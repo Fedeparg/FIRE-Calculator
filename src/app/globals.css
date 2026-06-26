@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Modo oscuro por clase (next-themes pone class="dark" en <html>). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f9;
+  --foreground: #0f1729;
+  --muted: #5b6478;
+  --border: #e4e7ef;
+  --brand: #4f46e5;
+  --brand-fg: #ffffff;
+  --brand-soft: #e6e8fd;
+  --accent: #10b981;
+  --accent-soft: #d6f5e7;
+  --warning: #b45309;
+  --warning-soft: #fef3e2;
+  --warning-border: #f5d9a8;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #0a0f1d;
+  --surface: #121a2d;
+  --surface-2: #1a2237;
+  --foreground: #e8edf6;
+  --muted: #94a1bb;
+  --border: #263149;
+  --brand: #818cf8;
+  --brand-fg: #0a0f1d;
+  --brand-soft: #1f2a4d;
+  --accent: #34d399;
+  --accent-soft: #123726;
+  --warning: #fbbf24;
+  --warning-soft: #2a2110;
+  --warning-border: #4a3a17;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-fg: var(--brand-fg);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-border: var(--warning-border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Recharts: quitar el contorno de foco al hacer clic/arrastrar en gráficas y
+   sectores (el "cuadrado de selección" queda feo) y evitar selección de texto. */
+.recharts-wrapper,
+.recharts-surface {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.recharts-wrapper:focus,
+.recharts-wrapper :focus,
+.recharts-surface:focus,
+.recharts-surface :focus,
+.recharts-sector:focus,
+.recharts-layer:focus,
+.recharts-wrapper :focus-visible {
+  outline: none;
+}

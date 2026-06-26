@@ -1,0 +1,47 @@
+# === Documentación / notas locales (NO subir) ===
+_local/
+*.local.md
+CLAUDE.md
+
+# === Variables de entorno (claves reales) ===
+.env
+.env.*
+!.env.example
+
+# === Node ===
+node_modules/
+.pnpm-store/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Builds / output ===
+dist/
+build/
+.svelte-kit/
+.next/
+.nuxt/
+.output/
+.vercel/
+coverage/
+
+# === Caches ===
+.cache/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+
+# === Bases de datos locales ===
+*.sqlite
+*.sqlite3
+*.db
+/data/
+
+# === Sistema operativo / editores ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp

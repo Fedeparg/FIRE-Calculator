@@ -1,20 +1,28 @@
 # Freedom Calculator — Project Roadmap
 
+> **Direction update (2026-06-26):** this is no longer framed as a learning
+> project — the goal is now a **serious, well-built product** for the Spanish
+> market. The React-only constraint has been dropped; the stack is being decided
+> (see the local working docs). The phase structure below still holds; phases are
+> being re-prioritised around a unified calculator suite with a searchable
+> selector, investment tracking, accounts, light monetization, and a landing page.
+
 ## What this is
 
-A "vitaminized" financial independence (FIRE) calculator, built as a learning project to:
+A "vitaminized" financial independence (FIRE) calculator and broader suite of
+financial calculators, focused on the **Spanish banking and tax system**:
 
-- Learn a modern frontend framework (coming from vanilla JS).
-- Practice working with an AI coding assistant (Claude Code) in a deliberate way — not just generating code, but understanding it.
-- Explore a small set of adjacent skills (MCP integration, lightweight monetization, multi-user backend, LLM integration, and eventually model fine-tuning) without forcing them all into the same release.
-
-This is not a commercial product. The goal is learning, portfolio value, and having fun. If the result is also useful to other people, great — and if someone wants to fork it and build their own version with AI assistance, that's perfectly fine too.
+- A unified selector page (with live search) centralising all calculators.
+- Investment tracking: users add any ticker/ISIN to follow their portfolio.
+- User accounts (auth + backend), with **no secrets ever in the frontend**.
+- Spanish-focused tax guidance (legal optimization, never evasion).
+- Light, unobtrusive monetization (1–2 ads/page) plus a donations area.
 
 ## Guiding principles
 
 - **Each phase should end in something complete and presentable**, not a half-finished mega-project. A small, polished tool is better than a large, incomplete one.
-- **No recurring costs.** Everything should run on free tiers and self-hosted infrastructure (existing home server). If a feature would introduce a real cost risk, it gets scoped down or made optional.
-- **Learning over automation.** Where a phase's main goal is learning a new skill (e.g. a frontend framework), AI assistance is used deliberately — to accelerate repetition of patterns already understood, not to replace understanding them in the first place.
+- **Minimal recurring cost.** Prefer free tiers and self-hostable infrastructure (existing home server). Hosting should be a deployment detail, not an architecture fork. Ads/donations offset what little cost remains.
+- **Well-built and scalable**, but solo-first to start. Calculation/tax logic lives in a framework-agnostic `core` package so the backend can be extracted later without a rewrite.
 - **Decoupled phases.** Later phases (multi-user backend, LLM assistant, fine-tuning) are optional add-ons that can be skipped, delayed, or dropped without invalidating earlier phases.
 
 ---
