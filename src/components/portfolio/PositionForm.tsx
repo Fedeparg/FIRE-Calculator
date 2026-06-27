@@ -61,6 +61,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const [duplicate, setDuplicate] = useState<Position | null>(null);
   // El símbolo ya existe y el bróker está vacío: hay que indicar uno para distinguirlo.
   const [brokerRequired, setBrokerRequired] = useState(false);
+  // Al editar, intento de vaciar un bróker que la posición ya tenía (no se permite).
+  const [brokerEmptied, setBrokerEmptied] = useState(false);
 
   const quantityNum = Number(quantity.replace(",", "."));
   const avgPriceNum = Number(avgPrice.replace(",", "."));
@@ -81,6 +83,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     setCurrency("EUR");
     setDuplicate(null);
     setBrokerRequired(false);
+    setBrokerEmptied(false);
     setErrorKey(null);
     setStatus("idle");
   }
@@ -99,8 +102,15 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     setErrorKey(null);
     setDuplicate(null);
     setBrokerRequired(false);
+    setBrokerEmptied(false);
     if (!isValid) {
       setErrorKey("errorInvalid");
+      return;
+    }
+    // No se puede vaciar el bróker de una posición que ya lo tenía (el alta sí permite
+    // crearla sin bróker; quitarlo después haría ambiguo el modelo de duplicados).
+    if (isEditing && Boolean(editing?.broker) && broker.trim() === "") {
+      setBrokerEmptied(true);
       return;
     }
     setStatus("submitting");
@@ -263,11 +273,14 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             value={broker}
             onChange={(e) => setBroker(e.target.value)}
             placeholder={t("brokerPlaceholder")}
-            aria-invalid={brokerRequired}
-            className={`${inputClass} ${brokerRequired ? "border-warning" : ""}`}
+            aria-invalid={brokerRequired || brokerEmptied}
+            className={`${inputClass} ${brokerRequired || brokerEmptied ? "border-warning" : ""}`}
           />
           {brokerRequired && (
             <p className="text-xs text-warning">{t("brokerRequired")}</p>
+          )}
+          {brokerEmptied && (
+            <p className="text-xs text-warning">{t("brokerCannotEmpty")}</p>
           )}
         </div>
 

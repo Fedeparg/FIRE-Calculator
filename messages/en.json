@@ -963,6 +963,7 @@
       "broker": "Broker",
       "brokerPlaceholder": "e.g. MyInvestor (optional)",
       "brokerRequired": "You already have this symbol: enter a broker to tell this position apart.",
+      "brokerCannotEmpty": "You can't remove the broker from a position that already has one. Change it to another or leave it as is.",
       "currency": "Currency",
       "submit": "Add position",
       "submitting": "Adding…",

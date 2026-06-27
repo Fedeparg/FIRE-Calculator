@@ -963,6 +963,7 @@
       "broker": "Bróker",
       "brokerPlaceholder": "p. ej. MyInvestor (opcional)",
       "brokerRequired": "Ya tienes este símbolo: indica un bróker para distinguir esta posición.",
+      "brokerCannotEmpty": "No puedes dejar sin bróker una posición que ya lo tiene. Cámbialo por otro o déjalo como está.",
       "currency": "Divisa",
       "submit": "Añadir posición",
       "submitting": "Añadiendo…",
