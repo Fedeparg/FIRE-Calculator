@@ -90,7 +90,8 @@
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero."
   },
   "footer": {
-    "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España)."
+    "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
+    "privacy": "Privacidad y cookies"
   },
   "frequency": {
     "label": "Frecuencia de aportación",
@@ -931,5 +932,8 @@
       "login": "Entrar",
       "portfolio": "Mi cartera"
     }
+  },
+  "legal": {
+    "lastUpdated": "Última actualización: {date}"
   }
 }

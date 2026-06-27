@@ -90,7 +90,8 @@
     "disclaimerShort": "Information, not tax or financial advice."
   },
   "footer": {
-    "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain)."
+    "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
+    "privacy": "Privacy & cookies"
   },
   "frequency": {
     "label": "Contribution frequency",
@@ -931,5 +932,8 @@
       "login": "Sign in",
       "portfolio": "My portfolio"
     }
+  },
+  "legal": {
+    "lastUpdated": "Last updated: {date}"
   }
 }

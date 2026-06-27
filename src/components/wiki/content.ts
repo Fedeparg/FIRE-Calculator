@@ -37,6 +37,7 @@ export interface Explainer {
 
 const WIKI_DIR = path.join(process.cwd(), "content", "wiki");
 const EXPLAINERS_DIR = path.join(WIKI_DIR, "explainers");
+const LEGAL_DIR = path.join(process.cwd(), "content", "legal");
 
 /** `<slug>.<locale>.md` → captura slug y locale; ignora subdirectorios. */
 const ARTICLE_FILE = /^(.+)\.(es|en)\.md$/;
@@ -105,6 +106,44 @@ export async function getArticle(slug: string, locale: string): Promise<Article 
   const meta = parseArticleMeta(slug, data);
   const html = await renderMarkdown(content);
   return { ...meta, html };
+}
+
+/** Documento legal (privacidad, aviso legal…): título del frontmatter + HTML. */
+export interface LegalDoc {
+  title: string;
+  updatedAt?: string;
+  html: string;
+}
+
+/** Slugs de documentos legales disponibles para un idioma. */
+export async function getLegalSlugs(locale: string): Promise<string[]> {
+  let entries: import("node:fs").Dirent[];
+  try {
+    entries = await fs.readdir(LEGAL_DIR, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const slugs: string[] = [];
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const match = ARTICLE_FILE.exec(entry.name);
+    if (match && match[2] === locale) slugs.push(match[1]);
+  }
+  return slugs.sort();
+}
+
+/** Un documento legal completo (título + HTML) o `null` si no existe. */
+export async function getLegalDoc(slug: string, locale: string): Promise<LegalDoc | null> {
+  const raw = await readFileOrNull(path.join(LEGAL_DIR, `${slug}.${locale}.md`));
+  if (raw === null) return null;
+  const { data, content } = matter(raw);
+  const html = await renderMarkdown(content);
+  return {
+    title: typeof data.title === "string" ? data.title : slug,
+    updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
+    html,
+  };
 }
 
 /** Explainer de una calculadora o `null` si todavía no existe (degradación). */
