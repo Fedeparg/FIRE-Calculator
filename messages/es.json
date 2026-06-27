@@ -945,6 +945,7 @@
       "broker": "Bróker",
       "value": "Valor estimado",
       "actions": "Acciones",
+      "edit": "Editar",
       "delete": "Eliminar",
       "confirm": "Sí, eliminar",
       "cancel": "Cancelar",
@@ -952,6 +953,7 @@
     },
     "form": {
       "title": "Añadir posición",
+      "editTitle": "Editar {ticker}",
       "ticker": "Símbolo o ISIN",
       "tickerPlaceholder": "p. ej. IWDA o IE00B4L5Y983",
       "name": "Nombre",
@@ -963,7 +965,15 @@
       "currency": "Divisa",
       "submit": "Añadir posición",
       "submitting": "Añadiendo…",
-      "error": "No se pudo añadir la posición. Revisa los datos e inténtalo de nuevo."
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "error": "No se pudo añadir la posición. Revisa los datos e inténtalo de nuevo.",
+      "editError": "No se pudieron guardar los cambios. Revisa los datos e inténtalo de nuevo.",
+      "duplicate": "Ya tienes {ticker} en {broker}.",
+      "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
+      "combine": "Combinar con la existente",
+      "combining": "Combinando…"
     }
   },
   "legal": {

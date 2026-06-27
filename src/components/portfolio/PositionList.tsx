@@ -8,11 +8,14 @@ import type { Position } from "@/lib/portfolio";
 
 type Props = {
   positions: Position[];
+  /** Id de la posición que se está editando (resaltada), o null. */
+  editingId: string | null;
+  onEdit: (position: Position) => void;
   onDeleted: (id: string) => void;
 };
 
-/** Tabla de posiciones con borrado inline (confirmación sin modal). */
-export default function PositionList({ positions, onDeleted }: Props) {
+/** Tabla de posiciones con editar y borrado inline (confirmación sin modal). */
+export default function PositionList({ positions, editingId, onEdit, onDeleted }: Props) {
   const t = useTranslations("portfolio.list");
   // id en confirmación de borrado / id en proceso de borrado.
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -64,8 +67,14 @@ export default function PositionList({ positions, onDeleted }: Props) {
             const value = p.quantity * p.avgPrice;
             const isConfirming = confirmingId === p.id;
             const isDeleting = deletingId === p.id;
+            const isEditing = editingId === p.id;
             return (
-              <tr key={p.id} className="border-b border-border last:border-0">
+              <tr
+                key={p.id}
+                className={`border-b border-border last:border-0 ${
+                  isEditing ? "bg-surface-2" : ""
+                }`}
+              >
                 <td className="px-4 py-3 font-medium text-foreground">{p.ticker}</td>
                 <td className="px-4 py-3 text-muted">{p.name ?? "—"}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-foreground">
@@ -74,7 +83,7 @@ export default function PositionList({ positions, onDeleted }: Props) {
                 <td className="px-4 py-3 text-right tabular-nums text-foreground">
                   {formatCurrency(p.avgPrice, p.currency)}
                 </td>
-                <td className="px-4 py-3 text-muted">{p.broker ?? "—"}</td>
+                <td className="px-4 py-3 text-muted">{p.broker}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-foreground">
                   {formatCurrency(value, p.currency)}
                 </td>
@@ -99,13 +108,22 @@ export default function PositionList({ positions, onDeleted }: Props) {
                       </button>
                     </span>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmingId(p.id)}
-                      className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-foreground"
-                    >
-                      {t("delete")}
-                    </button>
+                    <span className="inline-flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(p)}
+                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-foreground"
+                      >
+                        {t("edit")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingId(p.id)}
+                        className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-foreground"
+                      >
+                        {t("delete")}
+                      </button>
+                    </span>
                   )}
                 </td>
               </tr>

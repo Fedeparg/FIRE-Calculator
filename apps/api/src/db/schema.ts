@@ -6,6 +6,7 @@ import {
   varchar,
   numeric,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -56,6 +57,11 @@ export type NewLoginToken = typeof loginTokens.$inferInsert;
  *
  * Precisión: `quantity` y `avgPrice` usan `numeric(18,6)` (no float) para no perder
  * céntimos ni fracciones de participación. Drizzle los devuelve como `string`.
+ *
+ * Unicidad: una posición se identifica por `(userId, ticker, broker)`. El bróker es
+ * obligatorio precisamente para poder distinguir el mismo símbolo comprado en distintos
+ * sitios; el índice único es la barrera de último recurso (la detección case-insensitive
+ * y el flujo de "combinar" viven en el servicio).
  */
 export const positions = pgTable(
   'positions',
@@ -71,13 +77,23 @@ export const positions = pgTable(
     quantity: numeric('quantity', { precision: 18, scale: 6 }).notNull(),
     // Precio medio de compra, en la divisa de la posición.
     avgPrice: numeric('avg_price', { precision: 18, scale: 6 }).notNull(),
-    // Nombre libre del bróker/banco ("Degiro", "IBKR", "MyInvestor"…).
-    broker: varchar('broker', { length: 100 }),
+    // Nombre libre del bróker/banco ("Degiro", "IBKR", "MyInvestor"…). Obligatorio.
+    broker: varchar('broker', { length: 100 }).notNull(),
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
-  (table) => [index('positions_user_id_idx').on(table.userId)],
+  (table) => [
+    index('positions_user_id_idx').on(table.userId),
+    uniqueIndex('positions_user_ticker_broker_idx').on(
+      table.userId,
+      table.ticker,
+      table.broker,
+    ),
+  ],
 );
 
 export type Position = typeof positions.$inferSelect;

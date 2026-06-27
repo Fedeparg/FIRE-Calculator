@@ -23,7 +23,7 @@ export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 // `numeric(18,6)` admite 12 dígitos enteros → máximo 999_999_999_999,999999. `@Max` es
 // inclusivo, así que el tope es el mayor entero de 12 dígitos: pasar de aquí da 400
 // (validación) en lugar de un overflow en la BD (500).
-const NUMERIC_MAX = 999_999_999_999;
+export const NUMERIC_MAX = 999_999_999_999;
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
@@ -54,11 +54,13 @@ export class CreatePositionDto {
   @Max(NUMERIC_MAX)
   avgPrice!: number;
 
-  @IsOptional()
+  // Obligatorio y no vacío: junto con `ticker` identifica la posición (permite el mismo
+  // símbolo en distintos brókers y hace fiable la detección de duplicados).
   @IsString()
   @Transform(trim)
+  @IsNotEmpty()
   @MaxLength(100)
-  broker?: string;
+  broker!: string;
 
   @IsOptional()
   @IsIn(SUPPORTED_CURRENCIES)

@@ -945,6 +945,7 @@
       "broker": "Broker",
       "value": "Estimated value",
       "actions": "Actions",
+      "edit": "Edit",
       "delete": "Delete",
       "confirm": "Yes, delete",
       "cancel": "Cancel",
@@ -952,6 +953,7 @@
     },
     "form": {
       "title": "Add position",
+      "editTitle": "Edit {ticker}",
       "ticker": "Symbol or ISIN",
       "tickerPlaceholder": "e.g. IWDA or IE00B4L5Y983",
       "name": "Name",
@@ -963,7 +965,15 @@
       "currency": "Currency",
       "submit": "Add position",
       "submitting": "Adding…",
-      "error": "Couldn't add the position. Check the data and try again."
+      "save": "Save changes",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "error": "Couldn't add the position. Check the data and try again.",
+      "editError": "Couldn't save changes. Check the data and try again.",
+      "duplicate": "You already have {ticker} at {broker}.",
+      "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
+      "combine": "Combine with existing",
+      "combining": "Combining…"
     }
   },
   "legal": {

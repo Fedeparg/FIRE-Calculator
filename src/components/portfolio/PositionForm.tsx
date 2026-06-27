@@ -1,0 +1,313 @@
+"use client";
+
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+
+import { PORTFOLIO_CURRENCIES, type Position, type PortfolioCurrency } from "@/lib/portfolio";
+
+type Status = "idle" | "submitting" | "combining";
+
+type Props = {
+  /** Si viene una posición, el formulario está en modo edición; si no, en modo alta. */
+  editing?: Position | null;
+  /** Alta correcta (201). */
+  onCreated: (position: Position) => void;
+  /** Edición o combinación correctas: reemplaza la posición existente en la lista. */
+  onSaved: (position: Position) => void;
+  /** Cancelar la edición y volver al modo alta. */
+  onCancelEdit: () => void;
+};
+
+const inputClass =
+  "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
+
+function toCurrency(value: string | undefined): PortfolioCurrency {
+  return PORTFOLIO_CURRENCIES.includes(value as PortfolioCurrency)
+    ? (value as PortfolioCurrency)
+    : "EUR";
+}
+
+/**
+ * Formulario de posición, reutilizado para alta y edición. En alta, si el símbolo ya
+ * existe con el mismo bróker, la API responde 409 y mostramos un aviso con la opción de
+ * combinar (media ponderada) sin perder lo escrito. El `key` del padre fuerza un remount
+ * al cambiar de posición editada, así que el estado inicial siempre parte de `editing`.
+ */
+export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit }: Props) {
+  const t = useTranslations("portfolio.form");
+  const isEditing = Boolean(editing);
+
+  const [ticker, setTicker] = useState(editing?.ticker ?? "");
+  const [name, setName] = useState(editing?.name ?? "");
+  const [quantity, setQuantity] = useState(editing ? String(editing.quantity) : "");
+  const [avgPrice, setAvgPrice] = useState(editing ? String(editing.avgPrice) : "");
+  const [broker, setBroker] = useState(editing?.broker ?? "");
+  const [currency, setCurrency] = useState<PortfolioCurrency>(toCurrency(editing?.currency));
+  const [status, setStatus] = useState<Status>("idle");
+  const [error, setError] = useState(false);
+  // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
+  const [duplicate, setDuplicate] = useState<Position | null>(null);
+
+  const quantityNum = Number(quantity.replace(",", "."));
+  const avgPriceNum = Number(avgPrice.replace(",", "."));
+  const isValid =
+    ticker.trim().length > 0 &&
+    broker.trim().length > 0 &&
+    Number.isFinite(quantityNum) &&
+    quantityNum > 0 &&
+    Number.isFinite(avgPriceNum) &&
+    avgPriceNum >= 0;
+
+  function resetForm() {
+    setTicker("");
+    setName("");
+    setQuantity("");
+    setAvgPrice("");
+    setBroker("");
+    setCurrency("EUR");
+    setDuplicate(null);
+    setError(false);
+    setStatus("idle");
+  }
+
+  const payload = () => ({
+    ticker: ticker.trim(),
+    name: name.trim() || undefined,
+    quantity: quantityNum,
+    avgPrice: avgPriceNum,
+    broker: broker.trim(),
+    currency,
+  });
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(false);
+    setDuplicate(null);
+    if (!isValid) {
+      setError(true);
+      return;
+    }
+    setStatus("submitting");
+    try {
+      const res = await fetch(
+        isEditing ? `/api/positions/${editing!.id}` : "/api/positions",
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload()),
+        },
+      );
+
+      if (res.ok) {
+        const saved = (await res.json()) as Position;
+        if (isEditing) {
+          onSaved(saved);
+        } else {
+          onCreated(saved);
+          resetForm();
+        }
+        return;
+      }
+
+      // 409: ya existe ese símbolo+bróker. En alta ofrecemos combinar; en edición avisamos.
+      if (res.status === 409 && !isEditing) {
+        const body = (await res.json()) as { existing?: Position };
+        if (body.existing) {
+          setDuplicate(body.existing);
+          setStatus("idle");
+          return;
+        }
+      }
+      setError(true);
+      setStatus("idle");
+    } catch {
+      setError(true);
+      setStatus("idle");
+    }
+  }
+
+  /** Combina la compra actual con la posición existente que colisiona (media ponderada). */
+  async function handleCombine() {
+    if (!duplicate) return;
+    setStatus("combining");
+    setError(false);
+    try {
+      const res = await fetch(`/api/positions/${duplicate.id}/combine`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity: quantityNum, avgPrice: avgPriceNum, currency }),
+      });
+      if (res.ok) {
+        const merged = (await res.json()) as Position;
+        onSaved(merged);
+        resetForm();
+        return;
+      }
+      setError(true);
+      setStatus("idle");
+    } catch {
+      setError(true);
+      setStatus("idle");
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
+    >
+      <h2 className="text-lg font-semibold text-foreground">
+        {isEditing ? t("editTitle", { ticker: editing!.ticker }) : t("title")}
+      </h2>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="ticker" className="text-sm font-medium text-foreground">
+            {t("ticker")} <span className="text-warning">*</span>
+          </label>
+          <input
+            id="ticker"
+            type="text"
+            required
+            maxLength={20}
+            value={ticker}
+            onChange={(e) => setTicker(e.target.value)}
+            placeholder={t("tickerPlaceholder")}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="name" className="text-sm font-medium text-foreground">
+            {t("name")}
+          </label>
+          <input
+            id="name"
+            type="text"
+            maxLength={100}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("namePlaceholder")}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="quantity" className="text-sm font-medium text-foreground">
+            {t("quantity")} <span className="text-warning">*</span>
+          </label>
+          <input
+            id="quantity"
+            type="number"
+            required
+            min="0"
+            step="any"
+            inputMode="decimal"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="0"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="avgPrice" className="text-sm font-medium text-foreground">
+            {t("avgPrice")} <span className="text-warning">*</span>
+          </label>
+          <input
+            id="avgPrice"
+            type="number"
+            required
+            min="0"
+            step="any"
+            inputMode="decimal"
+            value={avgPrice}
+            onChange={(e) => setAvgPrice(e.target.value)}
+            placeholder="0"
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="broker" className="text-sm font-medium text-foreground">
+            {t("broker")} <span className="text-warning">*</span>
+          </label>
+          <input
+            id="broker"
+            type="text"
+            required
+            maxLength={100}
+            value={broker}
+            onChange={(e) => setBroker(e.target.value)}
+            placeholder={t("brokerPlaceholder")}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="currency" className="text-sm font-medium text-foreground">
+            {t("currency")}
+          </label>
+          <select
+            id="currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as PortfolioCurrency)}
+            className={inputClass}
+          >
+            {PORTFOLIO_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {duplicate && (
+        <div className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
+          <p className="text-sm text-foreground">
+            {t("duplicate", { ticker: duplicate.ticker, broker: duplicate.broker })}
+          </p>
+          <p className="text-xs text-muted">{t("duplicateHint")}</p>
+          <button
+            type="button"
+            onClick={handleCombine}
+            disabled={status === "combining"}
+            className="self-start rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
+          >
+            {status === "combining" ? t("combining") : t("combine")}
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-warning">{isEditing ? t("editError") : t("error")}</p>
+      )}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={status !== "idle" || !isValid}
+          className="rounded-lg bg-brand px-4 py-2.5 font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
+        >
+          {isEditing
+            ? status === "submitting"
+              ? t("saving")
+              : t("save")
+            : status === "submitting"
+              ? t("submitting")
+              : t("submit")}
+        </button>
+        {isEditing && (
+          <button
+            type="button"
+            onClick={onCancelEdit}
+            className="rounded-lg border border-border px-4 py-2.5 font-medium text-foreground transition hover:bg-surface-2"
+          >
+            {t("cancel")}
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}
