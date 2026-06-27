@@ -3,9 +3,21 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { Link } from "@/i18n/navigation";
 import { PORTFOLIO_CURRENCIES, type Position, type PortfolioCurrency } from "@/lib/portfolio";
 
 type Status = "idle" | "submitting" | "combining";
+
+/** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
+type ErrorKey = "errorNetwork" | "errorSession" | "errorInvalid" | "errorServer" | "errorGeneric";
+
+/** Traduce un status HTTP a un mensaje específico (sin volcar el body crudo de la API). */
+function errorKeyForStatus(status: number): ErrorKey {
+  if (status === 401) return "errorSession";
+  if (status === 400) return "errorInvalid";
+  if (status >= 500) return "errorServer";
+  return "errorGeneric";
+}
 
 type Props = {
   /** Si viene una posición, el formulario está en modo edición; si no, en modo alta. */
@@ -44,7 +56,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const [broker, setBroker] = useState(editing?.broker ?? "");
   const [currency, setCurrency] = useState<PortfolioCurrency>(toCurrency(editing?.currency));
   const [status, setStatus] = useState<Status>("idle");
-  const [error, setError] = useState(false);
+  const [errorKey, setErrorKey] = useState<ErrorKey | null>(null);
   // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
   const [duplicate, setDuplicate] = useState<Position | null>(null);
   // El símbolo ya existe y el bróker está vacío: hay que indicar uno para distinguirlo.
@@ -69,7 +81,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     setCurrency("EUR");
     setDuplicate(null);
     setBrokerRequired(false);
-    setError(false);
+    setErrorKey(null);
     setStatus("idle");
   }
 
@@ -84,11 +96,11 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setError(false);
+    setErrorKey(null);
     setDuplicate(null);
     setBrokerRequired(false);
     if (!isValid) {
-      setError(true);
+      setErrorKey("errorInvalid");
       return;
     }
     setStatus("submitting");
@@ -128,10 +140,12 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           return;
         }
       }
-      setError(true);
+      // Resto de fallos: mensaje específico según el status (sesión, datos, servidor…).
+      setErrorKey(errorKeyForStatus(res.status));
       setStatus("idle");
     } catch {
-      setError(true);
+      // La promesa de fetch solo rechaza por fallo de red/conexión.
+      setErrorKey("errorNetwork");
       setStatus("idle");
     }
   }
@@ -140,7 +154,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   async function handleCombine() {
     if (!duplicate) return;
     setStatus("combining");
-    setError(false);
+    setErrorKey(null);
     try {
       const res = await fetch(`/api/positions/${duplicate.id}/combine`, {
         method: "POST",
@@ -153,10 +167,10 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
         resetForm();
         return;
       }
-      setError(true);
+      setErrorKey(errorKeyForStatus(res.status));
       setStatus("idle");
     } catch {
-      setError(true);
+      setErrorKey("errorNetwork");
       setStatus("idle");
     }
   }
@@ -293,8 +307,21 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
         </div>
       )}
 
-      {error && (
-        <p className="text-sm text-warning">{isEditing ? t("editError") : t("error")}</p>
+      {errorKey && (
+        <p className="text-sm text-warning">
+          {t(errorKey)}
+          {errorKey === "errorSession" && (
+            <>
+              {" "}
+              <Link
+                href="/entrar"
+                className="font-medium text-brand underline underline-offset-2"
+              >
+                {t("errorSessionLink")}
+              </Link>
+            </>
+          )}
+        </p>
       )}
 
       <div className="flex items-center gap-3">

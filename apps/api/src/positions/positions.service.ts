@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
@@ -46,22 +47,32 @@ export class PositionsService {
 
     await this.assertCanUseTickerBroker(userId, ticker, broker);
 
-    const [row] = await this.db
-      .insert(positions)
-      .values({
-        userId,
-        ticker,
-        name: dto.name ?? null,
-        // `numeric` se almacena como string para conservar la precisión exacta.
-        quantity: dto.quantity.toString(),
-        avgPrice: dto.avgPrice.toString(),
-        // El bróker vacío se guarda como NULL (sin especificar).
-        broker: broker || null,
-        currency: dto.currency ?? 'EUR',
-      })
-      .returning();
+    try {
+      const [row] = await this.db
+        .insert(positions)
+        .values({
+          userId,
+          ticker,
+          name: dto.name ?? null,
+          // `numeric` se almacena como string para conservar la precisión exacta.
+          quantity: dto.quantity.toString(),
+          avgPrice: dto.avgPrice.toString(),
+          // El bróker vacío se guarda como NULL (sin especificar).
+          broker: broker || null,
+          currency: dto.currency ?? 'EUR',
+        })
+        .returning();
 
-    return this.toResponse(row);
+      return this.toResponse(row);
+    } catch (error) {
+      // La única FK de `positions` es `userId → users.id`. Una violación aquí solo puede
+      // significar que el JWT es válido (firma correcta) pero el usuario ya no existe
+      // (p. ej. cuenta borrada, o BD reiniciada en dev): sesión muerta → 401, no 500.
+      if (isForeignKeyViolation(error)) {
+        throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');
+      }
+      throw error;
+    }
   }
 
   /** Devuelve SOLO las posiciones del usuario autenticado, más recientes primero. */
@@ -264,4 +275,23 @@ export class PositionsService {
       createdAt: row.createdAt.toISOString(),
     };
   }
+}
+
+/** Código SQLSTATE de PostgreSQL para violación de clave foránea. */
+const PG_FOREIGN_KEY_VIOLATION = '23503';
+
+/**
+ * Detecta una violación de FK de Postgres. Drizzle envuelve el error del driver en un
+ * `DrizzleQueryError` y deja el `PostgresError` real (con el `code` SQLSTATE) en `cause`,
+ * así que recorremos la cadena de `cause` hasta encontrarlo.
+ */
+function isForeignKeyViolation(error: unknown): boolean {
+  let current: unknown = error;
+  while (typeof current === 'object' && current !== null) {
+    if ((current as { code?: unknown }).code === PG_FOREIGN_KEY_VIOLATION) {
+      return true;
+    }
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
 }
