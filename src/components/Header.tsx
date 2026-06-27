@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { BrandCompass, IconNavCalculator, IconNavLearn } from "./illustrations";
+import AuthNav from "./auth/AuthNav";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
@@ -35,6 +36,7 @@ export default function Header() {
             <IconNavLearn className="h-4 w-4" />
             {tNav("learn")}
           </Link>
+          <AuthNav />
           <span aria-hidden className="mx-1 hidden h-5 w-px bg-border sm:block" />
           <LanguageSwitcher />
           <ThemeToggle />

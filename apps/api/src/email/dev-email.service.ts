@@ -1,0 +1,19 @@
+import { Injectable, Logger } from '@nestjs/common';
+
+import type { EmailService } from './email.service';
+
+/**
+ * Transporte de email para desarrollo: NO envía nada, escribe el enlace mágico en
+ * el log. Permite construir y probar todo el flujo de login sin cuenta de Resend ni
+ * dominio. En producción se usa `ResendEmailService` (seleccionado por env).
+ */
+@Injectable()
+export class DevEmailService implements EmailService {
+  private readonly logger = new Logger('Email(dev)');
+
+  sendMagicLink(to: string, link: string): Promise<void> {
+    this.logger.log(`Magic link para ${to}:`);
+    this.logger.log(`  ${link}`);
+    return Promise.resolve();
+  }
+}

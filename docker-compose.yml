@@ -1,14 +1,14 @@
 # Orquestación de Sextante.
 #
-# Esqueleto (deliverable 1): PostgreSQL (con volumen persistente) + API NestJS.
+# PostgreSQL (volumen persistente) + servicio one-shot de migración + API NestJS.
 # El frontend Next se ejecuta de momento con `pnpm dev` (HMR) y proxea /api a la
 # API vía rewrites. La dockerización del web + Caddy/TLS llegará en el paso de
 # despliegue de producción.
 #
 # Uso:
-#   docker compose up -d        # levanta postgres + api
-#   docker compose logs -f api  # ver logs de la API
-#   docker compose down         # parar (los datos persisten en el volumen)
+#   docker compose up -d --build   # migra y levanta postgres + api
+#   docker compose logs -f api     # ver logs de la API
+#   docker compose down            # parar (los datos persisten en el volumen)
 
 services:
   postgres:
@@ -31,20 +31,52 @@ services:
       retries: 5
       start_period: 10s
 
+  # Servicio one-shot: aplica las migraciones y termina. La API espera a que acabe
+  # OK, así un arranque limpio nunca queda con la BD sin esquema.
+  migrate:
+    image: sextante-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ['node', 'dist/db/migrate.js']
+    restart: 'no'
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD:-sextante_dev}@postgres:5432/${POSTGRES_DB:-sextante}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   api:
+    image: sextante-api:latest
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
     environment:
       PORT: 3001
+      # Por defecto DEV (arranca out-of-the-box). En PRODUCCIÓN (UNRAID) definir vía
+      # .env: NODE_ENV=production + JWT_SECRET fuerte + COOKIE_SECURE=true. Con
+      # NODE_ENV=production, la API se NIEGA a arrancar con el JWT_SECRET por defecto.
+      NODE_ENV: ${NODE_ENV:-development}
       # Dentro de la red de Compose, el host de la BD es el nombre del servicio.
       DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD:-sextante_dev}@postgres:5432/${POSTGRES_DB:-sextante}
+      # Secreto del JWT de sesión (en prod, definir uno fuerte vía .env del compose).
+      JWT_SECRET: ${JWT_SECRET:-dev_insecure_secret_change_me}
+      # Cookie Secure: false en dev (http://localhost), true en prod (HTTPS).
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # URL del frontend (base del magic link).
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      # Transporte de email: dev (log) o resend (producción).
+      EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-dev}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     ports:
       - '3001:3001'
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       # Node 24 trae fetch global; sale 0 si /health responde OK.
       test:
