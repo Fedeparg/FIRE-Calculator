@@ -83,7 +83,7 @@ export default function PositionList({ positions, editingId, onEdit, onDeleted }
                 <td className="px-4 py-3 text-right tabular-nums text-foreground">
                   {formatCurrency(p.avgPrice, p.currency)}
                 </td>
-                <td className="px-4 py-3 text-muted">{p.broker}</td>
+                <td className="px-4 py-3 text-muted">{p.broker ?? "—"}</td>
                 <td className="px-4 py-3 text-right tabular-nums text-foreground">
                   {formatCurrency(value, p.currency)}
                 </td>

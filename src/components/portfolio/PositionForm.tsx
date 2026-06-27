@@ -47,12 +47,14 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const [error, setError] = useState(false);
   // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
   const [duplicate, setDuplicate] = useState<Position | null>(null);
+  // El símbolo ya existe y el bróker está vacío: hay que indicar uno para distinguirlo.
+  const [brokerRequired, setBrokerRequired] = useState(false);
 
   const quantityNum = Number(quantity.replace(",", "."));
   const avgPriceNum = Number(avgPrice.replace(",", "."));
+  // El bróker es opcional al añadir; la API lo exige solo si el símbolo ya existe.
   const isValid =
     ticker.trim().length > 0 &&
-    broker.trim().length > 0 &&
     Number.isFinite(quantityNum) &&
     quantityNum > 0 &&
     Number.isFinite(avgPriceNum) &&
@@ -66,6 +68,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     setBroker("");
     setCurrency("EUR");
     setDuplicate(null);
+    setBrokerRequired(false);
     setError(false);
     setStatus("idle");
   }
@@ -75,7 +78,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     name: name.trim() || undefined,
     quantity: quantityNum,
     avgPrice: avgPriceNum,
-    broker: broker.trim(),
+    broker: broker.trim() || undefined,
     currency,
   });
 
@@ -83,6 +86,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     event.preventDefault();
     setError(false);
     setDuplicate(null);
+    setBrokerRequired(false);
     if (!isValid) {
       setError(true);
       return;
@@ -109,10 +113,16 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
         return;
       }
 
-      // 409: ya existe ese símbolo+bróker. En alta ofrecemos combinar; en edición avisamos.
-      if (res.status === 409 && !isEditing) {
-        const body = (await res.json()) as { existing?: Position };
-        if (body.existing) {
+      // 409: dos casos según el `code`. DUPLICATE → ya existe ese símbolo+bróker (en alta
+      // ofrecemos combinar). BROKER_REQUIRED → el símbolo ya existe y falta el bróker.
+      if (res.status === 409) {
+        const body = (await res.json()) as { code?: string; existing?: Position };
+        if (body.code === "BROKER_REQUIRED") {
+          setBrokerRequired(true);
+          setStatus("idle");
+          return;
+        }
+        if (body.code === "DUPLICATE" && body.existing && !isEditing) {
           setDuplicate(body.existing);
           setStatus("idle");
           return;
@@ -230,18 +240,21 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="broker" className="text-sm font-medium text-foreground">
-            {t("broker")} <span className="text-warning">*</span>
+            {t("broker")}
           </label>
           <input
             id="broker"
             type="text"
-            required
             maxLength={100}
             value={broker}
             onChange={(e) => setBroker(e.target.value)}
             placeholder={t("brokerPlaceholder")}
-            className={inputClass}
+            aria-invalid={brokerRequired}
+            className={`${inputClass} ${brokerRequired ? "border-warning" : ""}`}
           />
+          {brokerRequired && (
+            <p className="text-xs text-warning">{t("brokerRequired")}</p>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -266,7 +279,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       {duplicate && (
         <div className="flex flex-col gap-2 rounded-lg border border-warning/40 bg-warning/10 px-4 py-3">
           <p className="text-sm text-foreground">
-            {t("duplicate", { ticker: duplicate.ticker, broker: duplicate.broker })}
+            {t("duplicate", { ticker: duplicate.ticker, broker: duplicate.broker ?? "" })}
           </p>
           <p className="text-xs text-muted">{t("duplicateHint")}</p>
           <button

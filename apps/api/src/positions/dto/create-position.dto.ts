@@ -54,13 +54,13 @@ export class CreatePositionDto {
   @Max(NUMERIC_MAX)
   avgPrice!: number;
 
-  // Obligatorio y no vacío: junto con `ticker` identifica la posición (permite el mismo
-  // símbolo en distintos brókers y hace fiable la detección de duplicados).
+  // Opcional a nivel de DTO: la regla "obligatorio si el símbolo ya existe" no se puede
+  // expresar aquí (depende de los datos del usuario), así que la aplica el servicio.
+  @IsOptional()
   @IsString()
   @Transform(trim)
-  @IsNotEmpty()
   @MaxLength(100)
-  broker!: string;
+  broker?: string;
 
   @IsOptional()
   @IsIn(SUPPORTED_CURRENCIES)

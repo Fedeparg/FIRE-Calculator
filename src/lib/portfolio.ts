@@ -15,7 +15,7 @@ export type Position = {
   name: string | null;
   quantity: number;
   avgPrice: number;
-  broker: string;
+  broker: string | null;
   currency: string;
   createdAt: string;
 };

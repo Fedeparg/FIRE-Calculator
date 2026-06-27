@@ -29,6 +29,13 @@
       "when": 1782594443399,
       "tag": "0003_cool_hammerhead",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782595865957,
+      "tag": "0004_lethal_toad",
+      "breakpoints": true
     }
   ]
 }

@@ -25,7 +25,7 @@ export type PositionResponse = {
   name: string | null;
   quantity: number;
   avgPrice: number;
-  broker: string;
+  broker: string | null;
   currency: string;
   createdAt: string;
 };
@@ -35,21 +35,16 @@ export class PositionsService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
   /**
-   * Crea una posición para el usuario autenticado. Si ya existe una con el mismo
-   * `(ticker, broker)` (comparación case-insensitive), NO se crea: lanza 409 con la
-   * posición existente, para que el frontend ofrezca combinar (media ponderada).
+   * Crea una posición para el usuario autenticado. Aplica la regla de duplicados antes de
+   * insertar (ver `assertCanUseTickerBroker`): el bróker solo es obligatorio si ya existe
+   * otra entrada del mismo símbolo; un `(ticker, broker)` exacto ya existente lanza 409 con
+   * la posición existente para ofrecer combinar.
    */
   async create(userId: string, dto: CreatePositionDto): Promise<PositionResponse> {
     const ticker = this.normalizeTicker(dto.ticker);
-    const broker = dto.broker.trim();
+    const broker = dto.broker?.trim() ?? '';
 
-    const existing = await this.findCollision(userId, ticker, broker);
-    if (existing) {
-      throw new ConflictException({
-        message: 'Ya tienes este símbolo en este bróker',
-        existing: this.toResponse(existing),
-      });
-    }
+    await this.assertCanUseTickerBroker(userId, ticker, broker);
 
     const [row] = await this.db
       .insert(positions)
@@ -60,7 +55,8 @@ export class PositionsService {
         // `numeric` se almacena como string para conservar la precisión exacta.
         quantity: dto.quantity.toString(),
         avgPrice: dto.avgPrice.toString(),
-        broker,
+        // El bróker vacío se guarda como NULL (sin especificar).
+        broker: broker || null,
         currency: dto.currency ?? 'EUR',
       })
       .returning();
@@ -133,23 +129,21 @@ export class PositionsService {
     const current = await this.findOwned(userId, id);
 
     const ticker = dto.ticker !== undefined ? this.normalizeTicker(dto.ticker) : current.ticker;
-    const broker = dto.broker !== undefined ? dto.broker.trim() : current.broker;
+    const broker =
+      dto.broker !== undefined ? (dto.broker.trim() || '') : (current.broker ?? '');
 
-    if (ticker !== current.ticker || broker.toLowerCase() !== current.broker.toLowerCase()) {
-      const collision = await this.findCollision(userId, ticker, broker, id);
-      if (collision) {
-        throw new ConflictException({
-          message: 'Ya tienes este símbolo en este bróker',
-          existing: this.toResponse(collision),
-        });
-      }
+    const tickerChanged = ticker !== current.ticker;
+    const brokerChanged = broker.toLowerCase() !== (current.broker ?? '').toLowerCase();
+    if (tickerChanged || brokerChanged) {
+      // Excluye la propia fila para que editar no choque consigo misma.
+      await this.assertCanUseTickerBroker(userId, ticker, broker, id);
     }
 
     const [row] = await this.db
       .update(positions)
       .set({
         ticker,
-        broker,
+        broker: broker || null,
         name: dto.name !== undefined ? dto.name || null : current.name,
         quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
         avgPrice: dto.avgPrice !== undefined ? dto.avgPrice.toString() : current.avgPrice,
@@ -189,16 +183,30 @@ export class PositionsService {
   }
 
   /**
-   * Busca una posición del usuario con el mismo `(ticker, broker)` (case-insensitive en
-   * el bróker; el ticker llega ya normalizado a mayúsculas). `excludeId` evita que una
-   * edición choque consigo misma.
+   * Aplica la regla de duplicados para un `(ticker, broker)` (con `broker` ya recortado;
+   * cadena vacía = sin bróker). Lanza:
+   *   - 409 `BROKER_REQUIRED` si el bróker está vacío PERO ya existe otra entrada del
+   *     mismo símbolo (hay que especificar bróker para distinguirla).
+   *   - 409 `DUPLICATE` (con la posición existente) si el `(ticker, broker)` exacto ya
+   *     existe (case-insensitive en el bróker), para ofrecer combinar.
+   * `excludeId` excluye la propia fila (ediciones).
    */
-  private async findCollision(
+  private async assertCanUseTickerBroker(
     userId: string,
     ticker: string,
     broker: string,
     excludeId?: string,
-  ): Promise<Position | undefined> {
+  ): Promise<void> {
+    if (broker === '') {
+      if (await this.symbolExists(userId, ticker, excludeId)) {
+        throw new ConflictException({
+          code: 'BROKER_REQUIRED',
+          message: 'Ya tienes este símbolo; indica un bróker para distinguirlo',
+        });
+      }
+      return;
+    }
+
     const conditions = [
       eq(positions.userId, userId),
       eq(positions.ticker, ticker),
@@ -207,12 +215,36 @@ export class PositionsService {
     if (excludeId) {
       conditions.push(ne(positions.id, excludeId));
     }
-    const [row] = await this.db
+    const [existing] = await this.db
       .select()
       .from(positions)
       .where(and(...conditions))
       .limit(1);
-    return row;
+    if (existing) {
+      throw new ConflictException({
+        code: 'DUPLICATE',
+        message: 'Ya tienes este símbolo en este bróker',
+        existing: this.toResponse(existing),
+      });
+    }
+  }
+
+  /** ¿El usuario ya tiene alguna posición de este símbolo (cualquier bróker)? */
+  private async symbolExists(
+    userId: string,
+    ticker: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const conditions = [eq(positions.userId, userId), eq(positions.ticker, ticker)];
+    if (excludeId) {
+      conditions.push(ne(positions.id, excludeId));
+    }
+    const [row] = await this.db
+      .select({ id: positions.id })
+      .from(positions)
+      .where(and(...conditions))
+      .limit(1);
+    return Boolean(row);
   }
 
   /** Normaliza el símbolo: sin espacios y en mayúsculas ("iwda" y "IWDA" son el mismo). */

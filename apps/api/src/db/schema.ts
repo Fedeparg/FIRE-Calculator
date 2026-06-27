@@ -59,9 +59,11 @@ export type NewLoginToken = typeof loginTokens.$inferInsert;
  * céntimos ni fracciones de participación. Drizzle los devuelve como `string`.
  *
  * Unicidad: una posición se identifica por `(userId, ticker, broker)`. El bróker es
- * obligatorio precisamente para poder distinguir el mismo símbolo comprado en distintos
- * sitios; el índice único es la barrera de último recurso (la detección case-insensitive
- * y el flujo de "combinar" viven en el servicio).
+ * OPCIONAL en general, pero pasa a ser obligatorio al añadir un símbolo que YA tiene otra
+ * entrada (regla de negocio en el servicio, no en el esquema): así se puede distinguir el
+ * mismo símbolo comprado en distintos sitios. El índice único es la barrera de último
+ * recurso para duplicados exactos con bróker no nulo (la detección case-insensitive, la
+ * regla "bróker requerido si el símbolo existe" y el flujo de "combinar" viven en el servicio).
  */
 export const positions = pgTable(
   'positions',
@@ -77,8 +79,9 @@ export const positions = pgTable(
     quantity: numeric('quantity', { precision: 18, scale: 6 }).notNull(),
     // Precio medio de compra, en la divisa de la posición.
     avgPrice: numeric('avg_price', { precision: 18, scale: 6 }).notNull(),
-    // Nombre libre del bróker/banco ("Degiro", "IBKR", "MyInvestor"…). Obligatorio.
-    broker: varchar('broker', { length: 100 }).notNull(),
+    // Nombre libre del bróker/banco ("Degiro", "IBKR", "MyInvestor"…). Opcional; el
+    // servicio lo exige solo cuando ya existe otra entrada del mismo símbolo.
+    broker: varchar('broker', { length: 100 }),
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

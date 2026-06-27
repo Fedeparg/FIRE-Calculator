@@ -1,0 +1,1 @@
+ALTER TABLE "positions" ALTER COLUMN "broker" DROP NOT NULL;
