@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
     "**/out/**",
     "**/build/**",
     ".claude/**",
+    // El backend (apps/api) tiene su propio tooling (NestJS/Drizzle); no lo
+    // analiza el ESLint del frontend Next.
+    "apps/**",
   ]),
 ]);
 
