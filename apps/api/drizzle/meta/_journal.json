@@ -15,6 +15,13 @@
       "when": 1782567177733,
       "tag": "0001_happy_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782592154145,
+      "tag": "0002_amused_firestar",
+      "breakpoints": true
     }
   ]
 }

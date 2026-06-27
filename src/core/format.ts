@@ -60,3 +60,26 @@ export const formatCompactEUR = (n: number): string =>
 /** Recibe un porcentaje en base 100 (7 → "7 %"). */
 export const formatPercent = (n: number): string =>
   Number.isFinite(n) ? pct.format(n / 100) : NON_FINITE;
+
+// Caché de formateadores por divisa (Intl.NumberFormat es caro de crear).
+const currencyFormatters = new Map<string, Intl.NumberFormat>();
+
+/**
+ * Moneda con 2 decimales en una divisa arbitraria (EUR/USD/GBP…), para las posiciones
+ * de la cartera, que pueden estar en distintas monedas. Mantiene es-ES como locale
+ * (separadores españoles) variando solo el símbolo de divisa.
+ */
+export const formatCurrency = (n: number, currency: string): string => {
+  if (!Number.isFinite(n)) return NON_FINITE;
+  let fmt = currencyFormatters.get(currency);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    currencyFormatters.set(currency, fmt);
+  }
+  return fmt.format(n);
+};

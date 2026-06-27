@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './db/database.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
+import { PositionsModule } from './positions/positions.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { HealthModule } from './health/health.module';
     EmailModule,
     AuthModule,
     HealthModule,
+    PositionsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

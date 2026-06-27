@@ -925,12 +925,45 @@
     "portfolio": {
       "greeting": "Hola, {email}",
       "title": "Tu cartera",
-      "empty": "Aquí verás todas tus inversiones en un solo sitio. Pronto podrás añadir tus posiciones.",
       "logout": "Cerrar sesión"
     },
     "nav": {
       "login": "Entrar",
       "portfolio": "Mi cartera"
+    }
+  },
+  "portfolio": {
+    "empty": {
+      "title": "Aún no tienes posiciones",
+      "body": "Añade tu primera inversión con el formulario de abajo para verla aquí."
+    },
+    "list": {
+      "ticker": "Símbolo / ISIN",
+      "name": "Nombre",
+      "quantity": "Cantidad",
+      "avgPrice": "Precio medio",
+      "broker": "Bróker",
+      "value": "Valor estimado",
+      "actions": "Acciones",
+      "delete": "Eliminar",
+      "confirm": "Sí, eliminar",
+      "cancel": "Cancelar",
+      "deleting": "Eliminando…"
+    },
+    "form": {
+      "title": "Añadir posición",
+      "ticker": "Símbolo o ISIN",
+      "tickerPlaceholder": "p. ej. IWDA o IE00B4L5Y983",
+      "name": "Nombre",
+      "namePlaceholder": "p. ej. iShares Core MSCI World",
+      "quantity": "Cantidad",
+      "avgPrice": "Precio medio de compra",
+      "broker": "Bróker",
+      "brokerPlaceholder": "p. ej. MyInvestor",
+      "currency": "Divisa",
+      "submit": "Añadir posición",
+      "submitting": "Añadiendo…",
+      "error": "No se pudo añadir la posición. Revisa los datos e inténtalo de nuevo."
     }
   },
   "legal": {
