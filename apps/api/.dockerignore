@@ -1,0 +1,8 @@
+node_modules
+dist
+# Excluir el caché incremental de TS: si entra obsoleto, tsc no re-emite dist.
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+*.log

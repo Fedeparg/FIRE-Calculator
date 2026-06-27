@@ -1,0 +1,64 @@
+# Orquestación de Sextante.
+#
+# Esqueleto (deliverable 1): PostgreSQL (con volumen persistente) + API NestJS.
+# El frontend Next se ejecuta de momento con `pnpm dev` (HMR) y proxea /api a la
+# API vía rewrites. La dockerización del web + Caddy/TLS llegará en el paso de
+# despliegue de producción.
+#
+# Uso:
+#   docker compose up -d        # levanta postgres + api
+#   docker compose logs -f api  # ver logs de la API
+#   docker compose down         # parar (los datos persisten en el volumen)
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sextante}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sextante_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-sextante}
+    ports:
+      # Expuesto al host para poder lanzar migraciones (drizzle-kit) desde fuera.
+      - '5432:5432'
+    volumes:
+      # Volumen NOMBRADO persistente: los datos sobreviven a `down`/recreaciones.
+      - sextante_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sextante} -d ${POSTGRES_DB:-sextante}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      # Dentro de la red de Compose, el host de la BD es el nombre del servicio.
+      DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD:-sextante_dev}@postgres:5432/${POSTGRES_DB:-sextante}
+    ports:
+      - '3001:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # Node 24 trae fetch global; sale 0 si /health responde OK.
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  sextante_pgdata:
+    name: sextante_pgdata

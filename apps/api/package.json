@@ -1,0 +1,33 @@
+{
+  "name": "@sextante/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API de Sextante (NestJS + Drizzle + PostgreSQL).",
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "node dist/main.js",
+    "lint": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "drizzle-orm": "^0.44.0",
+    "postgres": "^3.4.5",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/node": "^20",
+    "drizzle-kit": "^0.31.0",
+    "typescript": "^5"
+  }
+}
