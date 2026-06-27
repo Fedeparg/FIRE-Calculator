@@ -904,5 +904,32 @@
         "strong": "Your finances are very healthy. Focus on tax efficiency (pension plans, capital gains), keeping a diversified long-term portfolio, and aligning your money with your life goals."
       }
     }
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to Sextante",
+      "subtitle": "We'll email you a sign-in link. No passwords.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@email.com",
+      "submit": "Send sign-in link",
+      "sending": "Sending…",
+      "sent": "If that email is valid, we've sent you a sign-in link. Check your inbox.",
+      "error": "We couldn't send the link. Please try again in a moment."
+    },
+    "verify": {
+      "verifying": "Verifying your link…",
+      "error": "This link is invalid or has expired.",
+      "errorCta": "Back to sign in"
+    },
+    "portfolio": {
+      "greeting": "Hi, {email}",
+      "title": "Your portfolio",
+      "empty": "This is where you'll see all your investments in one place. Soon you'll be able to add your positions.",
+      "logout": "Sign out"
+    },
+    "nav": {
+      "login": "Sign in",
+      "portfolio": "My portfolio"
+    }
   }
 }

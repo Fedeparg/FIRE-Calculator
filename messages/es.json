@@ -904,5 +904,32 @@
         "strong": "Tus finanzas están muy saneadas. Céntrate en la eficiencia fiscal (planes de pensiones, plusvalías), en mantener una cartera diversificada a largo plazo y en alinear tu dinero con tus objetivos de vida."
       }
     }
+  },
+  "auth": {
+    "login": {
+      "title": "Entra en Sextante",
+      "subtitle": "Te enviamos un enlace de acceso a tu correo. Sin contraseñas.",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tu@correo.com",
+      "submit": "Enviar enlace de acceso",
+      "sending": "Enviando…",
+      "sent": "Si ese correo es válido, te hemos enviado un enlace de acceso. Revisa tu bandeja de entrada.",
+      "error": "No hemos podido enviar el enlace. Inténtalo de nuevo en un momento."
+    },
+    "verify": {
+      "verifying": "Verificando tu enlace…",
+      "error": "Este enlace no es válido o ha caducado.",
+      "errorCta": "Volver a entrar"
+    },
+    "portfolio": {
+      "greeting": "Hola, {email}",
+      "title": "Tu cartera",
+      "empty": "Aquí verás todas tus inversiones en un solo sitio. Pronto podrás añadir tus posiciones.",
+      "logout": "Cerrar sesión"
+    },
+    "nav": {
+      "login": "Entrar",
+      "portfolio": "Mi cartera"
+    }
   }
 }
