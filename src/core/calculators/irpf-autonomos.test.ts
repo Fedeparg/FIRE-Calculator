@@ -7,14 +7,16 @@ describe("computeSelfEmployedTax", () => {
     expect(r.netIncome).toBe(28000);
   });
 
-  it("valores por defecto del componente (golden)", () => {
-    const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, age: 30 });
-    expect(r.netIncome).toBe(28000);
+  it("valores por defecto del componente (golden, estimación directa simplificada)", () => {
+    const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, age: 30, simplifiedRegime: true });
+    expect(r.grossNetIncome).toBe(28000);
+    expect(r.difficultExpenses).toBe(1400); // 5 % de 28.000
+    expect(r.netIncome).toBe(26600);
     expect(r.personalMinimum).toBe(5550);
-    expect(r.taxableBase).toBe(28000);
-    expect(r.incomeTax).toBe(5511);
-    expect(r.netAfterTax).toBe(22489);
-    expect(r.effectiveRate).toBeCloseTo(19.682142857, 6);
+    expect(r.taxableBase).toBe(26600);
+    expect(r.incomeTax).toBe(5091);
+    expect(r.netAfterTax).toBe(21509);
+    expect(r.effectiveRate).toBeCloseTo(19.139097744, 6);
     expect(r.marginalRate).toBe(30);
   });
 
@@ -49,5 +51,32 @@ describe("computeSelfEmployedTax", () => {
     const r = computeSelfEmployedTax({ income: 50000, expenses: 10000, socialSecurity: 4000 });
     expect(r.effectiveRate).toBeGreaterThan(0);
     expect(r.marginalRate).toBeGreaterThanOrEqual(r.effectiveRate);
+  });
+
+  it("sin estimación directa simplificada no aplica gastos de difícil justificación", () => {
+    const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
+    expect(r.grossNetIncome).toBe(28000);
+    expect(r.difficultExpenses).toBe(0);
+    expect(r.netIncome).toBe(28000);
+  });
+
+  it("estimación directa simplificada: 5 % del rendimiento neto previo", () => {
+    const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
+    expect(r.grossNetIncome).toBe(28000);
+    expect(r.difficultExpenses).toBe(1400); // 5 % de 28.000
+    expect(r.netIncome).toBe(26600);
+  });
+
+  it("estimación directa simplificada: tope de 2.000 € en los gastos de difícil justificación", () => {
+    const r = computeSelfEmployedTax({ income: 80000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
+    expect(r.grossNetIncome).toBe(68000);
+    expect(r.difficultExpenses).toBe(2000); // 5 % serían 3.400 → tope 2.000
+    expect(r.netIncome).toBe(66000);
+  });
+
+  it("los gastos de difícil justificación reducen el IRPF", () => {
+    const normal = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
+    const simplificada = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
+    expect(simplificada.incomeTax).toBeLessThan(normal.incomeTax);
   });
 });

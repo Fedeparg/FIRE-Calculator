@@ -13,4 +13,6 @@ Cuando alguien te dona dinero o bienes, tributas por el **Impuesto sobre Donacio
 
 Esa es la magnitud de la diferencia entre comunidades.
 
-**Un apunte importante.** El impuesto está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. El resultado real **depende decisivamente de tu comunidad**. Es muy orientativo y no es asesoramiento fiscal.
+**El coeficiente multiplicador.** La cuota íntegra se multiplica por un coeficiente que depende de tu parentesco **y de tu patrimonio preexistente**: si ya tienes un patrimonio elevado, el coeficiente sube por tramos (a partir de 402.678,11 €, y de nuevo en 2.007.380,43 € y 4.020.770,98 €). Por eso la calculadora te pide ese patrimonio.
+
+**Un apunte importante.** El impuesto está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. El resultado real **depende decisivamente de tu comunidad**. No aplicamos el ajuste por «error de salto». Es muy orientativo y no es asesoramiento fiscal.

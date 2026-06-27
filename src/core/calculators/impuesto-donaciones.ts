@@ -7,20 +7,39 @@
 
 import { ISD_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets";
 
-/**
- * Coeficiente multiplicador por grupo de parentesco, para patrimonio
- * preexistente hasta 402.678,11 € (Ley 29/1987, art. 22).
- * - Grupos I y II (cónyuge, hijos, padres): 1,0000
- * - Grupo III (hermanos, tíos, sobrinos…): 1,5882
- * - Grupo IV (primos, extraños): 2,0000
- */
-export const KINSHIP_COEFFICIENTS = {
-  grupoI_II: 1.0,
-  grupoIII: 1.5882,
-  grupoIV: 2.0,
-} as const;
+export type KinshipGroup = "grupoI_II" | "grupoIII" | "grupoIV";
 
-export type KinshipGroup = keyof typeof KINSHIP_COEFFICIENTS;
+/**
+ * Umbrales de patrimonio preexistente (€) que delimitan los cuatro tramos de la
+ * tabla de coeficientes multiplicadores. Ley 29/1987, art. 22.2. El límite
+ * superior se incluye en su tramo (p. ej. 402.678,11 € pertenece al primer tramo).
+ */
+const WEALTH_TIERS = [402678.11, 2007380.43, 4020770.98] as const;
+
+/**
+ * Coeficiente multiplicador por grupo de parentesco y tramo de patrimonio
+ * preexistente del adquirente (Ley 29/1987, art. 22.2). Cuatro tramos (índices
+ * 0-3 según `WEALTH_TIERS`) × tres grupos:
+ * - Grupos I y II: cónyuge, descendientes, ascendientes.
+ * - Grupo III: colaterales de 2.º y 3.º grado (hermanos, tíos, sobrinos), afines.
+ * - Grupo IV: colaterales de 4.º grado o más, extraños.
+ */
+export const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, number, number]> = {
+  grupoI_II: [1.0, 1.05, 1.1, 1.2],
+  grupoIII: [1.5882, 1.6676, 1.7471, 1.9059],
+  grupoIV: [2.0, 2.1, 2.2, 2.4],
+};
+
+/**
+ * Coeficiente multiplicador aplicable a un grupo de parentesco según el
+ * patrimonio preexistente del adquirente. Art. 22.2 Ley 29/1987.
+ */
+export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: number): number {
+  const wealth = Math.max(0, Number.isFinite(preexistingWealth) ? preexistingWealth : 0);
+  let tier = 0;
+  while (tier < WEALTH_TIERS.length && wealth > WEALTH_TIERS[tier]) tier++;
+  return KINSHIP_COEFFICIENTS[kinship][tier];
+}
 
 export interface GiftTaxInput {
   /** Valor de lo donado. */
@@ -29,6 +48,11 @@ export interface GiftTaxInput {
   reduction?: number;
   /** Grupo de parentesco (coeficiente multiplicador). */
   kinship?: KinshipGroup;
+  /**
+   * Patrimonio preexistente del adquirente (€). Eleva el coeficiente
+   * multiplicador a partir de 402.678,11 €. Por defecto 0 (primer tramo).
+   */
+  preexistingWealth?: number;
   /** Bonificación autonómica sobre la cuota (%). Por defecto 0. */
   regionalRebate?: number;
 }
@@ -38,6 +62,8 @@ export interface GiftTaxResult {
   taxableBase: number;
   /** Cuota íntegra (tarifa estatal). */
   grossTax: number;
+  /** Coeficiente multiplicador aplicado (según parentesco y patrimonio preexistente). */
+  coefficient: number;
   /** Cuota tras coeficiente multiplicador, antes de bonificación. */
   adjustedTax: number;
   /** Cuota final tras bonificación autonómica. */
@@ -49,7 +75,7 @@ export interface GiftTaxResult {
 export function computeGiftTax(input: GiftTaxInput): GiftTaxResult {
   const amount = Math.max(0, input.amount || 0);
   const reduction = Math.max(0, input.reduction || 0);
-  const coefficient = KINSHIP_COEFFICIENTS[input.kinship ?? "grupoI_II"];
+  const coefficient = kinshipCoefficient(input.kinship ?? "grupoI_II", input.preexistingWealth ?? 0);
   const rebate = Math.min(100, Math.max(0, input.regionalRebate || 0));
 
   const taxableBase = Math.max(0, amount - reduction);
@@ -60,6 +86,7 @@ export function computeGiftTax(input: GiftTaxInput): GiftTaxResult {
   return {
     taxableBase,
     grossTax,
+    coefficient,
     adjustedTax,
     tax,
     effectiveRate: amount > 0 ? (tax / amount) * 100 : 0,

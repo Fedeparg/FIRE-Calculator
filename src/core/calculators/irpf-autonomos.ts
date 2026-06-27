@@ -4,12 +4,18 @@
 // Core puro. Orientativo.
 //
 // Reutiliza el motor fiscal compartido (`core/fiscal/*`): el mínimo personal y
-// familiar y la cuota por doble escala. No incorpora reducciones específicas de
-// actividades económicas (p. ej. gastos de difícil justificación), ni la
-// reducción por rendimientos del trabajo (art. 20 LIRPF), que NO aplica a
-// actividades económicas.
+// familiar y la cuota por doble escala. Contempla, en estimación directa
+// simplificada, los "gastos de difícil justificación" (5 % del rendimiento neto
+// previo, máx. 2.000 €/año; art. 30 Reglamento IRPF). No incluye la reducción por
+// rendimientos del trabajo (art. 20 LIRPF), que NO aplica a actividades económicas.
 
-import { IRPF_GENERAL, REDUCCION_TRIBUTACION_CONJUNTA, marginalRate } from "../fiscal/brackets";
+import {
+  IRPF_GENERAL,
+  REDUCCION_TRIBUTACION_CONJUNTA,
+  SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
+  SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE,
+  marginalRate,
+} from "../fiscal/brackets";
 import { generalIncomeTax, personalAndFamilyMinimum, type PersonalCircumstances } from "../fiscal/irpf";
 
 export interface SelfEmployedInput extends PersonalCircumstances {
@@ -21,10 +27,19 @@ export interface SelfEmployedInput extends PersonalCircumstances {
   socialSecurity: number;
   /** Aportación anual a plan de pensiones (reduce la base). Por defecto 0. */
   pensionContribution?: number;
+  /**
+   * Estimación directa simplificada: aplica el 5 % de gastos de difícil
+   * justificación (máx. 2.000 €/año). Por defecto false (estimación directa normal).
+   */
+  simplifiedRegime?: boolean;
 }
 
 export interface SelfEmployedResult {
-  /** Rendimiento neto de la actividad (ingresos − gastos − cuota autónomos). */
+  /** Rendimiento neto previo (ingresos − gastos − cuota autónomos). */
+  grossNetIncome: number;
+  /** Gastos de difícil justificación aplicados (solo estimación directa simplificada). */
+  difficultExpenses: number;
+  /** Rendimiento neto de la actividad tras los gastos de difícil justificación. */
   netIncome: number;
   /** Mínimo personal y familiar aplicado. */
   personalMinimum: number;
@@ -46,7 +61,14 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
   const socialSecurity = Math.max(0, input.socialSecurity || 0);
   const pension = Math.max(0, input.pensionContribution || 0);
 
-  const netIncome = Math.max(0, income - expenses - socialSecurity);
+  const grossNetIncome = Math.max(0, income - expenses - socialSecurity);
+  const difficultExpenses = input.simplifiedRegime
+    ? Math.min(
+        grossNetIncome * (SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE / 100),
+        SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
+      )
+    : 0;
+  const netIncome = Math.max(0, grossNetIncome - difficultExpenses);
 
   const jointReduction = input.jointReturn ? REDUCCION_TRIBUTACION_CONJUNTA : 0;
   const taxableBase = Math.max(0, netIncome - pension - jointReduction);
@@ -55,6 +77,8 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
   const incomeTax = generalIncomeTax(taxableBase, personalMinimum);
 
   return {
+    grossNetIncome,
+    difficultExpenses,
     netIncome,
     personalMinimum,
     taxableBase,

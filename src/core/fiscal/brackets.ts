@@ -176,5 +176,30 @@ export const MINIMO_DISCAPACIDAD_65 = 9000;
 /** Reducción en la base por tributación conjunta (unidad familiar biparental). */
 export const REDUCCION_TRIBUTACION_CONJUNTA = 3400;
 
-/** Límite anual de aportación individual a planes de pensiones con reducción. */
+/** Límite anual de aportación individual a planes de pensiones con reducción. Art. 52 LIRPF. */
 export const PENSION_INDIVIDUAL_LIMIT = 1500;
+
+/**
+ * Incremento del límite por contribuciones empresariales a planes de empleo
+ * (sobre el límite individual). Art. 52.1 LIRPF: hasta 8.500 € adicionales.
+ */
+export const PENSION_EMPLOYER_LIMIT = 8500;
+
+/**
+ * Límite conjunto (individual + empresa) de aportaciones con reducción en la base
+ * imponible general: 10.000 €. Art. 52.1 LIRPF. En todo caso, sujeto también al
+ * 30 % de los rendimientos netos del trabajo y de actividades económicas.
+ */
+export const PENSION_JOINT_LIMIT = 10000;
+
+/**
+ * Estimación directa simplificada — porcentaje de "gastos de difícil
+ * justificación" (provisiones deducibles y gastos de difícil justificación):
+ * 5 % del rendimiento neto positivo previo. Art. 30 del Reglamento del IRPF
+ * (RD 439/2007). Nota: el 7 % fue excepcional del ejercicio 2023; para el
+ * ejercicio de referencia (2026) rige de nuevo el 5 %.
+ */
+export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
+
+/** Tope anual de los gastos de difícil justificación (estimación directa simplificada). */
+export const SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP = 2000;

@@ -34,4 +34,24 @@ describe("computePensionRelief", () => {
     expect(r.taxSaving).toBe(0);
     expect(r.savingRate).toBe(0);
   });
+
+  it("la contribución de empresa NO genera ahorro de IRPF directo", () => {
+    const sin = computePensionRelief({ grossAnnual: 60000, contribution: 1500 });
+    const con = computePensionRelief({ grossAnnual: 60000, contribution: 1500, employerContribution: 8500 });
+    expect(con.taxSaving).toBe(sin.taxSaving); // el ahorro depende solo de la aportación individual
+    expect(con.netCost).toBe(sin.netCost);
+  });
+
+  it("la contribución de empresa se limita a 8.500 € y al conjunto de 10.000 €", () => {
+    const r = computePensionRelief({ grossAnnual: 60000, contribution: 1500, employerContribution: 12000 });
+    expect(r.appliedContribution).toBe(1500);
+    expect(r.employerApplied).toBe(8500); // tope de empresa
+    expect(r.totalApplied).toBe(10000); // límite conjunto
+  });
+
+  it("el conjunto individual + empresa no supera 10.000 €", () => {
+    const r = computePensionRelief({ grossAnnual: 60000, contribution: 1500, employerContribution: 9000 });
+    expect(r.totalApplied).toBeLessThanOrEqual(10000);
+    expect(r.employerApplied).toBe(8500);
+  });
 });

@@ -18,6 +18,7 @@ export default function SelfEmployedTaxCalculator() {
   const [income, setIncome] = useState(40000);
   const [expenses, setExpenses] = useState(8000);
   const [socialSecurity, setSocialSecurity] = useState(4000);
+  const [regime, setRegime] = useState("simplificada");
   const [pensionContribution, setPensionContribution] = useState(0);
   // Situación personal y familiar
   const [age, setAge] = useState(30);
@@ -33,6 +34,7 @@ export default function SelfEmployedTaxCalculator() {
         income,
         expenses,
         socialSecurity,
+        simplifiedRegime: regime === "simplificada",
         pensionContribution,
         age,
         jointReturn: jointReturn === "yes",
@@ -41,18 +43,28 @@ export default function SelfEmployedTaxCalculator() {
         ascendants,
         disability,
       }),
-    [income, expenses, socialSecurity, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
+    [income, expenses, socialSecurity, regime, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
   );
 
   return (
     <CalculatorLayout
-      inputCount={10}
+      inputCount={11}
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
           <NumberField label={t("income")} value={income} onChange={setIncome} step={1000} help={t("help.income")} />
           <NumberField label={t("expenses")} value={expenses} onChange={setExpenses} step={500} help={t("help.expenses")} />
           <NumberField label={t("socialSecurity")} value={socialSecurity} onChange={setSocialSecurity} step={250} help={t("help.socialSecurity")} />
+          <SelectField
+            label={t("regime")}
+            value={regime}
+            onChange={setRegime}
+            options={[
+              { value: "simplificada", label: t("regimeSimplified") },
+              { value: "normal", label: t("regimeNormal") },
+            ]}
+            help={t("help.regime")}
+          />
           <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
           <NumberField label={t("age")} value={age} onChange={setAge} min={16} max={120} step={1} help={t("help.age")} />
           <SelectField
@@ -84,6 +96,10 @@ export default function SelfEmployedTaxCalculator() {
       results={
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Stat label={t("incomeTax")} value={formatEUR(result.incomeTax)} highlight />
+          <Stat label={t("grossNetIncome")} value={formatEUR(result.grossNetIncome)} />
+          {result.difficultExpenses > 0 && (
+            <Stat label={t("difficultExpenses")} value={formatEUR(result.difficultExpenses)} />
+          )}
           <Stat label={t("netIncome")} value={formatEUR(result.netIncome)} />
           <Stat label={t("netAfterTax")} value={formatEUR(result.netAfterTax)} />
           <Stat label={t("effectiveRate")} value={formatPercent(result.effectiveRate)} />

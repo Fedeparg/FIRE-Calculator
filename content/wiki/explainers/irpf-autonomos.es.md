@@ -14,4 +14,6 @@ Un autónomo no tributa por lo que factura, sino por su **rendimiento neto**: in
 
 La cuota de autónomos es deducible: cuanto más cotices, menor es tu base. Y si añades hijos o ascendientes a cargo, el IRPF baja.
 
-**Un apunte importante.** No incluye pagos fraccionados trimestrales ni reducciones específicas de la actividad (p. ej. los gastos de difícil justificación de la estimación directa simplificada). Es orientativo y no es asesoramiento fiscal.
+**Estimación directa simplificada.** Si tu actividad está en este régimen, puedes deducir un **5 % adicional del rendimiento neto** por gastos de difícil justificación, con un tope de **2.000 €/año**. La calculadora lo aplica con el selector de régimen y rebaja en consecuencia tu rendimiento neto y tu IRPF.
+
+**Un apunte importante.** No incluye pagos fraccionados trimestrales. Es orientativo y no es asesoramiento fiscal.

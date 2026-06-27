@@ -14,4 +14,6 @@ A self-employed person is taxed not on what they bill but on their **net income*
 
 The self-employed contribution is deductible: the more you contribute, the lower your base. And adding dependent children or ascendants lowers the tax.
 
-**An important note.** It excludes quarterly instalments and activity-specific reductions (e.g. the hard-to-justify expenses of simplified direct assessment). It's indicative and not tax advice.
+**Simplified direct assessment.** If your activity is under this regime, you can deduct an extra **5% of net income** for hard-to-justify expenses, capped at **€2,000/year**. The calculator applies this via the regime selector and lowers your net income and tax accordingly.
+
+**An important note.** It excludes quarterly instalments. It's indicative and not tax advice.

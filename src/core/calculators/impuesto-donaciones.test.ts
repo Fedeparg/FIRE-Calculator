@@ -39,4 +39,26 @@ describe("computeGiftTax", () => {
     expect(r.tax).toBe(0);
     expect(r.effectiveRate).toBe(0);
   });
+
+  it("expone el coeficiente multiplicador aplicado", () => {
+    expect(computeGiftTax({ amount: 100000, kinship: "grupoI_II" }).coefficient).toBe(1.0);
+    expect(computeGiftTax({ amount: 100000, kinship: "grupoIII" }).coefficient).toBe(1.5882);
+    expect(computeGiftTax({ amount: 100000, kinship: "grupoIV" }).coefficient).toBe(2.0);
+  });
+
+  it("el patrimonio preexistente eleva el coeficiente por tramos (art. 22.2)", () => {
+    const base = computeGiftTax({ amount: 100000, kinship: "grupoI_II" });
+    // Tramo 2 (> 402.678,11 €): coeficiente 1,05.
+    const tramo2 = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 1_000_000 });
+    expect(tramo2.coefficient).toBe(1.05);
+    expect(tramo2.adjustedTax).toBeCloseTo(base.grossTax * 1.05, 6);
+    // Tramo 4 (> 4.020.770,98 €): coeficiente 1,20.
+    const tramo4 = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 5_000_000 });
+    expect(tramo4.coefficient).toBe(1.2);
+  });
+
+  it("el límite superior de un tramo pertenece a ese tramo", () => {
+    const r = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 402678.11 });
+    expect(r.coefficient).toBe(1.0); // exactamente en el límite → primer tramo
+  });
 });

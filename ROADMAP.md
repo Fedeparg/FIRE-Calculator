@@ -135,12 +135,18 @@ financial calculators, focused on the **Spanish banking and tax system**:
 
 | Phase | Status |
 |-------|--------|
-| A — Core calculator | Not started |
+| A — Core calculator | **Done** — 26 calculadoras (core + tests + UI + i18n es/en), selector con buscador, wiki "Aprende", motor fiscal ES, tema claro/oscuro |
+| Landing page (marca **Sextante**) | **Done** — landing de marketing en la raíz, selector movido a `/calculadoras`, ilustraciones SVG propias |
 | B — Data export | Not started |
-| C — Lightweight monetization | Not started |
+| C — Lightweight monetization | Not started (CMP de cookies aparcado hasta que haya ads/analytics) |
 | D — MCP support (single-session) | Not started |
 | E — Multi-user backend | Not started |
 | F — In-app LLM assistant | Not started |
 | G — Fine-tuned local model | Not started |
+| Seguimiento de inversiones (tickers/ISIN) | Not started (requiere backend; ver `_local/datos-inversiones-api.md`) |
+
+> Nota: el catálogo de 26 calculadoras (Fase A) supera el alcance original; las 3 mejoras
+> fiscales pendientes (autónomos / donaciones / planes de pensiones de empleo) se
+> implementaron el 2026-06-27. Pendiente: dominio definitivo de Sextante.
 
 This roadmap is a living document and will be updated as decisions are made or priorities change.

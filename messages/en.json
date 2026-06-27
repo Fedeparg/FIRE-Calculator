@@ -1,12 +1,63 @@
 {
   "site": {
-    "title": "Freedom Calculator",
-    "tagline": "Financial independence calculators for Spain"
+    "title": "Sextante",
+    "tagline": "Take the helm of your money"
   },
   "nav": {
     "home": "Calculators",
     "learn": "Learn",
-    "language": "Language"
+    "language": "Language",
+    "primary": "Primary navigation"
+  },
+  "landing": {
+    "meta": {
+      "title": "Sextante — Take the helm of your money",
+      "description": "Clear calculators and, soon, your investment portfolio in one place, built for the Spanish banking and tax system. Indicative information to help you take control of your money."
+    },
+    "hero": {
+      "eyebrow": "Personal finance for Spain",
+      "brand": "Sextante",
+      "tagline": "Take the helm of your money",
+      "subcopy": "Clear calculators for every decision and, soon, all your investments in one place: bring together what you hold across different banks and track it with up-to-date prices. Information for you to decide; not advice.",
+      "ctaCalculators": "Explore calculators",
+      "ctaLearn": "Learn"
+    },
+    "pillars": {
+      "heading": "Your instrument to find your bearings",
+      "subheading": "The essentials to take control of your money, no fluff and no jargon.",
+      "items": {
+        "suite": {
+          "title": "A complete suite of calculators",
+          "body": "Investing, FIRE, mortgages, savings, debt and taxes: a tool for every decision."
+        },
+        "tax": {
+          "title": "Real Spanish tax focus",
+          "body": "Income tax, wealth, gifts and more, with Spain's actual brackets and rules."
+        },
+        "learn": {
+          "title": "Understand what you calculate",
+          "body": "Clear guides in the Learn section to know what you calculate and why, without jargon."
+        },
+        "portfolio": {
+          "title": "Your portfolio, in one place",
+          "body": "Coming soon: bring together your investments from several banks and track your whole net worth with up-to-date prices."
+        }
+      }
+    },
+    "categories": {
+      "heading": "Calculators for every course",
+      "subheading": "Browse the tools by category and start with whatever interests you most.",
+      "cta": "See all calculators",
+      "count": "{count, plural, =1 {1 calculator} other {# calculators}}"
+    },
+    "learn": {
+      "heading": "Starting from scratch?",
+      "body": "In Learn you'll find simple guides on compound interest, mortgages, investing and financial independence. Written to understand everything from the ground up.",
+      "cta": "Go to Learn"
+    },
+    "disclaimer": {
+      "body": "Sextante provides indicative information for educational purposes and does not constitute financial or tax advice. Don't make decisions based on these calculations alone: always check with a professional and official sources."
+    }
   },
   "wiki": {
     "heading": "Learn",
@@ -603,10 +654,13 @@
     "irpf-autonomos": {
       "title": "Self-employed income-tax calculator",
       "intro": "Estimate a self-employed person's income tax under direct assessment from income, expenses and Social Security.",
-      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). It applies the personal and family minimum, but excludes instalment payments and activity-specific reductions (e.g. hard-to-justify expenses); the real figure may differ. Not tax advice.",
+      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). It applies the personal and family minimum. Under simplified direct assessment it includes the 5% hard-to-justify expenses (max €2,000/year); it excludes instalment payments. The real figure may differ. Not tax advice.",
       "income": "Annual income (€)",
       "expenses": "Deductible expenses (€/year)",
       "socialSecurity": "Self-employed contribution (€/year)",
+      "regime": "Direct assessment regime",
+      "regimeSimplified": "Simplified (5% hard-to-justify)",
+      "regimeNormal": "Standard",
       "pensionContribution": "Pension plan contribution (€/year)",
       "age": "Age",
       "jointReturn": "Joint taxation",
@@ -620,6 +674,8 @@
       "disability33": "Between 33% and 65%",
       "disability65": "65% or higher",
       "incomeTax": "Estimated income tax (annual)",
+      "grossNetIncome": "Net income before adjustment",
+      "difficultExpenses": "Hard-to-justify expenses",
       "netIncome": "Net income",
       "netAfterTax": "Net after tax",
       "effectiveRate": "Effective rate",
@@ -630,6 +686,7 @@
         "income": "Total billed during the year for your activity (excluding VAT).",
         "expenses": "Deductible expenses for the year (utilities, supplies, accounting…), excluding your Social Security contribution.",
         "socialSecurity": "What you pay per year in self-employed Social Security contributions. It is deductible.",
+        "regime": "Under simplified direct assessment you can deduct an extra 5% of net income for hard-to-justify expenses, up to €2,000/year.",
         "pensionContribution": "Lowers the base on which income tax is computed. Maximum with relief: €1,500/year.",
         "age": "From age 65 the personal minimum rises, and more so from 75.",
         "jointReturn": "If you file as a family unit, a €3,400 reduction applies to the base.",
@@ -642,17 +699,21 @@
     "desgravacion-plan-pensiones": {
       "title": "Pension plan tax relief calculator",
       "intro": "Find out how much income tax you save by contributing to a pension plan and the real cost of the contribution.",
-      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). The relief limit is the lower of €1,500 and 30% of your net earned income. Not tax advice.",
+      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). Your individual contribution gets relief up to the lower of €1,500 and 30% of your net earned income. Employer contributions raise the joint limit to €10,000 but give you no direct income-tax saving (they are imputed as pay and deducted at the same time); their benefit is building wealth with tax deferral. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "contribution": "Plan contribution (€/year)",
+      "employerContribution": "Employer contribution (€/year)",
       "taxSaving": "Tax saving",
       "appliedContribution": "Contribution with relief",
       "netCost": "Real cost of the contribution",
       "savingRate": "Percentage recovered",
       "excess": "Excess without relief",
+      "employerApplied": "Employer contribution counted",
+      "totalApplied": "Total reducing the base",
       "help": {
         "grossAnnual": "Used to place your marginal income-tax bracket, which determines the saving.",
-        "contribution": "What you want to contribute this year. Only up to €1,500 (or 30% of your earned income) gets relief."
+        "contribution": "What you want to contribute this year. Only up to €1,500 (or 30% of your earned income) gets relief.",
+        "employerContribution": "What your employer pays into a workplace plan. It lets you reach a joint limit of €10,000, but gives you no direct income-tax saving."
       }
     },
     "impuesto-patrimonio": {
@@ -677,22 +738,25 @@
     "impuesto-donaciones": {
       "title": "Gift tax calculator",
       "intro": "Estimate gift tax based on the amount given, the kinship and your region's rebate.",
-      "note": "Gift tax is devolved to the regions, which apply large rebates and reductions of their own. This estimate uses the 2026 supplementary state scale; the real figure depends decisively on your region. Adjust the reduction and the rebate. Not tax advice.",
+      "note": "Gift tax is devolved to the regions, which apply large rebates and reductions of their own. This estimate uses the 2026 supplementary state scale and the multiplier coefficient by kinship and pre-existing wealth (art. 22 Act 29/1987); it does not apply the «error de salto» adjustment. The real figure depends decisively on your region. Adjust the reduction and the rebate. Not tax advice.",
       "amount": "Value given (€)",
       "reduction": "Applicable reductions (€)",
       "kinship": "Kinship with the donor",
       "kinshipI_II": "Spouse, children, parents (Groups I and II)",
       "kinshipIII": "Siblings, uncles, nephews (Group III)",
       "kinshipIV": "Cousins, others, unrelated (Group IV)",
+      "preexistingWealth": "Pre-existing wealth (€)",
       "regionalRebate": "Your region's rebate (%)",
       "tax": "Tax due",
       "taxableBase": "Taxable base",
       "grossTax": "Gross tax",
+      "coefficient": "Multiplier coefficient",
       "effectiveRate": "Effective rate",
       "help": {
         "amount": "Money or value of the assets being gifted.",
         "reduction": "Reductions your region grants based on kinship. Leave it at 0 if unsure.",
         "kinship": "Sets the multiplier coefficient on the bill. The more distant the kinship, the more you pay.",
+        "preexistingWealth": "Wealth the recipient already holds. From €402,678.11 it raises the multiplier coefficient.",
         "regionalRebate": "Percentage of the bill your region rebates. In some it is around 99%."
       }
     },

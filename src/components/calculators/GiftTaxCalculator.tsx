@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeGiftTax, type KinshipGroup } from "@/core/calculators/impuesto-donaciones";
-import { formatEUR, formatPercent } from "@/core/format";
+import { formatEUR, formatMultiplier, formatPercent } from "@/core/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -16,16 +16,17 @@ export default function GiftTaxCalculator() {
   const [amount, setAmount] = useState(100000);
   const [reduction, setReduction] = useState(0);
   const [kinship, setKinship] = useState<KinshipGroup>("grupoI_II");
+  const [preexistingWealth, setPreexistingWealth] = useState(0);
   const [regionalRebate, setRegionalRebate] = useState(0);
 
   const result = useMemo(
-    () => computeGiftTax({ amount, reduction, kinship, regionalRebate }),
-    [amount, reduction, kinship, regionalRebate],
+    () => computeGiftTax({ amount, reduction, kinship, preexistingWealth, regionalRebate }),
+    [amount, reduction, kinship, preexistingWealth, regionalRebate],
   );
 
   return (
     <CalculatorLayout
-      inputCount={4}
+      inputCount={5}
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
@@ -42,6 +43,7 @@ export default function GiftTaxCalculator() {
             ]}
             help={t("help.kinship")}
           />
+          <NumberField label={t("preexistingWealth")} value={preexistingWealth} onChange={setPreexistingWealth} min={0} step={10000} help={t("help.preexistingWealth")} />
           <NumberField label={t("regionalRebate")} value={regionalRebate} onChange={setRegionalRebate} min={0} max={100} step={5} help={t("help.regionalRebate")} />
         </>
       }
@@ -50,6 +52,7 @@ export default function GiftTaxCalculator() {
           <Stat label={t("tax")} value={formatEUR(result.tax)} highlight />
           <Stat label={t("taxableBase")} value={formatEUR(result.taxableBase)} />
           <Stat label={t("grossTax")} value={formatEUR(result.grossTax)} />
+          <Stat label={t("coefficient")} value={`× ${formatMultiplier(result.coefficient)}`} />
           <Stat label={t("effectiveRate")} value={formatPercent(result.effectiveRate)} />
         </div>
       }

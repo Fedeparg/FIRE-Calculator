@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Artefactos de build anidados (p. ej. worktrees temporales de agentes bajo
+    // `.claude/`): evita que ESLint analice `.next/`/`out/`/`build/` generados
+    // fuera de la raíz y reporte miles de falsos positivos.
+    "**/.next/**",
+    "**/out/**",
+    "**/build/**",
+    ".claude/**",
   ]),
 ]);
 

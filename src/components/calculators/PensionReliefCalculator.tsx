@@ -14,20 +14,22 @@ export default function PensionReliefCalculator() {
 
   const [grossAnnual, setGrossAnnual] = useState(40000);
   const [contribution, setContribution] = useState(1500);
+  const [employerContribution, setEmployerContribution] = useState(0);
 
   const result = useMemo(
-    () => computePensionRelief({ grossAnnual, contribution }),
-    [grossAnnual, contribution],
+    () => computePensionRelief({ grossAnnual, contribution, employerContribution }),
+    [grossAnnual, contribution, employerContribution],
   );
 
   return (
     <CalculatorLayout
-      inputCount={2}
+      inputCount={3}
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
           <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />
           <NumberField label={t("contribution")} value={contribution} onChange={setContribution} step={100} help={t("help.contribution")} />
+          <NumberField label={t("employerContribution")} value={employerContribution} onChange={setEmployerContribution} min={0} step={500} help={t("help.employerContribution")} />
         </>
       }
       results={
@@ -37,6 +39,8 @@ export default function PensionReliefCalculator() {
           <Stat label={t("netCost")} value={formatEUR(result.netCost)} />
           <Stat label={t("savingRate")} value={formatPercent(result.savingRate)} />
           {result.excess > 0 && <Stat label={t("excess")} value={formatEUR(result.excess)} />}
+          {result.employerApplied > 0 && <Stat label={t("employerApplied")} value={formatEUR(result.employerApplied)} />}
+          {result.employerApplied > 0 && <Stat label={t("totalApplied")} value={formatEUR(result.totalApplied)} />}
         </div>
       }
     />

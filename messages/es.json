@@ -1,12 +1,63 @@
 {
   "site": {
-    "title": "Freedom Calculator",
-    "tagline": "Calculadoras de libertad financiera para España"
+    "title": "Sextante",
+    "tagline": "Toma el rumbo de tu dinero"
   },
   "nav": {
     "home": "Calculadoras",
     "learn": "Aprende",
-    "language": "Idioma"
+    "language": "Idioma",
+    "primary": "Navegación principal"
+  },
+  "landing": {
+    "meta": {
+      "title": "Sextante — Toma el rumbo de tu dinero",
+      "description": "Calculadoras claras y, muy pronto, tu cartera de inversiones en un mismo sitio, pensadas para el sistema bancario y fiscal español. Información orientativa para que tomes el control de tu dinero."
+    },
+    "hero": {
+      "eyebrow": "Finanzas personales para España",
+      "brand": "Sextante",
+      "tagline": "Toma el rumbo de tu dinero",
+      "subcopy": "Calculadoras claras para cada decisión y, muy pronto, toda tu inversión en un mismo sitio: reúne lo que tienes en distintos bancos y síguelo con cotizaciones al día. Información para decidir tú; no es asesoramiento.",
+      "ctaCalculators": "Explorar calculadoras",
+      "ctaLearn": "Aprende"
+    },
+    "pillars": {
+      "heading": "Tu instrumento para orientarte",
+      "subheading": "Lo esencial para tomar el control de tu dinero, sin humo y sin jerga.",
+      "items": {
+        "suite": {
+          "title": "Suite completa de calculadoras",
+          "body": "Inversión, FIRE, hipotecas, ahorro, deuda y fiscalidad: una herramienta para cada decisión."
+        },
+        "tax": {
+          "title": "Enfoque fiscal español",
+          "body": "IRPF, patrimonio, donaciones y más, con los tramos y las reglas reales de España."
+        },
+        "learn": {
+          "title": "Entiende lo que calculas",
+          "body": "Guías claras en la sección Aprende para saber qué calculas y por qué, sin jerga."
+        },
+        "portfolio": {
+          "title": "Tu cartera, en un sitio",
+          "body": "Muy pronto: reúne tus inversiones de varios bancos y sigue todo tu patrimonio con cotizaciones actualizadas."
+        }
+      }
+    },
+    "categories": {
+      "heading": "Calculadoras para cada rumbo",
+      "subheading": "Explora las herramientas por categoría y empieza por la que más te interese.",
+      "cta": "Ver todas las calculadoras",
+      "count": "{count, plural, =1 {1 calculadora} other {# calculadoras}}"
+    },
+    "learn": {
+      "heading": "¿Empiezas de cero?",
+      "body": "En Aprende encontrarás guías sencillas sobre interés compuesto, hipotecas, inversión e independencia financiera. Pensadas para entenderlo todo desde el principio.",
+      "cta": "Ir a Aprende"
+    },
+    "disclaimer": {
+      "body": "Sextante ofrece información orientativa con fines educativos y no constituye asesoramiento financiero ni fiscal. No tomes decisiones basándote únicamente en estos cálculos: contrasta siempre con un profesional y con las fuentes oficiales."
+    }
   },
   "wiki": {
     "heading": "Aprende",
@@ -603,10 +654,13 @@
     "irpf-autonomos": {
       "title": "Calculadora de IRPF para autónomos",
       "intro": "Estima el IRPF de un autónomo en estimación directa a partir de sus ingresos, gastos y cuota de autónomos.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar, pero no incluye pagos fraccionados ni reducciones específicas de la actividad (p. ej. gastos de difícil justificación); el resultado real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados. El resultado real puede variar. No es asesoramiento fiscal.",
       "income": "Ingresos anuales (€)",
       "expenses": "Gastos deducibles (€/año)",
       "socialSecurity": "Cuota de autónomos (€/año)",
+      "regime": "Régimen de estimación directa",
+      "regimeSimplified": "Simplificada (5 % difícil justificación)",
+      "regimeNormal": "Normal",
       "pensionContribution": "Aportación a plan de pensiones (€/año)",
       "age": "Edad",
       "jointReturn": "Tributación conjunta",
@@ -620,6 +674,8 @@
       "disability33": "Entre el 33% y el 65%",
       "disability65": "Igual o superior al 65%",
       "incomeTax": "IRPF estimado (anual)",
+      "grossNetIncome": "Rendimiento neto previo",
+      "difficultExpenses": "Gastos de difícil justificación",
       "netIncome": "Rendimiento neto",
       "netAfterTax": "Neto tras IRPF",
       "effectiveRate": "Tipo efectivo",
@@ -630,6 +686,7 @@
         "income": "Total facturado al año por tu actividad (sin IVA).",
         "expenses": "Gastos deducibles del año (suministros, material, asesoría…), sin contar la cuota de autónomos.",
         "socialSecurity": "Lo que pagas al año de cuota de autónomos a la Seguridad Social. Es deducible.",
+        "regime": "En estimación directa simplificada puedes deducir un 5 % extra del rendimiento neto por gastos de difícil justificación, hasta 2.000 €/año.",
         "pensionContribution": "Reduce la base sobre la que se calcula el IRPF. Máximo con desgravación: 1.500 €/año.",
         "age": "A partir de 65 años el mínimo personal aumenta, y más aún a partir de 75.",
         "jointReturn": "Si tributáis como unidad familiar, se aplica una reducción de 3.400 € en la base.",
@@ -642,17 +699,21 @@
     "desgravacion-plan-pensiones": {
       "title": "Calculadora de desgravación por plan de pensiones",
       "intro": "Descubre cuánto IRPF te ahorras al aportar a un plan de pensiones y cuál es el coste real de la aportación.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). El límite con desgravación es el menor entre 1.500 € y el 30 % de tus rendimientos netos del trabajo. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "contribution": "Aportación al plan (€/año)",
+      "employerContribution": "Aportación de la empresa (€/año)",
       "taxSaving": "Ahorro fiscal",
       "appliedContribution": "Aportación con desgravación",
       "netCost": "Coste real de la aportación",
       "savingRate": "Porcentaje recuperado",
       "excess": "Exceso sin desgravación",
+      "employerApplied": "Aportación de empresa computada",
+      "totalApplied": "Total que reduce la base",
       "help": {
         "grossAnnual": "Sirve para situar tu tramo marginal de IRPF, que determina el ahorro.",
-        "contribution": "Lo que quieres aportar este año. Solo desgravan hasta 1.500 € (o el 30 % de tus rendimientos del trabajo)."
+        "contribution": "Lo que quieres aportar este año. Solo desgravan hasta 1.500 € (o el 30 % de tus rendimientos del trabajo).",
+        "employerContribution": "Lo que aporta tu empresa a un plan de empleo. Permite llegar a un límite conjunto de 10.000 €, pero no genera ahorro de IRPF directo para ti."
       }
     },
     "impuesto-patrimonio": {
@@ -677,22 +738,25 @@
     "impuesto-donaciones": {
       "title": "Calculadora del Impuesto de Donaciones",
       "intro": "Estima el Impuesto sobre Donaciones según lo donado, el parentesco y la bonificación de tu CCAA.",
-      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de 2026; el resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
+      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de 2026 y el coeficiente multiplicador por parentesco y patrimonio preexistente (art. 22 Ley 29/1987); no aplica el ajuste por «error de salto». El resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
       "amount": "Valor de lo donado (€)",
       "reduction": "Reducciones aplicables (€)",
       "kinship": "Parentesco con quien dona",
       "kinshipI_II": "Cónyuge, hijos, padres (Grupos I y II)",
       "kinshipIII": "Hermanos, tíos, sobrinos (Grupo III)",
       "kinshipIV": "Primos, otros, sin parentesco (Grupo IV)",
+      "preexistingWealth": "Patrimonio preexistente (€)",
       "regionalRebate": "Bonificación de tu CCAA (%)",
       "tax": "Cuota a pagar",
       "taxableBase": "Base liquidable",
       "grossTax": "Cuota íntegra",
+      "coefficient": "Coeficiente multiplicador",
       "effectiveRate": "Tipo efectivo",
       "help": {
         "amount": "Dinero o valor de los bienes que se donan.",
         "reduction": "Reducciones que apruebe tu CCAA según el parentesco. Déjalo en 0 si no estás seguro.",
         "kinship": "Determina el coeficiente multiplicador de la cuota. A menor parentesco, más se paga.",
+        "preexistingWealth": "Patrimonio que ya tiene quien recibe la donación. A partir de 402.678,11 € eleva el coeficiente multiplicador.",
         "regionalRebate": "Porcentaje de la cuota que bonifica tu Comunidad. En algunas ronda el 99 %."
       }
     },

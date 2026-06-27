@@ -15,6 +15,11 @@ const eurCents = new Intl.NumberFormat("es-ES", {
 
 const num = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
 
+const multiplier = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
 const compact = new Intl.NumberFormat("es-ES", {
   notation: "compact",
   maximumFractionDigits: 1,
@@ -43,6 +48,10 @@ export const formatEURCents = (n: number): string =>
 
 export const formatNumber = (n: number): string =>
   Number.isFinite(n) ? num.format(n) : NON_FINITE;
+
+/** Coeficiente o multiplicador con 2-4 decimales (p. ej. 1,5882). */
+export const formatMultiplier = (n: number): string =>
+  Number.isFinite(n) ? multiplier.format(n) : NON_FINITE;
 
 /** Notación compacta para ejes de gráficas ("1,2 M €"). */
 export const formatCompactEUR = (n: number): string =>

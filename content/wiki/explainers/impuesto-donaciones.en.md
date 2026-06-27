@@ -13,4 +13,6 @@ When someone gifts you money or assets, you pay **gift tax**. A progressive tari
 
 That's the scale of the difference between regions.
 
-**An important note.** The tax is devolved to the regions, which apply large rebates and reductions of their own. The real figure **depends decisively on your region**. Highly indicative and not tax advice.
+**The multiplier coefficient.** The gross tax is multiplied by a coefficient that depends on your kinship **and on your pre-existing wealth**: if you already hold significant wealth, the coefficient rises in steps (from €402,678.11, and again at €2,007,380.43 and €4,020,770.98). That's why the calculator asks for that wealth.
+
+**An important note.** The tax is devolved to the regions, which apply large rebates and reductions of their own. The real figure **depends decisively on your region**. We don't apply the «error de salto» adjustment. Highly indicative and not tax advice.

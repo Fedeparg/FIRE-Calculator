@@ -21,7 +21,7 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
 
   return (
     <section className="mx-auto max-w-4xl px-4 py-8">
-      <Link href="/" className="text-sm font-medium text-brand hover:underline">
+      <Link href="/calculadoras" className="text-sm font-medium text-brand hover:underline">
         ← {t("back")}
       </Link>
 
