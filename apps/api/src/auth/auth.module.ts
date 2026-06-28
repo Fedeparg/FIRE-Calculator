@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import { OauthModule } from '../oauth/oauth.module';
 import { PositionsModule } from '../positions/positions.module';
 import { EmailModule } from '../email/email.module';
 import { AuthController } from './auth.controller';
@@ -13,6 +14,7 @@ import { SESSION_TTL_SECONDS } from './session.constants';
   imports: [
     EmailModule,
     PositionsModule,
+    OauthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

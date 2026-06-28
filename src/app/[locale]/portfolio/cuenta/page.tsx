@@ -4,6 +4,7 @@ import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/lib/session";
 import { Link } from "@/i18n/navigation";
 import AccountDangerZone from "@/components/account/AccountDangerZone";
+import ConnectedApps from "@/components/account/ConnectedApps";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -32,6 +33,7 @@ export default async function AccountPage({ params }: Props) {
         <h1 className="mt-2 text-2xl font-semibold text-foreground">{t("title")}</h1>
         <p className="text-sm text-muted">{t("subtitle")}</p>
       </div>
+      <ConnectedApps />
       <AccountDangerZone email={user.email} />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 type Status = "idle" | "sending" | "sent" | "error";
@@ -10,6 +10,15 @@ export default function LoginForm() {
   const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+
+  // Si se llega aquí desde un flujo OAuth (?returnTo=/authorize…), recuérdalo para
+  // volver tras canjear el magic link. Solo rutas relativas (anti open-redirect).
+  useEffect(() => {
+    const returnTo = new URLSearchParams(window.location.search).get("returnTo");
+    if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+      window.localStorage.setItem("sextante_return_to", returnTo);
+    }
+  }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

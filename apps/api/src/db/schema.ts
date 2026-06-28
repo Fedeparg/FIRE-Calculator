@@ -6,10 +6,13 @@ import {
   varchar,
   numeric,
   date,
+  jsonb,
   index,
   uniqueIndex,
   primaryKey,
 } from 'drizzle-orm/pg-core';
+
+import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 
 /**
  * Esquema de base de datos (única fuente de verdad). Drizzle genera las
@@ -155,3 +158,154 @@ export const instruments = pgTable('instruments', {
 
 export type Instrument = typeof instruments.$inferSelect;
 export type NewInstrument = typeof instruments.$inferInsert;
+
+/* ------------------------------------------------------------------------- */
+/* MCP / OAuth 2.1                                                            */
+/*                                                                           */
+/* Sextante expone un servidor MCP remoto (Streamable HTTP) para que LLMs    */
+/* externos (Claude, ChatGPT…) lean/escriban la cartera del usuario. La      */
+/* autorización es OAuth 2.1 (estándar MCP): el Authorization Server lo monta */
+/* el propio SDK oficial (`mcpAuthRouter`) y NOSOTROS implementamos el        */
+/* provider y emitimos los tokens. Ver `_local/mcp-integracion.md`.          */
+/*                                                                           */
+/* Anti data-leakage: el `userId` viaja DENTRO del token; toda tool filtra   */
+/* por él (igual que `positions`). Audience binding (el token solo vale para  */
+/* nuestro `…/api/mcp`). Tokens/códigos SOLO se guardan hasheados (SHA-256),  */
+/* nunca en claro (mismo patrón que `login_tokens`).                         */
+/* ------------------------------------------------------------------------- */
+
+/**
+ * Clientes OAuth registrados, normalmente vía Dynamic Client Registration (RFC 7591):
+ * cuando el usuario conecta Claude/ChatGPT, su cliente se registra aquí automáticamente.
+ *
+ * Guardamos la información completa del cliente (la forma que define el SDK,
+ * `OAuthClientInformationFull`) como `jsonb`, porque es justo lo que el `clientsStore`
+ * del SDK lee/escribe. El cliente DCR es ANÓNIMO (no hay `userId`): el vínculo
+ * usuario↔cliente —el consentimiento— vive en `oauth_grants`, no aquí.
+ *
+ * Nota seguridad: los clientes MCP públicos (Claude/ChatGPT) usan PKCE sin
+ * `client_secret`; cuando hay secreto, el SDK lo compara en claro, así que se conserva
+ * dentro del JSON tal cual lo exige la librería (PKCE es la barrera real).
+ */
+export const oauthClients = pgTable('oauth_clients', {
+  clientId: text('client_id').primaryKey(),
+  data: jsonb('data').$type<OAuthClientInformationFull>().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+});
+
+export type OAuthClientRow = typeof oauthClients.$inferSelect;
+export type NewOAuthClientRow = typeof oauthClients.$inferInsert;
+
+/**
+ * Consentimientos: qué scopes ha concedido un usuario a un cliente. Es la base jurídica
+ * (RGPD) del acceso y lo que se lista/revoca en "Aplicaciones conectadas". Único por
+ * `(userId, clientId)`: un cliente tiene un consentimiento por usuario (los scopes se
+ * actualizan en sitio). FK con borrado en cascada para "borrar mi cuenta".
+ */
+export const oauthGrants = pgTable(
+  'oauth_grants',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+  },
+  (table) => [
+    uniqueIndex('oauth_grants_user_client_idx').on(table.userId, table.clientId),
+    index('oauth_grants_user_id_idx').on(table.userId),
+  ],
+);
+
+export type OAuthGrant = typeof oauthGrants.$inferSelect;
+export type NewOAuthGrant = typeof oauthGrants.$inferInsert;
+
+/**
+ * Códigos de autorización (PKCE), efímeros y de UN SOLO USO. Se guardan SOLO hasheados.
+ * Ligados a `(clientId, redirectUri, codeChallenge, resource, userId)` para que el canje
+ * valide que nada cambió entre `/authorize` y `/token`. El SDK valida el `code_verifier`
+ * contra `codeChallenge` (PKCE) por nosotros; nosotros validamos lo demás y el single-use
+ * atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`, como en `login_tokens`).
+ */
+export const oauthAuthCodes = pgTable('oauth_auth_codes', {
+  codeHash: text('code_hash').primaryKey(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  clientId: text('client_id').notNull(),
+  scopes: jsonb('scopes').$type<string[]>().notNull(),
+  codeChallenge: text('code_challenge').notNull(),
+  redirectUri: text('redirect_uri').notNull(),
+  // URI canónico del recurso (RFC 8707) solicitado en `/authorize`; se propaga al token.
+  resource: text('resource'),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  consumedAt: timestamp('consumed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
+export type NewOAuthAuthCode = typeof oauthAuthCodes.$inferInsert;
+
+/**
+ * Access y refresh tokens, SOLO hasheados (SHA-256), nunca en claro. Cada token lleva su
+ * dueño (`userId`), `clientId`, `scopes`, `audience` (binding RFC 8707) y caducidad.
+ *
+ * Aislamiento: `verifyAccessToken` resuelve el Bearer → `userId` y RECHAZA si la
+ * `audience` no es nuestro `…/api/mcp`. Refresh con rotación: al canjear un refresh se
+ * marca `consumedAt` y se emite uno nuevo encadenado por `parentHash` (permite detectar
+ * reuso de un refresh ya gastado y cortar la cadena).
+ */
+export const oauthTokens = pgTable(
+  'oauth_tokens',
+  {
+    tokenHash: text('token_hash').primaryKey(),
+    // 'access' | 'refresh'.
+    type: varchar('type', { length: 10 }).notNull(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+    audience: text('audience').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    // Hash del refresh padre del que nació este token (rotación); null si es el primero.
+    parentHash: text('parent_hash'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('oauth_tokens_user_id_idx').on(table.userId),
+    index('oauth_tokens_user_client_idx').on(table.userId, table.clientId),
+  ],
+);
+
+export type OAuthTokenRow = typeof oauthTokens.$inferSelect;
+export type NewOAuthTokenRow = typeof oauthTokens.$inferInsert;
+
+/**
+ * Registro de auditoría de invocaciones MCP: quién (usuario+cliente) llamó a qué tool y
+ * con qué resultado. Para trazabilidad e investigación de incidentes (no guarda los datos
+ * de la cartera, solo metadatos de la llamada). FK con borrado en cascada.
+ */
+export const mcpAuditLog = pgTable(
+  'mcp_audit_log',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: text('client_id'),
+    tool: varchar('tool', { length: 64 }).notNull(),
+    // 'ok' | 'error' | 'denied_scope' (tool de escritura sin permiso portfolio:write).
+    outcome: varchar('outcome', { length: 16 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('mcp_audit_log_user_id_idx').on(table.userId)],
+);
+
+export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;
+export type NewMcpAuditLogRow = typeof mcpAuditLog.$inferInsert;

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { IconNavProfile } from "../illustrations";
 
 /**
  * Enlace de cabecera que muestra "Entrar" o "Mi cartera" según haya sesión.
@@ -34,6 +35,7 @@ export default function AuthNav() {
       href={authed ? "/portfolio" : "/entrar"}
       className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
     >
+      <IconNavProfile className="h-4 w-4" />
       {authed ? t("portfolio") : t("login")}
     </Link>
   );

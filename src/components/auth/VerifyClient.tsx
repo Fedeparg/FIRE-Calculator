@@ -27,8 +27,17 @@ export default function VerifyClient() {
           body: JSON.stringify({ token }),
         });
         if (res.ok) {
-          router.replace("/portfolio");
-          router.refresh();
+          // Si veníamos de un flujo OAuth, retoma ahí (ruta relativa validada);
+          // si no, a la cartera. `window.location` para salir a /authorize (no es
+          // ruta localizada de next-intl).
+          const returnTo = window.localStorage.getItem("sextante_return_to");
+          window.localStorage.removeItem("sextante_return_to");
+          if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+            window.location.assign(returnTo);
+          } else {
+            router.replace("/portfolio");
+            router.refresh();
+          }
         } else {
           setFetchError(true);
         }

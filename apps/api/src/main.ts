@@ -5,6 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module';
+import { mountMcp } from './mcp/mount-mcp';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -43,6 +44,10 @@ async function bootstrap(): Promise<void> {
       );
     }
   }
+
+  // Authorization Server OAuth (raíz) + endpoint MCP (/api/mcp). Debe ir tras cookieParser
+  // (lee la cookie de sesión en /authorize) y antes de escuchar.
+  mountMcp(app);
 
   const port = Number(config.get('PORT') ?? 3001);
 

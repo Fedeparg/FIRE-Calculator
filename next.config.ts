@@ -20,6 +20,22 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${API_URL}/api/:path*`,
       },
+      // Endpoints OAuth 2.1 del servidor MCP. Viven en la RAÍZ de la API (fuera de
+      // /api) porque la spec MCP/OAuth los descubre ahí (.well-known, /authorize…).
+      // Same-origin: el navegador y los clientes LLM siempre hablan con el origen
+      // público; aquí los reenviamos a la API. Ver _local/mcp-integracion.md.
+      {
+        source: "/.well-known/oauth-authorization-server",
+        destination: `${API_URL}/.well-known/oauth-authorization-server`,
+      },
+      {
+        source: "/.well-known/oauth-protected-resource/:path*",
+        destination: `${API_URL}/.well-known/oauth-protected-resource/:path*`,
+      },
+      { source: "/authorize", destination: `${API_URL}/authorize` },
+      { source: "/token", destination: `${API_URL}/token` },
+      { source: "/register", destination: `${API_URL}/register` },
+      { source: "/revoke", destination: `${API_URL}/revoke` },
     ];
   },
 };

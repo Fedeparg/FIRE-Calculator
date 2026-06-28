@@ -1,8 +1,9 @@
-// Conversión de divisas y agregación de cartera. Core puro (sin React), testeable.
+// Conversión de divisas y agregación de cartera. Lógica pura (sin Nest), testeable.
 //
-// ⚠️ Tiene un ESPEJO en `apps/api/src/portfolio/valuation.ts` (el backend lo necesita
-// para la tool MCP `get_portfolio_valuation`, y la raíz no es dependencia de la API).
-// Si cambias una fórmula aquí, cámbiala también allí.
+// ⚠️ ESPEJO de `src/core/fx.ts` (frontend). Son paquetes distintos (la raíz NO es
+// dependencia de `@sextante/api`), así que no se puede compartir el módulo: si cambias
+// una fórmula aquí, cámbiala también allí (y viceversa). Verificado por contraste:
+// `get_portfolio_valuation` (MCP) devuelve el mismo número que muestra la UI.
 
 /**
  * Convierte `amount` de la divisa `from` a `to`. `rates[CCY]` = USD por unidad de esa
@@ -57,8 +58,8 @@ export interface PortfolioAggregate {
  * Agrega la cartera a una divisa elegida. Una posición SOLO cuenta si: (1) hay precio,
  * (2) el precio viene en la misma divisa que la posición —misma regla que el P&L por fila,
  * no mezclamos divisas— y (3) su divisa es convertible a `display`. Las que no cumplan se
- * excluyen (y el frontend lo señala con `total − valued`). Invertido, valor y P&L se
- * calculan sobre el MISMO subconjunto para que P&L = valor − invertido cuadre siempre.
+ * excluyen. Invertido, valor y P&L se calculan sobre el MISMO subconjunto para que
+ * P&L = valor − invertido cuadre siempre.
  */
 export function aggregatePortfolio({
   positions,

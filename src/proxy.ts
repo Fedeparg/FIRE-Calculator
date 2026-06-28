@@ -6,6 +6,8 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
-  // Aplica a todas las rutas salvo API, estáticos e internos de Next.
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  // Aplica a todas las rutas salvo API, estáticos, internos de Next y los endpoints
+  // OAuth del servidor MCP (authorize/token/register/revoke; los .well-known ya quedan
+  // excluidos por contener un punto). Estos se reescriben a la API en next.config.
+  matcher: ["/((?!api|_next|_vercel|authorize|token|register|revoke|.*\\..*).*)"],
 };

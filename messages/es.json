@@ -945,7 +945,8 @@
       "pnl": "Ganancia/pérdida",
       "noData": "Aún no hay precios para calcular el total. Vuelve cuando se haya actualizado el mercado.",
       "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
-      "fxAsOf": "Tipos de cambio a {date}."
+      "fxAsOf": "Tipos de cambio a {date}.",
+      "priceCadence": "Los precios se actualizan una vez al día (sobre las 22:30, hora de España). Una posición recién añadida puede no mostrar precio hasta el siguiente refresco."
     },
     "list": {
       "ticker": "Símbolo / ISIN",
@@ -1012,6 +1013,31 @@
       "exporting": "Exportando…",
       "error": "No se pudieron exportar tus datos. Inténtalo de nuevo."
     },
+    "connections": {
+      "title": "Aplicaciones conectadas",
+      "description": "Aplicaciones y asistentes de IA con acceso a tu cartera vía MCP. Puedes revocar el acceso en cualquier momento.",
+      "loading": "Cargando…",
+      "empty": "No tienes ninguna aplicación conectada.",
+      "error": "No se pudieron cargar las aplicaciones conectadas.",
+      "unnamed": "Aplicación sin nombre",
+      "scopeRead": "Leer tu cartera",
+      "scopeWrite": "Modificar tu cartera",
+      "connected": "Conectada el {date}",
+      "lastUsed": "Último uso: {date}",
+      "neverUsed": "Sin uso todavía",
+      "revoke": "Revocar acceso",
+      "revoking": "Revocando…",
+      "revokeError": "No se pudo revocar el acceso. Inténtalo de nuevo.",
+      "howToTitle": "¿Cómo conecto un asistente de IA?",
+      "howToIntro": "Puedes conectar Claude (y otros clientes compatibles con MCP) para que lean y analicen tu cartera. En tu cliente, añade un conector MCP personalizado con esta dirección:",
+      "urlLabel": "URL del servidor MCP",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "step1": "Claude: Ajustes → Conectores → «Añadir conector personalizado» y pega la URL de arriba.",
+      "step2": "Inicia sesión en Sextante y aprueba los permisos (solo lectura, o lectura y escritura).",
+      "step3": "Listo: pídele que analice tu cartera. Puedes revocar el acceso desde aquí cuando quieras.",
+      "howToNote": "ChatGPT también admite conectores MCP, pero su soporte es más limitado según el plan; Claude es hoy el camino más completo."
+    },
     "danger": {
       "title": "Zona de peligro"
     },
@@ -1036,5 +1062,22 @@
   "ads": {
     "label": "Publicidad",
     "previewHint": "Vista previa del espacio publicitario"
+  },
+  "oauth": {
+    "consent": {
+      "title": "Conectar una aplicación",
+      "intro": "{app} quiere acceder a tu cartera de Sextante.",
+      "introGeneric": "Una aplicación quiere acceder a tu cartera de Sextante.",
+      "permissionsTitle": "Permisos solicitados",
+      "scopeRead": "Leer tu cartera (posiciones, valoración y rentabilidad)",
+      "scopeWrite": "Modificar tu cartera (añadir, editar y borrar posiciones)",
+      "warning": "Conecta solo aplicaciones en las que confíes. Podrás revocar este acceso cuando quieras desde tu cuenta.",
+      "allow": "Permitir acceso",
+      "deny": "Denegar",
+      "working": "Conectando…",
+      "error": "No se pudo completar la conexión. Inténtalo de nuevo.",
+      "missing": "Solicitud de autorización incompleta o no válida.",
+      "backHome": "Volver al inicio"
+    }
   }
 }

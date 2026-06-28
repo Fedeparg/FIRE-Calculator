@@ -8,6 +8,8 @@ import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module';
 import { loginTokens, users, type User } from '../db/schema';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service';
+import { OAuthClientsStore } from '../oauth/oauth-clients.store';
+import { OAuthGrantsService } from '../oauth/oauth-grants.service';
 import {
   PositionsService,
   type PositionResponse,
@@ -18,15 +20,26 @@ const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
 export type SessionUser = { id: string; email: string };
 
+/** Una aplicación OAuth/MCP conectada, tal y como aparece en la exportación RGPD. */
+export type ConnectedAppExport = {
+  clientId: string;
+  clientName: string | null;
+  scopes: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
 /**
  * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye
- * el email de la cuenta y TODAS sus posiciones. Si se añaden más datos personales en el
- * futuro, deben sumarse aquí para que la exportación siga siendo completa.
+ * el email de la cuenta, TODAS sus posiciones y las aplicaciones conectadas (accesos
+ * OAuth/MCP). Si se añaden más datos personales en el futuro, deben sumarse aquí para que
+ * la exportación siga siendo completa.
  */
 export type AccountExport = {
   email: string;
   exportedAt: string;
   positions: PositionResponse[];
+  connectedApps: ConnectedAppExport[];
 };
 
 @Injectable()
@@ -39,6 +52,8 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly positions: PositionsService,
+    private readonly grants: OAuthGrantsService,
+    private readonly clients: OAuthClientsStore,
   ) {}
 
   /**
@@ -100,10 +115,24 @@ export class AuthService {
    */
   async exportData(user: SessionUser): Promise<AccountExport> {
     const positions = await this.positions.findAllByUser(user.id);
+    const grants = await this.grants.listForUser(user.id);
+    const connectedApps: ConnectedAppExport[] = await Promise.all(
+      grants.map(async (g) => {
+        const client = await this.clients.getClient(g.clientId);
+        return {
+          clientId: g.clientId,
+          clientName: client?.client_name ?? null,
+          scopes: g.scopes,
+          createdAt: g.createdAt.toISOString(),
+          lastUsedAt: g.lastUsedAt ? g.lastUsedAt.toISOString() : null,
+        };
+      }),
+    );
     return {
       email: user.email,
       exportedAt: new Date().toISOString(),
       positions,
+      connectedApps,
     };
   }
 

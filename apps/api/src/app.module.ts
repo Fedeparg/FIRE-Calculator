@@ -4,10 +4,13 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
+import { AccountModule } from './account/account.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './db/database.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
+import { McpModule } from './mcp/mcp.module';
+import { OauthModule } from './oauth/oauth.module';
 import { PositionsModule } from './positions/positions.module';
 import { PricesModule } from './prices/prices.module';
 
@@ -24,6 +27,9 @@ import { PricesModule } from './prices/prices.module';
     HealthModule,
     PositionsModule,
     PricesModule,
+    OauthModule,
+    McpModule,
+    AccountModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

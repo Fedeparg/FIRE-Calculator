@@ -50,6 +50,13 @@
       "when": 1782637155356,
       "tag": "0006_black_reavers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782663872436,
+      "tag": "0007_hesitant_iceman",
+      "breakpoints": true
     }
   ]
 }

@@ -61,7 +61,10 @@ export default function PortfolioSummary({ positions, prices, fxRates }: Props) 
       </div>
 
       {agg.valued === 0 ? (
-        <p className="text-sm text-muted">{t("noData")}</p>
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">{t("noData")}</p>
+          <p className="text-xs text-muted">{t("priceCadence")}</p>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -95,6 +98,7 @@ export default function PortfolioSummary({ positions, prices, fxRates }: Props) 
           <div className="flex flex-col gap-1 text-xs text-muted">
             {excluded > 0 && <p>{t("excluded", { count: excluded, total: agg.total })}</p>}
             {fxRates?.asOf && <p>{t("fxAsOf", { date: formatIsoDate(fxRates.asOf) })}</p>}
+            <p>{t("priceCadence")}</p>
           </div>
         </>
       )}

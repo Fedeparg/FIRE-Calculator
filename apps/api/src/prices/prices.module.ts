@@ -36,5 +36,8 @@ import { YahooPriceProvider } from './yahoo-price.provider';
     { provide: PRICE_PROVIDER, useClass: YahooPriceProvider },
     { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
   ],
+  // Exportado para que la valoración de cartera (PortfolioModule, tools MCP) reutilice los
+  // precios y tasas FX cacheados sin duplicar el acceso a datos.
+  exports: [PricesService],
 })
 export class PricesModule {}

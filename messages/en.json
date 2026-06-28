@@ -945,7 +945,8 @@
       "pnl": "Profit/loss",
       "noData": "No prices yet to compute the total. Check back once the market has refreshed.",
       "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
-      "fxAsOf": "Exchange rates as of {date}."
+      "fxAsOf": "Exchange rates as of {date}.",
+      "priceCadence": "Prices update once a day (around 22:30 Spain time). A newly added position may not show a price until the next refresh."
     },
     "list": {
       "ticker": "Symbol / ISIN",
@@ -1012,6 +1013,31 @@
       "exporting": "Exporting…",
       "error": "We couldn't export your data. Please try again."
     },
+    "connections": {
+      "title": "Connected applications",
+      "description": "Apps and AI assistants with access to your portfolio via MCP. You can revoke access at any time.",
+      "loading": "Loading…",
+      "empty": "You have no connected applications.",
+      "error": "We couldn't load your connected applications.",
+      "unnamed": "Unnamed application",
+      "scopeRead": "Read your portfolio",
+      "scopeWrite": "Modify your portfolio",
+      "connected": "Connected on {date}",
+      "lastUsed": "Last used: {date}",
+      "neverUsed": "Not used yet",
+      "revoke": "Revoke access",
+      "revoking": "Revoking…",
+      "revokeError": "We couldn't revoke access. Please try again.",
+      "howToTitle": "How do I connect an AI assistant?",
+      "howToIntro": "You can connect Claude (and other MCP-compatible clients) to read and analyse your portfolio. In your client, add a custom MCP connector with this address:",
+      "urlLabel": "MCP server URL",
+      "copy": "Copy",
+      "copied": "Copied",
+      "step1": "Claude: Settings → Connectors → “Add custom connector” and paste the URL above.",
+      "step2": "Sign in to Sextante and approve the permissions (read-only, or read and write).",
+      "step3": "Done: ask it to analyse your portfolio. You can revoke access here at any time.",
+      "howToNote": "ChatGPT also supports MCP connectors, but support is more limited depending on your plan; Claude is currently the most complete option."
+    },
     "danger": {
       "title": "Danger zone"
     },
@@ -1036,5 +1062,22 @@
   "ads": {
     "label": "Advertisement",
     "previewHint": "Ad space preview"
+  },
+  "oauth": {
+    "consent": {
+      "title": "Connect an application",
+      "intro": "{app} wants to access your Sextante portfolio.",
+      "introGeneric": "An application wants to access your Sextante portfolio.",
+      "permissionsTitle": "Requested permissions",
+      "scopeRead": "Read your portfolio (positions, valuation and returns)",
+      "scopeWrite": "Modify your portfolio (add, edit and delete positions)",
+      "warning": "Only connect applications you trust. You can revoke this access anytime from your account.",
+      "allow": "Allow access",
+      "deny": "Deny",
+      "working": "Connecting…",
+      "error": "The connection could not be completed. Please try again.",
+      "missing": "Incomplete or invalid authorization request.",
+      "backHome": "Back to home"
+    }
   }
 }

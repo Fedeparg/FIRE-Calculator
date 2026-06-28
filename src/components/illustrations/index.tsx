@@ -248,6 +248,16 @@ export function IconNavLearn({ className }: SvgProps) {
   );
 }
 
+/** Icono de nav: perfil de usuario (line-art, hereda el color del texto). */
+export function IconNavProfile({ className }: SvgProps) {
+  return (
+    <NavIcon className={className}>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20 C5 16 8 14 12 14 C16 14 19 16 19 20" />
+    </NavIcon>
+  );
+}
+
 /** Onda decorativa de separación (rumbo / mar). */
 export function WaveDivider({ className }: SvgProps) {
   return (
