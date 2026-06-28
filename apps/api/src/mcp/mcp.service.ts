@@ -314,7 +314,8 @@ function toUserMessage(error: unknown): string {
     const r = response as { message?: unknown; code?: unknown };
     const msg = Array.isArray(r.message) ? r.message.join('; ') : r.message;
     if (typeof msg === 'string') {
-      return r.code ? `${msg} (${String(r.code)})` : msg;
+      const code = typeof r.code === 'string' || typeof r.code === 'number' ? r.code : undefined;
+      return code !== undefined ? `${msg} (${code})` : msg;
     }
   }
   if (error instanceof Error && error.message) {

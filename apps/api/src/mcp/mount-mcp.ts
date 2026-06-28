@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { Express, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import {
   getOAuthProtectedResourceMetadataUrl,
@@ -28,7 +28,7 @@ export function mountMcp(app: NestExpressApplication): void {
   const provider = app.get(SextanteOAuthProvider);
   const urls = app.get(OAuthUrls);
   const mcp = app.get(McpService);
-  const server_ = app.getHttpAdapter().getInstance() as Express;
+  const server_ = app.getHttpAdapter().getInstance();
 
   // Endpoints OAuth 2.1 + discovery + PRM, en la raíz.
   server_.use(
@@ -49,6 +49,41 @@ export function mountMcp(app: NestExpressApplication): void {
     requiredScopes: [],
     resourceMetadataUrl,
   });
+
+  // CORS para el endpoint MCP. El router OAuth del SDK ya pone CORS en /authorize|token|
+  // register|.well-known, pero /api/mcp lo montamos a mano y SIN esto un cliente de
+  // navegador (MCP Inspector, conectores web) no puede ni leer el 401 de descubrimiento
+  // (necesita ver WWW-Authenticate) ni hacer el preflight del POST. Se monta ANTES del
+  // bearer para que el propio 401 lleve las cabeceras CORS.
+  server_.use('/api/mcp', (req: Request, res: Response, next: NextFunction) => {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Authorization, Content-Type, Accept, Mcp-Protocol-Version, Mcp-Session-Id, Last-Event-Id',
+    );
+    res.setHeader('Access-Control-Expose-Headers', 'WWW-Authenticate, Mcp-Session-Id');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+
+  // Servidor sin estado: no hay stream SSE servidor→cliente ni sesión que cerrar. Tras el
+  // initialize, los clientes abren un GET para el stream; respondemos 405 (NO 404) para que
+  // sepan que el endpoint existe y sigan en modo solo-POST en vez de creer que no hay MCP.
+  const methodNotAllowed = (_req: Request, res: Response): void => {
+    res.status(405).json({
+      jsonrpc: '2.0',
+      error: { code: -32000, message: 'Method not allowed. El servidor MCP es sin estado (solo POST).' },
+      id: null,
+    });
+  };
+  server_.get('/api/mcp', methodNotAllowed);
+  server_.delete('/api/mcp', methodNotAllowed);
 
   // Endpoint MCP (Streamable HTTP, sin estado: un transporte por petición).
   server_.post('/api/mcp', bearer, async (req: Request, res: Response) => {
