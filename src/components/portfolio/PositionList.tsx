@@ -134,14 +134,22 @@ export default function PositionList({ positions, prices, editingId, onEdit, onD
                   }`}
                 >
                   <td className="px-4 py-3 font-medium text-foreground">{p.ticker}</td>
-                  <td className="px-4 py-3 text-muted">{p.name ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">
+                    <div className="max-w-[16rem] truncate" title={p.name ?? undefined}>
+                      {p.name ?? "—"}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {formatNumber(p.quantity)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {formatCurrency(p.avgPrice, p.currency)}
                   </td>
-                  <td className="px-4 py-3 text-muted">{p.broker ?? "—"}</td>
+                  <td className="px-4 py-3 text-muted">
+                    <div className="max-w-[9rem] truncate" title={p.broker ?? undefined}>
+                      {p.broker ?? "—"}
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {formatCurrency(invested, p.currency)}
                   </td>

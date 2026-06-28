@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
@@ -74,6 +74,38 @@ export default function PortfolioClient({ initialPositions }: Props) {
       cancelled = true;
     };
   }, []);
+
+  // Re-sincroniza la lista con el servidor (fuente de verdad). Necesario cuando un cliente
+  // externo cambia la cartera sin pasar por esta pestaña: típicamente Claude/ChatGPT vía MCP.
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/positions", { cache: "no-store" });
+      if (!res.ok) return;
+      const data: Position[] = await res.json();
+      setPositions(data);
+      // Si la posición en edición ya no existe (borrada fuera), salimos del modo edición.
+      setEditing((cur) => (cur && data.some((p) => p.id === cur.id) ? cur : null));
+    } catch {
+      // Re-sincronización oportunista: si falla, la pestaña sigue con lo que tenía.
+    }
+  }, []);
+
+  // Auto-refresco de bajo coste: revalida al volver a la pestaña (caso típico: le pides a
+  // Claude que añada algo y vuelves aquí) y con un sondeo lento que SOLO corre con la
+  // pestaña visible (en segundo plano no consume nada).
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("focus", refreshIfVisible);
+    const interval = setInterval(refreshIfVisible, 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("focus", refreshIfVisible);
+      clearInterval(interval);
+    };
+  }, [refresh]);
 
   function handleCreated(position: Position) {
     // Más recientes primero, igual que el orden del backend.

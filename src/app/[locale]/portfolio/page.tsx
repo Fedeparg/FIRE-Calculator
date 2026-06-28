@@ -25,7 +25,7 @@ export default async function PortfolioPage({ params }: Props) {
   const positions = await fetchPositions();
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-12">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
