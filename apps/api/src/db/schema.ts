@@ -5,8 +5,10 @@ import {
   timestamp,
   varchar,
   numeric,
+  date,
   index,
   uniqueIndex,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 /**
@@ -101,3 +103,33 @@ export const positions = pgTable(
 
 export type Position = typeof positions.$inferSelect;
 export type NewPosition = typeof positions.$inferInsert;
+
+/**
+ * Precios de cierre (EOD) por símbolo y día. Caché propia: el frontend SIEMPRE lee de
+ * aquí, nunca de la API externa. Un job diario refresca los símbolos en uso (compartido
+ * entre TODOS los usuarios: 1 fila por símbolo y día, no por usuario), así que el tráfico
+ * a la API de cotización es mínimo. Ver `_local/datos-inversiones-api.md`.
+ *
+ * `symbol` es el símbolo ya resuelto a la fuente de precios (hoy Yahoo: "AAPL", "EUNL.DE",
+ * "BTC-USD"). La traducción ticker/ISIN → símbolo es responsabilidad del `SymbolResolver`
+ * (hoy identidad; OpenFIGI más adelante), no de esta tabla.
+ *
+ * Precisión: `numeric(20,8)` cubre tanto precios grandes como fracciones de cripto.
+ */
+export const instrumentPrices = pgTable(
+  'instrument_prices',
+  {
+    symbol: varchar('symbol', { length: 40 }).notNull(),
+    // Fecha del cierre (en UTC). En findes/festivos de bolsa, es la del último cierre.
+    date: date('date').notNull(),
+    close: numeric('close', { precision: 20, scale: 8 }).notNull(),
+    currency: varchar('currency', { length: 8 }).notNull(),
+    // Proveedor que dio el dato ("yahoo"…), para trazabilidad y futuros fallbacks.
+    source: varchar('source', { length: 20 }).notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.symbol, table.date] })],
+);
+
+export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
+export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
