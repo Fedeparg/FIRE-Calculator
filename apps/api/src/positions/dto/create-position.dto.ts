@@ -11,8 +11,23 @@ import {
   Min,
 } from 'class-validator';
 
-/** Divisas admitidas para una posición (alineadas con el selector del frontend). */
-export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP'] as const;
+/**
+ * Divisas admitidas: las 10 más negociadas del mundo (turnover FX, BIS). EN PARIDAD con
+ * el `PORTFOLIO_CURRENCIES` del frontend: si difieren, una divisa válida en la UI podría
+ * dar 400 aquí (o viceversa).
+ */
+export const SUPPORTED_CURRENCIES = [
+  'EUR',
+  'USD',
+  'GBP',
+  'JPY',
+  'CHF',
+  'CAD',
+  'AUD',
+  'CNY',
+  'HKD',
+  'SGD',
+] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 /**

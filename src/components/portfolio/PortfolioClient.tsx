@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { Position } from "@/lib/portfolio";
+import type { PriceInfo, Position } from "@/lib/portfolio";
 import PositionForm from "./PositionForm";
 import PositionList from "./PositionList";
 
@@ -22,6 +22,37 @@ export default function PortfolioClient({ initialPositions }: Props) {
   const [positions, setPositions] = useState<Position[]>(initialPositions);
   // Posición en edición (null = modo alta).
   const [editing, setEditing] = useState<Position | null>(null);
+  // Últimos precios conocidos por ticker (desde nuestra DB, nunca de la API externa).
+  const [prices, setPrices] = useState<Record<string, PriceInfo>>({});
+
+  // Clave estable de los tickers distintos: solo re-pedimos precios si el CONJUNTO cambia
+  // (no al editar cantidad/precio medio). Es justo el `?symbols=` que espera la API.
+  const tickersKey = useMemo(
+    () => [...new Set(positions.map((p) => p.ticker))].sort().join(","),
+    [positions],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!tickersKey) {
+        if (!cancelled) setPrices({});
+        return;
+      }
+      try {
+        const res = await fetch(`/api/prices?symbols=${encodeURIComponent(tickersKey)}`);
+        const data: Record<string, PriceInfo> = res.ok ? await res.json() : {};
+        if (!cancelled) setPrices(data);
+      } catch {
+        // Los precios son enriquecimiento: si fallan, la cartera sigue usable (P&L "—").
+        if (!cancelled) setPrices({});
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [tickersKey]);
 
   function handleCreated(position: Position) {
     // Más recientes primero, igual que el orden del backend.
@@ -50,6 +81,7 @@ export default function PortfolioClient({ initialPositions }: Props) {
       ) : (
         <PositionList
           positions={positions}
+          prices={prices}
           editingId={editing?.id ?? null}
           onEdit={setEditing}
           onDeleted={handleDeleted}

@@ -19,6 +19,9 @@
   --warning: #b45309;
   --warning-soft: #fef3e2;
   --warning-border: #f5d9a8;
+  /* Ganancia/pérdida (P&L de cartera). Verde/rojo con contraste sobre fondo claro. */
+  --success: #15803d;
+  --danger: #b91c1c;
   color-scheme: light;
 }
 
@@ -37,6 +40,8 @@
   --warning: #fbbf24;
   --warning-soft: #2a2110;
   --warning-border: #4a3a17;
+  --success: #4ade80;
+  --danger: #f87171;
   color-scheme: dark;
 }
 
@@ -55,6 +60,8 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-warning-border: var(--warning-border);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
