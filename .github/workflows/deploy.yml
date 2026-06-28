@@ -52,6 +52,7 @@ jobs:
           EMAIL_FROM=Sextante <no-reply@send.fpardo.net>
           WEB_PORT=8790
           RCLONE_REMOTE=gdrive:sextante-backups
+          BACKUP_RETENTION_DAYS=7
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
           JWT_SECRET=${JWT_SECRET}
           RESEND_API_KEY=${RESEND_API_KEY}

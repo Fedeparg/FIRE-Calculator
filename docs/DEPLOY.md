@@ -105,7 +105,8 @@ link solo funcionará cuando el subdominio (paso 5) resuelva, porque el enlace u
 El servicio `backup` (ver `docker-compose.prod.yml` + `scripts/backup/`) hace
 `pg_dump → gzip → gpg (AES256) → rclone` a tu Google Drive: un backup **al
 arrancar** y luego **uno diario** (04:00 Europe/Madrid por defecto), con rotación
-(borra los > 30 días). **El cifrado ocurre en el servidor**, así que en Drive solo
+(borra los > 7 días, configurable con `BACKUP_RETENTION_DAYS`). **El cifrado ocurre
+en el servidor**, así que en Drive solo
 aterriza un `.gpg` ilegible sin `BACKUP_GPG_PASSPHRASE`.
 
 ### Conectar tu Google Drive (rclone) — se hace UNA vez
