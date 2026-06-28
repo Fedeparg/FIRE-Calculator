@@ -31,6 +31,12 @@ export type PriceInfo = {
   date: string;
 };
 
+/** Tasas FX que sirve `GET /api/fx`: USD por unidad de cada divisa (USD = 1). */
+export type FxRates = {
+  rates: Record<string, number>;
+  asOf: string | null;
+};
+
 /** Una posición tal y como la devuelve la API (números ya parseados, fecha ISO). */
 export type Position = {
   id: string;

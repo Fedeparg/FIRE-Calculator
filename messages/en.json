@@ -937,6 +937,16 @@
       "title": "You don't have any positions yet",
       "body": "Add your first investment with the form below to see it here."
     },
+    "summary": {
+      "title": "Portfolio total",
+      "displayIn": "Show in",
+      "invested": "Invested",
+      "marketValue": "Current value",
+      "pnl": "Profit/loss",
+      "noData": "No prices yet to compute the total. Check back once the market has refreshed.",
+      "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
+      "fxAsOf": "Exchange rates as of {date}."
+    },
     "list": {
       "ticker": "Symbol / ISIN",
       "name": "Name",

@@ -102,3 +102,19 @@ export const currencySymbol = (currency: string): string => {
   }
   return symbol;
 };
+
+/**
+ * Etiqueta compacta de una divisa para selectores: "€ EUR", "$ USD"… El código ISO va
+ * SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY). Si la divisa
+ * no tiene símbolo propio (CHF), `currencySymbol` ya devuelve el código y no se duplica.
+ */
+export const currencyLabel = (currency: string): string => {
+  const symbol = currencySymbol(currency);
+  return symbol === currency ? currency : `${symbol} ${currency}`;
+};
+
+/** Reformatea una fecha ISO "YYYY-MM-DD" a "DD/MM/YYYY" sin construir un Date (sin desfase de zona). */
+export const formatIsoDate = (iso: string): string => {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+};

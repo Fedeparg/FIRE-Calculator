@@ -937,6 +937,16 @@
       "title": "Aún no tienes posiciones",
       "body": "Añade tu primera inversión con el formulario de abajo para verla aquí."
     },
+    "summary": {
+      "title": "Total de la cartera",
+      "displayIn": "Ver en",
+      "invested": "Invertido",
+      "marketValue": "Valor actual",
+      "pnl": "Ganancia/pérdida",
+      "noData": "Aún no hay precios para calcular el total. Vuelve cuando se haya actualizado el mercado.",
+      "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
+      "fxAsOf": "Tipos de cambio a {date}."
+    },
     "list": {
       "ticker": "Símbolo / ISIN",
       "name": "Nombre",

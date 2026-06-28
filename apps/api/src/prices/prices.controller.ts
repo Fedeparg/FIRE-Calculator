@@ -11,7 +11,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PricesService, type PriceInfo, type RefreshSummary } from './prices.service';
+import {
+  PricesService,
+  type FxRates,
+  type PriceInfo,
+  type RefreshSummary,
+} from './prices.service';
 
 /**
  * Endpoints de precios. La lectura sale SIEMPRE de nuestra DB (caché), nunca de la API
@@ -37,6 +42,15 @@ export class PricesController {
       .filter(Boolean);
     const prices = await this.prices.getPrices(tickers);
     return Object.fromEntries(prices);
+  }
+
+  /**
+   * Tasas FX (USD por unidad de cada divisa soportada) desde nuestra DB. Las usa el total
+   * agregado de la cartera para convertir a la divisa que elija el usuario.
+   */
+  @Get('fx')
+  async fx(): Promise<FxRates> {
+    return this.prices.getFxRates();
   }
 
   /**

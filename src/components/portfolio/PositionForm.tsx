@@ -4,14 +4,8 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import { currencySymbol } from "@/core/format";
+import { currencyLabel } from "@/core/format";
 import { PORTFOLIO_CURRENCIES, type Position, type PortfolioCurrency } from "@/lib/portfolio";
-
-/** Etiqueta del selector de divisa: "€ EUR", "$ USD"… (código ISO siempre, símbolos colisionan). */
-function currencyLabel(code: string): string {
-  const symbol = currencySymbol(code);
-  return symbol === code ? code : `${symbol} ${code}`;
-}
 
 type Status = "idle" | "submitting" | "combining";
 

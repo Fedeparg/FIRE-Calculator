@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { PriceInfo, Position } from "@/lib/portfolio";
+import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
 import PositionForm from "./PositionForm";
 import PositionList from "./PositionList";
+import PortfolioSummary from "./PortfolioSummary";
 
 type Props = {
   initialPositions: Position[];
@@ -24,6 +25,8 @@ export default function PortfolioClient({ initialPositions }: Props) {
   const [editing, setEditing] = useState<Position | null>(null);
   // Últimos precios conocidos por ticker (desde nuestra DB, nunca de la API externa).
   const [prices, setPrices] = useState<Record<string, PriceInfo>>({});
+  // Tasas FX para el total agregado (global, no dependen de las posiciones).
+  const [fxRates, setFxRates] = useState<FxRates | null>(null);
 
   // Clave estable de los tickers distintos: solo re-pedimos precios si el CONJUNTO cambia
   // (no al editar cantidad/precio medio). Es justo el `?symbols=` que espera la API.
@@ -54,6 +57,24 @@ export default function PortfolioClient({ initialPositions }: Props) {
     };
   }, [tickersKey]);
 
+  // Tasas FX: una sola carga (son globales y cambian poco; el total las usa para convertir).
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch("/api/prices/fx");
+        const data: FxRates = res.ok ? await res.json() : { rates: {}, asOf: null };
+        if (!cancelled) setFxRates(data);
+      } catch {
+        if (!cancelled) setFxRates({ rates: {}, asOf: null });
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   function handleCreated(position: Position) {
     // Más recientes primero, igual que el orden del backend.
     setPositions((prev) => [position, ...prev]);
@@ -79,13 +100,16 @@ export default function PortfolioClient({ initialPositions }: Props) {
           <p className="mt-1 text-sm text-muted">{t("empty.body")}</p>
         </div>
       ) : (
-        <PositionList
-          positions={positions}
-          prices={prices}
-          editingId={editing?.id ?? null}
-          onEdit={setEditing}
-          onDeleted={handleDeleted}
-        />
+        <>
+          <PortfolioSummary positions={positions} prices={prices} fxRates={fxRates} />
+          <PositionList
+            positions={positions}
+            prices={prices}
+            editingId={editing?.id ?? null}
+            onEdit={setEditing}
+            onDeleted={handleDeleted}
+          />
+        </>
       )}
 
       {/* El `key` fuerza un remount al cambiar de posición editada (o volver a alta),

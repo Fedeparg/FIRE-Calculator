@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { formatCurrency, formatNumber, formatPercent } from "@/core/format";
+import { formatCurrency, formatIsoDate, formatNumber, formatPercent } from "@/core/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {
@@ -18,12 +18,6 @@ type Props = {
 
 /** Cómo se muestra el P&L: porcentaje o importe en la divisa de la posición. */
 type PnlMode = "pct" | "abs";
-
-/** Reformatea "YYYY-MM-DD" a "DD/MM/YYYY" sin construir un Date (evita desfases de zona). */
-function formatIsoDate(iso: string): string {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
 
 /**
  * Tabla de posiciones con editar y borrado inline (confirmación sin modal). Enriquece cada
