@@ -36,6 +36,8 @@ export default async function LearnIndexPage({ params }: Props) {
       </h1>
       <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
 
+      <AdSlot className="mt-6" />
+
       {articles.length === 0 ? (
         <p className="mt-8 text-muted">{t("empty")}</p>
       ) : (

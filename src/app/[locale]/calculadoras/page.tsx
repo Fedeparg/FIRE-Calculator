@@ -37,6 +37,7 @@ export default async function CalculatorsIndex({ params }: Props) {
         {t("heading")}
       </h1>
       <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
+      <AdSlot className="mt-6" />
       <Selector items={items} categories={categories} />
       <AdSlot className="mt-10" />
     </section>
