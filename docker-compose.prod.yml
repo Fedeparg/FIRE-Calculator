@@ -1,0 +1,128 @@
+# Orquestación de PRODUCCIÓN de Sextante (UNRAID, self-hosted).
+#
+# Diferencias con docker-compose.yml (que es de DESARROLLO):
+#   - Añade el servicio `web` (Next dockerizado, salida standalone).
+#   - NO publica postgres ni api al host: solo se hablan por la red interna de
+#     Compose. El ÚNICO puerto expuesto es el del `web`, y SOLO en 127.0.0.1,
+#     para que el nginx del host (TLS con Let's Encrypt) lo proxee.
+#   - Espera NODE_ENV=production y secretos fuertes (sin defaults inseguros).
+#
+# Buen vecino en una caja compartida (ya corre fpardo-web ahí):
+#   - `name: sextante` namespaca proyecto, red, contenedores y evita colisiones.
+#   - Volumen nombrado propio (sextante_pgdata). Puertos internos, no del host.
+#
+# Uso (lo ejecuta el runner de GitHub Actions; ver .github/workflows/deploy.yml):
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+#
+# Los secretos llegan vía el .env que el workflow materializa desde GitHub
+# Secrets. Variables esperadas: ver .env.prod.example.
+
+name: sextante
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sextante}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en el .env}
+      POSTGRES_DB: ${POSTGRES_DB:-sextante}
+    volumes:
+      - sextante_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sextante} -d ${POSTGRES_DB:-sextante}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # One-shot: aplica migraciones y termina. La API espera a que acabe OK.
+  migrate:
+    image: sextante-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    command: ['node', 'dist/db/migrate.js']
+    restart: 'no'
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sextante}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: sextante-api:latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sextante}
+      # En producción la API se niega a arrancar si JWT_SECRET falta o es el de dev.
+      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en el .env (openssl rand -base64 48)}
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      APP_URL: ${APP_URL:?define APP_URL (https://sextante.fpardo.net)}
+      EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-resend}
+      RESEND_API_KEY: ${RESEND_API_KEY:?define RESEND_API_KEY en el .env}
+      EMAIL_FROM: ${EMAIL_FROM:-Sextante <no-reply@send.fpardo.net>}
+      OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
+      PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3001/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  web:
+    image: sextante-web:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        # IDs PÚBLICOS de AdSense (vacíos hasta activar publicidad). Se inlinean
+        # en build; no son secretos.
+        NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
+        NEXT_PUBLIC_ADSENSE_SLOT: ${NEXT_PUBLIC_ADSENSE_SLOT:-}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Same-origin vía la red interna: el web (BFF) proxea /api al servicio api.
+      API_URL: http://api:3001
+      REVALIDATE_TOKEN: ${REVALIDATE_TOKEN:-}
+    ports:
+      # SOLO localhost: el nginx del host (TLS) hace de entrada pública.
+      - '127.0.0.1:${WEB_PORT:-8790}:3000'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  sextante_pgdata:
+    name: sextante_pgdata

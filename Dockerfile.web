@@ -20,6 +20,15 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 RUN pnpm install --frozen-lockfile --filter freedom-calculator...
 
+# Variables PÚBLICAS de AdSense: Next las inlinea en el bundle en BUILD TIME, así
+# que tienen que estar presentes durante `next build` (no en runtime). Vacías por
+# defecto → el script de AdSense no se carga. Cuando se active la publicidad, el
+# workflow las pasa como build-args. NO son secretos (son IDs públicos).
+ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID=""
+ARG NEXT_PUBLIC_ADSENSE_SLOT=""
+ENV NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID
+ENV NEXT_PUBLIC_ADSENSE_SLOT=$NEXT_PUBLIC_ADSENSE_SLOT
+
 # Código del front y compilación. `output: "standalone"` genera
 # .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
 COPY . .
