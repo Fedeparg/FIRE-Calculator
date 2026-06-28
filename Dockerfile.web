@@ -1,0 +1,43 @@
+# Imagen del frontend (Next.js 16, App Router + BFF). Node 24 LTS.
+# Multi-etapa: build (instala deps del front + `next build` en modo standalone)
+# -> runtime delgado que solo lleva la salida autocontenida (server.js + el
+# node_modules mínimo que Next traza). Ver `output: "standalone"` en next.config.
+#
+# Contexto de build = raíz del repo (monorepo pnpm). El `.dockerignore` de la
+# raíz mantiene el contexto pequeño y fuera cualquier `.env`.
+
+# ---- Base común ----
+FROM node:24-slim AS base
+ENV CI=true
+RUN corepack enable
+WORKDIR /app
+
+# ---- Build ----
+FROM base AS build
+# Manifiestos primero (cachea la instalación). Se copian también los del
+# workspace (apps/api) para que `--frozen-lockfile` valide el lockfile completo.
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
+RUN pnpm install --frozen-lockfile --filter freedom-calculator...
+
+# Código del front y compilación. `output: "standalone"` genera
+# .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
+COPY . .
+RUN pnpm build
+
+# ---- Runtime ----
+FROM node:24-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production
+# El servidor escucha en 0.0.0.0:3000 por defecto (Next standalone).
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+
+# Salida autocontenida: server.js + node_modules trazado.
+COPY --from=build /app/.next/standalone ./
+# Estáticos y assets públicos (Next standalone NO los incluye).
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+
+EXPOSE 3000
+CMD ["node", "server.js"]
