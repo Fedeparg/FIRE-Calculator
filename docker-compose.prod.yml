@@ -108,8 +108,11 @@ services:
       API_URL: http://api:3001
       REVALIDATE_TOKEN: ${REVALIDATE_TOKEN:-}
     ports:
-      # SOLO localhost: el nginx del host (TLS) hace de entrada pública.
-      - '127.0.0.1:${WEB_PORT:-8790}:3000'
+      # Publicado en el host para que Nginx Proxy Manager (que corre en un
+      # contenedor y no alcanza el loopback del host) lo proxee por IP:puerto.
+      # NPM es la entrada pública y termina el TLS. En una LAN doméstica detrás
+      # del router esto es aceptable; desde internet solo se entra por 80/443→NPM.
+      - '${WEB_PORT:-8790}:3000'
     depends_on:
       api:
         condition: service_healthy
