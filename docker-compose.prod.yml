@@ -126,6 +126,30 @@ services:
       retries: 5
       start_period: 20s
 
+  # Backups cifrados: pg_dump -> gzip -> gpg (AES256) -> rclone (Google Drive).
+  # Hace un backup al arrancar y luego uno diario (cron). El cifrado ocurre ANTES
+  # de salir del servidor. Ver scripts/backup/ y docs/DEPLOY.md.
+  backup:
+    image: sextante-backup:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-sextante}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-sextante}
+      BACKUP_GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:?define BACKUP_GPG_PASSPHRASE en el .env}
+      RCLONE_CONF_BASE64: ${RCLONE_CONF_BASE64:?define RCLONE_CONF_BASE64 en el .env}
+      RCLONE_REMOTE: ${RCLONE_REMOTE:-gdrive:sextante-backups}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_CRON: ${BACKUP_CRON:-0 4 * * *}
+      TZ: Europe/Madrid
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   sextante_pgdata:
     name: sextante_pgdata

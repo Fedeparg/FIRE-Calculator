@@ -65,10 +65,16 @@ al terminar):
 | `RESEND_API_KEY` | API key de Resend (envío del magic link) | Dashboard de Resend |
 | `OPENFIGI_API_KEY` | Resolución ISIN/ticker → símbolo | Cuenta OpenFIGI |
 | `REVALIDATE_TOKEN` | Revalidación on-demand de la wiki | `openssl rand -base64 32` |
+| `BACKUP_GPG_PASSPHRASE` | Cifra los backups (AES256) antes de subirlos | `openssl rand -base64 32` |
+| `RCLONE_CONF_BASE64` | Config de rclone (acceso a tu Google Drive), en base64 | Ver §6 |
 
 Valores **no secretos** (van fijos en el workflow, edítalos ahí si cambian):
 `APP_URL=https://sextante.fpardo.net`, `EMAIL_FROM`, `WEB_PORT=8790`,
-`COOKIE_SECURE=true`, `EMAIL_TRANSPORT=resend`.
+`COOKIE_SECURE=true`, `EMAIL_TRANSPORT=resend`, `RCLONE_REMOTE=gdrive:sextante-backups`.
+
+> ⚠️ Guarda `BACKUP_GPG_PASSPHRASE` también **fuera** del servidor (gestor de
+> contraseñas). Sin ella, los backups son irrecuperables — es la pieza que los
+> hace ilegibles en Drive, pero también para ti si la pierdes.
 
 > `JWT_SECRET` debe ser **fijo y estable**: si lo cambias, invalidas todas las
 > sesiones (todos deben volver a entrar). Defínelo una vez.
@@ -94,6 +100,69 @@ link solo funcionará cuando el subdominio (paso 5) resuelva, porque el enlace u
 2. Adapta `docs/nginx/sextante.fpardo.net.conf` a tu nginx.
 3. `certbot --nginx -d sextante.fpardo.net` para el certificado (Let's Encrypt).
 
+## 6. Backups cifrados a Google Drive
+
+El servicio `backup` (ver `docker-compose.prod.yml` + `scripts/backup/`) hace
+`pg_dump → gzip → gpg (AES256) → rclone` a tu Google Drive: un backup **al
+arrancar** y luego **uno diario** (04:00 Europe/Madrid por defecto), con rotación
+(borra los > 30 días). **El cifrado ocurre en el servidor**, así que en Drive solo
+aterriza un `.gpg` ilegible sin `BACKUP_GPG_PASSPHRASE`.
+
+### Conectar tu Google Drive (rclone) — se hace UNA vez
+
+`rclone` necesita un token OAuth de tu Drive. Lo generas en tu ordenador (donde
+tengas navegador) y lo subes como secret. Pasos:
+
+1. **Instala rclone** en tu equipo: https://rclone.org/install/
+   (macOS: `brew install rclone`).
+2. **Configura el remote** llamado exactamente `gdrive`:
+   ```sh
+   rclone config
+   # n) New remote
+   # name> gdrive
+   # Storage> drive            (Google Drive)
+   # client_id>                (déjalo vacío; o usa uno propio, ver nota)
+   # client_secret>            (vacío)
+   # scope> 1                  (acceso completo) o 3 (solo a ficheros creados por rclone)
+   # Edit advanced config> n
+   # Use auto config> y        -> abre el navegador, autoriza con tu cuenta Google
+   # Configure as Shared Drive> n
+   # y) Yes this is OK
+   ```
+3. **Crea la carpeta destino** en tu Drive (el nombre debe casar con
+   `RCLONE_REMOTE=gdrive:sextante-backups`):
+   ```sh
+   rclone mkdir gdrive:sextante-backups
+   rclone lsd gdrive:                 # comprueba que aparece
+   ```
+4. **Exporta la config a base64** y úsala como el secret `RCLONE_CONF_BASE64`:
+   ```sh
+   base64 -i "$(rclone config file | tail -1)" | tr -d '\n' | pbcopy   # macOS: al portapapeles
+   # Linux: base64 -w0 "$(rclone config file | tail -1)"
+   ```
+   Pega el resultado en GitHub → Settings → Secrets → `RCLONE_CONF_BASE64`.
+5. Crea también `BACKUP_GPG_PASSPHRASE` (`openssl rand -base64 32`) y guárdala en
+   tu gestor de contraseñas (sin ella no se puede restaurar).
+
+> **Nota (client_id propio):** con el `client_id` por defecto de rclone, Google
+> aplica límites de cuota compartidos (puede dar errores esporádicos). Para una
+> herramienta personal de backups diarios es suficiente. Si quieres robustez,
+> crea un OAuth client en Google Cloud Console (Drive API) y úsalo en el paso 2;
+> rclone lo documenta en https://rclone.org/drive/#making-your-own-client-id.
+
+### Restaurar un backup
+
+```sh
+# 1) Descarga el .gpg desde Drive
+rclone copy gdrive:sextante-backups/sextante-AAAAMMDD-HHMMSSZ.sql.gz.gpg .
+# 2) Restaura (DESTRUCTIVO; pide confirmación escribiendo "RESTAURAR")
+BACKUP_GPG_PASSPHRASE='...' PGPASSWORD='<POSTGRES_PASSWORD>' \
+  ./scripts/backup/restore.sh sextante-AAAAMMDD-HHMMSSZ.sql.gz.gpg
+```
+
+> **Prueba la restauración** de vez en cuando (idealmente contra una BD de
+> prueba). Un backup que nunca se ha restaurado no es un backup de fiar.
+
 ---
 
 ## Operación
@@ -103,7 +172,7 @@ link solo funcionará cuando el subdominio (paso 5) resuelva, porque el enlace u
 - **NUNCA** `docker compose ... down -v` en producción: borra la base de datos.
   Tampoco cambies `JWT_SECRET` salvo que quieras desloguear a todo el mundo.
 - **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web`.
-- **Backups:** los cubre la rama `feat/backups` (pg_dump cifrado → Google Drive).
+- **Backups:** ver §6.
 
 ## Nota sobre el build en el servidor
 

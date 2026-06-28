@@ -38,6 +38,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           OPENFIGI_API_KEY: ${{ secrets.OPENFIGI_API_KEY }}
           REVALIDATE_TOKEN: ${{ secrets.REVALIDATE_TOKEN }}
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+          RCLONE_CONF_BASE64: ${{ secrets.RCLONE_CONF_BASE64 }}
         run: |
           umask 077
           # Heredoc SIN -x: los valores se expanden desde el entorno del step
@@ -49,11 +51,14 @@ jobs:
           EMAIL_TRANSPORT=resend
           EMAIL_FROM=Sextante <no-reply@send.fpardo.net>
           WEB_PORT=8790
+          RCLONE_REMOTE=gdrive:sextante-backups
           POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
           JWT_SECRET=${JWT_SECRET}
           RESEND_API_KEY=${RESEND_API_KEY}
           OPENFIGI_API_KEY=${OPENFIGI_API_KEY}
           REVALIDATE_TOKEN=${REVALIDATE_TOKEN}
+          BACKUP_GPG_PASSPHRASE=${BACKUP_GPG_PASSPHRASE}
+          RCLONE_CONF_BASE64=${RCLONE_CONF_BASE64}
           EOF
 
       - name: Construir y levantar el stack
