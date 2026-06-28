@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/core/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
 import Selector, { type SelectorItem } from "@/components/Selector";
+import AdSlot from "@/components/AdSlot";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -37,6 +38,7 @@ export default async function CalculatorsIndex({ params }: Props) {
       </h1>
       <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
       <Selector items={items} categories={categories} />
+      <AdSlot className="mt-10" />
     </section>
   );
 }

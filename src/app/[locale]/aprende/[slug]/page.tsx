@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { getArticle, getArticleSlugs } from "@/components/wiki/content";
+import AdSlot from "@/components/AdSlot";
 
 // ISR + dynamicParams: las rutas conocidas se prerenderizan; slugs nuevos
 // (artículos añadidos sin redeploy) se generan bajo demanda y se cachean.
@@ -45,6 +46,9 @@ export default async function ArticlePage({ params }: Props) {
         className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-brand prose-strong:text-foreground"
         dangerouslySetInnerHTML={{ __html: article.html }}
       />
+
+      {/* Publicidad: solo en contenido público (wiki), al final del artículo. */}
+      <AdSlot className="mt-10" />
     </article>
   );
 }

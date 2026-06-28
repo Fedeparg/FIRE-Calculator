@@ -1032,5 +1032,9 @@
   },
   "legal": {
     "lastUpdated": "Última actualización: {date}"
+  },
+  "ads": {
+    "label": "Publicidad",
+    "previewHint": "Vista previa del espacio publicitario"
   }
 }

@@ -1,6 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AdSlot from "./AdSlot";
+import { ADS_ENABLED } from "./ads";
 import CalculatorExplainer from "./wiki/CalculatorExplainer";
 
 type Props = {
@@ -20,7 +21,9 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
   const t = useTranslations("common");
 
   return (
-    <section className="mx-auto max-w-4xl px-4 py-8">
+    // Con publicidad activa se ensancha para dar sitio al lateral; sin ella, el
+    // ancho clásico de lectura (max-w-4xl) y una sola columna.
+    <section className={`mx-auto px-4 py-8 ${ADS_ENABLED ? "max-w-7xl" : "max-w-4xl"}`}>
       <Link href="/calculadoras" className="text-sm font-medium text-brand hover:underline">
         ← {t("back")}
       </Link>
@@ -30,13 +33,28 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
       </h1>
       <p className="mt-2 max-w-2xl text-muted">{intro}</p>
 
-      <div className="mt-6">{children}</div>
+      {/* Dos columnas (contenido + lateral fijo) solo si hay publicidad y a partir
+          de lg. En móvil el lateral se oculta y el banner del final cubre. */}
+      <div className={ADS_ENABLED ? "mt-6 lg:flex lg:items-start lg:gap-8" : "mt-6"}>
+        <div className={ADS_ENABLED ? "min-w-0 lg:flex-1" : ""}>
+          {children}
 
-      <p className="mt-8 text-xs text-muted">{t("disclaimerShort")}</p>
+          <p className="mt-8 text-xs text-muted">{t("disclaimerShort")}</p>
 
-      <AdSlot className="mt-6" />
+          {/* Banner horizontal tras la herramienta (todos los tamaños). */}
+          <AdSlot className="mt-6" />
 
-      {slug && <CalculatorExplainer calcSlug={slug} />}
+          {slug && <CalculatorExplainer calcSlug={slug} />}
+        </div>
+
+        {/* Lateral fijo: solo desktop y solo con publicidad. Sticky en el propio
+            <aside> para que siga visible al hacer scroll (no en un div hijo). */}
+        {ADS_ENABLED && (
+          <aside className="sticky top-24 hidden w-[300px] shrink-0 lg:block">
+            <AdSlot previewMinH="min-h-[600px]" />
+          </aside>
+        )}
+      </div>
     </section>
   );
 }
