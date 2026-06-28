@@ -1,7 +1,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Header,
   HttpCode,
   HttpStatus,
   Post,
@@ -12,7 +14,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Response } from 'express';
 
-import { AuthService, type SessionUser } from './auth.service';
+import { AuthService, type AccountExport, type SessionUser } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { RequestLinkDto } from './dto/request-link.dto';
 import { VerifyDto } from './dto/verify.dto';
@@ -62,6 +64,32 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: SessionUser): SessionUser {
     return user;
+  }
+
+  /**
+   * RGPD — derecho de acceso/portabilidad: descarga un JSON con el email del usuario y
+   * TODAS sus posiciones. El `userId` se lee del JWT. La cabecera fuerza la descarga.
+   */
+  @Get('account/export')
+  @UseGuards(JwtAuthGuard)
+  @Header('Content-Disposition', 'attachment; filename="sextante-datos.json"')
+  exportAccount(@CurrentUser() user: SessionUser): Promise<AccountExport> {
+    return this.auth.exportData(user);
+  }
+
+  /**
+   * RGPD — derecho de supresión: borra la cuenta del usuario autenticado (sus posiciones
+   * caen por cascade) y limpia la cookie de sesión. El `userId` se lee del JWT.
+   */
+  @Delete('account')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAccount(
+    @CurrentUser() user: SessionUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    await this.auth.deleteAccount(user.id);
+    res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
   }
 
   private cookieOptions(): CookieOptions {

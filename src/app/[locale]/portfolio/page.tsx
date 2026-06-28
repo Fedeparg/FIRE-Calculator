@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/lib/session";
 import { fetchPositions } from "@/lib/portfolio.server";
+import { Link } from "@/i18n/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PortfolioClient from "@/components/portfolio/PortfolioClient";
 
@@ -20,6 +21,7 @@ export default async function PortfolioPage({ params }: Props) {
   }
 
   const t = await getTranslations("auth.portfolio");
+  const tAccount = await getTranslations("account");
   const positions = await fetchPositions();
 
   return (
@@ -29,7 +31,15 @@ export default async function PortfolioPage({ params }: Props) {
           <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted">{t("greeting", { email: user.email })}</p>
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-3">
+          <Link
+            href="/portfolio/cuenta"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-2"
+          >
+            {tAccount("link")}
+          </Link>
+          <LogoutButton />
+        </div>
       </div>
       <PortfolioClient initialPositions={positions} />
     </div>

@@ -24,5 +24,8 @@ import { PositionsService } from './positions.service';
   ],
   controllers: [PositionsController],
   providers: [PositionsService, JwtAuthGuard],
+  // Exportado para que el módulo de auth pueda reutilizarlo en la exportación RGPD
+  // de datos del usuario (GET /auth/account/export), sin duplicar el acceso a datos.
+  exports: [PositionsService],
 })
 export class PositionsModule {}

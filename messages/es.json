@@ -1000,6 +1000,36 @@
       "combining": "Combinando…"
     }
   },
+  "account": {
+    "link": "Mi cuenta",
+    "title": "Mi cuenta",
+    "subtitle": "Gestiona tus datos personales y tu cuenta.",
+    "back": "Volver a la cartera",
+    "export": {
+      "title": "Exportar mis datos",
+      "description": "Descarga un archivo JSON con tu correo y todas tus posiciones.",
+      "button": "Exportar mis datos",
+      "exporting": "Exportando…",
+      "error": "No se pudieron exportar tus datos. Inténtalo de nuevo."
+    },
+    "danger": {
+      "title": "Zona de peligro"
+    },
+    "delete": {
+      "title": "Borrar mi cuenta",
+      "description": "Esta acción es permanente: se eliminarán tu cuenta y todas tus posiciones. No se puede deshacer.",
+      "confirmLabel": "Para confirmar, escribe tu correo {email}:",
+      "placeholder": "tu@correo.com",
+      "button": "Borrar mi cuenta permanentemente",
+      "deleting": "Borrando…",
+      "success": "Tu cuenta ha sido borrada. Te llevamos al inicio…"
+    },
+    "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+    "errorSession": "Tu sesión ha caducado.",
+    "errorSessionLink": "Vuelve a iniciar sesión",
+    "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+  },
   "legal": {
     "lastUpdated": "Última actualización: {date}"
   }
