@@ -40,6 +40,10 @@ jobs:
           REVALIDATE_TOKEN: ${{ secrets.REVALIDATE_TOKEN }}
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
           RCLONE_CONF_BASE64: ${{ secrets.RCLONE_CONF_BASE64 }}
+          # IDs PÚBLICOS de AdSense (no secretos): van por Variables, no Secrets.
+          # Vacíos = sin anuncios. Se hornean en el build de `web` (NEXT_PUBLIC_*).
+          NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
+          NEXT_PUBLIC_ADSENSE_SLOT: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT }}
         run: |
           umask 077
           # Heredoc SIN -x: los valores se expanden desde el entorno del step
@@ -60,6 +64,8 @@ jobs:
           REVALIDATE_TOKEN=${REVALIDATE_TOKEN}
           BACKUP_GPG_PASSPHRASE=${BACKUP_GPG_PASSPHRASE}
           RCLONE_CONF_BASE64=${RCLONE_CONF_BASE64}
+          NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID}
+          NEXT_PUBLIC_ADSENSE_SLOT=${NEXT_PUBLIC_ADSENSE_SLOT}
           EOF
 
       - name: Construir y levantar el stack
