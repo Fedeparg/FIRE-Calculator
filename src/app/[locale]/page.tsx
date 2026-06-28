@@ -5,6 +5,7 @@ import { CALCULATORS } from "@/core/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
 import Hero from "@/components/landing/Hero";
 import Pillars from "@/components/landing/Pillars";
+import FeatureMcp from "@/components/landing/FeatureMcp";
 import Categories, { type LandingCategory } from "@/components/landing/Categories";
 import LearnCallout from "@/components/landing/LearnCallout";
 import DisclaimerBanner from "@/components/landing/DisclaimerBanner";
@@ -34,6 +35,7 @@ export default async function Landing({ params }: Props) {
     <>
       <Hero />
       <Pillars />
+      <FeatureMcp />
       <Categories categories={categories} />
       <LearnCallout />
       <DisclaimerBanner />

@@ -258,6 +258,26 @@ export function IconNavProfile({ className }: SvgProps) {
   );
 }
 
+/**
+ * Símbolo de IA (monocromo): chispa/«sparkle», el glifo universal de IA. Hereda el
+ * color del contexto vía `currentColor`, así que sirve sobre cualquier fondo del tema.
+ */
+export function IconAi({ className }: SvgProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      role="presentation"
+      aria-hidden="true"
+      focusable="false"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M11 3 C11.5 8.2 12.4 9.6 18 11 C12.4 12.4 11.5 13.8 11 19 C10.5 13.8 9.6 12.4 4 11 C9.6 9.6 10.5 8.2 11 3 Z" />
+      <path d="M18.5 13.5 C18.7 15.6 19.1 16.1 21 16.7 C19.1 17.3 18.7 17.8 18.5 19.9 C18.3 17.8 17.9 17.3 16 16.7 C17.9 16.1 18.3 15.6 18.5 13.5 Z" />
+    </svg>
+  );
+}
+
 /** Onda decorativa de separación (rumbo / mar). */
 export function WaveDivider({ className }: SvgProps) {
   return (

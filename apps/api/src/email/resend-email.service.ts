@@ -31,6 +31,7 @@ export class ResendEmailService implements EmailService {
   private readonly logger = new Logger('Email(resend)');
   private readonly resend: Resend;
   private readonly from: string;
+  private readonly appUrl: string;
 
   constructor(config: ConfigService) {
     const apiKey = config.get<string>('RESEND_API_KEY');
@@ -42,6 +43,9 @@ export class ResendEmailService implements EmailService {
     }
     this.resend = new Resend(apiKey);
     this.from = config.get<string>('EMAIL_FROM') ?? DEFAULT_FROM;
+    // Base absoluta para el logo del email (los clientes de correo no resuelven rutas
+    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`.
+    this.appUrl = config.get<string>('APP_URL') ?? 'https://sextante.fpardo.net';
   }
 
   async sendMagicLink(to: string, link: string): Promise<void> {
@@ -78,6 +82,7 @@ export class ResendEmailService implements EmailService {
   /** Versión HTML con estilos en línea (los clientes de correo no aplican CSS externo). */
   private buildHtml(link: string): string {
     const safeLink = this.escapeHtml(link);
+    const logoUrl = `${this.appUrl}/email-logo.png`;
     return `<!doctype html>
 <html lang="es">
   <body style="margin:0;padding:0;background-color:#f4f5f7;">
@@ -87,7 +92,9 @@ export class ResendEmailService implements EmailService {
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
             <tr>
               <td style="padding:32px 32px 8px 32px;">
-                <p style="margin:0;font-size:20px;font-weight:700;color:#0f172a;">Sextante</p>
+                <p style="margin:0;font-size:20px;font-weight:700;color:#0f172a;">
+                  <img src="${logoUrl}" width="42" height="40" alt="" style="vertical-align:middle;margin-right:10px;border:0;" />Sextante
+                </p>
               </td>
             </tr>
             <tr>

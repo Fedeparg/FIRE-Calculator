@@ -12,15 +12,15 @@
   "landing": {
     "meta": {
       "title": "Sextante — Toma el rumbo de tu dinero",
-      "description": "Calculadoras claras y, muy pronto, tu cartera de inversiones en un mismo sitio, pensadas para el sistema bancario y fiscal español. Información orientativa para que tomes el control de tu dinero."
+      "description": "Calculadoras claras y tu cartera de inversiones en un mismo sitio, para el sistema bancario y fiscal español. Reúne lo que tienes en distintos bancos, síguelo con cotizaciones al día y, si quieres, conéctalo a tu propio asistente de IA."
     },
     "hero": {
       "eyebrow": "Finanzas personales para España",
       "brand": "Sextante",
       "tagline": "Toma el rumbo de tu dinero",
-      "subcopy": "Calculadoras claras para cada decisión y, muy pronto, toda tu inversión en un mismo sitio: reúne lo que tienes en distintos bancos y síguelo con cotizaciones al día. Información para decidir tú; no es asesoramiento.",
+      "subcopy": "Calculadoras claras para cada decisión y toda tu inversión en un mismo sitio: reúne lo que tienes en distintos bancos, síguelo con cotizaciones al día y, si quieres, conéctalo a tu propio asistente de IA. La visión completa de tu dinero, para que las decisiones las tomes tú.",
       "ctaCalculators": "Explorar calculadoras",
-      "ctaLearn": "Aprende"
+      "ctaPortfolio": "Crea tu cartera"
     },
     "pillars": {
       "heading": "Tu instrumento para orientarte",
@@ -36,11 +36,11 @@
         },
         "learn": {
           "title": "Entiende lo que calculas",
-          "body": "Guías claras en la sección Aprende para saber qué calculas y por qué, sin jerga."
+          "body": "Guías claras en Aprende para entender qué calculas y por qué, paso a paso."
         },
         "portfolio": {
-          "title": "Tu cartera, en un sitio",
-          "body": "Muy pronto: reúne tus inversiones de varios bancos y sigue todo tu patrimonio con cotizaciones actualizadas."
+          "title": "Toda tu inversión, en un sitio",
+          "body": "Reúne tus inversiones de varios bancos y sigue todo tu patrimonio con cotizaciones al día."
         }
       }
     },
@@ -55,8 +55,14 @@
       "body": "En Aprende encontrarás guías sencillas sobre interés compuesto, hipotecas, inversión e independencia financiera. Pensadas para entenderlo todo desde el principio.",
       "cta": "Ir a Aprende"
     },
+    "mcp": {
+      "badge": "Novedad",
+      "heading": "Conecta tu propio asistente de IA",
+      "body": "Sextante expone tu cartera mediante MCP, el estándar abierto para conectar modelos de IA. Enlaza tu propio Claude o ChatGPT y deja que analice tus inversiones con tus datos reales: el asistente lo pones tú; nosotros, la información.",
+      "cta": "Crea tu cartera"
+    },
     "disclaimer": {
-      "body": "Sextante ofrece información orientativa con fines educativos y no constituye asesoramiento financiero ni fiscal. No tomes decisiones basándote únicamente en estos cálculos: contrasta siempre con un profesional y con las fuentes oficiales."
+      "body": "Sextante ofrece información orientativa con fines informativos y no constituye asesoramiento financiero ni fiscal. No tomes decisiones basándote únicamente en estos cálculos: contrasta siempre con un profesional y con las fuentes oficiales."
     }
   },
   "wiki": {

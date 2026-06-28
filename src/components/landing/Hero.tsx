@@ -22,8 +22,8 @@ export default function Hero() {
             <CtaLink href="/calculadoras" variant="primary">
               {t("ctaCalculators")}
             </CtaLink>
-            <CtaLink href="/aprende" variant="secondary">
-              {t("ctaLearn")}
+            <CtaLink href="/portfolio" variant="secondary">
+              {t("ctaPortfolio")}
             </CtaLink>
           </div>
         </div>

@@ -12,15 +12,15 @@
   "landing": {
     "meta": {
       "title": "Sextante — Take the helm of your money",
-      "description": "Clear calculators and, soon, your investment portfolio in one place, built for the Spanish banking and tax system. Indicative information to help you take control of your money."
+      "description": "Clear calculators and your investment portfolio in one place, built for the Spanish banking and tax system. Bring together what you hold across different banks, track it with up-to-date prices and, if you like, connect it to your own AI assistant."
     },
     "hero": {
       "eyebrow": "Personal finance for Spain",
       "brand": "Sextante",
       "tagline": "Take the helm of your money",
-      "subcopy": "Clear calculators for every decision and, soon, all your investments in one place: bring together what you hold across different banks and track it with up-to-date prices. Information for you to decide; not advice.",
+      "subcopy": "Clear calculators for every decision and all your investments in one place: bring together what you hold across different banks, track it with up-to-date prices and, if you like, connect it to your own AI assistant. The full picture of your money, so the decisions are yours.",
       "ctaCalculators": "Explore calculators",
-      "ctaLearn": "Learn"
+      "ctaPortfolio": "Create your portfolio"
     },
     "pillars": {
       "heading": "Your instrument to find your bearings",
@@ -36,11 +36,11 @@
         },
         "learn": {
           "title": "Understand what you calculate",
-          "body": "Clear guides in the Learn section to know what you calculate and why, without jargon."
+          "body": "Clear guides in Learn to understand what you calculate and why, step by step."
         },
         "portfolio": {
-          "title": "Your portfolio, in one place",
-          "body": "Coming soon: bring together your investments from several banks and track your whole net worth with up-to-date prices."
+          "title": "All your investments, in one place",
+          "body": "Bring together your investments from several banks and track your whole net worth with up-to-date prices."
         }
       }
     },
@@ -55,8 +55,14 @@
       "body": "In Learn you'll find simple guides on compound interest, mortgages, investing and financial independence. Written to understand everything from the ground up.",
       "cta": "Go to Learn"
     },
+    "mcp": {
+      "badge": "New",
+      "heading": "Connect your own AI assistant",
+      "body": "Sextante exposes your portfolio over MCP, the open standard for connecting AI models. Link your own Claude or ChatGPT and let it analyze your investments with your real data: you bring the assistant, we bring the information.",
+      "cta": "Create your portfolio"
+    },
     "disclaimer": {
-      "body": "Sextante provides indicative information for educational purposes and does not constitute financial or tax advice. Don't make decisions based on these calculations alone: always check with a professional and official sources."
+      "body": "Sextante provides indicative information for informational purposes and does not constitute financial or tax advice. Don't make decisions based on these calculations alone: always check with a professional and official sources."
     }
   },
   "wiki": {
