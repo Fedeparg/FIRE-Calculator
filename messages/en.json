@@ -1000,6 +1000,36 @@
       "combining": "Combining…"
     }
   },
+  "account": {
+    "link": "My account",
+    "title": "My account",
+    "subtitle": "Manage your personal data and your account.",
+    "back": "Back to portfolio",
+    "export": {
+      "title": "Export my data",
+      "description": "Download a JSON file with your email and all your positions.",
+      "button": "Export my data",
+      "exporting": "Exporting…",
+      "error": "We couldn't export your data. Please try again."
+    },
+    "danger": {
+      "title": "Danger zone"
+    },
+    "delete": {
+      "title": "Delete my account",
+      "description": "This action is permanent: your account and all your positions will be deleted. It cannot be undone.",
+      "confirmLabel": "To confirm, type your email {email}:",
+      "placeholder": "you@email.com",
+      "button": "Delete my account permanently",
+      "deleting": "Deleting…",
+      "success": "Your account has been deleted. Taking you home…"
+    },
+    "errorNetwork": "We couldn't reach the server. Check your connection and try again.",
+    "errorSession": "Your session has expired.",
+    "errorSessionLink": "Sign in again",
+    "errorServer": "A server error occurred. Please try again in a few moments.",
+    "errorGeneric": "We couldn't complete the operation. Please try again."
+  },
   "legal": {
     "lastUpdated": "Last updated: {date}"
   }
