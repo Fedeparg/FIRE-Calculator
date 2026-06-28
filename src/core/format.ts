@@ -65,21 +65,56 @@ export const formatPercent = (n: number): string =>
 const currencyFormatters = new Map<string, Intl.NumberFormat>();
 
 /**
- * Moneda con 2 decimales en una divisa arbitraria (EUR/USD/GBP…), para las posiciones
- * de la cartera, que pueden estar en distintas monedas. Mantiene es-ES como locale
- * (separadores españoles) variando solo el símbolo de divisa.
+ * Moneda en una divisa arbitraria (EUR/USD/GBP/JPY…), para las posiciones de la cartera,
+ * que pueden estar en distintas monedas. Mantiene es-ES como locale (separadores
+ * españoles) variando solo el símbolo de divisa. Los decimales los decide `Intl` por
+ * divisa (EUR/USD → 2, JPY → 0), así que no se hardcodean: forzar 2 rompería el yen.
  */
 export const formatCurrency = (n: number, currency: string): string => {
   if (!Number.isFinite(n)) return NON_FINITE;
   let fmt = currencyFormatters.get(currency);
   if (!fmt) {
-    fmt = new Intl.NumberFormat("es-ES", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    fmt = new Intl.NumberFormat("es-ES", { style: "currency", currency });
     currencyFormatters.set(currency, fmt);
   }
   return fmt.format(n);
+};
+
+// Caché de símbolos de divisa (Intl es caro; el símbolo es estable por divisa).
+const currencySymbols = new Map<string, string>();
+
+/**
+ * Símbolo corto de una divisa ("€", "$", "£", "¥", "CHF"…) en locale es-ES. Útil para
+ * etiquetas compactas (selector de divisas). OJO: varios símbolos colisionan ($ → USD/
+ * CAD/AUD/HKD/SGD; ¥ → JPY/CNY), así que en la UI se acompaña SIEMPRE del código ISO.
+ * Si la divisa no tiene símbolo propio (p. ej. CHF), `narrowSymbol` devuelve el código.
+ */
+export const currencySymbol = (currency: string): string => {
+  let symbol = currencySymbols.get(currency);
+  if (symbol === undefined) {
+    const parts = new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+    }).formatToParts(0);
+    symbol = parts.find((p) => p.type === "currency")?.value ?? currency;
+    currencySymbols.set(currency, symbol);
+  }
+  return symbol;
+};
+
+/**
+ * Etiqueta compacta de una divisa para selectores: "€ EUR", "$ USD"… El código ISO va
+ * SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY). Si la divisa
+ * no tiene símbolo propio (CHF), `currencySymbol` ya devuelve el código y no se duplica.
+ */
+export const currencyLabel = (currency: string): string => {
+  const symbol = currencySymbol(currency);
+  return symbol === currency ? currency : `${symbol} ${currency}`;
+};
+
+/** Reformatea una fecha ISO "YYYY-MM-DD" a "DD/MM/YYYY" sin construir un Date (sin desfase de zona). */
+export const formatIsoDate = (iso: string): string => {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
 };

@@ -47,6 +47,56 @@ pnpm db:migrate   # aplica las migraciones pendientes
 pnpm db:studio    # explorador visual de la BD
 ```
 
+## Email (Resend)
+
+El login es **passwordless**: la API genera un _magic link_ y lo envía por email.
+Hay dos transportes, seleccionados por `EMAIL_TRANSPORT`:
+
+- `dev` (por defecto): **no envía nada**, escribe el enlace en el log. Útil en local.
+- `resend`: envío real vía [Resend](https://resend.com). Para producción.
+
+### Activar el transporte en producción
+
+En el `.env` del servidor (nunca en el repo):
+
+```bash
+EMAIL_TRANSPORT=resend
+RESEND_API_KEY=re_...                          # Resend -> Settings -> API Keys
+EMAIL_FROM=Sextante <no-reply@send.fpardo.net> # opcional; este es el valor por defecto
+```
+
+Si `EMAIL_TRANSPORT=resend` y falta `RESEND_API_KEY`, **la API falla al arrancar**
+con un error claro (preferimos un fallo ruidoso a enviar a un agujero negro).
+
+### Verificar el dominio de envío (DNS)
+
+Enviamos desde un **subdominio dedicado** `send.fpardo.net` (no desde el dominio
+raíz) para aislar la reputación de envío del correo personal/corporativo.
+
+1. Crea una cuenta en Resend y, en **Domains -> Add Domain**, añade `send.fpardo.net`.
+2. Resend mostrará un conjunto de **registros DNS concretos para tu dominio**.
+   Cópialos **tal cual** (los valores exactos —en especial la clave DKIM— los genera
+   Resend y varían por dominio y región; **no los inventes**) en el panel DNS de
+   `fpardo.net` (donde tengas la zona: Hetzner, Cloudflare, registrador…).
+3. Espera a que Resend marque el dominio como **Verified** (la propagación DNS puede
+   tardar de minutos a unas horas).
+
+Los registros que Resend pedirá son, típicamente:
+
+| Tipo | Host (ejemplo) | Para qué sirve |
+|---|---|---|
+| **MX** | `send.fpardo.net` | Return-Path / gestión de rebotes del subdominio de envío. Necesario para verificar; usa el destino y prioridad que indique Resend. |
+| **TXT (SPF)** | `send.fpardo.net` | Autoriza a los servidores de Resend a enviar en nombre del dominio (`v=spf1 include:…`). |
+| **TXT (DKIM)** | `resend._domainkey.send.fpardo.net` (o el host que indique Resend) | Firma criptográfica que prueba que el correo no se ha manipulado. Es la clave pública que genera Resend. |
+| **TXT (DMARC)** _(recomendado)_ | `_dmarc.send.fpardo.net` | Política sobre qué hacer con correo que falle SPF/DKIM y a dónde mandar informes. Empieza laxo, p. ej. `v=DMARC1; p=none; rua=mailto:tu@correo`. |
+
+> Los valores **exactos** (destino MX, cadena SPF, clave DKIM) son los que muestra
+> Resend al añadir el dominio. Esta tabla solo explica **qué es cada registro y dónde
+> va**; copia siempre los de tu panel de Resend.
+
+Comprueba el flujo completo en prod pidiendo un magic link a tu propia dirección: el
+correo debe llegar desde `no-reply@send.fpardo.net` con el botón **Entrar en Sextante**.
+
 ## Scripts
 
 - `pnpm dev` · `pnpm build` · `pnpm start`

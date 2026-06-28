@@ -8,11 +8,26 @@ import { and, eq, gt, isNull } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module';
 import { loginTokens, users, type User } from '../db/schema';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service';
+import {
+  PositionsService,
+  type PositionResponse,
+} from '../positions/positions.service';
 
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos
 
 export type SessionUser = { id: string; email: string };
+
+/**
+ * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye
+ * el email de la cuenta y TODAS sus posiciones. Si se añaden más datos personales en el
+ * futuro, deben sumarse aquí para que la exportación siga siendo completa.
+ */
+export type AccountExport = {
+  email: string;
+  exportedAt: string;
+  positions: PositionResponse[];
+};
 
 @Injectable()
 export class AuthService {
@@ -23,6 +38,7 @@ export class AuthService {
     @Inject(EMAIL_SERVICE) private readonly email: EmailService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly positions: PositionsService,
   ) {}
 
   /**
@@ -76,6 +92,27 @@ export class AuthService {
   /** Firma el JWT de sesión para un usuario. */
   signSession(user: SessionUser): Promise<string> {
     return this.jwt.signAsync({ sub: user.id, email: user.email });
+  }
+
+  /**
+   * Exporta todos los datos personales del usuario (RGPD): su email y todas sus
+   * posiciones. El `userId` viene SIEMPRE del JWT, nunca del cliente.
+   */
+  async exportData(user: SessionUser): Promise<AccountExport> {
+    const positions = await this.positions.findAllByUser(user.id);
+    return {
+      email: user.email,
+      exportedAt: new Date().toISOString(),
+      positions,
+    };
+  }
+
+  /**
+   * Borra la cuenta del usuario (RGPD: derecho de supresión). Elimina la fila de
+   * `users`; las `positions` caen por `ON DELETE CASCADE`. El `userId` viene del JWT.
+   */
+  async deleteAccount(userId: string): Promise<void> {
+    await this.db.delete(users).where(eq(users.id, userId));
   }
 
   private async upsertUser(email: string): Promise<User> {

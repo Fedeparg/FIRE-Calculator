@@ -3,12 +3,15 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
 
-// URL de la API. En dev apunta a la API local (NestJS); en prod, Caddy enruta
-// /api al servicio de la API en el mismo dominio (same-origin), así que el
-// rewrite solo es necesario fuera de producción.
+// URL de la API. En dev apunta a la API local (NestJS); en prod, el servicio web
+// (BFF) proxea /api al servicio `api` por la red interna de Compose
+// (http://api:3001), manteniendo el navegador en same-origin.
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 const nextConfig: NextConfig = {
+  // Salida autocontenida (server.js + node_modules mínimo) para la imagen Docker
+  // de producción. Ver Dockerfile.web.
+  output: "standalone",
   async rewrites() {
     return [
       {

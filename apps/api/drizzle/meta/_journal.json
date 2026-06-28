@@ -22,6 +22,34 @@
       "when": 1782592154145,
       "tag": "0002_amused_firestar",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782594443399,
+      "tag": "0003_cool_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782595865957,
+      "tag": "0004_lethal_toad",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782633820961,
+      "tag": "0005_steep_quentin_quire",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1782637155356,
+      "tag": "0006_black_reavers",
+      "breakpoints": true
     }
   ]
 }

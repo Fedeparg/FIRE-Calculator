@@ -937,14 +937,33 @@
       "title": "Aún no tienes posiciones",
       "body": "Añade tu primera inversión con el formulario de abajo para verla aquí."
     },
+    "summary": {
+      "title": "Total de la cartera",
+      "displayIn": "Ver en",
+      "invested": "Invertido",
+      "marketValue": "Valor actual",
+      "pnl": "Ganancia/pérdida",
+      "noData": "Aún no hay precios para calcular el total. Vuelve cuando se haya actualizado el mercado.",
+      "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
+      "fxAsOf": "Tipos de cambio a {date}."
+    },
     "list": {
       "ticker": "Símbolo / ISIN",
       "name": "Nombre",
       "quantity": "Cantidad",
       "avgPrice": "Precio medio",
       "broker": "Bróker",
-      "value": "Valor estimado",
+      "invested": "Invertido",
+      "marketValue": "Valor actual",
+      "pnl": "P&L",
+      "pnlMode": "P&L en",
+      "pnlModePct": "%",
+      "pnlModeAbs": "Importe",
+      "priceAsOf": "Precio a {date}",
+      "noPrice": "Aún no hay precio de mercado para este símbolo.",
+      "currencyMismatch": "El precio está en {price} y la posición en {position}: no se compara sin conversión.",
       "actions": "Acciones",
+      "edit": "Editar",
       "delete": "Eliminar",
       "confirm": "Sí, eliminar",
       "cancel": "Cancelar",
@@ -952,6 +971,7 @@
     },
     "form": {
       "title": "Añadir posición",
+      "editTitle": "Editar {ticker}",
       "ticker": "Símbolo o ISIN",
       "tickerPlaceholder": "p. ej. IWDA o IE00B4L5Y983",
       "name": "Nombre",
@@ -959,12 +979,56 @@
       "quantity": "Cantidad",
       "avgPrice": "Precio medio de compra",
       "broker": "Bróker",
-      "brokerPlaceholder": "p. ej. MyInvestor",
+      "brokerPlaceholder": "p. ej. MyInvestor (opcional)",
+      "brokerRequired": "Ya tienes este símbolo: indica un bróker para distinguir esta posición.",
+      "brokerCannotEmpty": "No puedes dejar sin bróker una posición que ya lo tiene. Cámbialo por otro o déjalo como está.",
       "currency": "Divisa",
       "submit": "Añadir posición",
       "submitting": "Añadiendo…",
-      "error": "No se pudo añadir la posición. Revisa los datos e inténtalo de nuevo."
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorSession": "Tu sesión ha caducado.",
+      "errorSessionLink": "Vuelve a iniciar sesión",
+      "errorInvalid": "Revisa el formulario: hay algún campo con un valor no válido.",
+      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
+      "duplicate": "Ya tienes {ticker} en {broker}.",
+      "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
+      "combine": "Combinar con la existente",
+      "combining": "Combinando…"
     }
+  },
+  "account": {
+    "link": "Mi cuenta",
+    "title": "Mi cuenta",
+    "subtitle": "Gestiona tus datos personales y tu cuenta.",
+    "back": "Volver a la cartera",
+    "export": {
+      "title": "Exportar mis datos",
+      "description": "Descarga un archivo JSON con tu correo y todas tus posiciones.",
+      "button": "Exportar mis datos",
+      "exporting": "Exportando…",
+      "error": "No se pudieron exportar tus datos. Inténtalo de nuevo."
+    },
+    "danger": {
+      "title": "Zona de peligro"
+    },
+    "delete": {
+      "title": "Borrar mi cuenta",
+      "description": "Esta acción es permanente: se eliminarán tu cuenta y todas tus posiciones. No se puede deshacer.",
+      "confirmLabel": "Para confirmar, escribe tu correo {email}:",
+      "placeholder": "tu@correo.com",
+      "button": "Borrar mi cuenta permanentemente",
+      "deleting": "Borrando…",
+      "success": "Tu cuenta ha sido borrada. Te llevamos al inicio…"
+    },
+    "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+    "errorSession": "Tu sesión ha caducado.",
+    "errorSessionLink": "Vuelve a iniciar sesión",
+    "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
   },
   "legal": {
     "lastUpdated": "Última actualización: {date}"

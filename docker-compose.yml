@@ -70,6 +70,9 @@ services:
       EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-dev}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      # Resolución ISIN/ticker → símbolo (OpenFIGI) y cadencia del refresco de precios.
+      OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
+      PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
     ports:
       - '3001:3001'
     depends_on:

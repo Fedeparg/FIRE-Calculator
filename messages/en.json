@@ -937,14 +937,33 @@
       "title": "You don't have any positions yet",
       "body": "Add your first investment with the form below to see it here."
     },
+    "summary": {
+      "title": "Portfolio total",
+      "displayIn": "Show in",
+      "invested": "Invested",
+      "marketValue": "Current value",
+      "pnl": "Profit/loss",
+      "noData": "No prices yet to compute the total. Check back once the market has refreshed.",
+      "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
+      "fxAsOf": "Exchange rates as of {date}."
+    },
     "list": {
       "ticker": "Symbol / ISIN",
       "name": "Name",
       "quantity": "Quantity",
       "avgPrice": "Avg. price",
       "broker": "Broker",
-      "value": "Estimated value",
+      "invested": "Invested",
+      "marketValue": "Current value",
+      "pnl": "P&L",
+      "pnlMode": "P&L in",
+      "pnlModePct": "%",
+      "pnlModeAbs": "Amount",
+      "priceAsOf": "Price as of {date}",
+      "noPrice": "No market price yet for this symbol.",
+      "currencyMismatch": "Price is in {price} and the position in {position}: not compared without conversion.",
       "actions": "Actions",
+      "edit": "Edit",
       "delete": "Delete",
       "confirm": "Yes, delete",
       "cancel": "Cancel",
@@ -952,6 +971,7 @@
     },
     "form": {
       "title": "Add position",
+      "editTitle": "Edit {ticker}",
       "ticker": "Symbol or ISIN",
       "tickerPlaceholder": "e.g. IWDA or IE00B4L5Y983",
       "name": "Name",
@@ -959,12 +979,56 @@
       "quantity": "Quantity",
       "avgPrice": "Average buy price",
       "broker": "Broker",
-      "brokerPlaceholder": "e.g. MyInvestor",
+      "brokerPlaceholder": "e.g. MyInvestor (optional)",
+      "brokerRequired": "You already have this symbol: enter a broker to tell this position apart.",
+      "brokerCannotEmpty": "You can't remove the broker from a position that already has one. Change it to another or leave it as is.",
       "currency": "Currency",
       "submit": "Add position",
       "submitting": "Adding…",
-      "error": "Couldn't add the position. Check the data and try again."
+      "save": "Save changes",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "errorNetwork": "Couldn't reach the server. Check your connection and try again.",
+      "errorSession": "Your session has expired.",
+      "errorSessionLink": "Sign in again",
+      "errorInvalid": "Check the form: a field has an invalid value.",
+      "errorServer": "Something went wrong on the server. Please try again in a moment.",
+      "errorGeneric": "Couldn't complete the operation. Please try again.",
+      "duplicate": "You already have {ticker} at {broker}.",
+      "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
+      "combine": "Combine with existing",
+      "combining": "Combining…"
     }
+  },
+  "account": {
+    "link": "My account",
+    "title": "My account",
+    "subtitle": "Manage your personal data and your account.",
+    "back": "Back to portfolio",
+    "export": {
+      "title": "Export my data",
+      "description": "Download a JSON file with your email and all your positions.",
+      "button": "Export my data",
+      "exporting": "Exporting…",
+      "error": "We couldn't export your data. Please try again."
+    },
+    "danger": {
+      "title": "Danger zone"
+    },
+    "delete": {
+      "title": "Delete my account",
+      "description": "This action is permanent: your account and all your positions will be deleted. It cannot be undone.",
+      "confirmLabel": "To confirm, type your email {email}:",
+      "placeholder": "you@email.com",
+      "button": "Delete my account permanently",
+      "deleting": "Deleting…",
+      "success": "Your account has been deleted. Taking you home…"
+    },
+    "errorNetwork": "We couldn't reach the server. Check your connection and try again.",
+    "errorSession": "Your session has expired.",
+    "errorSessionLink": "Sign in again",
+    "errorServer": "A server error occurred. Please try again in a few moments.",
+    "errorGeneric": "We couldn't complete the operation. Please try again."
   },
   "legal": {
     "lastUpdated": "Last updated: {date}"

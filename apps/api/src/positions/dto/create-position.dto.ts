@@ -11,8 +11,23 @@ import {
   Min,
 } from 'class-validator';
 
-/** Divisas admitidas para una posición (alineadas con el selector del frontend). */
-export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP'] as const;
+/**
+ * Divisas admitidas: las 10 más negociadas del mundo (turnover FX, BIS). EN PARIDAD con
+ * el `PORTFOLIO_CURRENCIES` del frontend: si difieren, una divisa válida en la UI podría
+ * dar 400 aquí (o viceversa).
+ */
+export const SUPPORTED_CURRENCIES = [
+  'EUR',
+  'USD',
+  'GBP',
+  'JPY',
+  'CHF',
+  'CAD',
+  'AUD',
+  'CNY',
+  'HKD',
+  'SGD',
+] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 /**
@@ -23,7 +38,7 @@ export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 // `numeric(18,6)` admite 12 dígitos enteros → máximo 999_999_999_999,999999. `@Max` es
 // inclusivo, así que el tope es el mayor entero de 12 dígitos: pasar de aquí da 400
 // (validación) en lugar de un overflow en la BD (500).
-const NUMERIC_MAX = 999_999_999_999;
+export const NUMERIC_MAX = 999_999_999_999;
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;
@@ -54,6 +69,8 @@ export class CreatePositionDto {
   @Max(NUMERIC_MAX)
   avgPrice!: number;
 
+  // Opcional a nivel de DTO: la regla "obligatorio si el símbolo ya existe" no se puede
+  // expresar aquí (depende de los datos del usuario), así que la aplica el servicio.
   @IsOptional()
   @IsString()
   @Transform(trim)
