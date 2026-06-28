@@ -93,6 +93,9 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
+        # Se hornea en build (el rewrite /api se congela en el manifiesto). En la
+        # red de Compose el web alcanza la API por el nombre de servicio.
+        API_URL: http://api:3001
         # IDs PÚBLICOS de AdSense (vacíos hasta activar publicidad). Se inlinean
         # en build; no son secretos.
         NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}

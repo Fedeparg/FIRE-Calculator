@@ -20,6 +20,14 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 RUN pnpm install --frozen-lockfile --filter freedom-calculator...
 
+# URL de la API. CRÍTICO: el rewrite /api/* de next.config se evalúa en BUILD
+# TIME y se congela en el manifiesto (el server standalone NO lo recalcula en
+# runtime). Por eso API_URL debe estar presente en `next build`, no solo como env
+# de runtime. En producción se hornea la red interna de Compose (http://api:3001):
+# el server de Next resuelve el destino en cada request, ya dentro de esa red.
+ARG API_URL=http://api:3001
+ENV API_URL=$API_URL
+
 # Variables PÚBLICAS de AdSense: Next las inlinea en el bundle en BUILD TIME, así
 # que tienen que estar presentes durante `next build` (no en runtime). Vacías por
 # defecto → el script de AdSense no se carga. Cuando se active la publicidad, el
