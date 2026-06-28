@@ -8,7 +8,8 @@ import { PRICE_PROVIDER } from './price-provider.interface';
 import { PricesController } from './prices.controller';
 import { PricesScheduler } from './prices.scheduler';
 import { PricesService } from './prices.service';
-import { IdentitySymbolResolver, SYMBOL_RESOLVER } from './symbol-resolver';
+import { OpenFigiSymbolResolver } from './openfigi-symbol-resolver';
+import { SYMBOL_RESOLVER } from './symbol-resolver';
 import { YahooPriceProvider } from './yahoo-price.provider';
 
 /**
@@ -33,7 +34,7 @@ import { YahooPriceProvider } from './yahoo-price.provider';
     PricesScheduler,
     JwtAuthGuard,
     { provide: PRICE_PROVIDER, useClass: YahooPriceProvider },
-    { provide: SYMBOL_RESOLVER, useClass: IdentitySymbolResolver },
+    { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
   ],
 })
 export class PricesModule {}

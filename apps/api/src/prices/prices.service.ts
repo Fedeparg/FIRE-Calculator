@@ -106,7 +106,9 @@ export class PricesService {
   async getPrices(tickers: string[]): Promise<Map<string, PriceInfo>> {
     const tickerToSymbol = new Map<string, string>();
     for (const ticker of tickers) {
-      const symbol = await this.resolver.resolve(ticker);
+      // Solo caché: la lectura del usuario NUNCA dispara OpenFIGI ni la fuente externa. Un
+      // símbolo aún sin resolver no tiene precio hasta que el refresco lo resuelva y cachee.
+      const symbol = await this.resolver.resolveCached(ticker);
       if (symbol) tickerToSymbol.set(ticker, symbol);
     }
 

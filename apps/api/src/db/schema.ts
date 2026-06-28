@@ -133,3 +133,25 @@ export const instrumentPrices = pgTable(
 
 export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
 export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
+
+/**
+ * Caché de resolución ticker/ISIN → símbolo de la fuente de precios. La traducción real
+ * (OpenFIGI: ISIN → ticker+mercado, validado contra Yahoo) es cara y NO cambia con el
+ * tiempo, así que se cachea aquí permanentemente.
+ *
+ * `query` es lo que el usuario tecleó, NORMALIZADO (trim + mayúsculas). `symbol` es el
+ * símbolo resuelto (p. ej. "EUNL.DE") o NULL si se confirmó que no existe (p. ej. OpenFIGI
+ * devolvió 0 coincidencias): cachear el "no encontrado" evita repetir la búsqueda. Los
+ * fallos transitorios (red, rate-limit de Yahoo) NO escriben fila, para no "bloquear" un
+ * símbolo válido por un hipo puntual. Ver `_local/datos-inversiones-api.md`.
+ */
+export const instruments = pgTable('instruments', {
+  query: varchar('query', { length: 40 }).primaryKey(),
+  symbol: varchar('symbol', { length: 40 }),
+  // Cómo se resolvió: "openfigi" | "identity" | "not_found" (trazabilidad).
+  source: varchar('source', { length: 20 }).notNull(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export type Instrument = typeof instruments.$inferSelect;
+export type NewInstrument = typeof instruments.$inferInsert;
