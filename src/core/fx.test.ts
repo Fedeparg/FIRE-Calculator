@@ -30,7 +30,7 @@ describe("convertCurrency", () => {
 describe("aggregatePortfolio", () => {
   const display = "EUR";
 
-  it("agrega solo posiciones con precio en la misma divisa, convirtiendo a la divisa elegida", () => {
+  it("agrega posiciones convirtiendo cada importe a la divisa elegida", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
@@ -54,25 +54,42 @@ describe("aggregatePortfolio", () => {
     expect(result.pnlPct).toBeCloseTo((result.pnlAbs / result.invested) * 100, 6);
   });
 
-  it("excluye posiciones sin precio o con divisa del precio distinta a la de la posición", () => {
+  it("convierte vía FX una posición cuyo precio cotiza en otra divisa que la del coste", () => {
+    // Coste declarado en EUR (lo que se pagó), pero el instrumento cotiza en USD.
+    const result = aggregatePortfolio({
+      display, // EUR
+      rates: RATES,
+      positions: [{ ticker: "BTC-USD", quantity: 1, avgPrice: 50_000, currency: "EUR" }],
+      prices: { "BTC-USD": { close: 60_000, currency: "USD" } },
+    });
+
+    // Invertido: 50 000 € (ya en display). Valor: 60 000 $ → 60 000/1,1 €.
+    expect(result.valued).toBe(1);
+    expect(result.invested).toBeCloseTo(50_000, 6);
+    expect(result.marketValue).toBeCloseTo(60_000 / 1.1, 6);
+    expect(result.pnlAbs).toBeCloseTo(60_000 / 1.1 - 50_000, 6);
+  });
+
+  it("excluye posiciones sin precio (pero las de divisa distinta SÍ entran, convertidas)", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
       positions: [
         { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR" }, // valorada
-        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR" }, // sin precio
-        { ticker: "MISMATCH", quantity: 1, avgPrice: 10, currency: "EUR" }, // precio en USD
+        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR" }, // sin precio → fuera
+        { ticker: "USDPRICE", quantity: 1, avgPrice: 10, currency: "EUR" }, // precio en USD → dentro
       ],
       prices: {
         "EUNL.DE": { close: 90, currency: "EUR" },
-        MISMATCH: { close: 12, currency: "USD" },
+        USDPRICE: { close: 12, currency: "USD" },
       },
     });
 
-    expect(result.valued).toBe(1);
+    expect(result.valued).toBe(2);
     expect(result.total).toBe(3);
-    expect(result.invested).toBeCloseTo(800, 6);
-    expect(result.marketValue).toBeCloseTo(900, 6);
+    // Invertido: 800 € + 10 € = 810 €. Valor: 900 € + 12 $/1,1.
+    expect(result.invested).toBeCloseTo(810, 6);
+    expect(result.marketValue).toBeCloseTo(900 + 12 / 1.1, 6);
   });
 
   it("excluye posiciones cuya divisa no es convertible (sin tasa)", () => {

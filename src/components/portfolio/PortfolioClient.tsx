@@ -137,6 +137,7 @@ export default function PortfolioClient({ initialPositions }: Props) {
           <PositionList
             positions={positions}
             prices={prices}
+            rates={fxRates?.rates ?? {}}
             editingId={editing?.id ?? null}
             onEdit={setEditing}
             onDeleted={handleDeleted}

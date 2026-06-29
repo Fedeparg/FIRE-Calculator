@@ -968,13 +968,13 @@
       "pnlModeAbs": "Amount",
       "priceAsOf": "Price as of {date}",
       "noPrice": "No market price yet for this symbol.",
-      "currencyMismatch": "Price is in {price} and the position in {position}: not compared without conversion.",
       "actions": "Actions",
       "edit": "Edit",
       "delete": "Delete",
       "confirm": "Yes, delete",
       "cancel": "Cancel",
-      "deleting": "Deleting…"
+      "deleting": "Deleting…",
+      "noFxRate": "No {price}→{position} exchange rate yet to convert the value."
     },
     "form": {
       "title": "Add position",

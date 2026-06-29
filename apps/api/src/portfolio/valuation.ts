@@ -55,11 +55,13 @@ export interface PortfolioAggregate {
 }
 
 /**
- * Agrega la cartera a una divisa elegida. Una posición SOLO cuenta si: (1) hay precio,
- * (2) el precio viene en la misma divisa que la posición —misma regla que el P&L por fila,
- * no mezclamos divisas— y (3) su divisa es convertible a `display`. Las que no cumplan se
- * excluyen. Invertido, valor y P&L se calculan sobre el MISMO subconjunto para que
- * P&L = valor − invertido cuadre siempre.
+ * Agrega la cartera a una divisa elegida, CONVIRTIENDO cada importe con las tasas FX
+ * diarias. Una posición cuenta si: (1) hay precio y (2) tanto su divisa de coste como la
+ * divisa del precio son convertibles a `display`. **El coste se convierte desde la divisa de
+ * la posición (`p.currency`, en la que está `avgPrice`) y el valor desde la divisa del precio
+ * (`price.currency`, la nativa del instrumento)**: pueden diferir (p. ej. compraste en EUR un
+ * activo que cotiza en USD) y el FX las unifica. Invertido, valor y P&L se calculan sobre el
+ * MISMO subconjunto para que P&L = valor − invertido cuadre siempre.
  */
 export function aggregatePortfolio({
   positions,
@@ -73,10 +75,10 @@ export function aggregatePortfolio({
 
   for (const p of positions) {
     const price = prices[p.ticker];
-    if (!price || price.currency !== p.currency) continue;
+    if (!price) continue;
 
     const investedDisplay = convertCurrency(p.quantity * p.avgPrice, p.currency, display, rates);
-    const valueDisplay = convertCurrency(p.quantity * price.close, p.currency, display, rates);
+    const valueDisplay = convertCurrency(p.quantity * price.close, price.currency, display, rates);
     if (investedDisplay === null || valueDisplay === null) continue;
 
     invested += investedDisplay;

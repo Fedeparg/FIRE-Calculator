@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { convertCurrency } from "@/core/fx";
 import { formatCurrency, formatIsoDate, formatNumber, formatPercent } from "@/core/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
@@ -10,6 +11,8 @@ type Props = {
   positions: Position[];
   /** Último precio conocido por ticker (desde nuestra DB). Vacío mientras carga o sin datos. */
   prices: Record<string, PriceInfo>;
+  /** Tasas FX (USD por unidad de cada divisa) para convertir el valor a la divisa de la fila. */
+  rates: Record<string, number>;
   /** Id de la posición que se está editando (resaltada), o null. */
   editingId: string | null;
   onEdit: (position: Position) => void;
@@ -23,11 +26,19 @@ type PnlMode = "pct" | "abs";
  * Tabla de posiciones con editar y borrado inline (confirmación sin modal). Enriquece cada
  * fila con el último precio de mercado (desde nuestra DB) para mostrar valor actual y P&L.
  *
- * Regla de divisa: el P&L se calcula SOLO cuando el precio viene en la MISMA divisa que la
- * posición (no convertimos aquí; el total global con FX vive aparte). Si difieren, se marca
- * "—" con una explicación: comparar importes en divisas distintas sería engañoso.
+ * Regla de divisa: el valor de mercado se CONVIERTE a la divisa de la posición con las tasas
+ * FX diarias (el precio puede venir en otra divisa, p. ej. un activo en USD comprado en EUR).
+ * El P&L = valor − invertido, ambos ya en la divisa de la posición. Solo se marca "—" si no
+ * hay precio o si falta la tasa de cambio necesaria.
  */
-export default function PositionList({ positions, prices, editingId, onEdit, onDeleted }: Props) {
+export default function PositionList({
+  positions,
+  prices,
+  rates,
+  editingId,
+  onEdit,
+  onDeleted,
+}: Props) {
   const t = useTranslations("portfolio.list");
   // id en confirmación de borrado / id en proceso de borrado.
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
@@ -107,20 +118,21 @@ export default function PositionList({ positions, prices, editingId, onEdit, onD
             {positions.map((p) => {
               const invested = p.quantity * p.avgPrice;
               const price = prices[p.ticker];
-              // El P&L exige que el precio esté en la misma divisa que la posición.
-              const sameCurrency = price !== undefined && price.currency === p.currency;
-              const marketValue = sameCurrency ? p.quantity * price.close : null;
+              // Valor de mercado convertido a la divisa de la posición (el precio puede venir
+              // en otra divisa). `null` si no hay precio o falta la tasa de cambio.
+              const marketValue =
+                price !== undefined
+                  ? convertCurrency(p.quantity * price.close, price.currency, p.currency, rates)
+                  : null;
               const pnlAbs = marketValue !== null ? marketValue - invested : null;
               const pnlPct =
-                marketValue !== null && p.avgPrice > 0
-                  ? ((price!.close - p.avgPrice) / p.avgPrice) * 100
-                  : null;
-              // Motivo de un P&L no calculable (para el tooltip del "—").
+                pnlAbs !== null && invested > 0 ? (pnlAbs / invested) * 100 : null;
+              // Motivo de un valor no calculable (para el tooltip del "—").
               const missingReason =
                 price === undefined
                   ? t("noPrice")
-                  : !sameCurrency
-                    ? t("currencyMismatch", { price: price.currency, position: p.currency })
+                  : marketValue === null
+                    ? t("noFxRate", { price: price.currency, position: p.currency })
                     : "";
 
               const isConfirming = confirmingId === p.id;
