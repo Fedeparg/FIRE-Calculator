@@ -9,6 +9,13 @@ import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
 const FX_QUOTE = 'USD';
+/**
+ * Tope de espera del refresco en caliente (`primeSymbol`) antes de devolver el control a la
+ * petición. El caso común (símbolo exacto) tarda ~1 s; este límite solo protege del caso raro
+ * (ISIN nuevo con resolución larga), evitando que el POST cuelgue / agote el proxy.
+ */
+const PRIME_MAX_WAIT_MS = 9_000;
+const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 /** Símbolo de Yahoo del par CCY→USD (= USD por unidad de CCY). USD consigo mismo es 1. */
 function fxSymbol(currency: string): string {
   return `${currency}${FX_QUOTE}=X`;
@@ -167,11 +174,26 @@ export class PricesService {
    * escritura puntual, no la navegación). Tolerante a fallos: si la fuente falla, la posición
    * se crea igualmente y el precio llegará en el próximo refresco (no propaga el error).
    *
+   * Lo espera la ruta de escritura (el alta), porque el frontend solo re-pide precios cuando
+   * cambia el CONJUNTO de tickers (una vez, tras crear): si no estuviera ya en la DB, la
+   * nueva posición saldría sin precio hasta recargar. Para el caso común (símbolo exacto del
+   * buscador) es una sola llamada rápida. Pero un ISIN nuevo dispara la resolución completa
+   * (OpenFIGI + validar candidatos), que puede tardar; por eso ACOTAMOS la espera con
+   * `PRIME_MAX_WAIT_MS`: si se pasa, el POST responde igualmente y la resolución termina en
+   * segundo plano (queda cacheada y el precio aparece en la siguiente carga).
+   *
    * @param ticker símbolo o ISIN tal y como se guardó en la posición.
    * @param currency divisa de la posición; si no es USD, refresca también su par FX para que
    *   el total agregado pueda convertirla desde ya.
    */
   async primeSymbol(ticker: string, currency?: string): Promise<void> {
+    // El trabajo se lanza entero (sigue en segundo plano si vence el timeout); solo acotamos
+    // CUÁNTO esperamos antes de devolver el control a la petición.
+    await Promise.race([this.primeNow(ticker, currency), delay(PRIME_MAX_WAIT_MS)]);
+  }
+
+  /** Resolución + fetch + upsert de un ticker. Autocontenido y tolerante a fallos. */
+  private async primeNow(ticker: string, currency?: string): Promise<void> {
     try {
       const symbol = await this.resolver.resolve(ticker);
       const wanted = new Set<string>();

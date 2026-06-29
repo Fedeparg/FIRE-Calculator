@@ -212,8 +212,9 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             onChange={setTicker}
             onSelect={(r: InstrumentSearchResult) => {
               setTicker(r.symbol);
-              // Prefill del nombre solo si el usuario no escribió uno propio.
-              setName((prev) => prev || r.name);
+              // Prefill del nombre solo si el usuario no escribió uno propio. Truncado a 100:
+              // el `longname` de Yahoo puede excederlo y el DTO (@MaxLength(100)) daría 400.
+              setName((prev) => prev || r.name.slice(0, 100));
             }}
             placeholder={t("tickerPlaceholder")}
             inputClass={inputClass}
