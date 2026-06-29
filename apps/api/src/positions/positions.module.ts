@@ -4,15 +4,19 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SESSION_TTL_SECONDS } from '../auth/session.constants';
+import { PricesModule } from '../prices/prices.module';
 import { PositionsController } from './positions.controller';
 import { PositionsService } from './positions.service';
 
 /**
  * Módulo de cartera. Registra JwtModule con el mismo secreto que el de auth para que
- * `JwtAuthGuard` pueda verificar la cookie de sesión en estos endpoints.
+ * `JwtAuthGuard` pueda verificar la cookie de sesión en estos endpoints. Importa
+ * `PricesModule` para refrescar en caliente el precio de una posición recién dada de alta
+ * o editada (sin esperar al cron diario).
  */
 @Module({
   imports: [
+    PricesModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

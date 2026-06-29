@@ -57,6 +57,13 @@
       "when": 1782663872436,
       "tag": "0007_hesitant_iceman",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1782663872437,
+      "tag": "0008_reset_crypto_symbols",
+      "breakpoints": true
     }
   ]
 }

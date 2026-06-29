@@ -11,6 +11,7 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module';
 import { positions, type Position } from '../db/schema';
+import { PricesService } from '../prices/prices.service';
 import { CombinePositionDto } from './dto/combine-position.dto';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
@@ -33,7 +34,10 @@ export type PositionResponse = {
 
 @Injectable()
 export class PositionsService {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly prices: PricesService,
+  ) {}
 
   /**
    * Crea una posición para el usuario autenticado. Aplica la regla de duplicados antes de
@@ -63,6 +67,9 @@ export class PositionsService {
         })
         .returning();
 
+      // Refresca el precio en caliente para que la valoración aparezca al instante (sin
+      // esperar al cron diario). Es tolerante a fallos: nunca rompe el alta.
+      await this.prices.primeSymbol(row.ticker, row.currency);
       return this.toResponse(row);
     } catch (error) {
       // La única FK de `positions` es `userId → users.id`. Una violación aquí solo puede
@@ -164,6 +171,10 @@ export class PositionsService {
       .where(eq(positions.id, id))
       .returning();
 
+    // Si cambió el símbolo, su precio puede no estar cacheado: refréscalo en caliente.
+    if (row.ticker !== current.ticker) {
+      await this.prices.primeSymbol(row.ticker, row.currency);
+    }
     return this.toResponse(row);
   }
 

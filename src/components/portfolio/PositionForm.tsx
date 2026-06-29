@@ -5,7 +5,13 @@ import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { currencyLabel } from "@/core/format";
-import { PORTFOLIO_CURRENCIES, type Position, type PortfolioCurrency } from "@/lib/portfolio";
+import {
+  PORTFOLIO_CURRENCIES,
+  type InstrumentSearchResult,
+  type Position,
+  type PortfolioCurrency,
+} from "@/lib/portfolio";
+import InstrumentSearchField from "./InstrumentSearchField";
 
 type Status = "idle" | "submitting" | "combining";
 
@@ -200,16 +206,20 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           <label htmlFor="ticker" className="text-sm font-medium text-foreground">
             {t("ticker")} <span className="text-warning">*</span>
           </label>
-          <input
+          <InstrumentSearchField
             id="ticker"
-            type="text"
-            required
-            maxLength={20}
             value={ticker}
-            onChange={(e) => setTicker(e.target.value)}
+            onChange={setTicker}
+            onSelect={(r: InstrumentSearchResult) => {
+              setTicker(r.symbol);
+              // Prefill del nombre solo si el usuario no escribió uno propio.
+              setName((prev) => prev || r.name);
+            }}
             placeholder={t("tickerPlaceholder")}
-            className={inputClass}
+            inputClass={inputClass}
+            maxLength={20}
           />
+          <p className="text-xs text-muted">{t("tickerHint")}</p>
         </div>
 
         <div className="flex flex-col gap-1.5">

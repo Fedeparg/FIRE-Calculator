@@ -980,7 +980,7 @@
       "title": "Añadir posición",
       "editTitle": "Editar {ticker}",
       "ticker": "Símbolo o ISIN",
-      "tickerPlaceholder": "p. ej. IWDA o IE00B4L5Y983",
+      "tickerPlaceholder": "p. ej. bitcoin, Apple o IE00B4L5Y983",
       "name": "Nombre",
       "namePlaceholder": "p. ej. iShares Core MSCI World",
       "quantity": "Cantidad",
@@ -1004,7 +1004,20 @@
       "duplicate": "Ya tienes {ticker} en {broker}.",
       "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
       "combine": "Combinar con la existente",
-      "combining": "Combinando…"
+      "combining": "Combinando…",
+      "tickerHint": "Busca por nombre o símbolo y elige el instrumento; también puedes pegar un ISIN.",
+      "search": {
+        "searching": "Buscando…",
+        "type": {
+          "equity": "Acción",
+          "etf": "ETF",
+          "fund": "Fondo",
+          "crypto": "Cripto",
+          "index": "Índice",
+          "currency": "Divisa",
+          "other": "Otro"
+        }
+      }
     }
   },
   "account": {

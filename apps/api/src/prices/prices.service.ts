@@ -4,7 +4,7 @@ import { desc, inArray } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module';
 import { instrumentPrices, positions } from '../db/schema';
 import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto';
-import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface';
+import { PRICE_PROVIDER, type PriceProvider, type Quote } from './price-provider.interface';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
@@ -68,27 +68,7 @@ export class PricesService {
     }
 
     const quotes = await this.provider.getQuotes(symbols);
-    for (const quote of quotes.values()) {
-      await this.db
-        .insert(instrumentPrices)
-        .values({
-          symbol: quote.symbol,
-          date: quote.date,
-          close: quote.close.toString(),
-          currency: quote.currency,
-          source: this.provider.name,
-          fetchedAt: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: [instrumentPrices.symbol, instrumentPrices.date],
-          set: {
-            close: quote.close.toString(),
-            currency: quote.currency,
-            source: this.provider.name,
-            fetchedAt: new Date(),
-          },
-        });
-    }
+    await this.upsertQuotes(quotes);
 
     const missing = symbols.filter((s) => !quotes.has(s));
     this.logger.log(
@@ -178,6 +158,59 @@ export class PricesService {
       }
     }
     return { rates, asOf };
+  }
+
+  /**
+   * Resuelve y cachea el precio de UN ticker recién dado de alta o editado, en caliente,
+   * para que su valoración aparezca al instante en vez de esperar al cron diario. Es la
+   * ÚNICA ruta del usuario que dispara resolución/fetch externos a propósito (una acción de
+   * escritura puntual, no la navegación). Tolerante a fallos: si la fuente falla, la posición
+   * se crea igualmente y el precio llegará en el próximo refresco (no propaga el error).
+   *
+   * @param ticker símbolo o ISIN tal y como se guardó en la posición.
+   * @param currency divisa de la posición; si no es USD, refresca también su par FX para que
+   *   el total agregado pueda convertirla desde ya.
+   */
+  async primeSymbol(ticker: string, currency?: string): Promise<void> {
+    try {
+      const symbol = await this.resolver.resolve(ticker);
+      const wanted = new Set<string>();
+      if (symbol) wanted.add(symbol);
+      if (currency && currency !== FX_QUOTE) wanted.add(fxSymbol(currency));
+      if (wanted.size === 0) return;
+
+      const quotes = await this.provider.getQuotes([...wanted]);
+      await this.upsertQuotes(quotes);
+    } catch (error) {
+      this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${
+        (error as Error).message
+      }`);
+    }
+  }
+
+  /** Upsert de un lote de cotizaciones en `instrument_prices` (1 fila por símbolo y día). */
+  private async upsertQuotes(quotes: Map<string, Quote>): Promise<void> {
+    for (const quote of quotes.values()) {
+      await this.db
+        .insert(instrumentPrices)
+        .values({
+          symbol: quote.symbol,
+          date: quote.date,
+          close: quote.close.toString(),
+          currency: quote.currency,
+          source: this.provider.name,
+          fetchedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [instrumentPrices.symbol, instrumentPrices.date],
+          set: {
+            close: quote.close.toString(),
+            currency: quote.currency,
+            source: this.provider.name,
+            fetchedAt: new Date(),
+          },
+        });
+    }
   }
 
   /** Símbolos FX a refrescar: cada divisa soportada contra USD (USD no necesita par). */

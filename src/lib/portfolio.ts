@@ -37,6 +37,24 @@ export type FxRates = {
   asOf: string | null;
 };
 
+/** Tipo de instrumento normalizado que sirve `GET /api/instruments/search`. */
+export type InstrumentType =
+  | "equity"
+  | "etf"
+  | "fund"
+  | "crypto"
+  | "index"
+  | "currency"
+  | "other";
+
+/** Un resultado del buscador de instrumentos: símbolo exacto a guardar + cómo distinguirlo. */
+export type InstrumentSearchResult = {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  exchange: string | null;
+};
+
 /** Una posición tal y como la devuelve la API (números ya parseados, fecha ISO). */
 export type Position = {
   id: string;

@@ -980,7 +980,7 @@
       "title": "Add position",
       "editTitle": "Edit {ticker}",
       "ticker": "Symbol or ISIN",
-      "tickerPlaceholder": "e.g. IWDA or IE00B4L5Y983",
+      "tickerPlaceholder": "e.g. bitcoin, Apple or IE00B4L5Y983",
       "name": "Name",
       "namePlaceholder": "e.g. iShares Core MSCI World",
       "quantity": "Quantity",
@@ -1004,7 +1004,20 @@
       "duplicate": "You already have {ticker} at {broker}.",
       "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
       "combine": "Combine with existing",
-      "combining": "Combining…"
+      "combining": "Combining…",
+      "tickerHint": "Search by name or symbol and pick the instrument; you can also paste an ISIN.",
+      "search": {
+        "searching": "Searching…",
+        "type": {
+          "equity": "Stock",
+          "etf": "ETF",
+          "fund": "Fund",
+          "crypto": "Crypto",
+          "index": "Index",
+          "currency": "Currency",
+          "other": "Other"
+        }
+      }
     }
   },
   "account": {

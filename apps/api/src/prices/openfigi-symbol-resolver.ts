@@ -60,10 +60,26 @@ export function isinCandidates(tickers: string[]): string[] {
   return [...new Set(out)].slice(0, MAX_CANDIDATES);
 }
 
-/** Candidatos para un ticker suelto: bare primero (US/cripto/símbolo ya completo), luego sufijos. */
+/**
+ * Símbolos de cripto que en Yahoo SON un par "<T>-USD", pero cuyo ticker suelto colisiona
+ * con un valor bursátil real (p. ej. "BTC" cotiza como el ETF Grayscale Bitcoin Mini Trust a
+ * ~26 US$, no como Bitcoin a ~60 000 US$). El flujo normal de alta usa el buscador y guarda
+ * ya el símbolo exacto ("BTC-USD"), así que esto es una RED DE SEGURIDAD para tickers sueltos
+ * que llegan por otra vía (datos antiguos, alta por API/MCP): fuerza el par y NO cae al bare.
+ */
+export const CRYPTO_TICKERS = new Set([
+  'BTC', 'ETH', 'USDT', 'BNB', 'SOL', 'XRP', 'USDC', 'ADA', 'AVAX', 'DOGE',
+  'DOT', 'TRX', 'LINK', 'MATIC', 'TON', 'SHIB', 'LTC', 'BCH', 'XLM', 'ATOM',
+  'XMR', 'ETC', 'NEAR', 'ALGO', 'FIL', 'ICP', 'APT', 'ARB', 'OP', 'UNI',
+]);
+
+/** Candidatos para un ticker suelto: bare primero (US/símbolo ya completo), luego sufijos. */
 export function tickerCandidates(query: string): string[] {
   // Si ya parece un símbolo de Yahoo (EUNL.DE, BTC-USD), no inventamos sufijos.
   if (query.includes('.') || query.includes('-')) return [query];
+  // Cripto conocida: NO probamos el bare (colisiona con un valor real). Solo el par "-USD";
+  // si no cotizara, preferimos no resolver antes que cachear el instrumento equivocado.
+  if (CRYPTO_TICKERS.has(query)) return [`${query}-USD`];
   const out = [query, ...YAHOO_SUFFIXES.map((s) => query + s)];
   return out.slice(0, MAX_CANDIDATES);
 }
