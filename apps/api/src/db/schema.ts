@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import {
   pgTable,
   uuid,
@@ -66,9 +67,13 @@ export type NewLoginToken = typeof loginTokens.$inferInsert;
  * Unicidad: una posición se identifica por `(userId, ticker, broker)`. El bróker es
  * OPCIONAL en general, pero pasa a ser obligatorio al añadir un símbolo que YA tiene otra
  * entrada (regla de negocio en el servicio, no en el esquema): así se puede distinguir el
- * mismo símbolo comprado en distintos sitios. El índice único es la barrera de último
- * recurso para duplicados exactos con bróker no nulo (la detección case-insensitive, la
- * regla "bróker requerido si el símbolo existe" y el flujo de "combinar" viven en el servicio).
+ * mismo símbolo comprado en distintos sitios. El índice único FUNCIONAL es la barrera de
+ * último recurso para duplicados, y refleja EXACTAMENTE la regla del servicio:
+ * `lower(coalesce(broker, ''))` hace que sea case-insensitive (Degiro = degiro) y que el
+ * bróker ausente (NULL) cuente como cadena vacía → un usuario no puede tener dos entradas
+ * del mismo símbolo sin bróker (en Postgres dos NULL serían distintos, lo que dejaría
+ * pasar duplicados). La detección case-insensitive y el flujo de "combinar" viven en el
+ * servicio; este índice los respalda a nivel de BD.
  */
 export const positions = pgTable(
   'positions',
@@ -99,7 +104,7 @@ export const positions = pgTable(
     uniqueIndex('positions_user_ticker_broker_idx').on(
       table.userId,
       table.ticker,
-      table.broker,
+      sql`lower(coalesce(${table.broker}, ''))`,
     ),
   ],
 );

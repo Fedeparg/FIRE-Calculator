@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
-import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { asLocale } from "@/core/types";
+import { SITE_NAME } from "@/lib/site";
+import { articleSchema } from "@/lib/jsonld";
 import { getArticle, getArticleSlugs } from "@/components/wiki/content";
+import ArticleRelatedCalculators from "@/components/wiki/ArticleRelatedCalculators";
+import { buildMetadata } from "@/lib/seo";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
 import AdSlot from "@/components/AdSlot";
 
 // ISR + dynamicParams: las rutas conocidas se prerenderizan; slugs nuevos
@@ -25,27 +31,49 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const article = await getArticle(slug, locale);
   if (!article) return {};
-  return { title: article.title, description: article.description };
+  return buildMetadata({
+    locale,
+    path: `/aprende/${slug}`,
+    title: article.title,
+    description: article.description,
+    ogType: "article",
+  });
 }
 
 export default async function ArticlePage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("wiki");
+  const tNav = await getTranslations("nav");
 
   const article = await getArticle(slug, locale);
   if (!article) notFound();
 
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
-      <Link href="/aprende" className="text-sm font-medium text-brand hover:underline">
-        ← {t("backToIndex")}
-      </Link>
+      <Breadcrumbs
+        items={[
+          { name: SITE_NAME, path: "/" },
+          { name: tNav("learn"), path: "/aprende" },
+          { name: article.title, path: `/aprende/${slug}` },
+        ]}
+      />
+
+      <JsonLd
+        data={articleSchema({
+          locale: asLocale(locale),
+          slug,
+          title: article.title,
+          description: article.description,
+        })}
+      />
 
       <div
         className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-brand prose-strong:text-foreground"
         dangerouslySetInnerHTML={{ __html: article.html }}
       />
+
+      {/* Enlazado interno: calculadoras que usan este concepto. */}
+      <ArticleRelatedCalculators articleSlug={slug} />
 
       {/* Publicidad: solo en contenido público (wiki), al final del artículo. */}
       <AdSlot className="mt-10" />

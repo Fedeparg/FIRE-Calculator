@@ -78,7 +78,8 @@
     "explainer": {
       "heading": "How this calculator works",
       "relatedHeading": "Keep learning"
-    }
+    },
+    "relatedCalculators": "Related calculators"
   },
   "selector": {
     "heading": "Financial calculators",
@@ -1118,7 +1119,7 @@
   },
   "about": {
     "meta": {
-      "title": "About me — Sextante",
+      "title": "About me",
       "description": "Who is behind Sextante and why this project exists."
     },
     "title": "About me",

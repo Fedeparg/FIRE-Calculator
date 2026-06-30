@@ -1,0 +1,85 @@
+# Integración continua: gate de calidad ANTES de fusionar/desplegar.
+#
+# Corre en cada push y pull request, en runners de GitHub (no en el self-hosted de
+# producción): typecheck, lint, tests y build de los DOS paquetes (frontend y API).
+# Los tests del backend levantan un PostgreSQL efímero con Testcontainers, que usa
+# el Docker preinstalado en los runners `ubuntu-latest`.
+#
+# Para que sea un gate real, marca estos checks como obligatorios en la protección
+# de la rama `main` (Settings → Branches → Branch protection), ya que eso es una
+# configuración del repositorio y no puede vivir en este fichero.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+# Cancela ejecuciones antiguas de la misma rama/PR cuando llega un push nuevo.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Frontend (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  backend:
+    name: Backend (NestJS)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @sextante/api typecheck
+
+      - name: Lint
+        run: pnpm --filter @sextante/api lint
+
+      - name: Tests (Postgres efímero vía Testcontainers)
+        run: pnpm --filter @sextante/api test
+
+      - name: Build
+        run: pnpm --filter @sextante/api build
