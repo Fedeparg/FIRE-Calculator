@@ -4,6 +4,10 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { asLocale } from "@/core/types";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { organizationSchema, websiteSchema } from "@/lib/jsonld";
+import JsonLd from "@/components/seo/JsonLd";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeScript from "@/components/ThemeScript";
@@ -29,7 +33,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "site" });
-  return { title: t("title"), description: t("tagline") };
+  return {
+    // Resuelve a absolutas las URLs relativas de canonical, hreflang y OG.
+    metadataBase: new URL(SITE_URL),
+    // Las páginas pasan su título "a secas"; la plantilla añade la marca. La
+    // home (sin título propio) usa el `default` sin sufijo duplicado.
+    title: { default: t("title"), template: `%s | ${SITE_NAME}` },
+    description: t("tagline"),
+    applicationName: SITE_NAME,
+    // Defaults de Open Graph para cualquier página que no los especifique;
+    // `buildMetadata` los enriquece por página (canonical, imagen, tipo…).
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      locale: locale === "es" ? "es_ES" : "en_US",
+    },
+    twitter: { card: "summary_large_image" },
+  };
 }
 
 export default async function LocaleLayout({ children, params }: Props) {
@@ -46,6 +66,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeScript />
         <AdsenseScript />
+        <JsonLd data={[organizationSchema(), websiteSchema(asLocale(locale))]} />
         <NextIntlClientProvider>
           <Header />
           <main className="flex-1">{children}</main>

@@ -60,3 +60,17 @@ export const RELATED_ARTICLES: Record<string, readonly string[]> = {
 export function getRelatedArticleSlugs(calcSlug: string): readonly string[] {
   return RELATED_ARTICLES[calcSlug] ?? [];
 }
+
+/**
+ * Inverso de `RELATED_ARTICLES`: dadas las relaciones calculadora → artículos,
+ * devuelve las calculadoras que enlazan a un artículo. Sirve para el enlazado
+ * interno bidireccional (desde el artículo de la wiki hacia sus calculadoras),
+ * reutilizando el mismo mapeo central como única fuente de verdad.
+ */
+export function getRelatedCalculatorSlugs(articleSlug: string): string[] {
+  const calcSlugs: string[] = [];
+  for (const [calcSlug, articleSlugs] of Object.entries(RELATED_ARTICLES)) {
+    if (articleSlugs.includes(articleSlug)) calcSlugs.push(calcSlug);
+  }
+  return calcSlugs;
+}

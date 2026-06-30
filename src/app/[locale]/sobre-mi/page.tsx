@@ -3,13 +3,19 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import DonationWidget from "@/components/donations/DonationWidget";
 import { DONATIONS_ENABLED } from "@/components/donations/config";
+import { buildMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "about" });
-  return { title: t("meta.title"), description: t("meta.description") };
+  return buildMetadata({
+    locale,
+    path: "/sobre-mi",
+    title: t("meta.title"),
+    description: t("meta.description"),
+  });
 }
 
 export default async function AboutPage({ params }: Props) {

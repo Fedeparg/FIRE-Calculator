@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { routing } from "@/i18n/routing";
 import { getLegalDoc, getLegalSlugs } from "@/components/wiki/content";
+import { buildMetadata } from "@/lib/seo";
 
 // Documentos legales: estáticos, se regeneran cada hora (igual que la wiki).
 export const revalidate = 3600;
@@ -21,7 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, slug } = await params;
   const doc = await getLegalDoc(slug, locale);
   if (!doc) return {};
-  return { title: doc.title };
+  return buildMetadata({
+    locale,
+    path: `/legal/${slug}`,
+    title: doc.title,
+    description: doc.title,
+  });
 }
 
 export default async function LegalPage({ params }: Props) {
