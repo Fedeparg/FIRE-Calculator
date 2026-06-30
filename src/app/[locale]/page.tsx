@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { CALCULATORS } from "@/core/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
+import { buildMetadata } from "@/lib/seo";
 import Hero from "@/components/landing/Hero";
 import Pillars from "@/components/landing/Pillars";
 import FeatureMcp from "@/components/landing/FeatureMcp";
@@ -16,7 +17,14 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "landing.meta" });
-  return { title: t("title"), description: t("description") };
+  return buildMetadata({
+    locale,
+    path: "/",
+    title: t("title"),
+    description: t("description"),
+    // El título de la home ya incluye la marca; no la dupliques con la plantilla.
+    titleAbsolute: true,
+  });
 }
 
 export default async function Landing({ params }: Props) {

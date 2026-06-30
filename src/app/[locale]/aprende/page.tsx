@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { getAllArticles, WIKI_LEVELS, type ArticleMeta } from "@/components/wiki/content";
+import { buildMetadata } from "@/lib/seo";
 import AdSlot from "@/components/AdSlot";
 
 // ISR: el contenido se lee de ficheros Markdown en runtime; se revalida cada
@@ -15,7 +16,12 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "wiki" });
-  return { title: t("heading"), description: t("subheading") };
+  return buildMetadata({
+    locale,
+    path: "/aprende",
+    title: t("heading"),
+    description: t("subheading"),
+  });
 }
 
 export default async function LearnIndexPage({ params }: Props) {

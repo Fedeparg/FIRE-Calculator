@@ -1,7 +1,12 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { asLocale } from "@/core/types";
+import { SITE_NAME } from "@/lib/site";
+import { calculatorSchema } from "@/lib/jsonld";
 import AdSlot from "./AdSlot";
 import { ADS_ENABLED } from "./ads";
+import Breadcrumbs from "./seo/Breadcrumbs";
+import JsonLd from "./seo/JsonLd";
 import CalculatorExplainer from "./wiki/CalculatorExplainer";
 
 type Props = {
@@ -19,14 +24,32 @@ type Props = {
 /** Estructura común a todas las páginas de calculadora. */
 export default function CalculatorShell({ title, intro, children, slug }: Props) {
   const t = useTranslations("common");
+  const tNav = useTranslations("nav");
+  const locale = asLocale(useLocale());
 
   return (
     // Con publicidad activa se ensancha para dar sitio al lateral; sin ella, el
     // ancho clásico de lectura (max-w-4xl) y una sola columna.
     <section className={`mx-auto px-4 py-8 ${ADS_ENABLED ? "max-w-7xl" : "max-w-4xl"}`}>
-      <Link href="/calculadoras" className="text-sm font-medium text-brand hover:underline">
-        ← {t("back")}
-      </Link>
+      {slug ? (
+        <Breadcrumbs
+          items={[
+            { name: SITE_NAME, path: "/" },
+            { name: tNav("home"), path: "/calculadoras" },
+            { name: title, path: `/calculadoras/${slug}` },
+          ]}
+        />
+      ) : (
+        <Link href="/calculadoras" className="text-sm font-medium text-brand hover:underline">
+          ← {t("back")}
+        </Link>
+      )}
+
+      {slug && (
+        <JsonLd
+          data={calculatorSchema({ locale, slug, name: title, description: intro })}
+        />
+      )}
 
       <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
         {title}
