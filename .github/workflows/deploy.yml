@@ -40,10 +40,14 @@ jobs:
           REVALIDATE_TOKEN: ${{ secrets.REVALIDATE_TOKEN }}
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
           RCLONE_CONF_BASE64: ${{ secrets.RCLONE_CONF_BASE64 }}
+          # Clave SECRETA de Stripe (donaciones): va por Secrets, la consume el `api`.
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           # IDs PÚBLICOS de AdSense (no secretos): van por Variables, no Secrets.
           # Vacíos = sin anuncios. Se hornean en el build de `web` (NEXT_PUBLIC_*).
           NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
           NEXT_PUBLIC_ADSENSE_SLOT: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT }}
+          # Interruptor público de donaciones (Variable, no Secret): "1" = mostrar.
+          NEXT_PUBLIC_DONATIONS_ENABLED: ${{ vars.NEXT_PUBLIC_DONATIONS_ENABLED }}
         run: |
           umask 077
           # Heredoc SIN -x: los valores se expanden desde el entorno del step
@@ -66,6 +70,8 @@ jobs:
           RCLONE_CONF_BASE64=${RCLONE_CONF_BASE64}
           NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID}
           NEXT_PUBLIC_ADSENSE_SLOT=${NEXT_PUBLIC_ADSENSE_SLOT}
+          STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+          NEXT_PUBLIC_DONATIONS_ENABLED=${NEXT_PUBLIC_DONATIONS_ENABLED}
           EOF
 
       - name: Construir y levantar el stack

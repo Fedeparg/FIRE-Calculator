@@ -97,7 +97,9 @@
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
-    "privacy": "Privacidad y cookies"
+    "privacy": "Privacidad y cookies",
+    "madeBy": "Desarrollado por <author>Federico Pardo</author>.",
+    "coffee": "Invítame a un café"
   },
   "frequency": {
     "label": "Frecuencia de aportación",
@@ -1098,5 +1100,42 @@
       "missing": "Solicitud de autorización incompleta o no válida.",
       "backHome": "Volver al inicio"
     }
+  },
+  "donations": {
+    "landing": {
+      "title": "Sextante es gratis y lo hace una sola persona",
+      "body": "Lo esencial es y será gratis, sin muros de pago. Si te resulta útil y quieres que siga creciendo, puedes invitarme a un café. Cada aporte ayuda a cubrir el servidor y el tiempo que le dedico.",
+      "aboutLink": "Conoce quién hay detrás →"
+    },
+    "widget": {
+      "chooseAmount": "Elige una cantidad",
+      "customLabel": "Otra",
+      "cta": "Donar {amount} € ☕",
+      "redirecting": "Redirigiendo a Stripe…",
+      "error": "No se pudo iniciar el pago. Inténtalo de nuevo en un momento.",
+      "secure": "Pago seguro gestionado por Stripe. Sextante no almacena los datos de tu tarjeta."
+    }
+  },
+  "about": {
+    "meta": {
+      "title": "Sobre mí — Sextante",
+      "description": "Quién hay detrás de Sextante y por qué nació este proyecto."
+    },
+    "title": "Sobre mí",
+    "intro": "Hola, soy Federico Pardo, la persona detrás de Sextante.",
+    "whoTitle": "Quién soy",
+    "whoBody": "Soy Federico Pardo, doctor en Inteligencia Artificial y licenciado en Ingeniería Informática. Llevo años trabajando con datos y software, y Sextante es mi forma de juntar esa experiencia con algo que me importa: ayudar a la gente a entender mejor su dinero.",
+    "whyTitle": "Por qué hice Sextante",
+    "whyBody": "Creé Sextante como un proyecto personal para que cualquiera pudiera tener más control sobre sus finanzas, con calculadoras y herramientas pensadas de verdad para el sistema fiscal y bancario español. Quería algo serio, claro y honesto, sin jerga ni letra pequeña, que cualquiera pudiese usar gratis para tomar mejores decisiones con su dinero.",
+    "supportTitle": "Invítame a un café",
+    "supportBody": "Sextante es gratis y lo mantengo yo solo. Si te ha sido útil, puedes apoyar el proyecto con una pequeña donación: ayuda a pagar el servidor y a seguir mejorándolo."
+  },
+  "thanks": {
+    "meta": {
+      "title": "¡Gracias! — Sextante"
+    },
+    "title": "¡Gracias por tu café!",
+    "body": "Tu apoyo ayuda a mantener Sextante en marcha y a seguir mejorándolo. Lo aprecio de verdad.",
+    "backHome": "Volver al inicio"
   }
 }

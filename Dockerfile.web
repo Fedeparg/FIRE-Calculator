@@ -37,6 +37,12 @@ ARG NEXT_PUBLIC_ADSENSE_SLOT=""
 ENV NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID
 ENV NEXT_PUBLIC_ADSENSE_SLOT=$NEXT_PUBLIC_ADSENSE_SLOT
 
+# Interruptor PÚBLICO de donaciones ("invítame a un café"): se inlinea en BUILD TIME
+# igual que AdSense. "1" muestra el botón/sección; vacío lo oculta. No es secreto (la
+# clave secreta de Stripe vive solo en el backend, ver el servicio `api`).
+ARG NEXT_PUBLIC_DONATIONS_ENABLED=""
+ENV NEXT_PUBLIC_DONATIONS_ENABLED=$NEXT_PUBLIC_DONATIONS_ENABLED
+
 # Código del front y compilación. `output: "standalone"` genera
 # .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
 COPY . .

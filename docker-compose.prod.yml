@@ -69,6 +69,8 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-Sextante <no-reply@send.fpardo.net>}
       OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
       PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
+      # Clave SECRETA de Stripe (donaciones). Vacía → donaciones desactivadas.
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -100,6 +102,8 @@ services:
         # en build; no son secretos.
         NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
         NEXT_PUBLIC_ADSENSE_SLOT: ${NEXT_PUBLIC_ADSENSE_SLOT:-}
+        # Interruptor público de donaciones ("1" = mostrar). Se inlinea en build.
+        NEXT_PUBLIC_DONATIONS_ENABLED: ${NEXT_PUBLIC_DONATIONS_ENABLED:-}
     restart: unless-stopped
     environment:
       NODE_ENV: production

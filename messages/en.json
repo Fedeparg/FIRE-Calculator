@@ -97,7 +97,9 @@
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
-    "privacy": "Privacy & cookies"
+    "privacy": "Privacy & cookies",
+    "madeBy": "Built by <author>Federico Pardo</author>.",
+    "coffee": "Buy me a coffee"
   },
   "frequency": {
     "label": "Contribution frequency",
@@ -1098,5 +1100,42 @@
       "missing": "Incomplete or invalid authorization request.",
       "backHome": "Back to home"
     }
+  },
+  "donations": {
+    "landing": {
+      "title": "Sextante is free and built by one person",
+      "body": "The essentials are and will stay free, with no paywalls. If you find it useful and want it to keep growing, you can buy me a coffee. Every contribution helps cover the server and the time I put into it.",
+      "aboutLink": "Meet the person behind it →"
+    },
+    "widget": {
+      "chooseAmount": "Pick an amount",
+      "customLabel": "Other",
+      "cta": "Donate €{amount} ☕",
+      "redirecting": "Redirecting to Stripe…",
+      "error": "Couldn't start the payment. Please try again in a moment.",
+      "secure": "Secure payment handled by Stripe. Sextante never stores your card details."
+    }
+  },
+  "about": {
+    "meta": {
+      "title": "About me — Sextante",
+      "description": "Who is behind Sextante and why this project exists."
+    },
+    "title": "About me",
+    "intro": "Hi, I'm Federico Pardo, the person behind Sextante.",
+    "whoTitle": "Who I am",
+    "whoBody": "I'm Federico Pardo, a PhD in Artificial Intelligence and a graduate in Computer Engineering. I've spent years working with data and software, and Sextante is my way of combining that experience with something I care about: helping people understand their money better.",
+    "whyTitle": "Why I built Sextante",
+    "whyBody": "I built Sextante as a personal project so that anyone could have more control over their finances, with calculators and tools designed specifically for the Spanish tax and banking system. I wanted something serious, clear and honest, with no jargon or fine print, that anyone could use for free to make better decisions with their money.",
+    "supportTitle": "Buy me a coffee",
+    "supportBody": "Sextante is free and I maintain it on my own. If it's been useful to you, you can support the project with a small donation: it helps pay for the server and keep improving it."
+  },
+  "thanks": {
+    "meta": {
+      "title": "Thank you! — Sextante"
+    },
+    "title": "Thanks for the coffee!",
+    "body": "Your support helps keep Sextante running and improving. I really appreciate it.",
+    "backHome": "Back to home"
   }
 }

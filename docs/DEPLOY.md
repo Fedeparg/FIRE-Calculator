@@ -67,10 +67,15 @@ al terminar):
 | `REVALIDATE_TOKEN` | Revalidación on-demand de la wiki | `openssl rand -base64 32` |
 | `BACKUP_GPG_PASSPHRASE` | Cifra los backups (AES256) antes de subirlos | `openssl rand -base64 32` |
 | `RCLONE_CONF_BASE64` | Config de rclone (acceso a tu Google Drive), en base64 | Ver §6 |
+| `STRIPE_SECRET_KEY` | Donaciones ("invítame a un café"); la consume el `api`. Vacía/ausente = donaciones desactivadas | Dashboard de Stripe → Developers → API keys (modo Live: `sk_live_…`) |
 
 Valores **no secretos** (van fijos en el workflow, edítalos ahí si cambian):
 `APP_URL=https://sextante.fpardo.net`, `EMAIL_FROM`, `WEB_PORT=8790`,
 `COOKIE_SECURE=true`, `EMAIL_TRANSPORT=resend`, `RCLONE_REMOTE=gdrive:sextante-backups`.
+
+**Variables** (no secretas; **Settings → Secrets and variables → Actions → Variables**):
+`NEXT_PUBLIC_DONATIONS_ENABLED=1` enciende el botón de donación (se hornea en el build
+del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret `STRIPE_SECRET_KEY`.
 
 > ⚠️ Guarda `BACKUP_GPG_PASSPHRASE` también **fuera** del servidor (gestor de
 > contraseñas). Sin ella, los backups son irrecuperables — es la pieza que los

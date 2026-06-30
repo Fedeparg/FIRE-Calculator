@@ -8,6 +8,7 @@ import Pillars from "@/components/landing/Pillars";
 import FeatureMcp from "@/components/landing/FeatureMcp";
 import Categories, { type LandingCategory } from "@/components/landing/Categories";
 import LearnCallout from "@/components/landing/LearnCallout";
+import Support from "@/components/landing/Support";
 import DisclaimerBanner from "@/components/landing/DisclaimerBanner";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -38,6 +39,7 @@ export default async function Landing({ params }: Props) {
       <FeatureMcp />
       <Categories categories={categories} />
       <LearnCallout />
+      <Support />
       <DisclaimerBanner />
     </>
   );

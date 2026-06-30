@@ -7,6 +7,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AccountModule } from './account/account.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './db/database.module';
+import { DonationsModule } from './donations/donations.module';
 import { EmailModule } from './email/email.module';
 import { HealthModule } from './health/health.module';
 import { McpModule } from './mcp/mcp.module';
@@ -23,6 +24,7 @@ import { PricesModule } from './prices/prices.module';
     ScheduleModule.forRoot(),
     DatabaseModule,
     EmailModule,
+    DonationsModule,
     AuthModule,
     HealthModule,
     PositionsModule,
