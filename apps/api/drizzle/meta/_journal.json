@@ -64,6 +64,13 @@
       "when": 1782663872437,
       "tag": "0008_reset_crypto_symbols",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1782826241727,
+      "tag": "0009_normal_prowler",
+      "breakpoints": true
     }
   ]
 }

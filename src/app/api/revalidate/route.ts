@@ -1,3 +1,5 @@
+import { createHash, timingSafeEqual } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -26,6 +28,17 @@ function getToken(request: NextRequest): string | null {
   );
 }
 
+/**
+ * Compara dos tokens en tiempo constante (evita filtrar la longitud o el prefijo
+ * coincidente por timing). Se comparan los hashes SHA-256 para igualar longitudes,
+ * ya que `timingSafeEqual` exige buffers del mismo tamaño.
+ */
+function tokensMatch(provided: string, expected: string): boolean {
+  const a = createHash("sha256").update(provided).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
+
 export async function POST(request: NextRequest) {
   const expected = process.env.REVALIDATE_TOKEN;
   if (!expected) {
@@ -35,7 +48,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (getToken(request) !== expected) {
+  const provided = getToken(request);
+  if (!provided || !tokensMatch(provided, expected)) {
     return NextResponse.json(
       { revalidated: false, message: "Invalid or missing token." },
       { status: 401 },

@@ -1,0 +1,136 @@
+import { randomUUID } from 'node:crypto';
+
+import {
+  ForbiddenException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+
+import type { Database } from '../db/database.module';
+import type { PricesService } from '../prices/prices.service';
+import { createTestDb, insertUser, resetDb } from '../../test/db';
+import { CreatePositionDto } from './dto/create-position.dto';
+import { PositionsService } from './positions.service';
+
+/** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
+const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;
+
+function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
+  return {
+    quantity: 1,
+    avgPrice: 100,
+    ...partial,
+  };
+}
+
+describe('PositionsService (integración con Postgres)', () => {
+  let db: Database;
+  let close: () => Promise<void>;
+  let service: PositionsService;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+    service = new PositionsService(db, pricesStub);
+  });
+
+  afterEach(async () => {
+    await resetDb(db);
+  });
+
+  afterAll(async () => {
+    await close();
+  });
+
+  describe('aislamiento entre usuarios', () => {
+    it('findAllByUser solo devuelve las posiciones del propio usuario', async () => {
+      const userA = await insertUser(db, 'a@example.com');
+      const userB = await insertUser(db, 'b@example.com');
+
+      await service.create(userA, dto({ ticker: 'IWDA' }));
+      await service.create(userB, dto({ ticker: 'VWCE' }));
+
+      const aPositions = await service.findAllByUser(userA);
+      const bPositions = await service.findAllByUser(userB);
+
+      expect(aPositions).toHaveLength(1);
+      expect(aPositions[0].ticker).toBe('IWDA');
+      expect(bPositions).toHaveLength(1);
+      expect(bPositions[0].ticker).toBe('VWCE');
+    });
+
+    it('un usuario no puede borrar la posición de otro (403)', async () => {
+      const userA = await insertUser(db, 'a@example.com');
+      const userB = await insertUser(db, 'b@example.com');
+      const a = await service.create(userA, dto({ ticker: 'IWDA' }));
+
+      await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(ForbiddenException);
+
+      // Sigue existiendo para su dueño: el borrado ajeno no surtió efecto.
+      expect(await service.findAllByUser(userA)).toHaveLength(1);
+    });
+
+    it('un usuario no puede actualizar la posición de otro (403)', async () => {
+      const userA = await insertUser(db, 'a@example.com');
+      const userB = await insertUser(db, 'b@example.com');
+      const a = await service.create(userA, dto({ ticker: 'IWDA' }));
+
+      await expect(
+        service.update(userB, a.id, { quantity: 999 }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('borrar/actualizar una posición inexistente da 404', async () => {
+      const userA = await insertUser(db, 'a@example.com');
+      await expect(service.remove(userA, randomUUID())).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('reglas de duplicados', () => {
+    it('exige bróker si el símbolo ya existe sin bróker (BROKER_REQUIRED)', async () => {
+      const user = await insertUser(db, 'a@example.com');
+      await service.create(user, dto({ ticker: 'IWDA' }));
+
+      await expect(service.create(user, dto({ ticker: 'IWDA' }))).rejects.toMatchObject({
+        response: { code: 'BROKER_REQUIRED' },
+      });
+    });
+
+    it('rechaza el mismo (símbolo, bróker) case-insensitive (DUPLICATE)', async () => {
+      const user = await insertUser(db, 'a@example.com');
+      await service.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' }));
+
+      await expect(
+        service.create(user, dto({ ticker: 'IWDA', broker: 'degiro' })),
+      ).rejects.toMatchObject({ response: { code: 'DUPLICATE' } });
+    });
+
+    it('permite el mismo símbolo en brókers distintos', async () => {
+      const user = await insertUser(db, 'a@example.com');
+      await service.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' }));
+      const second = await service.create(user, dto({ ticker: 'IWDA', broker: 'MyInvestor' }));
+
+      expect(second.broker).toBe('MyInvestor');
+      expect(await service.findAllByUser(user)).toHaveLength(2);
+    });
+
+    it('el mismo símbolo de dos usuarios distintos no es duplicado', async () => {
+      const userA = await insertUser(db, 'a@example.com');
+      const userB = await insertUser(db, 'b@example.com');
+
+      await service.create(userA, dto({ ticker: 'IWDA' }));
+      // El mismo símbolo sin bróker para OTRO usuario debe permitirse.
+      const b = await service.create(userB, dto({ ticker: 'IWDA' }));
+      expect(b.ticker).toBe('IWDA');
+    });
+  });
+
+  it('traduce una violación de FK (usuario inexistente) a 401, no 500', async () => {
+    // JWT con firma válida pero `sub` que ya no existe en BD.
+    await expect(
+      service.create(randomUUID(), dto({ ticker: 'IWDA' })),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+});

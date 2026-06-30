@@ -1,9 +1,27 @@
 packages:
   - 'apps/*'
 
+# Forzamos versiones parcheadas de dependencias transitivas con avisos de
+# seguridad (ver `pnpm audit`). Todas son de baja alcanzabilidad real en este
+# código, pero las elevamos por higiene a la versión parcheada sin saltar de
+# major (compatibilidad de API):
+#   - esbuild/postcss: solo tooling de build/dev.
+#   - multer: transitiva de @nestjs/platform-express; no hay rutas de subida.
+#   - js-yaml (vía gray-matter): solo parsea frontmatter de Markdown de confianza.
+overrides:
+  esbuild: '>=0.24.3'
+  postcss: '>=8.5.10'
+  multer: '>=2.2.0'
+  gray-matter>js-yaml: '^3.15.0'
+
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
+  # Deps nativas OPCIONALES de testcontainers/dockerode (transporte SSH). Los tests
+  # usan el socket local de Docker, no SSH, así que no hace falta compilarlas.
+  cpu-features: false
+  protobufjs: false
+  ssh2: false
   esbuild: true
   sharp: true
   unrs-resolver: true

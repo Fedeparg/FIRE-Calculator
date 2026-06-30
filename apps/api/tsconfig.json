@@ -12,7 +12,6 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
@@ -22,6 +21,8 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts"],
+  // `tsc --noEmit` (typecheck) cubre TODO, incluidos los tests y sus utilidades.
+  // El build de producción usa `tsconfig.build.json`, que excluye los tests.
+  "include": ["src/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
