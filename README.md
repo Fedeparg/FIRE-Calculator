@@ -26,7 +26,7 @@ de la raíz; cada paquete se chequea por separado.
 
 ## Requisitos
 
-- Node.js ≥ 20 y [pnpm](https://pnpm.io/)
+- Node.js ≥ 22.13 y [pnpm](https://pnpm.io/) (la versión de pnpm fijada en `packageManager` requiere Node ≥ 22.13)
 - Docker (para el stack completo y para los tests de integración del backend)
 
 ## Arranque rápido
