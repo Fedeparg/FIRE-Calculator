@@ -15,6 +15,14 @@ const eurCents = new Intl.NumberFormat("es-ES", {
 
 const num = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 });
 
+// Cantidades de participaciones/acciones/cripto: hasta 6 decimales (la BD guarda
+// `numeric(18,6)`), sin forzar decimales para que un entero se muestre limpio. Redondear
+// a entero (como `formatNumber`) falsearía 1368,8 → "1.369" y ocultaría 0,5 BTC como "1".
+const quantity = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 6,
+});
+
 const multiplier = new Intl.NumberFormat("es-ES", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
@@ -48,6 +56,14 @@ export const formatEURCents = (n: number): string =>
 
 export const formatNumber = (n: number): string =>
   Number.isFinite(n) ? num.format(n) : NON_FINITE;
+
+/**
+ * Cantidad de títulos de una posición (participaciones, acciones, cripto). A diferencia de
+ * `formatNumber`, conserva hasta 6 decimales (la precisión con la que se almacena), así que
+ * un fondo con 1368,8 participaciones o 0,5 BTC se muestran fielmente en lugar de redondear.
+ */
+export const formatQuantity = (n: number): string =>
+  Number.isFinite(n) ? quantity.format(n) : NON_FINITE;
 
 /** Coeficiente o multiplicador con 2-4 decimales (p. ej. 1,5882). */
 export const formatMultiplier = (n: number): string =>
