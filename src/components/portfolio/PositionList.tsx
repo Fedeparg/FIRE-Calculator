@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { convertCurrency } from "@/core/fx";
-import { formatCurrency, formatIsoDate, formatNumber, formatPercent } from "@/core/format";
+import { formatCurrency, formatIsoDate, formatPercent, formatQuantity } from "@/core/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {
@@ -152,7 +152,7 @@ export default function PositionList({
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
-                    {formatNumber(p.quantity)}
+                    {formatQuantity(p.quantity)}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {formatCurrency(p.avgPrice, p.currency)}
