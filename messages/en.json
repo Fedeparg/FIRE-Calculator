@@ -970,6 +970,7 @@
       "pnlModePct": "%",
       "pnlModeAbs": "Amount",
       "priceAsOf": "Price as of {date}",
+      "sortBy": "Sort by {field}",
       "noPrice": "No market price yet for this symbol.",
       "actions": "Actions",
       "edit": "Edit",
