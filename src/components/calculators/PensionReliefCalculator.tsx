@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -11,7 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function PensionReliefCalculator() {
   const t = useTranslations("calc.desgravacion-plan-pensiones");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [grossAnnual, setGrossAnnual] = useState(40000);
   const [contribution, setContribution] = useState(1500);
   const [employerContribution, setEmployerContribution] = useState(0);

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeInflation } from "@/core/calculators/inflacion";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
@@ -11,6 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function InflationCalculator() {
   const t = useTranslations("calc.inflacion");
+  const { formatEUR, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
   const [amount, setAmount] = useState(10000);

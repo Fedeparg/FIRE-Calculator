@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeDividends } from "@/core/calculators/dividendos";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -12,6 +12,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function DividendsCalculator() {
   const t = useTranslations("calc.dividendos");
+  const { formatEUR, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
   const [shares, setShares] = useState(100);

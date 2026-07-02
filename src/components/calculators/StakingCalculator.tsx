@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeStaking } from "@/core/calculators/staking";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -13,6 +13,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function StakingCalculator() {
   const t = useTranslations("calc.staking");
+  const { formatEUR } = useFormat();
   const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useState(5000);

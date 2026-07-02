@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeAffordability } from "@/core/calculators/hipoteca-asequible";
-import { formatEUR, formatEURCents } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function AffordabilityCalculator() {
   const t = useTranslations("calc.que-hipoteca-me-puedo-permitir");
-
+  const { formatEUR, formatEURCents } = useFormat();
   const [netMonthlyIncome, setNetMonthlyIncome] = useState(2000);
   const [monthlyDebts, setMonthlyDebts] = useState(0);
   const [downPayment, setDownPayment] = useState(40000);

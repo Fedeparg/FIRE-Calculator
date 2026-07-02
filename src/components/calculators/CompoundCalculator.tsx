@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeCompound } from "@/core/calculators/interes-compuesto";
 import { FREQUENCIES, type Frequency } from "@/core/projection";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -14,6 +14,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function CompoundCalculator() {
   const t = useTranslations("calc.interes-compuesto");
+  const { formatEUR } = useFormat();
   const tf = useTranslations("frequency");
   const tc = useTranslations("chart");
 

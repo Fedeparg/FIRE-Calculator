@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeGiftTax, type KinshipGroup } from "@/core/calculators/impuesto-donaciones";
-import { formatEUR, formatMultiplier, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -12,7 +12,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function GiftTaxCalculator() {
   const t = useTranslations("calc.impuesto-donaciones");
-
+  const { formatEUR, formatMultiplier, formatPercent } = useFormat();
   const [amount, setAmount] = useState(100000);
   const [reduction, setReduction] = useState(0);
   const [kinship, setKinship] = useState<KinshipGroup>("grupoI_II");

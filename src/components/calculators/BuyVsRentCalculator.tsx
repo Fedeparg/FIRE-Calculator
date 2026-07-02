@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeBuyVsRent } from "@/core/calculators/hipoteca-vs-alquiler";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -11,7 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function BuyVsRentCalculator() {
   const t = useTranslations("calc.hipoteca-vs-alquiler");
-
+  const { formatEUR } = useFormat();
   const [purchasePrice, setPurchasePrice] = useState(250000);
   const [purchaseCosts, setPurchaseCosts] = useState(25000);
   const [downPayment, setDownPayment] = useState(50000);

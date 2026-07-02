@@ -1,6 +1,6 @@
 "use client";
 
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 
 type Entry = {
   name?: string;
@@ -28,6 +28,7 @@ export default function ChartTooltip({
   totalKeys,
   totalLabel,
 }: Props) {
+  const { formatEUR } = useFormat();
   if (!active || !payload?.length) return null;
 
   const total =

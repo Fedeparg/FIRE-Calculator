@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
-import { formatEUR, formatEURCents, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -13,7 +13,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function PayrollWithholdingCalculator() {
   const t = useTranslations("calc.irpf-nomina");
-
+  const { formatEUR, formatEURCents, formatPercent } = useFormat();
   // Datos de la nómina
   const [grossAnnual, setGrossAnnual] = useState(30000);
   const [payments, setPayments] = useState("14");

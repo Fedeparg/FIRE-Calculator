@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { formatCompactEUR, formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import ChartTooltip from "./ChartTooltip";
 
 export type SeriesDef = { key: string; name: string; color: string };
@@ -59,6 +59,7 @@ export default function TimeSeriesChart({
   labels,
   height = 300,
 }: Props) {
+  const { formatCompactEUR, formatEUR } = useFormat();
   const [selection, setSelection] = useState<Selection>(null);
   const [dragging, setDragging] = useState(false);
 

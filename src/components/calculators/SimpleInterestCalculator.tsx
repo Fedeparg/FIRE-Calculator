@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeSimpleInterest } from "@/core/calculators/interes-simple";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -13,6 +13,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function SimpleInterestCalculator() {
   const t = useTranslations("calc.interes-simple");
+  const { formatEUR } = useFormat();
   const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useState(10000);

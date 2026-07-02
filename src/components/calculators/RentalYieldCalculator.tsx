@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeRentalYield } from "@/core/calculators/rentabilidad-alquiler";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function RentalYieldCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [purchasePrice, setPurchasePrice] = useState(200000);
   const [purchaseCosts, setPurchaseCosts] = useState(20000);
   const [monthlyRent, setMonthlyRent] = useState(1000);

@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeEarlyRepayment } from "@/core/calculators/amortizacion-anticipada";
-import { formatEUR, formatEURCents, formatNumber } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function EarlyRepaymentCalculator() {
   const t = useTranslations("calc.amortizacion-anticipada");
-
+  const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const [pendingPrincipal, setPendingPrincipal] = useState(150000);
   const [annualRate, setAnnualRate] = useState(3);
   const [remainingYears, setRemainingYears] = useState(25);

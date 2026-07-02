@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { convertCurrency } from "@/core/fx";
-import { formatCurrency, formatIsoDate, formatPercent, formatQuantity } from "@/core/format";
+import { formatIsoDate } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import {
   DEFAULT_SORT_DIR,
   DEFAULT_SORT_KEY,
@@ -80,6 +81,7 @@ export default function PositionList({
   onDeleted,
 }: Props) {
   const t = useTranslations("portfolio.list");
+  const { formatCurrency, formatPercent, formatQuantity } = useFormat();
   // id en confirmación de borrado / id en proceso de borrado.
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

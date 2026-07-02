@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { aggregatePortfolio } from "@/core/fx";
-import { currencyLabel, formatCurrency, formatIsoDate, formatPercent } from "@/core/format";
+import { formatIsoDate } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import {
   PORTFOLIO_CURRENCIES,
   type FxRates,
@@ -27,6 +28,7 @@ type Props = {
  */
 export default function PortfolioSummary({ positions, prices, fxRates }: Props) {
   const t = useTranslations("portfolio.summary");
+  const { currencyLabel, formatCurrency, formatPercent } = useFormat();
   const [display, setDisplay] = useState<string>("EUR");
 
   const rates = useMemo(() => fxRates?.rates ?? {}, [fxRates]);
