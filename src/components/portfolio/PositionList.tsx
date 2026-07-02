@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { convertCurrency } from "@/core/fx";
 import { formatCurrency, formatIsoDate, formatPercent, formatQuantity } from "@/core/format";
+import {
+  DEFAULT_SORT_DIR,
+  DEFAULT_SORT_KEY,
+  sortPositions,
+  type SortableRow,
+  type SortDir,
+  type SortKey,
+} from "@/core/portfolio-sort";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {
@@ -22,14 +30,46 @@ type Props = {
 /** Cómo se muestra el P&L: porcentaje o importe en la divisa de la posición. */
 type PnlMode = "pct" | "abs";
 
+/** Fila enriquecida: datos ya calculados para pintar + valores comparables para ordenar. */
+type Row = {
+  position: Position;
+  invested: number;
+  price: PriceInfo | undefined;
+  marketValue: number | null;
+  pnlAbs: number | null;
+  pnlPct: number | null;
+  missingReason: string;
+  sortable: SortableRow;
+};
+
+/** Divisa base para comparar importes entre posiciones (las tasas son USD por unidad). */
+const BASE_CURRENCY = "USD";
+
 /**
- * Tabla de posiciones con editar y borrado inline (confirmación sin modal). Enriquece cada
- * fila con el último precio de mercado (desde nuestra DB) para mostrar valor actual y P&L.
+ * Convierte un importe de su divisa a la base (USD) solo para poder ORDENAR importes de
+ * posiciones en divisas distintas de forma justa. `null` si falta la tasa de origen (esa fila
+ * se ordena al final). No se usa para mostrar: en la tabla cada importe va en su propia divisa.
+ */
+function toBase(amount: number | null, currency: string, rates: Record<string, number>): number | null {
+  if (amount === null) return null;
+  if (currency === BASE_CURRENCY) return amount;
+  const rate = rates[currency];
+  return Number.isFinite(rate) && rate ? amount * rate : null;
+}
+
+/**
+ * Tabla de posiciones con ordenación por cualquier columna, editar y borrado inline
+ * (confirmación sin modal). Enriquece cada fila con el último precio de mercado (desde nuestra
+ * DB) para mostrar valor actual y P&L.
  *
  * Regla de divisa: el valor de mercado se CONVIERTE a la divisa de la posición con las tasas
  * FX diarias (el precio puede venir en otra divisa, p. ej. un activo en USD comprado en EUR).
  * El P&L = valor − invertido, ambos ya en la divisa de la posición. Solo se marca "—" si no
  * hay precio o si falta la tasa de cambio necesaria.
+ *
+ * Ordenación: el primer clic en una columna ordena de mayor a menor; el siguiente invierte el
+ * sentido. Por defecto, por lo invertido descendente. Los valores no calculables ("—") van
+ * siempre al final. Los importes se comparan convertidos a una divisa base común (USD).
  */
 export default function PositionList({
   positions,
@@ -44,6 +84,8 @@ export default function PositionList({
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pnlMode, setPnlMode] = useState<PnlMode>("pct");
+  const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
+  const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -57,6 +99,62 @@ export default function PositionList({
       setConfirmingId(null);
     }
   }
+
+  // Primer clic en una columna: de mayor a menor. Clics siguientes: alterna el sentido.
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  // Decoramos cada posición con sus valores calculados y comparables. El P&L comparable sigue
+  // el modo activo (%, o importe base) para que ordenar coincida con lo que se ve.
+  const rows: Row[] = useMemo(
+    () =>
+      positions.map((position) => {
+        const invested = position.quantity * position.avgPrice;
+        const price = prices[position.ticker];
+        const marketValue =
+          price !== undefined
+            ? convertCurrency(
+                position.quantity * price.close,
+                price.currency,
+                position.currency,
+                rates,
+              )
+            : null;
+        const pnlAbs = marketValue !== null ? marketValue - invested : null;
+        const pnlPct = pnlAbs !== null && invested > 0 ? (pnlAbs / invested) * 100 : null;
+        const missingReason =
+          price === undefined
+            ? t("noPrice")
+            : marketValue === null
+              ? t("noFxRate", { price: price.currency, position: position.currency })
+              : "";
+
+        const sortable: SortableRow = {
+          ticker: position.ticker,
+          name: position.name,
+          broker: position.broker,
+          quantity: position.quantity,
+          avgPrice: toBase(position.avgPrice, position.currency, rates),
+          invested: toBase(invested, position.currency, rates),
+          marketValue: toBase(marketValue, position.currency, rates),
+          pnl: pnlMode === "pct" ? pnlPct : toBase(pnlAbs, position.currency, rates),
+        };
+
+        return { position, invested, price, marketValue, pnlAbs, pnlPct, missingReason, sortable };
+      }),
+    [positions, prices, rates, pnlMode, t],
+  );
+
+  const sortedRows = useMemo(
+    () => sortPositions(rows, sortKey, sortDir),
+    [rows, sortKey, sortDir],
+  );
 
   return (
     <div className="flex flex-col gap-3">
@@ -85,55 +183,87 @@ export default function PositionList({
         <table className="w-full min-w-[52rem] text-left text-sm">
           <thead>
             <tr className="border-b border-border text-muted">
-              <th scope="col" className="px-4 py-3 font-medium">
-                {t("ticker")}
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium">
-                {t("name")}
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                {t("quantity")}
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                {t("avgPrice")}
-              </th>
-              <th scope="col" className="px-4 py-3 font-medium">
-                {t("broker")}
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                {t("invested")}
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                {t("marketValue")}
-              </th>
-              <th scope="col" className="px-4 py-3 text-right font-medium">
-                {t("pnl")}
-              </th>
+              <SortHeader
+                column="ticker"
+                label={t("ticker")}
+                title={t("sortBy", { field: t("ticker") })}
+                align="left"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="name"
+                label={t("name")}
+                title={t("sortBy", { field: t("name") })}
+                align="left"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="quantity"
+                label={t("quantity")}
+                title={t("sortBy", { field: t("quantity") })}
+                align="right"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="avgPrice"
+                label={t("avgPrice")}
+                title={t("sortBy", { field: t("avgPrice") })}
+                align="right"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="broker"
+                label={t("broker")}
+                title={t("sortBy", { field: t("broker") })}
+                align="left"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="invested"
+                label={t("invested")}
+                title={t("sortBy", { field: t("invested") })}
+                align="right"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="marketValue"
+                label={t("marketValue")}
+                title={t("sortBy", { field: t("marketValue") })}
+                align="right"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
+              <SortHeader
+                column="pnl"
+                label={t("pnl")}
+                title={t("sortBy", { field: t("pnl") })}
+                align="right"
+                activeKey={sortKey}
+                dir={sortDir}
+                onSort={handleSort}
+              />
               <th scope="col" className="px-4 py-3 text-right font-medium">
                 <span className="sr-only">{t("actions")}</span>
               </th>
             </tr>
           </thead>
           <tbody>
-            {positions.map((p) => {
-              const invested = p.quantity * p.avgPrice;
-              const price = prices[p.ticker];
-              // Valor de mercado convertido a la divisa de la posición (el precio puede venir
-              // en otra divisa). `null` si no hay precio o falta la tasa de cambio.
-              const marketValue =
-                price !== undefined
-                  ? convertCurrency(p.quantity * price.close, price.currency, p.currency, rates)
-                  : null;
-              const pnlAbs = marketValue !== null ? marketValue - invested : null;
-              const pnlPct =
-                pnlAbs !== null && invested > 0 ? (pnlAbs / invested) * 100 : null;
-              // Motivo de un valor no calculable (para el tooltip del "—").
-              const missingReason =
-                price === undefined
-                  ? t("noPrice")
-                  : marketValue === null
-                    ? t("noFxRate", { price: price.currency, position: p.currency })
-                    : "";
+            {sortedRows.map((row) => {
+              const p = row.position;
+              const { invested, price, marketValue, pnlAbs, pnlPct, missingReason } = row;
 
               const isConfirming = confirmingId === p.id;
               const isDeleting = deletingId === p.id;
@@ -240,5 +370,59 @@ export default function PositionList({
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Cabecera de columna ordenable: un botón accesible dentro del `<th>`. Marca `aria-sort` en la
+ * columna activa e indica el sentido con una flecha (↑/↓); en inactivas muestra "↕" al pasar
+ * el ratón. Todo con tokens de color (nada hardcodeado), válido en claro y oscuro.
+ */
+function SortHeader({
+  column,
+  label,
+  title,
+  align,
+  activeKey,
+  dir,
+  onSort,
+}: {
+  column: SortKey;
+  label: string;
+  title: string;
+  align: "left" | "right";
+  activeKey: SortKey;
+  dir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = activeKey === column;
+  const ariaSort = active ? (dir === "asc" ? "ascending" : "descending") : "none";
+  return (
+    <th
+      scope="col"
+      aria-sort={ariaSort}
+      className={`px-4 py-3 font-medium ${align === "right" ? "text-right" : ""}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        title={title}
+        className={`group inline-flex items-center gap-1 whitespace-nowrap rounded transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 ${
+          active ? "text-foreground" : "hover:text-foreground"
+        }`}
+      >
+        <span>{label}</span>
+        <span
+          aria-hidden
+          className={`text-xs ${
+            active
+              ? "text-brand"
+              : "text-muted opacity-0 transition-opacity group-hover:opacity-60"
+          }`}
+        >
+          {active ? (dir === "asc" ? "↑" : "↓") : "↕"}
+        </span>
+      </button>
+    </th>
   );
 }
