@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeRoi } from "@/core/calculators/roi";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -11,7 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function RoiCalculator() {
   const t = useTranslations("calc.roi");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [initial, setInitial] = useState(1000);
   const [final, setFinal] = useState(1500);
   const [years, setYears] = useState(5);

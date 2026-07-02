@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import { currencyLabel } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import {
   PORTFOLIO_CURRENCIES,
   type InstrumentSearchResult,
@@ -54,6 +54,7 @@ function toCurrency(value: string | undefined): PortfolioCurrency {
  */
 export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.form");
+  const { currencyLabel } = useFormat();
   const isEditing = Boolean(editing);
 
   const [ticker, setTicker] = useState(editing?.ticker ?? "");

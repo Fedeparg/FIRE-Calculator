@@ -1,7 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 
 export type DonutSlice = { name: string; value: number; color: string };
 
@@ -13,6 +13,7 @@ type Props = {
 
 /** Donut de composición (p.ej. aportado vs intereses) con leyenda y porcentajes. */
 export default function BreakdownDonut({ title, data, centerLabel }: Props) {
+  const { formatEUR } = useFormat();
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0);
   const pct = (v: number) => (total > 0 ? Math.round((Math.max(0, v) / total) * 100) : 0);
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeDeposit } from "@/core/calculators/deposito";
-import { formatEUR } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import BreakdownDonut from "../charts/BreakdownDonut";
@@ -33,7 +33,7 @@ export default function DepositLikeCalculator({
   defaultApr,
 }: Props) {
   const t = useTranslations(`calc.${namespace}`);
-
+  const { formatEUR } = useFormat();
   const [principal, setPrincipal] = useState(defaultPrincipal);
   const [apr, setApr] = useState(defaultApr);
   const [years, setYears] = useState(1);

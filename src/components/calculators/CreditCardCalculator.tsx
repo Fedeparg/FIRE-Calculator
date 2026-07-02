@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeCreditCard, type PaymentMode } from "@/core/calculators/tarjeta-credito";
-import { formatEUR, formatEURCents, formatNumber } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -12,6 +12,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function CreditCardCalculator() {
   const t = useTranslations("calc.tarjeta-credito");
+  const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const tc = useTranslations("chart");
 
   const [balance, setBalance] = useState(2000);

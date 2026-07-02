@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeHolidayRental } from "@/core/calculators/rentabilidad-alquiler-vacacional";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function HolidayRentalCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler-vacacional");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [purchasePrice, setPurchasePrice] = useState(200000);
   const [purchaseCosts, setPurchaseCosts] = useState(20000);
   const [nightlyRate, setNightlyRate] = useState(100);

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeAveragePrice } from "@/core/calculators/promediar-acciones";
-import { formatEUR, formatEURCents, formatNumber, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 
@@ -19,7 +19,7 @@ const makeRow = (price: number, shares: number, commission: number): Row => ({
 
 export default function AveragePriceCalculator() {
   const t = useTranslations("calc.promediar-acciones");
-
+  const { formatEUR, formatEURCents, formatNumber, formatPercent } = useFormat();
   const [rows, setRows] = useState<Row[]>(() => [makeRow(10, 10, 5), makeRow(8, 15, 5)]);
   const [currentPrice, setCurrentPrice] = useState(12);
 

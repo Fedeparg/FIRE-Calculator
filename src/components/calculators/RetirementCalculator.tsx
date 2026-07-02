@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeRetirement } from "@/core/calculators/ahorro-jubilacion";
-import { formatEUR, formatEURCents, formatNumber } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -13,6 +13,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function RetirementCalculator() {
   const t = useTranslations("calc.ahorro-jubilacion");
+  const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const tc = useTranslations("chart");
 
   const [currentAge, setCurrentAge] = useState(30);

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeBudget } from "@/core/calculators/presupuesto";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import BreakdownDonut from "../charts/BreakdownDonut";
@@ -11,7 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function BudgetCalculator() {
   const t = useTranslations("calc.presupuesto-mensual");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [income, setIncome] = useState(2000);
   const [needs, setNeeds] = useState(1000);
   const [wants, setWants] = useState(600);

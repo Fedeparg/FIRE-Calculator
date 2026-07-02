@@ -13,7 +13,7 @@ import {
   YAxis,
 } from "recharts";
 import { computeMortgage } from "@/core/calculators/hipoteca";
-import { formatCompactEUR, formatEUR, formatEURCents, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import ChartCard from "../ui/ChartCard";
@@ -23,6 +23,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function MortgageCalculator() {
   const t = useTranslations("calc.hipoteca-fija");
+  const { formatCompactEUR, formatEUR, formatEURCents, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useState(180000);

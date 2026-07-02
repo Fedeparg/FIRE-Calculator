@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeSelfEmployedTax } from "@/core/calculators/irpf-autonomos";
 import type { DisabilityGrade } from "@/core/fiscal/irpf";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -13,7 +13,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function SelfEmployedTaxCalculator() {
   const t = useTranslations("calc.irpf-autonomos");
-
+  const { formatEUR, formatPercent } = useFormat();
   // Datos de la actividad
   const [income, setIncome] = useState(40000);
   const [expenses, setExpenses] = useState(8000);

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeWealthTax } from "@/core/calculators/impuesto-patrimonio";
-import { formatEUR, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
@@ -11,7 +11,7 @@ import CalculatorLayout from "../CalculatorLayout";
 
 export default function WealthTaxCalculator() {
   const t = useTranslations("calc.impuesto-patrimonio");
-
+  const { formatEUR, formatPercent } = useFormat();
   const [totalWealth, setTotalWealth] = useState(1500000);
   const [primaryResidenceValue, setPrimaryResidenceValue] = useState(300000);
   const [exemptMinimum, setExemptMinimum] = useState(700000);

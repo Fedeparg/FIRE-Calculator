@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeNetSalary } from "@/core/calculators/salario-bruto-neto";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
-import { formatEUR, formatEURCents, formatPercent } from "@/core/format";
+import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -12,7 +12,7 @@ import Notice from "../ui/Notice";
 
 export default function NetSalaryCalculator() {
   const t = useTranslations("calc.salario-bruto-neto");
-
+  const { formatEUR, formatEURCents, formatPercent } = useFormat();
   // Datos básicos
   const [grossAnnual, setGrossAnnual] = useState(30000);
   const [payments, setPayments] = useState("14");
