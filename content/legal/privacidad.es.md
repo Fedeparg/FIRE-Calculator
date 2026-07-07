@@ -1,6 +1,6 @@
 ---
 title: Política de privacidad y cookies
-updatedAt: "2026-06-28"
+updatedAt: "2026-07-07"
 ---
 
 Esta política explica qué datos tratamos cuando visitas **Sextante**
@@ -23,21 +23,6 @@ datos posibles**.
 Las calculadoras se ejecutan **íntegramente en tu navegador**. Los valores que
 introduces (ahorros, ingresos, importes, etc.) **no se envían ni se almacenan en
 nuestros servidores**. No necesitas registrarte para usarlas.
-
-### Publicidad (Google AdSense)
-
-Financiamos el sitio con publicidad de **Google AdSense**. Google y sus socios
-utilizan **cookies e identificadores** para mostrar anuncios y medir su
-rendimiento. En función de tu consentimiento, esos anuncios pueden ser
-personalizados o no personalizados. Para ello, Google puede tratar datos como tu
-dirección IP, identificadores de dispositivo y datos de navegación.
-
-- **Base legal:** tu **consentimiento**, que gestionamos mediante la plataforma
-  de consentimiento (CMP) certificada de Google. Puedes **retirarlo o
-  modificarlo** en cualquier momento desde el panel de consentimiento del sitio.
-- Más información sobre cómo Google usa los datos: *“Cómo utiliza Google la
-  información de sitios o aplicaciones que usan sus servicios”*
-  (`policies.google.com/technologies/partner-sites`).
 
 ### Cartera y cuenta (opcional)
 
@@ -74,29 +59,23 @@ Usamos los siguientes tipos de cookies:
 | Tipo | Finalidad | Consentimiento |
 | --- | --- | --- |
 | **Técnicas / preferencias** | Recordar ajustes como el tema claro/oscuro. Se guardan en tu navegador. | No requiere |
-| **Publicidad (Google)** | Mostrar y medir anuncios de AdSense. | Requiere consentimiento |
 
-Puedes gestionar tu consentimiento desde el panel del sitio y, además,
-configurar o bloquear las cookies desde tu navegador. Bloquear las cookies de
-publicidad no impide usar las calculadoras.
+No usamos cookies de **publicidad ni de analítica**. Puedes configurar o bloquear
+las cookies desde tu navegador sin que ello impida usar las calculadoras.
 
 ## Destinatarios y transferencias internacionales
 
-Los datos de publicidad los trata **Google** como proveedor. Google puede
-transferir datos fuera del Espacio Económico Europeo (por ejemplo, a EE. UU.)
-amparándose en los marcos de transferencia y garantías legalmente previstos.
 Cuando **conectas una aplicación externa** (MCP), tus datos de cartera se
-comparten con el proveedor que tú elijas. Salvo esos casos, no vendemos ni
-cedemos tus datos a terceros con fines propios.
+comparten con el proveedor que tú elijas, que puede estar fuera del Espacio
+Económico Europeo. Salvo ese caso, no vendemos ni cedemos tus datos a terceros
+con fines propios.
 
 ## Conservación
 
 Si no usas la cartera, **no conservamos datos personales tuyos** en nuestros
 servidores. Si la usas, conservamos tu cuenta y tus posiciones **hasta que borras
 tu cuenta**. Los accesos concedidos a aplicaciones (OAuth/MCP) se conservan hasta
-que los **revocas**, y los tokens caducados se eliminan automáticamente. Los
-datos tratados con fines publicitarios los conserva Google según sus propias
-políticas.
+que los **revocas**, y los tokens caducados se eliminan automáticamente.
 
 ## Tus derechos
 

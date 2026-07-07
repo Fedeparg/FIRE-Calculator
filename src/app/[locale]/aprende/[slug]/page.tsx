@@ -11,7 +11,6 @@ import ArticleRelatedCalculators from "@/components/wiki/ArticleRelatedCalculato
 import { buildMetadata } from "@/lib/seo";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
-import AdSlot from "@/components/AdSlot";
 
 // ISR + dynamicParams: las rutas conocidas se prerenderizan; slugs nuevos
 // (artículos añadidos sin redeploy) se generan bajo demanda y se cachean.
@@ -74,9 +73,6 @@ export default async function ArticlePage({ params }: Props) {
 
       {/* Enlazado interno: calculadoras que usan este concepto. */}
       <ArticleRelatedCalculators articleSlug={slug} />
-
-      {/* Publicidad: solo en contenido público (wiki), al final del artículo. */}
-      <AdSlot className="mt-10" />
     </article>
   );
 }

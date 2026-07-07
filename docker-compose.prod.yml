@@ -98,10 +98,10 @@ services:
         # Se hornea en build (el rewrite /api se congela en el manifiesto). En la
         # red de Compose el web alcanza la API por el nombre de servicio.
         API_URL: http://api:3001
-        # IDs PÚBLICOS de AdSense (vacíos hasta activar publicidad). Se inlinean
-        # en build; no son secretos.
-        NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${NEXT_PUBLIC_ADSENSE_CLIENT_ID:-}
-        NEXT_PUBLIC_ADSENSE_SLOT: ${NEXT_PUBLIC_ADSENSE_SLOT:-}
+        # URL canónica del sitio: se hornea en build (SEO, sitemap, robots.txt).
+        # Obligatoria: si falta, el build falla en vez de caer al fallback
+        # http://localhost:3000 (que dejaría el sitemap inservible para Google).
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?define NEXT_PUBLIC_SITE_URL (https://sextante.fpardo.net)}
         # Interruptor público de donaciones ("1" = mostrar). Se inlinea en build.
         NEXT_PUBLIC_DONATIONS_ENABLED: ${NEXT_PUBLIC_DONATIONS_ENABLED:-}
     restart: unless-stopped

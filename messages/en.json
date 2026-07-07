@@ -1082,10 +1082,6 @@
   "legal": {
     "lastUpdated": "Last updated: {date}"
   },
-  "ads": {
-    "label": "Advertisement",
-    "previewHint": "Ad space preview"
-  },
   "oauth": {
     "consent": {
       "title": "Connect an application",

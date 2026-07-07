@@ -42,10 +42,6 @@ jobs:
           RCLONE_CONF_BASE64: ${{ secrets.RCLONE_CONF_BASE64 }}
           # Clave SECRETA de Stripe (donaciones): va por Secrets, la consume el `api`.
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          # IDs PÚBLICOS de AdSense (no secretos): van por Variables, no Secrets.
-          # Vacíos = sin anuncios. Se hornean en el build de `web` (NEXT_PUBLIC_*).
-          NEXT_PUBLIC_ADSENSE_CLIENT_ID: ${{ vars.NEXT_PUBLIC_ADSENSE_CLIENT_ID }}
-          NEXT_PUBLIC_ADSENSE_SLOT: ${{ vars.NEXT_PUBLIC_ADSENSE_SLOT }}
           # Interruptor público de donaciones (Variable, no Secret): "1" = mostrar.
           NEXT_PUBLIC_DONATIONS_ENABLED: ${{ vars.NEXT_PUBLIC_DONATIONS_ENABLED }}
         run: |
@@ -55,6 +51,8 @@ jobs:
           cat > .env <<EOF
           NODE_ENV=production
           APP_URL=https://sextante.fpardo.net
+          # URL canónica pública: la hornea el build de `web` (SEO, sitemap, robots).
+          NEXT_PUBLIC_SITE_URL=https://sextante.fpardo.net
           COOKIE_SECURE=true
           EMAIL_TRANSPORT=resend
           EMAIL_FROM=Sextante <no-reply@send.fpardo.net>
@@ -68,8 +66,6 @@ jobs:
           REVALIDATE_TOKEN=${REVALIDATE_TOKEN}
           BACKUP_GPG_PASSPHRASE=${BACKUP_GPG_PASSPHRASE}
           RCLONE_CONF_BASE64=${RCLONE_CONF_BASE64}
-          NEXT_PUBLIC_ADSENSE_CLIENT_ID=${NEXT_PUBLIC_ADSENSE_CLIENT_ID}
-          NEXT_PUBLIC_ADSENSE_SLOT=${NEXT_PUBLIC_ADSENSE_SLOT}
           STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
           NEXT_PUBLIC_DONATIONS_ENABLED=${NEXT_PUBLIC_DONATIONS_ENABLED}
           EOF
