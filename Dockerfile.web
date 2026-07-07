@@ -28,17 +28,17 @@ RUN pnpm install --frozen-lockfile --filter freedom-calculator...
 ARG API_URL=http://api:3001
 ENV API_URL=$API_URL
 
-# Variables PÚBLICAS de AdSense: Next las inlinea en el bundle en BUILD TIME, así
-# que tienen que estar presentes durante `next build` (no en runtime). Vacías por
-# defecto → el script de AdSense no se carga. Cuando se active la publicidad, el
-# workflow las pasa como build-args. NO son secretos (son IDs públicos).
-ARG NEXT_PUBLIC_ADSENSE_CLIENT_ID=""
-ARG NEXT_PUBLIC_ADSENSE_SLOT=""
-ENV NEXT_PUBLIC_ADSENSE_CLIENT_ID=$NEXT_PUBLIC_ADSENSE_CLIENT_ID
-ENV NEXT_PUBLIC_ADSENSE_SLOT=$NEXT_PUBLIC_ADSENSE_SLOT
+# URL canónica pública del sitio. Next la inlinea (metadataBase, canonical,
+# hreflang) y la usan sitemap.xml y robots.txt para emitir URLs absolutas. Se
+# hornea en BUILD TIME (NEXT_PUBLIC_*), así que DEBE estar presente en `next
+# build`: si falta, el código cae a http://localhost:3000 y el sitemap queda
+# inservible para Google. El default local solo cubre un `docker build` suelto;
+# en prod el compose la exige (ver docker-compose.prod.yml).
+ARG NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
 # Interruptor PÚBLICO de donaciones ("invítame a un café"): se inlinea en BUILD TIME
-# igual que AdSense. "1" muestra el botón/sección; vacío lo oculta. No es secreto (la
+# (como toda NEXT_PUBLIC_). "1" muestra el botón/sección; vacío lo oculta. No es secreto (la
 # clave secreta de Stripe vive solo en el backend, ver el servicio `api`).
 ARG NEXT_PUBLIC_DONATIONS_ENABLED=""
 ENV NEXT_PUBLIC_DONATIONS_ENABLED=$NEXT_PUBLIC_DONATIONS_ENABLED

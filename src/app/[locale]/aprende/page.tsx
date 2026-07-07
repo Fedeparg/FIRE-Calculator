@@ -4,7 +4,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getAllArticles, WIKI_LEVELS, type ArticleMeta } from "@/components/wiki/content";
 import { buildMetadata } from "@/lib/seo";
-import AdSlot from "@/components/AdSlot";
 
 // ISR: el contenido se lee de ficheros Markdown en runtime; se revalida cada
 // hora y bajo demanda vía /api/revalidate, de modo que editar la wiki en el
@@ -42,8 +41,6 @@ export default async function LearnIndexPage({ params }: Props) {
       </h1>
       <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
 
-      <AdSlot className="mt-6" />
-
       {articles.length === 0 ? (
         <p className="mt-8 text-muted">{t("empty")}</p>
       ) : (
@@ -62,8 +59,6 @@ export default async function LearnIndexPage({ params }: Props) {
           ))}
         </div>
       )}
-
-      <AdSlot className="mt-12" />
     </section>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * Donaciones ("invítame a un café"). El interruptor es PÚBLICO por diseño (no es un
- * secreto): igual que los flags de AdSense, gobierna si se RENDERIZA el botón. Cuando
+ * secreto): se inlinea en build y gobierna si se RENDERIZA el botón. Cuando
  * vale "1" se muestra; vacío/0 lo oculta por completo. Ponlo a "1" en el `.env` de la
  * raíz a la vez que defines STRIPE_SECRET_KEY en `apps/api/.env` (ver .env.example).
  *

@@ -1,6 +1,6 @@
 ---
 title: Privacy and cookie policy
-updatedAt: "2026-06-28"
+updatedAt: "2026-07-07"
 ---
 
 This policy explains what data we process when you visit **Sextante**
@@ -23,20 +23,6 @@ possible**.
 The calculators run **entirely in your browser**. The values you enter (savings,
 income, amounts, etc.) **are not sent to or stored on our servers**. You do not
 need to register to use them.
-
-### Advertising (Google AdSense)
-
-We fund the site with **Google AdSense** advertising. Google and its partners use
-**cookies and identifiers** to serve ads and measure their performance.
-Depending on your consent, those ads may be personalised or non-personalised.
-To do so, Google may process data such as your IP address, device identifiers
-and browsing data.
-
-- **Legal basis:** your **consent**, which we manage through Google's certified
-  consent management platform (CMP). You can **withdraw or change it** at any
-  time from the site's consent panel.
-- More about how Google uses data: *“How Google uses information from sites or
-  apps that use its services”* (`policies.google.com/technologies/partner-sites`).
 
 ### Portfolio and account (optional)
 
@@ -73,29 +59,23 @@ We use the following types of cookies:
 | Type | Purpose | Consent |
 | --- | --- | --- |
 | **Essential / preferences** | Remember settings such as light/dark theme. Stored in your browser. | Not required |
-| **Advertising (Google)** | Serve and measure AdSense ads. | Requires consent |
 
-You can manage your consent from the site panel and also configure or block
-cookies in your browser. Blocking advertising cookies does not prevent you from
-using the calculators.
+We do not use **advertising or analytics** cookies. You can configure or block
+cookies in your browser without preventing you from using the calculators.
 
 ## Recipients and international transfers
 
-Advertising data is processed by **Google** as a provider. Google may transfer
-data outside the European Economic Area (for example, to the USA) relying on the
-transfer frameworks and safeguards provided for by law. When you **connect an
-external application** (MCP), your portfolio data is shared with the provider you
-choose. Apart from those cases, we do not sell or share your data with third
-parties for their own purposes.
+When you **connect an external application** (MCP), your portfolio data is shared
+with the provider you choose, which may be located outside the European Economic
+Area. Apart from that case, we do not sell or share your data with third parties
+for their own purposes.
 
 ## Retention
 
 If you do not use the portfolio, **we do not retain any personal data of yours**
 on our servers. If you do, we retain your account and your positions **until you
 delete your account**. Access granted to applications (OAuth/MCP) is retained
-until you **revoke** it, and expired tokens are deleted automatically. Data
-processed for advertising purposes is retained by Google in accordance with its
-own policies.
+until you **revoke** it, and expired tokens are deleted automatically.
 
 ## Your rights
 

@@ -11,7 +11,6 @@ import JsonLd from "@/components/seo/JsonLd";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeScript from "@/components/ThemeScript";
-import AdsenseScript from "@/components/AdsenseScript";
 import "../globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -65,7 +64,6 @@ export default async function LocaleLayout({ children, params }: Props) {
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeScript />
-        <AdsenseScript />
         <JsonLd data={[organizationSchema(), websiteSchema(asLocale(locale))]} />
         <NextIntlClientProvider>
           <Header />
