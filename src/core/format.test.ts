@@ -67,3 +67,10 @@ describe("formatPercent", () => {
     expect(en.formatPercent(3.25)).toMatch(/^3\.25%$/u);
   });
 });
+
+describe("decimalSeparator", () => {
+  it("es la coma en castellano y el punto en inglés", () => {
+    expect(es.decimalSeparator).toBe(",");
+    expect(en.decimalSeparator).toBe(".");
+  });
+});

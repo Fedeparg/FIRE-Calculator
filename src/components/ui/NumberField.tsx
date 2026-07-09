@@ -1,6 +1,16 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type KeyboardEvent } from "react";
+
+import {
+  addStep,
+  clampNumber,
+  formatDecimalInput,
+  parseDecimalInput,
+  sanitizeDecimalInput,
+  stripLeadingZeros,
+} from "@/core/number-input";
+import { useFormat } from "@/lib/format";
 import HelpTooltip from "./HelpTooltip";
 
 type Props = {
@@ -14,13 +24,14 @@ type Props = {
 };
 
 /**
- * Quita ceros a la izquierda al escribir ("0300" → "300"), pero conserva el
- * cero de los decimales ("0.5") y el "0" solo.
+ * Campo numérico con teclado decimal en móvil.
+ *
+ * Es `type="text"` a propósito, no `type="number"`: el teclado decimal de un móvil
+ * en español ofrece coma, y `type="number"` descarta todo lo que no sea un número
+ * con punto, así que la coma nunca llegaba al handler y no se podían escribir
+ * decimales. A cambio perdemos las flechas nativas del spinner, que se reimplementan
+ * aquí; como allí, `min`/`max` gobiernan las flechas y no lo que se teclea.
  */
-function stripLeadingZeros(raw: string): string {
-  return raw.replace(/^0+(?=\d)/, "");
-}
-
 export default function NumberField({
   label,
   value,
@@ -31,15 +42,39 @@ export default function NumberField({
   help,
 }: Props) {
   const id = useId();
+  const { decimalSeparator } = useFormat();
   // Estado de texto interno: permite el campo vacío mientras se edita (sin
-  // forzar un "0" que dejaría ceros feos a la izquierda).
-  const [text, setText] = useState(() => String(value));
+  // forzar un "0" que dejaría ceros feos a la izquierda) y conserva el separador
+  // tal y como lo escribe el usuario.
+  const [text, setText] = useState(() => formatDecimalInput(value, decimalSeparator));
 
   function handleChange(raw: string) {
-    const next = stripLeadingZeros(raw);
+    const next = stripLeadingZeros(sanitizeDecimalInput(raw));
     setText(next);
-    const parsed = next === "" || next === "." ? 0 : Number(next);
-    onChange(Number.isFinite(parsed) ? parsed : 0);
+    onChange(parseDecimalInput(next) ?? 0);
+  }
+
+  /**
+   * Al salir, el texto se resincroniza con el número ("3," → "3", "" → "0"). No se
+   * acota a [min, max]: `type="number"` tampoco lo hacía al teclear, y hay tasas que
+   * son legítimamente negativas pese al `min = 0` por defecto (un año en pérdidas,
+   * deflación). Los extremos solo gobiernan las flechas, como el spinner nativo.
+   */
+  function handleBlur() {
+    const parsed = parseDecimalInput(text) ?? 0;
+    if (parsed !== value) onChange(parsed);
+    setText(formatDecimalInput(parsed, decimalSeparator));
+  }
+
+  /** Reemplaza las flechas del spinner nativo, que `type="text"` no trae. */
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
+    event.preventDefault();
+
+    const current = parseDecimalInput(text) ?? 0;
+    const next = clampNumber(addStep(current, event.key === "ArrowUp" ? step : -step), min, max);
+    setText(formatDecimalInput(next, decimalSeparator));
+    onChange(next);
   }
 
   return (
@@ -52,14 +87,17 @@ export default function NumberField({
       </div>
       <input
         id={id}
-        type="number"
+        type="text"
         inputMode="decimal"
+        autoComplete="off"
+        role="spinbutton"
+        aria-valuenow={value}
+        aria-valuemin={min}
+        aria-valuemax={max}
         value={text}
-        min={min}
-        max={max}
-        step={step}
         onChange={(e) => handleChange(e.target.value)}
-        onBlur={() => setText(String(value))}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
         className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20"
       />
     </div>
