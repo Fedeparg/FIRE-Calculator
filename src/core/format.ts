@@ -42,6 +42,8 @@ export interface Formatters {
   currencySymbol: (currency: string) => string;
   /** Etiqueta compacta de una divisa para selectores: "€ EUR", "$ USD"… */
   currencyLabel: (currency: string) => string;
+  /** Separador decimal del idioma ("," en es, "." en en). Para los campos de entrada editables. */
+  decimalSeparator: string;
 }
 
 /** Construye un juego de formateadores para un idioma. Cachea internamente por divisa. */
@@ -124,6 +126,9 @@ function build(locale: Locale): Formatters {
       const symbol = currencySymbol(currency);
       return symbol === currency ? currency : `${symbol} ${currency}`;
     },
+    // `num` redondea a entero, así que no sirve para sondear el separador: usamos uno limpio.
+    decimalSeparator:
+      new Intl.NumberFormat(l).formatToParts(1.1).find((p) => p.type === "decimal")?.value ?? ".",
   };
 }
 

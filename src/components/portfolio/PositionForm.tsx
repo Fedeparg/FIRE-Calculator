@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import {
@@ -72,8 +73,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   // Al editar, intento de vaciar un bróker que la posición ya tenía (no se permite).
   const [brokerEmptied, setBrokerEmptied] = useState(false);
 
-  const quantityNum = Number(quantity.replace(",", "."));
-  const avgPriceNum = Number(avgPrice.replace(",", "."));
+  const quantityNum = parseDecimalInput(quantity) ?? NaN;
+  const avgPriceNum = parseDecimalInput(avgPrice) ?? NaN;
   // El bróker es opcional al añadir; la API lo exige solo si el símbolo ya existe.
   const isValid =
     ticker.trim().length > 0 &&
@@ -245,13 +246,12 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           </label>
           <input
             id="quantity"
-            type="number"
+            type="text"
             required
-            min="0"
-            step="any"
             inputMode="decimal"
+            autoComplete="off"
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
             placeholder="0"
             className={inputClass}
           />
@@ -263,13 +263,12 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           </label>
           <input
             id="avgPrice"
-            type="number"
+            type="text"
             required
-            min="0"
-            step="any"
             inputMode="decimal"
+            autoComplete="off"
             value={avgPrice}
-            onChange={(e) => setAvgPrice(e.target.value)}
+            onChange={(e) => setAvgPrice(sanitizeDecimalInput(e.target.value))}
             placeholder="0"
             className={inputClass}
           />
