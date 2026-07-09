@@ -44,15 +44,16 @@ export function HeroSextant({ className }: SvgProps) {
         <line x1="200" y1="98" x2="342" y2="292" />
       </g>
 
-      {/* Bastidor interior: arcos que rigidizan el marco */}
+      {/* Bastidor interior: arcos que rigidizan el marco, concéntricos con el limbo */}
       <g fill="none" className="stroke-brand" strokeWidth="9" strokeLinecap="round">
-        <path d="M92 276 Q200 244 308 276" />
-        <path d="M126 256 Q200 230 274 256" />
+        <path d="M92 276 A237 237 0 0 0 308 276" />
+        <path d="M126 256 A205 205 0 0 0 274 256" />
       </g>
 
-      {/* Limbo: arco graduado ancho en la base */}
+      {/* Limbo: arco graduado ancho en la base. Su centro es la perilla del
+          vértice (200,66), así que la curvatura se aleja de ella. */}
       <path
-        d="M54 292 A270 270 0 0 1 346 292"
+        d="M54 292 A270 270 0 0 0 346 292"
         fill="none"
         className="stroke-accent"
         strokeWidth="18"
@@ -76,8 +77,7 @@ export function HeroSextant({ className }: SvgProps) {
       <circle cx="200" cy="66" r="26" className="fill-brand" />
       <circle cx="200" cy="60" r="10" className="fill-surface" />
 
-      {/* Tambor micrométrico con lente, en la base de la alidada */}
-      <line x1="174" y1="332" x2="150" y2="332" className="stroke-brand" strokeWidth="7" strokeLinecap="round" />
+      {/* Tambor micrométrico con lente, montado sobre el limbo al pie de la alidada */}
       <rect x="174" y="300" width="52" height="48" rx="15" className="fill-brand stroke-surface" strokeWidth="4" />
       <circle cx="200" cy="322" r="14" className="fill-accent stroke-surface" strokeWidth="3" />
       </g>
