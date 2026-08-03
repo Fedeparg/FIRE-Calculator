@@ -10,32 +10,6 @@ const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-// Dominios de Google AdSense / CMP. Las cargas de anuncios son inertes mientras no
-// haya Publisher ID, así que esta allowlist se construye a partir de la documentación
-// de Google y DEBE revalidarse en navegador al activar los anuncios (puede faltar
-// algún subdominio según el formato del anuncio).
-const ADSENSE_SCRIPT = [
-  "https://pagead2.googlesyndication.com",
-  "https://partner.googleadservices.com",
-  "https://tpc.googlesyndication.com",
-  "https://adservice.google.com",
-  "https://*.googlesyndication.com",
-  "https://fundingchoicesmessages.google.com",
-  "https://www.google.com",
-];
-const ADSENSE_FRAME = [
-  "https://googleads.g.doubleclick.net",
-  "https://tpc.googlesyndication.com",
-  "https://*.googlesyndication.com",
-  "https://www.google.com",
-];
-const ADSENSE_CONNECT = [
-  "https://pagead2.googlesyndication.com",
-  "https://*.googlesyndication.com",
-  "https://*.g.doubleclick.net",
-  "https://*.google.com",
-];
-
 /**
  * Content-Security-Policy en modo allowlist (NO nonce): un CSP con nonce obligaría a
  * renderizar cada página por petición, lo que anularía la generación estática/ISR de
@@ -43,6 +17,9 @@ const ADSENSE_CONNECT = [
  * que harían que el navegador ignore `'unsafe-inline'`), necesario para el script de
  * tema sin parpadeo y los scripts de hidratación de Next. Stripe no aparece: el flujo
  * de donación es una REDIRECCIÓN (no carga Stripe.js ni usa iframes).
+ *
+ * La app no carga NINGÚN recurso de terceros: no hay analítica, ni publicidad, ni
+ * fuentes externas. Por eso el allowlist es estrictamente 'self'.
  */
 function contentSecurityPolicy(): string {
   const directives: Record<string, string[]> = {
@@ -52,18 +29,12 @@ function contentSecurityPolicy(): string {
     "frame-ancestors": ["'self'"],
     "form-action": ["'self'"],
     // 'unsafe-eval' solo en dev (lo necesita React Fast Refresh / HMR).
-    "script-src": [
-      "'self'",
-      "'unsafe-inline'",
-      ...(isDev ? ["'unsafe-eval'"] : []),
-      ...ADSENSE_SCRIPT,
-    ],
+    "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
     "style-src": ["'self'", "'unsafe-inline'"],
-    // Imágenes de anuncios desde múltiples CDNs de Google → se permite cualquier https.
-    "img-src": ["'self'", "data:", "https:"],
+    "img-src": ["'self'", "data:"],
     "font-src": ["'self'", "data:"],
-    "frame-src": ["'self'", ...ADSENSE_FRAME],
-    "connect-src": ["'self'", ...(isDev ? ["ws:"] : []), ...ADSENSE_CONNECT],
+    "frame-src": ["'self'"],
+    "connect-src": ["'self'", ...(isDev ? ["ws:"] : [])],
   };
   if (!isDev) directives["upgrade-insecure-requests"] = [];
 
@@ -87,7 +58,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   async headers() {
     // Cabeceras de seguridad en todas las rutas. Defensa en profundidad: la app
-    // inyecta Markdown como HTML (descartando el HTML embebido) y carga AdSense.
+    // inyecta Markdown como HTML (descartando el HTML embebido).
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
   async rewrites() {

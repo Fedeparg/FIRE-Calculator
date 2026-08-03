@@ -15,13 +15,20 @@ TS=$(date -u +%Y%m%d-%H%M%SZ)
 FILE="sextante-${TS}.sql.gz.gpg"
 TMP="/tmp/${FILE}"
 
+# La passphrase va por FICHERO (600), no por argv: los argumentos de un proceso son
+# visibles en `ps` para cualquier otro proceso del contenedor/host.
+PASSFILE=$(mktemp)
+chmod 600 "${PASSFILE}"
+trap 'rm -f "${PASSFILE}" "${TMP}"' EXIT INT TERM
+printf '%s' "${BACKUP_GPG_PASSPHRASE}" > "${PASSFILE}"
+
 echo "[backup] $(date -u) dump de ${POSTGRES_DB}@${POSTGRES_HOST}"
 PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump \
   -h "${POSTGRES_HOST}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" \
   --no-owner --no-privileges \
   | gzip -9 \
   | gpg --batch --yes --symmetric --cipher-algo AES256 \
-        --passphrase "${BACKUP_GPG_PASSPHRASE}" -o "${TMP}"
+        --passphrase-file "${PASSFILE}" -o "${TMP}"
 
 echo "[backup] subiendo ${FILE} -> ${RCLONE_REMOTE}"
 rclone copy "${TMP}" "${RCLONE_REMOTE}" --no-traverse
