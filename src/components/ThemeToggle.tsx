@@ -1,11 +1,15 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 /**
  * Conmuta el tema manipulando la clase `.dark` del <html> y persistiendo en
  * localStorage. Sin estado de React ni next-themes: los iconos se muestran por
  * CSS (variante `dark:`), así no hay desajuste de hidratación ni parpadeo.
  */
 export default function ThemeToggle() {
+  const t = useTranslations("nav");
+
   function toggle() {
     const el = document.documentElement;
     const dark = !el.classList.contains("dark");
@@ -20,7 +24,7 @@ export default function ThemeToggle() {
   return (
     <button
       type="button"
-      aria-label="Cambiar tema claro/oscuro"
+      aria-label={t("theme")}
       onClick={toggle}
       className="grid h-9 w-9 place-items-center rounded-lg border border-border bg-surface text-muted transition-colors hover:text-foreground"
     >

@@ -200,28 +200,6 @@ export function IconPortfolio({ className }: SvgProps) {
   );
 }
 
-/** Privacidad / cálculo en el navegador: escudo con onda. */
-export function IconPrivacy({ className }: SvgProps) {
-  return (
-    <PillarFrame className={className}>
-      <path
-        d="M36 14 L56 22 V38 C56 50 47 57 36 60 C25 57 16 50 16 38 V22 Z"
-        className="fill-brand-soft stroke-brand"
-        strokeWidth="3.5"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      <path
-        d="M24 38 q6 -8 12 0 t12 0"
-        fill="none"
-        className="stroke-accent"
-        strokeWidth="3.5"
-        strokeLinecap="round"
-      />
-    </PillarFrame>
-  );
-}
-
 /** Icono de nav: calculadora (line-art, hereda el color del texto). */
 export function IconNavCalculator({ className }: SvgProps) {
   return (
