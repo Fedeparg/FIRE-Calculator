@@ -1,13 +1,13 @@
-# Orquestación de PRODUCCIÓN de Sextante (UNRAID, self-hosted).
+# Orquestación de PRODUCCIÓN de Sextante (self-hosted).
 #
 # Diferencias con docker-compose.yml (que es de DESARROLLO):
 #   - Añade el servicio `web` (Next dockerizado, salida standalone).
 #   - NO publica postgres ni api al host: solo se hablan por la red interna de
-#     Compose. El ÚNICO puerto expuesto es el del `web`, y SOLO en 127.0.0.1,
-#     para que el nginx del host (TLS con Let's Encrypt) lo proxee.
+#     Compose. El ÚNICO puerto publicado es el del `web` (WEB_PORT), para que el
+#     proxy inverso (TLS con Let's Encrypt) lo alcance.
 #   - Espera NODE_ENV=production y secretos fuertes (sin defaults inseguros).
 #
-# Buen vecino en una caja compartida (ya corre fpardo-web ahí):
+# Buen vecino en una máquina compartida con otros stacks:
 #   - `name: sextante` namespaca proyecto, red, contenedores y evita colisiones.
 #   - Volumen nombrado propio (sextante_pgdata). Puertos internos, no del host.
 #
@@ -15,7 +15,7 @@
 #   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 #
 # Los secretos llegan vía el .env que el workflow materializa desde GitHub
-# Secrets. Variables esperadas: ver .env.prod.example.
+# Secrets. Variables esperadas: ver docs/DEPLOY.md §2.
 
 name: sextante
 
@@ -112,10 +112,12 @@ services:
       API_URL: http://api:3001
       REVALIDATE_TOKEN: ${REVALIDATE_TOKEN:-}
     ports:
-      # Publicado en el host para que Nginx Proxy Manager (que corre en un
-      # contenedor y no alcanza el loopback del host) lo proxee por IP:puerto.
-      # NPM es la entrada pública y termina el TLS. En una LAN doméstica detrás
-      # del router esto es aceptable; desde internet solo se entra por 80/443→NPM.
+      # OJO: sin prefijo de interfaz, Docker publica en 0.0.0.0 (toda la red local),
+      # no solo en el loopback. Es deliberado: un proxy inverso que corre EN UN
+      # CONTENEDOR no alcanza el loopback del host, así que necesita IP:puerto.
+      # El proxy es la entrada pública y termina el TLS.
+      # Si tu proxy corre en el host, o lo conectas a la red `sextante` y proxeas a
+      # http://web:3000, cambia esto a '127.0.0.1:${WEB_PORT:-8790}:3000'.
       - '${WEB_PORT:-8790}:3000'
     depends_on:
       api:

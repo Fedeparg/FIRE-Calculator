@@ -1,28 +1,56 @@
-# Despliegue de Sextante (UNRAID + GitHub Actions)
+# Despliegue de Sextante
 
 Despliegue continuo: cada **push a `main`** dispara `.github/workflows/deploy.yml`,
-que corre en **tu runner self-hosted de UNRAID** y levanta el stack con
-`docker-compose.prod.yml`. nginx (en el host) termina el TLS y proxea a `web`.
+que corre en un **runner self-hosted** y levanta el stack con
+`docker-compose.prod.yml`. Un proxy inverso delante (nginx, Nginx Proxy Manager…)
+termina el TLS y proxea al servicio `web`.
 
 ```
-push a main ─▶ GitHub Actions ─▶ runner UNRAID (label: sextante)
+push a main ─▶ GitHub Actions ─▶ runner self-hosted (label: sextante)
                                    └─ docker compose -f docker-compose.prod.yml up -d --build
                                         ├─ postgres (volumen sextante_pgdata)
                                         ├─ migrate (one-shot)
-                                        ├─ api  (NestJS, interno)
-                                        └─ web  (Next, 127.0.0.1:8790) ◀─ nginx (TLS) ◀─ sextante.fpardo.net
+                                        ├─ api  (NestJS, solo red interna)
+                                        └─ web  (Next, puerto WEB_PORT) ◀─ proxy inverso (TLS)
 ```
 
-> ⚠️ El despliegue solo arranca cuando hagas merge a `main`. Hasta entonces, todo
-> el trabajo vive en ramas de feature. El subdominio en nginx es el último paso.
+---
+
+> ## ⚠️ Antes de nada: runner self-hosted y repositorios públicos
+>
+> **Un runner self-hosted no debe usarse en un repositorio público** sin
+> protecciones adicionales. En un evento `pull_request`, GitHub ejecuta los
+> ficheros de workflow **tal y como vienen en la rama del PR**, no los de `main`.
+> Cualquiera puede abrir un PR desde un fork que incluya un workflow nuevo con
+> `runs-on: [self-hosted, sextante]` y conseguir **ejecución de código en tu
+> máquina**. Las etiquetas del runner son enrutado, no autorización.
+>
+> Como este runner monta `/var/run/docker.sock`, esa ejecución es equivalente a
+> root en el host.
+>
+> Si el repositorio es público, elige una de las dos vías:
+>
+> 1. **Recomendada — eliminar la clase de problema.** Construir en los runners de
+>    GitHub, publicar la imagen a un registro (GHCR) y que el servidor solo haga
+>    `pull`. Así **no hace falta ningún runner self-hosted** (ver
+>    "Alternativa: build en GitHub + pull" al final).
+> 2. **Si mantienes el runner**, en este orden:
+>    1. Settings → Actions → General → *Fork pull request workflows from outside
+>       collaborators* → **"Require approval for all external collaborators"**
+>       (el valor por defecto, *first-time contributors*, deja de pedir
+>       aprobación en cuanto alguien tiene una contribución aceptada).
+>    2. Registra el runner en modo **efímero** (`EPHEMERAL=1`).
+>    3. Mueve los secrets a un **Environment** `production` con *required
+>       reviewers*, y añade `environment: production` al job de deploy.
+>    4. Da al PAT del runner el **mínimo** alcance que permita registrarlo.
 
 ---
 
 ## 1. Runner dedicado (label `sextante`)
 
-Ya tienes un runner para `fpardo-web` con label `self-hosted`. Crea **otro**
-runner para este repo con un label propio, **`sextante`**, para que el workflow
-no se ejecute en el runner equivocado. Añádelo a tu stack de runners:
+El workflow usa `runs-on: [self-hosted, sextante]`. La etiqueta propia evita que
+el job caiga en otro runner self-hosted que ya tengas registrado para otros
+proyectos. Ejemplo de servicio:
 
 ```yaml
 services:
@@ -32,31 +60,30 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Madrid
-      - RUNNER_NAME=unraid-sextante
-      - REPO_URL=https://github.com/Fedeparg/FIRE-Calculator   # <-- este repo
-      - ACCESS_TOKEN=<PAT con acceso a FIRE-Calculator>        # <-- ver nota
+      - RUNNER_NAME=sextante-runner
+      - REPO_URL=https://github.com/<usuario>/<repo>
+      - ACCESS_TOKEN=<PAT con acceso al repo>     # ver notas
       - RUNNER_SCOPE=repo
-      - LABELS=sextante                                        # <-- label propio
+      - EPHEMERAL=1                               # recomendado (ver aviso arriba)
+      - LABELS=sextante
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /mnt/user/web/runner-sextante:/tmp/github-runner       # ruta propia
+      - /var/run/docker.sock:/var/run/docker.sock  # ⚠️ root-equivalente en el host
+      - /ruta/al/estado/runner-sextante:/tmp/github-runner
 ```
 
 Notas:
-- **PAT:** los fine-grained PAT son por-repo. El que usas en `fpardo-web` casi
-  seguro **no** cubre `FIRE-Calculator`. Genera/edita uno con acceso a este repo
-  (permiso *Administration: read/write* para registrar runners).
-- **`docker compose` en el runner:** el workflow usa `docker compose` (v2). La
-  imagen `myoung34/github-runner` trae el cliente Docker; si `docker compose` no
+- **PAT:** los fine-grained PAT son por-repo; necesita permiso *Administration:
+  read/write* para registrar runners. Usa uno dedicado a este repositorio.
+- **`docker compose` en el runner:** el workflow usa Compose v2. La imagen
+  `myoung34/github-runner` trae el cliente Docker; si `docker compose` no
   estuviera disponible, instala el plugin compose en el runner.
-- El runner registra automáticamente el label `self-hosted` además de `sextante`,
-  por eso el workflow usa `runs-on: [self-hosted, sextante]`.
+- El runner registra automáticamente el label `self-hosted` además de `sextante`.
 
 ## 2. GitHub Secrets
 
-En el repo: **Settings → Secrets and variables → Actions → New repository secret**.
-Crea estos (el workflow los vuelca a un `.env` efímero, permisos 600, y lo borra
-al terminar):
+En el repo: **Settings → Secrets and variables → Actions → New repository secret**
+(o, mejor, en un *Environment* `production`). El workflow los vuelca a un `.env`
+efímero con permisos 600 y lo borra al terminar.
 
 | Secret | Qué es | Cómo generarlo |
 |---|---|---|
@@ -66,30 +93,31 @@ al terminar):
 | `OPENFIGI_API_KEY` | Resolución ISIN/ticker → símbolo | Cuenta OpenFIGI |
 | `REVALIDATE_TOKEN` | Revalidación on-demand de la wiki | `openssl rand -base64 32` |
 | `BACKUP_GPG_PASSPHRASE` | Cifra los backups (AES256) antes de subirlos | `openssl rand -base64 32` |
-| `RCLONE_CONF_BASE64` | Config de rclone (acceso a tu Google Drive), en base64 | Ver §6 |
-| `STRIPE_SECRET_KEY` | Donaciones ("invítame a un café"); la consume el `api`. Vacía/ausente = donaciones desactivadas | Dashboard de Stripe → Developers → API keys (modo Live: `sk_live_…`) |
+| `RCLONE_CONF_BASE64` | Config de rclone (acceso al Drive destino), en base64 | Ver §6 |
+| `STRIPE_SECRET_KEY` | Donaciones; la consume el `api`. Vacía/ausente = donaciones desactivadas | Dashboard de Stripe → Developers → API keys |
 
-Valores **no secretos** (van fijos en el workflow, edítalos ahí si cambian):
-`APP_URL=https://sextante.fpardo.net`, `EMAIL_FROM`, `WEB_PORT=8790`,
-`COOKIE_SECURE=true`, `EMAIL_TRANSPORT=resend`, `RCLONE_REMOTE=gdrive:sextante-backups`.
+Valores **no secretos** (van fijos en el workflow; edítalos ahí si cambian):
+`APP_URL`, `NEXT_PUBLIC_SITE_URL`, `EMAIL_FROM`, `WEB_PORT`, `COOKIE_SECURE=true`,
+`EMAIL_TRANSPORT=resend`, `RCLONE_REMOTE`.
 
 **Variables** (no secretas; **Settings → Secrets and variables → Actions → Variables**):
-`NEXT_PUBLIC_DONATIONS_ENABLED=1` enciende el botón de donación (se hornea en el build
-del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret `STRIPE_SECRET_KEY`.
+`NEXT_PUBLIC_DONATIONS_ENABLED=1` enciende el botón de donación (se hornea en el
+build del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret
+`STRIPE_SECRET_KEY`.
 
 > ⚠️ Guarda `BACKUP_GPG_PASSPHRASE` también **fuera** del servidor (gestor de
-> contraseñas). Sin ella, los backups son irrecuperables — es la pieza que los
-> hace ilegibles en Drive, pero también para ti si la pierdes.
+> contraseñas). Sin ella los backups son irrecuperables — es la pieza que los
+> hace ilegibles en el destino, pero también para ti si la pierdes.
 
 > `JWT_SECRET` debe ser **fijo y estable**: si lo cambias, invalidas todas las
-> sesiones (todos deben volver a entrar). Defínelo una vez.
+> sesiones. Defínelo una vez.
 
 ## 3. Email (Resend)
 
 Verifica el dominio de envío y pon los registros DNS (SPF/DKIM/DMARC + MX) según
 **`apps/api/README.md` → sección "Email (Resend)"**. El test e2e real del magic
-link solo funcionará cuando el subdominio (paso 5) resuelva, porque el enlace usa
-`APP_URL=https://sextante.fpardo.net`.
+link solo funciona cuando el dominio (paso 5) resuelve, porque el enlace usa
+`APP_URL`.
 
 ## 4. Primer despliegue
 
@@ -97,73 +125,81 @@ link solo funcionará cuando el subdominio (paso 5) resuelva, porque el enlace u
 2. Haz merge a `main`. El workflow construye las imágenes **en el servidor** y
    levanta el stack. El servicio `migrate` aplica las migraciones antes de la API.
 3. Comprueba: `docker compose -f docker-compose.prod.yml ps` y
-   `curl -fsS http://127.0.0.1:8790/` en el host.
+   `curl -fsS http://127.0.0.1:${WEB_PORT}/` en el host.
 
-## 5. nginx + TLS (último paso)
+## 5. Proxy inverso + TLS (último paso)
 
-1. Apunta el DNS `sextante.fpardo.net` → IP del servidor.
-2. Adapta `docs/nginx/sextante.fpardo.net.conf` a tu nginx.
-3. `certbot --nginx -d sextante.fpardo.net` para el certificado (Let's Encrypt).
+1. Apunta el DNS de tu dominio a la IP del servidor.
+2. Adapta `docs/nginx/sextante.conf` a tu proxy.
+3. Emite el certificado, p. ej. `certbot --nginx -d <tu-dominio>` (Let's Encrypt).
 
-## 6. Backups cifrados a Google Drive
+> **Nota sobre el binding del puerto.** `docker-compose.prod.yml` publica
+> `${WEB_PORT}:3000` **sin prefijo de interfaz**, es decir en `0.0.0.0`, no solo en
+> loopback. Es deliberado: un proxy inverso que corre **en un contenedor** no
+> alcanza el loopback del host. Si tu proxy corre en el host, o lo conectas a la
+> red `sextante` de Compose y proxeas a `http://web:3000`, puedes (y deberías)
+> cambiarlo a `127.0.0.1:${WEB_PORT}:3000`.
+
+## 6. Backups cifrados
 
 El servicio `backup` (ver `docker-compose.prod.yml` + `scripts/backup/`) hace
-`pg_dump → gzip → gpg (AES256) → rclone` a tu Google Drive: un backup **al
+`pg_dump → gzip → gpg (AES256) → rclone` al destino configurado: un backup **al
 arrancar** y luego **uno diario** (04:00 Europe/Madrid por defecto), con rotación
-(borra los > 7 días, configurable con `BACKUP_RETENTION_DAYS`). **El cifrado ocurre
-en el servidor**, así que en Drive solo
-aterriza un `.gpg` ilegible sin `BACKUP_GPG_PASSPHRASE`.
+(borra los > 7 días, configurable con `BACKUP_RETENTION_DAYS`). **El cifrado
+ocurre en el servidor**, así que en el destino solo aterriza un `.gpg` ilegible
+sin `BACKUP_GPG_PASSPHRASE` (esto es lo que cierra el problema de "subencargado"
+del RGPD: el proveedor de almacenamiento nunca ve datos personales en claro).
 
-### Conectar tu Google Drive (rclone) — se hace UNA vez
+### Conectar el destino (rclone) — se hace UNA vez
 
-`rclone` necesita un token OAuth de tu Drive. Lo generas en tu ordenador (donde
-tengas navegador) y lo subes como secret. Pasos:
+`rclone` necesita un token OAuth del destino. Lo generas en un equipo con
+navegador y lo subes como secret. Ejemplo con Google Drive:
 
-1. **Instala rclone** en tu equipo: https://rclone.org/install/
-   (macOS: `brew install rclone`).
-2. **Configura el remote** llamado exactamente `gdrive`:
+1. **Instala rclone**: https://rclone.org/install/ (macOS: `brew install rclone`).
+2. **Configura el remote** con el mismo nombre que uses en `RCLONE_REMOTE`:
    ```sh
    rclone config
    # n) New remote
    # name> gdrive
    # Storage> drive            (Google Drive)
-   # client_id>                (déjalo vacío; o usa uno propio, ver nota)
+   # client_id>                (vacío; o usa uno propio, ver nota)
    # client_secret>            (vacío)
-   # scope> 1                  (acceso completo) o 3 (solo a ficheros creados por rclone)
+   # scope> 3                  (solo ficheros creados por rclone) o 1 (acceso completo)
    # Edit advanced config> n
-   # Use auto config> y        -> abre el navegador, autoriza con tu cuenta Google
+   # Use auto config> y        -> abre el navegador y autoriza
    # Configure as Shared Drive> n
    # y) Yes this is OK
    ```
-3. **Crea la carpeta destino** en tu Drive (el nombre debe casar con
-   `RCLONE_REMOTE=gdrive:sextante-backups`):
+3. **Crea la carpeta destino** (debe casar con `RCLONE_REMOTE`):
    ```sh
    rclone mkdir gdrive:sextante-backups
-   rclone lsd gdrive:                 # comprueba que aparece
+   rclone lsd gdrive:
    ```
 4. **Exporta la config a base64** y úsala como el secret `RCLONE_CONF_BASE64`:
    ```sh
-   base64 -i "$(rclone config file | tail -1)" | tr -d '\n' | pbcopy   # macOS: al portapapeles
+   base64 -i "$(rclone config file | tail -1)" | tr -d '\n' | pbcopy   # macOS
    # Linux: base64 -w0 "$(rclone config file | tail -1)"
    ```
-   Pega el resultado en GitHub → Settings → Secrets → `RCLONE_CONF_BASE64`.
 5. Crea también `BACKUP_GPG_PASSPHRASE` (`openssl rand -base64 32`) y guárdala en
    tu gestor de contraseñas (sin ella no se puede restaurar).
 
 > **Nota (client_id propio):** con el `client_id` por defecto de rclone, Google
-> aplica límites de cuota compartidos (puede dar errores esporádicos). Para una
-> herramienta personal de backups diarios es suficiente. Si quieres robustez,
-> crea un OAuth client en Google Cloud Console (Drive API) y úsalo en el paso 2;
-> rclone lo documenta en https://rclone.org/drive/#making-your-own-client-id.
+> aplica límites de cuota compartidos. Para backups diarios es suficiente; si
+> quieres robustez, crea un OAuth client propio:
+> https://rclone.org/drive/#making-your-own-client-id.
 
 ### Restaurar un backup
 
 ```sh
-# 1) Descarga el .gpg desde Drive
+# 1) Descarga el .gpg desde el destino
 rclone copy gdrive:sextante-backups/sextante-AAAAMMDD-HHMMSSZ.sql.gz.gpg .
-# 2) Restaura (DESTRUCTIVO; pide confirmación escribiendo "RESTAURAR")
-BACKUP_GPG_PASSPHRASE='...' PGPASSWORD='<POSTGRES_PASSWORD>' \
-  ./scripts/backup/restore.sh sextante-AAAAMMDD-HHMMSSZ.sql.gz.gpg
+
+# 2) Restaura (DESTRUCTIVO; pide confirmación escribiendo "RESTAURAR").
+#    Pasa las credenciales por entorno, NO en la línea de comandos, para que no
+#    queden en el historial del shell ni sean visibles en `ps`.
+read -rs BACKUP_GPG_PASSPHRASE; export BACKUP_GPG_PASSPHRASE
+read -rs PGPASSWORD; export PGPASSWORD
+./scripts/backup/restore.sh sextante-AAAAMMDD-HHMMSSZ.sql.gz.gpg
 ```
 
 > **Prueba la restauración** de vez en cuando (idealmente contra una BD de
@@ -180,9 +216,35 @@ BACKUP_GPG_PASSPHRASE='...' PGPASSWORD='<POSTGRES_PASSWORD>' \
 - **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web`.
 - **Backups:** ver §6.
 
-## Nota sobre el build en el servidor
+## Alternativa: build en GitHub + pull (recomendada si el repo es público)
 
-El workflow construye las imágenes en el runner (UNRAID). El build de Next puede
-consumir RAM/CPU. Si resultara pesado para la caja, la alternativa es construir en
-los runners de GitHub y publicar a un registro (GHCR), y que el servidor solo haga
-`pull`. No hace falta para empezar; se documenta por si escala.
+El workflow actual construye las imágenes en el runner. Además de la cuestión de
+seguridad del aviso inicial, el build de Next consume RAM/CPU del servidor. La
+alternativa es construir en los runners de GitHub, publicar a GHCR y que el
+servidor solo haga `pull`:
+
+```yaml
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@<sha>
+      - uses: docker/login-action@<sha>
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@<sha>
+        with:
+          context: .
+          file: Dockerfile.web
+          push: true
+          tags: ghcr.io/<usuario>/sextante-web:latest
+```
+
+En el servidor, un cron (o Watchtower) hace
+`docker compose -f docker-compose.prod.yml pull && up -d`, con el `.env` escrito
+**una vez a mano** (permisos 600) en lugar de generado por el workflow. Con esto
+**no hace falta runner self-hosted**. Publica los paquetes de GHCR como
+**privados**: la etapa de build de `Dockerfile.web` ve todo el repositorio.
