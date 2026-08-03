@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  # Frontend (raíz del workspace pnpm). `directory: /` cubre también apps/api
+  # porque Dependabot resuelve el workspace desde el pnpm-lock.yaml de la raíz.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Agrupa los parches/menores en un solo PR para no ahogar el repo.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
