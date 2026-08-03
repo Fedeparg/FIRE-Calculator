@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
+import { absoluteUrl } from "@/lib/site";
 
 /** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
 type Connection = {
@@ -22,8 +23,12 @@ const SCOPE_LABELS: Record<string, string> = {
   "portfolio:write": "scopeWrite",
 };
 
-/** URL pública del servidor MCP (el origen de producción + el endpoint MCP). */
-const MCP_URL = "https://sextante.fpardo.net/api/mcp";
+/**
+ * URL pública del servidor MCP: el origen canónico del sitio + el endpoint MCP.
+ * Sale de `NEXT_PUBLIC_SITE_URL` (vía `src/lib/site.ts`), no de una constante
+ * escrita a mano, para que un despliegue en otro dominio muestre SU url.
+ */
+const MCP_URL = absoluteUrl("/api/mcp");
 
 /**
  * Lista las aplicaciones OAuth/MCP conectadas a la cartera del usuario y permite revocarlas

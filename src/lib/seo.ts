@@ -36,8 +36,8 @@ function languageAlternates(path: string): Record<string, string> {
 }
 
 /** Construye la ruta relativa a la imagen Open Graph generada en `/og`. */
-function ogImagePath(title: string, subtitle?: string): string {
-  const params = new URLSearchParams({ title });
+function ogImagePath(title: string, locale: Locale, subtitle?: string): string {
+  const params = new URLSearchParams({ title, locale });
   if (subtitle) params.set("subtitle", subtitle);
   return `/og?${params.toString()}`;
 }
@@ -71,7 +71,7 @@ export function buildMetadata(options: BuildMetadataOptions): Metadata {
     options;
   const locale = asLocale(options.locale);
   const canonical = localizedPath(locale, path);
-  const image = ogImagePath(title, ogSubtitle);
+  const image = ogImagePath(title, locale, ogSubtitle);
 
   return {
     title: titleAbsolute ? { absolute: title } : title,

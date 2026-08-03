@@ -71,7 +71,3 @@ export const CALCULATORS: CalculatorMeta[] = [
   { slug: "inflacion", name: { es: "Inflación (IPC)", en: "Inflation (CPI)" }, category: "herramientas", description: { es: "Poder adquisitivo a lo largo del tiempo.", en: "Purchasing power over time." }, keywords: ["inflacion", "ipc", "inflation", "cpi"], status: "live" },
   { slug: "salud-financiera", name: { es: "Test de salud financiera", en: "Financial health test" }, category: "herramientas", description: { es: "Cuestionario sobre tus finanzas.", en: "A quiz about your finances." }, keywords: ["test", "salud", "health", "quiz"], status: "live" },
 ];
-
-export function getLiveCalculator(slug: string): CalculatorMeta | undefined {
-  return CALCULATORS.find((c) => c.slug === slug && c.status === "live");
-}

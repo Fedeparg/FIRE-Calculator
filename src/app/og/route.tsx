@@ -18,6 +18,16 @@ const SIZE = { width: 1200, height: 630 };
 const MAX_TITLE = 110;
 const MAX_SUBTITLE = 90;
 
+/**
+ * Reclamo de marca al pie de la tarjeta. No puede salir de `next-intl` (esta ruta
+ * vive fuera del routing por idioma), así que se resuelve con el parámetro
+ * `locale` que añade `buildMetadata`.
+ */
+const TAGLINE: Record<string, string> = {
+  es: "Calculadoras y guías de finanzas personales · España",
+  en: "Personal finance calculators and guides · Spain",
+};
+
 function clamp(value: string, max: number): string {
   const trimmed = value.trim();
   return trimmed.length > max ? `${trimmed.slice(0, max - 1)}…` : trimmed;
@@ -28,6 +38,7 @@ export async function GET(request: Request) {
   const title = clamp(searchParams.get("title") || SITE_NAME, MAX_TITLE);
   const subtitleRaw = searchParams.get("subtitle");
   const subtitle = subtitleRaw ? clamp(subtitleRaw, MAX_SUBTITLE) : null;
+  const tagline = TAGLINE[searchParams.get("locale") ?? "es"] ?? TAGLINE.es;
 
   const [regular, bold] = await Promise.all([
     readFile(new URL("./Inter-Regular.woff", import.meta.url)),
@@ -98,9 +109,7 @@ export async function GET(request: Request) {
           </span>
         </div>
 
-        <span style={{ fontSize: "26px", color: "#94a3b8" }}>
-          Calculadoras y guías de finanzas personales · España
-        </span>
+        <span style={{ fontSize: "26px", color: "#94a3b8" }}>{tagline}</span>
       </div>
     ),
     {

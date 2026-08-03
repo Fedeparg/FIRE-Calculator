@@ -6,8 +6,8 @@
   "nav": {
     "home": "Calculadoras",
     "learn": "Aprende",
-    "language": "Idioma",
-    "primary": "Navegación principal"
+    "primary": "Navegación principal",
+    "theme": "Cambiar entre tema claro y oscuro"
   },
   "landing": {
     "meta": {
@@ -69,7 +69,6 @@
     "heading": "Aprende",
     "subheading": "Guías claras sobre inversión, interés compuesto, hipotecas e independencia financiera. Pensadas para empezar de cero.",
     "empty": "Todavía no hay artículos publicados.",
-    "backToIndex": "Volver a Aprende",
     "level": {
       "basico": "Básico",
       "intermedio": "Intermedio",
@@ -117,8 +116,7 @@
     "growth": "Crecimiento",
     "contributed": "Aportado",
     "interest": "Intereses",
-    "axisYear": "Año",
-    "dragHint": "Arrastra sobre la gráfica para ver el acumulado de un tramo."
+    "axisYear": "Año"
   },
   "calc": {
     "interes-compuesto": {

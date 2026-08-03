@@ -6,8 +6,8 @@
   "nav": {
     "home": "Calculators",
     "learn": "Learn",
-    "language": "Language",
-    "primary": "Primary navigation"
+    "primary": "Primary navigation",
+    "theme": "Switch between light and dark theme"
   },
   "landing": {
     "meta": {
@@ -69,7 +69,6 @@
     "heading": "Learn",
     "subheading": "Clear guides on investing, compound interest, mortgages and financial independence. Written to start from scratch.",
     "empty": "No articles have been published yet.",
-    "backToIndex": "Back to Learn",
     "level": {
       "basico": "Beginner",
       "intermedio": "Intermediate",
@@ -117,8 +116,7 @@
     "growth": "Growth",
     "contributed": "Contributed",
     "interest": "Interest",
-    "axisYear": "Year",
-    "dragHint": "Drag across the chart to see the total for a range."
+    "axisYear": "Year"
   },
   "calc": {
     "interes-compuesto": {
