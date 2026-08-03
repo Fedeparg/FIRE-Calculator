@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "API de Sextante (NestJS + Drizzle + PostgreSQL).",
+  "license": "AGPL-3.0-only",
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "build": "nest build -p tsconfig.build.json",
     "dev": "nest start --watch",

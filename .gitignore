@@ -2,6 +2,8 @@
 _local/
 *.local.md
 CLAUDE.md
+.claude/
+HANDOFF.md
 
 # === Variables de entorno (claves reales) ===
 .env
