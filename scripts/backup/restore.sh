@@ -34,7 +34,14 @@ printf '¿Seguro? Esto SOBREESCRIBE la base de datos. Escribe "RESTAURAR": '
 read -r CONFIRM
 [ "${CONFIRM}" = "RESTAURAR" ] || { echo "Cancelado."; exit 1; }
 
-gpg --batch --yes --decrypt --passphrase "${BACKUP_GPG_PASSPHRASE}" "${FILE}" \
+# La passphrase va por FICHERO (600), no por argv: los argumentos de un proceso son
+# visibles en `ps` para cualquier otro proceso de la máquina.
+PASSFILE=$(mktemp)
+chmod 600 "${PASSFILE}"
+trap 'rm -f "${PASSFILE}"' EXIT INT TERM
+printf '%s' "${BACKUP_GPG_PASSPHRASE}" > "${PASSFILE}"
+
+gpg --batch --yes --decrypt --passphrase-file "${PASSFILE}" "${FILE}" \
   | gunzip \
   | psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}"
 

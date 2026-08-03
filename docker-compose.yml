@@ -19,8 +19,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sextante_dev}
       POSTGRES_DB: ${POSTGRES_DB:-sextante}
     ports:
-      # Expuesto al host para poder lanzar migraciones (drizzle-kit) desde fuera.
-      - '5432:5432'
+      # Expuesto SOLO en el loopback del host, para lanzar migraciones (drizzle-kit)
+      # desde fuera del contenedor. Sin el prefijo 127.0.0.1, Docker publicaría el
+      # puerto en TODAS las interfaces y la contraseña por defecto de desarrollo
+      # (`sextante_dev`, pública en este fichero) dejaría Postgres abierto a la LAN.
+      - '127.0.0.1:5432:5432'
     volumes:
       # Volumen NOMBRADO persistente: los datos sobreviven a `down`/recreaciones.
       - sextante_pgdata:/var/lib/postgresql/data
