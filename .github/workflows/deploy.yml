@@ -1,9 +1,15 @@
-# Despliegue continuo a producción (UNRAID, runner self-hosted).
+# Despliegue continuo a producción (runner self-hosted).
 #
-# Se dispara en cada push a `main`. Corre en TU runner de UNRAID (no en los
+# Se dispara en cada push a `main`. Corre en el runner self-hosted (no en los
 # runners de GitHub) porque necesita el daemon Docker del servidor para levantar
-# el stack. El runner debe tener el label `sextante` (ver docs/DEPLOY.md) para
-# NO colisionar con el runner de fpardo-web (que solo tiene `self-hosted`).
+# el stack. El runner debe tener el label `sextante` (ver docs/DEPLOY.md) para no
+# colisionar con otros runners que solo tengan `self-hosted`.
+#
+# ⚠️ SEGURIDAD: si este repositorio es público, un runner self-hosted es peligroso.
+# En un evento `pull_request` GitHub ejecuta los workflows DE LA RAMA DEL PR, así
+# que cualquiera puede abrir un PR desde un fork con un workflow propio que pida
+# `runs-on: [self-hosted, sextante]` y ejecutar código en el servidor. Lee el aviso
+# al principio de docs/DEPLOY.md antes de hacer público el repositorio.
 #
 # Los secretos se inyectan desde GitHub Secrets, se materializan en un .env
 # efímero (permisos 600) y se borran al terminar. No quedan en el repo ni en logs.
@@ -25,7 +31,16 @@ permissions:
 
 jobs:
   deploy:
-    # AMBOS labels: solo casa con el runner de Sextante, no con el de fpardo-web.
+    # Este repo se replica a un espejo PÚBLICO (Fedeparg/sextante) que existe solo
+    # como escaparate y NO tiene runner propio. Sin este guard, allí el job pediría
+    # un runner `[self-hosted, sextante]` inexistente y se quedaría encolado para
+    # siempre. Con él, se salta limpiamente.
+    #
+    # OJO: esto NO es un control de seguridad. Un PR desde un fork puede traer su
+    # propio workflow sin este `if`. Lo que hace segura la copia pública es que no
+    # tiene ningún runner self-hosted registrado.
+    if: github.repository == 'Fedeparg/FIRE-Calculator'
+    # AMBOS labels: solo casa con el runner de Sextante, no con otros runners.
     runs-on: [self-hosted, sextante]
     steps:
       - name: Checkout
