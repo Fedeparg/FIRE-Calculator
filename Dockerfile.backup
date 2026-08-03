@@ -1,7 +1,7 @@
 # Imagen del servicio de backups. Base postgres:17-alpine para tener un pg_dump
 # de la MISMA versión mayor que el servidor (evita incompatibilidades de dump).
 # Añade gnupg (cifrado AES256) y rclone (subida a Google Drive).
-FROM postgres:17-alpine
+FROM postgres:18-alpine
 
 RUN apk add --no-cache gnupg rclone tzdata
 
