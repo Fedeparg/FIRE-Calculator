@@ -1,9 +1,21 @@
 # Despliegue continuo a producción (runner self-hosted).
 #
-# Se dispara en cada push a `main`. Corre en el runner self-hosted (no en los
-# runners de GitHub) porque necesita el daemon Docker del servidor para levantar
-# el stack. El runner debe tener el label `sextante` (ver docs/DEPLOY.md) para no
-# colisionar con otros runners que solo tengan `self-hosted`.
+# Se dispara cuando el workflow `ci` TERMINA CON ÉXITO sobre `main`, no en el push
+# directo. Antes colgaba de `push: [main]` y corría EN PARALELO con `ci`, así que un
+# commit que rompiera typecheck/lint/tests/build llegaba igualmente a producción: el
+# gate de calidad existía pero no gobernaba el despliegue. Con `workflow_run` el
+# orden es real (ci → deploy) y solo se despliega un commit verde.
+#
+# Tres detalles que hacen que el gate no se pueda saltar:
+#   1. Se exige `conclusion == 'success'` Y `head_branch == 'main'`. Sin lo segundo,
+#      un CI verde en una rama de PR dispararía un despliegue a producción.
+#   2. El checkout usa `head_sha` del run de CI, no el tip de la rama: si han entrado
+#      commits nuevos mientras CI corría, se despliega EXACTAMENTE lo que se validó.
+#   3. Se conserva `workflow_dispatch` como escotilla manual (redesplegar sin tocar
+#      código, o desplegar si el gate se atasca).
+#
+# El runner debe tener el label `sextante` (ver docs/DEPLOY.md) para no colisionar
+# con otros runners que solo tengan `self-hosted`.
 #
 # ⚠️ SEGURIDAD: si este repositorio es público, un runner self-hosted es peligroso.
 # En un evento `pull_request` GitHub ejecuta los workflows DE LA RAMA DEL PR, así
@@ -17,8 +29,9 @@
 name: deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
   workflow_dispatch: {} # permite lanzarlo a mano desde la pestaña Actions
 
 concurrency:
@@ -31,20 +44,31 @@ permissions:
 
 jobs:
   deploy:
-    # Este repo se replica a un espejo PÚBLICO (Fedeparg/sextante) que existe solo
-    # como escaparate y NO tiene runner propio. Sin este guard, allí el job pediría
-    # un runner `[self-hosted, sextante]` inexistente y se quedaría encolado para
-    # siempre. Con él, se salta limpiamente.
+    # Tres condiciones, todas necesarias:
     #
-    # OJO: esto NO es un control de seguridad. Un PR desde un fork puede traer su
-    # propio workflow sin este `if`. Lo que hace segura la copia pública es que no
-    # tiene ningún runner self-hosted registrado.
-    if: github.repository == 'Fedeparg/FIRE-Calculator'
+    # - `github.repository`: este repo se replica a un espejo PÚBLICO
+    #   (Fedeparg/sextante) que existe solo como escaparate y NO tiene runner propio.
+    #   Sin este guard, allí el job pediría un runner `[self-hosted, sextante]`
+    #   inexistente y se quedaría encolado para siempre. OJO: esto NO es un control de
+    #   seguridad (un PR desde un fork puede traer su propio workflow sin este `if`);
+    #   lo que hace segura la copia pública es que no tiene runner registrado.
+    # - `workflow_dispatch`: el disparo manual se acepta sin más comprobaciones (solo
+    #   puede lanzarlo quien tiene permiso de escritura en el repo).
+    # - `workflow_run`: solo si CI acabó en verde Y era la rama `main`.
+    if: >-
+      github.repository == 'Fedeparg/FIRE-Calculator' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'))
     # AMBOS labels: solo casa con el runner de Sextante, no con otros runners.
     runs-on: [self-hosted, sextante]
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # El commit EXACTO que validó CI. En `workflow_run` el checkout por defecto
+          # tomaría el tip de la rama, que puede ser ya un commit posterior sin validar.
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
       - name: Materializar el .env de producción (efímero)
         env:
