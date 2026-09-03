@@ -14,6 +14,50 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "2a329206",
+          "type": "feat",
+          "scope": "changelog",
+          "category": "feature",
+          "text": {
+            "es": "una vista filtrada de las novedades se puede compartir y recargar: los filtros viajan en la dirección de la página",
+            "en": "a filtered view of the release notes can be shared and reloaded: the filters travel in the page address"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "9eebf5df",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "la cartera avisa cuando una posición se valora con un precio más antiguo que el del resto, como un fondo con valor liquidativo diferido",
+            "en": "the portfolio flags a position valued with a price older than the rest, such as a fund with a delayed net asset value"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "76fc6d8f",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "la página de cartera ya no se puede arrastrar en horizontal sobre fondo vacío, y se corrigen cuatro detalles de cifras y fechas",
+            "en": "the portfolio page can no longer be dragged sideways over empty background, and four number and date details are corrected"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "eb742fb9",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "añade al historial de cambios la entrega del día",
+            "en": "adds the day's release to the change history"
+          },
+          "hidden": false
+        },
+        {
           "hash": "b92e84cd",
           "type": "feat",
           "scope": "portfolio",
