@@ -22,6 +22,13 @@ export interface ArticleMeta {
   description: string;
   level: WikiLevel;
   keywords: string[];
+  /**
+   * Fecha de última revisión real del contenido (`updated: 2026-09-03` en el
+   * frontmatter). Es OPCIONAL a propósito: solo la escribe quien revisa el texto.
+   * Alimenta el `lastmod` del sitemap, que sin un dato de verdad es ruido — un
+   * `lastmod` que cambia en cada rastreo hace que Google deje de creérselo.
+   */
+  updated?: string;
 }
 
 /** Artículo completo: metadatos + cuerpo ya renderizado a HTML. */
@@ -55,7 +62,25 @@ function parseArticleMeta(slug: string, data: Record<string, unknown>): ArticleM
     description: typeof data.description === "string" ? data.description : "",
     level,
     keywords: toStringArray(data.keywords),
+    updated: parseContentDate(data.updated),
   };
+}
+
+/**
+ * Normaliza una fecha de frontmatter a `YYYY-MM-DD`. `gray-matter` convierte a
+ * `Date` los valores sin comillas (YAML los tipa como fecha) y deja `string` los
+ * entrecomillados, así que hay que aceptar ambos. Cualquier otra cosa se descarta:
+ * es preferible no publicar `lastmod` a publicar uno inventado.
+ */
+function parseContentDate(value: unknown): string | undefined {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  }
+  return undefined;
 }
 
 async function readFileOrNull(filePath: string): Promise<string | null> {
@@ -144,6 +169,45 @@ export async function getLegalDoc(slug: string, locale: string): Promise<LegalDo
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
     html,
   };
+}
+
+/**
+ * Fecha de última revisión por slug, para el `lastmod` del sitemap. Recorre AMBOS
+ * idiomas y se queda con la más reciente: si solo se ha revisado la versión en
+ * castellano, esa es la fecha en que el contenido cambió por última vez.
+ *
+ * Solo aparecen los slugs que declaran fecha; los demás se omiten del mapa (y del
+ * `lastmod`) en vez de recibir la fecha de hoy.
+ */
+export async function getContentUpdatedDates(
+  kind: "wiki" | "legal",
+): Promise<Map<string, string>> {
+  const dir = kind === "wiki" ? WIKI_DIR : LEGAL_DIR;
+  const field = kind === "wiki" ? "updated" : "updatedAt";
+
+  let entries: import("node:fs").Dirent[];
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return new Map();
+  }
+
+  const dates = new Map<string, string>();
+  await Promise.all(
+    entries.map(async (entry) => {
+      if (!entry.isFile()) return;
+      const match = ARTICLE_FILE.exec(entry.name);
+      if (!match) return;
+      const raw = await readFileOrNull(path.join(dir, entry.name));
+      if (raw === null) return;
+      const { data } = matter(raw);
+      const updated = parseContentDate((data as Record<string, unknown>)[field]);
+      if (!updated) return;
+      const current = dates.get(match[1]);
+      if (!current || updated > current) dates.set(match[1], updated);
+    }),
+  );
+  return dates;
 }
 
 /** Explainer de una calculadora o `null` si todavía no existe (degradación). */
