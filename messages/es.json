@@ -1122,6 +1122,7 @@
       "pnlModePct": "%",
       "pnlModeAbs": "Importe",
       "priceAsOf": "Precio a {date}",
+      "stalePrice": "Precio a {date}, anterior al último refresco de la cartera ({latest}): este valor no está al día.",
       "sortBy": "Ordenar por {field}",
       "noPrice": "Aún no hay precio de mercado para este símbolo.",
       "actions": "Acciones",
