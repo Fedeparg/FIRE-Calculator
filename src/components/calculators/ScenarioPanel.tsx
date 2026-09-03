@@ -7,7 +7,10 @@ import { Link } from "@/i18n/navigation";
 import {
   MAX_SCENARIOS_PER_USER,
   SCENARIO_NAME_MAX_LENGTH,
+  scenarioErrorKeyForResponse,
+  scenarioErrorKeyForStatus,
   type SavedScenario,
+  type ScenarioErrorKey,
 } from "@/lib/scenarios";
 import { useCalculatorState } from "./CalculatorState";
 
@@ -16,41 +19,6 @@ import { useCalculatorState } from "./CalculatorState";
  * API contesta, para no enseñar un panel que luego desaparece.
  */
 type SessionState = "unknown" | "anonymous" | "authenticated";
-
-/** Tipo de error mostrado, derivado del fallo concreto (status, código de la API o red). */
-type ErrorKey =
-  | "errorNetwork"
-  | "errorSession"
-  | "errorInvalid"
-  | "errorServer"
-  | "errorGeneric"
-  | "errorTooLarge"
-  | "errorQuota";
-
-/** Traduce un status HTTP a un mensaje específico (sin volcar el body crudo de la API). */
-function errorKeyForStatus(status: number): ErrorKey {
-  if (status === 401) return "errorSession";
-  if (status === 400) return "errorInvalid";
-  if (status >= 500) return "errorServer";
-  return "errorGeneric";
-}
-
-/**
- * Los dos 400 con significado propio del backend (`saved-scenarios.service.ts`). El resto de
- * 400 son "revisa el formulario".
- */
-async function errorKeyForResponse(res: Response): Promise<ErrorKey> {
-  if (res.status === 400) {
-    try {
-      const body = (await res.json()) as { code?: string };
-      if (body.code === "INPUTS_TOO_LARGE") return "errorTooLarge";
-      if (body.code === "SCENARIO_QUOTA_EXCEEDED") return "errorQuota";
-    } catch {
-      // Un 400 sin cuerpo JSON cae al mensaje genérico de datos inválidos.
-    }
-  }
-  return errorKeyForStatus(res.status);
-}
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
@@ -80,7 +48,7 @@ export default function ScenarioPanel() {
   const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [errorKey, setErrorKey] = useState<ErrorKey | null>(null);
+  const [errorKey, setErrorKey] = useState<ScenarioErrorKey | null>(null);
   // Escenario en proceso de renombrado y el texto que se está escribiendo.
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -106,7 +74,7 @@ export default function ScenarioPanel() {
         }
         if (!res.ok) {
           setSession("authenticated");
-          setErrorKey(errorKeyForStatus(res.status));
+          setErrorKey(scenarioErrorKeyForStatus(res.status));
           return;
         }
         setScenarios((await res.json()) as SavedScenario[]);
@@ -147,7 +115,7 @@ export default function ScenarioPanel() {
         setScenarios((prev) => [created, ...prev]);
         setName("");
       } else {
-        setErrorKey(await errorKeyForResponse(res));
+        setErrorKey(await scenarioErrorKeyForResponse(res));
       }
     } catch {
       setErrorKey("errorNetwork");
@@ -174,7 +142,7 @@ export default function ScenarioPanel() {
         setScenarios((prev) => prev.map((s) => (s.id === id ? updated : s)));
         setRenamingId(null);
       } else {
-        setErrorKey(await errorKeyForResponse(res));
+        setErrorKey(await scenarioErrorKeyForResponse(res));
       }
     } catch {
       setErrorKey("errorNetwork");
@@ -189,7 +157,7 @@ export default function ScenarioPanel() {
       if (res.ok) {
         setScenarios((prev) => prev.filter((s) => s.id !== id));
       } else {
-        setErrorKey(errorKeyForStatus(res.status));
+        setErrorKey(scenarioErrorKeyForStatus(res.status));
       }
     } catch {
       setErrorKey("errorNetwork");
