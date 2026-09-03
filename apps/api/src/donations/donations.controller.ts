@@ -1,8 +1,8 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 
-import { DonationsService } from './donations.service';
-import { CreateCheckoutDto } from './dto/create-checkout.dto';
+import { DonationsService } from './donations.service.js';
+import { CreateCheckoutDto } from './dto/create-checkout.dto.js';
 
 @Controller('donations')
 export class DonationsController {

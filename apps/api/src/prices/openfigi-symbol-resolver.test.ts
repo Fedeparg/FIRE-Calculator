@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CRYPTO_TICKERS, isinCandidates, tickerCandidates } from './openfigi-symbol-resolver';
+import { CRYPTO_TICKERS, isinCandidates, tickerCandidates } from './openfigi-symbol-resolver.js';
 
 /** Tope de candidatos que aplica el resolver (`MAX_CANDIDATES`). */
 const MAX_CANDIDATES = 12;

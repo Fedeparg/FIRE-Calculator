@@ -6,14 +6,14 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { oauthTokens } from '../db/schema';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { OAuthClientsStore } from './oauth-clients.store';
-import { OAuthGrantsService } from './oauth-grants.service';
-import { OAuthUrls } from './oauth-urls';
-import { SextanteOAuthProvider } from './oauth.provider';
-import { REFRESH_TOKEN_TTL_SECONDS } from './oauth.constants';
+import type { Database } from '../db/database.module.js';
+import { oauthTokens } from '../db/schema.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { OAuthClientsStore } from './oauth-clients.store.js';
+import { OAuthGrantsService } from './oauth-grants.service.js';
+import { OAuthUrls } from './oauth-urls.js';
+import { SextanteOAuthProvider } from './oauth.provider.js';
+import { REFRESH_TOKEN_TTL_SECONDS } from './oauth.constants.js';
 
 const APP_URL = 'http://localhost:3000';
 const CLIENT: OAuthClientInformationFull = {

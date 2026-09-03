@@ -6,7 +6,7 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
+import type { Database } from '../db/database.module.js';
 import {
   loginTokens,
   mcpAuditLog,
@@ -14,9 +14,9 @@ import {
   oauthClients,
   oauthGrants,
   oauthTokens,
-} from '../db/schema';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { OAuthReaper } from './oauth-reaper';
+} from '../db/schema.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { OAuthReaper } from './oauth-reaper.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;

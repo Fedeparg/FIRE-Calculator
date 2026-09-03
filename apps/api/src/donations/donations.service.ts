@@ -2,7 +2,7 @@ import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import type Stripe from 'stripe';
 
-import { STRIPE_CLIENT } from './donations.constants';
+import { STRIPE_CLIENT } from './donations.constants.js';
 
 /**
  * Donaciones ("invítame a un café") vía Stripe Checkout.

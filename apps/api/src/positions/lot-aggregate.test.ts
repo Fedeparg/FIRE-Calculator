@@ -6,7 +6,7 @@ import {
   parseDecimal,
   type AggregatableLot,
   LotAggregateError,
-} from './lot-aggregate';
+} from './lot-aggregate.js';
 
 /** Construye un lote con lo mínimo; el orden lo fija `tradedAt` (y `createdAt` desempata). */
 let seq = 0;

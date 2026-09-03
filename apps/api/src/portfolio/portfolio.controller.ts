@@ -1,13 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { SessionUser } from '../auth/auth.service';
-import { PortfolioHistoryQueryDto } from './dto/portfolio-history-query.dto';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { SessionUser } from '../auth/auth.service.js';
+import { PortfolioHistoryQueryDto } from './dto/portfolio-history-query.dto.js';
 import {
   PortfolioSnapshotsService,
   type PortfolioHistory,
-} from './portfolio-snapshots.service';
+} from './portfolio-snapshots.service.js';
 
 /**
  * Histórico de la cartera. Autenticado y scopeado por el `userId` del JWT, como el resto:

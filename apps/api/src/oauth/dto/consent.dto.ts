@@ -1,6 +1,6 @@
 import { ArrayNotEmpty, IsArray, IsIn, IsString } from 'class-validator';
 
-import { SCOPES_SUPPORTED } from '../oauth.constants';
+import { SCOPES_SUPPORTED } from '../oauth.constants.js';
 
 /** Cuerpo de la aprobación de consentimiento: a qué cliente y con qué scopes. */
 export class ConsentDto {

@@ -6,14 +6,14 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { positionLots, positions } from '../db/schema';
-import type { PricesService } from '../prices/prices.service';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { CreatePositionDto } from './dto/create-position.dto';
-import { aggregateLots } from './lot-aggregate';
-import { PositionLotsService } from './position-lots.service';
-import { PositionsService } from './positions.service';
+import type { Database } from '../db/database.module.js';
+import { positionLots, positions } from '../db/schema.js';
+import type { PricesService } from '../prices/prices.service.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { CreatePositionDto } from './dto/create-position.dto.js';
+import { aggregateLots } from './lot-aggregate.js';
+import { PositionLotsService } from './position-lots.service.js';
+import { PositionsService } from './positions.service.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
 const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;
@@ -34,7 +34,7 @@ const START_DATE = '2026-01-01';
  * única cobertura real que puede tener.
  */
 function readBackfillStatement(): string {
-  const dir = resolve(__dirname, '../../drizzle');
+  const dir = resolve(import.meta.dirname, '../../drizzle');
   const statements = readdirSync(dir)
     .filter((file) => file.endsWith('.sql'))
     .flatMap((file) => readFileSync(resolve(dir, file), 'utf8').split('--> statement-breakpoint'))

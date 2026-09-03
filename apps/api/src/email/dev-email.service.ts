@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { EmailService } from './email.service';
+import type { EmailService } from './email.service.js';
 
 /**
  * Transporte de email para desarrollo: NO envía nada, escribe el enlace mágico en

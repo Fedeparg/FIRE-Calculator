@@ -4,10 +4,10 @@ import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { JwtAuthGuard, type AuthedRequest } from './jwt-auth.guard';
-import { SESSION_COOKIE } from './session.constants';
+import type { Database } from '../db/database.module.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { JwtAuthGuard, type AuthedRequest } from './jwt-auth.guard.js';
+import { SESSION_COOKIE } from './session.constants.js';
 
 const SECRET = 'test-secret';
 

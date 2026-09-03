@@ -21,19 +21,19 @@ import {
   InvalidTokenError,
 } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { oauthAuthCodes, oauthTokens } from '../db/schema';
-import { SESSION_COOKIE } from '../auth/session.constants';
-import { OAuthClientsStore } from './oauth-clients.store';
-import { OAuthGrantsService } from './oauth-grants.service';
-import { OAuthUrls } from './oauth-urls';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { oauthAuthCodes, oauthTokens } from '../db/schema.js';
+import { SESSION_COOKIE } from '../auth/session.constants.js';
+import { OAuthClientsStore } from './oauth-clients.store.js';
+import { OAuthGrantsService } from './oauth-grants.service.js';
+import { OAuthUrls } from './oauth-urls.js';
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   AUTH_CODE_TTL_SECONDS,
   REFRESH_TOKEN_TTL_SECONDS,
   SCOPE_PORTFOLIO_READ,
   SCOPES_SUPPORTED,
-} from './oauth.constants';
+} from './oauth.constants.js';
 
 type SessionJwt = { sub: string; email: string };
 

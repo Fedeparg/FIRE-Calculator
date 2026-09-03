@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { DevEmailService } from './dev-email.service';
-import { EMAIL_SERVICE, type EmailService } from './email.service';
-import { ResendEmailService } from './resend-email.service';
+import { DevEmailService } from './dev-email.service.js';
+import { EMAIL_SERVICE, type EmailService } from './email.service.js';
+import { ResendEmailService } from './resend-email.service.js';
 
 /**
  * Selecciona el transporte de email según EMAIL_TRANSPORT:

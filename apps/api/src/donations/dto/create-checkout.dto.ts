@@ -1,6 +1,6 @@
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
-import { DONATION_MAX_EUR, DONATION_MIN_EUR } from '../donations.constants';
+import { DONATION_MAX_EUR, DONATION_MIN_EUR } from '../donations.constants.js';
 
 /** Cuerpo de POST /donations/checkout: importe de la donación en euros enteros. */
 export class CreateCheckoutDto {

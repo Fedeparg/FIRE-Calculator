@@ -8,7 +8,7 @@
 // decenas de operaciones, desplaza el precio medio en céntimos. Ese error NO se propaga a los
 // lotes.
 
-import type { PositionLotKind } from '../db/schema';
+import type { PositionLotKind } from '../db/schema.js';
 
 /** Escala (decimales) de `position_lots.quantity/price` y de `positions.quantity/avg_price`. */
 export const AMOUNT_SCALE = 6;

@@ -4,7 +4,7 @@ import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
+import { DRIZZLE, type Database } from '../db/database.module.js';
 import {
   loginTokens,
   mcpAuditLog,
@@ -12,7 +12,7 @@ import {
   oauthClients,
   oauthGrants,
   oauthTokens,
-} from '../db/schema';
+} from '../db/schema.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 15 * * * *';

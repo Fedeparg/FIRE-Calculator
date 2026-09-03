@@ -1,15 +1,15 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { instrumentPrices, portfolioSnapshots } from '../db/schema';
-import { PositionLotsService } from '../positions/position-lots.service';
-import { PositionsService } from '../positions/positions.service';
-import type { PriceProvider } from '../prices/price-provider.interface';
-import { PricesService } from '../prices/prices.service';
-import type { SymbolResolver } from '../prices/symbol-resolver';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { PortfolioSnapshotsService } from './portfolio-snapshots.service';
-import { PortfolioValuationService } from './portfolio-valuation.service';
+import type { Database } from '../db/database.module.js';
+import { instrumentPrices, portfolioSnapshots } from '../db/schema.js';
+import { PositionLotsService } from '../positions/position-lots.service.js';
+import { PositionsService } from '../positions/positions.service.js';
+import type { PriceProvider } from '../prices/price-provider.interface.js';
+import { PricesService } from '../prices/prices.service.js';
+import type { SymbolResolver } from '../prices/symbol-resolver.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
+import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
 /**
  * Resolutor identidad: el ticker ES el símbolo. Evita salir a OpenFIGI en los tests, igual

@@ -24,7 +24,7 @@ async function main(): Promise<void> {
 
   // Carpeta de migraciones, resuelta de forma robusta respecto a este archivo
   // (dist/db/migrate.js -> ../../drizzle).
-  const migrationsFolder = resolve(__dirname, '../../drizzle');
+  const migrationsFolder = resolve(import.meta.dirname, '../../drizzle');
 
   try {
     console.log(`Aplicando migraciones desde ${migrationsFolder}...`);

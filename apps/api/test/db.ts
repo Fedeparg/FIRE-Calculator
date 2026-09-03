@@ -3,8 +3,8 @@ import { sql } from 'drizzle-orm';
 import postgres from 'postgres';
 import { inject } from 'vitest';
 
-import * as schema from '../src/db/schema';
-import type { Database } from '../src/db/database.module';
+import * as schema from '../src/db/schema.js';
+import type { Database } from '../src/db/database.module.js';
 
 /**
  * Conexión a la BD de test (el PostgreSQL efímero levantado en `global-setup.ts`).

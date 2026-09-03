@@ -12,8 +12,8 @@ import {
   Min,
 } from 'class-validator';
 
-import type { PositionLotKind } from '../../db/schema';
-import { NUMERIC_MAX } from './create-position.dto';
+import type { PositionLotKind } from '../../db/schema.js';
+import { NUMERIC_MAX } from './create-position.dto.js';
 
 /** Tipos de operación admitidos en un lote. */
 export const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionLotKind[];

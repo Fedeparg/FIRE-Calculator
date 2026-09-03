@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 
-import { NUMERIC_MAX, SUPPORTED_CURRENCIES, type SupportedCurrency } from './create-position.dto';
+import { NUMERIC_MAX, SUPPORTED_CURRENCIES, type SupportedCurrency } from './create-position.dto.js';
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;

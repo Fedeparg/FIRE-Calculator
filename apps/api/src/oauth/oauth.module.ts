@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ConsentController } from './consent.controller';
-import { OAuthClientsStore } from './oauth-clients.store';
-import { OAuthGrantsService } from './oauth-grants.service';
-import { OAuthReaper } from './oauth-reaper';
-import { OAuthUrls } from './oauth-urls';
-import { SextanteOAuthProvider } from './oauth.provider';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { ConsentController } from './consent.controller.js';
+import { OAuthClientsStore } from './oauth-clients.store.js';
+import { OAuthGrantsService } from './oauth-grants.service.js';
+import { OAuthReaper } from './oauth-reaper.js';
+import { OAuthUrls } from './oauth-urls.js';
+import { SextanteOAuthProvider } from './oauth.provider.js';
 
 /**
  * Módulo del Authorization Server MCP. Provee el provider del SDK (respaldado por Drizzle),

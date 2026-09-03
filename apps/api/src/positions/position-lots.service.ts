@@ -1,17 +1,17 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { positionLots, positions, type PositionLot } from '../db/schema';
-import { CreatePositionLotDto } from './dto/create-position-lot.dto';
-import { UpdatePositionLotDto } from './dto/update-position-lot.dto';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { positionLots, positions, type PositionLot } from '../db/schema.js';
+import { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
+import { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
 import {
   aggregateLots,
   LotAggregateError,
   type AggregatableLot,
   type LotAggregate,
-} from './lot-aggregate';
-import { findOwnedPosition, type DatabaseOrTransaction } from './position-access';
+} from './lot-aggregate.js';
+import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 
 /**
  * Lote tal y como lo consume el frontend. Igual que `PositionResponse`, los `numeric` de

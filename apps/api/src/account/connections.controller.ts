@@ -8,11 +8,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import type { SessionUser } from '../auth/auth.service';
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { OAuthClientsStore } from '../oauth/oauth-clients.store';
-import { OAuthGrantsService } from '../oauth/oauth-grants.service';
+import type { SessionUser } from '../auth/auth.service.js';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
+import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 
 /** Una aplicación conectada (consentimiento OAuth) tal y como la consume la UI. */
 export interface ConnectedApp {

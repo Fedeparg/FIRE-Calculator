@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
-import { CALCULATOR_SLUG_PATTERN } from './create-saved-scenario.dto';
+import { CALCULATOR_SLUG_PATTERN } from './create-saved-scenario.dto.js';
 
 const trim = ({ value }: { value: unknown }): unknown =>
   typeof value === 'string' ? value.trim() : value;

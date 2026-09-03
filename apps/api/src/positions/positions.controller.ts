@@ -12,13 +12,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { SessionUser } from '../auth/auth.service';
-import { CombinePositionDto } from './dto/combine-position.dto';
-import { CreatePositionDto } from './dto/create-position.dto';
-import { UpdatePositionDto } from './dto/update-position.dto';
-import { PositionsService, type PositionResponse } from './positions.service';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { SessionUser } from '../auth/auth.service.js';
+import { CombinePositionDto } from './dto/combine-position.dto.js';
+import { CreatePositionDto } from './dto/create-position.dto.js';
+import { UpdatePositionDto } from './dto/update-position.dto.js';
+import { PositionsService, type PositionResponse } from './positions.service.js';
 
 /**
  * Cartera del usuario. TODOS los endpoints están autenticados y el `userId` se obtiene

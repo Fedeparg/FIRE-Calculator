@@ -2,10 +2,10 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { oauthClients } from '../db/schema';
-import { createTestDb, resetDb } from '../../test/db';
-import { OAuthClientsStore } from './oauth-clients.store';
+import type { Database } from '../db/database.module.js';
+import { oauthClients } from '../db/schema.js';
+import { createTestDb, resetDb } from '../../test/db.js';
+import { OAuthClientsStore } from './oauth-clients.store.js';
 
 const CLIENT: OAuthClientInformationFull = {
   client_id: 'client-1',

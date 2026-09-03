@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 
-import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service';
-import { PricesService } from '../prices/prices.service';
+import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
+import { PricesService } from '../prices/prices.service.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 30 22 * * *';

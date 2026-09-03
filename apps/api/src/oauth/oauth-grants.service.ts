@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { oauthGrants, oauthTokens } from '../db/schema';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { oauthGrants, oauthTokens } from '../db/schema.js';
 
 /**
  * Consentimientos OAuth (tabla `oauth_grants`): qué scopes ha concedido un usuario a un

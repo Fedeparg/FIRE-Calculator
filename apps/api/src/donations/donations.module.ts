@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
-import { DonationsController } from './donations.controller';
-import { STRIPE_CLIENT } from './donations.constants';
-import { DonationsService } from './donations.service';
+import { DonationsController } from './donations.controller.js';
+import { STRIPE_CLIENT } from './donations.constants.js';
+import { DonationsService } from './donations.service.js';
 
 /**
  * Construye el cliente de Stripe SOLO si hay STRIPE_SECRET_KEY (igual que el módulo de

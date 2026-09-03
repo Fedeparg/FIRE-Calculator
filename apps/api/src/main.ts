@@ -1,11 +1,15 @@
+// Debe ir PRIMERO: en ESM los imports se evalúan en orden y los decoradores de Nest
+// escriben metadata vía reflect-metadata al definirse las clases.
+import 'reflect-metadata';
+
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
-import { AppModule } from './app.module';
-import { mountMcp } from './mcp/mount-mcp';
+import { AppModule } from './app.module.js';
+import { mountMcp } from './mcp/mount-mcp.js';
 
 /**
  * Saltos de proxy de confianza por defecto. Se mantiene en 1 (el valor histórico) para no

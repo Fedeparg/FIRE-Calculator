@@ -134,7 +134,7 @@ A pnpm workspace with two packages that deploy as one stack.
   (Claude, ChatGPT)   OAuth 2.1 + POST /api/mcp           │
                                                          ▼
                     ┌───────────────────────────────────────────┐
-                    │  api · NestJS 11                          │
+                    │  api · NestJS 12                          │
                     │                                           │
                     │  auth · positions · prices · portfolio    │
                     │  oauth · mcp · account · donations        │

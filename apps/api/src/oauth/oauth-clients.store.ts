@@ -3,8 +3,8 @@ import { eq } from 'drizzle-orm';
 import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { oauthClients } from '../db/schema';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { oauthClients } from '../db/schema.js';
 
 /**
  * Almacén de clientes OAuth respaldado por Postgres (vía Drizzle), tal y como lo espera el

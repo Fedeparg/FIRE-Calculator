@@ -5,28 +5,28 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { loginTokens, users, type User } from '../db/schema';
-import { EMAIL_SERVICE, type EmailService } from '../email/email.service';
-import { OAuthClientsStore } from '../oauth/oauth-clients.store';
-import { OAuthGrantsService } from '../oauth/oauth-grants.service';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { loginTokens, users, type User } from '../db/schema.js';
+import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
+import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
+import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 import {
   PortfolioSnapshotsService,
   HISTORY_MAX_DAYS,
   type PortfolioHistoryPoint,
-} from '../portfolio/portfolio-snapshots.service';
+} from '../portfolio/portfolio-snapshots.service.js';
 import {
   PositionLotsService,
   type PositionLotResponse,
-} from '../positions/position-lots.service';
+} from '../positions/position-lots.service.js';
 import {
   PositionsService,
   type PositionResponse,
-} from '../positions/positions.service';
+} from '../positions/positions.service.js';
 import {
   SavedScenariosService,
   type SavedScenarioResponse,
-} from '../scenarios/saved-scenarios.service';
+} from '../scenarios/saved-scenarios.service.js';
 
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos
