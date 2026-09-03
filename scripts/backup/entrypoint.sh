@@ -23,7 +23,7 @@ export POSTGRES_DB='${POSTGRES_DB:-sextante}'
 export POSTGRES_PASSWORD='${POSTGRES_PASSWORD}'
 export BACKUP_GPG_PASSPHRASE='${BACKUP_GPG_PASSPHRASE}'
 export RCLONE_REMOTE='${RCLONE_REMOTE:-gdrive:sextante-backups}'
-export BACKUP_RETENTION_DAYS='${BACKUP_RETENTION_DAYS:-30}'
+export BACKUP_RETENTION_DAYS='${BACKUP_RETENTION_DAYS:-7}'
 EOF
 
 # 3) Backup inmediato al arrancar: deja una copia reciente y valida la config

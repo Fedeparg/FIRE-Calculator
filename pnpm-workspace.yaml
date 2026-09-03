@@ -12,7 +12,11 @@ overrides:
   esbuild: '>=0.24.3'
   postcss: '>=8.5.10'
   multer: '>=2.2.0'
-  gray-matter>js-yaml: '^3.15.0'
+  gray-matter>js-yaml: '^3.15.2'
+  # qs (vía @modelcontextprotocol/sdk > express > body-parser): dos avisos de
+  # denegación de servicio al parsear query strings. La API sí recibe query
+  # strings de red, así que este sí es alcanzable.
+  qs: '^6.16.0'
 
 allowBuilds:
   '@parcel/watcher': true

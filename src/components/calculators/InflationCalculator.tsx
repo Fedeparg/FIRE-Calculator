@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeInflation } from "@/core/calculators/inflacion";
 import { useFormat } from "@/lib/format";
@@ -8,16 +8,17 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function InflationCalculator() {
   const t = useTranslations("calc.inflacion");
   const { formatEUR, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
-  const [amount, setAmount] = useState(10000);
-  const [annualRate, setAnnualRate] = useState(3);
-  const [years, setYears] = useState(20);
-  const [nominalReturn, setNominalReturn] = useState(2);
+  const [amount, setAmount] = useNumberField("amount", 10000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
+  const [years, setYears] = useNumberField("years", 20);
+  const [nominalReturn, setNominalReturn] = useNumberField("nominalReturn", 2);
 
   const result = useMemo(
     () => computeInflation({ amount, annualRate, years, nominalReturn }),

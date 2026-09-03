@@ -10,6 +10,14 @@
 export const FISCAL_YEAR = 2026;
 
 /**
+ * `FISCAL_YEAR` en texto, para inyectarlo como argumento `{year}` en los avisos
+ * traducidos de las calculadoras fiscales. Se pasa como cadena a propósito: así
+ * el año nunca queda sujeto al formateo numérico del idioma, que le añadiría
+ * separador de millares («2.026»).
+ */
+export const FISCAL_YEAR_LABEL = String(FISCAL_YEAR);
+
+/**
  * Un tramo de una escala progresiva.
  * - `upTo`: límite superior de la base para este tramo (incluido). `null` = sin
  *   límite (último tramo).
@@ -62,9 +70,50 @@ export function effectiveRate(base: number, brackets: readonly Bracket[]): numbe
 // ---------------------------------------------------------------------------
 
 /**
- * IRPF — escala general (base liquidable general). Suma de la escala estatal y
- * la autonómica supletoria. Cada CCAA puede aprobar su propia escala autonómica,
- * por lo que el resultado real puede variar.
+ * IRPF — escala ESTATAL de la base liquidable general (art. 63.1.1º LIRPF).
+ *
+ * Se aplica VERBATIM: la ley ya la da dividida por dos (tipos 9,50 a 24,50), de
+ * modo que la cuota íntegra general es `estatal(base) + autonómica(base)`, SIN
+ * ningún factor 0,5. Multiplicarla por 0,5 dividiría una escala ya dividida.
+ * Fuente: AEAT, Manual práctico de Renta 2025, "Gravamen estatal".
+ */
+export const IRPF_ESTATAL_GENERAL: readonly Bracket[] = [
+  { upTo: 12450, rate: 9.5 },
+  { upTo: 20200, rate: 12 },
+  { upTo: 35200, rate: 15 },
+  { upTo: 60000, rate: 18.5 },
+  { upTo: 300000, rate: 22.5 },
+  { upTo: null, rate: 24.5 },
+];
+
+/**
+ * IRPF — escala autonómica SUPLETORIA (art. 65 LIRPF).
+ *
+ * NO es idéntica a la estatal: coincide hasta 60.000 €, pero su último tramo es
+ * un 22,50 % plano, sin el desdoblamiento en 300.000 € al 24,50 % que sí tiene la
+ * estatal. Confundirlas sobreestimaría las rentas superiores a 300.000 € (49 % en
+ * lugar del 47 % real).
+ *
+ * Desde 2011 no hay supletoriedad real (las 15 comunidades de régimen común tienen
+ * escala propia, ver `regions.ts`): esta escala rige para Ceuta y Melilla
+ * (DA 32ª LIRPF) y para residentes en el extranjero, y es la que usa este motor
+ * cuando no se indica comunidad.
+ * Fuente: AEAT, Manual práctico de Renta 2025, especialidad de Ceuta y Melilla.
+ */
+export const IRPF_AUTONOMICA_SUPLETORIA: readonly Bracket[] = [
+  { upTo: 12450, rate: 9.5 },
+  { upTo: 20200, rate: 12 },
+  { upTo: 35200, rate: 15 },
+  { upTo: 60000, rate: 18.5 },
+  { upTo: null, rate: 22.5 },
+];
+
+/**
+ * IRPF — escala general (base liquidable general): suma tramo a tramo de
+ * `IRPF_ESTATAL_GENERAL` e `IRPF_AUTONOMICA_SUPLETORIA` (el 47 % del último tramo
+ * sale de 24,50 + 22,50). Es la escala que se aplica cuando el usuario no indica
+ * comunidad autónoma; cada comunidad tiene la suya (ver `regions.ts`) y el
+ * resultado real puede variar.
  * Fuente: AEAT, tramos IRPF 2026.
  */
 export const IRPF_GENERAL: readonly Bracket[] = [
@@ -203,3 +252,22 @@ export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
 
 /** Tope anual de los gastos de difícil justificación (estimación directa simplificada). */
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP = 2000;
+
+/**
+ * Reducción por obtención de rendimientos del trabajo (art. 20 LIRPF). Es una
+ * escala decreciente de tres tramos sobre el rendimiento neto previo:
+ *  1. Hasta `..._FULL_LIMIT`: se aplica el importe máximo.
+ *  2. Hasta `..._TIER2_LIMIT`: el máximo menos `..._TIER2_SLOPE` € por cada euro
+ *     que excede del primer límite.
+ *  3. Hasta `..._TIER3_LIMIT`: `..._TIER3_BASE` menos `..._TIER3_SLOPE` € por
+ *     cada euro que excede del segundo límite.
+ * Por encima del tercer límite la reducción es 0.
+ * Fuente: AEAT, ejercicio de referencia (ver `FISCAL_YEAR`).
+ */
+export const WORK_INCOME_REDUCTION_FULL_LIMIT = 14852;
+export const WORK_INCOME_REDUCTION_MAX = 7302;
+export const WORK_INCOME_REDUCTION_TIER2_LIMIT = 17673.52;
+export const WORK_INCOME_REDUCTION_TIER2_SLOPE = 1.75;
+export const WORK_INCOME_REDUCTION_TIER3_LIMIT = 19747.5;
+export const WORK_INCOME_REDUCTION_TIER3_BASE = 2364.34;
+export const WORK_INCOME_REDUCTION_TIER3_SLOPE = 1.14;

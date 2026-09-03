@@ -10,13 +10,17 @@
 // rendimientos del trabajo (art. 20 LIRPF), que NO aplica a actividades económicas.
 
 import {
-  IRPF_GENERAL,
   REDUCCION_TRIBUTACION_CONJUNTA,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE,
-  marginalRate,
 } from "../fiscal/brackets";
-import { generalIncomeTax, personalAndFamilyMinimum, type PersonalCircumstances } from "../fiscal/irpf";
+import {
+  generalIncomeTax,
+  generalMarginalRate,
+  personalAndFamilyMinimum,
+  regionalPersonalAndFamilyMinimum,
+  type PersonalCircumstances,
+} from "../fiscal/irpf";
 
 export interface SelfEmployedInput extends PersonalCircumstances {
   /** Ingresos anuales de la actividad. */
@@ -41,7 +45,7 @@ export interface SelfEmployedResult {
   difficultExpenses: number;
   /** Rendimiento neto de la actividad tras los gastos de difícil justificación. */
   netIncome: number;
-  /** Mínimo personal y familiar aplicado. */
+  /** Mínimo personal y familiar estatal aplicado (ver `core/fiscal/irpf.ts`). */
   personalMinimum: number;
   /** Base liquidable general (tras aportación a plan y reducción conjunta). */
   taxableBase: number;
@@ -74,7 +78,10 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
   const taxableBase = Math.max(0, netIncome - pension - jointReduction);
 
   const personalMinimum = personalAndFamilyMinimum(input);
-  const incomeTax = generalIncomeTax(taxableBase, personalMinimum);
+  const incomeTax = generalIncomeTax(taxableBase, personalMinimum, {
+    region: input.region,
+    regionalMinimum: regionalPersonalAndFamilyMinimum(input),
+  });
 
   return {
     grossNetIncome,
@@ -85,6 +92,6 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
     incomeTax,
     netAfterTax: netIncome - incomeTax,
     effectiveRate: netIncome > 0 ? (incomeTax / netIncome) * 100 : 0,
-    marginalRate: marginalRate(taxableBase, IRPF_GENERAL),
+    marginalRate: generalMarginalRate(taxableBase, input.region),
   };
 }

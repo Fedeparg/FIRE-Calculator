@@ -1,21 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeEarlyRepayment } from "@/core/calculators/amortizacion-anticipada";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function EarlyRepaymentCalculator() {
   const t = useTranslations("calc.amortizacion-anticipada");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
-  const [pendingPrincipal, setPendingPrincipal] = useState(150000);
-  const [annualRate, setAnnualRate] = useState(3);
-  const [remainingYears, setRemainingYears] = useState(25);
-  const [extraPayment, setExtraPayment] = useState(15000);
-  const [compensationRate, setCompensationRate] = useState(0);
+  const [pendingPrincipal, setPendingPrincipal] = useNumberField("pendingPrincipal", 150000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
+  const [remainingYears, setRemainingYears] = useNumberField("remainingYears", 25);
+  const [extraPayment, setExtraPayment] = useNumberField("extraPayment", 15000);
+  const [compensationRate, setCompensationRate] = useNumberField("compensationRate", 0);
 
   const result = useMemo(
     () => computeEarlyRepayment({ pendingPrincipal, annualRate, remainingYears, extraPayment, compensationRate }),

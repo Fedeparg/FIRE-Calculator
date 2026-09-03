@@ -4,6 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
+import PortfolioBreakdown from "./PortfolioBreakdown";
+import PortfolioHistoryChart from "./PortfolioHistoryChart";
+import PositionDetail from "./PositionDetail";
 import PositionForm from "./PositionForm";
 import PositionList from "./PositionList";
 import PortfolioSummary from "./PortfolioSummary";
@@ -17,6 +20,10 @@ type Props = {
  * recargar al añadir, editar, combinar o borrar. La carga inicial (SSR) llega por props
  * desde el server component; la autorización y el scoping por usuario los decide siempre
  * la API.
+ *
+ * La divisa de visualización vive AQUÍ, no en el resumen: la comparten el total, el histórico
+ * y la composición, y tener tres selectores independientes daría tres cifras distintas en la
+ * misma pantalla.
  */
 export default function PortfolioClient({ initialPositions }: Props) {
   const t = useTranslations("portfolio");
@@ -27,6 +34,10 @@ export default function PortfolioClient({ initialPositions }: Props) {
   const [prices, setPrices] = useState<Record<string, PriceInfo>>({});
   // Tasas FX para el total agregado (global, no dependen de las posiciones).
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
+  // Divisa en la que se expresan el total, el histórico y la composición.
+  const [display, setDisplay] = useState<string>("EUR");
+  // Posición cuyo detalle (lotes + simulación de venta) está abierto.
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // Clave estable de los tickers distintos: solo re-pedimos precios si el CONJUNTO cambia
   // (no al editar cantidad/precio medio). Es justo el `?symbols=` que espera la API.
@@ -122,7 +133,12 @@ export default function PortfolioClient({ initialPositions }: Props) {
     setPositions((prev) => prev.filter((p) => p.id !== id));
     // Si estábamos editando la que se borra, salimos del modo edición.
     setEditing((cur) => (cur?.id === id ? null : cur));
+    setDetailId((cur) => (cur === id ? null : cur));
   }
+
+  // El detalle se deriva del id, no se guarda la posición: así, cuando `refresh()` trae la
+  // cantidad y el precio medio reagregados tras tocar un lote, el panel los ve al instante.
+  const detail = positions.find((p) => p.id === detailId) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -133,15 +149,41 @@ export default function PortfolioClient({ initialPositions }: Props) {
         </div>
       ) : (
         <>
-          <PortfolioSummary positions={positions} prices={prices} fxRates={fxRates} />
+          <PortfolioSummary
+            positions={positions}
+            prices={prices}
+            fxRates={fxRates}
+            display={display}
+            onDisplayChange={setDisplay}
+          />
+          <PortfolioHistoryChart display={display} />
+          <PortfolioBreakdown
+            positions={positions}
+            prices={prices}
+            rates={fxRates?.rates ?? {}}
+            display={display}
+          />
           <PositionList
             positions={positions}
             prices={prices}
             rates={fxRates?.rates ?? {}}
             editingId={editing?.id ?? null}
+            detailId={detailId}
             onEdit={setEditing}
+            onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
             onDeleted={handleDeleted}
           />
+          {detail && (
+            <PositionDetail
+              // Al cambiar de posición se remonta: el histórico y la simulación parten de cero.
+              key={detail.id}
+              position={detail}
+              price={prices[detail.ticker]}
+              rates={fxRates?.rates ?? {}}
+              onClose={() => setDetailId(null)}
+              onMutated={refresh}
+            />
+          )}
         </>
       )}
 

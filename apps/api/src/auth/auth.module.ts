@@ -3,7 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
 import { OauthModule } from '../oauth/oauth.module';
+import { PortfolioModule } from '../portfolio/portfolio.module';
 import { PositionsModule } from '../positions/positions.module';
+import { ScenariosModule } from '../scenarios/scenarios.module';
 import { EmailModule } from '../email/email.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -14,6 +16,10 @@ import { SESSION_TTL_SECONDS } from './session.constants';
   imports: [
     EmailModule,
     PositionsModule,
+    // La exportación RGPD debe incluir TODO dato personal: lotes e histórico (PortfolioModule)
+    // y escenarios guardados (ScenariosModule) además de las posiciones.
+    PortfolioModule,
+    ScenariosModule,
     OauthModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

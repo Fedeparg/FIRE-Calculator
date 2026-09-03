@@ -14,4 +14,4 @@ Your **gross** salary isn't what you take home: from it you subtract **Social Se
 
 Add children or a pension contribution and watch the tax fall.
 
-**An important note.** It applies the state + supplementary regional scale; your region may change the result somewhat. It's indicative and not tax advice.
+**An important note.** You can pick your region: it adds the state scale and that region's own scale; leave it unset and the supplementary one applies. It excludes regional deductions, and the chartered regimes of the Basque Country and Navarre. It's indicative and not tax advice.

@@ -27,6 +27,21 @@ export interface PriceProvider {
    * poder refrescar el resto aunque uno falle.
    */
   getQuotes(symbols: string[]): Promise<Map<string, Quote>>;
+
+  /**
+   * Devuelve la SERIE de cierres diarios del símbolo, del más antiguo al más reciente, para
+   * el último año aproximadamente. Sirve para que un símbolo recién dado de alta tenga
+   * histórico desde el primer día, en vez de tener que esperar meses a que el cron diario lo
+   * construya cierre a cierre.
+   *
+   * Es una llamada por símbolo y solo se usa en el ALTA (`primeSymbol`), nunca en el refresco
+   * diario: pedir un año entero de cada símbolo cada día multiplicaría el tráfico a la fuente
+   * sin aportar nada (el cierre del día ya lo trae `getQuotes`).
+   *
+   * Devuelve `[]` —nunca lanza— si el símbolo no existe o la fuente falla: el alta de una
+   * posición no puede depender de esto.
+   */
+  getHistory(symbol: string): Promise<Quote[]>;
 }
 
 /** Token de inyección para el proveedor de precios activo. */

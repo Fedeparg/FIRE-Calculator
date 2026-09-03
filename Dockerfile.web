@@ -56,11 +56,17 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-# Salida autocontenida: server.js + node_modules trazado.
-COPY --from=build /app/.next/standalone ./
+# Salida autocontenida: server.js + node_modules trazado. Se copia ya con el
+# usuario `node` como dueño para poder correr sin privilegios (ver USER abajo).
+COPY --from=build --chown=node:node /app/.next/standalone ./
 # Estáticos y assets públicos (Next standalone NO los incluye).
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
+COPY --from=build --chown=node:node /app/.next/static ./.next/static
+COPY --from=build --chown=node:node /app/public ./public
+
+# Sin privilegios: si alguien logra ejecutar código en el contenedor, no lo hace
+# como root. La imagen `node` ya trae el usuario `node` (uid 1000). El servidor
+# escucha en el 3000, que no es privilegiado, así que no hace falta root para nada.
+USER node
 
 EXPOSE 3000
 CMD ["node", "server.js"]

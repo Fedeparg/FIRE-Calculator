@@ -1,35 +1,51 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import {
+  SELECTABLE_REGIONS,
+  toSupportedRegion,
+  type RegionSelection,
+} from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
+import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function PensionReliefCalculator() {
   const t = useTranslations("calc.desgravacion-plan-pensiones");
   const { formatEUR, formatPercent } = useFormat();
-  const [grossAnnual, setGrossAnnual] = useState(40000);
-  const [contribution, setContribution] = useState(1500);
-  const [employerContribution, setEmployerContribution] = useState(0);
+  const [grossAnnual, setGrossAnnual] = useNumberField("grossAnnual", 40000);
+  const [contribution, setContribution] = useNumberField("contribution", 1500);
+  const [employerContribution, setEmployerContribution] = useNumberField("employerContribution", 0);
+  const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
 
   const result = useMemo(
-    () => computePensionRelief({ grossAnnual, contribution, employerContribution }),
-    [grossAnnual, contribution, employerContribution],
+    () =>
+      computePensionRelief({
+        grossAnnual,
+        contribution,
+        employerContribution,
+        region: toSupportedRegion(region),
+      }),
+    [grossAnnual, contribution, employerContribution, region],
   );
 
   return (
     <CalculatorLayout
-      inputCount={3}
-      notice={<Notice>{t("note")}</Notice>}
+      inputCount={4}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />
           <NumberField label={t("contribution")} value={contribution} onChange={setContribution} step={100} help={t("help.contribution")} />
           <NumberField label={t("employerContribution")} value={employerContribution} onChange={setEmployerContribution} min={0} step={500} help={t("help.employerContribution")} />
+          <RegionSelectField value={region} onChange={setRegion} />
         </>
       }
       results={

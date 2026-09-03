@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeSimpleInterest } from "@/core/calculators/interes-simple";
 import { useFormat } from "@/lib/format";
@@ -10,16 +10,17 @@ import Notice from "../ui/Notice";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function SimpleInterestCalculator() {
   const t = useTranslations("calc.interes-simple");
   const { formatEUR } = useFormat();
   const tc = useTranslations("chart");
 
-  const [principal, setPrincipal] = useState(10000);
-  const [annualRate, setAnnualRate] = useState(4);
-  const [years, setYears] = useState(15);
-  const [withholdingRate, setWithholdingRate] = useState(19);
+  const [principal, setPrincipal] = useNumberField("principal", 10000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 4);
+  const [years, setYears] = useNumberField("years", 15);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
 
   const result = useMemo(
     () => computeSimpleInterest({ principal, annualRate, years, withholdingRate }),

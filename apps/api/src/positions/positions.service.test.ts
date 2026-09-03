@@ -11,6 +11,7 @@ import type { Database } from '../db/database.module';
 import type { PricesService } from '../prices/prices.service';
 import { createTestDb, insertUser, resetDb } from '../../test/db';
 import { CreatePositionDto } from './dto/create-position.dto';
+import { PositionLotsService } from './position-lots.service';
 import { PositionsService } from './positions.service';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
@@ -31,7 +32,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(db, pricesStub);
+    service = new PositionsService(db, pricesStub, new PositionLotsService(db));
   });
 
   afterEach(async () => {

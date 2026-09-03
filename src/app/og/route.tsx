@@ -118,6 +118,13 @@ export async function GET(request: Request) {
         { name: "Inter", data: regular, weight: 400, style: "normal" },
         { name: "Inter", data: bold, weight: 700, style: "normal" },
       ],
+      headers: {
+        // La imagen es función pura de la query (título, subtítulo, idioma), así que
+        // el mismo enlace da siempre el mismo PNG. Sin esta cabecera la ruta se
+        // servía sin caché y cada vista previa de Twitter, WhatsApp o LinkedIn
+        // obligaba a re-renderizar la tarjeta entera con sus fuentes.
+        "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+      },
     },
   );
 }

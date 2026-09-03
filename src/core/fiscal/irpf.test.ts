@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { MINIMO_PERSONAL } from "./brackets";
 import {
   estimateNetSalary,
   generalIncomeTax,
+  generalMarginalRate,
   personalAndFamilyMinimum,
+  regionalPersonalAndFamilyMinimum,
   workIncomeReduction,
 } from "./irpf";
+import { REGION_CODES } from "./regions";
 
 describe("workIncomeReduction", () => {
   it("rendimiento bajo → reducción máxima fija", () => {
@@ -127,5 +131,139 @@ describe("personalAndFamilyMinimum", () => {
   it("suma ascendientes y discapacidad", () => {
     expect(personalAndFamilyMinimum({ ascendants: 1 })).toBe(5550 + 1150);
     expect(personalAndFamilyMinimum({ disability: "g65" })).toBe(5550 + 9000);
+  });
+});
+
+describe("IRPF por comunidad autónoma", () => {
+  const BASES = [0, 5550, 12450, 20000, 30000, 60000, 100000, 300000, 500000];
+
+  it("sin comunidad el resultado es exactamente el de siempre (escala conjunta)", () => {
+    for (const base of BASES) {
+      const legacy = generalIncomeTax(base);
+      expect(generalIncomeTax(base, MINIMO_PERSONAL, {})).toBe(legacy);
+      expect(generalIncomeTax(base, MINIMO_PERSONAL, { region: undefined })).toBe(legacy);
+      // Un mínimo autonómico distinto es irrelevante mientras no haya comunidad.
+      expect(generalIncomeTax(base, MINIMO_PERSONAL, { regionalMinimum: 9999 })).toBe(legacy);
+    }
+  });
+
+  it("Castilla-La Mancha da el mismo resultado que no indicar comunidad", () => {
+    // Su escala autonómica es idéntica a la supletoria y no modifica el mínimo:
+    // es la comprobación de que sumar estatal + autonómica no introduce sesgo.
+    for (const base of BASES) {
+      expect(generalIncomeTax(base, MINIMO_PERSONAL, { region: "castilla-la-mancha" })).toBeCloseTo(
+        generalIncomeTax(base),
+        6,
+      );
+    }
+  });
+
+  it.each(REGION_CODES)("%s: cuota positiva, creciente y nunca superior al 47 % de la base", (region) => {
+    const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
+    expect(generalIncomeTax(0, MINIMO_PERSONAL, options)).toBe(0);
+    expect(generalIncomeTax(40000, MINIMO_PERSONAL, options)).toBeGreaterThan(
+      generalIncomeTax(30000, MINIMO_PERSONAL, options),
+    );
+    expect(generalIncomeTax(60000, MINIMO_PERSONAL, options)).toBeLessThan(60000 * 0.47);
+  });
+
+  it("cada cuota se acota a cero por separado, no la suma", () => {
+    // Asturias sube el mínimo del contribuyente a 6.105 €. Con una base de
+    // 6.000 € hay cuota estatal (por encima de 5.550 €) y NO hay cuota
+    // autonómica: 450 € al 9,5 % estatal = 42,75 €. Acotar la suma en lugar de
+    // cada cuota daría 33,30 €, restando una cuota autonómica negativa.
+    const options = {
+      region: "asturias" as const,
+      regionalMinimum: regionalPersonalAndFamilyMinimum({ region: "asturias" }),
+    };
+    expect(regionalPersonalAndFamilyMinimum({ region: "asturias" })).toBe(6105);
+    expect(generalIncomeTax(6000, MINIMO_PERSONAL, options)).toBeCloseTo(42.75, 6);
+  });
+
+  it("Madrid tributa menos que la escala supletoria y la Comunitat Valenciana, más", () => {
+    const withRegion = (region: "madrid" | "valencia") =>
+      generalIncomeTax(100000, MINIMO_PERSONAL, {
+        region,
+        regionalMinimum: regionalPersonalAndFamilyMinimum({ region }),
+      });
+    expect(withRegion("madrid")).toBeLessThan(generalIncomeTax(100000));
+    expect(withRegion("valencia")).toBeGreaterThan(generalIncomeTax(100000));
+  });
+
+  it("bases nulas o no finitas no rompen el cálculo con comunidad", () => {
+    for (const region of REGION_CODES) {
+      const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
+      expect(generalIncomeTax(0, MINIMO_PERSONAL, options)).toBe(0);
+      expect(generalIncomeTax(-1000, MINIMO_PERSONAL, options)).toBe(0);
+      expect(generalIncomeTax(Number.NaN, MINIMO_PERSONAL, options)).toBe(0);
+      expect(generalIncomeTax(Number.POSITIVE_INFINITY, MINIMO_PERSONAL, options)).toBe(0);
+      expect(generalIncomeTax(30000, Number.NaN, options)).toBeGreaterThan(0);
+    }
+  });
+
+  it("el mínimo autonómico solo alimenta la cuota autonómica", () => {
+    // Canarias baja el marginal de los primeros tramos y sube el mínimo: con la
+    // misma base, su cuota difiere de la que sale usando el mínimo estatal en
+    // ambas escalas.
+    const base = 30000;
+    const withOwnMinimum = generalIncomeTax(base, MINIMO_PERSONAL, {
+      region: "canarias",
+      regionalMinimum: regionalPersonalAndFamilyMinimum({ region: "canarias" }),
+    });
+    const withStateMinimum = generalIncomeTax(base, MINIMO_PERSONAL, { region: "canarias" });
+    expect(regionalPersonalAndFamilyMinimum({ region: "canarias" })).toBe(5606);
+    expect(withOwnMinimum).toBeLessThan(withStateMinimum);
+  });
+
+  it("las circunstancias familiares se aplican también al mínimo autonómico", () => {
+    const c = { region: "galicia" as const, children: 2, childrenUnder3: 1 };
+    // 5.789 + 2.503 + 2.816 + 2.920 (menor de 3 años) = 14.028 €.
+    expect(regionalPersonalAndFamilyMinimum(c)).toBeCloseTo(14028, 6);
+    // El mínimo estatal del mismo contribuyente sigue siendo el estatal.
+    expect(personalAndFamilyMinimum(c)).toBeCloseTo(5550 + 2400 + 2700 + 2800, 6);
+  });
+
+  it("sin comunidad, el mínimo autonómico es el estatal", () => {
+    const c = { children: 1, age: 70 };
+    expect(regionalPersonalAndFamilyMinimum(c)).toBe(personalAndFamilyMinimum(c));
+    expect(regionalPersonalAndFamilyMinimum()).toBe(personalAndFamilyMinimum());
+  });
+});
+
+describe("generalMarginalRate", () => {
+  it("sin comunidad devuelve el marginal de la escala conjunta", () => {
+    expect(generalMarginalRate(30000)).toBe(30);
+    expect(generalMarginalRate(400000)).toBe(47);
+  });
+
+  it("con comunidad suma el marginal estatal y el autonómico", () => {
+    // Madrid: 17,40 % autonómico + 18,50 % estatal en el tramo de 35.200-57.320 €.
+    expect(generalMarginalRate(40000, "madrid")).toBeCloseTo(35.9, 6);
+    // La Rioja por encima de 120.000 €: 27 % + 22,50 % estatal.
+    expect(generalMarginalRate(150000, "la-rioja")).toBeCloseTo(49.5, 6);
+  });
+
+  it("bases no finitas o negativas usan el primer tramo", () => {
+    expect(generalMarginalRate(Number.NaN, "madrid")).toBeCloseTo(9.5 + 8.5, 6);
+    expect(generalMarginalRate(-5000)).toBe(19);
+  });
+});
+
+describe("estimateNetSalary por comunidad", () => {
+  it("sin comunidad el resultado no cambia respecto del histórico", () => {
+    const withoutRegion = estimateNetSalary({ grossAnnual: 30000 });
+    const explicitUndefined = estimateNetSalary({ grossAnnual: 30000, region: undefined });
+    expect(explicitUndefined).toEqual(withoutRegion);
+  });
+
+  it("la comunidad cambia el neto en la dirección esperada", () => {
+    const base = { grossAnnual: 60000 };
+    const madrid = estimateNetSalary({ ...base, region: "madrid" });
+    const supletoria = estimateNetSalary(base);
+    const valencia = estimateNetSalary({ ...base, region: "valencia" });
+    expect(madrid.netAnnual).toBeGreaterThan(supletoria.netAnnual);
+    expect(valencia.netAnnual).toBeLessThan(supletoria.netAnnual);
+    // El mínimo que se reporta sigue siendo el estatal.
+    expect(madrid.personalMinimum).toBe(supletoria.personalMinimum);
   });
 });

@@ -14,4 +14,4 @@ Tu salario **bruto** no es lo que cobras: del bruto se restan tu **cotización a
 
 Añade hijos o una aportación a un plan de pensiones y verás cómo baja el IRPF.
 
-**Un apunte importante.** Aplica la escala estatal + autonómica supletoria; tu Comunidad Autónoma puede variar algo el resultado. Es orientativo y no es asesoramiento fiscal.
+**Un apunte importante.** Puedes elegir tu comunidad autónoma: suma la escala estatal y la escala autonómica de esa comunidad; si no la indicas, aplica la supletoria. No incluye las deducciones autonómicas, ni el régimen foral del País Vasco y Navarra. Es orientativo y no es asesoramiento fiscal.

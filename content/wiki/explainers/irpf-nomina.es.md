@@ -14,4 +14,4 @@ La **retención de IRPF** es un adelanto del impuesto que tu empresa entrega a H
 
 Si subes el sueldo, el tipo sube, porque el IRPF es progresivo; si añades hijos o una aportación a un plan de pensiones, baja.
 
-**Un apunte importante.** Aproxima el algoritmo de retención de la AEAT con la escala estatal + autonómica supletoria. La cifra real puede variar según tu Comunidad Autónoma. No es asesoramiento fiscal.
+**Un apunte importante.** Aproxima el algoritmo de retención de la AEAT sumando la escala estatal y la de la comunidad autónoma que elijas (sin elegir ninguna, la supletoria). La cifra real puede variar y no incluye las deducciones autonómicas. No es asesoramiento fiscal.

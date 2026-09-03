@@ -1,24 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeHolidayRental } from "@/core/calculators/rentabilidad-alquiler-vacacional";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function HolidayRentalCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler-vacacional");
   const { formatEUR, formatPercent } = useFormat();
-  const [purchasePrice, setPurchasePrice] = useState(200000);
-  const [purchaseCosts, setPurchaseCosts] = useState(20000);
-  const [nightlyRate, setNightlyRate] = useState(100);
-  const [occupiedNights, setOccupiedNights] = useState(200);
-  const [managementRate, setManagementRate] = useState(20);
-  const [cleaningFee, setCleaningFee] = useState(50);
-  const [avgStayNights, setAvgStayNights] = useState(4);
-  const [annualExpenses, setAnnualExpenses] = useState(4000);
+  const [purchasePrice, setPurchasePrice] = useNumberField("purchasePrice", 200000);
+  const [purchaseCosts, setPurchaseCosts] = useNumberField("purchaseCosts", 20000);
+  const [nightlyRate, setNightlyRate] = useNumberField("nightlyRate", 100);
+  const [occupiedNights, setOccupiedNights] = useNumberField("occupiedNights", 200);
+  const [managementRate, setManagementRate] = useNumberField("managementRate", 20);
+  const [cleaningFee, setCleaningFee] = useNumberField("cleaningFee", 50);
+  const [avgStayNights, setAvgStayNights] = useNumberField("avgStayNights", 4);
+  const [annualExpenses, setAnnualExpenses] = useNumberField("annualExpenses", 4000);
 
   const result = useMemo(
     () =>

@@ -3,6 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { asLocale } from "@/core/types";
 import { SITE_NAME } from "@/lib/site";
 import { calculatorSchema } from "@/lib/jsonld";
+import CalculatorStateProvider from "./calculators/CalculatorState";
 import Breadcrumbs from "./seo/Breadcrumbs";
 import JsonLd from "./seo/JsonLd";
 import CalculatorExplainer from "./wiki/CalculatorExplainer";
@@ -53,7 +54,18 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
       <p className="mt-2 max-w-2xl text-muted">{intro}</p>
 
       <div className="mt-6">
-        {children}
+        {/*
+          El proveedor de estado envuelve la calculadora aquí porque este es el único punto
+          por el que pasan TODAS las páginas de calculadora y el que conoce el slug: así el
+          estado en la URL, el botón de copiar enlace y los escenarios guardados existen una
+          sola vez y no calculadora a calculadora. Añade además la barra de acciones cuando
+          la calculadora declara sus campos (ver `CalculatorState.tsx`).
+        */}
+        {slug ? (
+          <CalculatorStateProvider slug={slug}>{children}</CalculatorStateProvider>
+        ) : (
+          children
+        )}
 
         <p className="mt-8 text-xs text-muted">{t("disclaimerShort")}</p>
 

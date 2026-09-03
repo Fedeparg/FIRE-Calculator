@@ -6,6 +6,7 @@ import {
   timestamp,
   varchar,
   numeric,
+  integer,
   date,
   jsonb,
   index,
@@ -111,6 +112,150 @@ export const positions = pgTable(
 
 export type Position = typeof positions.$inferSelect;
 export type NewPosition = typeof positions.$inferInsert;
+
+/**
+ * Lotes (transacciones individuales) de una posición: cada compra o venta concreta, con su
+ * fecha, precio y comisiones. Es el histórico que `positions` —una FOTO del estado actual—
+ * no puede dar: sin lotes no hay evolución temporal, ni rentabilidad por periodo, ni
+ * fiscalidad de plusvalías (FIFO del IRPF español).
+ *
+ * COMPATIBILIDAD: `positions.quantity` y `positions.avgPrice` SIGUEN siendo la fuente que
+ * leen la valoración, las tools MCP y la UI. No se sustituyen: se RECALCULAN a partir de los
+ * lotes en cada mutación (ver `PositionLotsService.recompute`), de modo que nada de lo que
+ * existe hoy se rompe aunque la interfaz de lotes esté incompleta.
+ *
+ * `userId` está DESNORMALIZADO a propósito (se puede derivar por `positionId`): permite
+ * filtrar e indexar por usuario sin join y deja el borrado RGPD en cascada por partida doble
+ * (borrar el usuario borra sus lotes aunque la posición se hubiese desligado).
+ *
+ * Precisión: `numeric(18,6)`, la MISMA de `positions`, nunca float. Drizzle los devuelve como
+ * `string` y la agregación se hace con aritmética decimal exacta (ver `decimal.ts`).
+ *
+ * `tradedAt` es un `date` (sin hora): dos lotes pueden caer el mismo día, así que el orden
+ * canónico de la agregación es `(tradedAt, createdAt, id)` —definido en el servicio— para que
+ * el coste medio móvil sea determinista.
+ */
+export const positionLots = pgTable(
+  'position_lots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    positionId: uuid('position_id')
+      .notNull()
+      .references(() => positions.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // 'buy' | 'sell'. Mismo patrón que `oauth_tokens.type` y `mcp_audit_log.outcome`.
+    kind: varchar('kind', { length: 4 }).$type<PositionLotKind>().notNull(),
+    quantity: numeric('quantity', { precision: 18, scale: 6 }).notNull(),
+    // Precio unitario de la operación, en la divisa de la posición.
+    price: numeric('price', { precision: 18, scale: 6 }).notNull(),
+    // Comisiones/gastos de la operación, en la divisa de la posición. No entran en el precio
+    // medio (que es precio de mercado puro), pero se guardan para la futura fiscalidad.
+    fees: numeric('fees', { precision: 18, scale: 6 }).notNull().default('0'),
+    tradedAt: date('traded_at').notNull(),
+    note: varchar('note', { length: 200 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('position_lots_position_id_idx').on(table.positionId),
+    index('position_lots_user_id_idx').on(table.userId),
+    index('position_lots_traded_at_idx').on(table.tradedAt),
+  ],
+);
+
+/** Tipo de operación de un lote. */
+export type PositionLotKind = 'buy' | 'sell';
+
+export type PositionLot = typeof positionLots.$inferSelect;
+export type NewPositionLot = typeof positionLots.$inferInsert;
+
+/**
+ * Foto diaria del valor de la cartera de un usuario. Es lo que convierte el portfolio en una
+ * PELÍCULA: la gráfica de evolución y la rentabilidad temporal se leen de aquí, no se
+ * recalculan hacia atrás (los precios históricos de un instrumento que el usuario ya vendió
+ * no bastarían para reconstruir qué tenía cada día).
+ *
+ * DIVISA BASE CANÓNICA: `invested` y `marketValue` se guardan SIEMPRE en **EUR**. Sextante
+ * está enfocado al inversor español, así que el euro es la unidad natural del histórico y
+ * evita tener que decidir la divisa en el momento de capturar. Para poder REEXPRESAR la serie
+ * en cualquier divisa soportada sin recalcularla, se guardan además las tasas FX del día en
+ * `fxRates` (USD por unidad de divisa, USD = 1: la misma forma que `PricesService.getFxRates`),
+ * de modo que EUR→X es `importe * fxRates.EUR / fxRates.X` con las tasas de AQUEL día.
+ *
+ * Clave primaria `(userId, date)`: un snapshot por usuario y día. La captura es idempotente
+ * (upsert), así que correr el cron dos veces el mismo día actualiza la fila, no la duplica.
+ *
+ * Precisión: `numeric(20,8)` (como `instrument_prices.close`), no float.
+ */
+export const portfolioSnapshots = pgTable(
+  'portfolio_snapshots',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // Fecha del snapshot (UTC), no la del precio: en fin de semana se repite el último cierre.
+    date: date('date').notNull(),
+    /** Coste de las posiciones VALORADAS ese día, en EUR. */
+    invested: numeric('invested', { precision: 20, scale: 8 }).notNull(),
+    /** Valor de mercado de las posiciones valoradas ese día, en EUR. */
+    marketValue: numeric('market_value', { precision: 20, scale: 8 }).notNull(),
+    /** Nº de posiciones que se pudieron valorar (había precio y FX convertible). */
+    valuedPositions: integer('valued_positions').notNull(),
+    /** Nº total de posiciones del usuario ese día (valuedPositions + excluidas). */
+    totalPositions: integer('total_positions').notNull(),
+    /** Tasas FX del día: USD por unidad de cada divisa (USD = 1). */
+    fxRates: jsonb('fx_rates').$type<Record<string, number>>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.date] })],
+);
+
+export type PortfolioSnapshot = typeof portfolioSnapshots.$inferSelect;
+export type NewPortfolioSnapshot = typeof portfolioSnapshots.$inferInsert;
+
+/**
+ * Configuraciones guardadas de una calculadora ("mi plan FIRE a los 45"). `slug` identifica
+ * la calculadora (el mismo del `registry.ts` del frontend) e `inputs` guarda sus campos tal
+ * cual, como `jsonb`: el esquema de entrada de cada calculadora vive en el frontend y cambia
+ * con ella, así que tipar aquí cada una acoplaría la API a 26 formularios.
+ *
+ * NO es almacenamiento libre: el servicio acota el tamaño del JSON, el número de escenarios
+ * por usuario y la forma del `slug` (ver `SavedScenariosService`). FK con borrado en cascada.
+ */
+export const savedScenarios = pgTable(
+  'saved_scenarios',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // Slug de la calculadora (p. ej. "fire-basico"). Minúsculas, dígitos y guiones.
+    slug: varchar('slug', { length: 64 }).notNull(),
+    name: varchar('name', { length: 100 }).notNull(),
+    inputs: jsonb('inputs').$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('saved_scenarios_user_id_idx').on(table.userId),
+    index('saved_scenarios_user_slug_idx').on(table.userId, table.slug),
+  ],
+);
+
+export type SavedScenario = typeof savedScenarios.$inferSelect;
+export type NewSavedScenario = typeof savedScenarios.$inferInsert;
 
 /**
  * Precios de cierre (EOD) por símbolo y día. Caché propia: el frontend SIEMPRE lee de
@@ -309,7 +454,14 @@ export const mcpAuditLog = pgTable(
     outcome: varchar('outcome', { length: 16 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('mcp_audit_log_user_id_idx').on(table.userId)],
+  (table) => [
+    index('mcp_audit_log_user_id_idx').on(table.userId),
+    // Índice por fecha: la tabla crece sin límite (una fila por invocación de tool) y el
+    // reaper de retención la poda con `DELETE ... WHERE created_at < corte`. Sin este
+    // índice esa purga —y cualquier consulta por rango de fechas— haría seq scan sobre
+    // toda la tabla. Descendente porque las consultas interesantes son "lo más reciente".
+    index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
+  ],
 );
 
 export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;

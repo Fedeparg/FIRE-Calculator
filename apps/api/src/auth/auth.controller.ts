@@ -6,13 +6,15 @@ import {
   Header,
   HttpCode,
   HttpStatus,
+  Logger,
   Post,
+  Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
-import type { CookieOptions, Response } from 'express';
+import type { CookieOptions, Request, Response } from 'express';
 
 import { AuthService, type AccountExport, type SessionUser } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -23,6 +25,8 @@ import { SESSION_COOKIE, SESSION_TTL_SECONDS } from './session.constants';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly auth: AuthService,
     private readonly config: ConfigService,
@@ -32,7 +36,8 @@ export class AuthController {
   @Post('request')
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async request(@Body() dto: RequestLinkDto): Promise<{ ok: true }> {
+  async request(@Body() dto: RequestLinkDto, @Req() req: Request): Promise<{ ok: true }> {
+    this.logDetectedIp(req);
     await this.auth.requestLink(dto.email);
     // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
     return { ok: true };
@@ -90,6 +95,21 @@ export class AuthController {
   ): Promise<void> {
     await this.auth.deleteAccount(user.id);
     res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
+  }
+
+  /**
+   * Diagnóstico de la IP real detectada. Solo en esta ruta (está limitada a 5 req/min, así
+   * que no ensucia el log) y a propósito: el rate limiting depende de que `TRUST_PROXY_HOPS`
+   * (ver `main.ts`) cuente bien los saltos de proxy, y eso no se puede deducir sin ver qué
+   * llega de verdad en producción. Si `req.ip` no coincide con la IP más a la izquierda de
+   * `X-Forwarded-For`, hay que subir el número de saltos.
+   *
+   * No registra el email ni ningún otro dato del cuerpo (minimización de datos).
+   */
+  private logDetectedIp(req: Request): void {
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const chain = Array.isArray(forwardedFor) ? forwardedFor.join(', ') : (forwardedFor ?? '-');
+    this.logger.log(`Diagnóstico de proxy — req.ip=${req.ip ?? '-'} x-forwarded-for=${chain}`);
   }
 
   private cookieOptions(): CookieOptions {

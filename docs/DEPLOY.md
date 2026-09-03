@@ -1,12 +1,17 @@
 # Despliegue de Sextante
 
-Despliegue continuo: cada **push a `main`** dispara `.github/workflows/deploy.yml`,
-que corre en un **runner self-hosted** y levanta el stack con
-`docker-compose.prod.yml`. Un proxy inverso delante (nginx, Nginx Proxy Manager…)
-termina el TLS y proxea al servicio `web`.
+Despliegue continuo con **gate de calidad**: un push a `main` lanza `ci.yml`
+(typecheck, lint, tests y build de los dos paquetes) y **solo si CI termina en
+verde** se dispara `.github/workflows/deploy.yml`, que corre en un **runner
+self-hosted** y levanta el stack con `docker-compose.prod.yml`. Un proxy inverso
+delante (nginx, Nginx Proxy Manager…) termina el TLS y proxea al servicio `web`.
+
+El despliegue hace checkout del **commit exacto que validó CI**
+(`workflow_run.head_sha`), no del tip de la rama: si entran commits nuevos
+mientras CI corre, se despliega lo que se validó y no otra cosa.
 
 ```
-push a main ─▶ GitHub Actions ─▶ runner self-hosted (label: sextante)
+push a main ─▶ ci (runners de GitHub) ─▶ ¿verde? ─▶ deploy ─▶ runner self-hosted (label: sextante)
                                    └─ docker compose -f docker-compose.prod.yml up -d --build
                                         ├─ postgres (volumen sextante_pgdata)
                                         ├─ migrate (one-shot)
@@ -122,8 +127,9 @@ link solo funciona cuando el dominio (paso 5) resuelve, porque el enlace usa
 ## 4. Primer despliegue
 
 1. Crea el runner (paso 1) y los secrets (paso 2).
-2. Haz merge a `main`. El workflow construye las imágenes **en el servidor** y
-   levanta el stack. El servicio `migrate` aplica las migraciones antes de la API.
+2. Haz merge a `main`. Primero corre `ci`; al pasar, arranca `deploy`, que
+   construye las imágenes **en el servidor** y levanta el stack. El servicio
+   `migrate` aplica las migraciones antes de la API.
 3. Comprueba: `docker compose -f docker-compose.prod.yml ps` y
    `curl -fsS http://127.0.0.1:${WEB_PORT}/` en el host.
 
@@ -209,8 +215,13 @@ read -rs PGPASSWORD; export PGPASSWORD
 
 ## Operación
 
-- **Actualizar:** push a `main` → redeploy automático. El volumen `sextante_pgdata`
-  persiste; las migraciones nuevas se aplican solas.
+- **Actualizar:** push a `main` → CI y, si pasa, redeploy automático. El volumen
+  `sextante_pgdata` persiste; las migraciones nuevas se aplican solas.
+- **Desplegar a mano:** pestaña *Actions* → workflow `deploy` → *Run workflow*.
+  Es la escotilla para redesplegar sin tocar código, o si el gate se atasca.
+- **CI en rojo = no hay despliegue.** Producción se queda en la versión anterior;
+  arregla el fallo y vuelve a hacer push. No hay forma de saltarse el gate salvo
+  el disparo manual, que es deliberadamente explícito.
 - **NUNCA** `docker compose ... down -v` en producción: borra la base de datos.
   Tampoco cambies `JWT_SECRET` salvo que quieras desloguear a todo el mundo.
 - **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web`.

@@ -34,4 +34,19 @@ export class OAuthClientsStore implements OAuthRegisteredClientsStore {
       .onConflictDoUpdate({ target: oauthClients.clientId, set: { data: client } });
     return client;
   }
+
+  /**
+   * Marca el cliente como usado de verdad. Se llama al CANJEAR un token (código o refresh),
+   * no en `getClient`: ese se invoca también en pasos que no implican uso efectivo (p. ej.
+   * un `/authorize` que acaba en el login), y queremos que `lastUsedAt` signifique "este
+   * cliente sigue vivo".
+   *
+   * Es lo que permite al reaper distinguir un registro DCR abandonado de uno activo.
+   */
+  async touch(clientId: string): Promise<void> {
+    await this.db
+      .update(oauthClients)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(oauthClients.clientId, clientId));
+  }
 }

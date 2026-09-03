@@ -65,8 +65,11 @@ RESEND_API_KEY=re_...                            # Resend -> Settings -> API Key
 EMAIL_FROM=Sextante <no-reply@send.tu-dominio>   # remitente verificado en Resend
 ```
 
-Si `EMAIL_TRANSPORT=resend` y falta `RESEND_API_KEY`, **la API falla al arrancar**
-con un error claro (preferimos un fallo ruidoso a enviar a un agujero negro).
+`EMAIL_FROM` es **obligatorio** y no tiene valor por defecto: el remitente depende del
+dominio verificado en tu cuenta de Resend, así que no hay ninguno razonable de fábrica.
+
+Si `EMAIL_TRANSPORT=resend` y falta `RESEND_API_KEY` o `EMAIL_FROM`, **la API falla al
+arrancar** con un error claro (preferimos un fallo ruidoso a enviar a un agujero negro).
 
 ### Verificar el dominio de envío (DNS)
 
@@ -106,6 +109,40 @@ correo debe llegar desde `no-reply@send.<tu-dominio>` con el botón **Entrar en 
 - `pnpm typecheck` · `pnpm lint`
 - `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:studio`
 
+## Modelo de datos de la cartera
+
+`positions` es la **foto** (cantidad y precio medio actuales) y `position_lots` la
+**película** (cada compra y venta con su fecha). La foto NO se sustituye: se
+**recalcula** desde los lotes en cada mutación, dentro de la misma transacción, así
+que la valoración, las tools MCP y la UI —que leen `positions`— siguen funcionando
+igual. La agregación es **coste medio móvil**: una venta baja la cantidad y no mueve
+el precio medio. Todo el cálculo se hace con aritmética decimal exacta sobre los
+`string` de `numeric` (`src/positions/lot-aggregate.ts`), nunca con `number`.
+
+`portfolio_snapshots` guarda una fila por usuario y día con la valoración en **EUR**
+(divisa base canónica) y las **tasas FX de ese día** en `jsonb`, lo que permite
+reexpresar el histórico en cualquier divisa soportada sin recalcularlo.
+
+## Tools MCP
+
+12 tools, cada una con su scope. Las de escritura exigen `portfolio:write` en tiempo
+de ejecución (step-up por tool, no un 403 HTTP) y todas quedan en `mcp_audit_log`.
+
+| Tool | Scope | Qué hace |
+|---|---|---|
+| `list_positions` | `portfolio:read` | Todas las posiciones del usuario. |
+| `get_portfolio_valuation` | `portfolio:read` | Valor de mercado y P&L, agregado en la divisa elegida. |
+| `get_position` | `portfolio:read` | Detalle y P&L de una posición. |
+| `search_instruments` | `portfolio:read` | Busca el símbolo exacto de un instrumento (mismo buscador que el alta en la UI), para que el LLM no invente tickers. |
+| `get_portfolio_history` | `portfolio:read` | Serie diaria de valoración (snapshots), reexpresada a la divisa pedida. |
+| `list_position_lots` | `portfolio:read` | Compras y ventas de una posición, en orden cronológico. |
+| `add_position` | `portfolio:write` | Crea una posición. |
+| `update_position` | `portfolio:write` | Edita una posición. |
+| `combine_position` | `portfolio:write` | Suma una compra a una posición existente. |
+| `delete_position` | `portfolio:write` | Borra una posición. |
+| `add_position_lot` | `portfolio:write` | Registra una compra o venta con fecha y recalcula la posición. |
+| `delete_position_lot` | `portfolio:write` | Borra una operación registrada y recalcula la posición. |
+
 ## Estructura
 
 | Ruta | Qué hay |
@@ -115,11 +152,13 @@ correo debe llegar desde `no-reply@send.<tu-dominio>` con el botón **Entrar en 
 | `src/db/` | Drizzle: `schema.ts` (única fuente de verdad), `database.module.ts` (proveedor `DRIZZLE`) y `migrate.ts` (migrador del servicio one-shot). |
 | `src/auth/` | Magic link: token hasheado SHA-256, canje atómico single-use, JWT en cookie HttpOnly. |
 | `src/email/` | Transporte de correo: `dev` (log) o Resend, según `EMAIL_TRANSPORT`. |
-| `src/positions/` | CRUD de posiciones de la cartera (DTOs con `class-validator`). |
-| `src/prices/` | Feed de cotizaciones y tasas FX; resolución ISIN/ticker → símbolo (OpenFIGI). |
-| `src/portfolio/` | Valoración y P&L de la cartera (`valuation.ts`). |
+| `src/positions/` | CRUD de posiciones y de sus **lotes** (compras/ventas). `lot-aggregate.ts` deriva cantidad y precio medio de los lotes con aritmética decimal exacta. |
+| `src/prices/` | Feed de cotizaciones y tasas FX; resolución ISIN/ticker → símbolo (OpenFIGI); histórico anual al dar de alta un símbolo. |
+| `src/portfolio/` | Valoración y P&L de la cartera (`valuation.ts`) e **histórico diario** de valoración (`portfolio-snapshots.service.ts`). |
+| `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |
+| `src/jobs/` | Cron nocturno: refresco de precios → captura de snapshots, en ese orden. |
 | `src/oauth/` | Authorization Server OAuth 2.1 del MCP: clientes, grants, códigos, tokens y reaper. |
-| `src/mcp/` | Servidor MCP remoto (Streamable HTTP) y su log de auditoría. |
+| `src/mcp/` | Servidor MCP remoto (Streamable HTTP), sus 12 tools y el log de auditoría. |
 | `src/account/` | Cuenta del usuario: apps conectadas, export y borrado (RGPD). |
 | `src/donations/` | Sesión de Stripe Checkout para las donaciones. |
 | `src/health/` | `/api/health` (comprueba la conexión a Postgres). |

@@ -1,0 +1,1 @@
+CREATE INDEX "mcp_audit_log_created_at_idx" ON "mcp_audit_log" USING btree ("created_at" DESC NULLS LAST);

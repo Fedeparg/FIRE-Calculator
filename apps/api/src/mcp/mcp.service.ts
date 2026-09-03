@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { plainToInstance } from 'class-transformer';
@@ -6,12 +6,23 @@ import { validate } from 'class-validator';
 import { z } from 'zod';
 
 import { SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants';
+import {
+  HISTORY_DEFAULT_DAYS,
+  HISTORY_MAX_DAYS,
+  PortfolioSnapshotsService,
+} from '../portfolio/portfolio-snapshots.service';
 import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service';
 import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto';
 import { CombinePositionDto } from '../positions/dto/combine-position.dto';
 import { CreatePositionDto } from '../positions/dto/create-position.dto';
+import { CreatePositionLotDto } from '../positions/dto/create-position-lot.dto';
 import { UpdatePositionDto } from '../positions/dto/update-position.dto';
+import { PositionLotsService } from '../positions/position-lots.service';
 import { PositionsService } from '../positions/positions.service';
+import {
+  INSTRUMENT_SEARCH,
+  type InstrumentSearchProvider,
+} from '../prices/instrument-search';
 import { McpAuditService } from './mcp-audit.service';
 
 /**
@@ -48,7 +59,10 @@ function errorResult(message: string): CallToolResult {
 export class McpService {
   constructor(
     private readonly positions: PositionsService,
+    private readonly lots: PositionLotsService,
     private readonly valuation: PortfolioValuationService,
+    private readonly snapshots: PortfolioSnapshotsService,
+    @Inject(INSTRUMENT_SEARCH) private readonly instruments: InstrumentSearchProvider,
     private readonly audit: McpAuditService,
   ) {}
 
@@ -61,7 +75,10 @@ export class McpService {
           'herramientas para leer, analizar y (con permiso de escritura) modificar las ' +
           'posiciones del usuario autenticado. Los importes de cada posición están en su ' +
           'divisa nativa; el agregado de `get_portfolio_valuation` se convierte a la divisa ' +
-          '`display` elegida.',
+          '`display` elegida. Cada posición tiene además sus LOTES (compras y ventas con ' +
+          'fecha), de los que se derivan su cantidad y su precio medio, y la cartera tiene un ' +
+          'HISTÓRICO diario de valoración en EUR. Para dar de alta un símbolo, búscalo antes ' +
+          'con `search_instruments` en vez de deducir el ticker.',
       },
     );
 
@@ -128,6 +145,83 @@ export class McpService {
         this.run(ctx, 'get_position', async () => {
           const position = await this.valuation.valuateOne(ctx.userId, id);
           return jsonResult({ position });
+        }),
+    );
+
+    server.registerTool(
+      'search_instruments',
+      {
+        title: 'Buscar instrumentos por nombre o símbolo',
+        description:
+          'Busca acciones, ETFs, fondos y cripto por texto libre ("bitcoin", "apple", "world ' +
+          'etf") y devuelve el símbolo EXACTO de cada resultado, con su nombre, tipo y ' +
+          'mercado. ÚSALA SIEMPRE antes de `add_position` para obtener el símbolo correcto en ' +
+          'lugar de deducirlo: un ticker suelto es ambiguo (p. ej. "BTC" es un ETF real en ' +
+          'NYSE; Bitcoin es "BTC-USD"). Solo lectura.',
+        inputSchema: {
+          query: z.string().min(1).max(64).describe('Texto a buscar (nombre o símbolo).'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ query }) =>
+        this.run(ctx, 'search_instruments', async () => {
+          // Mismo proveedor que usa `GET /api/instruments/search`: el LLM y la UI ven
+          // exactamente los mismos resultados.
+          const results = await this.instruments.search(query);
+          return jsonResult({ results });
+        }),
+    );
+
+    server.registerTool(
+      'get_portfolio_history',
+      {
+        title: 'Histórico de valoración de la cartera',
+        description:
+          'Devuelve la serie diaria de coste y valor de mercado de la cartera (un punto por ' +
+          'día capturado), para analizar la evolución y la rentabilidad por periodo. Los ' +
+          'importes se guardan en EUR y se reexpresan a la divisa `display` con las tasas de ' +
+          'CADA día. La serie empieza el día en que se capturó el primer snapshot, así que ' +
+          'una cuenta nueva puede tener pocos puntos o ninguno. Solo lectura.',
+        inputSchema: {
+          days: z
+            .number()
+            .int()
+            .min(1)
+            .max(HISTORY_MAX_DAYS)
+            .optional()
+            .describe(`Ventana en días hacia atrás (por defecto ${HISTORY_DEFAULT_DAYS}).`),
+          display: z
+            .enum(CURRENCY_VALUES)
+            .optional()
+            .describe('Divisa en la que devolver los importes (por defecto EUR).'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ days, display }) =>
+        this.run(ctx, 'get_portfolio_history', async () => {
+          const history = await this.snapshots.history(ctx.userId, days, display);
+          return jsonResult(history);
+        }),
+    );
+
+    server.registerTool(
+      'list_position_lots',
+      {
+        title: 'Listar las operaciones (lotes) de una posición',
+        description:
+          'Devuelve las compras y ventas registradas de una posición, en orden cronológico, ' +
+          'con fecha, cantidad, precio y comisiones. La cantidad y el precio medio de la ' +
+          'posición se DERIVAN de estos lotes (coste medio móvil). El id se obtiene de ' +
+          '`list_positions`. Solo lectura.',
+        inputSchema: {
+          positionId: z.string().min(1).describe('Id de la posición.'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ positionId }) =>
+        this.run(ctx, 'list_position_lots', async () => {
+          const lots = await this.lots.listByPosition(ctx.userId, positionId);
+          return jsonResult({ lots });
         }),
     );
   }
@@ -231,6 +325,58 @@ export class McpService {
         this.runWrite(ctx, 'delete_position', async () => {
           await this.positions.remove(ctx.userId, id);
           return jsonResult({ deleted: true, id });
+        }),
+    );
+
+    server.registerTool(
+      'add_position_lot',
+      {
+        title: 'Registrar una compra o venta en una posición',
+        description:
+          'Añade una operación con su FECHA a una posición existente y recalcula su cantidad ' +
+          'y precio medio (compras y ventas; el precio medio sigue el coste medio móvil, así ' +
+          'que una venta baja la cantidad pero no lo mueve). Prefiere esta tool a ' +
+          '`combine_position` cuando conozcas la fecha de la operación, y úsala para ' +
+          'registrar ventas: es lo que construye el histórico. Una venta mayor que lo que se ' +
+          'tiene se rechaza. Requiere permiso de escritura.',
+        inputSchema: {
+          positionId: z.string().min(1).describe('Id de la posición.'),
+          kind: z.enum(['buy', 'sell']).describe('Tipo de operación: compra o venta.'),
+          quantity: z.number().positive().describe('Cantidad operada.'),
+          price: z.number().min(0).describe('Precio unitario de la operación.'),
+          fees: z.number().min(0).optional().describe('Comisiones (opcional).'),
+          tradedAt: z.string().describe('Fecha de la operación en formato YYYY-MM-DD.'),
+          note: z.string().max(200).optional().describe('Nota libre (opcional).'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+      },
+      ({ positionId, ...rest }) =>
+        this.runWrite(ctx, 'add_position_lot', async () => {
+          const dto = await this.validateDto(CreatePositionLotDto, rest);
+          const lot = await this.lots.create(ctx.userId, positionId, dto);
+          return jsonResult({ lot });
+        }),
+    );
+
+    server.registerTool(
+      'delete_position_lot',
+      {
+        title: 'Borrar una operación (lote) de una posición',
+        description:
+          'Elimina una operación registrada y recalcula la cantidad y el precio medio de la ' +
+          'posición con las que queden. Acción irreversible: corrige errores de registro, no ' +
+          'sirve para reflejar una venta (para eso, `add_position_lot` con kind "sell"). ' +
+          'Requiere permiso de escritura.',
+        inputSchema: {
+          positionId: z.string().min(1).describe('Id de la posición.'),
+          lotId: z.string().min(1).describe('Id del lote a borrar.'),
+        },
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      },
+      ({ positionId, lotId }) =>
+        this.runWrite(ctx, 'delete_position_lot', async () => {
+          await this.lots.remove(ctx.userId, positionId, lotId);
+          return jsonResult({ deleted: true, lotId });
         }),
     );
   }

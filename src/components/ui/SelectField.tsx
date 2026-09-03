@@ -3,7 +3,12 @@
 import { useId } from "react";
 import HelpTooltip from "./HelpTooltip";
 
-type Option<T extends string> = { value: T; label: string };
+/**
+ * Una opción del desplegable. `disabled` permite mostrar opciones que existen
+ * pero no se pueden elegir (p. ej. territorios forales sin soporte), en vez de
+ * omitirlas en silencio.
+ */
+type Option<T extends string> = { value: T; label: string; disabled?: boolean };
 
 type Props<T extends string> = {
   label: string;
@@ -43,7 +48,7 @@ export default function SelectField<T extends string = string>({
         className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20"
       >
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} disabled={o.disabled}>
             {o.label}
           </option>
         ))}

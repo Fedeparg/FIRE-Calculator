@@ -93,7 +93,8 @@
   "common": {
     "back": "Volver a las calculadoras",
     "results": "Resultados",
-    "disclaimerShort": "Información, no asesoramiento fiscal o financiero."
+    "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
+    "moreInfo": "Más información"
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -110,13 +111,46 @@
     "semiannual": "Semestral",
     "annual": "Anual"
   },
+  "region": {
+    "label": "Comunidad autónoma",
+    "help": "Cada comunidad de régimen común aprueba su propia escala autonómica del IRPF y puede subir el mínimo personal y familiar, así que el resultado cambia bastante según dónde residas. Escalas del ejercicio 2025, vigentes también en 2026. Si no indicas comunidad se aplica la escala supletoria del art. 65 LIRPF, la misma que rige en Ceuta y Melilla. No se incluyen las deducciones autonómicas.",
+    "none": "Sin especificar (escala supletoria)",
+    "name": {
+      "andalucia": "Andalucía",
+      "aragon": "Aragón",
+      "asturias": "Principado de Asturias",
+      "baleares": "Illes Balears",
+      "canarias": "Canarias",
+      "cantabria": "Cantabria",
+      "castilla-la-mancha": "Castilla-La Mancha",
+      "castilla-y-leon": "Castilla y León",
+      "cataluna": "Cataluña",
+      "extremadura": "Extremadura",
+      "galicia": "Galicia",
+      "madrid": "Comunidad de Madrid",
+      "murcia": "Región de Murcia",
+      "la-rioja": "La Rioja",
+      "valencia": "Comunitat Valenciana",
+      "alava": "Álava",
+      "bizkaia": "Bizkaia",
+      "gipuzkoa": "Gipuzkoa",
+      "navarra": "Navarra",
+      "ceuta-melilla": "Ceuta y Melilla"
+    },
+    "reason": {
+      "foral": "régimen foral, no soportado",
+      "ceutaMelilla": "deducción del 60 % no modelada"
+    }
+  },
   "chart": {
     "total": "Valor total",
     "selectionTitle": "Tramo",
     "growth": "Crecimiento",
     "contributed": "Aportado",
     "interest": "Intereses",
-    "axisYear": "Año"
+    "axisYear": "Año",
+    "imageLabel": "Gráfica: {title}",
+    "dataTableCaption": "Datos de la gráfica: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -433,7 +467,7 @@
         "contributionGrowth": "Si subes tu aportación cada año (con el sueldo o la inflación), indícalo. Déjalo en 0 si es fija."
       }
     },
-    "tarjeta-credito": {
+    "intereses-tarjeta-credito": {
       "title": "Calculadora de intereses de tarjeta de crédito",
       "intro": "Descubre cuánto tardas en pagar una deuda de tarjeta y cuántos intereses te cuesta.",
       "balance": "Saldo de la deuda (€)",
@@ -574,7 +608,7 @@
     "salario-bruto-neto": {
       "title": "Calculadora de salario bruto a neto",
       "intro": "Estima tu salario neto a partir del bruto anual, descontando la Seguridad Social y la retención de IRPF.",
-      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de 2026. Aplica la escala estatal + autonómica supletoria: tu Comunidad Autónoma puede variar el resultado, igual que otras circunstancias no contempladas. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de {year}. Suma la escala estatal y la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria); no incluye las deducciones autonómicas ni otras circunstancias no contempladas, así que tu resultado real puede variar. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -620,7 +654,7 @@
     "irpf-nomina": {
       "title": "Calculadora de retención de IRPF en nómina",
       "intro": "Calcula el porcentaje de IRPF que te retienen cada mes en la nómina y cuánto supone al año.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar y no se incluyen las deducciones autonómicas. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -662,7 +696,7 @@
     "irpf-autonomos": {
       "title": "Calculadora de IRPF para autónomos",
       "intro": "Estima el IRPF de un autónomo en estimación directa a partir de sus ingresos, gastos y cuota de autónomos.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados. El resultado real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados ni deducciones autonómicas. El resultado real puede variar. No es asesoramiento fiscal.",
       "income": "Ingresos anuales (€)",
       "expenses": "Gastos deducibles (€/año)",
       "socialSecurity": "Cuota de autónomos (€/año)",
@@ -707,7 +741,7 @@
     "desgravacion-plan-pensiones": {
       "title": "Calculadora de desgravación por plan de pensiones",
       "intro": "Descubre cuánto IRPF te ahorras al aportar a un plan de pensiones y cuál es el coste real de la aportación.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria), que cambia el ahorro porque el tipo marginal autonómico varía mucho de una comunidad a otra. Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "contribution": "Aportación al plan (€/año)",
       "employerContribution": "Aportación de la empresa (€/año)",
@@ -727,7 +761,7 @@
     "impuesto-patrimonio": {
       "title": "Calculadora del Impuesto sobre el Patrimonio",
       "intro": "Estima la cuota del Impuesto sobre el Patrimonio según tu patrimonio neto, el mínimo exento y la bonificación de tu CCAA.",
-      "note": "Estimación orientativa con la escala estatal supletoria de 2026. Muchas Comunidades Autónomas bonifican la cuota casi al 100 % o aplican su propia escala (p. ej. Madrid). Ajusta el mínimo exento y la bonificación de tu CCAA. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con la escala estatal supletoria de {year}. Muchas Comunidades Autónomas bonifican la cuota casi al 100 % o aplican su propia escala (p. ej. Madrid). Ajusta el mínimo exento y la bonificación de tu CCAA. No es asesoramiento fiscal.",
       "totalWealth": "Patrimonio neto total (€)",
       "primaryResidenceValue": "Valor de la vivienda habitual (€)",
       "exemptMinimum": "Mínimo exento (€)",
@@ -740,13 +774,13 @@
         "totalWealth": "Valor de todos tus bienes y derechos menos las deudas.",
         "primaryResidenceValue": "Tu vivienda habitual está exenta hasta 300.000 €.",
         "exemptMinimum": "Importe que no tributa. El estatal es 700.000 €, pero varía por CCAA.",
-        "regionalRebate": "Porcentaje de la cuota que bonifica tu Comunidad. Madrid, por ejemplo, ronda el 100 %."
+        "regionalRebate": "Porcentaje de la cuota que bonifica tu comunidad. Se pide a mano a propósito: la bonificación real no siempre es un porcentaje fijo. En Madrid, Andalucía, Cantabria, La Rioja y Murcia es variable y depende de la cuota del Impuesto Temporal de Solidaridad de las Grandes Fortunas, otro impuesto estatal que habría que calcular aparte. Consulta la de tu comunidad; Madrid, por ejemplo, ronda el 100 %."
       }
     },
     "impuesto-donaciones": {
       "title": "Calculadora del Impuesto de Donaciones",
       "intro": "Estima el Impuesto sobre Donaciones según lo donado, el parentesco y la bonificación de tu CCAA.",
-      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de 2026 y el coeficiente multiplicador por parentesco y patrimonio preexistente (art. 22 Ley 29/1987); no aplica el ajuste por «error de salto». El resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
+      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de {year} y el coeficiente multiplicador por parentesco y patrimonio preexistente (art. 22 Ley 29/1987); no aplica el ajuste por «error de salto». El resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
       "amount": "Valor de lo donado (€)",
       "reduction": "Reducciones aplicables (€)",
       "kinship": "Parentesco con quien dona",
@@ -765,7 +799,7 @@
         "reduction": "Reducciones que apruebe tu CCAA según el parentesco. Déjalo en 0 si no estás seguro.",
         "kinship": "Determina el coeficiente multiplicador de la cuota. A menor parentesco, más se paga.",
         "preexistingWealth": "Patrimonio que ya tiene quien recibe la donación. A partir de 402.678,11 € eleva el coeficiente multiplicador.",
-        "regionalRebate": "Porcentaje de la cuota que bonifica tu Comunidad. En algunas ronda el 99 %."
+        "regionalRebate": "Porcentaje de la cuota que bonifica tu comunidad. Se pide a mano a propósito: no todas usan un porcentaje fijo. Cataluña y Galicia aplican una tarifa propia en lugar de bonificar, y en Extremadura la bonificación baja del 99 % al 50 % por encima de 300.000 € de base liquidable. Consulta la de tu comunidad; en varias ronda el 99 %."
       }
     },
     "rentabilidad-alquiler-vacacional": {
@@ -913,6 +947,44 @@
       }
     }
   },
+  "calculator": {
+    "share": {
+      "title": "Comparte o guarda este cálculo",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "copyError": "No se pudo copiar el enlace. Cópialo de la barra de direcciones.",
+      "hint": "El enlace incluye los valores que has introducido: quien lo abra verá este mismo cálculo."
+    },
+    "scenarios": {
+      "title": "Escenarios guardados",
+      "signedOut": "Entra en tu cuenta para guardar este cálculo y recuperarlo cuando quieras.",
+      "signedOutLink": "Entrar",
+      "nameLabel": "Nombre del escenario",
+      "namePlaceholder": "Mi plan a los 45",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "empty": "Todavía no has guardado ningún escenario de esta calculadora.",
+      "load": "Cargar",
+      "loaded": "Escenario «{name}» cargado.",
+      "rename": "Renombrar",
+      "renameSave": "Guardar nombre",
+      "renameLabel": "Nuevo nombre para «{name}»",
+      "cancel": "Cancelar",
+      "delete": "Borrar",
+      "deleteLabel": "Borrar el escenario «{name}»",
+      "confirmDelete": "Confirmar",
+      "deleting": "Borrando…",
+      "quotaReached": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro.",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorSession": "Tu sesión ha caducado.",
+      "errorSessionLink": "Vuelve a iniciar sesión",
+      "errorInvalid": "Revisa el nombre del escenario: no puede estar vacío.",
+      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
+      "errorTooLarge": "Este cálculo ocupa demasiado para guardarlo.",
+      "errorQuota": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro."
+    }
+  },
   "auth": {
     "login": {
       "title": "Entra en Sextante",
@@ -976,7 +1048,8 @@
       "confirm": "Sí, eliminar",
       "cancel": "Cancelar",
       "deleting": "Eliminando…",
-      "noFxRate": "Aún no hay tipo de cambio {price}→{position} para convertir el valor."
+      "noFxRate": "Aún no hay tipo de cambio {price}→{position} para convertir el valor.",
+      "lots": "Lotes"
     },
     "form": {
       "title": "Añadir posición",
@@ -1020,6 +1093,115 @@
           "other": "Otro"
         }
       }
+    },
+    "history": {
+      "title": "Evolución de la cartera",
+      "rangeLabel": "Rango del histórico",
+      "range": {
+        "30d": "30 días",
+        "90d": "90 días",
+        "1y": "1 año",
+        "all": "Todo"
+      },
+      "loading": "Cargando el histórico…",
+      "error": "No se ha podido cargar el histórico. Inténtalo de nuevo en unos momentos.",
+      "emptyBody": "Todavía no hay histórico de esta cartera. La serie se construye a diario: cada noche, después de actualizar los precios (sobre las 22:30, hora de España), se guarda un punto con la valoración del día. El primero aparecerá mañana.",
+      "singlePointBody": "Solo hay un día guardado, así que aún no hay línea que dibujar. La serie se construye a diario: cada noche se guarda un punto con la valoración de la jornada.",
+      "since": "Del {from} al {to}:",
+      "chartTitle": "Valor de mercado frente a lo invertido",
+      "marketValue": "Valor de mercado",
+      "invested": "Invertido",
+      "date": "Fecha",
+      "dropped": "{count, plural, =1 {Un día del periodo no se ha podido convertir a esta divisa y no aparece en la gráfica.} other {# días del periodo no se han podido convertir a esta divisa y no aparecen en la gráfica.}}",
+      "cadence": "Cada punto es la valoración de cierre de ese día. Se guarda en euros junto con los tipos de cambio de la jornada, así que al cambiar de divisa se reexpresa con las tasas de entonces, no con las de hoy."
+    },
+    "breakdown": {
+      "title": "Composición de la cartera",
+      "groupByLabel": "Agrupar por",
+      "group": {
+        "asset": "Activo",
+        "broker": "Bróker",
+        "currency": "Divisa"
+      },
+      "chartTitle": {
+        "asset": "Peso por activo",
+        "broker": "Peso por bróker",
+        "currency": "Peso por divisa"
+      },
+      "center": "Valor total",
+      "noBroker": "Sin bróker",
+      "noData": "Todavía no se puede repartir la cartera: ninguna posición tiene precio convertible a la divisa elegida.",
+      "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible)."
+    },
+    "lots": {
+      "title": "Operaciones de {ticker}",
+      "snapshot": "Ahora mismo: {quantity} participaciones a un precio medio de {avgPrice}.",
+      "explainer": "La posición es la foto (cuánto tienes y a qué precio medio) y los lotes son la película (cada compra y cada venta, con su fecha). Al añadir, editar o borrar un lote, el servidor recalcula solo la cantidad y el precio medio de la posición.",
+      "close": "Cerrar",
+      "loading": "Cargando las operaciones…",
+      "loadError": "No se han podido cargar las operaciones. Inténtalo de nuevo en unos momentos.",
+      "empty": "Esta posición todavía no tiene operaciones registradas.",
+      "tableCaption": "Operaciones de {ticker}, de la más antigua a la más reciente.",
+      "tradedAt": "Fecha",
+      "kind": "Tipo",
+      "kindBuy": "Compra",
+      "kindSell": "Venta",
+      "quantity": "Cantidad",
+      "priceShort": "Precio",
+      "feesShort": "Comisiones",
+      "note": "Nota",
+      "notePlaceholder": "p. ej. aportación mensual",
+      "actions": "Acciones",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "confirmDelete": "Sí, eliminar",
+      "cancel": "Cancelar",
+      "formAddTitle": "Añadir operación",
+      "formEditTitle": "Editar operación",
+      "price": "Precio por participación ({currency})",
+      "fees": "Comisiones ({currency})",
+      "feesHint": "No afectan al precio medio; se guardan para el cálculo de plusvalías.",
+      "add": "Añadir operación",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "errorNotFound": "Esta operación ya no existe. Recarga la página para ver el histórico actualizado.",
+      "errorNegative": "Esa venta dejaría la posición en negativo: no puedes vender más participaciones de las que tienes en esa fecha.",
+      "errorOverflow": "El resultado de las operaciones excede el máximo que admite una posición.",
+      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido.",
+      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+    },
+    "sale": {
+      "title": "¿Qué pasaría si vendo?",
+      "intro": "Simula una venta contra tus lotes por el criterio FIFO (primero los comprados antes), que es el que exige Hacienda para valores homogéneos.",
+      "quantity": "Participaciones a vender",
+      "available": "Tienes {quantity}.",
+      "price": "Precio de venta por participación ({currency})",
+      "priceFrom": "Prellenado con la cotización del {date}.",
+      "priceNotConvertible": "No hay tipo de cambio {from}→{to}, así que no se ha prellenado: escribe el precio en {to}.",
+      "noPrice": "Todavía no hay cotización de este símbolo: escribe el precio a mano.",
+      "fees": "Comisiones de la venta ({currency})",
+      "incomplete": "Indica cuántas participaciones venderías y a qué precio.",
+      "insufficient": "No puedes vender más de lo que tienes: hay {available} participaciones disponibles.",
+      "transferValue": "Valor de transmisión",
+      "acquisitionValue": "Valor de adquisición",
+      "gain": "Ganancia patrimonial",
+      "loss": "Pérdida patrimonial",
+      "taxBase": "Base del ahorro",
+      "tax": "Cuota estimada ({year})",
+      "net": "Ganancia después de impuestos",
+      "taxNotConvertible": "No hay tipo de cambio {from}→{to}, así que no se puede estimar la cuota: la escala del IRPF está en {to}.",
+      "fifoCaption": "Lotes que absorbería la venta, del más antiguo al más reciente (FIFO).",
+      "lotDate": "Fecha de compra",
+      "lotQuantity": "Participaciones",
+      "lotPrice": "Precio de compra",
+      "lotAcquisition": "Valor de adquisición",
+      "lotGain": "Resultado",
+      "remaining": "Tras la venta quedarían {quantity} participaciones a un precio medio de {avgPrice}.",
+      "disclaimer": "Cálculo orientativo, no es asesoramiento fiscal. Mira la venta de forma aislada: no aplica la regla de los dos meses (si recompras el mismo valor, la pérdida no se computa), no compensa con otras ganancias ni pérdidas del ejercicio ni con saldos negativos de años anteriores, y no suma el resto de tu base del ahorro, que puede llevar la ganancia a un tramo superior.",
+      "disclaimerFx": "Además, tu posición está en {currency}: la ganancia se convierte a euros con el tipo de cambio de hoy, no con el que hubiera el día de una venta real."
     }
   },
   "account": {

@@ -11,19 +11,13 @@ import type { EmailService } from './email.service';
  */
 const LINK_TTL_MINUTES = 15;
 
-/**
- * Remitente por defecto si no se define `EMAIL_FROM`. Subdominio de envío dedicado
- * (`send.fpardo.net`) para no comprometer la reputación del dominio raíz.
- */
-const DEFAULT_FROM = 'Sextante <no-reply@send.fpardo.net>';
-
 const SUBJECT = 'Tu enlace de acceso a Sextante';
 
 /**
  * Transporte de email de producción vía Resend. Se activa con `EMAIL_TRANSPORT=resend`.
- * Requiere `RESEND_API_KEY`; `EMAIL_FROM` es opcional (por defecto `DEFAULT_FROM`).
+ * Requiere `RESEND_API_KEY`, `EMAIL_FROM` y `APP_URL`.
  *
- * Si falta `RESEND_API_KEY`, el constructor lanza con un mensaje claro y aborta el
+ * Si falta cualquiera de las tres, el constructor lanza con un mensaje claro y aborta el
  * arranque de la API: preferimos un fallo ruidoso a enviar a un agujero negro.
  */
 @Injectable()
@@ -42,10 +36,24 @@ export class ResendEmailService implements EmailService {
       );
     }
     this.resend = new Resend(apiKey);
-    this.from = config.get<string>('EMAIL_FROM') ?? DEFAULT_FROM;
+
+    // Sin remitente por defecto: este repo es genérico (AGPL) y cualquiera puede desplegarlo,
+    // así que un dominio cableado aquí sería el de OTRO. Además, Resend solo acepta dominios
+    // verificados en la cuenta del despliegue: un valor "de fábrica" fallaría en el envío, y
+    // más vale enterarse al arrancar que cuando un usuario intenta entrar.
+    const from = config.get<string>('EMAIL_FROM')?.trim();
+    if (!from) {
+      throw new Error(
+        'EMAIL_TRANSPORT=resend requiere EMAIL_FROM con un remitente de un dominio ' +
+          'verificado en Resend (p. ej. "Sextante <no-reply@send.tu-dominio>").',
+      );
+    }
+    this.from = from;
+
     // Base absoluta para el logo del email (los clientes de correo no resuelven rutas
-    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`.
-    this.appUrl = config.get<string>('APP_URL') ?? 'https://sextante.fpardo.net';
+    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`. `getOrThrow`
+    // porque `APP_URL` ya es obligatoria en el resto de la app (es la base del magic link).
+    this.appUrl = config.getOrThrow<string>('APP_URL');
   }
 
   async sendMagicLink(to: string, link: string): Promise<void> {
