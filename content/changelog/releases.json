@@ -1,0 +1,827 @@
+{
+  "generatedFrom": "git log main",
+  "releases": [
+    {
+      "date": "2026-09-03",
+      "title": {
+        "es": "Histórico de cartera, IRPF por comunidad y enlaces compartibles",
+        "en": "Portfolio history, regional income tax and shareable links"
+      },
+      "summary": {
+        "es": "La cartera deja de ser la foto de un día: ahora guarda cada compra y venta, dibuja la evolución del patrimonio y su composición, y estima la plusvalía de una venta emparejando lotes por orden de antigüedad, como exige la ley. Las calculadoras de renta permiten elegir comunidad autónoma, y cualquier cálculo se puede compartir por enlace o guardar con nombre en la cuenta.",
+        "en": "The portfolio stops being a single day's snapshot: it now records every purchase and sale, charts how your net worth and its composition evolve, and estimates the tax on a sale by matching lots oldest-first, as Spanish law requires. Income calculators let you pick your autonomous community, and any calculation can be shared as a link or saved to your account under a name."
+      },
+      "highlight": true,
+      "entries": [
+        {
+          "hash": "d622b103",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "pone al día el README y la hoja de ruta con lo que hay hoy",
+            "en": "brings the README and the roadmap up to date with what exists today"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "7aed8e8a",
+          "type": "feat",
+          "scope": "calculadoras",
+          "category": "feature",
+          "text": {
+            "es": "las calculadoras guardan sus valores en la dirección de la página, para compartir un cálculo o volver a él, y permiten guardar escenarios con nombre en la cuenta",
+            "en": "calculators keep their values in the page address, so a calculation can be shared or returned to, and you can save named scenarios to your account"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "ccbd2dbf",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "gráfica de evolución del patrimonio, composición de la cartera, detalle de compras de cada posición y simulador de venta con estimación de la plusvalía",
+            "en": "net-worth evolution chart, portfolio composition, purchase detail for each position and a sale simulator that estimates the tax on the gain"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "201064c4",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la cartera registra cada compra y venta con su fecha y anota su valor todos los días, que es lo que permite ver la evolución y calcular plusvalías",
+            "en": "the portfolio records each purchase and sale with its date and notes its value every day, which is what makes evolution charts and gain calculations possible"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "9bbe7f6d",
+          "type": "feat",
+          "scope": "fiscal",
+          "category": "feature",
+          "text": {
+            "es": "el IRPF se calcula con la escala de cada comunidad autónoma en las calculadoras de renta",
+            "en": "income tax is calculated with each autonomous community's own rates in the income calculators"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "71f487fb",
+          "type": "fix",
+          "scope": "seo",
+          "category": "fix",
+          "text": {
+            "es": "el mapa del sitio solo declara fechas de revisión reales y las imágenes de vista previa para redes se sirven desde caché",
+            "en": "the sitemap only reports genuine revision dates and social preview images are served from cache"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "2076612d",
+          "type": "feat",
+          "scope": "api",
+          "category": "security",
+          "text": {
+            "es": "limita cuántas llamadas seguidas puede hacer un asistente conectado, borra automáticamente los datos ya caducados y el servidor deja de ejecutarse con permisos de administrador",
+            "en": "caps how many calls in a row a connected assistant can make, deletes expired data automatically, and the server stops running with administrator privileges"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e3ccb305",
+          "type": "feat",
+          "scope": "a11y,test",
+          "category": "feature",
+          "text": {
+            "es": "accesibilidad: todos los campos tienen nombre, las ayudas se abren con el teclado y al tocarlas en el móvil, y las gráficas ofrecen sus datos en texto para lectores de pantalla",
+            "en": "accessibility: every field has a name, help bubbles open with the keyboard and on touch, and charts expose their data as text for screen readers"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "b3f80a93",
+          "type": "fix",
+          "scope": "docker",
+          "category": "security",
+          "text": {
+            "es": "la web deja de ejecutarse con permisos de administrador en el servidor",
+            "en": "the website stops running with administrator privileges on the server"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e692adda",
+          "type": "fix",
+          "scope": "backup",
+          "category": "security",
+          "text": {
+            "es": "cada copia de seguridad se comprueba restaurable antes de guardarse fuera del servidor",
+            "en": "every backup is checked to be restorable before it is stored off the server"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "81b940ff",
+          "type": "ci",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "ningún cambio llega a la web publicada si antes no pasa todas las pruebas",
+            "en": "no change reaches the live site unless it passes every test first"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "47fa7367",
+          "type": "chore",
+          "scope": "deps",
+          "category": "security",
+          "text": {
+            "es": "actualiza las librerías del proyecto, incluidas varias con avisos de seguridad publicados",
+            "en": "updates the project's libraries, including several with published security advisories"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "title": {
+        "es": "Código abierto y refuerzo de la seguridad",
+        "en": "Open source and a security tightening"
+      },
+      "summary": {
+        "es": "Sextante se publica con licencia AGPL-3.0, así que cualquiera puede leer y auditar el código que hace los cálculos. En el mismo lote se cierra la puerta a cualquier recurso externo en el navegador, se deja de exponer la base de datos en la red local y se traducen los últimos textos que seguían apareciendo en castellano en la versión inglesa.",
+        "en": "Sextante is released under the AGPL-3.0 licence, so anyone can read and audit the code behind the calculations. The same batch shuts the door on any external resource in the browser, stops exposing the database on the local network, and translates the last texts that still showed up in Spanish on the English site."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "d7ddfb94",
+          "type": "ci",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "las pruebas automáticas dejan de duplicarse, se fijan a versiones exactas y pasan a ejecutarse sobre Node 24",
+            "en": "automated checks stop running twice, are pinned to exact versions and now run on Node 24"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "5bfa0df7",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "presentación del proyecto en inglés y documentación de instalación reutilizable por cualquiera",
+            "en": "an English introduction to the project and setup documentation anyone can reuse"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "5f8de188",
+          "type": "refactor",
+          "scope": null,
+          "category": "fix",
+          "text": {
+            "es": "traduce los textos que seguían en castellano dentro de la versión inglesa y retira código que ya no se usaba",
+            "en": "translates the texts that were still in Spanish inside the English version and removes code that was no longer used"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "0c0c03cb",
+          "type": "fix",
+          "scope": "seguridad",
+          "category": "security",
+          "text": {
+            "es": "el navegador ya no puede cargar ningún recurso de terceros, la base de datos deja de estar accesible desde la red local y la contraseña de las copias de seguridad deja de ser visible para otros programas",
+            "en": "the browser can no longer load any third-party resource, the database is no longer reachable from the local network, and the backup password is no longer visible to other programs"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "2a650c29",
+          "type": "chore",
+          "scope": "repo",
+          "category": "internal",
+          "text": {
+            "es": "licencia AGPL-3.0 y normas de contribución del repositorio",
+            "en": "AGPL-3.0 licence and contribution rules for the repository"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-07-09",
+      "title": {
+        "es": "Decimales en el móvil y un sextante bien dibujado",
+        "en": "Decimals on mobile and a properly drawn sextant"
+      },
+      "summary": {
+        "es": "El teclado numérico del móvil ya acepta la coma, así que escribir importes con céntimos deja de ser una pelea. Además, el sextante del logotipo se corrige para que su arco curve como el del instrumento real y estrena icono propio en la pestaña del navegador.",
+        "en": "The mobile number keypad now accepts a comma, so typing amounts with cents stops being a fight. The sextant in the logo is also corrected so its arc curves like the real instrument, and it gets its own browser-tab icon."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "2e204ec2",
+          "type": "fix",
+          "scope": "ui",
+          "category": "fix",
+          "text": {
+            "es": "permite escribir decimales con coma en el teclado numérico del móvil",
+            "en": "lets you type decimals with a comma on the mobile number keypad"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "1fd1a814",
+          "type": "fix",
+          "scope": "landing",
+          "category": "fix",
+          "text": {
+            "es": "corrige la curvatura del arco del sextante del logotipo y estrena icono del instrumento en la pestaña del navegador",
+            "en": "fixes the curve of the sextant's arc in the logo and introduces an icon of the instrument in the browser tab"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-07-07",
+      "title": {
+        "es": "Fuera la publicidad",
+        "en": "Advertising removed"
+      },
+      "summary": {
+        "es": "Sextante retira los anuncios que había mostrado en sus páginas públicas: no compensaban el estorbo, y el proyecto pasa a sostenerse solo con donaciones voluntarias. La política de privacidad se actualiza en consecuencia y deja claro que no se usan cookies de publicidad ni de analítica.",
+        "en": "Sextante removes the ads it had been showing on its public pages: they were not worth the clutter, and the project now relies on voluntary donations alone. The privacy policy is updated accordingly and states plainly that no advertising or analytics cookies are used."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "2373019a",
+          "type": "chore",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "retira la publicidad de las páginas públicas y corrige las direcciones del sitio que se publican a los buscadores",
+            "en": "removes advertising from the public pages and fixes the site addresses published to search engines"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-07-02",
+      "title": {
+        "es": "Números en tu idioma y tabla ordenable",
+        "en": "Numbers in your language, sortable table"
+      },
+      "summary": {
+        "es": "Las cifras y las divisas se muestran con la puntuación propia de cada idioma, así que la versión en inglés deja de escribir los números a la española. En la cartera, la tabla de posiciones se puede ordenar por cualquier columna.",
+        "en": "Figures and currencies are shown with each language's own punctuation, so the English version stops writing numbers the Spanish way. In the portfolio, the positions table can be sorted by any column."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "84704990",
+          "type": "feat",
+          "scope": "i18n",
+          "category": "feature",
+          "text": {
+            "es": "el formato de números y monedas sigue el idioma elegido",
+            "en": "number and currency formatting follows the language you choose"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "54b58614",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "ordena la tabla de posiciones por cualquier columna",
+            "en": "sort the positions table by any column"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-07-01",
+      "title": {
+        "es": "Cantidades con decimales en la cartera",
+        "en": "Fractional quantities in the portfolio"
+      },
+      "summary": {
+        "es": "Las cantidades fraccionadas, habituales en cripto y en las compras por importe, ya se ven con sus decimales: media unidad dejaba de mostrarse redondeada a cero.",
+        "en": "Fractional quantities, common in crypto and in amount-based purchases, now show their decimals: half a unit was being rounded down to zero."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "33cd03ef",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "muestra los decimales de la cantidad de cada posición, que antes se redondeaba a un número entero",
+            "en": "shows the decimals in each position's quantity, which used to be rounded to a whole number"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-06-30",
+      "title": {
+        "es": "Donaciones, página «Sobre mí» y presencia en buscadores",
+        "en": "Donations, an About page and search-engine presence"
+      },
+      "summary": {
+        "es": "Quien quiera apoyar el proyecto puede invitar a un café con tarjeta desde la portada o desde la nueva página «Sobre mí». Cada página declara además su dirección canónica, su equivalente en el otro idioma y la vista previa que se ve al compartirla en redes, y se aplican los resultados de una auditoría de código.",
+        "en": "Anyone who wants to support the project can buy a coffee by card from the home page or the new About page. Every page also declares its canonical address, its counterpart in the other language and the preview shown when it is shared on social networks, and the findings of a code audit are applied."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "5664b9ce",
+          "type": "ci",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "las pruebas automáticas pasan a ejecutarse sobre Node 22",
+            "en": "automated checks now run on Node 22"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "9618cbbe",
+          "type": "chore",
+          "scope": "hardening",
+          "category": "security",
+          "text": {
+            "es": "aplica los hallazgos de una auditoría de código: cabeceras de seguridad en el navegador, librerías actualizadas y una batería de pruebas del servidor",
+            "en": "applies the findings of a code audit: security headers in the browser, updated libraries and a test suite for the server"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "7fc2eef6",
+          "type": "feat",
+          "scope": "seo",
+          "category": "feature",
+          "text": {
+            "es": "cada página declara su dirección canónica, su versión en el otro idioma y su vista previa al compartirla, y el sitio publica su mapa para los buscadores",
+            "en": "every page declares its canonical address, its version in the other language and its preview when shared, and the site publishes a map for search engines"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "72ed0a23",
+          "type": "feat",
+          "scope": "donaciones",
+          "category": "feature",
+          "text": {
+            "es": "donaciones con tarjeta a través de Stripe, página «Sobre mí» y créditos en el pie",
+            "en": "card donations through Stripe, an About page and credits in the footer"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-06-29",
+      "title": {
+        "es": "Buscador de instrumentos y precios en la divisa correcta",
+        "en": "Instrument search and prices in the right currency"
+      },
+      "summary": {
+        "es": "Al dar de alta una posición se puede buscar el instrumento y quedarse con el símbolo exacto, en lugar de confiar en que el sistema adivine: escribir «BTC» a secas podía acabar valorando la cartera con el precio de otro producto. Las posiciones cuyo coste está en una divisa y cuyo precio cotiza en otra ya se convierten al cambio del día en vez de quedarse sin valorar.",
+        "en": "When adding a position you can search for the instrument and keep its exact symbol, instead of trusting the system to guess: typing a bare 'BTC' could end up valuing the portfolio with another product's price. Positions whose cost is in one currency and whose price is quoted in another are now converted at the day's rate instead of being left unvalued."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "4ee216f5",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "valora las posiciones cuyo coste está en una divisa distinta a la de su precio, convirtiendo al cambio del día",
+            "en": "values positions whose cost is in a different currency from their price, converting at the day's rate"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "a4f43517",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "dar de alta un instrumento por su ISIN ya no deja la página esperando, y un nombre demasiado largo ya no impide guardar la posición",
+            "en": "adding an instrument by its ISIN no longer leaves the page waiting, and an overly long name no longer prevents saving the position"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "d6c7c411",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "buscador de instrumentos al añadir una posición, para quedarse con el símbolo exacto y ver su precio desde el primer momento",
+            "en": "instrument search when adding a position, so you keep the exact symbol and see its price straight away"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-06-28",
+      "title": {
+        "es": "Sextante se estrena en producción",
+        "en": "Sextante goes live"
+      },
+      "summary": {
+        "es": "Sextante empieza a funcionar en sextante.fpardo.net, con copias de seguridad cifradas de la base de datos y correos de acceso de verdad. El mismo día llega la conexión para asistentes de inteligencia artificial: quien lo autorice puede pedirle a Claude o a ChatGPT que consulte o modifique su cartera, con permisos distintos para leer y para escribir y la posibilidad de revocar el acceso cuando quiera. La cartera gana total agregado, ganancia o pérdida por posición, elección entre diez divisas y precios de cierre diarios.",
+        "en": "Sextante starts running at sextante.fpardo.net, with encrypted database backups and real sign-in emails. The same day brings the connection for AI assistants: anyone who authorises it can ask Claude or ChatGPT to read or change their portfolio, with separate permissions for reading and writing and the option to revoke access at any time. The portfolio gains an aggregate total, gain or loss per position, a choice of ten currencies and daily closing prices."
+      },
+      "highlight": true,
+      "entries": [
+        {
+          "hash": "3f744cfd",
+          "type": "fix",
+          "scope": "landing",
+          "category": "fix",
+          "text": {
+            "es": "el bloque de conexión con la inteligencia artificial de la portada deja de repetir el mismo botón",
+            "en": "the AI-connection block on the home page stops repeating the same button"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "3377d809",
+          "type": "feat",
+          "scope": "landing",
+          "category": "feature",
+          "text": {
+            "es": "portada reescrita, con la conexión para asistentes de inteligencia artificial en primer plano, y logotipo en los correos",
+            "en": "rewritten home page, with the connection for AI assistants front and centre, and a logo in the emails"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "affc984e",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "la tabla de la cartera ya no obliga a desplazarse en horizontal y se actualiza sola al volver a la pestaña",
+            "en": "the portfolio table no longer forces you to scroll sideways, and refreshes itself when you come back to the tab"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e94b9c7b",
+          "type": "fix",
+          "scope": "mcp",
+          "category": "fix",
+          "text": {
+            "es": "los asistentes de inteligencia artificial se conectan a la cartera sin tropiezos",
+            "en": "AI assistants connect to the portfolio without hiccups"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "628fcaef",
+          "type": "feat",
+          "scope": "mcp",
+          "category": "feature",
+          "text": {
+            "es": "conexión para asistentes de inteligencia artificial: Claude o ChatGPT pueden consultar y modificar tu cartera con tu permiso, con acceso revocable desde tu cuenta",
+            "en": "connection for AI assistants: Claude or ChatGPT can read and change your portfolio with your permission, and access can be revoked from your account"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "b06ef37c",
+          "type": "feat",
+          "scope": "ads",
+          "category": "internal",
+          "text": {
+            "es": "anuncio en la cabecera de los índices de calculadoras y de la wiki",
+            "en": "an ad at the top of the calculator and wiki index pages"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "86eaa106",
+          "type": "fix",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "hace llegar la configuración de la publicidad al proceso de publicación",
+            "en": "gets the advertising configuration through to the publishing process"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "2fd1a4f5",
+          "type": "feat",
+          "scope": "ads",
+          "category": "internal",
+          "text": {
+            "es": "anuncios en las páginas públicas, nunca en la cartera ni en la cuenta",
+            "en": "ads on the public pages, never in the portfolio or the account"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e9a9353e",
+          "type": "chore",
+          "scope": "backups",
+          "category": "internal",
+          "text": {
+            "es": "las copias de seguridad se conservan siete días en lugar de treinta",
+            "en": "backups are kept for seven days instead of thirty"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "faa6ca02",
+          "type": "fix",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "publica la web en el servidor para que el proxy la sirva",
+            "en": "publishes the website on the server so the proxy can serve it"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "1c6c2981",
+          "type": "feat",
+          "scope": "backups",
+          "category": "feature",
+          "text": {
+            "es": "copias de seguridad cifradas de la base de datos, guardadas fuera del servidor",
+            "en": "encrypted database backups, stored away from the server"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "d0c08c53",
+          "type": "fix",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "la web pasa a hablar con el servidor de datos por su dirección interna",
+            "en": "the website now talks to the data server through its internal address"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "c8de1b56",
+          "type": "feat",
+          "scope": "deploy",
+          "category": "milestone",
+          "text": {
+            "es": "primer despliegue de Sextante en producción, publicado automáticamente desde el repositorio",
+            "en": "first production deployment of Sextante, published automatically from the repository"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "63cf6275",
+          "type": "chore",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "empaqueta la web para poder publicarla en el servidor",
+            "en": "packages the website so it can be published on the server"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "75d667a4",
+          "type": "feat",
+          "scope": "account",
+          "category": "feature",
+          "text": {
+            "es": "puedes descargar todos tus datos y borrar tu cuenta desde los ajustes, como manda el RGPD",
+            "en": "you can download all your data and delete your account from the settings, as the GDPR requires"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "35dcf657",
+          "type": "feat",
+          "scope": "email",
+          "category": "feature",
+          "text": {
+            "es": "el correo con el enlace de acceso ya se envía de verdad, con versión en texto y con formato",
+            "en": "the email with the sign-in link is now actually sent, in both plain-text and formatted versions"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "f6ed32d3",
+          "type": "chore",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "el servidor estrena su propia configuración de revisión automática de código",
+            "en": "the server gets its own automatic code-review configuration"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "e0d1d779",
+          "type": "feat",
+          "scope": "prices",
+          "category": "feature",
+          "text": {
+            "es": "reconoce el ISIN o el ticker de un instrumento y lo traduce al símbolo con el que se consulta su cotización",
+            "en": "recognises an instrument's ISIN or ticker and maps it to the symbol its quote is looked up with"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "a681753e",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "total de la cartera sumado en una sola divisa, convirtiendo cada posición al cambio del día",
+            "en": "portfolio total added up in a single currency, converting each position at the day's rate"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "dc4d6706",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "columna de ganancia o pérdida por posición y selector de diez divisas",
+            "en": "a gain-or-loss column for each position and a ten-currency selector"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "fd5490db",
+          "type": "feat",
+          "scope": "prices",
+          "category": "feature",
+          "text": {
+            "es": "precios de cierre diarios de cada instrumento, guardados en el propio servidor y actualizados cada noche",
+            "en": "daily closing prices for each instrument, stored on our own server and updated every night"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "c7927dd5",
+          "type": "feat",
+          "scope": "auth",
+          "category": "security",
+          "text": {
+            "es": "una sesión cuya cuenta ya no existe deja de dar acceso, y al editar una posición no se puede dejar vacío el bróker que ya tenía",
+            "en": "a session whose account no longer exists stops granting access, and editing a position no longer lets you clear the broker it already had"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "f435ee06",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "mensajes de error concretos al añadir o editar una posición, y aviso claro cuando la sesión ha caducado",
+            "en": "specific error messages when adding or editing a position, and a clear notice when the session has expired"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-06-27",
+      "title": {
+        "es": "Cuenta con acceso por enlace y primera cartera",
+        "en": "Accounts with link sign-in, and the first portfolio"
+      },
+      "summary": {
+        "es": "Se construye la parte con cuenta de Sextante, todavía antes de publicarlo: se entra con un enlace enviado al correo, sin contraseña que recordar, y cada persona puede añadir, editar y borrar las posiciones de su cartera. Se escriben también la política de privacidad y de cookies en los dos idiomas y la portada de la marca.",
+        "en": "The account side of Sextante is built, still before launch: you sign in with a link sent to your email, with no password to remember, and each person can add, edit and delete the positions in their portfolio. The privacy and cookie policy in both languages and the brand home page are written too."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "c0dc638e",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "el bróker solo es obligatorio si ya tienes otra posición del mismo instrumento",
+            "en": "the broker is only required if you already hold another position in the same instrument"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e3cc2c3a",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "editar posiciones ya creadas y aviso cuando ya existe una igual",
+            "en": "edit positions you already created, with a warning when an identical one exists"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "eb217ab2",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "añadir, consultar y borrar las posiciones de tu cartera",
+            "en": "add, view and delete the positions in your portfolio"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "aeec49dc",
+          "type": "feat",
+          "scope": "legal",
+          "category": "feature",
+          "text": {
+            "es": "política de privacidad y de cookies, en castellano y en inglés",
+            "en": "privacy and cookie policy, in Spanish and English"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "1415446d",
+          "type": "feat",
+          "scope": "adsense",
+          "category": "internal",
+          "text": {
+            "es": "prepara la integración con Google AdSense, sin efecto alguno mientras no se configure",
+            "en": "prepares the Google AdSense integration, with no effect at all until it is configured"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "ba3fb5d6",
+          "type": "feat",
+          "scope": "auth",
+          "category": "feature",
+          "text": {
+            "es": "pantalla de acceso con enlace por correo y páginas reservadas a quien ha entrado",
+            "en": "sign-in screen with an email link, and pages reserved for those who are signed in"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "33d72b7e",
+          "type": "feat",
+          "scope": "auth",
+          "category": "feature",
+          "text": {
+            "es": "acceso sin contraseña mediante un enlace de un solo uso que caduca a los quince minutos",
+            "en": "password-free sign-in through a single-use link that expires after fifteen minutes"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "312666cd",
+          "type": "feat",
+          "scope": "backend",
+          "category": "internal",
+          "text": {
+            "es": "primer servidor propio con base de datos, donde vivirán los datos de cada cuenta",
+            "en": "first server of our own with a database, where each account's data will live"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "c692ef79",
+          "type": "feat",
+          "scope": null,
+          "category": "feature",
+          "text": {
+            "es": "completa huecos fiscales en autónomos, donaciones y planes de pensiones, y estrena la portada de la marca Sextante",
+            "en": "fills tax gaps for the self-employed, gift tax and pension plans, and introduces the Sextante brand home page"
+          },
+          "hidden": false
+        }
+      ]
+    }
+  ]
+}
