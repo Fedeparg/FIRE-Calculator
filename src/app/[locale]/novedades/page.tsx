@@ -9,8 +9,10 @@ import { buildMetadata } from "@/lib/seo";
 
 // ISR: igual que la wiki, el contenido se lee de un fichero de `content/` en
 // runtime, así que regenerar `releases.json` en el servidor se publica solo, sin
-// redesplegar. El filtrado vive en cliente precisamente para no perder esto (leer
-// `searchParams` volvería la ruta dinámica); ver `ChangelogTimeline`.
+// redesplegar. El filtrado vive en cliente precisamente para no perder esto: leer
+// aquí `searchParams` volvería la ruta dinámica, así que los filtros viajan en la
+// URL desde el cliente (`history.replaceState`, lectura tras el montaje) y esta
+// página se sigue prerenderizando en su estado por defecto. Ver `ChangelogTimeline`.
 export const revalidate = 3600;
 
 // El slug no se traduce, igual que `/calculadoras` y `/aprende`: una única URL por

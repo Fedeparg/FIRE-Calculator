@@ -1,13 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 
+import {
+  decodeChangelogFilter,
+  encodeChangelogFilter,
+} from "@/core/changelog-url-state";
 import {
   availableCategories,
   filterReleases,
   summarizeReleases,
   type ChangelogCategory,
+  type ChangelogFilter,
   type ChangelogCategoryFilter,
   type LocalizedChangelogRelease,
 } from "@/core/changelog";
@@ -20,12 +25,24 @@ import { CategoryIcon, SparkleIcon } from "./icons";
  * Línea temporal de entregas con filtro por categoría e interruptor de cambios
  * internos.
  *
- * POR QUÉ EL FILTRADO ES DE CLIENTE: la alternativa natural (estado en
- * `searchParams`, filtrado en servidor, funcional sin JavaScript) convertiría la
- * ruta en dinámica y perdería la generación estática + ISR que tiene el resto del
- * sitio. Como contrapartida, el HTML que se prerenderiza es el del estado por
- * defecto — todas las entregas, sin fontanería — así que sin JavaScript la página
- * sigue siendo el changelog completo y legible: solo se pierden los controles.
+ * POR QUÉ EL FILTRADO ES DE CLIENTE: la alternativa natural (leer `searchParams` en
+ * el servidor y filtrar allí, funcional sin JavaScript) convertiría la ruta en
+ * dinámica y perdería la generación estática + ISR que tiene el resto del sitio.
+ * Como contrapartida, el HTML que se prerenderiza es el del estado por defecto —
+ * todas las entregas, sin fontanería — así que sin JavaScript la página sigue
+ * siendo el changelog completo y legible: solo se pierden los controles.
+ *
+ * ESTADO EN LA URL, aun así: una vista filtrada se puede compartir y recargar, igual
+ * que un cálculo de una calculadora (`CalculatorState.tsx`). El filtro NO se duplica en
+ * un `useState`: la query string ES su estado, leída con `useSyncExternalStore` y escrita
+ * con `history.replaceState` (ver `useSearchQuery` y `writeSearch` más abajo). Así:
+ *
+ * - El render del servidor y el primero del cliente usan la instantánea del servidor —la
+ *   query vacía, o sea el estado por defecto—, de modo que el HTML prerenderizado y la
+ *   hidratación coinciden y la ruta NO se vuelve dinámica (`useSearchParams` sí lo haría).
+ * - No hay dos copias del filtro que puedan discrepar, ni efectos que sincronicen la una
+ *   con la otra: se escribe la selección YA NORMALIZADA (ver `updateFilter`), así que la
+ *   dirección nunca dice algo que los chips no muestren.
  *
  * Todos los datos llegan ya validados y resueltos a un idioma desde el servidor
  * (`core/changelog.ts`); aquí no se vuelve a tocar el contenido, solo se filtra.
@@ -56,29 +73,95 @@ type Props = {
   locale: Locale;
 };
 
+/**
+ * Suscriptores de la query string. `history.replaceState` no dispara ningún evento del
+ * navegador, así que quien escribe la URL tiene que avisar él mismo; `popstate` cubre el
+ * botón «atrás».
+ */
+const searchListeners = new Set<() => void>();
+
+function subscribeToSearch(onChange: () => void): () => void {
+  searchListeners.add(onChange);
+  window.addEventListener("popstate", onChange);
+  return () => {
+    searchListeners.delete(onChange);
+    window.removeEventListener("popstate", onChange);
+  };
+}
+
+/**
+ * Escribe la query string y avisa a quien la esté leyendo. Solo la query: la ruta y el ancla
+ * se conservan tal cual.
+ *
+ * Se usa `history.replaceState` y no el router: cambiar la query con `router.replace` sería
+ * una navegación de App Router (volvería a pedir el payload RSC de la ruta), y aquí solo se
+ * refleja el filtro en la barra de direcciones. Tampoco apila una entrada por clic.
+ */
+function writeSearch(search: string): void {
+  if (search === window.location.search) return;
+  const { pathname, hash } = window.location;
+  window.history.replaceState(null, "", `${pathname}${search}${hash}`);
+  for (const listener of searchListeners) listener();
+}
+
+/**
+ * La query string como valor de React, sin `useSearchParams` y sin efectos.
+ *
+ * El tercer argumento es la instantánea del SERVIDOR: cadena vacía, es decir, el estado por
+ * defecto. Es lo que hace que el HTML prerenderizado y la hidratación coincidan; en cuanto
+ * termina de hidratar, React vuelve a renderizar ya con la query real del navegador.
+ */
+function useSearchQuery(): string {
+  return useSyncExternalStore(
+    subscribeToSearch,
+    () => window.location.search,
+    () => "",
+  );
+}
+
 export default function ChangelogTimeline({ releases, locale }: Props) {
   const t = useTranslations("changelog");
-  const [category, setCategory] = useState<ChangelogCategoryFilter>("all");
-  const [includeInternal, setIncludeInternal] = useState(false);
 
-  // Corpus visible según el interruptor de internos: de él salen tanto los chips
-  // ofrecidos como el resultado final.
-  const visible = useMemo(
-    () => filterReleases(releases, { category: "all", includeInternal }),
-    [releases, includeInternal],
+  // El filtro NO se guarda en un estado propio: se lee de la URL, que es su única fuente de
+  // verdad. Así no hay dos copias que puedan discrepar y el enlace siempre describe lo que
+  // se está viendo.
+  const search = useSearchQuery();
+  const filter = useMemo(() => decodeChangelogFilter(search), [search]);
+
+  // Categorías realmente presentes, con y sin la fontanería. Se calculan las dos porque el
+  // interruptor de internos puede dejar sin sentido la categoría elegida, y eso se resuelve
+  // en el mismo clic (ver `updateFilter`), no después.
+  const allCategories = useMemo(() => availableCategories(releases), [releases]);
+  const publicCategories = useMemo(
+    () => availableCategories(filterReleases(releases, { category: "all", includeInternal: false })),
+    [releases],
   );
-  const categories = useMemo(() => availableCategories(visible), [visible]);
+  const categories = filter.includeInternal ? allCategories : publicCategories;
 
-  // Al apagar el interruptor, la categoría seleccionada puede dejar de existir
-  // (p. ej. «internos»). Se resuelve de forma DERIVADA, sin efecto ni estado
-  // extra: si ya no está disponible, vale «todas» y el chip activo se repinta
-  // solo, en vez de dejar al usuario ante una lista vacía sin chip que pulsar.
+  // Defensa de la interfaz frente a una URL escrita a mano (`?cat=internal` sin los internos
+  // activados): se muestra «todas» en vez de dejar al usuario ante una lista vacía sin chip
+  // que pulsar. Es derivado, sin efecto ni estado extra.
   const activeCategory: ChangelogCategoryFilter =
-    category === "all" || categories.includes(category) ? category : "all";
+    filter.category === "all" || categories.includes(filter.category) ? filter.category : "all";
+
+  /**
+   * Cambia el filtro escribiéndolo en la URL. Normaliza antes: si la categoría elegida no
+   * existe en el corpus que deja ver el interruptor, se guarda «todas», de modo que la
+   * dirección nunca dice algo que la lista no muestra.
+   */
+  const updateFilter = useCallback(
+    (next: ChangelogFilter) => {
+      const available = next.includeInternal ? allCategories : publicCategories;
+      const category =
+        next.category === "all" || available.includes(next.category) ? next.category : "all";
+      writeSearch(encodeChangelogFilter(window.location.search, { ...next, category }));
+    },
+    [allCategories, publicCategories],
+  );
 
   const filtered = useMemo(
-    () => filterReleases(visible, { category: activeCategory, includeInternal }),
-    [visible, activeCategory, includeInternal],
+    () => filterReleases(releases, { category: activeCategory, includeInternal: filter.includeInternal }),
+    [releases, activeCategory, filter.includeInternal],
   );
 
   // El resumen se calcula sobre lo que se está mostrando, así que hace también de
@@ -107,7 +190,7 @@ export default function ChangelogTimeline({ releases, locale }: Props) {
           <FilterChip
             label={t("filters.all")}
             active={activeCategory === "all"}
-            onClick={() => setCategory("all")}
+            onClick={() => updateFilter({ ...filter, category: "all" })}
           />
           {categories.map((id) => (
             <FilterChip
@@ -115,7 +198,7 @@ export default function ChangelogTimeline({ releases, locale }: Props) {
               label={t(`category.${id}`)}
               category={id}
               active={activeCategory === id}
-              onClick={() => setCategory(id)}
+              onClick={() => updateFilter({ ...filter, category: id })}
             />
           ))}
         </div>
@@ -124,8 +207,8 @@ export default function ChangelogTimeline({ releases, locale }: Props) {
           <input
             id="changelog-internal"
             type="checkbox"
-            checked={includeInternal}
-            onChange={(e) => setIncludeInternal(e.target.checked)}
+            checked={filter.includeInternal}
+            onChange={(e) => updateFilter({ ...filter, includeInternal: e.target.checked })}
             // `mt-0.5`: alinea la casilla con la PRIMERA línea de la etiqueta,
             // que en móvil ocupa dos.
             className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
