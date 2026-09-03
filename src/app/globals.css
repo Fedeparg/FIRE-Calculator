@@ -25,6 +25,9 @@
   --danger-fg: #ffffff;
   --danger-soft: #fef2f2;
   --danger-border: #f3c4c4;
+  /* Hito del changelog: violeta, el único matiz de la paleta que no está ya
+     ocupado por otra semántica (marca, correcciones, avisos, errores). */
+  --milestone: #6d28d9;
   /* Paleta categórica de gráficas (composición de la cartera). Ocho tonos con matiz
      bien separado, para que sigan distinguiéndose en un donut de muchos sectores.
      Los dos primeros coinciden con --brand y --accent para no chocar con el resto
@@ -60,6 +63,7 @@
   --danger-fg: #0a0f1d;
   --danger-soft: #2a1414;
   --danger-border: #4a2222;
+  --milestone: #c4b5fd;
   /* Misma secuencia de matices, aclarada para conservar contraste sobre fondo oscuro. */
   --chart-1: #818cf8;
   --chart-2: #34d399;
@@ -92,6 +96,7 @@
   --color-danger-fg: var(--danger-fg);
   --color-danger-soft: var(--danger-soft);
   --color-danger-border: var(--danger-border);
+  --color-milestone: var(--milestone);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

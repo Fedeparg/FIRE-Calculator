@@ -80,6 +80,32 @@
     },
     "relatedCalculators": "Related calculators"
   },
+  "changelog": {
+    "heading": "What's new",
+    "subheading": "Everything that has been built in Sextante, release by release. Generated from the project's real history.",
+    "empty": "No news published yet.",
+    "noResults": "No changes match this filter.",
+    "highlight": "Featured release",
+    "summary": {
+      "label": "Summary of the news shown",
+      "releases": "Releases",
+      "changes": "Changes",
+      "since": "Since"
+    },
+    "filters": {
+      "legend": "Filter by change type",
+      "all": "All",
+      "showInternal": "Also show internal changes (docs, CI, refactors)"
+    },
+    "category": {
+      "feature": "Feature",
+      "fix": "Fix",
+      "security": "Security",
+      "performance": "Performance",
+      "milestone": "Milestone",
+      "internal": "Internal"
+    }
+  },
   "selector": {
     "heading": "Financial calculators",
     "subheading": "Investing, mortgage, tax and FIRE tools designed for Spain.",
@@ -98,6 +124,7 @@
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
+    "changelog": "What's new",
     "privacy": "Privacy & cookies",
     "madeBy": "Built by <author>Federico Pardo</author>.",
     "coffee": "Buy me a coffee"

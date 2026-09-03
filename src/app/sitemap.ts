@@ -7,6 +7,7 @@ import {
   getContentUpdatedDates,
   getLegalSlugs,
 } from "@/components/wiki/content";
+import { getChangelogLastUpdated } from "@/components/changelog/content";
 import { absoluteUrl } from "@/lib/site";
 import { localizedPath } from "@/lib/seo";
 
@@ -28,7 +29,7 @@ import { localizedPath } from "@/lib/seo";
  * contenido lo genera el código, no un fichero con historial propio.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [esArticles, enArticles, esLegal, enLegal, articleDates, legalDates] =
+  const [esArticles, enArticles, esLegal, enLegal, articleDates, legalDates, changelogDate] =
     await Promise.all([
       getArticleSlugs("es"),
       getArticleSlugs("en"),
@@ -36,6 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       getLegalSlugs("en"),
       getContentUpdatedDates("wiki"),
       getContentUpdatedDates("legal"),
+      getChangelogLastUpdated(),
     ]);
 
   const articleSlugs = [...new Set([...esArticles, ...enArticles])].sort();
@@ -68,6 +70,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/", 1, "weekly"),
     entry("/calculadoras", 0.9, "weekly"),
     entry("/aprende", 0.8, "weekly"),
+    // Aquí SÍ hay una fecha real de contenido (la entrega más reciente), a
+    // diferencia de las calculadoras: se emite el `lastmod`.
+    entry("/novedades", 0.5, "weekly", changelogDate),
     entry("/sobre-mi", 0.3, "yearly"),
     ...liveCalculators.map((c) => entry(`/calculadoras/${c.slug}`, 0.8, "monthly")),
     ...articleSlugs.map((slug) =>

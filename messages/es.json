@@ -80,6 +80,32 @@
     },
     "relatedCalculators": "Calculadoras relacionadas"
   },
+  "changelog": {
+    "heading": "Novedades",
+    "subheading": "Todo lo que se ha construido en Sextante, entrega a entrega. Generado a partir del historial real del proyecto.",
+    "empty": "Todavía no hay novedades publicadas.",
+    "noResults": "No hay cambios que encajen con este filtro.",
+    "highlight": "Entrega destacada",
+    "summary": {
+      "label": "Resumen de las novedades mostradas",
+      "releases": "Entregas",
+      "changes": "Cambios",
+      "since": "Desde"
+    },
+    "filters": {
+      "legend": "Filtrar por tipo de cambio",
+      "all": "Todos",
+      "showInternal": "Mostrar también los cambios internos (documentación, CI, refactorizaciones)"
+    },
+    "category": {
+      "feature": "Novedad",
+      "fix": "Corrección",
+      "security": "Seguridad",
+      "performance": "Rendimiento",
+      "milestone": "Hito",
+      "internal": "Interno"
+    }
+  },
   "selector": {
     "heading": "Calculadoras financieras",
     "subheading": "Herramientas de inversión, hipotecas, fiscalidad y FIRE pensadas para España.",
@@ -98,6 +124,7 @@
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
+    "changelog": "Novedades",
     "privacy": "Privacidad y cookies",
     "madeBy": "Desarrollado por <author>Federico Pardo</author>.",
     "coffee": "Invítame a un café"

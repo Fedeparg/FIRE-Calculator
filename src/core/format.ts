@@ -173,3 +173,36 @@ export const formatIsoDate = (iso: string): string => {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 };
+
+// Fecha larga por idioma ("3 de septiembre de 2026" / "3 September 2026"). Un juego por
+// locale, memoizado igual que los formateadores numéricos.
+const longDateFormatters = new Map<Locale, Intl.DateTimeFormat>();
+
+/**
+ * Fecha ISO "YYYY-MM-DD" → fecha larga en el idioma dado.
+ *
+ * El día se ancla en UTC (`Date.UTC` + `timeZone: "UTC"`) por dos motivos: una fecha
+ * "a secas" no tiene hora, y sin anclar, un navegador en una zona por detrás de UTC
+ * mostraría el día anterior; además así el resultado es idéntico en servidor y en
+ * cliente, que es lo que evita un desajuste de hidratación. Devuelve el ISO tal cual
+ * si no es una fecha parseable, para no inventar un día.
+ */
+export const formatLongDate = (iso: string, locale: Locale): string => {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return iso;
+
+  const timestamp = Date.UTC(y, m - 1, d);
+  if (Number.isNaN(timestamp)) return iso;
+
+  let fmt = longDateFormatters.get(locale);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(INTL_LOCALE[locale], {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+    longDateFormatters.set(locale, fmt);
+  }
+  return fmt.format(timestamp);
+};
