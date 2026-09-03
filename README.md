@@ -51,10 +51,13 @@ Spanish, and every calculator runs in your browser — no account needed.
 | | |
 |---|---|
 | **26 calculators** | Compound interest, FIRE, mortgages (fixed rate / early repayment / buy-vs-rent / affordability), deposits, dividends, DCA, staking, inflation, ROI, budget, financial-health quiz… |
-| **A real Spanish tax engine** | IRPF via the AEAT dual-scale method, Social Security contributions with caps, payroll withholding, self-employed IRPF, wealth tax, gift tax by kinship group |
+| **A real Spanish tax engine** | IRPF via the AEAT dual-scale method, with the regional scale of each of the 15 common-regime communities, Social Security contributions with caps, payroll withholding, self-employed IRPF, wealth tax, gift tax by kinship group |
 | **Aggregated portfolio** | Positions across brokers in one place, with a daily price feed, FX conversion and P&L |
+| **Portfolio history** | Purchase lots per position, a year of prices fetched the first time a symbol is seen, nightly valuation snapshots, an evolution chart and a breakdown by asset, broker or currency |
+| **Capital-gains simulator** | "What if I sell?" with FIFO lot matching, fees prorated across the shares still open, and an estimate on the savings scale — upfront about the rules it does not model |
+| **Shareable and saveable** | Every input lives in the URL, so a calculation is a link; signed in, you can save named scenarios to your account |
 | **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
-| **Bilingual** | Spanish (default) and English: 909 translation keys per locale, with enforced parity |
+| **Bilingual** | Spanish (default) and English: 1,065 translation keys per locale, with parity enforced by a test, not by hope |
 | **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 26 tools, in both languages |
 | **No tracking** | No analytics, no ads, no third-party scripts. The CSP allowlist is `'self'` and nothing else. |
 
@@ -231,7 +234,8 @@ trust instantly, so `format.ts` funnels every non-finite value to an em dash.
 
 No UI string is ever hardcoded in a component; everything goes through
 `next-intl`. `messages/es.json` and `messages/en.json` are held at **exactly the
-same key set** (909 each) — checked, not assumed.
+same key set** (1,065 each) with the same ICU arguments — and a test fails the
+build if they ever drift, so this is checked, not assumed.
 
 ---
 
