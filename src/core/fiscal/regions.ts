@@ -507,6 +507,14 @@ export type RegionSelection = RegionCode | UnsupportedRegionCode | "";
  * cuando no hay comunidad o cuando la elegida no está soportada (en cuyo caso se
  * usa la escala supletoria, el comportamiento por defecto).
  */
+/**
+ * Selecciones que el desplegable deja elegir DE VERDAD: sin comunidad ("") y las
+ * comunidades soportadas. Deja fuera los territorios forales y Ceuta/Melilla, que se
+ * muestran deshabilitados: así una URL con uno de ellos cae a "" en vez de dejar la
+ * calculadora en un estado que no se puede alcanzar desde la interfaz.
+ */
+export const SELECTABLE_REGIONS: readonly RegionSelection[] = ["", ...REGION_CODES];
+
 export function toSupportedRegion(selection: RegionSelection): RegionCode | undefined {
   return REGION_CODES.find((code) => code === selection);
 }

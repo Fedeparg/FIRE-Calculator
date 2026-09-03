@@ -1,24 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeAffordability } from "@/core/calculators/hipoteca-asequible";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function AffordabilityCalculator() {
   const t = useTranslations("calc.que-hipoteca-me-puedo-permitir");
   const { formatEUR, formatEURCents } = useFormat();
-  const [netMonthlyIncome, setNetMonthlyIncome] = useState(2000);
-  const [monthlyDebts, setMonthlyDebts] = useState(0);
-  const [downPayment, setDownPayment] = useState(40000);
-  const [annualRate, setAnnualRate] = useState(3);
-  const [termYears, setTermYears] = useState(30);
-  const [effortRatio, setEffortRatio] = useState(35);
-  const [maxLtv, setMaxLtv] = useState(80);
-  const [purchaseCostsRate, setPurchaseCostsRate] = useState(12);
+  const [netMonthlyIncome, setNetMonthlyIncome] = useNumberField("netMonthlyIncome", 2000);
+  const [monthlyDebts, setMonthlyDebts] = useNumberField("monthlyDebts", 0);
+  const [downPayment, setDownPayment] = useNumberField("downPayment", 40000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
+  const [termYears, setTermYears] = useNumberField("termYears", 30);
+  const [effortRatio, setEffortRatio] = useNumberField("effortRatio", 35);
+  const [maxLtv, setMaxLtv] = useNumberField("maxLtv", 80);
+  const [purchaseCostsRate, setPurchaseCostsRate] = useNumberField("purchaseCostsRate", 12);
 
   const result = useMemo(
     () =>

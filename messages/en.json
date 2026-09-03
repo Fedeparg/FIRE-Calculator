@@ -947,6 +947,44 @@
       }
     }
   },
+  "calculator": {
+    "share": {
+      "title": "Share or save this calculation",
+      "copyLink": "Copy link",
+      "copied": "Link copied",
+      "copyError": "The link could not be copied. Copy it from the address bar.",
+      "hint": "The link includes the values you entered: anyone opening it will see this same calculation."
+    },
+    "scenarios": {
+      "title": "Saved scenarios",
+      "signedOut": "Sign in to save this calculation and get it back whenever you want.",
+      "signedOutLink": "Sign in",
+      "nameLabel": "Scenario name",
+      "namePlaceholder": "My plan at 45",
+      "save": "Save",
+      "saving": "Saving…",
+      "empty": "You haven't saved any scenario for this calculator yet.",
+      "load": "Load",
+      "loaded": "Scenario “{name}” loaded.",
+      "rename": "Rename",
+      "renameSave": "Save name",
+      "renameLabel": "New name for “{name}”",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "deleteLabel": "Delete the scenario “{name}”",
+      "confirmDelete": "Confirm",
+      "deleting": "Deleting…",
+      "quotaReached": "You've reached the maximum number of saved scenarios. Delete one to save another.",
+      "errorNetwork": "Could not reach the server. Check your connection and try again.",
+      "errorSession": "Your session has expired.",
+      "errorSessionLink": "Sign in again",
+      "errorInvalid": "Check the scenario name: it cannot be empty.",
+      "errorServer": "A server error occurred. Please try again in a moment.",
+      "errorGeneric": "The operation could not be completed. Please try again.",
+      "errorTooLarge": "This calculation is too large to save.",
+      "errorQuota": "You've reached the maximum number of saved scenarios. Delete one to save another."
+    }
+  },
   "auth": {
     "login": {
       "title": "Sign in to Sextante",

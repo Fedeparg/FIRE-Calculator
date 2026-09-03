@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeWealthTax } from "@/core/calculators/impuesto-patrimonio";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
@@ -9,14 +9,15 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function WealthTaxCalculator() {
   const t = useTranslations("calc.impuesto-patrimonio");
   const { formatEUR, formatPercent } = useFormat();
-  const [totalWealth, setTotalWealth] = useState(1500000);
-  const [primaryResidenceValue, setPrimaryResidenceValue] = useState(300000);
-  const [exemptMinimum, setExemptMinimum] = useState(700000);
-  const [regionalRebate, setRegionalRebate] = useState(0);
+  const [totalWealth, setTotalWealth] = useNumberField("totalWealth", 1500000);
+  const [primaryResidenceValue, setPrimaryResidenceValue] = useNumberField("primaryResidenceValue", 300000);
+  const [exemptMinimum, setExemptMinimum] = useNumberField("exemptMinimum", 700000);
+  const [regionalRebate, setRegionalRebate] = useNumberField("regionalRebate", 0);
 
   const result = useMemo(
     () => computeWealthTax({ totalWealth, primaryResidenceValue, exemptMinimum, regionalRebate }),

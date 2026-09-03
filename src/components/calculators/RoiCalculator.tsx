@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeRoi } from "@/core/calculators/roi";
 import { useFormat } from "@/lib/format";
@@ -8,16 +8,17 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function RoiCalculator() {
   const t = useTranslations("calc.roi");
   const { formatEUR, formatPercent } = useFormat();
-  const [initial, setInitial] = useState(1000);
-  const [final, setFinal] = useState(1500);
-  const [years, setYears] = useState(5);
-  const [costs, setCosts] = useState(20);
-  const [income, setIncome] = useState(50);
-  const [taxRate, setTaxRate] = useState(19);
+  const [initial, setInitial] = useNumberField("initial", 1000);
+  const [final, setFinal] = useNumberField("final", 1500);
+  const [years, setYears] = useNumberField("years", 5);
+  const [costs, setCosts] = useNumberField("costs", 20);
+  const [income, setIncome] = useNumberField("income", 50);
+  const [taxRate, setTaxRate] = useNumberField("taxRate", 19);
 
   const result = useMemo(
     () => computeRoi({ initial, final, years: years > 0 ? years : undefined, costs, income, taxRate }),

@@ -1,11 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
-import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
-import { toSupportedRegion, type RegionSelection } from "@/core/fiscal/regions";
+import {
+  CONTRACT_TYPES,
+  DISABILITY_GRADES,
+  JOINT_RETURN_OPTIONS,
+  PAYMENT_COUNTS,
+  type ContractType,
+  type DisabilityGrade,
+  type JointReturnOption,
+  type PaymentCount,
+} from "@/core/fiscal/irpf";
+import {
+  SELECTABLE_REGIONS,
+  toSupportedRegion,
+  type RegionSelection,
+} from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
@@ -13,23 +26,36 @@ import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function PayrollWithholdingCalculator() {
   const t = useTranslations("calc.irpf-nomina");
   const { formatEUR, formatEURCents, formatPercent } = useFormat();
   // Datos de la nómina
-  const [grossAnnual, setGrossAnnual] = useState(30000);
-  const [payments, setPayments] = useState("14");
-  const [contractType, setContractType] = useState<ContractType>("indefinido");
-  const [region, setRegion] = useState<RegionSelection>("");
-  const [pensionContribution, setPensionContribution] = useState(0);
+  const [grossAnnual, setGrossAnnual] = useNumberField("grossAnnual", 30000);
+  const [payments, setPayments] = useOptionField<PaymentCount>("payments", "14", PAYMENT_COUNTS);
+  const [contractType, setContractType] = useOptionField<ContractType>(
+    "contractType",
+    "indefinido",
+    CONTRACT_TYPES,
+  );
+  const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
+  const [pensionContribution, setPensionContribution] = useNumberField("pensionContribution", 0);
   // Situación personal y familiar
-  const [age, setAge] = useState(30);
-  const [jointReturn, setJointReturn] = useState("no");
-  const [children, setChildren] = useState(0);
-  const [childrenUnder3, setChildrenUnder3] = useState(0);
-  const [ascendants, setAscendants] = useState(0);
-  const [disability, setDisability] = useState<DisabilityGrade>("none");
+  const [age, setAge] = useNumberField("age", 30);
+  const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>(
+    "jointReturn",
+    "no",
+    JOINT_RETURN_OPTIONS,
+  );
+  const [children, setChildren] = useNumberField("children", 0);
+  const [childrenUnder3, setChildrenUnder3] = useNumberField("childrenUnder3", 0);
+  const [ascendants, setAscendants] = useNumberField("ascendants", 0);
+  const [disability, setDisability] = useOptionField<DisabilityGrade>(
+    "disability",
+    "none",
+    DISABILITY_GRADES,
+  );
 
   const result = useMemo(
     () =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeBuyVsRent } from "@/core/calculators/hipoteca-vs-alquiler";
 import { useFormat } from "@/lib/format";
@@ -8,22 +8,23 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function BuyVsRentCalculator() {
   const t = useTranslations("calc.hipoteca-vs-alquiler");
   const { formatEUR } = useFormat();
-  const [purchasePrice, setPurchasePrice] = useState(250000);
-  const [purchaseCosts, setPurchaseCosts] = useState(25000);
-  const [downPayment, setDownPayment] = useState(50000);
-  const [mortgageRate, setMortgageRate] = useState(3);
-  const [mortgageTerm, setMortgageTerm] = useState(30);
-  const [annualCostRate, setAnnualCostRate] = useState(1);
-  const [appreciationRate, setAppreciationRate] = useState(2);
-  const [monthlyRent, setMonthlyRent] = useState(1000);
-  const [rentGrowthRate, setRentGrowthRate] = useState(2);
-  const [investmentReturn, setInvestmentReturn] = useState(5);
-  const [horizonYears, setHorizonYears] = useState(10);
-  const [sellingCostsRate, setSellingCostsRate] = useState(5);
+  const [purchasePrice, setPurchasePrice] = useNumberField("purchasePrice", 250000);
+  const [purchaseCosts, setPurchaseCosts] = useNumberField("purchaseCosts", 25000);
+  const [downPayment, setDownPayment] = useNumberField("downPayment", 50000);
+  const [mortgageRate, setMortgageRate] = useNumberField("mortgageRate", 3);
+  const [mortgageTerm, setMortgageTerm] = useNumberField("mortgageTerm", 30);
+  const [annualCostRate, setAnnualCostRate] = useNumberField("annualCostRate", 1);
+  const [appreciationRate, setAppreciationRate] = useNumberField("appreciationRate", 2);
+  const [monthlyRent, setMonthlyRent] = useNumberField("monthlyRent", 1000);
+  const [rentGrowthRate, setRentGrowthRate] = useNumberField("rentGrowthRate", 2);
+  const [investmentReturn, setInvestmentReturn] = useNumberField("investmentReturn", 5);
+  const [horizonYears, setHorizonYears] = useNumberField("horizonYears", 10);
+  const [sellingCostsRate, setSellingCostsRate] = useNumberField("sellingCostsRate", 5);
 
   const result = useMemo(
     () =>

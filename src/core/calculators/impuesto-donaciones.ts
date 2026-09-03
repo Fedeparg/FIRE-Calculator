@@ -7,7 +7,9 @@
 
 import { ISD_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets";
 
-export type KinshipGroup = "grupoI_II" | "grupoIII" | "grupoIV";
+/** Grupos de parentesco del ISD, en el orden en que se ofrecen en el desplegable. */
+export const KINSHIP_GROUPS = ["grupoI_II", "grupoIII", "grupoIV"] as const;
+export type KinshipGroup = (typeof KINSHIP_GROUPS)[number];
 
 /**
  * Umbrales de patrimonio preexistente (€) que delimitan los cuatro tramos de la

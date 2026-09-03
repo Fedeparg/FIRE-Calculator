@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeStaking } from "@/core/calculators/staking";
 import { useFormat } from "@/lib/format";
@@ -10,16 +10,17 @@ import Notice from "../ui/Notice";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function StakingCalculator() {
   const t = useTranslations("calc.staking");
   const { formatEUR } = useFormat();
   const tc = useTranslations("chart");
 
-  const [principal, setPrincipal] = useState(5000);
-  const [apy, setApy] = useState(8);
-  const [years, setYears] = useState(5);
-  const [withholdingRate, setWithholdingRate] = useState(19);
+  const [principal, setPrincipal] = useNumberField("principal", 5000);
+  const [apy, setApy] = useNumberField("apy", 8);
+  const [years, setYears] = useNumberField("years", 5);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
 
   const result = useMemo(
     () => computeStaking({ principal, apy, years, withholdingRate }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeFire } from "@/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@/core/projection";
@@ -11,6 +11,7 @@ import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function FireCalculator() {
   const t = useTranslations("calc.independencia-financiera");
@@ -18,13 +19,13 @@ export default function FireCalculator() {
   const tf = useTranslations("frequency");
   const tc = useTranslations("chart");
 
-  const [annualExpenses, setAnnualExpenses] = useState(24000);
-  const [currentSavings, setCurrentSavings] = useState(20000);
-  const [savings, setSavings] = useState(800);
-  const [frequency, setFrequency] = useState<Frequency>("monthly");
-  const [annualReturn, setAnnualReturn] = useState(5);
-  const [withdrawalRate, setWithdrawalRate] = useState(4);
-  const [savingsGrowth, setSavingsGrowth] = useState(0);
+  const [annualExpenses, setAnnualExpenses] = useNumberField("annualExpenses", 24000);
+  const [currentSavings, setCurrentSavings] = useNumberField("currentSavings", 20000);
+  const [savings, setSavings] = useNumberField("savings", 800);
+  const [frequency, setFrequency] = useOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
+  const [annualReturn, setAnnualReturn] = useNumberField("annualReturn", 5);
+  const [withdrawalRate, setWithdrawalRate] = useNumberField("withdrawalRate", 4);
+  const [savingsGrowth, setSavingsGrowth] = useNumberField("savingsGrowth", 0);
 
   const result = useMemo(
     () =>

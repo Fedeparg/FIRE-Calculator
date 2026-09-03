@@ -7,7 +7,9 @@
 //    típico de las tarjetas revolving: al bajar el saldo baja la cuota, por lo
 //    que la deuda dura años. El suelo garantiza que la deuda termina por saldarse.
 
-export type PaymentMode = "fixed" | "percent";
+/** Formas de pago mensual de la tarjeta: cuota fija o porcentaje del saldo. */
+export const PAYMENT_MODES = ["fixed", "percent"] as const;
+export type PaymentMode = (typeof PAYMENT_MODES)[number];
 
 export interface CreditCardInput {
   /** Saldo pendiente (deuda). */

@@ -1,24 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
-import { toSupportedRegion, type RegionSelection } from "@/core/fiscal/regions";
+import {
+  SELECTABLE_REGIONS,
+  toSupportedRegion,
+  type RegionSelection,
+} from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function PensionReliefCalculator() {
   const t = useTranslations("calc.desgravacion-plan-pensiones");
   const { formatEUR, formatPercent } = useFormat();
-  const [grossAnnual, setGrossAnnual] = useState(40000);
-  const [contribution, setContribution] = useState(1500);
-  const [employerContribution, setEmployerContribution] = useState(0);
-  const [region, setRegion] = useState<RegionSelection>("");
+  const [grossAnnual, setGrossAnnual] = useNumberField("grossAnnual", 40000);
+  const [contribution, setContribution] = useNumberField("contribution", 1500);
+  const [employerContribution, setEmployerContribution] = useNumberField("employerContribution", 0);
+  const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
 
   const result = useMemo(
     () =>

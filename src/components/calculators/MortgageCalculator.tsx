@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
   Bar,
@@ -21,17 +21,18 @@ import ChartDataTable, { type ChartTableColumn } from "../charts/ChartDataTable"
 import ChartTooltip from "../charts/ChartTooltip";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function MortgageCalculator() {
   const t = useTranslations("calc.hipoteca-fija");
   const { formatCompactEUR, formatEUR, formatEURCents, formatNumber, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
-  const [principal, setPrincipal] = useState(180000);
-  const [annualRate, setAnnualRate] = useState(3);
-  const [years, setYears] = useState(30);
-  const [openingFeeRate, setOpeningFeeRate] = useState(0.5);
-  const [annualInsurance, setAnnualInsurance] = useState(300);
+  const [principal, setPrincipal] = useNumberField("principal", 180000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
+  const [years, setYears] = useNumberField("years", 30);
+  const [openingFeeRate, setOpeningFeeRate] = useNumberField("openingFeeRate", 0.5);
+  const [annualInsurance, setAnnualInsurance] = useNumberField("annualInsurance", 300);
 
   const result = useMemo(
     () => computeMortgage({ principal, annualRate, years, openingFeeRate, annualInsurance }),

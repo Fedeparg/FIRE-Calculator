@@ -1,24 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeRentalYield } from "@/core/calculators/rentabilidad-alquiler";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function RentalYieldCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler");
   const { formatEUR, formatPercent } = useFormat();
-  const [purchasePrice, setPurchasePrice] = useState(200000);
-  const [purchaseCosts, setPurchaseCosts] = useState(20000);
-  const [monthlyRent, setMonthlyRent] = useState(1000);
-  const [vacancyRate, setVacancyRate] = useState(5);
-  const [ibiAnnual, setIbiAnnual] = useState(400);
-  const [communityMonthly, setCommunityMonthly] = useState(50);
-  const [insuranceAnnual, setInsuranceAnnual] = useState(200);
-  const [maintenanceAnnual, setMaintenanceAnnual] = useState(500);
+  const [purchasePrice, setPurchasePrice] = useNumberField("purchasePrice", 200000);
+  const [purchaseCosts, setPurchaseCosts] = useNumberField("purchaseCosts", 20000);
+  const [monthlyRent, setMonthlyRent] = useNumberField("monthlyRent", 1000);
+  const [vacancyRate, setVacancyRate] = useNumberField("vacancyRate", 5);
+  const [ibiAnnual, setIbiAnnual] = useNumberField("ibiAnnual", 400);
+  const [communityMonthly, setCommunityMonthly] = useNumberField("communityMonthly", 50);
+  const [insuranceAnnual, setInsuranceAnnual] = useNumberField("insuranceAnnual", 200);
+  const [maintenanceAnnual, setMaintenanceAnnual] = useNumberField("maintenanceAnnual", 500);
 
   const result = useMemo(
     () =>

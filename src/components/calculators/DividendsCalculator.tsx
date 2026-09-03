@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeDividends } from "@/core/calculators/dividendos";
 import { useFormat } from "@/lib/format";
@@ -9,18 +9,19 @@ import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function DividendsCalculator() {
   const t = useTranslations("calc.dividendos");
   const { formatEUR, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
-  const [shares, setShares] = useState(100);
-  const [dividendPerShare, setDividendPerShare] = useState(1.5);
-  const [sharePrice, setSharePrice] = useState(50);
-  const [withholdingRate, setWithholdingRate] = useState(19);
-  const [annualGrowth, setAnnualGrowth] = useState(5);
-  const [years, setYears] = useState(10);
+  const [shares, setShares] = useNumberField("shares", 100);
+  const [dividendPerShare, setDividendPerShare] = useNumberField("dividendPerShare", 1.5);
+  const [sharePrice, setSharePrice] = useNumberField("sharePrice", 50);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const [annualGrowth, setAnnualGrowth] = useNumberField("annualGrowth", 5);
+  const [years, setYears] = useNumberField("years", 10);
 
   const result = useMemo(
     () =>

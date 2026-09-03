@@ -947,6 +947,44 @@
       }
     }
   },
+  "calculator": {
+    "share": {
+      "title": "Comparte o guarda este cálculo",
+      "copyLink": "Copiar enlace",
+      "copied": "Enlace copiado",
+      "copyError": "No se pudo copiar el enlace. Cópialo de la barra de direcciones.",
+      "hint": "El enlace incluye los valores que has introducido: quien lo abra verá este mismo cálculo."
+    },
+    "scenarios": {
+      "title": "Escenarios guardados",
+      "signedOut": "Entra en tu cuenta para guardar este cálculo y recuperarlo cuando quieras.",
+      "signedOutLink": "Entrar",
+      "nameLabel": "Nombre del escenario",
+      "namePlaceholder": "Mi plan a los 45",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "empty": "Todavía no has guardado ningún escenario de esta calculadora.",
+      "load": "Cargar",
+      "loaded": "Escenario «{name}» cargado.",
+      "rename": "Renombrar",
+      "renameSave": "Guardar nombre",
+      "renameLabel": "Nuevo nombre para «{name}»",
+      "cancel": "Cancelar",
+      "delete": "Borrar",
+      "deleteLabel": "Borrar el escenario «{name}»",
+      "confirmDelete": "Confirmar",
+      "deleting": "Borrando…",
+      "quotaReached": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro.",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorSession": "Tu sesión ha caducado.",
+      "errorSessionLink": "Vuelve a iniciar sesión",
+      "errorInvalid": "Revisa el nombre del escenario: no puede estar vacío.",
+      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
+      "errorTooLarge": "Este cálculo ocupa demasiado para guardarlo.",
+      "errorQuota": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro."
+    }
+  },
   "auth": {
     "login": {
       "title": "Entra en Sextante",

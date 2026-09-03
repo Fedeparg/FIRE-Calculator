@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeDeposit } from "@/core/calculators/deposito";
 import { useFormat } from "@/lib/format";
@@ -8,6 +8,7 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 type Props = {
   /** Namespace de i18n ("deposito-plazo-fijo" | "cuenta-remunerada"). */
@@ -34,11 +35,13 @@ export default function DepositLikeCalculator({
 }: Props) {
   const t = useTranslations(`calc.${namespace}`);
   const { formatEUR } = useFormat();
-  const [principal, setPrincipal] = useState(defaultPrincipal);
-  const [apr, setApr] = useState(defaultApr);
-  const [years, setYears] = useState(1);
-  const [withholdingRate, setWithholdingRate] = useState(19);
-  const [inflationRate, setInflationRate] = useState(2.5);
+  // La clave de la URL es la del campo ("principal" o "balance"), no un nombre fijo: el
+  // enlace compartido describe así lo que de verdad es cada calculadora.
+  const [principal, setPrincipal] = useNumberField(principalKey, defaultPrincipal);
+  const [apr, setApr] = useNumberField("apr", defaultApr);
+  const [years, setYears] = useNumberField("years", 1);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const [inflationRate, setInflationRate] = useNumberField("inflationRate", 2.5);
 
   const result = useMemo(
     () => computeDeposit({ principal, apr, years, withholdingRate, inflationRate }),

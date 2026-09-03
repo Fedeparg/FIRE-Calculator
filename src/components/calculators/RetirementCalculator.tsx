@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeRetirement } from "@/core/calculators/ahorro-jubilacion";
 import { useFormat } from "@/lib/format";
@@ -10,20 +10,21 @@ import Notice from "../ui/Notice";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function RetirementCalculator() {
   const t = useTranslations("calc.ahorro-jubilacion");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const tc = useTranslations("chart");
 
-  const [currentAge, setCurrentAge] = useState(30);
-  const [retirementAge, setRetirementAge] = useState(67);
-  const [currentSavings, setCurrentSavings] = useState(15000);
-  const [monthlySavings, setMonthlySavings] = useState(300);
-  const [annualReturn, setAnnualReturn] = useState(6);
-  const [inflationRate, setInflationRate] = useState(2.5);
-  const [annualFee, setAnnualFee] = useState(0.3);
-  const [contributionGrowth, setContributionGrowth] = useState(0);
+  const [currentAge, setCurrentAge] = useNumberField("currentAge", 30);
+  const [retirementAge, setRetirementAge] = useNumberField("retirementAge", 67);
+  const [currentSavings, setCurrentSavings] = useNumberField("currentSavings", 15000);
+  const [monthlySavings, setMonthlySavings] = useNumberField("monthlySavings", 300);
+  const [annualReturn, setAnnualReturn] = useNumberField("annualReturn", 6);
+  const [inflationRate, setInflationRate] = useNumberField("inflationRate", 2.5);
+  const [annualFee, setAnnualFee] = useNumberField("annualFee", 0.3);
+  const [contributionGrowth, setContributionGrowth] = useNumberField("contributionGrowth", 0);
 
   const result = useMemo(
     () =>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeBudget } from "@/core/calculators/presupuesto";
 import { useFormat } from "@/lib/format";
@@ -8,13 +8,14 @@ import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField } from "./CalculatorState";
 
 export default function BudgetCalculator() {
   const t = useTranslations("calc.presupuesto-mensual");
   const { formatEUR, formatPercent } = useFormat();
-  const [income, setIncome] = useState(2000);
-  const [needs, setNeeds] = useState(1000);
-  const [wants, setWants] = useState(600);
+  const [income, setIncome] = useNumberField("income", 2000);
+  const [needs, setNeeds] = useNumberField("needs", 1000);
+  const [wants, setWants] = useNumberField("wants", 600);
 
   const result = useMemo(
     () => computeBudget({ income, needs, wants }),

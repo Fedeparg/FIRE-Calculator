@@ -44,9 +44,24 @@ import {
   type RegionCode,
 } from "./regions";
 
-export type ContractType = "indefinido" | "temporal";
+/** Tipos de contrato, en el orden en que se ofrecen en el desplegable. */
+export const CONTRACT_TYPES = ["indefinido", "temporal"] as const;
+export type ContractType = (typeof CONTRACT_TYPES)[number];
 /** Grado de discapacidad del contribuyente. */
-export type DisabilityGrade = "none" | "g33" | "g65";
+/**
+ * Número de pagas al año que ofrecen las calculadoras de nómina. Es TEXTO porque es el
+ * valor de un desplegable; el cálculo lo convierte a número.
+ */
+export const PAYMENT_COUNTS = ["14", "12"] as const;
+export type PaymentCount = (typeof PAYMENT_COUNTS)[number];
+
+/** Respuesta a "declaración conjunta" (desplegable sí/no). */
+export const JOINT_RETURN_OPTIONS = ["no", "yes"] as const;
+export type JointReturnOption = (typeof JOINT_RETURN_OPTIONS)[number];
+
+/** Grados de discapacidad reconocidos, de menor a mayor. */
+export const DISABILITY_GRADES = ["none", "g33", "g65"] as const;
+export type DisabilityGrade = (typeof DISABILITY_GRADES)[number];
 
 /** Circunstancias personales y familiares que afectan al mínimo y a la cuota. */
 export interface PersonalCircumstances {

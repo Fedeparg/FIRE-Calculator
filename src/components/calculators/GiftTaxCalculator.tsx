@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeGiftTax, type KinshipGroup } from "@/core/calculators/impuesto-donaciones";
+import {
+  KINSHIP_GROUPS,
+  computeGiftTax,
+  type KinshipGroup,
+} from "@/core/calculators/impuesto-donaciones";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -10,15 +14,16 @@ import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
 import Notice from "../ui/Notice";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function GiftTaxCalculator() {
   const t = useTranslations("calc.impuesto-donaciones");
   const { formatEUR, formatMultiplier, formatPercent } = useFormat();
-  const [amount, setAmount] = useState(100000);
-  const [reduction, setReduction] = useState(0);
-  const [kinship, setKinship] = useState<KinshipGroup>("grupoI_II");
-  const [preexistingWealth, setPreexistingWealth] = useState(0);
-  const [regionalRebate, setRegionalRebate] = useState(0);
+  const [amount, setAmount] = useNumberField("amount", 100000);
+  const [reduction, setReduction] = useNumberField("reduction", 0);
+  const [kinship, setKinship] = useOptionField<KinshipGroup>("kinship", "grupoI_II", KINSHIP_GROUPS);
+  const [preexistingWealth, setPreexistingWealth] = useNumberField("preexistingWealth", 0);
+  const [regionalRebate, setRegionalRebate] = useNumberField("regionalRebate", 0);
 
   const result = useMemo(
     () => computeGiftTax({ amount, reduction, kinship, preexistingWealth, regionalRebate }),

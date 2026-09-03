@@ -1,26 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeCreditCard, type PaymentMode } from "@/core/calculators/tarjeta-credito";
+import {
+  PAYMENT_MODES,
+  computeCreditCard,
+  type PaymentMode,
+} from "@/core/calculators/tarjeta-credito";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function CreditCardCalculator() {
   const t = useTranslations("calc.intereses-tarjeta-credito");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const tc = useTranslations("chart");
 
-  const [balance, setBalance] = useState(2000);
-  const [annualRate, setAnnualRate] = useState(22);
-  const [paymentMode, setPaymentMode] = useState<PaymentMode>("fixed");
-  const [monthlyPayment, setMonthlyPayment] = useState(100);
-  const [minPercent, setMinPercent] = useState(3);
-  const [minFloor, setMinFloor] = useState(25);
+  const [balance, setBalance] = useNumberField("balance", 2000);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 22);
+  const [paymentMode, setPaymentMode] = useOptionField<PaymentMode>("paymentMode", "fixed", PAYMENT_MODES);
+  const [monthlyPayment, setMonthlyPayment] = useNumberField("monthlyPayment", 100);
+  const [minPercent, setMinPercent] = useNumberField("minPercent", 3);
+  const [minFloor, setMinFloor] = useNumberField("minFloor", 25);
 
   const result = useMemo(
     () => computeCreditCard({ balance, annualRate, paymentMode, monthlyPayment, minPercent, minFloor }),

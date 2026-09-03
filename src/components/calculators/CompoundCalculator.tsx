@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeCompound } from "@/core/calculators/interes-compuesto";
 import { FREQUENCIES, type Frequency } from "@/core/projection";
@@ -11,6 +11,7 @@ import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
+import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function CompoundCalculator() {
   const t = useTranslations("calc.interes-compuesto");
@@ -18,15 +19,15 @@ export default function CompoundCalculator() {
   const tf = useTranslations("frequency");
   const tc = useTranslations("chart");
 
-  const [initial, setInitial] = useState(5000);
-  const [contribution, setContribution] = useState(300);
-  const [frequency, setFrequency] = useState<Frequency>("monthly");
-  const [annualRate, setAnnualRate] = useState(7);
-  const [years, setYears] = useState(25);
+  const [initial, setInitial] = useNumberField("initial", 5000);
+  const [contribution, setContribution] = useNumberField("contribution", 300);
+  const [frequency, setFrequency] = useOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
+  const [annualRate, setAnnualRate] = useNumberField("annualRate", 7);
+  const [years, setYears] = useNumberField("years", 25);
   // Extras (desactivados por defecto)
-  const [annualFee, setAnnualFee] = useState(0);
-  const [contributionGrowth, setContributionGrowth] = useState(0);
-  const [inflationRate, setInflationRate] = useState(0);
+  const [annualFee, setAnnualFee] = useNumberField("annualFee", 0);
+  const [contributionGrowth, setContributionGrowth] = useNumberField("contributionGrowth", 0);
+  const [inflationRate, setInflationRate] = useNumberField("inflationRate", 0);
 
   const result = useMemo(
     () =>
