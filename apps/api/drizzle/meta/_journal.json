@@ -71,6 +71,13 @@
       "when": 1782826241727,
       "tag": "0009_normal_prowler",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788437640812,
+      "tag": "0010_romantic_jackpot",
+      "breakpoints": true
     }
   ]
 }

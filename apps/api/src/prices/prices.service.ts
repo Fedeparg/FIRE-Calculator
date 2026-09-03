@@ -78,10 +78,18 @@ export class PricesService {
     await this.upsertQuotes(quotes);
 
     const missing = symbols.filter((s) => !quotes.has(s));
-    this.logger.log(
-      `Refresco de precios (${this.provider.name}): ${quotes.size}/${symbols.length} símbolos` +
-        (missing.length ? ` — sin datos: ${missing.join(', ')}` : ''),
-    );
+    const detail =
+      `(${this.provider.name}): ${quotes.size}/${symbols.length} símbolos` +
+      (missing.length ? ` — sin datos: ${missing.join(', ')}` : '');
+
+    if (quotes.size === 0) {
+      // Cero de cero cuando SÍ había símbolos que pedir: no es un símbolo malo, es la fuente
+      // caída, un bloqueo por rate-limit o un corte de red. Antes se registraba como un log
+      // normal y pasaba desapercibido, dejando la cartera con precios rancios en silencio.
+      this.logger.error(`Refresco de precios SIN NINGÚN dato ${detail}`);
+    } else {
+      this.logger.log(`Refresco de precios ${detail}`);
+    }
     return { symbols: symbols.length, fetched: quotes.size, missing };
   }
 

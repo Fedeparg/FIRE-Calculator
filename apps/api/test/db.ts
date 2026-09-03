@@ -20,14 +20,24 @@ export function createTestDb(): { db: Database; close: () => Promise<void> } {
  * Vacía todas las tablas con datos de dominio entre tests para aislarlos. `CASCADE`
  * resuelve las claves foráneas (p. ej. positions → users) y `RESTART IDENTITY` deja
  * la BD como recién migrada.
+ *
+ * Están TODAS las tablas a propósito, no solo las que cuelgan de `users`: los ficheros de
+ * test comparten una única BD (`fileParallelism: false`), así que una tabla sin FK a `users`
+ * —`oauth_clients`, `instruments`, `instrument_prices`— sobreviviría al `CASCADE` y filtraría
+ * estado al siguiente fichero. `mcp_audit_log` sí caería por cascada, pero se lista explícito:
+ * la lista es la documentación de qué se limpia.
  */
 export async function resetDb(db: Database): Promise<void> {
   await db.execute(sql`
     TRUNCATE TABLE
       positions,
+      instrument_prices,
+      instruments,
+      mcp_audit_log,
       oauth_tokens,
       oauth_auth_codes,
       oauth_grants,
+      oauth_clients,
       login_tokens,
       users
     RESTART IDENTITY CASCADE

@@ -66,9 +66,21 @@ services:
       APP_URL: ${APP_URL:?define APP_URL (https://sextante.fpardo.net)}
       EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-resend}
       RESEND_API_KEY: ${RESEND_API_KEY:?define RESEND_API_KEY en el .env}
-      EMAIL_FROM: ${EMAIL_FROM:-Sextante <no-reply@send.fpardo.net>}
+      # Sin remitente por defecto: el dominio de envío es propio de cada despliegue,
+      # así que se exige explícitamente en vez de heredar el del proyecto original.
+      EMAIL_FROM: ${EMAIL_FROM:?define EMAIL_FROM (remitente verificado en Resend)}
       OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
       PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
+      # Saltos de proxy de confianza para obtener la IP real (rate limiting). Ver
+      # apps/api/.env.example: por defecto 1; súbelo si hay más de un proxy delante
+      # y el rate limit agrupa a todos los usuarios en el mismo cubo.
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-}
+      # Poda periódica: códigos y tokens OAuth caducados, tokens de login gastados,
+      # auditoría de MCP y clientes DCR abandonados.
+      OAUTH_REAPER_CRON: ${OAUTH_REAPER_CRON:-}
+      LOGIN_TOKEN_RETENTION_DAYS: ${LOGIN_TOKEN_RETENTION_DAYS:-}
+      MCP_AUDIT_RETENTION_DAYS: ${MCP_AUDIT_RETENTION_DAYS:-}
+      OAUTH_CLIENT_RETENTION_DAYS: ${OAUTH_CLIENT_RETENTION_DAYS:-}
       # Clave SECRETA de Stripe (donaciones). Vacía → donaciones desactivadas.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     depends_on:

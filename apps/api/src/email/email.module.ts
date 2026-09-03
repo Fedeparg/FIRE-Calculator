@@ -7,7 +7,7 @@ import { ResendEmailService } from './resend-email.service';
 
 /**
  * Selecciona el transporte de email según EMAIL_TRANSPORT:
- *   - 'resend' -> ResendEmailService (producción; requiere RESEND_API_KEY, EMAIL_FROM opcional)
+ *   - 'resend' -> ResendEmailService (producción; requiere RESEND_API_KEY, EMAIL_FROM y APP_URL)
  *   - cualquier otro (por defecto 'dev') -> DevEmailService (log)
  *
  * Se construye SOLO el transporte elegido, así en dev no se instancia Resend (cuyo

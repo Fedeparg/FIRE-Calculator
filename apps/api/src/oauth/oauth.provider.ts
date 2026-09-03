@@ -185,6 +185,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
 
     const tokens = await this.issueTokens(code.userId, code.clientId, code.scopes, audience);
     await this.grants.touch(code.userId, code.clientId);
+    this.touchClient(code.clientId);
     return tokens;
   }
 
@@ -242,6 +243,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     }
 
     const audience = this.validateResource(resource);
+    this.touchClient(row.clientId);
     return this.issueTokens(row.userId, row.clientId, nextScopes, audience, refreshHash);
   }
 
@@ -293,6 +295,18 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /* --------------------------------- helpers -------------------------------- */
+
+  /**
+   * Marca el cliente como usado (columna `lastUsedAt`, que el reaper usa para no purgar
+   * clientes vivos). Deliberadamente SIN `await`: es telemetría, no parte del contrato del
+   * canje, así que no debe sumar latencia a `/token` ni hacer fallar la emisión si el UPDATE
+   * falla. Un error solo se registra.
+   */
+  private touchClient(clientId: string): void {
+    void this.clients.touch(clientId).catch((error: unknown) => {
+      this.logger.warn(`No se pudo marcar el uso del cliente ${clientId}: ${String(error)}`);
+    });
+  }
 
   /** Emite (y persiste hasheados) un access token + refresh token encadenados. */
   private async issueTokens(

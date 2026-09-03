@@ -65,8 +65,11 @@ RESEND_API_KEY=re_...                            # Resend -> Settings -> API Key
 EMAIL_FROM=Sextante <no-reply@send.tu-dominio>   # remitente verificado en Resend
 ```
 
-Si `EMAIL_TRANSPORT=resend` y falta `RESEND_API_KEY`, **la API falla al arrancar**
-con un error claro (preferimos un fallo ruidoso a enviar a un agujero negro).
+`EMAIL_FROM` es **obligatorio** y no tiene valor por defecto: el remitente depende del
+dominio verificado en tu cuenta de Resend, así que no hay ninguno razonable de fábrica.
+
+Si `EMAIL_TRANSPORT=resend` y falta `RESEND_API_KEY` o `EMAIL_FROM`, **la API falla al
+arrancar** con un error claro (preferimos un fallo ruidoso a enviar a un agujero negro).
 
 ### Verificar el dominio de envío (DNS)
 

@@ -7,6 +7,22 @@ import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { mountMcp } from './mcp/mount-mcp';
 
+/**
+ * Saltos de proxy de confianza por defecto. Se mantiene en 1 (el valor histórico) para no
+ * cambiar el comportamiento de un despliegue existente sin que su dueño lo decida.
+ */
+const DEFAULT_TRUST_PROXY_HOPS = 1;
+
+/**
+ * Lee `TRUST_PROXY_HOPS` como entero ≥ 0. Cualquier valor ausente o inválido cae al defecto:
+ * un typo en el entorno no debe convertir la API en un proxy "de confianza total" (lo que
+ * permitiría a cualquiera falsificar su IP con un `X-Forwarded-For`).
+ */
+function readTrustProxyHops(raw: string | undefined): number {
+  const parsed = Number.parseInt(raw?.trim() ?? '', 10);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : DEFAULT_TRUST_PROXY_HOPS;
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: false,
@@ -15,9 +31,16 @@ async function bootstrap(): Promise<void> {
   // Cierre limpio: ejecuta los hooks OnModuleDestroy (cierra el pool de Postgres).
   app.enableShutdownHooks();
 
-  // Detrás de un proxy (Next rewrites / Cloudflare / reverse proxy): confiar en él
-  // para obtener la IP real (rate limiting) y las cookies Secure.
-  app.set('trust proxy', 1);
+  const config = app.get(ConfigService);
+
+  // Detrás de un proxy: confiar en él para obtener la IP real (rate limiting) y las cookies
+  // Secure. El número dice CUÁNTOS saltos de confianza hay por delante; Express toma la
+  // IP-ésima empezando por la derecha de `X-Forwarded-For`. En producción puede haber dos
+  // (reverse proxy TLS → BFF de Next → API) y, si el de en medio reescribe la cabecera en
+  // vez de añadir a ella, con `1` todos los usuarios acabarían compartiendo cubo de rate
+  // limit. No lo adivinamos: se ajusta con `TRUST_PROXY_HOPS` usando la evidencia del log de
+  // diagnóstico de `POST /api/auth/request` (imprime `req.ip` y el `X-Forwarded-For` real).
+  app.set('trust proxy', readTrustProxyHops(config.get<string>('TRUST_PROXY_HOPS')));
 
   // Lee cookies (cookie de sesión JWT).
   app.use(cookieParser());
@@ -30,8 +53,6 @@ async function bootstrap(): Promise<void> {
   // Todas las rutas cuelgan de /api para encajar con la topología same-origin
   // (Caddy en prod / rewrites de Next en dev enrutan /api -> esta API).
   app.setGlobalPrefix('api');
-
-  const config = app.get(ConfigService);
 
   // Seguridad: en producción, negarse a arrancar con un JWT_SECRET ausente o igual
   // al valor de desarrollo (un secreto público permitiría falsificar sesiones).

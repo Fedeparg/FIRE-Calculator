@@ -309,7 +309,14 @@ export const mcpAuditLog = pgTable(
     outcome: varchar('outcome', { length: 16 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('mcp_audit_log_user_id_idx').on(table.userId)],
+  (table) => [
+    index('mcp_audit_log_user_id_idx').on(table.userId),
+    // Índice por fecha: la tabla crece sin límite (una fila por invocación de tool) y el
+    // reaper de retención la poda con `DELETE ... WHERE created_at < corte`. Sin este
+    // índice esa purga —y cualquier consulta por rango de fechas— haría seq scan sobre
+    // toda la tabla. Descendente porque las consultas interesantes son "lo más reciente".
+    index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
+  ],
 );
 
 export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;

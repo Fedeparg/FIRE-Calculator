@@ -11,6 +11,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SCOPES_SUPPORTED } from '../oauth/oauth.constants';
 import { OAuthUrls } from '../oauth/oauth-urls';
 import { SextanteOAuthProvider } from '../oauth/oauth.provider';
+import { createMcpRateLimiter, MCP_RATE_LIMIT_MAX } from './mcp-rate-limit';
 import { McpService } from './mcp.service';
 
 /**
@@ -72,6 +73,12 @@ export function mountMcp(app: NestExpressApplication): void {
     next();
   });
 
+  // Rate limit del endpoint MCP. Va DESPUÉS del CORS (para que el 429 lleve sus cabeceras y
+  // un cliente de navegador pueda leerlo) y ANTES de los handlers, incluidos el bearer y los
+  // 405: el orden de registro es el orden de ejecución en Express, así que montarlo al final
+  // dejaría rutas sin limitar. Ver `mcp-rate-limit.ts` para la elección de clave.
+  server_.use('/api/mcp', createMcpRateLimiter());
+
   // Servidor sin estado: no hay stream SSE servidor→cliente ni sesión que cerrar. Tras el
   // initialize, los clientes abren un GET para el stream; respondemos 405 (NO 404) para que
   // sepan que el endpoint existe y sigan en modo solo-POST en vez de creer que no hay MCP.
@@ -117,5 +124,7 @@ export function mountMcp(app: NestExpressApplication): void {
     }
   });
 
-  logger.log(`Servidor MCP montado en ${urls.resource.href}`);
+  logger.log(
+    `Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_RATE_LIMIT_MAX} req/min por token)`,
+  );
 }
