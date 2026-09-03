@@ -391,7 +391,10 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
             aria-label={t("progressAria")}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuenow={Math.round(goal.progress)}
+            // Sin redondear a entero: un 4,43 % anunciado como "4" pierde precisión sin
+            // motivo (ARIA admite decimales). Se acota a dos para no arrastrar el ruido
+            // de la coma flotante.
+            aria-valuenow={Math.round(goal.progress * 100) / 100}
             aria-valuetext={t("progressValue", { percent: formatPercent(goal.progress) })}
             className="h-3 w-full overflow-hidden rounded-full bg-surface-2"
           >

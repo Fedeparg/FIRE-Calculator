@@ -66,6 +66,24 @@ describe("formatPercent", () => {
     expect(es.formatPercent(3.25)).toMatch(/^3,25\s?%$/u);
     expect(en.formatPercent(3.25)).toMatch(/^3\.25%$/u);
   });
+
+  // Regresión: en la columna de rentabilidad de la cartera, un 39,40 % se escribía
+  // "39,4 %" entre valores de dos decimales, y se leía como si tuviera menos precisión.
+  it("con minDecimals mantiene los decimales que acaban en cero", () => {
+    expect(es.formatPercent(39.4, { minDecimals: 2 })).toMatch(/^39,40\s?%$/u);
+    expect(es.formatPercent(16, { minDecimals: 2 })).toMatch(/^16,00\s?%$/u);
+    expect(en.formatPercent(39.4, { minDecimals: 2 })).toMatch(/^39\.40%$/u);
+  });
+
+  it("sin minDecimals sigue omitiendo los decimales que no aportan", () => {
+    expect(es.formatPercent(39.4)).toMatch(/^39,4\s?%$/u);
+    expect(es.formatPercent(16)).toMatch(/^16\s?%$/u);
+  });
+
+  it("no rompe con valores no finitos", () => {
+    expect(es.formatPercent(Number.NaN, { minDecimals: 2 })).toBe("—");
+    expect(es.formatPercent(Number.POSITIVE_INFINITY, { minDecimals: 2 })).toBe("—");
+  });
 });
 
 describe("decimalSeparator", () => {

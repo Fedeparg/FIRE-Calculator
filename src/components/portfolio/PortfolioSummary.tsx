@@ -68,7 +68,7 @@ export default function PortfolioSummary({ agg, fxAsOf, display }: Props) {
                 {agg.pnlPct !== null && (
                   <span className="ml-1 text-base font-medium">
                     ({sign}
-                    {formatPercent(agg.pnlPct)})
+                    {formatPercent(agg.pnlPct, { minDecimals: 2 })})
                   </span>
                 )}
               </span>
