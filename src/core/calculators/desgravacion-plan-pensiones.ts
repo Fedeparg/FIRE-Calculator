@@ -10,7 +10,13 @@
 // aportación individual cabe; su ventaja es construir patrimonio con diferimiento.
 
 import { PENSION_EMPLOYER_LIMIT, PENSION_INDIVIDUAL_LIMIT, PENSION_JOINT_LIMIT } from "../fiscal/brackets";
-import { estimateNetSalary, generalIncomeTax } from "../fiscal/irpf";
+import {
+  estimateNetSalary,
+  generalIncomeTax,
+  personalAndFamilyMinimum,
+  regionalPersonalAndFamilyMinimum,
+} from "../fiscal/irpf";
+import type { RegionCode } from "../fiscal/regions";
 
 export interface PensionReliefInput {
   /** Salario bruto anual (para situar el tramo marginal). */
@@ -22,6 +28,11 @@ export interface PensionReliefInput {
    * genera ahorro de IRPF directo; solo eleva el límite conjunto a 10.000 €.
    */
   employerContribution?: number;
+  /**
+   * Comunidad autónoma de residencia. Cambia el ahorro fiscal porque el marginal
+   * autonómico varía mucho entre comunidades. Sin valor: escala supletoria.
+   */
+  region?: RegionCode;
 }
 
 export interface PensionReliefResult {
@@ -46,7 +57,7 @@ export function computePensionRelief(input: PensionReliefInput): PensionReliefRe
   const requested = Math.max(0, input.contribution || 0);
   const employerRequested = Math.max(0, input.employerContribution || 0);
 
-  const base = estimateNetSalary({ grossAnnual });
+  const base = estimateNetSalary({ grossAnnual, region: input.region });
   // El 30 % del rendimiento neto del trabajo limita el conjunto de aportaciones.
   const thirtyPercentCap = base.netWorkIncome * 0.3;
 
@@ -62,8 +73,15 @@ export function computePensionRelief(input: PensionReliefInput): PensionReliefRe
   const employerApplied = Math.min(employerRequested, employerRoom);
 
   // El ahorro de IRPF proviene SOLO de la aportación individual (ver cabecera).
-  const taxBefore = generalIncomeTax(base.netWorkIncome);
-  const taxAfter = generalIncomeTax(base.netWorkIncome - appliedContribution);
+  // Sin circunstancias familiares: se usa el mínimo del contribuyente, estatal y
+  // autonómico, que es lo único que se puede deducir del bruto anual.
+  const taxOptions = {
+    region: input.region,
+    regionalMinimum: regionalPersonalAndFamilyMinimum({ region: input.region }),
+  };
+  const minimum = personalAndFamilyMinimum();
+  const taxBefore = generalIncomeTax(base.netWorkIncome, minimum, taxOptions);
+  const taxAfter = generalIncomeTax(base.netWorkIncome - appliedContribution, minimum, taxOptions);
   const taxSaving = Math.max(0, taxBefore - taxAfter);
 
   return {

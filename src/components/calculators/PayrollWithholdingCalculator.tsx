@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
+import { toSupportedRegion, type RegionSelection } from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
+import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -19,6 +21,7 @@ export default function PayrollWithholdingCalculator() {
   const [grossAnnual, setGrossAnnual] = useState(30000);
   const [payments, setPayments] = useState("14");
   const [contractType, setContractType] = useState<ContractType>("indefinido");
+  const [region, setRegion] = useState<RegionSelection>("");
   const [pensionContribution, setPensionContribution] = useState(0);
   // Situación personal y familiar
   const [age, setAge] = useState(30);
@@ -34,6 +37,7 @@ export default function PayrollWithholdingCalculator() {
         grossAnnual,
         payments: payments === "12" ? 12 : 14,
         contractType,
+        region: toSupportedRegion(region),
         pensionContribution,
         age,
         jointReturn: jointReturn === "yes",
@@ -42,12 +46,12 @@ export default function PayrollWithholdingCalculator() {
         ascendants,
         disability,
       }),
-    [grossAnnual, payments, contractType, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
+    [grossAnnual, payments, contractType, region, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
   );
 
   return (
     <CalculatorLayout
-      inputCount={10}
+      inputCount={11}
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
@@ -73,6 +77,7 @@ export default function PayrollWithholdingCalculator() {
             help={t("help.contractType")}
           />
           <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
+          <RegionSelectField value={region} onChange={setRegion} />
           <NumberField label={t("age")} value={age} onChange={setAge} min={16} max={120} step={1} help={t("help.age")} />
           <SelectField
             label={t("jointReturn")}

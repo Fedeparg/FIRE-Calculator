@@ -111,6 +111,37 @@
     "semiannual": "Semiannual",
     "annual": "Annual"
   },
+  "region": {
+    "label": "Region",
+    "help": "Every common-regime region approves its own regional income-tax scale and may raise the personal and family minimum, so the result changes noticeably depending on where you live. 2025 scales, still in force for 2026. Leave it unset and the supplementary scale of art. 65 LIRPF applies, the same one that governs Ceuta and Melilla. Regional deductions are not included.",
+    "none": "Not specified (supplementary scale)",
+    "name": {
+      "andalucia": "Andalusia",
+      "aragon": "Aragon",
+      "asturias": "Asturias",
+      "baleares": "Balearic Islands",
+      "canarias": "Canary Islands",
+      "cantabria": "Cantabria",
+      "castilla-la-mancha": "Castilla-La Mancha",
+      "castilla-y-leon": "Castile and León",
+      "cataluna": "Catalonia",
+      "extremadura": "Extremadura",
+      "galicia": "Galicia",
+      "madrid": "Madrid",
+      "murcia": "Murcia",
+      "la-rioja": "La Rioja",
+      "valencia": "Valencia",
+      "alava": "Álava",
+      "bizkaia": "Bizkaia",
+      "gipuzkoa": "Gipuzkoa",
+      "navarra": "Navarre",
+      "ceuta-melilla": "Ceuta and Melilla"
+    },
+    "reason": {
+      "foral": "chartered regime, not supported",
+      "ceutaMelilla": "60% deduction not modelled"
+    }
+  },
   "chart": {
     "total": "Total value",
     "selectionTitle": "Range",
@@ -577,7 +608,7 @@
     "salario-bruto-neto": {
       "title": "Gross to net salary calculator",
       "intro": "Estimate your net salary from your annual gross, deducting Social Security and income-tax withholding.",
-      "note": "Indicative estimate using {year} income-tax brackets, the personal and family minimum and Social Security contributions. It applies the state + supplementary regional scale: your region may change the result, as may other circumstances not covered here. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets, the personal and family minimum and Social Security contributions. It adds the state scale and that of the region you pick (with none picked, the supplementary one); it excludes regional deductions and other circumstances not covered here, so your actual figure may differ. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "payments": "Number of payments",
       "payments14": "14 payments",
@@ -623,7 +654,7 @@
     "irpf-nomina": {
       "title": "Payroll income-tax withholding calculator",
       "intro": "Work out the income-tax percentage withheld from your monthly payslip and how much it adds up to per year.",
-      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). It approximates the tax agency's withholding algorithm from your salary, contract type and personal and family situation; your actual withholding may differ. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets: the state scale plus that of the region you pick (with none picked, the supplementary one). It approximates the tax agency's withholding algorithm from your salary, contract type and personal and family situation; your actual withholding may differ and regional deductions are not included. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "payments": "Number of payments",
       "payments14": "14 payments",
@@ -665,7 +696,7 @@
     "irpf-autonomos": {
       "title": "Self-employed income-tax calculator",
       "intro": "Estimate a self-employed person's income tax under direct assessment from income, expenses and Social Security.",
-      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). It applies the personal and family minimum. Under simplified direct assessment it includes the 5% hard-to-justify expenses (max €2,000/year); it excludes instalment payments. The real figure may differ. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets: the state scale plus that of the region you pick (with none picked, the supplementary one). It applies the personal and family minimum. Under simplified direct assessment it includes the 5% hard-to-justify expenses (max €2,000/year); it excludes instalment payments and regional deductions. The real figure may differ. Not tax advice.",
       "income": "Annual income (€)",
       "expenses": "Deductible expenses (€/year)",
       "socialSecurity": "Self-employed contribution (€/year)",
@@ -710,7 +741,7 @@
     "desgravacion-plan-pensiones": {
       "title": "Pension plan tax relief calculator",
       "intro": "Find out how much income tax you save by contributing to a pension plan and the real cost of the contribution.",
-      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). Your individual contribution gets relief up to the lower of €1,500 and 30% of your net earned income. Employer contributions raise the joint limit to €10,000 but give you no direct income-tax saving (they are imputed as pay and deducted at the same time); their benefit is building wealth with tax deferral. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets: the state scale plus that of the region you pick (with none picked, the supplementary one), which changes the saving because the top regional rate varies widely between regions. Your individual contribution gets relief up to the lower of €1,500 and 30% of your net earned income. Employer contributions raise the joint limit to €10,000 but give you no direct income-tax saving (they are imputed as pay and deducted at the same time); their benefit is building wealth with tax deferral. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "contribution": "Plan contribution (€/year)",
       "employerContribution": "Employer contribution (€/year)",
@@ -743,7 +774,7 @@
         "totalWealth": "Value of all your assets and rights minus your debts.",
         "primaryResidenceValue": "Your primary residence is exempt up to €300,000.",
         "exemptMinimum": "Amount that is not taxed. The state figure is €700,000, but it varies by region.",
-        "regionalRebate": "Percentage of the bill your region rebates. Madrid, for instance, is around 100%."
+        "regionalRebate": "Percentage of the bill your region rebates. It is entered by hand on purpose: the real rebate is not always a fixed percentage. In Madrid, Andalusia, Cantabria, La Rioja and Murcia it is variable and depends on the bill of the temporary solidarity tax on large fortunes, a separate state tax that would have to be computed first. Check your region's; Madrid, for instance, is around 100%."
       }
     },
     "impuesto-donaciones": {
@@ -768,7 +799,7 @@
         "reduction": "Reductions your region grants based on kinship. Leave it at 0 if unsure.",
         "kinship": "Sets the multiplier coefficient on the bill. The more distant the kinship, the more you pay.",
         "preexistingWealth": "Wealth the recipient already holds. From €402,678.11 it raises the multiplier coefficient.",
-        "regionalRebate": "Percentage of the bill your region rebates. In some it is around 99%."
+        "regionalRebate": "Percentage of the bill your region rebates. It is entered by hand on purpose: not every region uses a fixed percentage. Catalonia and Galicia apply their own tax rates instead of a rebate, and in Extremadura the rebate drops from 99% to 50% above a €300,000 taxable base. Check your region's; in several it is around 99%."
       }
     },
     "rentabilidad-alquiler-vacacional": {

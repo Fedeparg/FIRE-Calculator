@@ -111,6 +111,37 @@
     "semiannual": "Semestral",
     "annual": "Anual"
   },
+  "region": {
+    "label": "Comunidad autónoma",
+    "help": "Cada comunidad de régimen común aprueba su propia escala autonómica del IRPF y puede subir el mínimo personal y familiar, así que el resultado cambia bastante según dónde residas. Escalas del ejercicio 2025, vigentes también en 2026. Si no indicas comunidad se aplica la escala supletoria del art. 65 LIRPF, la misma que rige en Ceuta y Melilla. No se incluyen las deducciones autonómicas.",
+    "none": "Sin especificar (escala supletoria)",
+    "name": {
+      "andalucia": "Andalucía",
+      "aragon": "Aragón",
+      "asturias": "Principado de Asturias",
+      "baleares": "Illes Balears",
+      "canarias": "Canarias",
+      "cantabria": "Cantabria",
+      "castilla-la-mancha": "Castilla-La Mancha",
+      "castilla-y-leon": "Castilla y León",
+      "cataluna": "Cataluña",
+      "extremadura": "Extremadura",
+      "galicia": "Galicia",
+      "madrid": "Comunidad de Madrid",
+      "murcia": "Región de Murcia",
+      "la-rioja": "La Rioja",
+      "valencia": "Comunitat Valenciana",
+      "alava": "Álava",
+      "bizkaia": "Bizkaia",
+      "gipuzkoa": "Gipuzkoa",
+      "navarra": "Navarra",
+      "ceuta-melilla": "Ceuta y Melilla"
+    },
+    "reason": {
+      "foral": "régimen foral, no soportado",
+      "ceutaMelilla": "deducción del 60 % no modelada"
+    }
+  },
   "chart": {
     "total": "Valor total",
     "selectionTitle": "Tramo",
@@ -577,7 +608,7 @@
     "salario-bruto-neto": {
       "title": "Calculadora de salario bruto a neto",
       "intro": "Estima tu salario neto a partir del bruto anual, descontando la Seguridad Social y la retención de IRPF.",
-      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de {year}. Aplica la escala estatal + autonómica supletoria: tu Comunidad Autónoma puede variar el resultado, igual que otras circunstancias no contempladas. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de {year}. Suma la escala estatal y la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria); no incluye las deducciones autonómicas ni otras circunstancias no contempladas, así que tu resultado real puede variar. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -623,7 +654,7 @@
     "irpf-nomina": {
       "title": "Calculadora de retención de IRPF en nómina",
       "intro": "Calcula el porcentaje de IRPF que te retienen cada mes en la nómina y cuánto supone al año.",
-      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar y no se incluyen las deducciones autonómicas. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -665,7 +696,7 @@
     "irpf-autonomos": {
       "title": "Calculadora de IRPF para autónomos",
       "intro": "Estima el IRPF de un autónomo en estimación directa a partir de sus ingresos, gastos y cuota de autónomos.",
-      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados. El resultado real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados ni deducciones autonómicas. El resultado real puede variar. No es asesoramiento fiscal.",
       "income": "Ingresos anuales (€)",
       "expenses": "Gastos deducibles (€/año)",
       "socialSecurity": "Cuota de autónomos (€/año)",
@@ -710,7 +741,7 @@
     "desgravacion-plan-pensiones": {
       "title": "Calculadora de desgravación por plan de pensiones",
       "intro": "Descubre cuánto IRPF te ahorras al aportar a un plan de pensiones y cuál es el coste real de la aportación.",
-      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year}: escala estatal más la de la comunidad autónoma que elijas (sin elegir ninguna se aplica la supletoria), que cambia el ahorro porque el tipo marginal autonómico varía mucho de una comunidad a otra. Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "contribution": "Aportación al plan (€/año)",
       "employerContribution": "Aportación de la empresa (€/año)",
@@ -743,7 +774,7 @@
         "totalWealth": "Valor de todos tus bienes y derechos menos las deudas.",
         "primaryResidenceValue": "Tu vivienda habitual está exenta hasta 300.000 €.",
         "exemptMinimum": "Importe que no tributa. El estatal es 700.000 €, pero varía por CCAA.",
-        "regionalRebate": "Porcentaje de la cuota que bonifica tu Comunidad. Madrid, por ejemplo, ronda el 100 %."
+        "regionalRebate": "Porcentaje de la cuota que bonifica tu comunidad. Se pide a mano a propósito: la bonificación real no siempre es un porcentaje fijo. En Madrid, Andalucía, Cantabria, La Rioja y Murcia es variable y depende de la cuota del Impuesto Temporal de Solidaridad de las Grandes Fortunas, otro impuesto estatal que habría que calcular aparte. Consulta la de tu comunidad; Madrid, por ejemplo, ronda el 100 %."
       }
     },
     "impuesto-donaciones": {
@@ -768,7 +799,7 @@
         "reduction": "Reducciones que apruebe tu CCAA según el parentesco. Déjalo en 0 si no estás seguro.",
         "kinship": "Determina el coeficiente multiplicador de la cuota. A menor parentesco, más se paga.",
         "preexistingWealth": "Patrimonio que ya tiene quien recibe la donación. A partir de 402.678,11 € eleva el coeficiente multiplicador.",
-        "regionalRebate": "Porcentaje de la cuota que bonifica tu Comunidad. En algunas ronda el 99 %."
+        "regionalRebate": "Porcentaje de la cuota que bonifica tu comunidad. Se pide a mano a propósito: no todas usan un porcentaje fijo. Cataluña y Galicia aplican una tarifa propia en lugar de bonificar, y en Extremadura la bonificación baja del 99 % al 50 % por encima de 300.000 € de base liquidable. Consulta la de tu comunidad; en varias ronda el 99 %."
       }
     },
     "rentabilidad-alquiler-vacacional": {

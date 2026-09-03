@@ -14,4 +14,4 @@ title: "How the payroll income-tax withholding calculator works"
 
 Raise the salary and the rate rises, because income tax is progressive; add children or a pension contribution and it falls.
 
-**An important note.** It approximates the tax agency's withholding algorithm using the state + supplementary regional scale. The real figure may differ depending on your region. Not tax advice.
+**An important note.** It approximates the tax agency's withholding algorithm by adding the state scale and that of the region you pick (with none picked, the supplementary one). The real figure may differ and it excludes regional deductions. Not tax advice.

@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { computeNetSalary } from "@/core/calculators/salario-bruto-neto";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
+import { toSupportedRegion, type RegionSelection } from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
+import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -18,6 +20,7 @@ export default function NetSalaryCalculator() {
   const [grossAnnual, setGrossAnnual] = useState(30000);
   const [payments, setPayments] = useState("14");
   const [contractType, setContractType] = useState<ContractType>("indefinido");
+  const [region, setRegion] = useState<RegionSelection>("");
   // Circunstancias personales y familiares
   const [age, setAge] = useState(30);
   const [children, setChildren] = useState(0);
@@ -33,6 +36,7 @@ export default function NetSalaryCalculator() {
         grossAnnual,
         payments: payments === "12" ? 12 : 14,
         contractType,
+        region: toSupportedRegion(region),
         age,
         children,
         childrenUnder3,
@@ -45,6 +49,7 @@ export default function NetSalaryCalculator() {
       grossAnnual,
       payments,
       contractType,
+      region,
       age,
       children,
       childrenUnder3,
@@ -85,6 +90,7 @@ export default function NetSalaryCalculator() {
               help={t("help.contractType")}
             />
             <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
+            <RegionSelectField value={region} onChange={setRegion} />
           </div>
         </section>
 

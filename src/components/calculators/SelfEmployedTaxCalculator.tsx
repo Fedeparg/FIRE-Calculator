@@ -5,7 +5,9 @@ import { useTranslations } from "next-intl";
 import { computeSelfEmployedTax } from "@/core/calculators/irpf-autonomos";
 import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { DisabilityGrade } from "@/core/fiscal/irpf";
+import { toSupportedRegion, type RegionSelection } from "@/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
+import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
@@ -20,6 +22,7 @@ export default function SelfEmployedTaxCalculator() {
   const [expenses, setExpenses] = useState(8000);
   const [socialSecurity, setSocialSecurity] = useState(4000);
   const [regime, setRegime] = useState("simplificada");
+  const [region, setRegion] = useState<RegionSelection>("");
   const [pensionContribution, setPensionContribution] = useState(0);
   // Situación personal y familiar
   const [age, setAge] = useState(30);
@@ -36,6 +39,7 @@ export default function SelfEmployedTaxCalculator() {
         expenses,
         socialSecurity,
         simplifiedRegime: regime === "simplificada",
+        region: toSupportedRegion(region),
         pensionContribution,
         age,
         jointReturn: jointReturn === "yes",
@@ -44,12 +48,12 @@ export default function SelfEmployedTaxCalculator() {
         ascendants,
         disability,
       }),
-    [income, expenses, socialSecurity, regime, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
+    [income, expenses, socialSecurity, regime, region, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
   );
 
   return (
     <CalculatorLayout
-      inputCount={11}
+      inputCount={12}
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
@@ -67,6 +71,7 @@ export default function SelfEmployedTaxCalculator() {
             help={t("help.regime")}
           />
           <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
+          <RegionSelectField value={region} onChange={setRegion} />
           <NumberField label={t("age")} value={age} onChange={setAge} min={16} max={120} step={1} help={t("help.age")} />
           <SelectField
             label={t("jointReturn")}
