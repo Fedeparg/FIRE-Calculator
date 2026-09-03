@@ -1,8 +1,8 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 
-import type { Database } from '../db/database.module';
-import { positions, type Position } from '../db/schema';
+import type { Database } from '../db/database.module.js';
+import { positions, type Position } from '../db/schema.js';
 
 /** Cliente Drizzle o transacción: las consultas de acceso valen para ambos. */
 export type DatabaseOrTransaction =

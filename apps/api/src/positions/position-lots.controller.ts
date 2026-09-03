@@ -12,12 +12,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { SessionUser } from '../auth/auth.service';
-import { CreatePositionLotDto } from './dto/create-position-lot.dto';
-import { UpdatePositionLotDto } from './dto/update-position-lot.dto';
-import { PositionLotsService, type PositionLotResponse } from './position-lots.service';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { SessionUser } from '../auth/auth.service.js';
+import { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
+import { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
+import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
 
 /**
  * Lotes (compras y ventas) de una posición. Rutas ANIDADAS bajo la posición a propósito:

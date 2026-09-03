@@ -4,7 +4,7 @@ import type {
   InstrumentSearchProvider,
   InstrumentSearchResult,
   InstrumentType,
-} from './instrument-search';
+} from './instrument-search.js';
 
 /** Endpoint público de autocompletado de Yahoo (mismo que alimenta su buscador web). */
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';

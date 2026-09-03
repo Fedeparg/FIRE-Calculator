@@ -2,10 +2,10 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { instruments } from '../db/schema';
-import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface';
-import { normalizeQuery, type SymbolResolver } from './symbol-resolver';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { instruments } from '../db/schema.js';
+import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.js';
+import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
 
 /** Forma de un ISIN: 2 letras (país) + 9 alfanuméricos + 1 dígito de control. */
 const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;

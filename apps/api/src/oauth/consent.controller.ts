@@ -10,12 +10,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { SessionUser } from '../auth/auth.service';
-import { ConsentDto } from './dto/consent.dto';
-import { OAuthClientsStore } from './oauth-clients.store';
-import { OAuthGrantsService } from './oauth-grants.service';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { SessionUser } from '../auth/auth.service.js';
+import { ConsentDto } from './dto/consent.dto.js';
+import { OAuthClientsStore } from './oauth-clients.store.js';
+import { OAuthGrantsService } from './oauth-grants.service.js';
 
 /**
  * Endpoints que respaldan la pantalla de consentimiento OAuth (la UI vive en Next:

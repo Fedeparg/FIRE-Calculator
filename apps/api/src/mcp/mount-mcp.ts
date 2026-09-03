@@ -8,11 +8,11 @@ import {
 } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 
-import { SCOPES_SUPPORTED } from '../oauth/oauth.constants';
-import { OAuthUrls } from '../oauth/oauth-urls';
-import { SextanteOAuthProvider } from '../oauth/oauth.provider';
-import { createMcpRateLimiter, MCP_RATE_LIMIT_MAX } from './mcp-rate-limit';
-import { McpService } from './mcp.service';
+import { SCOPES_SUPPORTED } from '../oauth/oauth.constants.js';
+import { OAuthUrls } from '../oauth/oauth-urls.js';
+import { SextanteOAuthProvider } from '../oauth/oauth.provider.js';
+import { createMcpRateLimiter, MCP_RATE_LIMIT_MAX } from './mcp-rate-limit.js';
+import { McpService } from './mcp.service.js';
 
 /**
  * Monta el Authorization Server OAuth (endpoints en la RAÍZ, fuera del prefijo `/api`) y el

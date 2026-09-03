@@ -4,7 +4,7 @@ import {
   epochToUtcDate,
   parseYahooChart,
   parseYahooChartHistory,
-} from './yahoo-price.provider';
+} from './yahoo-price.provider.js';
 
 /** Construye una respuesta de Yahoo con el `meta` indicado. */
 const chart = (meta: Record<string, unknown>): unknown => ({ chart: { result: [{ meta }] } });

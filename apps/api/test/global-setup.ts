@@ -6,8 +6,9 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 
 // `provide` publica valores serializables a los workers (que los leen con
-// `inject`). Se tipa inline para no importar tipos ESM de `vitest/node` (el
-// `module: node16` exigiría una `resolution-mode` que complica el setup).
+// `inject`). Se tipa inline en vez de importar `TestProject` de `vitest/node`
+// porque aquí se desestructura el método: tiparlo como la clase invitaría a
+// pasarlo suelto y perder el `this`.
 type Provide = (key: 'databaseUrl', value: string) => void;
 
 /**
@@ -23,7 +24,7 @@ export default async function setup({ provide }: { provide: Provide }) {
   const client = postgres(url, { max: 1 });
   try {
     await migrate(drizzle(client), {
-      migrationsFolder: resolve(__dirname, '../drizzle'),
+      migrationsFolder: resolve(import.meta.dirname, '../drizzle'),
     });
   } finally {
     await client.end({ timeout: 5 });

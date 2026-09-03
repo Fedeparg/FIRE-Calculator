@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import type { Request } from 'express';
 import { describe, expect, it } from 'vitest';
 
-import { mcpRateLimitKey } from './mcp-rate-limit';
+import { mcpRateLimitKey } from './mcp-rate-limit.js';
 
 /** Petición mínima con lo único que mira la función (cabeceras + IP resuelta por Express). */
 function request(opts: { authorization?: string; ip?: string }): Request {

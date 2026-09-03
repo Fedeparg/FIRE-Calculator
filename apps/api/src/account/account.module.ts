@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants';
-import { OauthModule } from '../oauth/oauth.module';
-import { ConnectionsController } from './connections.controller';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { OauthModule } from '../oauth/oauth.module.js';
+import { ConnectionsController } from './connections.controller.js';
 
 /**
  * Gestión de cuenta del usuario más allá de auth: "Aplicaciones conectadas" (listar/revocar

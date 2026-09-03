@@ -16,12 +16,12 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 
-import { AuthService, type AccountExport, type SessionUser } from './auth.service';
-import { CurrentUser } from './current-user.decorator';
-import { RequestLinkDto } from './dto/request-link.dto';
-import { VerifyDto } from './dto/verify.dto';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { SESSION_COOKIE, SESSION_TTL_SECONDS } from './session.constants';
+import { AuthService, type AccountExport, type SessionUser } from './auth.service.js';
+import { CurrentUser } from './current-user.decorator.js';
+import { RequestLinkDto } from './dto/request-link.dto.js';
+import { VerifyDto } from './dto/verify.dto.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { SESSION_COOKIE, SESSION_TTL_SECONDS } from './session.constants.js';
 
 @Controller('auth')
 export class AuthController {

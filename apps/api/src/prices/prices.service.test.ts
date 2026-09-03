@@ -1,12 +1,12 @@
 import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { instrumentPrices } from '../db/schema';
-import { createTestDb, resetDb } from '../../test/db';
-import type { PriceProvider, Quote } from './price-provider.interface';
-import { PricesService } from './prices.service';
-import type { SymbolResolver } from './symbol-resolver';
+import type { Database } from '../db/database.module.js';
+import { instrumentPrices } from '../db/schema.js';
+import { createTestDb, resetDb } from '../../test/db.js';
+import type { PriceProvider, Quote } from './price-provider.interface.js';
+import { PricesService } from './prices.service.js';
+import type { SymbolResolver } from './symbol-resolver.js';
 
 /** Resolutor identidad: el ticker ES el símbolo (el caso del buscador, sin OpenFIGI). */
 const identityResolver: SymbolResolver = {

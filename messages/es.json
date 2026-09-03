@@ -80,6 +80,32 @@
     },
     "relatedCalculators": "Calculadoras relacionadas"
   },
+  "changelog": {
+    "heading": "Novedades",
+    "subheading": "Todo lo que se ha construido en Sextante, entrega a entrega. Generado a partir del historial real del proyecto.",
+    "empty": "Todavía no hay novedades publicadas.",
+    "noResults": "No hay cambios que encajen con este filtro.",
+    "highlight": "Entrega destacada",
+    "summary": {
+      "label": "Resumen de las novedades mostradas",
+      "releases": "Entregas",
+      "changes": "Cambios",
+      "since": "Desde"
+    },
+    "filters": {
+      "legend": "Filtrar por tipo de cambio",
+      "all": "Todos",
+      "showInternal": "Mostrar también los cambios internos (documentación, CI, refactorizaciones)"
+    },
+    "category": {
+      "feature": "Novedad",
+      "fix": "Corrección",
+      "security": "Seguridad",
+      "performance": "Rendimiento",
+      "milestone": "Hito",
+      "internal": "Interno"
+    }
+  },
   "selector": {
     "heading": "Calculadoras financieras",
     "subheading": "Herramientas de inversión, hipotecas, fiscalidad y FIRE pensadas para España.",
@@ -98,6 +124,7 @@
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
+    "changelog": "Novedades",
     "privacy": "Privacidad y cookies",
     "madeBy": "Desarrollado por <author>Federico Pardo</author>.",
     "coffee": "Invítame a un café"
@@ -1026,6 +1053,61 @@
       "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
       "fxAsOf": "Tipos de cambio a {date}.",
       "priceCadence": "Los precios se actualizan una vez al día (sobre las 22:30, hora de España). Una posición recién añadida puede no mostrar precio hasta el siguiente refresco."
+    },
+    "goal": {
+      "title": "Tu objetivo de independencia financiera",
+      "intro": "Define cuánto quieres gastar al año y compara el patrimonio que necesitas con el que ya tienes invertido.",
+      "annualExpenses": "Gasto anual estimado ({currency})",
+      "withdrawalRate": "Tasa de retiro segura (%)",
+      "contribution": "Aportación periódica ({currency})",
+      "annualReturn": "Rentabilidad anual esperada (%)",
+      "help": {
+        "annualExpenses": "Lo que quieres poder gastar cada año viviendo de tu patrimonio, en la divisa elegida arriba.",
+        "withdrawalRate": "Porcentaje del patrimonio que retiras cada año. La regla del 4 % equivale a acumular 25 veces tu gasto anual.",
+        "contribution": "Lo que aportas a la cartera en cada periodo. Solo se usa para estimar cuánto falta.",
+        "annualReturn": "Rentabilidad media anual que esperas. Si la pones ya descontada la inflación, el resultado está en dinero de hoy."
+      },
+      "target": "Patrimonio objetivo",
+      "current": "Patrimonio actual",
+      "remaining": "Te falta",
+      "eta": "Tiempo estimado",
+      "etaYears": "{years, plural, one {# año} other {# años}}",
+      "etaReached": "Alcanzado",
+      "etaYear": "Hacia {year}, si mantienes el ritmo de aportación.",
+      "etaNever": "Con esta aportación no se alcanza en 60 años.",
+      "reached": "Tu cartera ya cubre el objetivo que te has marcado.",
+      "progressAria": "Progreso hacia tu objetivo",
+      "progressValue": "{percent} completado",
+      "noValuation": "Aún no hay precios para valorar la cartera: el patrimonio actual cuenta como cero hasta el próximo refresco.",
+      "currencyHint": "Los importes van en {currency}, la divisa elegida en el total de la cartera.",
+      "currencyConverted": "Los importes del objetivo se han convertido de {from} a {to} con los tipos de cambio de hoy.",
+      "currencyNotConvertible": "No hay tipo de cambio {from}→{to}: los importes se muestran tal cual, revísalos antes de fiarte del resultado.",
+      "assumptions": "La estimación supone una rentabilidad constante y aportaciones sin fallar, y no tiene en cuenta impuestos ni inflación. Es un orden de magnitud, no una previsión.",
+      "scenarioTitle": "Guarda tu objetivo",
+      "scenarioHint": "Se guarda como escenario de la calculadora de independencia financiera: lo verás también allí.",
+      "loadLabel": "Cargar un objetivo guardado",
+      "loadPlaceholder": "Elige un escenario…",
+      "update": "Actualizar",
+      "saved": "Objetivo guardado como «{name}».",
+      "updated": "Objetivo «{name}» actualizado.",
+      "loaded": "Objetivo «{name}» cargado."
+    },
+    "export": {
+      "button": "Descargar CSV",
+      "hint": "Descarga tus posiciones en CSV, listo para abrir en Excel o en Google Sheets.",
+      "error": "No se pudo generar el fichero. Inténtalo de nuevo.",
+      "headers": {
+        "ticker": "Símbolo",
+        "name": "Nombre",
+        "quantity": "Cantidad",
+        "avgPrice": "Precio medio",
+        "currency": "Divisa",
+        "broker": "Bróker",
+        "lastPrice": "Último precio",
+        "priceCurrency": "Divisa del precio",
+        "priceDate": "Fecha del precio",
+        "marketValue": "Valoración ({currency})"
+      }
     },
     "list": {
       "ticker": "Símbolo / ISIN",

@@ -1,11 +1,11 @@
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import {
   INSTRUMENT_SEARCH,
   type InstrumentSearchProvider,
   type InstrumentSearchResult,
-} from './instrument-search';
+} from './instrument-search.js';
 
 /**
  * Búsqueda de instrumentos para el alta de posiciones. A diferencia de `/prices` (que lee

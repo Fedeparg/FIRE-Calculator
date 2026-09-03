@@ -80,6 +80,32 @@
     },
     "relatedCalculators": "Related calculators"
   },
+  "changelog": {
+    "heading": "What's new",
+    "subheading": "Everything that has been built in Sextante, release by release. Generated from the project's real history.",
+    "empty": "No news published yet.",
+    "noResults": "No changes match this filter.",
+    "highlight": "Featured release",
+    "summary": {
+      "label": "Summary of the news shown",
+      "releases": "Releases",
+      "changes": "Changes",
+      "since": "Since"
+    },
+    "filters": {
+      "legend": "Filter by change type",
+      "all": "All",
+      "showInternal": "Also show internal changes (docs, CI, refactors)"
+    },
+    "category": {
+      "feature": "Feature",
+      "fix": "Fix",
+      "security": "Security",
+      "performance": "Performance",
+      "milestone": "Milestone",
+      "internal": "Internal"
+    }
+  },
   "selector": {
     "heading": "Financial calculators",
     "subheading": "Investing, mortgage, tax and FIRE tools designed for Spain.",
@@ -98,6 +124,7 @@
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
+    "changelog": "What's new",
     "privacy": "Privacy & cookies",
     "madeBy": "Built by <author>Federico Pardo</author>.",
     "coffee": "Buy me a coffee"
@@ -1026,6 +1053,61 @@
       "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
       "fxAsOf": "Exchange rates as of {date}.",
       "priceCadence": "Prices update once a day (around 22:30 Spain time). A newly added position may not show a price until the next refresh."
+    },
+    "goal": {
+      "title": "Your financial independence goal",
+      "intro": "Set how much you want to spend per year and compare the net worth you need with what you already have invested.",
+      "annualExpenses": "Estimated annual spending ({currency})",
+      "withdrawalRate": "Safe withdrawal rate (%)",
+      "contribution": "Recurring contribution ({currency})",
+      "annualReturn": "Expected annual return (%)",
+      "help": {
+        "annualExpenses": "What you want to be able to spend every year living off your portfolio, in the currency selected above.",
+        "withdrawalRate": "Share of your net worth you withdraw each year. The 4 % rule means saving 25 times your annual spending.",
+        "contribution": "What you add to the portfolio each period. It is only used to estimate how long is left.",
+        "annualReturn": "Average annual return you expect. If you enter it net of inflation, the result is in today's money."
+      },
+      "target": "Target net worth",
+      "current": "Current net worth",
+      "remaining": "Still needed",
+      "eta": "Estimated time",
+      "etaYears": "{years, plural, one {# year} other {# years}}",
+      "etaReached": "Reached",
+      "etaYear": "Around {year}, if you keep contributing at this pace.",
+      "etaNever": "At this contribution it is not reached within 60 years.",
+      "reached": "Your portfolio already covers the goal you set.",
+      "progressAria": "Progress towards your goal",
+      "progressValue": "{percent} complete",
+      "noValuation": "No prices yet to value the portfolio: current net worth counts as zero until the next refresh.",
+      "currencyHint": "Amounts are in {currency}, the currency selected for the portfolio total.",
+      "currencyConverted": "Goal amounts were converted from {from} to {to} using today's exchange rates.",
+      "currencyNotConvertible": "No {from}→{to} exchange rate available: amounts are shown as they were, so check them before trusting the result.",
+      "assumptions": "The estimate assumes a constant return and contributions you never miss, and ignores taxes and inflation. It is a ballpark, not a forecast.",
+      "scenarioTitle": "Save your goal",
+      "scenarioHint": "It is stored as a scenario of the financial independence calculator, so you will find it there too.",
+      "loadLabel": "Load a saved goal",
+      "loadPlaceholder": "Choose a scenario…",
+      "update": "Update",
+      "saved": "Goal saved as “{name}”.",
+      "updated": "Goal “{name}” updated.",
+      "loaded": "Goal “{name}” loaded."
+    },
+    "export": {
+      "button": "Download CSV",
+      "hint": "Download your positions as a CSV, ready to open in Excel or Google Sheets.",
+      "error": "The file could not be generated. Please try again.",
+      "headers": {
+        "ticker": "Symbol",
+        "name": "Name",
+        "quantity": "Quantity",
+        "avgPrice": "Average price",
+        "currency": "Currency",
+        "broker": "Broker",
+        "lastPrice": "Last price",
+        "priceCurrency": "Price currency",
+        "priceDate": "Price date",
+        "marketValue": "Market value ({currency})"
+      }
     },
     "list": {
       "ticker": "Symbol / ISIN",

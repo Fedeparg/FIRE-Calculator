@@ -4,8 +4,8 @@ import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import {
   SUPPORTED_CURRENCIES,
   type SupportedCurrency,
-} from '../../positions/dto/create-position.dto';
-import { HISTORY_MAX_DAYS } from '../portfolio-snapshots.service';
+} from '../../positions/dto/create-position.dto.js';
+import { HISTORY_MAX_DAYS } from '../portfolio-snapshots.service.js';
 
 /**
  * Query de GET /api/portfolio/history. Es una CLASE, no `@Query('days')` suelto, para que el

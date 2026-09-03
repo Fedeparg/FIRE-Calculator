@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { desc, inArray, sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { instrumentPrices, positions } from '../db/schema';
-import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto';
-import { PRICE_PROVIDER, type PriceProvider, type Quote } from './price-provider.interface';
-import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { instrumentPrices, positions } from '../db/schema.js';
+import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
+import { PRICE_PROVIDER, type PriceProvider, type Quote } from './price-provider.interface.js';
+import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
 const FX_QUOTE = 'USD';

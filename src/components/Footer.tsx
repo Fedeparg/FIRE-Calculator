@@ -35,6 +35,12 @@ export default function Footer() {
             </Link>
           )}
           <Link
+            href="/novedades"
+            className="font-medium text-foreground transition hover:text-brand"
+          >
+            {t("changelog")}
+          </Link>
+          <Link
             href="/legal/privacidad"
             className="font-medium text-foreground transition hover:text-brand"
           >

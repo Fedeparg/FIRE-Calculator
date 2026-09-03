@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { Controller, Get, Inject, ServiceUnavailableException } from '@nestjs/common';
 import { sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { instrumentPrices } from '../db/schema';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { instrumentPrices } from '../db/schema.js';
 
 /**
  * Horas tras las que se considera rancio el último refresco de precios. El cron corre a
@@ -24,7 +24,7 @@ const VERSION: string = readVersion();
 
 function readVersion(): string {
   try {
-    const raw = readFileSync(join(__dirname, '..', '..', 'package.json'), 'utf8');
+    const raw = readFileSync(join(import.meta.dirname, '..', '..', 'package.json'), 'utf8');
     const parsed: unknown = JSON.parse(raw);
     const version =
       typeof parsed === 'object' && parsed !== null

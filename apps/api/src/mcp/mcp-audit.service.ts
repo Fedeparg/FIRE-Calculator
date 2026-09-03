@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { mcpAuditLog } from '../db/schema';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { mcpAuditLog } from '../db/schema.js';
 
 /**
  * Registro de auditoría de invocaciones MCP. Guarda solo METADATOS de la llamada (usuario,

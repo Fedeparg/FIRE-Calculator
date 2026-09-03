@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 
-import { PortfolioModule } from '../portfolio/portfolio.module';
-import { PositionsModule } from '../positions/positions.module';
-import { PricesModule } from '../prices/prices.module';
-import { McpAuditService } from './mcp-audit.service';
-import { McpService } from './mcp.service';
+import { PortfolioModule } from '../portfolio/portfolio.module.js';
+import { PositionsModule } from '../positions/positions.module.js';
+import { PricesModule } from '../prices/prices.module.js';
+import { McpAuditService } from './mcp-audit.service.js';
+import { McpService } from './mcp.service.js';
 
 /**
  * Módulo del servidor MCP (tools sobre la cartera). El montaje del endpoint HTTP `/api/mcp`

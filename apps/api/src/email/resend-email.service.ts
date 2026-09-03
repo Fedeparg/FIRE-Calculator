@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
-import type { EmailService } from './email.service';
+import type { EmailService } from './email.service.js';
 
 /**
  * Minutos de validez del enlace mágico que mostramos al usuario en el email.

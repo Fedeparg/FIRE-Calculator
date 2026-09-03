@@ -27,13 +27,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],
-    setupFiles: [resolve(__dirname, 'test/setup.ts')],
-    globalSetup: [resolve(__dirname, 'test/global-setup.ts')],
+    setupFiles: [resolve(import.meta.dirname, 'test/setup.ts')],
+    globalSetup: [resolve(import.meta.dirname, 'test/global-setup.ts')],
     fileParallelism: false,
     testTimeout: 30_000,
     hookTimeout: 120_000,
-    // El SDK de MCP es ESM puro; inlinearlo evita problemas de interop al
-    // importarlo desde el código transpilado por swc.
-    server: { deps: { inline: [/@modelcontextprotocol\/sdk/] } },
   },
 });

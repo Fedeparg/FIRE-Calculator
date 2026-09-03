@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, gte, eq } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { portfolioSnapshots, positions } from '../db/schema';
-import { PricesService } from '../prices/prices.service';
-import { PortfolioValuationService } from './portfolio-valuation.service';
-import { convertCurrency } from './valuation';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { portfolioSnapshots, positions } from '../db/schema.js';
+import { PricesService } from '../prices/prices.service.js';
+import { PortfolioValuationService } from './portfolio-valuation.service.js';
+import { convertCurrency } from './valuation.js';
 
 /**
  * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan

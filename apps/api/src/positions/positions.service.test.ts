@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import type { PricesService } from '../prices/prices.service';
-import { createTestDb, insertUser, resetDb } from '../../test/db';
-import { CreatePositionDto } from './dto/create-position.dto';
-import { PositionLotsService } from './position-lots.service';
-import { PositionsService } from './positions.service';
+import type { Database } from '../db/database.module.js';
+import type { PricesService } from '../prices/prices.service.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { CreatePositionDto } from './dto/create-position.dto.js';
+import { PositionLotsService } from './position-lots.service.js';
+import { PositionsService } from './positions.service.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
 const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;

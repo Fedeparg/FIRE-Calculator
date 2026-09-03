@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { afterAll, beforeAll, describe, expect, it, inject } from 'vitest';
 
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 
 /**
  * Comprueba que la aplicación ARRANCA entera: que el grafo de inyección de dependencias se

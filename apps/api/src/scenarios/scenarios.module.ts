@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants';
-import { SavedScenariosController } from './saved-scenarios.controller';
-import { SavedScenariosService } from './saved-scenarios.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { SavedScenariosController } from './saved-scenarios.controller.js';
+import { SavedScenariosService } from './saved-scenarios.service.js';
 
 /**
  * Escenarios guardados de calculadora en la cuenta del usuario. Registra `JwtModule` con el

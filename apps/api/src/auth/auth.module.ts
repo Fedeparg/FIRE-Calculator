@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { OauthModule } from '../oauth/oauth.module';
-import { PortfolioModule } from '../portfolio/portfolio.module';
-import { PositionsModule } from '../positions/positions.module';
-import { ScenariosModule } from '../scenarios/scenarios.module';
-import { EmailModule } from '../email/email.module';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from './session.constants';
+import { OauthModule } from '../oauth/oauth.module.js';
+import { PortfolioModule } from '../portfolio/portfolio.module.js';
+import { PositionsModule } from '../positions/positions.module.js';
+import { ScenariosModule } from '../scenarios/scenarios.module.js';
+import { EmailModule } from '../email/email.module.js';
+import { AuthController } from './auth.controller.js';
+import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 @Module({
   imports: [

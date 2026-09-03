@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getFormatters } from "./format";
+import { formatLongDate, getFormatters } from "./format";
 
 const es = getFormatters("es");
 const en = getFormatters("en");
@@ -72,5 +72,29 @@ describe("decimalSeparator", () => {
   it("es la coma en castellano y el punto en inglés", () => {
     expect(es.decimalSeparator).toBe(",");
     expect(en.decimalSeparator).toBe(".");
+  });
+});
+
+describe("formatLongDate", () => {
+  it("escribe la fecha larga en el idioma pedido", () => {
+    expect(formatLongDate("2026-09-03", "es")).toBe("3 de septiembre de 2026");
+    expect(formatLongDate("2026-09-03", "en")).toBe("3 September 2026");
+  });
+
+  it("no se desplaza un día por la zona horaria", () => {
+    // Ancla el día en UTC: en una zona por detrás de UTC (p. ej. America/New_York),
+    // `new Date("2026-01-01")` formateado en local daría el 31 de diciembre.
+    const original = process.env.TZ;
+    process.env.TZ = "America/New_York";
+    try {
+      expect(formatLongDate("2026-01-01", "es")).toBe("1 de enero de 2026");
+    } finally {
+      process.env.TZ = original;
+    }
+  });
+
+  it("devuelve la cadena tal cual si no es una fecha parseable", () => {
+    expect(formatLongDate("no es una fecha", "es")).toBe("no es una fecha");
+    expect(formatLongDate("", "es")).toBe("");
   });
 });

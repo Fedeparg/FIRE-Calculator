@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { PositionsService, type PositionResponse } from '../positions/positions.service';
-import { PricesService, type PriceInfo } from '../prices/prices.service';
-import { aggregatePortfolio, type PortfolioAggregate } from './valuation';
+import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
+import { PricesService, type PriceInfo } from '../prices/prices.service.js';
+import { aggregatePortfolio, type PortfolioAggregate } from './valuation.js';
 
 /**
  * Valoración de UNA posición, con su P&L en divisa NATIVA. Misma regla que la tabla de la

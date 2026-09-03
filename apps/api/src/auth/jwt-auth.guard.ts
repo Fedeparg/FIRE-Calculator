@@ -9,10 +9,10 @@ import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import type { Request } from 'express';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { users } from '../db/schema';
-import type { SessionUser } from './auth.service';
-import { SESSION_COOKIE } from './session.constants';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { users } from '../db/schema.js';
+import type { SessionUser } from './auth.service.js';
+import { SESSION_COOKIE } from './session.constants.js';
 
 type JwtPayload = { sub: string; email: string };
 

@@ -7,14 +7,14 @@ import {
 } from '@nestjs/common';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module';
-import { positions, type Position } from '../db/schema';
-import { PricesService } from '../prices/prices.service';
-import { CombinePositionDto } from './dto/combine-position.dto';
-import { CreatePositionDto } from './dto/create-position.dto';
-import { UpdatePositionDto } from './dto/update-position.dto';
-import { findOwnedPosition, type DatabaseOrTransaction } from './position-access';
-import { PositionLotsService, todayUtc } from './position-lots.service';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { positions, type Position } from '../db/schema.js';
+import { PricesService } from '../prices/prices.service.js';
+import { CombinePositionDto } from './dto/combine-position.dto.js';
+import { CreatePositionDto } from './dto/create-position.dto.js';
+import { UpdatePositionDto } from './dto/update-position.dto.js';
+import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import { PositionLotsService, todayUtc } from './position-lots.service.js';
 
 /**
  * Posición tal y como la consume el frontend. Drizzle devuelve `numeric` como `string`

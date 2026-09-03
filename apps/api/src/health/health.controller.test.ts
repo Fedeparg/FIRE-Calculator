@@ -1,9 +1,9 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
-import type { Database } from '../db/database.module';
-import { instrumentPrices } from '../db/schema';
-import { createTestDb, resetDb } from '../../test/db';
-import { HealthController } from './health.controller';
+import type { Database } from '../db/database.module.js';
+import { instrumentPrices } from '../db/schema.js';
+import { createTestDb, resetDb } from '../../test/db.js';
+import { HealthController } from './health.controller.js';
 
 const HOUR = 3_600_000;
 

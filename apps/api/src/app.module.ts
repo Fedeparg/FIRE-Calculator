@@ -4,19 +4,19 @@ import { APP_GUARD } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
-import { AccountModule } from './account/account.module';
-import { AuthModule } from './auth/auth.module';
-import { DatabaseModule } from './db/database.module';
-import { DonationsModule } from './donations/donations.module';
-import { EmailModule } from './email/email.module';
-import { DailyJobsModule } from './jobs/daily-jobs.module';
-import { HealthModule } from './health/health.module';
-import { McpModule } from './mcp/mcp.module';
-import { OauthModule } from './oauth/oauth.module';
-import { PortfolioModule } from './portfolio/portfolio.module';
-import { PositionsModule } from './positions/positions.module';
-import { PricesModule } from './prices/prices.module';
-import { ScenariosModule } from './scenarios/scenarios.module';
+import { AccountModule } from './account/account.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { DatabaseModule } from './db/database.module.js';
+import { DonationsModule } from './donations/donations.module.js';
+import { EmailModule } from './email/email.module.js';
+import { DailyJobsModule } from './jobs/daily-jobs.module.js';
+import { HealthModule } from './health/health.module.js';
+import { McpModule } from './mcp/mcp.module.js';
+import { OauthModule } from './oauth/oauth.module.js';
+import { PortfolioModule } from './portfolio/portfolio.module.js';
+import { PositionsModule } from './positions/positions.module.js';
+import { PricesModule } from './prices/prices.module.js';
+import { ScenariosModule } from './scenarios/scenarios.module.js';
 
 @Module({
   imports: [

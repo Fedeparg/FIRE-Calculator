@@ -5,25 +5,25 @@ import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { z } from 'zod';
 
-import { SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants';
+import { SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
 import {
   HISTORY_DEFAULT_DAYS,
   HISTORY_MAX_DAYS,
   PortfolioSnapshotsService,
-} from '../portfolio/portfolio-snapshots.service';
-import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service';
-import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto';
-import { CombinePositionDto } from '../positions/dto/combine-position.dto';
-import { CreatePositionDto } from '../positions/dto/create-position.dto';
-import { CreatePositionLotDto } from '../positions/dto/create-position-lot.dto';
-import { UpdatePositionDto } from '../positions/dto/update-position.dto';
-import { PositionLotsService } from '../positions/position-lots.service';
-import { PositionsService } from '../positions/positions.service';
+} from '../portfolio/portfolio-snapshots.service.js';
+import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service.js';
+import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
+import { CombinePositionDto } from '../positions/dto/combine-position.dto.js';
+import { CreatePositionDto } from '../positions/dto/create-position.dto.js';
+import { CreatePositionLotDto } from '../positions/dto/create-position-lot.dto.js';
+import { UpdatePositionDto } from '../positions/dto/update-position.dto.js';
+import { PositionLotsService } from '../positions/position-lots.service.js';
+import { PositionsService } from '../positions/positions.service.js';
 import {
   INSTRUMENT_SEARCH,
   type InstrumentSearchProvider,
-} from '../prices/instrument-search';
-import { McpAuditService } from './mcp-audit.service';
+} from '../prices/instrument-search.js';
+import { McpAuditService } from './mcp-audit.service.js';
 
 /**
  * Contexto de seguridad de una petición MCP, derivado del access token verificado. El

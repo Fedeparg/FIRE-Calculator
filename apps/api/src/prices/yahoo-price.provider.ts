@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { PriceProvider, Quote } from './price-provider.interface';
+import type { PriceProvider, Quote } from './price-provider.interface.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';

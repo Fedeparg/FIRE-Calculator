@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { aggregatePortfolio, convertCurrency } from './valuation';
+import { aggregatePortfolio, convertCurrency } from './valuation.js';
 
 describe('convertCurrency', () => {
   // rates = USD por unidad de divisa (USD = 1).

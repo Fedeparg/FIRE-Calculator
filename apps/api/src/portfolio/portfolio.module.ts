@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants';
-import { PositionsModule } from '../positions/positions.module';
-import { PricesModule } from '../prices/prices.module';
-import { PortfolioController } from './portfolio.controller';
-import { PortfolioSnapshotsService } from './portfolio-snapshots.service';
-import { PortfolioValuationService } from './portfolio-valuation.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { PositionsModule } from '../positions/positions.module.js';
+import { PricesModule } from '../prices/prices.module.js';
+import { PortfolioController } from './portfolio.controller.js';
+import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
+import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
 /**
  * Compone valor de mercado y P&L de la cartera reutilizando `PositionsService` y

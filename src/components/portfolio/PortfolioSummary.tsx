@@ -1,26 +1,24 @@
 "use client";
 
-import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 
-import { aggregatePortfolio } from "@/core/fx";
+import type { PortfolioAggregate } from "@/core/fx";
 import { formatIsoDate } from "@/core/format";
 import { useFormat } from "@/lib/format";
-import {
-  PORTFOLIO_CURRENCIES,
-  type FxRates,
-  type PriceInfo,
-  type Position,
-} from "@/lib/portfolio";
 
 type Props = {
-  positions: Position[];
-  prices: Record<string, PriceInfo>;
-  /** Tasas FX desde la API; null mientras cargan o si no hay datos. */
-  fxRates: FxRates | null;
-  /** Divisa elegida. La gobierna el padre porque la comparten histórico y composición. */
+  /**
+   * Total agregado ya calculado. Lo calcula el padre porque lo comparten el resumen y el
+   * bloque de objetivo: dos agregaciones independientes podrían enseñar dos totales.
+   */
+  agg: PortfolioAggregate;
+  /** Fecha de las tasas FX usadas, o null si aún no hay. */
+  fxAsOf: string | null;
+  /**
+   * Divisa elegida. La gobierna el padre —junto con su selector— porque la comparten el
+   * objetivo, el histórico y la composición.
+   */
   display: string;
-  onDisplayChange: (currency: string) => void;
 };
 
 /**
@@ -29,21 +27,9 @@ type Props = {
  * precio en su propia divisa y convertible al destino; el resto se excluye y se señala,
  * para no inflar el total con conversiones que no podemos hacer.
  */
-export default function PortfolioSummary({
-  positions,
-  prices,
-  fxRates,
-  display,
-  onDisplayChange,
-}: Props) {
+export default function PortfolioSummary({ agg, fxAsOf, display }: Props) {
   const t = useTranslations("portfolio.summary");
-  const { currencyLabel, formatCurrency, formatPercent } = useFormat();
-
-  const rates = useMemo(() => fxRates?.rates ?? {}, [fxRates]);
-  const agg = useMemo(
-    () => aggregatePortfolio({ positions, prices, rates, display }),
-    [positions, prices, rates, display],
-  );
+  const { formatCurrency, formatPercent } = useFormat();
 
   const excluded = agg.total - agg.valued;
   const sign = agg.pnlAbs > 0 ? "+" : "";
@@ -52,23 +38,7 @@ export default function PortfolioSummary({
 
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-        <label className="flex items-center gap-2 text-sm text-muted">
-          {t("displayIn")}
-          <select
-            value={display}
-            onChange={(e) => onDisplayChange(e.target.value)}
-            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
-          >
-            {PORTFOLIO_CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {currencyLabel(c)}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
 
       {agg.valued === 0 ? (
         <div className="flex flex-col gap-2">
@@ -107,7 +77,7 @@ export default function PortfolioSummary({
 
           <div className="flex flex-col gap-1 text-xs text-muted">
             {excluded > 0 && <p>{t("excluded", { count: excluded, total: agg.total })}</p>}
-            {fxRates?.asOf && <p>{t("fxAsOf", { date: formatIsoDate(fxRates.asOf) })}</p>}
+            {fxAsOf && <p>{t("fxAsOf", { date: formatIsoDate(fxAsOf) })}</p>}
             <p>{t("priceCadence")}</p>
           </div>
         </>

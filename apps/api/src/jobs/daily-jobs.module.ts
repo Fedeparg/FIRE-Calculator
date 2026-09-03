@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 
-import { PortfolioModule } from '../portfolio/portfolio.module';
-import { PricesModule } from '../prices/prices.module';
-import { DailyJobsScheduler } from './daily-jobs.scheduler';
+import { PortfolioModule } from '../portfolio/portfolio.module.js';
+import { PricesModule } from '../prices/prices.module.js';
+import { DailyJobsScheduler } from './daily-jobs.scheduler.js';
 
 /**
  * Orquestador de los trabajos nocturnos de la cartera (refresco de precios → snapshots).

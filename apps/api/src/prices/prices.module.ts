@@ -2,17 +2,17 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants';
-import { INSTRUMENT_SEARCH } from './instrument-search';
-import { InstrumentsController } from './instruments.controller';
-import { PRICE_PROVIDER } from './price-provider.interface';
-import { PricesController } from './prices.controller';
-import { PricesService } from './prices.service';
-import { OpenFigiSymbolResolver } from './openfigi-symbol-resolver';
-import { SYMBOL_RESOLVER } from './symbol-resolver';
-import { YahooPriceProvider } from './yahoo-price.provider';
-import { YahooInstrumentSearchProvider } from './yahoo-search.provider';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { INSTRUMENT_SEARCH } from './instrument-search.js';
+import { InstrumentsController } from './instruments.controller.js';
+import { PRICE_PROVIDER } from './price-provider.interface.js';
+import { PricesController } from './prices.controller.js';
+import { PricesService } from './prices.service.js';
+import { OpenFigiSymbolResolver } from './openfigi-symbol-resolver.js';
+import { SYMBOL_RESOLVER } from './symbol-resolver.js';
+import { YahooPriceProvider } from './yahoo-price.provider.js';
+import { YahooInstrumentSearchProvider } from './yahoo-search.provider.js';
 
 /**
  * Módulo de precios. La fuente de precios (`PRICE_PROVIDER`) y la resolución de símbolos

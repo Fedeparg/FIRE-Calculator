@@ -13,16 +13,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { CurrentUser } from '../auth/current-user.decorator';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import type { SessionUser } from '../auth/auth.service';
-import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto';
-import { SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto';
-import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto';
+import { CurrentUser } from '../auth/current-user.decorator.js';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import type { SessionUser } from '../auth/auth.service.js';
+import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
+import { SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto.js';
+import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
 import {
   SavedScenariosService,
   type SavedScenarioResponse,
-} from './saved-scenarios.service';
+} from './saved-scenarios.service.js';
 
 /**
  * Escenarios guardados de calculadora. TODOS los endpoints están autenticados y el `userId`

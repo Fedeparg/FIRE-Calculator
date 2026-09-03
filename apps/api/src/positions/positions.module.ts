@@ -2,13 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants';
-import { PricesModule } from '../prices/prices.module';
-import { PositionLotsController } from './position-lots.controller';
-import { PositionLotsService } from './position-lots.service';
-import { PositionsController } from './positions.controller';
-import { PositionsService } from './positions.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { PricesModule } from '../prices/prices.module.js';
+import { PositionLotsController } from './position-lots.controller.js';
+import { PositionLotsService } from './position-lots.service.js';
+import { PositionsController } from './positions.controller.js';
+import { PositionsService } from './positions.service.js';
 
 /**
  * Módulo de cartera: posiciones (la FOTO que lee toda la app) y sus lotes (la PELÍCULA de
