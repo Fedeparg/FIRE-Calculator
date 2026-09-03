@@ -11,7 +11,7 @@ import TimeSeriesChart from "../charts/TimeSeriesChart";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function CreditCardCalculator() {
-  const t = useTranslations("calc.tarjeta-credito");
+  const t = useTranslations("calc.intereses-tarjeta-credito");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
   const tc = useTranslations("chart");
 

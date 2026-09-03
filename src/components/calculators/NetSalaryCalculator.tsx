@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeNetSalary } from "@/core/calculators/salario-bruto-neto";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -56,7 +57,7 @@ export default function NetSalaryCalculator() {
 
   return (
     <div className="grid gap-6">
-      <Notice>{t("note")}</Notice>
+      <Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>
 
       <div className="grid gap-6 rounded-xl border border-border bg-surface p-5">
         <section className="grid gap-3">

@@ -21,6 +21,13 @@ type Props = {
   max?: number;
   step?: number;
   help?: string;
+  /**
+   * Oculta la etiqueta visualmente (sigue en el DOM y sigue siendo el nombre
+   * accesible del input). Para filas repetidas donde la etiqueta ya se ve una
+   * vez en la cabecera: se evita repetirla en pantalla sin dejar el campo
+   * anónimo para un lector de pantalla.
+   */
+  hideLabel?: boolean;
 };
 
 /**
@@ -40,6 +47,7 @@ export default function NumberField({
   max,
   step = 1,
   help,
+  hideLabel = false,
 }: Props) {
   const id = useId();
   const { decimalSeparator } = useFormat();
@@ -80,7 +88,10 @@ export default function NumberField({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
-        <label htmlFor={id} className="text-sm font-medium text-foreground">
+        <label
+          htmlFor={id}
+          className={hideLabel ? "sr-only" : "text-sm font-medium text-foreground"}
+        >
           {label}
         </label>
         {help && <HelpTooltip text={help} />}

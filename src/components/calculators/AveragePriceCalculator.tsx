@@ -44,20 +44,28 @@ export default function AveragePriceCalculator() {
         <ul className="grid gap-3">
           {rows.map((row, i) => (
             <li key={row.id} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3">
+              {/*
+                La etiqueta se escribe siempre (es el nombre accesible del
+                campo) y a partir de la segunda fila se oculta visualmente:
+                en pantalla la cabecera de la columna ya la muestra una vez.
+              */}
               <NumberField
-                label={i === 0 ? t("price") : ""}
+                label={t("price")}
+                hideLabel={i > 0}
                 value={row.price}
                 onChange={(v) => updateRow(row.id, { price: v })}
                 step={0.1}
               />
               <NumberField
-                label={i === 0 ? t("shares") : ""}
+                label={t("shares")}
+                hideLabel={i > 0}
                 value={row.shares}
                 onChange={(v) => updateRow(row.id, { shares: v })}
                 step={1}
               />
               <NumberField
-                label={i === 0 ? t("commission") : ""}
+                label={t("commission")}
+                hideLabel={i > 0}
                 value={row.commission}
                 onChange={(v) => updateRow(row.id, { commission: v })}
                 step={0.5}

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeWealthTax } from "@/core/calculators/impuesto-patrimonio";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
@@ -25,7 +26,7 @@ export default function WealthTaxCalculator() {
   return (
     <CalculatorLayout
       inputCount={4}
-      notice={<Notice>{t("note")}</Notice>}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("totalWealth")} value={totalWealth} onChange={setTotalWealth} step={50000} help={t("help.totalWealth")} />

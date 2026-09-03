@@ -8,22 +8,23 @@ import {
   ComposedChart,
   Legend,
   Line,
+  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { computeMortgage } from "@/core/calculators/hipoteca";
+import { computeMortgage, type MortgageYearPoint } from "@/core/calculators/hipoteca";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
-import ChartCard from "../ui/ChartCard";
+import ChartDataTable, { type ChartTableColumn } from "../charts/ChartDataTable";
 import ChartTooltip from "../charts/ChartTooltip";
 import BreakdownDonut from "../charts/BreakdownDonut";
 import CalculatorLayout from "../CalculatorLayout";
 
 export default function MortgageCalculator() {
   const t = useTranslations("calc.hipoteca-fija");
-  const { formatCompactEUR, formatEUR, formatEURCents, formatPercent } = useFormat();
+  const { formatCompactEUR, formatEUR, formatEURCents, formatNumber, formatPercent } = useFormat();
   const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useState(180000);
@@ -36,6 +37,14 @@ export default function MortgageCalculator() {
     () => computeMortgage({ principal, annualRate, years, openingFeeRate, annualInsurance }),
     [principal, annualRate, years, openingFeeRate, annualInsurance],
   );
+
+  // Alternativa textual del cuadro de amortización (ver `ChartDataTable`).
+  const scheduleColumns: ChartTableColumn<MortgageYearPoint>[] = [
+    { label: tc("axisYear"), value: (row) => formatNumber(row.year) },
+    { label: t("seriesPrincipal"), value: (row) => formatEUR(row.principalPaid) },
+    { label: t("seriesInterest"), value: (row) => formatEUR(row.interestPaid) },
+    { label: t("seriesBalance"), value: (row) => formatEUR(row.balance) },
+  ];
 
   return (
     <CalculatorLayout
@@ -61,18 +70,33 @@ export default function MortgageCalculator() {
             <Stat label={t("totalCostWithFees")} value={formatEUR(result.totalCostWithFees)} />
           </div>
 
-          <ChartCard title={t("chartTitle")}>
-            <ComposedChart data={result.schedule} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="year" tick={{ fontSize: 12, fill: "var(--muted)" }} />
-              <YAxis tick={{ fontSize: 12, fill: "var(--muted)" }} tickFormatter={formatCompactEUR} width={70} />
-              <Tooltip content={<ChartTooltip labelPrefix={tc("axisYear")} />} />
-              <Legend />
-              <Bar dataKey="principalPaid" name={t("seriesPrincipal")} stackId="cuota" fill="var(--brand)" />
-              <Bar dataKey="interestPaid" name={t("seriesInterest")} stackId="cuota" fill="var(--accent)" />
-              <Line type="monotone" dataKey="balance" name={t("seriesBalance")} stroke="var(--muted)" strokeWidth={2} dot={false} />
-            </ComposedChart>
-          </ChartCard>
+          <div className="rounded-xl border border-border bg-surface p-4">
+            <h2 className="mb-3 text-sm font-medium text-foreground">{t("chartTitle")}</h2>
+            <div
+              style={{ width: "100%", height: 300 }}
+              role="img"
+              aria-label={tc("imageLabel", { title: t("chartTitle") })}
+            >
+              <ResponsiveContainer>
+                <ComposedChart data={result.schedule} margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12, fill: "var(--muted)" }} />
+                  <YAxis tick={{ fontSize: 12, fill: "var(--muted)" }} tickFormatter={formatCompactEUR} width={70} />
+                  <Tooltip content={<ChartTooltip labelPrefix={tc("axisYear")} />} />
+                  <Legend />
+                  <Bar dataKey="principalPaid" name={t("seriesPrincipal")} stackId="cuota" fill="var(--brand)" />
+                  <Bar dataKey="interestPaid" name={t("seriesInterest")} stackId="cuota" fill="var(--accent)" />
+                  <Line type="monotone" dataKey="balance" name={t("seriesBalance")} stroke="var(--muted)" strokeWidth={2} dot={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            <ChartDataTable
+              title={t("chartTitle")}
+              columns={scheduleColumns}
+              rows={result.schedule}
+            />
+          </div>
 
           <BreakdownDonut
             title={t("donutTitle")}

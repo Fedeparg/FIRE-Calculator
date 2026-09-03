@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeSelfEmployedTax } from "@/core/calculators/irpf-autonomos";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { DisabilityGrade } from "@/core/fiscal/irpf";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -49,7 +50,7 @@ export default function SelfEmployedTaxCalculator() {
   return (
     <CalculatorLayout
       inputCount={11}
-      notice={<Notice>{t("note")}</Notice>}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("income")} value={income} onChange={setIncome} step={1000} help={t("help.income")} />

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import type { ContractType, DisabilityGrade } from "@/core/fiscal/irpf";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -47,7 +48,7 @@ export default function PayrollWithholdingCalculator() {
   return (
     <CalculatorLayout
       inputCount={10}
-      notice={<Notice>{t("note")}</Notice>}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />

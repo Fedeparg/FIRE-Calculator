@@ -93,7 +93,8 @@
   "common": {
     "back": "Volver a las calculadoras",
     "results": "Resultados",
-    "disclaimerShort": "Información, no asesoramiento fiscal o financiero."
+    "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
+    "moreInfo": "Más información"
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -116,7 +117,9 @@
     "growth": "Crecimiento",
     "contributed": "Aportado",
     "interest": "Intereses",
-    "axisYear": "Año"
+    "axisYear": "Año",
+    "imageLabel": "Gráfica: {title}",
+    "dataTableCaption": "Datos de la gráfica: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -433,7 +436,7 @@
         "contributionGrowth": "Si subes tu aportación cada año (con el sueldo o la inflación), indícalo. Déjalo en 0 si es fija."
       }
     },
-    "tarjeta-credito": {
+    "intereses-tarjeta-credito": {
       "title": "Calculadora de intereses de tarjeta de crédito",
       "intro": "Descubre cuánto tardas en pagar una deuda de tarjeta y cuántos intereses te cuesta.",
       "balance": "Saldo de la deuda (€)",
@@ -574,7 +577,7 @@
     "salario-bruto-neto": {
       "title": "Calculadora de salario bruto a neto",
       "intro": "Estima tu salario neto a partir del bruto anual, descontando la Seguridad Social y la retención de IRPF.",
-      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de 2026. Aplica la escala estatal + autonómica supletoria: tu Comunidad Autónoma puede variar el resultado, igual que otras circunstancias no contempladas. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF, el mínimo personal y familiar y la cotización a la Seguridad Social de {year}. Aplica la escala estatal + autonómica supletoria: tu Comunidad Autónoma puede variar el resultado, igual que otras circunstancias no contempladas. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -620,7 +623,7 @@
     "irpf-nomina": {
       "title": "Calculadora de retención de IRPF en nómina",
       "intro": "Calcula el porcentaje de IRPF que te retienen cada mes en la nómina y cuánto supone al año.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Aproxima el algoritmo de retención de la AEAT a partir de tu salario, tu tipo de contrato y tu situación personal y familiar; tu retención real puede variar. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "payments": "Número de pagas",
       "payments14": "14 pagas",
@@ -662,7 +665,7 @@
     "irpf-autonomos": {
       "title": "Calculadora de IRPF para autónomos",
       "intro": "Estima el IRPF de un autónomo en estimación directa a partir de sus ingresos, gastos y cuota de autónomos.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados. El resultado real puede variar. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Aplica el mínimo personal y familiar. En estimación directa simplificada incluye el 5 % de gastos de difícil justificación (máx. 2.000 €/año); no incluye pagos fraccionados. El resultado real puede variar. No es asesoramiento fiscal.",
       "income": "Ingresos anuales (€)",
       "expenses": "Gastos deducibles (€/año)",
       "socialSecurity": "Cuota de autónomos (€/año)",
@@ -707,7 +710,7 @@
     "desgravacion-plan-pensiones": {
       "title": "Calculadora de desgravación por plan de pensiones",
       "intro": "Descubre cuánto IRPF te ahorras al aportar a un plan de pensiones y cuál es el coste real de la aportación.",
-      "note": "Estimación orientativa con los tramos de IRPF de 2026 (escala estatal + autonómica supletoria). Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con los tramos de IRPF de {year} (escala estatal + autonómica supletoria). Tu aportación individual desgrava hasta el menor de 1.500 € y el 30 % de tus rendimientos netos del trabajo. La aportación de la empresa eleva el límite conjunto a 10.000 €, pero no te genera ahorro de IRPF directo (se imputa como retribución y se reduce a la vez); su ventaja es construir patrimonio con diferimiento. No es asesoramiento fiscal.",
       "grossAnnual": "Salario bruto anual (€)",
       "contribution": "Aportación al plan (€/año)",
       "employerContribution": "Aportación de la empresa (€/año)",
@@ -727,7 +730,7 @@
     "impuesto-patrimonio": {
       "title": "Calculadora del Impuesto sobre el Patrimonio",
       "intro": "Estima la cuota del Impuesto sobre el Patrimonio según tu patrimonio neto, el mínimo exento y la bonificación de tu CCAA.",
-      "note": "Estimación orientativa con la escala estatal supletoria de 2026. Muchas Comunidades Autónomas bonifican la cuota casi al 100 % o aplican su propia escala (p. ej. Madrid). Ajusta el mínimo exento y la bonificación de tu CCAA. No es asesoramiento fiscal.",
+      "note": "Estimación orientativa con la escala estatal supletoria de {year}. Muchas Comunidades Autónomas bonifican la cuota casi al 100 % o aplican su propia escala (p. ej. Madrid). Ajusta el mínimo exento y la bonificación de tu CCAA. No es asesoramiento fiscal.",
       "totalWealth": "Patrimonio neto total (€)",
       "primaryResidenceValue": "Valor de la vivienda habitual (€)",
       "exemptMinimum": "Mínimo exento (€)",
@@ -746,7 +749,7 @@
     "impuesto-donaciones": {
       "title": "Calculadora del Impuesto de Donaciones",
       "intro": "Estima el Impuesto sobre Donaciones según lo donado, el parentesco y la bonificación de tu CCAA.",
-      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de 2026 y el coeficiente multiplicador por parentesco y patrimonio preexistente (art. 22 Ley 29/1987); no aplica el ajuste por «error de salto». El resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
+      "note": "El Impuesto sobre Donaciones está cedido a las CCAA, que aplican grandes bonificaciones y reducciones propias. Esta estimación usa la tarifa estatal supletoria de {year} y el coeficiente multiplicador por parentesco y patrimonio preexistente (art. 22 Ley 29/1987); no aplica el ajuste por «error de salto». El resultado real depende decisivamente de tu Comunidad Autónoma. Ajusta la reducción y la bonificación. No es asesoramiento fiscal.",
       "amount": "Valor de lo donado (€)",
       "reduction": "Reducciones aplicables (€)",
       "kinship": "Parentesco con quien dona",

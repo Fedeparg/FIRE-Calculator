@@ -1,6 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
+import { useTranslations } from "next-intl";
 import { useFormat } from "@/lib/format";
 
 export type DonutSlice = { name: string; value: number; color: string };
@@ -11,9 +12,20 @@ type Props = {
   centerLabel: string;
 };
 
-/** Donut de composición (p.ej. aportado vs intereses) con leyenda y porcentajes. */
+/**
+ * Donut de composición (p.ej. aportado vs intereses) con leyenda y porcentajes.
+ *
+ * Accesibilidad: aquí NO hace falta una tabla oculta como en `TimeSeriesChart`.
+ * La leyenda visible ya lista cada porción con su nombre, su importe y su
+ * porcentaje, y el centro muestra el total: un lector de pantalla lee todos los
+ * datos del gráfico como texto normal. Lo único que sobra es el SVG, que sin
+ * `<title>` solo aportaría ruido, así que se marca `role="img"` con una
+ * etiqueta corta y sus nodos internos quedan fuera del árbol de accesibilidad.
+ * Duplicar esos mismos números en una tabla `sr-only` los haría oír dos veces.
+ */
 export default function BreakdownDonut({ title, data, centerLabel }: Props) {
   const { formatEUR } = useFormat();
+  const tc = useTranslations("chart");
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0);
   const pct = (v: number) => (total > 0 ? Math.round((Math.max(0, v) / total) * 100) : 0);
 
@@ -23,24 +35,30 @@ export default function BreakdownDonut({ title, data, centerLabel }: Props) {
 
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
         <div className="relative h-[200px] w-[200px] shrink-0">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data.map((d) => ({ ...d, value: Math.max(0, d.value) }))}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={62}
-                outerRadius={92}
-                paddingAngle={2}
-                stroke="none"
-                isAnimationActive={false}
-              >
-                {data.map((d) => (
-                  <Cell key={d.name} fill={d.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+          {/*
+            `role="img"` envuelve SOLO el SVG: el rótulo central es hermano y
+            debe seguir siendo texto legible para el lector de pantalla.
+          */}
+          <div className="h-full w-full" role="img" aria-label={tc("imageLabel", { title })}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={data.map((d) => ({ ...d, value: Math.max(0, d.value) }))}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={62}
+                  outerRadius={92}
+                  paddingAngle={2}
+                  stroke="none"
+                  isAnimationActive={false}
+                >
+                  {data.map((d) => (
+                    <Cell key={d.name} fill={d.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-xs text-muted">{centerLabel}</span>
             <span className="text-lg font-semibold text-foreground">{formatEUR(total)}</span>

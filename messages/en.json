@@ -93,7 +93,8 @@
   "common": {
     "back": "Back to calculators",
     "results": "Results",
-    "disclaimerShort": "Information, not tax or financial advice."
+    "disclaimerShort": "Information, not tax or financial advice.",
+    "moreInfo": "More information"
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
@@ -116,7 +117,9 @@
     "growth": "Growth",
     "contributed": "Contributed",
     "interest": "Interest",
-    "axisYear": "Year"
+    "axisYear": "Year",
+    "imageLabel": "Chart: {title}",
+    "dataTableCaption": "Chart data: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -433,7 +436,7 @@
         "contributionGrowth": "If you raise your contribution each year (with your salary or inflation), enter it here. Leave it at 0 if it's fixed."
       }
     },
-    "tarjeta-credito": {
+    "intereses-tarjeta-credito": {
       "title": "Credit card interest calculator",
       "intro": "See how long it takes to pay off a card debt and how much interest it costs you.",
       "balance": "Debt balance (€)",
@@ -574,7 +577,7 @@
     "salario-bruto-neto": {
       "title": "Gross to net salary calculator",
       "intro": "Estimate your net salary from your annual gross, deducting Social Security and income-tax withholding.",
-      "note": "Indicative estimate using 2026 income-tax brackets, the personal and family minimum and Social Security contributions. It applies the state + supplementary regional scale: your region may change the result, as may other circumstances not covered here. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets, the personal and family minimum and Social Security contributions. It applies the state + supplementary regional scale: your region may change the result, as may other circumstances not covered here. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "payments": "Number of payments",
       "payments14": "14 payments",
@@ -620,7 +623,7 @@
     "irpf-nomina": {
       "title": "Payroll income-tax withholding calculator",
       "intro": "Work out the income-tax percentage withheld from your monthly payslip and how much it adds up to per year.",
-      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). It approximates the tax agency's withholding algorithm from your salary, contract type and personal and family situation; your actual withholding may differ. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). It approximates the tax agency's withholding algorithm from your salary, contract type and personal and family situation; your actual withholding may differ. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "payments": "Number of payments",
       "payments14": "14 payments",
@@ -662,7 +665,7 @@
     "irpf-autonomos": {
       "title": "Self-employed income-tax calculator",
       "intro": "Estimate a self-employed person's income tax under direct assessment from income, expenses and Social Security.",
-      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). It applies the personal and family minimum. Under simplified direct assessment it includes the 5% hard-to-justify expenses (max €2,000/year); it excludes instalment payments. The real figure may differ. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). It applies the personal and family minimum. Under simplified direct assessment it includes the 5% hard-to-justify expenses (max €2,000/year); it excludes instalment payments. The real figure may differ. Not tax advice.",
       "income": "Annual income (€)",
       "expenses": "Deductible expenses (€/year)",
       "socialSecurity": "Self-employed contribution (€/year)",
@@ -707,7 +710,7 @@
     "desgravacion-plan-pensiones": {
       "title": "Pension plan tax relief calculator",
       "intro": "Find out how much income tax you save by contributing to a pension plan and the real cost of the contribution.",
-      "note": "Indicative estimate using 2026 income-tax brackets (state + supplementary regional scale). Your individual contribution gets relief up to the lower of €1,500 and 30% of your net earned income. Employer contributions raise the joint limit to €10,000 but give you no direct income-tax saving (they are imputed as pay and deducted at the same time); their benefit is building wealth with tax deferral. Not tax advice.",
+      "note": "Indicative estimate using {year} income-tax brackets (state + supplementary regional scale). Your individual contribution gets relief up to the lower of €1,500 and 30% of your net earned income. Employer contributions raise the joint limit to €10,000 but give you no direct income-tax saving (they are imputed as pay and deducted at the same time); their benefit is building wealth with tax deferral. Not tax advice.",
       "grossAnnual": "Annual gross salary (€)",
       "contribution": "Plan contribution (€/year)",
       "employerContribution": "Employer contribution (€/year)",
@@ -727,7 +730,7 @@
     "impuesto-patrimonio": {
       "title": "Wealth tax calculator",
       "intro": "Estimate your wealth-tax bill based on net wealth, the exempt minimum and your region's rebate.",
-      "note": "Indicative estimate using the 2026 supplementary state scale. Many regions rebate the bill almost to 100% or apply their own scale (e.g. Madrid). Adjust the exempt minimum and your region's rebate. Not tax advice.",
+      "note": "Indicative estimate using the {year} supplementary state scale. Many regions rebate the bill almost to 100% or apply their own scale (e.g. Madrid). Adjust the exempt minimum and your region's rebate. Not tax advice.",
       "totalWealth": "Total net wealth (€)",
       "primaryResidenceValue": "Primary residence value (€)",
       "exemptMinimum": "Exempt minimum (€)",
@@ -746,7 +749,7 @@
     "impuesto-donaciones": {
       "title": "Gift tax calculator",
       "intro": "Estimate gift tax based on the amount given, the kinship and your region's rebate.",
-      "note": "Gift tax is devolved to the regions, which apply large rebates and reductions of their own. This estimate uses the 2026 supplementary state scale and the multiplier coefficient by kinship and pre-existing wealth (art. 22 Act 29/1987); it does not apply the «error de salto» adjustment. The real figure depends decisively on your region. Adjust the reduction and the rebate. Not tax advice.",
+      "note": "Gift tax is devolved to the regions, which apply large rebates and reductions of their own. This estimate uses the {year} supplementary state scale and the multiplier coefficient by kinship and pre-existing wealth (art. 22 Act 29/1987); it does not apply the «error de salto» adjustment. The real figure depends decisively on your region. Adjust the reduction and the rebate. Not tax advice.",
       "amount": "Value given (€)",
       "reduction": "Applicable reductions (€)",
       "kinship": "Kinship with the donor",

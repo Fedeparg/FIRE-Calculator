@@ -21,6 +21,13 @@ import {
   SS_EMPLOYEE_RATE,
   SS_EMPLOYEE_RATE_TEMPORAL,
   SS_MAX_BASE_ANNUAL,
+  WORK_INCOME_REDUCTION_FULL_LIMIT,
+  WORK_INCOME_REDUCTION_MAX,
+  WORK_INCOME_REDUCTION_TIER2_LIMIT,
+  WORK_INCOME_REDUCTION_TIER2_SLOPE,
+  WORK_INCOME_REDUCTION_TIER3_BASE,
+  WORK_INCOME_REDUCTION_TIER3_LIMIT,
+  WORK_INCOME_REDUCTION_TIER3_SLOPE,
   WORK_OTHER_EXPENSES,
   applyProgressiveBrackets,
 } from "./brackets";
@@ -49,13 +56,26 @@ export interface PersonalCircumstances {
 
 /**
  * Reducción por obtención de rendimientos del trabajo (art. 20 LIRPF), tres
- * tramos. Nunca negativa. Fuente: AEAT, ejercicio 2025-2026.
+ * tramos. Nunca negativa. Los umbrales, importes y coeficientes viven en
+ * `brackets.ts`, única fuente de verdad de las cifras fiscales.
  */
 export function workIncomeReduction(netWorkIncome: number): number {
   const r = Math.max(0, Number.isFinite(netWorkIncome) ? netWorkIncome : 0);
-  if (r <= 14852) return 7302;
-  if (r <= 17673.52) return Math.max(0, 7302 - 1.75 * (r - 14852));
-  if (r <= 19747.5) return Math.max(0, 2364.34 - 1.14 * (r - 17673.52));
+  if (r <= WORK_INCOME_REDUCTION_FULL_LIMIT) return WORK_INCOME_REDUCTION_MAX;
+  if (r <= WORK_INCOME_REDUCTION_TIER2_LIMIT) {
+    return Math.max(
+      0,
+      WORK_INCOME_REDUCTION_MAX -
+        WORK_INCOME_REDUCTION_TIER2_SLOPE * (r - WORK_INCOME_REDUCTION_FULL_LIMIT),
+    );
+  }
+  if (r <= WORK_INCOME_REDUCTION_TIER3_LIMIT) {
+    return Math.max(
+      0,
+      WORK_INCOME_REDUCTION_TIER3_BASE -
+        WORK_INCOME_REDUCTION_TIER3_SLOPE * (r - WORK_INCOME_REDUCTION_TIER2_LIMIT),
+    );
+  }
   return 0;
 }
 

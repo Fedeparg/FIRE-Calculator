@@ -13,7 +13,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useTranslations } from "next-intl";
 import { useFormat } from "@/lib/format";
+import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
 
 export type SeriesDef = { key: string; name: string; color: string };
@@ -59,7 +61,11 @@ export default function TimeSeriesChart({
   labels,
   height = 300,
 }: Props) {
-  const { formatCompactEUR, formatEUR } = useFormat();
+  const { formatCompactEUR, formatEUR, formatNumber } = useFormat();
+  // Las cadenas de accesibilidad son genéricas de cualquier gráfica, así que se
+  // leen del namespace compartido `chart` en lugar de propagarlas por `labels`
+  // desde cada una de las calculadoras que la usan.
+  const tc = useTranslations("chart");
   const [selection, setSelection] = useState<Selection>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -85,6 +91,14 @@ export default function TimeSeriesChart({
     };
   })();
 
+  const tableColumns: ChartTableColumn<DataRow>[] = [
+    { label: labels.axisX, value: (row) => formatNumber(row[xKey]) },
+    ...[...stack, ...lines].map((series) => ({
+      label: series.name,
+      value: (row: DataRow) => formatEUR(row[series.key]),
+    })),
+  ];
+
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       <div className="mb-3 flex min-h-[20px] items-center justify-between gap-3">
@@ -106,7 +120,12 @@ export default function TimeSeriesChart({
         )}
       </div>
 
-      <div style={{ width: "100%", height }} className="select-none">
+      <div
+        style={{ width: "100%", height }}
+        className="select-none"
+        role="img"
+        aria-label={tc("imageLabel", { title })}
+      >
         <ResponsiveContainer>
           <AreaChart
             data={data}
@@ -185,6 +204,8 @@ export default function TimeSeriesChart({
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
+      <ChartDataTable title={title} columns={tableColumns} rows={data} />
     </div>
   );
 }

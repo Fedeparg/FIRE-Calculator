@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
@@ -24,7 +25,7 @@ export default function PensionReliefCalculator() {
   return (
     <CalculatorLayout
       inputCount={3}
-      notice={<Notice>{t("note")}</Notice>}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />

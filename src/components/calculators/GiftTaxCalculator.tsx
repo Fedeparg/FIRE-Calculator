@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeGiftTax, type KinshipGroup } from "@/core/calculators/impuesto-donaciones";
+import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
@@ -27,7 +28,7 @@ export default function GiftTaxCalculator() {
   return (
     <CalculatorLayout
       inputCount={5}
-      notice={<Notice>{t("note")}</Notice>}
+      notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
           <NumberField label={t("amount")} value={amount} onChange={setAmount} step={5000} help={t("help.amount")} />

@@ -10,14 +10,14 @@ export const revalidate = 3600;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "calc.tarjeta-credito" });
+  const t = await getTranslations({ locale, namespace: "calc.intereses-tarjeta-credito" });
   return calculatorMetadata({ locale, slug: "intereses-tarjeta-credito", title: t("title"), description: t("intro") });
 }
 
 export default async function Page({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("calc.tarjeta-credito");
+  const t = await getTranslations("calc.intereses-tarjeta-credito");
 
   return (
     <CalculatorShell title={t("title")} intro={t("intro")} slug="intereses-tarjeta-credito">

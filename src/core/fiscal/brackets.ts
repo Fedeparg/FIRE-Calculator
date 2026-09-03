@@ -10,6 +10,14 @@
 export const FISCAL_YEAR = 2026;
 
 /**
+ * `FISCAL_YEAR` en texto, para inyectarlo como argumento `{year}` en los avisos
+ * traducidos de las calculadoras fiscales. Se pasa como cadena a propósito: así
+ * el año nunca queda sujeto al formateo numérico del idioma, que le añadiría
+ * separador de millares («2.026»).
+ */
+export const FISCAL_YEAR_LABEL = String(FISCAL_YEAR);
+
+/**
  * Un tramo de una escala progresiva.
  * - `upTo`: límite superior de la base para este tramo (incluido). `null` = sin
  *   límite (último tramo).
@@ -203,3 +211,22 @@ export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
 
 /** Tope anual de los gastos de difícil justificación (estimación directa simplificada). */
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP = 2000;
+
+/**
+ * Reducción por obtención de rendimientos del trabajo (art. 20 LIRPF). Es una
+ * escala decreciente de tres tramos sobre el rendimiento neto previo:
+ *  1. Hasta `..._FULL_LIMIT`: se aplica el importe máximo.
+ *  2. Hasta `..._TIER2_LIMIT`: el máximo menos `..._TIER2_SLOPE` € por cada euro
+ *     que excede del primer límite.
+ *  3. Hasta `..._TIER3_LIMIT`: `..._TIER3_BASE` menos `..._TIER3_SLOPE` € por
+ *     cada euro que excede del segundo límite.
+ * Por encima del tercer límite la reducción es 0.
+ * Fuente: AEAT, ejercicio de referencia (ver `FISCAL_YEAR`).
+ */
+export const WORK_INCOME_REDUCTION_FULL_LIMIT = 14852;
+export const WORK_INCOME_REDUCTION_MAX = 7302;
+export const WORK_INCOME_REDUCTION_TIER2_LIMIT = 17673.52;
+export const WORK_INCOME_REDUCTION_TIER2_SLOPE = 1.75;
+export const WORK_INCOME_REDUCTION_TIER3_LIMIT = 19747.5;
+export const WORK_INCOME_REDUCTION_TIER3_BASE = 2364.34;
+export const WORK_INCOME_REDUCTION_TIER3_SLOPE = 1.14;
