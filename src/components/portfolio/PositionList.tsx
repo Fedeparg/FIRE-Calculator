@@ -187,7 +187,13 @@ export default function PositionList({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-border bg-surface">
+      {/* `relative` NO es decorativo: la cabecera accesible de la columna de acciones es
+          un `sr-only`, que se posiciona en absoluto. Sin un ancestro posicionado se
+          anclaba al BODY, en la coordenada que le tocaría dentro de una tabla más ancha
+          que la pantalla, y estiraba el ancho del documento: la página entera se podía
+          arrastrar en horizontal sobre fondo vacío (en móvil, casi el triple de su
+          ancho). Anclado aquí, queda dentro del área que ya hace scroll. */}
+      <div className="relative overflow-x-auto rounded-2xl border border-border bg-surface">
         <table className="w-full min-w-[52rem] text-left text-sm">
           <thead>
             <tr className="border-b border-border text-muted">
@@ -323,7 +329,7 @@ export default function PositionList({
                       >
                         {pnlAbs > 0 ? "+" : ""}
                         {pnlMode === "pct"
-                          ? formatPercent(pnlPct!)
+                          ? formatPercent(pnlPct!, { minDecimals: 2 })
                           : formatCurrency(pnlAbs, p.currency)}
                       </span>
                     ) : (

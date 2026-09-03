@@ -36,8 +36,15 @@ export interface Formatters {
   formatCompactEUR: (n: number) => string;
   /** Notación compacta en una divisa arbitraria, para ejes de gráficas en la divisa elegida. */
   formatCompactCurrency: (n: number, currency: string) => string;
-  /** Recibe un porcentaje en base 100 (7 → "7 %"). */
-  formatPercent: (n: number) => string;
+  /**
+   * Recibe un porcentaje en base 100 (7 → "7 %"). Por defecto omite los decimales que
+   * no aportan, que es lo natural en prosa y en leyendas.
+   *
+   * `minDecimals` los fuerza: en una COLUMNA de cifras comparables, "39,4 %" entre
+   * "15,34 %" y "28,48 %" se lee como si tuviera menos precisión que las demás, cuando
+   * en realidad es 39,40 %. Ahí conviene pasar `{ minDecimals: 2 }`.
+   */
+  formatPercent: (n: number, options?: { minDecimals?: number }) => string;
   /** Moneda en una divisa arbitraria (EUR/USD/GBP/JPY…), para las posiciones de la cartera. */
   formatCurrency: (n: number, currency: string) => string;
   /** Símbolo corto de una divisa ("€", "$", "£", "CHF"…) en el idioma activo. */
@@ -79,6 +86,12 @@ function build(locale: Locale): Formatters {
   const pct = new Intl.NumberFormat(l, {
     style: "percent",
     minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  // Variante con dos decimales SIEMPRE, para columnas de cifras alineadas (ver `formatPercent`).
+  const pctFixed2 = new Intl.NumberFormat(l, {
+    style: "percent",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
@@ -139,7 +152,10 @@ function build(locale: Locale): Formatters {
     formatMultiplier: (n) => (Number.isFinite(n) ? multiplier.format(n) : NON_FINITE),
     formatCompactEUR: (n) => (Number.isFinite(n) ? `${compact.format(n)} €` : NON_FINITE),
     formatCompactCurrency,
-    formatPercent: (n) => (Number.isFinite(n) ? pct.format(n / 100) : NON_FINITE),
+    formatPercent: (n, options) =>
+      Number.isFinite(n)
+        ? (options?.minDecimals === 2 ? pctFixed2 : pct).format(n / 100)
+        : NON_FINITE,
     formatCurrency,
     currencySymbol,
     // El código ISO va SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY).

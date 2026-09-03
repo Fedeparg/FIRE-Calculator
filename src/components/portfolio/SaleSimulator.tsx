@@ -8,7 +8,7 @@ import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
 import { estimateSavingsTax, simulateSale, type TradeLot } from "@/core/fiscal/plusvalias";
 import { formatIsoDate } from "@/core/format";
 import { convertCurrency } from "@/core/fx";
-import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { useFormat } from "@/lib/format";
 import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";
 
@@ -45,7 +45,7 @@ const inputClass =
  */
 export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const t = useTranslations("portfolio.sale");
-  const { formatCurrency, formatPercent, formatQuantity } = useFormat();
+  const { formatCurrency, formatPercent, formatQuantity, decimalSeparator } = useFormat();
 
   const currency = position.currency;
 
@@ -63,9 +63,15 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const [typedPrice, setTypedPrice] = useState<string | null>(null);
   const [fees, setFees] = useState("");
 
+  // El precio sugerido se escribe con el separador decimal del idioma, como hace
+  // `NumberField`. Con `String(...)` salía "12.214", que en castellano se lee como doce
+  // mil doscientos catorce en vez de 12,214 €: un malentendido caro en una simulación
+  // fiscal, justo donde el usuario está mirando una cifra de impuestos.
   const priceText =
     typedPrice ??
-    (suggestedPrice !== null ? String(Number(suggestedPrice.toFixed(6))) : "");
+    (suggestedPrice !== null
+      ? formatDecimalInput(Number(suggestedPrice.toFixed(6)), decimalSeparator)
+      : "");
 
   const quantityNum = parseDecimalInput(quantity) ?? Number.NaN;
   const priceNum = parseDecimalInput(priceText) ?? Number.NaN;
