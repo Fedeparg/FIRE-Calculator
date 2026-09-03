@@ -19,6 +19,8 @@ Where Sextante is today, what's next, and what it deliberately won't do.
 | **Portfolio history** — purchase lots per position, one year of prices fetched on first sight, nightly valuation snapshots, evolution chart and breakdown by asset / broker / currency | ✅ Live |
 | **Capital-gains simulator** — FIFO lot matching with fees prorated, savings-scale estimate, explicit about what it does not model | ✅ Live |
 | **Shareable calculations** — every input in the URL, copy-link button, and named scenarios saved to your account | ✅ Live |
+| **FIRE goal on your real money** — the portfolio tracks progress towards your independence target, sharing scenarios with the calculator; CSV export included | ✅ Live |
+| **Changelog** — a public What's new page built from the project's own commit history, kept honest by a generator | ✅ Live |
 | **Remote MCP server** — 12 tools over Streamable HTTP, OAuth 2.1, per-tool scope step-up, per-token rate limit | ✅ Live |
 | **GDPR tooling** — data export, account deletion with cascade, connected-app revocation | ✅ Live |
 | **SEO** — canonical URLs, hreflang, sitemap, JSON-LD, dynamic OG images | ✅ Live |

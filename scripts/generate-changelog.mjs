@@ -63,12 +63,15 @@ function categoryFor({ type, scope }) {
   return 'internal';
 }
 
+// Se lee la rama ACTUAL, no `main` fijo: el changelog se redacta en la misma rama
+// que trae los cambios, antes de fusionar, para que la entrega salga publicada a la
+// vez que el código que describe. Con `main` fijo, lo escrito en una rama no se veía.
 const commits = git([
   'log',
   '--no-merges',
   '--date=short',
   '--pretty=format:%H\x1f%ad\x1f%s',
-  'main',
+  'HEAD',
 ])
   .split('\n')
   .filter(Boolean)
@@ -130,7 +133,7 @@ const releases = [...byDate.entries()]
     };
   });
 
-const output = { generatedFrom: 'git log main', releases };
+const output = { generatedFrom: 'git log HEAD', releases };
 
 if (process.argv.includes('--check')) {
   const missing = [];

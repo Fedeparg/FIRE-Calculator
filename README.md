@@ -56,6 +56,7 @@ Spanish, and every calculator runs in your browser — no account needed.
 | **Portfolio history** | Purchase lots per position, a year of prices fetched the first time a symbol is seen, nightly valuation snapshots, an evolution chart and a breakdown by asset, broker or currency |
 | **Capital-gains simulator** | "What if I sell?" with FIFO lot matching, fees prorated across the shares still open, and an estimate on the savings scale — upfront about the rules it does not model |
 | **Shareable and saveable** | Every input lives in the URL, so a calculation is a link; signed in, you can save named scenarios to your account |
+| **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold, sharing saved scenarios with the FIRE calculator |
 | **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
 | **Bilingual** | Spanish (default) and English: 1,065 translation keys per locale, with parity enforced by a test, not by hope |
 | **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 26 tools, in both languages |

@@ -1,18 +1,62 @@
 {
-  "generatedFrom": "git log main",
+  "generatedFrom": "git log HEAD",
   "releases": [
     {
       "date": "2026-09-03",
       "title": {
-        "es": "Histórico de cartera, IRPF por comunidad y enlaces compartibles",
-        "en": "Portfolio history, regional income tax and shareable links"
+        "es": "Histórico de cartera, IRPF por comunidad, objetivo FIRE y novedades",
+        "en": "Portfolio history, regional income tax, a FIRE goal and a changelog"
       },
       "summary": {
-        "es": "La cartera deja de ser la foto de un día: ahora guarda cada compra y venta, dibuja la evolución del patrimonio y su composición, y estima la plusvalía de una venta emparejando lotes por orden de antigüedad, como exige la ley. Las calculadoras de renta permiten elegir comunidad autónoma, y cualquier cálculo se puede compartir por enlace o guardar con nombre en la cuenta.",
-        "en": "The portfolio stops being a single day's snapshot: it now records every purchase and sale, charts how your net worth and its composition evolve, and estimates the tax on a sale by matching lots oldest-first, as Spanish law requires. Income calculators let you pick your autonomous community, and any calculation can be shared as a link or saved to your account under a name."
+        "es": "La cartera deja de ser la foto de un día: guarda cada compra y venta, dibuja la evolución del patrimonio y su composición, estima la plusvalía de una venta emparejando lotes por orden de antigüedad como exige la ley, y ahora también muestra tu progreso hacia la independencia financiera con el dinero que tienes de verdad. Las calculadoras de renta permiten elegir comunidad autónoma, cualquier cálculo se puede compartir por enlace o guardar con nombre, y esta misma página de novedades nace hoy.",
+        "en": "The portfolio stops being a single day’s snapshot: it records every purchase and sale, charts how your net worth and its composition evolve, estimates the tax on a sale by matching lots oldest-first as the law requires, and now shows your progress towards financial independence against the money you actually hold. The income-tax calculators let you pick your autonomous community, any calculation can be shared as a link or saved by name, and this very What’s new page is born today."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "b92e84cd",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la cartera muestra tu progreso hacia la independencia financiera usando el patrimonio real, y se puede descargar en CSV",
+            "en": "the portfolio shows your progress towards financial independence using your real net worth, and can be downloaded as a CSV"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "65930574",
+          "type": "chore",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "actualiza el motor del servidor a su última versión mayor",
+            "en": "updates the server engine to its latest major version"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "013d1139",
+          "type": "feat",
+          "scope": "changelog",
+          "category": "feature",
+          "text": {
+            "es": "nueva página de novedades con todo lo que se ha publicado, entrega a entrega",
+            "en": "a new What’s new page with everything that has shipped, release by release"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "5bc1b7a5",
+          "type": "feat",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "el historial de cambios se extrae del propio registro del proyecto, para que no se quede desactualizado",
+            "en": "the change history is extracted from the project’s own record, so it cannot fall out of date"
+          },
+          "hidden": false
+        },
         {
           "hash": "d622b103",
           "type": "docs",
