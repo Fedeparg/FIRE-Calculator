@@ -55,7 +55,7 @@ export interface ReapSummary {
  *  3. `mcp_audit_log` más antiguo que la retención configurada.
  *  4. `oauth_clients` registrados por DCR, antiguos y ABANDONADOS.
  *
- * Análogo al `PricesScheduler`. Configurable con `OAUTH_REAPER_CRON` y con las variables
+ * Análogo al `DailyJobsScheduler`. Configurable con `OAUTH_REAPER_CRON` y con las variables
  * `*_RETENTION_DAYS` (ver `.env.example`).
  */
 @Injectable()

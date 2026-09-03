@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { desc, inArray } from 'drizzle-orm';
+import { desc, inArray, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module';
 import { instrumentPrices, positions } from '../db/schema';
@@ -15,7 +15,17 @@ const FX_QUOTE = 'USD';
  * (ISIN nuevo con resolución larga), evitando que el POST cuelgue / agote el proxy.
  */
 const PRIME_MAX_WAIT_MS = 9_000;
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+/** Filas por sentencia al cachear un histórico (evita una sentencia por cierre). */
+const UPSERT_CHUNK_SIZE = 200;
+/**
+ * Espera `ms`. El temporizador va `unref`: solo se usa como TOPE de espera en un
+ * `Promise.race`, así que, si el trabajo termina antes, el timer pendiente no debe mantener
+ * vivo el proceso (apagado limpio del contenedor, y tests que no se quedan colgados 9 s).
+ */
+const delay = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms).unref();
+  });
 /** Símbolo de Yahoo del par CCY→USD (= USD por unidad de CCY). USD consigo mismo es 1. */
 function fxSymbol(currency: string): string {
   return `${currency}${FX_QUOTE}=X`;
@@ -200,17 +210,25 @@ export class PricesService {
     await Promise.race([this.primeNow(ticker, currency), delay(PRIME_MAX_WAIT_MS)]);
   }
 
-  /** Resolución + fetch + upsert de un ticker. Autocontenido y tolerante a fallos. */
+  /**
+   * Resolución + fetch + upsert de un ticker. Autocontenido y tolerante a fallos.
+   *
+   * Del INSTRUMENTO se trae un AÑO de cierres, no solo el del día: hasta que este cambio
+   * existió, `instrument_prices` solo recibía el cierre del día en que corría el cron, así que
+   * un símbolo nuevo no tenía serie hasta pasados meses y la gráfica de evolución nacía vacía.
+   * Es una única petición extra por símbolo NUEVO (ver `PriceProvider.getHistory`).
+   *
+   * Del par FX basta el último cierre: el histórico de divisas no se usa hacia atrás (cada
+   * snapshot de cartera guarda las tasas de SU día).
+   */
   private async primeNow(ticker: string, currency?: string): Promise<void> {
     try {
       const symbol = await this.resolver.resolve(ticker);
-      const wanted = new Set<string>();
-      if (symbol) wanted.add(symbol);
-      if (currency && currency !== FX_QUOTE) wanted.add(fxSymbol(currency));
-      if (wanted.size === 0) return;
+      if (symbol) await this.primeHistory(symbol);
 
-      const quotes = await this.provider.getQuotes([...wanted]);
-      await this.upsertQuotes(quotes);
+      if (currency && currency !== FX_QUOTE) {
+        await this.upsertQuotes(await this.provider.getQuotes([fxSymbol(currency)]));
+      }
     } catch (error) {
       this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${
         (error as Error).message
@@ -218,26 +236,55 @@ export class PricesService {
     }
   }
 
+  /**
+   * Trae y cachea el histórico de un símbolo recién dado de alta. Si la fuente no devuelve
+   * serie (símbolo exótico, respuesta sin `timestamp`), CAE al último cierre: el
+   * comportamiento previo al histórico, para no dejar la posición sin precio por intentar
+   * conseguir más datos.
+   */
+  private async primeHistory(symbol: string): Promise<void> {
+    const history = await this.provider.getHistory(symbol);
+    if (history.length > 0) {
+      await this.upsertQuoteList(history);
+      this.logger.log(`Histórico de ${symbol}: ${history.length} cierres cacheados`);
+      return;
+    }
+    await this.upsertQuotes(await this.provider.getQuotes([symbol]));
+  }
+
   /** Upsert de un lote de cotizaciones en `instrument_prices` (1 fila por símbolo y día). */
-  private async upsertQuotes(quotes: Map<string, Quote>): Promise<void> {
-    for (const quote of quotes.values()) {
+  private upsertQuotes(quotes: Map<string, Quote>): Promise<void> {
+    return this.upsertQuoteList([...quotes.values()]);
+  }
+
+  /**
+   * Upsert de una LISTA de cotizaciones. Se inserta por bloques en vez de fila a fila porque
+   * un histórico anual son ~250 filas por símbolo: una sentencia por fila multiplicaría por
+   * 250 los viajes a la BD durante un alta, que es una ruta síncrona del usuario.
+   */
+  private async upsertQuoteList(quotes: readonly Quote[]): Promise<void> {
+    const fetchedAt = new Date();
+    const rows = quotes.map((quote) => ({
+      symbol: quote.symbol,
+      date: quote.date,
+      close: quote.close.toString(),
+      currency: quote.currency,
+      source: this.provider.name,
+      fetchedAt,
+    }));
+
+    for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+      const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
       await this.db
         .insert(instrumentPrices)
-        .values({
-          symbol: quote.symbol,
-          date: quote.date,
-          close: quote.close.toString(),
-          currency: quote.currency,
-          source: this.provider.name,
-          fetchedAt: new Date(),
-        })
+        .values(chunk)
         .onConflictDoUpdate({
           target: [instrumentPrices.symbol, instrumentPrices.date],
           set: {
-            close: quote.close.toString(),
-            currency: quote.currency,
-            source: this.provider.name,
-            fetchedAt: new Date(),
+            close: sql`excluded.close`,
+            currency: sql`excluded.currency`,
+            source: sql`excluded.source`,
+            fetchedAt: sql`excluded.fetched_at`,
           },
         });
     }

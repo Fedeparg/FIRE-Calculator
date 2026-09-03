@@ -30,6 +30,9 @@ export function createTestDb(): { db: Database; close: () => Promise<void> } {
 export async function resetDb(db: Database): Promise<void> {
   await db.execute(sql`
     TRUNCATE TABLE
+      position_lots,
+      portfolio_snapshots,
+      saved_scenarios,
       positions,
       instrument_prices,
       instruments,

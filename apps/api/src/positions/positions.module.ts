@@ -5,12 +5,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { SESSION_TTL_SECONDS } from '../auth/session.constants';
 import { PricesModule } from '../prices/prices.module';
+import { PositionLotsController } from './position-lots.controller';
+import { PositionLotsService } from './position-lots.service';
 import { PositionsController } from './positions.controller';
 import { PositionsService } from './positions.service';
 
 /**
- * Módulo de cartera. Registra JwtModule con el mismo secreto que el de auth para que
- * `JwtAuthGuard` pueda verificar la cookie de sesión en estos endpoints. Importa
+ * Módulo de cartera: posiciones (la FOTO que lee toda la app) y sus lotes (la PELÍCULA de
+ * compras y ventas de la que se recalcula esa foto). Registra JwtModule con el mismo secreto
+ * que el de auth para que `JwtAuthGuard` verifique la cookie de sesión en estos endpoints. Importa
  * `PricesModule` para refrescar en caliente el precio de una posición recién dada de alta
  * o editada (sin esperar al cron diario).
  */
@@ -26,10 +29,11 @@ import { PositionsService } from './positions.service';
       }),
     }),
   ],
-  controllers: [PositionsController],
-  providers: [PositionsService, JwtAuthGuard],
-  // Exportado para que el módulo de auth pueda reutilizarlo en la exportación RGPD
-  // de datos del usuario (GET /auth/account/export), sin duplicar el acceso a datos.
-  exports: [PositionsService],
+  controllers: [PositionsController, PositionLotsController],
+  providers: [PositionsService, PositionLotsService, JwtAuthGuard],
+  // Exportados para que el módulo de auth pueda reutilizarlos en la exportación RGPD
+  // de datos del usuario (GET /auth/account/export) y para que las tools MCP de lotes
+  // reutilicen el mismo servicio, sin duplicar el acceso a datos.
+  exports: [PositionsService, PositionLotsService],
 })
 export class PositionsModule {}

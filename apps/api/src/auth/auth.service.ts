@@ -11,9 +11,22 @@ import { EMAIL_SERVICE, type EmailService } from '../email/email.service';
 import { OAuthClientsStore } from '../oauth/oauth-clients.store';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service';
 import {
+  PortfolioSnapshotsService,
+  HISTORY_MAX_DAYS,
+  type PortfolioHistoryPoint,
+} from '../portfolio/portfolio-snapshots.service';
+import {
+  PositionLotsService,
+  type PositionLotResponse,
+} from '../positions/position-lots.service';
+import {
   PositionsService,
   type PositionResponse,
 } from '../positions/positions.service';
+import {
+  SavedScenariosService,
+  type SavedScenarioResponse,
+} from '../scenarios/saved-scenarios.service';
 
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos
@@ -30,15 +43,22 @@ export type ConnectedAppExport = {
 };
 
 /**
- * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye
- * el email de la cuenta, TODAS sus posiciones y las aplicaciones conectadas (accesos
- * OAuth/MCP). Si se añaden más datos personales en el futuro, deben sumarse aquí para que
- * la exportación siga siendo completa.
+ * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye el
+ * email de la cuenta, TODAS sus posiciones y sus lotes, el histórico de valoración, los
+ * escenarios guardados y las aplicaciones conectadas (accesos OAuth/MCP). Si se añaden más
+ * datos personales en el futuro, deben sumarse aquí para que la exportación siga siendo
+ * completa: una tabla nueva con datos del usuario que no aparezca aquí es un agujero de
+ * portabilidad, aunque el borrado sí la cubra por cascada.
  */
 export type AccountExport = {
   email: string;
   exportedAt: string;
   positions: PositionResponse[];
+  /** Compras y ventas de todas sus posiciones (el histórico del que salen los agregados). */
+  positionLots: PositionLotResponse[];
+  /** Serie de valoración diaria, en EUR (la divisa base del histórico). */
+  portfolioHistory: PortfolioHistoryPoint[];
+  savedScenarios: SavedScenarioResponse[];
   connectedApps: ConnectedAppExport[];
 };
 
@@ -52,6 +72,9 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly positions: PositionsService,
+    private readonly lots: PositionLotsService,
+    private readonly snapshots: PortfolioSnapshotsService,
+    private readonly scenarios: SavedScenariosService,
     private readonly grants: OAuthGrantsService,
     private readonly clients: OAuthClientsStore,
   ) {}
@@ -110,11 +133,16 @@ export class AuthService {
   }
 
   /**
-   * Exporta todos los datos personales del usuario (RGPD): su email y todas sus
-   * posiciones. El `userId` viene SIEMPRE del JWT, nunca del cliente.
+   * Exporta todos los datos personales del usuario (RGPD): email, posiciones, lotes,
+   * histórico de valoración, escenarios guardados y apps conectadas. El `userId` viene
+   * SIEMPRE del JWT, nunca del cliente.
    */
   async exportData(user: SessionUser): Promise<AccountExport> {
     const positions = await this.positions.findAllByUser(user.id);
+    const positionLots = await this.lots.findAllByUser(user.id);
+    // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
+    const history = await this.snapshots.history(user.id, HISTORY_MAX_DAYS);
+    const savedScenarios = await this.scenarios.findAllByUser(user.id);
     const grants = await this.grants.listForUser(user.id);
     const connectedApps: ConnectedAppExport[] = await Promise.all(
       grants.map(async (g) => {
@@ -132,13 +160,17 @@ export class AuthService {
       email: user.email,
       exportedAt: new Date().toISOString(),
       positions,
+      positionLots,
+      portfolioHistory: history.points,
+      savedScenarios,
       connectedApps,
     };
   }
 
   /**
-   * Borra la cuenta del usuario (RGPD: derecho de supresión). Elimina la fila de
-   * `users`; las `positions` caen por `ON DELETE CASCADE`. El `userId` viene del JWT.
+   * Borra la cuenta del usuario (RGPD: derecho de supresión). Elimina la fila de `users`; el
+   * resto (`positions`, `position_lots`, `portfolio_snapshots`, `saved_scenarios`, tokens y
+   * grants OAuth) cae por `ON DELETE CASCADE`. El `userId` viene del JWT.
    */
   async deleteAccount(userId: string): Promise<void> {
     await this.db.delete(users).where(eq(users.id, userId));

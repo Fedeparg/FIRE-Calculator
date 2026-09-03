@@ -8,7 +8,6 @@ import { INSTRUMENT_SEARCH } from './instrument-search';
 import { InstrumentsController } from './instruments.controller';
 import { PRICE_PROVIDER } from './price-provider.interface';
 import { PricesController } from './prices.controller';
-import { PricesScheduler } from './prices.scheduler';
 import { PricesService } from './prices.service';
 import { OpenFigiSymbolResolver } from './openfigi-symbol-resolver';
 import { SYMBOL_RESOLVER } from './symbol-resolver';
@@ -19,6 +18,9 @@ import { YahooInstrumentSearchProvider } from './yahoo-search.provider';
  * Módulo de precios. La fuente de precios (`PRICE_PROVIDER`) y la resolución de símbolos
  * (`SYMBOL_RESOLVER`) se inyectan por token: cambiar de Yahoo a una fuente de pago, o
  * enchufar OpenFIGI, es sustituir la clase aquí sin tocar el resto.
+ *
+ * El cron diario NO vive aquí: encadena refresco de precios y snapshots de cartera, así que
+ * está en `jobs/DailyJobsModule`, por encima de este módulo y del de portfolio.
  */
 @Module({
   imports: [
@@ -34,14 +36,14 @@ import { YahooInstrumentSearchProvider } from './yahoo-search.provider';
   controllers: [PricesController, InstrumentsController],
   providers: [
     PricesService,
-    PricesScheduler,
     JwtAuthGuard,
     { provide: PRICE_PROVIDER, useClass: YahooPriceProvider },
     { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
     { provide: INSTRUMENT_SEARCH, useClass: YahooInstrumentSearchProvider },
   ],
-  // Exportado para que la valoración de cartera (PortfolioModule, tools MCP) reutilice los
-  // precios y tasas FX cacheados sin duplicar el acceso a datos.
-  exports: [PricesService],
+  // Exportados para que la valoración de cartera (PortfolioModule, tools MCP) reutilice los
+  // precios y tasas FX cacheados, y para que la tool MCP `search_instruments` use el MISMO
+  // buscador que el alta de posiciones, sin duplicar el acceso a datos.
+  exports: [PricesService, INSTRUMENT_SEARCH],
 })
 export class PricesModule {}

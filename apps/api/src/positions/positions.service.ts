@@ -1,10 +1,8 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
@@ -15,6 +13,8 @@ import { PricesService } from '../prices/prices.service';
 import { CombinePositionDto } from './dto/combine-position.dto';
 import { CreatePositionDto } from './dto/create-position.dto';
 import { UpdatePositionDto } from './dto/update-position.dto';
+import { findOwnedPosition, type DatabaseOrTransaction } from './position-access';
+import { PositionLotsService, todayUtc } from './position-lots.service';
 
 /**
  * Posición tal y como la consume el frontend. Drizzle devuelve `numeric` como `string`
@@ -37,6 +37,7 @@ export class PositionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly prices: PricesService,
+    private readonly lots: PositionLotsService,
   ) {}
 
   /**
@@ -52,23 +53,40 @@ export class PositionsService {
     await this.assertCanUseTickerBroker(userId, ticker, broker);
 
     try {
-      const [row] = await this.db
-        .insert(positions)
-        .values({
+      // El alta y su lote inicial van en la MISMA transacción: una posición sin lotes sería
+      // una película sin fotograma inicial y el primer recálculo la pondría a cero.
+      const row = await this.db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(positions)
+          .values({
+            userId,
+            ticker,
+            name: dto.name ?? null,
+            // `numeric` se almacena como string para conservar la precisión exacta.
+            quantity: dto.quantity.toString(),
+            avgPrice: dto.avgPrice.toString(),
+            // El bróker vacío se guarda como NULL (sin especificar).
+            broker: broker || null,
+            currency: dto.currency ?? 'EUR',
+          })
+          .returning();
+
+        await this.lots.appendLotOwned(tx, {
+          positionId: inserted.id,
           userId,
-          ticker,
-          name: dto.name ?? null,
-          // `numeric` se almacena como string para conservar la precisión exacta.
-          quantity: dto.quantity.toString(),
-          avgPrice: dto.avgPrice.toString(),
-          // El bróker vacío se guarda como NULL (sin especificar).
-          broker: broker || null,
-          currency: dto.currency ?? 'EUR',
-        })
-        .returning();
+          kind: 'buy',
+          quantity: inserted.quantity,
+          price: inserted.avgPrice,
+          // Misma convención que el backfill: la fecha de alta (en UTC) es lo más cercano a
+          // la fecha real de compra que conocemos mientras el usuario no diga otra cosa.
+          tradedAt: inserted.createdAt.toISOString().slice(0, 10),
+        });
+        return inserted;
+      });
 
       // Refresca el precio en caliente para que la valoración aparezca al instante (sin
-      // esperar al cron diario). Es tolerante a fallos: nunca rompe el alta.
+      // esperar al cron diario). Fuera de la transacción: es una llamada de red.
+      // Es tolerante a fallos: nunca rompe el alta.
       await this.prices.primeSymbol(row.ticker, row.currency);
       return this.toResponse(row);
     } catch (error) {
@@ -94,9 +112,14 @@ export class PositionsService {
   }
 
   /**
-   * Combina una nueva compra con una posición existente mediante MEDIA PONDERADA:
-   *   cantidad' = q_old + q_new
-   *   precio'   = (q_old·p_old + q_new·p_new) / (q_old + q_new)
+   * Combina una nueva compra con una posición existente. Registra la compra como un LOTE y
+   * deja que el recálculo derive cantidad y precio medio (media ponderada / coste medio
+   * móvil, ver `lot-aggregate.ts`), en vez de hacer la media a mano.
+   *
+   * PRECISIÓN: la versión anterior calculaba `(q_old·p_old + q_new·p_new) / (q_old + q_new)`
+   * con `Number()`, es decir en coma flotante binaria: el precio medio se desplazaba unas
+   * milésimas en cada combinación y el error se acumulaba. Ahora la aritmética es decimal
+   * exacta sobre los `string` de `numeric`, y además queda histórico de la compra.
    *
    * La divisa de la compra debe coincidir con la de la posición (no tiene sentido
    * promediar un precio en EUR con otro en USD) → 400 si difieren.
@@ -114,23 +137,19 @@ export class PositionsService {
       );
     }
 
-    const qOld = Number(current.quantity);
-    const pOld = Number(current.avgPrice);
-    const qNew = dto.quantity;
-    const pNew = dto.avgPrice;
-
-    const newQuantity = qOld + qNew;
-    const newAvgPrice = newQuantity > 0 ? (qOld * pOld + qNew * pNew) / newQuantity : 0;
-
-    const [row] = await this.db
-      .update(positions)
-      .set({
-        quantity: newQuantity.toString(),
-        avgPrice: newAvgPrice.toString(),
-        updatedAt: new Date(),
-      })
-      .where(eq(positions.id, id))
-      .returning();
+    const row = await this.db.transaction(async (tx) => {
+      await this.lots.appendLotOwned(tx, {
+        positionId: id,
+        userId,
+        kind: 'buy',
+        quantity: dto.quantity.toString(),
+        price: dto.avgPrice.toString(),
+        // Sin fecha en el DTO (la API pública no la pedía): la compra es de hoy. Para fijar
+        // otra fecha existen los endpoints de lotes.
+        tradedAt: todayUtc(),
+      });
+      return this.reread(tx, id);
+    });
 
     return this.toResponse(row);
   }
@@ -157,19 +176,35 @@ export class PositionsService {
       await this.assertCanUseTickerBroker(userId, ticker, broker, id);
     }
 
-    const [row] = await this.db
-      .update(positions)
-      .set({
-        ticker,
-        broker: broker || null,
-        name: dto.name !== undefined ? dto.name || null : current.name,
-        quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
-        avgPrice: dto.avgPrice !== undefined ? dto.avgPrice.toString() : current.avgPrice,
-        currency: dto.currency ?? current.currency,
-        updatedAt: new Date(),
-      })
-      .where(eq(positions.id, id))
-      .returning();
+    const declaresAmounts = dto.quantity !== undefined || dto.avgPrice !== undefined;
+
+    const row = await this.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(positions)
+        .set({
+          ticker,
+          broker: broker || null,
+          name: dto.name !== undefined ? dto.name || null : current.name,
+          quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
+          avgPrice: dto.avgPrice !== undefined ? dto.avgPrice.toString() : current.avgPrice,
+          currency: dto.currency ?? current.currency,
+          updatedAt: new Date(),
+        })
+        .where(eq(positions.id, id))
+        .returning();
+
+      if (!declaresAmounts) return updated;
+
+      // Editar cantidad/precio medio a mano es DECLARAR el estado actual: los lotes se
+      // realinean para que foto y película sigan diciendo lo mismo (ver `declareState`).
+      await this.lots.declareState(tx, {
+        positionId: id,
+        userId,
+        quantity: updated.quantity,
+        price: updated.avgPrice,
+      });
+      return this.reread(tx, id);
+    });
 
     // Si cambió el símbolo, su precio puede no estar cacheado: refréscalo en caliente.
     if (row.ticker !== current.ticker) {
@@ -192,15 +227,16 @@ export class PositionsService {
   /**
    * Localiza una posición por id verificando propiedad: 404 si no existe, 403 si es de
    * otro usuario. Centraliza el scoping por usuario para todos los endpoints por id.
+   * Delega en el helper compartido para que el servicio de lotes aplique EXACTAMENTE la
+   * misma regla de seguridad (ver `position-access.ts`).
    */
-  private async findOwned(userId: string, id: string): Promise<Position> {
-    const [row] = await this.db.select().from(positions).where(eq(positions.id, id));
-    if (!row) {
-      throw new NotFoundException('Posición no encontrada');
-    }
-    if (row.userId !== userId) {
-      throw new ForbiddenException('No puedes acceder a una posición que no es tuya');
-    }
+  private findOwned(userId: string, id: string): Promise<Position> {
+    return findOwnedPosition(this.db, userId, id);
+  }
+
+  /** Relee la posición tras un recálculo de lotes, para devolver la foto ya sincronizada. */
+  private async reread(tx: DatabaseOrTransaction, id: string): Promise<Position> {
+    const [row] = await tx.select().from(positions).where(eq(positions.id, id));
     return row;
   }
 
