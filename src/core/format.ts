@@ -34,6 +34,8 @@ export interface Formatters {
   formatMultiplier: (n: number) => string;
   /** Notación compacta para ejes de gráficas ("1,2 M €"). */
   formatCompactEUR: (n: number) => string;
+  /** Notación compacta en una divisa arbitraria, para ejes de gráficas en la divisa elegida. */
+  formatCompactCurrency: (n: number, currency: string) => string;
   /** Recibe un porcentaje en base 100 (7 → "7 %"). */
   formatPercent: (n: number) => string;
   /** Moneda en una divisa arbitraria (EUR/USD/GBP/JPY…), para las posiciones de la cartera. */
@@ -83,6 +85,7 @@ function build(locale: Locale): Formatters {
   // Cachés por divisa (dentro del closure del idioma: cada locale tiene las suyas). Sin esto,
   // una caché global por-divisa devolvería el formateador del primer idioma que la tocara.
   const currencyFormatters = new Map<string, Intl.NumberFormat>();
+  const compactCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const currencySymbols = new Map<string, string>();
 
   const formatCurrency = (n: number, currency: string): string => {
@@ -92,6 +95,24 @@ function build(locale: Locale): Formatters {
       // Los decimales los decide `Intl` por divisa (EUR/USD → 2, JPY → 0): forzar 2 rompería el yen.
       fmt = new Intl.NumberFormat(l, { style: "currency", currency });
       currencyFormatters.set(currency, fmt);
+    }
+    return fmt.format(n);
+  };
+
+  // Compacto CON divisa: se delega en `Intl` (style "currency" + notation "compact") en vez de
+  // pegar el símbolo a mano, porque la posición del símbolo depende del idioma ("1,2 M €" en
+  // es, "€1.2M" en en) y del propio código de divisa.
+  const formatCompactCurrency = (n: number, currency: string): string => {
+    if (!Number.isFinite(n)) return NON_FINITE;
+    let fmt = compactCurrencyFormatters.get(currency);
+    if (!fmt) {
+      fmt = new Intl.NumberFormat(l, {
+        style: "currency",
+        currency,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      });
+      compactCurrencyFormatters.set(currency, fmt);
     }
     return fmt.format(n);
   };
@@ -117,6 +138,7 @@ function build(locale: Locale): Formatters {
     formatQuantity: (n) => (Number.isFinite(n) ? quantity.format(n) : NON_FINITE),
     formatMultiplier: (n) => (Number.isFinite(n) ? multiplier.format(n) : NON_FINITE),
     formatCompactEUR: (n) => (Number.isFinite(n) ? `${compact.format(n)} €` : NON_FINITE),
+    formatCompactCurrency,
     formatPercent: (n) => (Number.isFinite(n) ? pct.format(n / 100) : NON_FINITE),
     formatCurrency,
     currencySymbol,

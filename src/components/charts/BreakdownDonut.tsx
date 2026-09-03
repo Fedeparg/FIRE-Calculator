@@ -10,6 +10,11 @@ type Props = {
   title: string;
   data: DonutSlice[];
   centerLabel: string;
+  /**
+   * Divisa de los importes. Si se omite se formatea en euros sin decimales, igual que
+   * siempre; la cartera la pasa para mostrar la divisa que el usuario haya elegido.
+   */
+  currency?: string;
 };
 
 /**
@@ -23,8 +28,9 @@ type Props = {
  * etiqueta corta y sus nodos internos quedan fuera del árbol de accesibilidad.
  * Duplicar esos mismos números en una tabla `sr-only` los haría oír dos veces.
  */
-export default function BreakdownDonut({ title, data, centerLabel }: Props) {
-  const { formatEUR } = useFormat();
+export default function BreakdownDonut({ title, data, centerLabel, currency }: Props) {
+  const { formatCurrency, formatEUR } = useFormat();
+  const formatValue = currency ? (n: number) => formatCurrency(n, currency) : formatEUR;
   const tc = useTranslations("chart");
   const total = data.reduce((sum, d) => sum + Math.max(0, d.value), 0);
   const pct = (v: number) => (total > 0 ? Math.round((Math.max(0, v) / total) * 100) : 0);
@@ -61,7 +67,7 @@ export default function BreakdownDonut({ title, data, centerLabel }: Props) {
           </div>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
             <span className="text-xs text-muted">{centerLabel}</span>
-            <span className="text-lg font-semibold text-foreground">{formatEUR(total)}</span>
+            <span className="text-lg font-semibold text-foreground">{formatValue(total)}</span>
           </div>
         </div>
 
@@ -77,7 +83,7 @@ export default function BreakdownDonut({ title, data, centerLabel }: Props) {
                 {d.name}
               </span>
               <span className="text-foreground">
-                <span className="font-medium">{formatEUR(d.value)}</span>
+                <span className="font-medium">{formatValue(d.value)}</span>
                 <span className="ml-1.5 text-muted">{pct(d.value)}%</span>
               </span>
             </li>

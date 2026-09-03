@@ -24,7 +24,11 @@ type Props = {
   rates: Record<string, number>;
   /** Id de la posición que se está editando (resaltada), o null. */
   editingId: string | null;
+  /** Id de la posición cuyo panel de lotes está abierto, o null. */
+  detailId: string | null;
   onEdit: (position: Position) => void;
+  /** Abre (o cierra, si ya lo estaba) el panel de lotes de una posición. */
+  onToggleDetail: (id: string) => void;
   onDeleted: (id: string) => void;
 };
 
@@ -77,7 +81,9 @@ export default function PositionList({
   prices,
   rates,
   editingId,
+  detailId,
   onEdit,
+  onToggleDetail,
   onDeleted,
 }: Props) {
   const t = useTranslations("portfolio.list");
@@ -348,6 +354,16 @@ export default function PositionList({
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onToggleDetail(p.id)}
+                          aria-pressed={detailId === p.id}
+                          className={`rounded-md border border-border px-2.5 py-1 text-xs font-medium transition hover:bg-surface-2 hover:text-foreground ${
+                            detailId === p.id ? "bg-surface-2 text-foreground" : "text-muted"
+                          }`}
+                        >
+                          {t("lots")}
+                        </button>
                         <button
                           type="button"
                           onClick={() => onEdit(p)}

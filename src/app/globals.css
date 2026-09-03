@@ -25,6 +25,18 @@
   --danger-fg: #ffffff;
   --danger-soft: #fef2f2;
   --danger-border: #f3c4c4;
+  /* Paleta categórica de gráficas (composición de la cartera). Ocho tonos con matiz
+     bien separado, para que sigan distinguiéndose en un donut de muchos sectores.
+     Los dos primeros coinciden con --brand y --accent para no chocar con el resto
+     de la interfaz. */
+  --chart-1: #4f46e5;
+  --chart-2: #10b981;
+  --chart-3: #f59e0b;
+  --chart-4: #db2777;
+  --chart-5: #0891b2;
+  --chart-6: #7c3aed;
+  --chart-7: #65a30d;
+  --chart-8: #ea580c;
   color-scheme: light;
 }
 
@@ -48,6 +60,15 @@
   --danger-fg: #0a0f1d;
   --danger-soft: #2a1414;
   --danger-border: #4a2222;
+  /* Misma secuencia de matices, aclarada para conservar contraste sobre fondo oscuro. */
+  --chart-1: #818cf8;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #f472b6;
+  --chart-5: #22d3ee;
+  --chart-6: #a78bfa;
+  --chart-7: #a3e635;
+  --chart-8: #fb923c;
   color-scheme: dark;
 }
 

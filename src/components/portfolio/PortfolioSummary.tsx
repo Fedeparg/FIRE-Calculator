@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import { aggregatePortfolio } from "@/core/fx";
@@ -18,6 +18,9 @@ type Props = {
   prices: Record<string, PriceInfo>;
   /** Tasas FX desde la API; null mientras cargan o si no hay datos. */
   fxRates: FxRates | null;
+  /** Divisa elegida. La gobierna el padre porque la comparten histórico y composición. */
+  display: string;
+  onDisplayChange: (currency: string) => void;
 };
 
 /**
@@ -26,10 +29,15 @@ type Props = {
  * precio en su propia divisa y convertible al destino; el resto se excluye y se señala,
  * para no inflar el total con conversiones que no podemos hacer.
  */
-export default function PortfolioSummary({ positions, prices, fxRates }: Props) {
+export default function PortfolioSummary({
+  positions,
+  prices,
+  fxRates,
+  display,
+  onDisplayChange,
+}: Props) {
   const t = useTranslations("portfolio.summary");
   const { currencyLabel, formatCurrency, formatPercent } = useFormat();
-  const [display, setDisplay] = useState<string>("EUR");
 
   const rates = useMemo(() => fxRates?.rates ?? {}, [fxRates]);
   const agg = useMemo(
@@ -50,7 +58,7 @@ export default function PortfolioSummary({ positions, prices, fxRates }: Props) 
           {t("displayIn")}
           <select
             value={display}
-            onChange={(e) => setDisplay(e.target.value)}
+            onChange={(e) => onDisplayChange(e.target.value)}
             className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           >
             {PORTFOLIO_CURRENCIES.map((c) => (

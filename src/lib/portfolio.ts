@@ -66,3 +66,28 @@ export type Position = {
   currency: string;
   createdAt: string;
 };
+
+/** Tipo de operación de un lote: compra o venta. */
+export type PositionLotKind = "buy" | "sell";
+
+/**
+ * Una operación concreta del histórico de una posición, tal y como la devuelve
+ * `GET /api/positions/:positionId/lots`.
+ *
+ * IMPORTANTE: un lote NO lleva divisa propia. Sus importes están siempre en la divisa de la
+ * posición a la que pertenece (`Position.currency`), que es lo que permite sumarlos entre sí
+ * sin convertir nada.
+ */
+export type PositionLot = {
+  id: string;
+  positionId: string;
+  kind: PositionLotKind;
+  quantity: number;
+  price: number;
+  /** Comisiones y gastos de la operación. No entran en el precio medio; sí en la fiscalidad. */
+  fees: number;
+  /** Fecha de la operación (`YYYY-MM-DD`). */
+  tradedAt: string;
+  note: string | null;
+  createdAt: string;
+};
