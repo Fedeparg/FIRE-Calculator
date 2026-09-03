@@ -1122,6 +1122,7 @@
       "pnlModePct": "%",
       "pnlModeAbs": "Amount",
       "priceAsOf": "Price as of {date}",
+      "stalePrice": "Price as of {date}, older than the portfolio's last refresh ({latest}): this value is not up to date.",
       "sortBy": "Sort by {field}",
       "noPrice": "No market price yet for this symbol.",
       "actions": "Actions",

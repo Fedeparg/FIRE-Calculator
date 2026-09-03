@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { convertCurrency } from "@/core/fx";
 import { formatIsoDate } from "@/core/format";
 import { useFormat } from "@/lib/format";
+import { isStalePrice, latestPriceDate } from "@/core/portfolio-prices";
 import {
   DEFAULT_SORT_DIR,
   DEFAULT_SORT_KEY,
@@ -43,6 +44,8 @@ type Row = {
   marketValue: number | null;
   pnlAbs: number | null;
   pnlPct: number | null;
+  /** El precio de esta fila es anterior al del último refresco de la cartera. */
+  stale: boolean;
   missingReason: string;
   sortable: SortableRow;
 };
@@ -118,6 +121,10 @@ export default function PositionList({
     }
   }
 
+  // Referencia de frescura: la fecha del precio más reciente de la cartera. Ver
+  // `core/portfolio-prices.ts` — no hay una "fecha de último refresco" que sirva la API.
+  const latestDate = useMemo(() => latestPriceDate(prices), [prices]);
+
   // Decoramos cada posición con sus valores calculados y comparables. El P&L comparable sigue
   // el modo activo (%, o importe base) para que ordenar coincida con lo que se ve.
   const rows: Row[] = useMemo(
@@ -134,6 +141,7 @@ export default function PositionList({
                 rates,
               )
             : null;
+        const stale = isStalePrice(price, latestDate);
         const pnlAbs = marketValue !== null ? marketValue - invested : null;
         const pnlPct = pnlAbs !== null && invested > 0 ? (pnlAbs / invested) * 100 : null;
         const missingReason =
@@ -154,9 +162,19 @@ export default function PositionList({
           pnl: pnlMode === "pct" ? pnlPct : toBase(pnlAbs, position.currency, rates),
         };
 
-        return { position, invested, price, marketValue, pnlAbs, pnlPct, missingReason, sortable };
+        return {
+          position,
+          invested,
+          price,
+          marketValue,
+          pnlAbs,
+          pnlPct,
+          stale,
+          missingReason,
+          sortable,
+        };
       }),
-    [positions, prices, rates, pnlMode, t],
+    [positions, prices, rates, pnlMode, latestDate, t],
   );
 
   const sortedRows = useMemo(
@@ -277,7 +295,7 @@ export default function PositionList({
           <tbody>
             {sortedRows.map((row) => {
               const p = row.position;
-              const { invested, price, marketValue, pnlAbs, pnlPct, missingReason } = row;
+              const { invested, price, marketValue, pnlAbs, pnlPct, stale, missingReason } = row;
 
               const isConfirming = confirmingId === p.id;
               const isDeleting = deletingId === p.id;
@@ -311,8 +329,26 @@ export default function PositionList({
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {marketValue !== null ? (
-                      <span title={t("priceAsOf", { date: formatIsoDate(price!.date) })}>
+                      <span
+                        title={
+                          stale
+                            ? t("stalePrice", {
+                                date: formatIsoDate(price!.date),
+                                latest: formatIsoDate(latestDate!),
+                              })
+                            : t("priceAsOf", { date: formatIsoDate(price!.date) })
+                        }
+                        className="inline-flex items-center justify-end gap-1"
+                      >
                         {formatCurrency(marketValue, p.currency)}
+                        {stale && (
+                          <StaleBadge
+                            label={t("stalePrice", {
+                              date: formatIsoDate(price!.date),
+                              latest: formatIsoDate(latestDate!),
+                            })}
+                          />
+                        )}
                       </span>
                     ) : (
                       <span className="text-muted" title={missingReason}>
@@ -394,6 +430,29 @@ export default function PositionList({
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Marca de precio rezagado: la fila se valora con un precio anterior al del último refresco
+ * (típicamente un fondo con valor liquidativo diferido junto a activos cotizados al día).
+ *
+ * El icono NO es la única pista ni vive solo en el `title`: los atributos `title` no existen
+ * para quien navega con teclado o lector de pantalla, así que la explicación completa va en
+ * un texto `sr-only`. El color es redundante, nunca la única señal.
+ */
+function StaleBadge({ label }: { label: string }) {
+  return (
+    <>
+      <svg aria-hidden="true" viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 fill-current text-warning">
+        <path
+          fillRule="evenodd"
+          d="M10 2a8 8 0 100 16 8 8 0 000-16zm0 2a6 6 0 110 12 6 6 0 010-12zm-.75 2.5a.75.75 0 011.5 0v3.19l2.03 2.03a.75.75 0 11-1.06 1.06l-2.25-2.25a.75.75 0 01-.22-.53V6.5z"
+          clipRule="evenodd"
+        />
+      </svg>
+      <span className="sr-only">{label}</span>
+    </>
   );
 }
 
