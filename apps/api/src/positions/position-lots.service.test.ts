@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -56,7 +57,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
   beforeAll(() => {
     ({ db, close } = createTestDb());
     lots = new PositionLotsService(db);
-    service = new PositionsService(db, pricesStub, lots);
+    service = new PositionsService(db, pricesStub, lots, new EventEmitter2());
   });
 
   afterEach(async () => {
