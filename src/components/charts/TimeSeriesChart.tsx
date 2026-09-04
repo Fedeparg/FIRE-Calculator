@@ -22,9 +22,11 @@ export type SeriesDef = { key: string; name: string; color: string };
 
 /**
  * Una fila de datos. El eje X admite texto (una fecha ISO) además de número; las series
- * siempre son numéricas, pero la firma de índice no puede distinguirlas.
+ * siempre son numéricas, pero la firma de índice no puede distinguirlas. `boolean` se admite
+ * además para columnas extra de la tabla accesible (p.ej. "estimado") que no se pintan en el
+ * propio gráfico.
  */
-type DataRow = Record<string, number | string>;
+export type DataRow = Record<string, number | string | boolean>;
 
 type Props = {
   title: string;
@@ -76,12 +78,24 @@ type Props = {
    * `preserveStartEnd` garantiza los extremos cuando se ocultan etiquetas intermedias.
    */
   xInterval?: "preserveEnd" | "preserveStartEnd";
+  /**
+   * Tramos del eje X que se sombrean de forma permanente (a diferencia de la selección por
+   * arrastre, que es interactiva). Genérico a propósito — el componente no sabe qué
+   * significa un tramo, solo lo pinta — para que cualquier calculadora lo reutilice; hoy lo
+   * usa la cartera para marcar los puntos `estimated` del histórico.
+   */
+  shadedRanges?: { from: string | number; to: string | number; label?: string }[];
+  /**
+   * Columnas extra de la tabla accesible, además del eje X y las series (`stack`/`lines`).
+   * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
+   */
+  extraColumns?: ChartTableColumn<DataRow>[];
 };
 
 type Selection = { start: number; end: number } | null;
 type RechartsState = { activeLabel?: string | number } | null;
 
-const toNum = (v: string | number | undefined) => (v === undefined ? 0 : Number(v));
+const toNum = (v: string | number | boolean | undefined) => (v === undefined ? 0 : Number(v));
 
 export default function TimeSeriesChart({
   title,
@@ -100,6 +114,8 @@ export default function TimeSeriesChart({
   showTotal = true,
   xMinTickGap = 5,
   xInterval = "preserveEnd",
+  shadedRanges = [],
+  extraColumns = [],
 }: Props) {
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
     useFormat();
@@ -139,11 +155,12 @@ export default function TimeSeriesChart({
   })();
 
   const tableColumns: ChartTableColumn<DataRow>[] = [
-    { label: labels.axisX, value: (row) => formatX(row[xKey]) },
+    { label: labels.axisX, value: (row) => formatX(row[xKey] as string | number) },
     ...[...stack, ...lines].map((series) => ({
       label: series.name,
       value: (row: DataRow) => formatValue(Number(row[series.key])),
     })),
+    ...extraColumns,
   ];
 
   return (
@@ -248,6 +265,17 @@ export default function TimeSeriesChart({
                 strokeWidth={1.5}
                 strokeDasharray="5 5"
                 dot={false}
+              />
+            ))}
+            {shadedRanges.map((range, index) => (
+              <ReferenceArea
+                key={`shaded-${index}`}
+                x1={range.from}
+                x2={range.to}
+                label={range.label}
+                strokeOpacity={0}
+                fill="var(--warning)"
+                fillOpacity={0.1}
               />
             ))}
             {selection && (

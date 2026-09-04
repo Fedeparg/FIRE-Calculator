@@ -13,6 +13,7 @@ function point(
   date: string,
   invested: number | null,
   marketValue: number | null,
+  estimated = false,
 ): HistoryPointDto {
   return {
     date,
@@ -22,6 +23,7 @@ function point(
     pnlPct: null,
     valuedPositions: 1,
     totalPositions: 1,
+    estimated,
   };
 }
 
@@ -116,6 +118,45 @@ describe("buildHistorySeries", () => {
 
     expect(series.changeAbs).toBe(120);
     expect(series.changePct).toBeNull();
+  });
+
+  it("sin puntos estimados, estimatedRange es null", () => {
+    const series = buildHistorySeries([
+      point("2026-01-01", 1000, 1000),
+      point("2026-01-02", 1000, 1100),
+    ]);
+    expect(series.estimatedRange).toBeNull();
+  });
+
+  it("calcula el tramo de puntos estimados (backfill), el prefijo más antiguo de la serie", () => {
+    const series = buildHistorySeries([
+      point("2026-01-01", 1000, 1000, true),
+      point("2026-01-02", 1000, 1050, true),
+      point("2026-01-03", 1000, 1100, false),
+    ]);
+    expect(series.estimatedRange).toEqual({ from: "2026-01-01", to: "2026-01-02" });
+  });
+
+  it("un punto descartado (no convertible) no cuenta para estimatedRange", () => {
+    const series = buildHistorySeries([
+      point("2026-01-01", null, null, true),
+      point("2026-01-02", 1000, 1050, true),
+      point("2026-01-03", 1000, 1100, false),
+    ]);
+    expect(series.estimatedRange).toEqual({ from: "2026-01-02", to: "2026-01-02" });
+  });
+
+  it("un punto estimado suelto tras datos reales NO extiende el rango (defensa si se rompe el prefijo)", () => {
+    const series = buildHistorySeries([
+      point("2026-01-01", 1000, 1000, true),
+      point("2026-01-05", 1000, 1100, false),
+      point("2026-01-10", 1000, 1200, false),
+      // Si `backfillDates` volviera a incluir hoy, esta sería la fila estimada suelta que
+      // escribiría al reiniciar la API en mitad del día: no debe hacer que el rango señalado
+      // "coma" los dos puntos reales de en medio.
+      point("2026-01-15", 1000, 1300, true),
+    ]);
+    expect(series.estimatedRange).toEqual({ from: "2026-01-01", to: "2026-01-01" });
   });
 
   it("los rangos ofrecidos son crecientes y el rango por defecto existe", () => {
