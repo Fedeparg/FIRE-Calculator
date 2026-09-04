@@ -90,6 +90,13 @@ type Props = {
    * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
    */
   extraColumns?: ChartTableColumn<DataRow>[];
+  /**
+   * Dominio del eje de valores. `"zero"` (por defecto) es el de siempre: arranca en 0, que es
+   * lo correcto para una proyección que crece desde cero. `"fit"` ajusta el eje al rango real
+   * de los datos (con un 1% de margen arriba y abajo) en vez de forzar el 0 como suelo; lo
+   * necesita la cartera, donde un valor base alto con poca variación se ve plana pegada a 0.
+   */
+  yDomain?: "zero" | "fit";
 };
 
 /** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
@@ -119,6 +126,7 @@ export default function TimeSeriesChart({
   xInterval = "preserveEnd",
   shadedRanges = [],
   extraColumns = [],
+  yDomain = "zero",
 }: Props) {
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
     useFormat();
