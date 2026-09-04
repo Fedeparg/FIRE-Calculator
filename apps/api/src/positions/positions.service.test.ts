@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
@@ -32,7 +33,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(db, pricesStub, new PositionLotsService(db));
+    service = new PositionsService(db, pricesStub, new PositionLotsService(db), new EventEmitter2());
   });
 
   afterEach(async () => {

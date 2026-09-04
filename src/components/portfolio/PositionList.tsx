@@ -329,27 +329,29 @@ export default function PositionList({
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-foreground">
                     {marketValue !== null ? (
-                      <span
-                        title={
-                          stale
-                            ? t("stalePrice", {
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span className="inline-flex items-center gap-1">
+                          {formatCurrency(marketValue, p.currency)}
+                          {stale && (
+                            <StaleBadge
+                              label={t("stalePrice", {
                                 date: formatIsoDate(price!.date),
                                 latest: formatIsoDate(latestDate!),
-                              })
-                            : t("priceAsOf", { date: formatIsoDate(price!.date) })
-                        }
-                        className="inline-flex items-center justify-end gap-1"
-                      >
-                        {formatCurrency(marketValue, p.currency)}
-                        {stale && (
-                          <StaleBadge
-                            label={t("stalePrice", {
-                              date: formatIsoDate(price!.date),
-                              latest: formatIsoDate(latestDate!),
-                            })}
-                          />
-                        )}
-                      </span>
+                              })}
+                            />
+                          )}
+                        </span>
+                        {/* Fecha del precio SIEMPRE visible (no solo en un `title`, que no
+                            existe para teclado/lector de pantalla): resuelve la confusión de
+                            no saber cuándo se valoró esta fila. */}
+                        <span
+                          className={`text-xs font-normal normal-case ${
+                            stale ? "text-warning" : "text-muted"
+                          }`}
+                        >
+                          {t("priceAsOf", { date: formatIsoDate(price!.date) })}
+                        </span>
+                      </div>
                     ) : (
                       <span className="text-muted" title={missingReason}>
                         —

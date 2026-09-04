@@ -1189,14 +1189,19 @@
       "loading": "Cargando el histórico…",
       "error": "No se ha podido cargar el histórico. Inténtalo de nuevo en unos momentos.",
       "emptyBody": "Todavía no hay histórico de esta cartera. La serie se construye a diario: cada noche, después de actualizar los precios (sobre las 22:30, hora de España), se guarda un punto con la valoración del día. El primero aparecerá mañana.",
-      "singlePointBody": "Solo hay un día guardado, así que aún no hay línea que dibujar. La serie se construye a diario: cada noche se guarda un punto con la valoración de la jornada.",
+      "singlePointBody": "Solo hay un día guardado, así que aún no hay línea que dibujar. La serie se construye a diario: cada noche, después de actualizar los precios (sobre las 22:30, hora de España), se guarda un punto más. El siguiente aparecerá mañana.",
       "since": "Del {from} al {to}:",
       "chartTitle": "Valor de mercado frente a lo invertido",
       "marketValue": "Valor de mercado",
       "invested": "Invertido",
       "date": "Fecha",
       "dropped": "{count, plural, =1 {Un día del periodo no se ha podido convertir a esta divisa y no aparece en la gráfica.} other {# días del periodo no se han podido convertir a esta divisa y no aparecen en la gráfica.}}",
-      "cadence": "Cada punto es la valoración de cierre de ese día. Se guarda en euros junto con los tipos de cambio de la jornada, así que al cambiar de divisa se reexpresa con las tasas de entonces, no con las de hoy."
+      "cadence": "Cada punto es la valoración de cierre de ese día. Se guarda en euros junto con los tipos de cambio de la jornada, así que al cambiar de divisa se reexpresa con las tasas de entonces, no con las de hoy.",
+      "estimatedNotice": "Los puntos hasta el {date} son una estimación: se calculan aplicando tu cartera actual a los precios de aquellos días, no es la valoración real que tenías entonces.",
+      "estimatedShadeLabel": "Estimado",
+      "estimatedColumn": "Estimado",
+      "estimatedYes": "Sí",
+      "estimatedNo": "No"
     },
     "breakdown": {
       "title": "Composición de la cartera",

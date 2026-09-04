@@ -85,6 +85,13 @@
       "when": 1788438949804,
       "tag": "0011_melodic_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788532448679,
+      "tag": "0012_fat_harpoon",
+      "breakpoints": true
     }
   ]
 }

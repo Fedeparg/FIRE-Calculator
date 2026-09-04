@@ -1,11 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { and, asc, gte, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots, positions } from '../db/schema.js';
-import { PricesService } from '../prices/prices.service.js';
+import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/position-events.js';
+import { PositionsService } from '../positions/positions.service.js';
+import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
-import { convertCurrency } from './valuation.js';
+import { aggregatePortfolio, convertCurrency } from './valuation.js';
 
 /**
  * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan
@@ -33,6 +36,11 @@ export interface PortfolioHistoryPoint {
   pnlPct: number | null;
   valuedPositions: number;
   totalPositions: number;
+  /**
+   * `true` si este punto es una estimación BACKFILLED (cartera actual aplicada a precios de
+   * ese día pasado), no una captura real de aquel día. Ver `backfillUser`.
+   */
+  estimated: boolean;
 }
 
 /** Serie histórica de la cartera de un usuario. */
@@ -86,6 +94,7 @@ export class PortfolioSnapshotsService {
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly valuation: PortfolioValuationService,
     private readonly prices: PricesService,
+    private readonly positionsService: PositionsService,
   ) {}
 
   /**
@@ -146,6 +155,9 @@ export class PortfolioSnapshotsService {
       valuedPositions: valuation.aggregate.valued,
       totalPositions: valuation.aggregate.total,
       fxRates: rates,
+      // Captura REAL del cron: nunca es una estimación, y sustituye sin condiciones
+      // cualquier fila `estimated: true` que un backfill hubiera escrito para este día.
+      estimated: false,
     };
 
     await this.db
@@ -159,9 +171,148 @@ export class PortfolioSnapshotsService {
           valuedPositions: row.valuedPositions,
           totalPositions: row.totalPositions,
           fxRates: row.fxRates,
+          estimated: false,
           updatedAt: new Date(),
         },
       });
+  }
+
+  /**
+   * Backfill de los últimos `days` días para UN usuario, con la cantidad ACTUAL de sus
+   * posiciones (foto de hoy) aplicada a los precios "como estaban" cada día pasado. Usa
+   * `aggregatePortfolio` DIRECTAMENTE (no `PortfolioValuationService.valuate`, que solo sabe
+   * valorar "hoy"): es pura y agnóstica de fecha, y ya es la misma fórmula que ve la UI.
+   *
+   * Simplificación consciente y aceptada por producto: si el usuario compró/vendió dentro de
+   * esta ventana, los puntos backfilled anteriores a esa operación quedan aproximados (aplican
+   * la cantidad de HOY a precios de ANTES). Por eso se guardan con `estimated: true` — y el
+   * frontend lo señala de forma visible, no solo con un icono sutil.
+   *
+   * El upsert NUNCA pisa una captura real (`estimated: false`): el `setWhere` solo permite
+   * actualizar una fila que YA era estimada. Esto además permite que una pasada de backfill
+   * posterior REFINE una estimación anterior con mejores datos (p. ej. si la primera corrió
+   * mientras `primeSymbol` aún estaba trayendo histórico en segundo plano, dado su tope de
+   * espera de 9s), en vez de dejarla congelada para siempre.
+   */
+  async backfillUser(userId: string, days: number = HISTORY_BACKFILL_DAYS): Promise<void> {
+    const owned = await this.positionsService.findAllByUser(userId);
+    if (owned.length === 0) return; // mismo criterio que `usersWithPositions`
+
+    const tickers = [...new Set(owned.map((p) => p.ticker))];
+
+    for (const date of this.backfillDates(days)) {
+      const priceMap = await this.prices.getPricesAsOf(tickers, date);
+      const fx = await this.prices.getFxRatesAsOf(date);
+
+      const pricesRecord: Record<string, { close: number; currency: string }> = {};
+      for (const [ticker, info] of priceMap) {
+        pricesRecord[ticker] = { close: info.close, currency: info.currency };
+      }
+
+      const aggregate = aggregatePortfolio({
+        positions: owned.map((p) => ({
+          ticker: p.ticker,
+          quantity: p.quantity,
+          avgPrice: p.avgPrice,
+          currency: p.currency,
+        })),
+        prices: pricesRecord,
+        rates: fx.rates,
+        display: SNAPSHOT_BASE_CURRENCY,
+      });
+
+      // Sin ningún precio convertible ese día: no hay nada honesto que guardar (mismo
+      // criterio que "usuarios sin posiciones se omiten" — aquí, "día sin datos se omite").
+      if (aggregate.valued === 0) continue;
+
+      const invested = toNumeric(aggregate.invested);
+      const marketValue = toNumeric(aggregate.marketValue);
+      if (invested === null || marketValue === null) continue; // desbordado: se salta ese día
+
+      const row = {
+        userId,
+        date,
+        invested,
+        marketValue,
+        valuedPositions: aggregate.valued,
+        totalPositions: aggregate.total,
+        fxRates: fx.rates,
+        estimated: true,
+      };
+
+      await this.db
+        .insert(portfolioSnapshots)
+        .values(row)
+        .onConflictDoUpdate({
+          target: [portfolioSnapshots.userId, portfolioSnapshots.date],
+          set: {
+            invested: row.invested,
+            marketValue: row.marketValue,
+            valuedPositions: row.valuedPositions,
+            totalPositions: row.totalPositions,
+            fxRates: row.fxRates,
+            estimated: true,
+            updatedAt: new Date(),
+          },
+          setWhere: eq(portfolioSnapshots.estimated, true),
+        });
+    }
+  }
+
+  /** Backfill de todos los usuarios con posiciones. Aislado por usuario, igual que `captureAll`. */
+  async backfillAll(days: number = HISTORY_BACKFILL_DAYS): Promise<void> {
+    const userIds = await this.usersWithPositions();
+    let backfilled = 0;
+    let failed = 0;
+    for (const userId of userIds) {
+      try {
+        await this.backfillUser(userId, days);
+        backfilled += 1;
+      } catch (error) {
+        failed += 1;
+        this.logger.warn(
+          `Backfill de cartera fallido (usuario ${userId}): ${(error as Error).message}`,
+        );
+      }
+    }
+    this.logger.log(
+      `Backfill de histórico (${days} días): ${backfilled}/${userIds.length} usuarios` +
+        (failed ? ` — ${failed} con error` : ''),
+    );
+  }
+
+  /**
+   * Últimos `days` días naturales ANTERIORES a hoy, en `YYYY-MM-DD`. Excluye HOY a propósito:
+   * valorar el día de hoy es responsabilidad exclusiva de `captureUser`/el cron nocturno, que
+   * es una captura real (`estimated: false`). Si hoy entrase en esta ventana, cualquier
+   * backfill disparado durante el día (el evento `position.created`, o el autocurado de
+   * `onApplicationBootstrap` al reiniciar la API) escribiría una fila `estimated: true` para
+   * hoy mientras aún no existe la captura real de la noche — y como `estimatedRange` en el
+   * frontend toma el primer y el último día estimado, ese único punto en el extremo más
+   * reciente bastaría para marcar TODO el histórico real intermedio como "estimación".
+   */
+  private backfillDates(days: number): string[] {
+    const out: string[] = [];
+    for (let i = 1; i <= days; i++) {
+      out.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+    }
+    return out;
+  }
+
+  /**
+   * Backfillea el histórico reciente del usuario justo tras dar de alta (o editar el símbolo
+   * de) una posición — ver `position-events.ts` sobre por qué es un evento y no una llamada
+   * directa. Tolerante a fallos: nunca debe romper el flujo que disparó el evento.
+   */
+  @OnEvent(POSITION_CREATED_EVENT)
+  async onPositionCreated({ userId }: PositionCreatedEvent): Promise<void> {
+    try {
+      await this.backfillUser(userId);
+    } catch (error) {
+      this.logger.warn(
+        `Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`,
+      );
+    }
   }
 
   /**
@@ -209,6 +360,7 @@ export class PortfolioSnapshotsService {
         pnlPct: pnlAbs !== null && invested !== null && invested > 0 ? (pnlAbs / invested) * 100 : null,
         valuedPositions: row.valuedPositions,
         totalPositions: row.totalPositions,
+        estimated: row.estimated,
       };
     });
 

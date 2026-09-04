@@ -2,10 +2,10 @@ import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices } from '../db/schema.js';
-import { createTestDb, resetDb } from '../../test/db.js';
+import { instrumentPrices, positions } from '../db/schema.js';
+import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { PriceProvider, Quote } from './price-provider.interface.js';
-import { PricesService } from './prices.service.js';
+import { HISTORY_BACKFILL_DAYS, PricesService } from './prices.service.js';
 import type { SymbolResolver } from './symbol-resolver.js';
 
 /** Resolutor identidad: el ticker ES el símbolo (el caso del buscador, sin OpenFIGI). */
@@ -47,6 +47,10 @@ const quote = (symbol: string, date: string, close: number, currency = 'EUR'): Q
   close,
   currency,
 });
+
+/** Fecha (YYYY-MM-DD) de hace `days` días, para probar cobertura/backfill sin fechas fijas. */
+const daysAgo = (days: number): string =>
+  new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 describe('PricesService — caché de histórico (integración con Postgres)', () => {
   let db: Database;
@@ -92,7 +96,9 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       quote('IWDA', '2026-03-15', 97.3),
     ];
 
-    await service.primeSymbol('IWDA', 'EUR');
+    // Divisa puente (USD): no dispara además el priming del par FX, que es un
+    // comportamiento aparte y no lo que comprueba este test.
+    await service.primeSymbol('IWDA', 'USD');
 
     const rows = await cachedRows('IWDA');
     expect(rows.map((r) => r.date)).toEqual(['2026-03-13', '2026-03-14', '2026-03-15']);
@@ -120,7 +126,28 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     expect(rows[1].close).toBe('96.99000000');
   });
 
-  it('cachea también el par FX de la divisa de la posición (para el total agregado)', async () => {
+  it('cachea también el HISTÓRICO del par FX de la divisa de la posición, no solo el último cierre', async () => {
+    makeService();
+    provider.history = [
+      quote('AAPL', '2026-03-13', 180, 'USD'),
+      quote('EURUSD=X', '2026-03-11', 1.08, 'USD'),
+      quote('EURUSD=X', '2026-03-12', 1.09, 'USD'),
+      quote('EURUSD=X', '2026-03-13', 1.1, 'USD'),
+    ];
+
+    await service.primeSymbol('AAPL', 'EUR');
+
+    const fx = await service.getFxRates();
+    expect(fx.rates.EUR).toBe(1.1);
+    // Del instrumento y del par FX se pide histórico (el backfill de snapshots necesita
+    // reexpresar también días PASADOS a la divisa de la posición, no solo el de hoy).
+    expect(provider.historyCalls).toEqual(['AAPL', 'EURUSD=X']);
+    expect(await cachedRows('EURUSD=X')).toHaveLength(3);
+    // Como el histórico cubrió los días pedidos, no hace falta caer al último cierre.
+    expect(provider.quoteCalls).toEqual([]);
+  });
+
+  it('si la fuente no da histórico del par FX, cae al último cierre igualmente', async () => {
     makeService();
     provider.history = [quote('AAPL', '2026-03-13', 180, 'USD')];
     provider.quotes = [quote('EURUSD=X', '2026-03-13', 1.1, 'USD')];
@@ -129,8 +156,6 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
 
     const fx = await service.getFxRates();
     expect(fx.rates.EUR).toBe(1.1);
-    // Del instrumento se pide histórico; del par FX, solo el último cierre.
-    expect(provider.historyCalls).toEqual(['AAPL']);
     expect(provider.quoteCalls).toEqual([['EURUSD=X']]);
   });
 
@@ -190,5 +215,113 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     const prices = await service.getPrices(['IWDA']);
 
     expect(prices.get('IWDA')).toMatchObject({ close: 97.3, date: '2026-03-15' });
+  });
+
+  describe('getPricesAsOf / getFxRatesAsOf — precio vigente en una fecha pasada', () => {
+    it('devuelve el precio vigente en la fecha pedida, no el más reciente', async () => {
+      makeService();
+      provider.history = [
+        quote('IWDA', '2026-03-10', 90),
+        quote('IWDA', '2026-03-12', 92),
+        quote('IWDA', '2026-03-15', 97.3),
+      ];
+      await service.primeSymbol('IWDA');
+
+      const asOf = await service.getPricesAsOf(['IWDA'], '2026-03-13');
+
+      expect(asOf.get('IWDA')).toMatchObject({ close: 92, date: '2026-03-12' });
+    });
+
+    it('sin ningún precio anterior o igual a la fecha pedida, el ticker no aparece', async () => {
+      makeService();
+      provider.history = [quote('IWDA', '2026-03-15', 97.3)];
+      await service.primeSymbol('IWDA');
+
+      const asOf = await service.getPricesAsOf(['IWDA'], '2026-03-10');
+
+      expect(asOf.has('IWDA')).toBe(false);
+    });
+
+    it('getFxRatesAsOf usa la tasa FX vigente en la fecha pedida', async () => {
+      makeService();
+      provider.history = [
+        quote('EURUSD=X', '2026-03-10', 1.05, 'USD'),
+        quote('EURUSD=X', '2026-03-13', 1.1, 'USD'),
+      ];
+      await service.ensureRecentHistory(['EURUSD=X'], HISTORY_BACKFILL_DAYS);
+
+      const fx = await service.getFxRatesAsOf('2026-03-12');
+
+      expect(fx.rates.EUR).toBe(1.05);
+      expect(fx.asOf).toBe('2026-03-10');
+    });
+  });
+
+  describe('ensureRecentHistory — guard de cobertura mínima', () => {
+    it('no vuelve a pedir histórico si el símbolo ya tiene cobertura suficiente', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(1), 100), quote('IWDA', daysAgo(10), 90)];
+      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      expect(provider.historyCalls).toEqual(['IWDA']);
+
+      provider.historyCalls = [];
+      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+
+      expect(provider.historyCalls).toEqual([]);
+    });
+
+    it('vuelve a pedir histórico si la cobertura no llega a los días pedidos', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(2), 100)];
+      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      expect(provider.historyCalls).toEqual(['IWDA']);
+
+      provider.historyCalls = [];
+      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+
+      // El stub no añade más historia entre llamadas: sigue faltando cobertura.
+      expect(provider.historyCalls).toEqual(['IWDA']);
+    });
+
+    it('un símbolo sin ninguna fila cacheada también cuenta como falto de cobertura', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(1), 100)];
+
+      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+
+      expect(provider.historyCalls).toEqual(['IWDA']);
+      expect(await cachedRows('IWDA')).toHaveLength(1);
+    });
+  });
+
+  describe('ensureRecentHistoryForActivePositions', () => {
+    it('asegura cobertura para los símbolos en uso y para todos los pares FX soportados', async () => {
+      makeService();
+      const userId = await insertUser(db, 'a@example.com');
+      await db.insert(positions).values({
+        userId,
+        ticker: 'AAPL',
+        quantity: '10',
+        avgPrice: '150',
+        currency: 'USD',
+      });
+      provider.history = [quote('AAPL', daysAgo(1), 180, 'USD')];
+
+      await service.ensureRecentHistoryForActivePositions(HISTORY_BACKFILL_DAYS);
+
+      expect(await cachedRows('AAPL')).toHaveLength(1);
+      // El par EUR/USD se asegura SIEMPRE (para el total agregado), aunque ninguna posición
+      // esté en EUR: cualquier usuario puede elegir esa divisa de visualización.
+      expect(provider.historyCalls).toEqual(expect.arrayContaining(['AAPL', 'EURUSD=X']));
+    });
+
+    it('sin posiciones, no pide histórico de instrumentos pero sí el de los pares FX', async () => {
+      makeService();
+
+      await service.ensureRecentHistoryForActivePositions(HISTORY_BACKFILL_DAYS);
+
+      expect(provider.historyCalls).toEqual(expect.arrayContaining(['EURUSD=X']));
+      expect(provider.historyCalls).not.toContain('AAPL');
+    });
   });
 });

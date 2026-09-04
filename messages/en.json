@@ -1189,14 +1189,19 @@
       "loading": "Loading history…",
       "error": "The history could not be loaded. Please try again in a moment.",
       "emptyBody": "There is no history for this portfolio yet. The series is built daily: every night, after prices are refreshed (around 22:30 Spanish time), a point with that day's valuation is stored. The first one will show up tomorrow.",
-      "singlePointBody": "Only one day has been stored so far, so there is no line to draw yet. The series is built daily: every night a point with that day's valuation is stored.",
+      "singlePointBody": "Only one day has been stored so far, so there is no line to draw yet. The series is built daily: every night, after prices are refreshed (around 22:30 Spanish time), another point is stored. The next one will show up tomorrow.",
       "since": "From {from} to {to}:",
       "chartTitle": "Market value vs. invested",
       "marketValue": "Market value",
       "invested": "Invested",
       "date": "Date",
       "dropped": "{count, plural, =1 {One day in the period could not be converted to this currency and is not shown in the chart.} other {# days in the period could not be converted to this currency and are not shown in the chart.}}",
-      "cadence": "Each point is that day's closing valuation. It is stored in euros together with the exchange rates of that day, so switching currency re-expresses it with the rates of the time, not today's."
+      "cadence": "Each point is that day's closing valuation. It is stored in euros together with the exchange rates of that day, so switching currency re-expresses it with the rates of the time, not today's.",
+      "estimatedNotice": "The points up to {date} are an estimate: they apply your current portfolio to those days' prices, not the actual valuation you had back then.",
+      "estimatedShadeLabel": "Estimated",
+      "estimatedColumn": "Estimated",
+      "estimatedYes": "Yes",
+      "estimatedNo": "No"
     },
     "breakdown": {
       "title": "Portfolio composition",
