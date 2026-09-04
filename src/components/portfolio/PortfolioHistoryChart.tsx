@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import TimeSeriesChart, { type DataRow } from "@/components/charts/TimeSeriesChart";
+import type { ChartTableColumn } from "@/components/charts/ChartDataTable";
 import Notice from "@/components/ui/Notice";
 import { formatIsoDate } from "@/core/format";
 import {
@@ -77,6 +78,11 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
   const series = useMemo(() => buildHistorySeries(history?.points ?? []), [history]);
 
+  const estimatedColumn: ChartTableColumn<DataRow> = {
+    label: t("estimatedColumn"),
+    value: (row) => (row.estimated ? t("estimatedYes") : t("estimatedNo")),
+  };
+
   const changeColor =
     series.changeAbs === null || series.changeAbs === 0
       ? "text-foreground"
@@ -117,6 +123,12 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
       {status === "ready" && !series.insufficient && (
         <>
+          {series.estimatedRange && (
+            <Notice variant="warning">
+              {t("estimatedNotice", { date: formatIsoDate(series.estimatedRange.to) })}
+            </Notice>
+          )}
+
           {series.changeAbs !== null && series.from && series.to && (
             <p className="text-sm text-muted">
               {t("since", { from: formatIsoDate(series.from), to: formatIsoDate(series.to) })}{" "}
@@ -151,9 +163,18 @@ export default function PortfolioHistoryChart({ display }: Props) {
             showTotal={false}
             xMinTickGap={48}
             xInterval="preserveStartEnd"
-            // Un valor base alto con poca variación se aplana pegado al 0: se ajusta el eje
-            // al rango real de la cartera en vez de forzar el suelo en cero.
-            yDomain="fit"
+            shadedRanges={
+              series.estimatedRange
+                ? [
+                    {
+                      from: series.estimatedRange.from,
+                      to: series.estimatedRange.to,
+                      label: t("estimatedShadeLabel"),
+                    },
+                  ]
+                : []
+            }
+            extraColumns={[estimatedColumn]}
           />
 
           {series.dropped > 0 && <p className="text-xs text-muted">{t("dropped", { count: series.dropped })}</p>}

@@ -5,6 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -15,6 +16,7 @@ import { CreatePositionDto } from './dto/create-position.dto.js';
 import { UpdatePositionDto } from './dto/update-position.dto.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { PositionLotsService, todayUtc } from './position-lots.service.js';
+import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from './position-events.js';
 
 /**
  * Posición tal y como la consume el frontend. Drizzle devuelve `numeric` como `string`
@@ -38,6 +40,7 @@ export class PositionsService {
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly prices: PricesService,
     private readonly lots: PositionLotsService,
+    private readonly events: EventEmitter2,
   ) {}
 
   /**
@@ -88,6 +91,10 @@ export class PositionsService {
       // esperar al cron diario). Fuera de la transacción: es una llamada de red.
       // Es tolerante a fallos: nunca rompe el alta.
       await this.prices.primeSymbol(row.ticker, row.currency);
+      // Backfillea el histórico reciente de la cartera del usuario (ver `position-events.ts`
+      // sobre por qué es un evento y no una llamada directa). No se espera: no debe alargar
+      // la respuesta del alta, y es tolerante a fallos en su propio listener.
+      this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
       return this.toResponse(row);
     } catch (error) {
       // La única FK de `positions` es `userId → users.id`. Una violación aquí solo puede
@@ -209,6 +216,7 @@ export class PositionsService {
     // Si cambió el símbolo, su precio puede no estar cacheado: refréscalo en caliente.
     if (row.ticker !== current.ticker) {
       await this.prices.primeSymbol(row.ticker, row.currency);
+      this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
     }
     return this.toResponse(row);
   }

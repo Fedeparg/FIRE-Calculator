@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { desc, inArray, sql } from 'drizzle-orm';
+import { and, desc, inArray, lte, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instrumentPrices, positions } from '../db/schema.js';
@@ -17,6 +17,12 @@ const FX_QUOTE = 'USD';
 const PRIME_MAX_WAIT_MS = 9_000;
 /** Filas por sentencia al cachear un histórico (evita una sentencia por cierre). */
 const UPSERT_CHUNK_SIZE = 200;
+/**
+ * Días de cobertura de histórico que se garantizan para cada símbolo/par FX en uso, y
+ * profundidad del backfill de `portfolio_snapshots` (`PortfolioSnapshotsService` importa
+ * esta misma constante: single source of truth, un solo número mágico).
+ */
+export const HISTORY_BACKFILL_DAYS = 7;
 /**
  * Espera `ms`. El temporizador va `unref`: solo se usa como TOPE de espera en un
  * `Promise.race`, así que, si el trabajo termina antes, el timer pendiente no debe mantener
@@ -104,34 +110,27 @@ export class PricesService {
   }
 
   /**
-   * Devuelve el último precio conocido (desde nuestra DB) para cada ticker pedido. Resuelve
-   * ticker → símbolo y mapea el resultado de vuelta al ticker original, para que el frontend
-   * lo case con sus posiciones. Los tickers sin precio en caché simplemente no aparecen.
+   * Última fila por símbolo (orden `date DESC`, primera de cada símbolo). Con `upTo` se
+   * acota a "como estaba el precio ESE día" (`date &lt;= upTo`, filtrado en la query, no en
+   * memoria); sin él es el comportamiento de siempre: el cierre más reciente conocido.
+   * Compartida por `getPrices`/`getFxRates` (sin `upTo`) y sus variantes "as of".
    */
-  async getPrices(tickers: string[]): Promise<Map<string, PriceInfo>> {
-    const tickerToSymbol = new Map<string, string>();
-    for (const ticker of tickers) {
-      // Solo caché: la lectura del usuario NUNCA dispara OpenFIGI ni la fuente externa. Un
-      // símbolo aún sin resolver no tiene precio hasta que el refresco lo resuelva y cachee.
-      const symbol = await this.resolver.resolveCached(ticker);
-      if (symbol) tickerToSymbol.set(ticker, symbol);
-    }
-
-    const symbols = [...new Set(tickerToSymbol.values())];
+  private async latestBySymbol(symbols: string[], upTo?: string): Promise<Map<string, PriceInfo>> {
     const out = new Map<string, PriceInfo>();
     if (symbols.length === 0) return out;
+
+    const conditions = [inArray(instrumentPrices.symbol, symbols)];
+    if (upTo) conditions.push(lte(instrumentPrices.date, upTo));
 
     const rows = await this.db
       .select()
       .from(instrumentPrices)
-      .where(inArray(instrumentPrices.symbol, symbols))
+      .where(and(...conditions))
       .orderBy(instrumentPrices.symbol, desc(instrumentPrices.date));
 
-    // El último por símbolo: primera fila de cada símbolo (orden date DESC).
-    const latest = new Map<string, PriceInfo>();
     for (const row of rows) {
-      if (!latest.has(row.symbol)) {
-        latest.set(row.symbol, {
+      if (!out.has(row.symbol)) {
+        out.set(row.symbol, {
           symbol: row.symbol,
           close: Number(row.close),
           currency: row.currency,
@@ -139,10 +138,50 @@ export class PricesService {
         });
       }
     }
+    return out;
+  }
 
+  /**
+   * Devuelve el último precio conocido (desde nuestra DB) para cada ticker pedido. Resuelve
+   * ticker → símbolo y mapea el resultado de vuelta al ticker original, para que el frontend
+   * lo case con sus posiciones. Los tickers sin precio en caché simplemente no aparecen.
+   */
+  async getPrices(tickers: string[]): Promise<Map<string, PriceInfo>> {
+    const tickerToSymbol = await this.resolveCachedTickers(tickers);
+    const latest = await this.latestBySymbol([...new Set(tickerToSymbol.values())]);
+
+    const out = new Map<string, PriceInfo>();
     for (const [ticker, symbol] of tickerToSymbol) {
       const price = latest.get(symbol);
       if (price) out.set(ticker, price);
+    }
+    return out;
+  }
+
+  /**
+   * Igual que `getPrices`, pero el precio de cada ticker es el que estaba vigente el `date`
+   * pedido (última fila con `date &lt;= date`), no el más reciente. Sirve para reconstruir
+   * cómo se habría valorado la cartera un día pasado (`PortfolioSnapshotsService.backfillUser`),
+   * sin duplicar la resolución ticker→símbolo ni el criterio de "una fila por símbolo".
+   */
+  async getPricesAsOf(tickers: string[], date: string): Promise<Map<string, PriceInfo>> {
+    const tickerToSymbol = await this.resolveCachedTickers(tickers);
+    const latest = await this.latestBySymbol([...new Set(tickerToSymbol.values())], date);
+
+    const out = new Map<string, PriceInfo>();
+    for (const [ticker, symbol] of tickerToSymbol) {
+      const price = latest.get(symbol);
+      if (price) out.set(ticker, price);
+    }
+    return out;
+  }
+
+  /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa). */
+  private async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
+    const out = new Map<string, string>();
+    for (const ticker of tickers) {
+      const symbol = await this.resolver.resolveCached(ticker);
+      if (symbol) out.set(ticker, symbol);
     }
     return out;
   }
@@ -154,6 +193,15 @@ export class PricesService {
    * no convertible y excluye esas posiciones del total, señalándolo).
    */
   async getFxRates(): Promise<FxRates> {
+    return this.fxRatesUpTo();
+  }
+
+  /** Igual que `getFxRates`, pero con las tasas tal y como estaban el `date` pedido. */
+  async getFxRatesAsOf(date: string): Promise<FxRates> {
+    return this.fxRatesUpTo(date);
+  }
+
+  private async fxRatesUpTo(upTo?: string): Promise<FxRates> {
     const currencyBySymbol = new Map<string, string>();
     for (const c of SUPPORTED_CURRENCIES) {
       if (c !== FX_QUOTE) currencyBySymbol.set(fxSymbol(c), c);
@@ -161,25 +209,12 @@ export class PricesService {
     const rates: Record<string, number> = { [FX_QUOTE]: 1 };
     let asOf: string | null = null;
 
-    const symbols = [...currencyBySymbol.keys()];
-    if (symbols.length === 0) return { rates, asOf };
-
-    const rows = await this.db
-      .select()
-      .from(instrumentPrices)
-      .where(inArray(instrumentPrices.symbol, symbols))
-      .orderBy(instrumentPrices.symbol, desc(instrumentPrices.date));
-
-    // Primera fila de cada símbolo = la más reciente (orden date DESC).
-    const seen = new Set<string>();
-    for (const row of rows) {
-      if (seen.has(row.symbol)) continue;
-      seen.add(row.symbol);
-      const currency = currencyBySymbol.get(row.symbol);
-      const close = Number(row.close);
-      if (currency && Number.isFinite(close) && close > 0) {
-        rates[currency] = close;
-        if (asOf === null || row.date > asOf) asOf = row.date;
+    const latest = await this.latestBySymbol([...currencyBySymbol.keys()], upTo);
+    for (const [symbol, price] of latest) {
+      const currency = currencyBySymbol.get(symbol);
+      if (currency && Number.isFinite(price.close) && price.close > 0) {
+        rates[currency] = price.close;
+        if (asOf === null || price.date > asOf) asOf = price.date;
       }
     }
     return { rates, asOf };
@@ -218,8 +253,11 @@ export class PricesService {
    * un símbolo nuevo no tenía serie hasta pasados meses y la gráfica de evolución nacía vacía.
    * Es una única petición extra por símbolo NUEVO (ver `PriceProvider.getHistory`).
    *
-   * Del par FX basta el último cierre: el histórico de divisas no se usa hacia atrás (cada
-   * snapshot de cartera guarda las tasas de SU día).
+   * Del par FX se asegura AL MENOS `HISTORY_BACKFILL_DAYS` días (vía `ensureRecentHistory`,
+   * que no vuelve a pedir nada si ya los tiene): antes bastaba el último cierre porque cada
+   * snapshot de cartera solo guardaba las tasas de SU día, pero el backfill de
+   * `portfolio_snapshots` (`PortfolioSnapshotsService.backfillUser`) necesita reexpresar
+   * también los días PASADOS a la divisa de la posición, y para eso hace falta su histórico.
    */
   private async primeNow(ticker: string, currency?: string): Promise<void> {
     try {
@@ -227,13 +265,74 @@ export class PricesService {
       if (symbol) await this.primeHistory(symbol);
 
       if (currency && currency !== FX_QUOTE) {
-        await this.upsertQuotes(await this.provider.getQuotes([fxSymbol(currency)]));
+        await this.ensureRecentHistory([fxSymbol(currency)], HISTORY_BACKFILL_DAYS);
       }
     } catch (error) {
       this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${
         (error as Error).message
       }`);
     }
+  }
+
+  /**
+   * Símbolos, de entre los pedidos, cuyo histórico en `instrument_prices` NO cubre los
+   * últimos `days` días: sin ninguna fila, o con la fila más antigua posterior al corte. Es
+   * un criterio de COBERTURA (fecha mínima), no de conteo de filas: un fin de semana o
+   * festivo de mercado da menos filas que días naturales sin que falte nada.
+   */
+  private async symbolsNeedingHistory(symbols: string[], days: number): Promise<string[]> {
+    if (symbols.length === 0) return [];
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    const rows = await this.db
+      .select({ symbol: instrumentPrices.symbol, minDate: sql<string>`min(${instrumentPrices.date})` })
+      .from(instrumentPrices)
+      .where(inArray(instrumentPrices.symbol, symbols))
+      .groupBy(instrumentPrices.symbol);
+
+    const covered = new Map(rows.map((r) => [r.symbol, r.minDate]));
+    return symbols.filter((s) => {
+      const min = covered.get(s);
+      return !min || min > cutoff;
+    });
+  }
+
+  /**
+   * Se asegura de que cada símbolo pedido tenga al menos `days` días de cobertura en
+   * `instrument_prices`, pidiendo histórico SOLO a los que les falte (guard barato: una
+   * query agrupada, y el fetch real solo para el hueco real). Tolerante por símbolo: uno que
+   * falle no bloquea el resto.
+   */
+  async ensureRecentHistory(symbols: string[], days: number): Promise<void> {
+    const missing = await this.symbolsNeedingHistory(symbols, days);
+    for (const symbol of missing) {
+      try {
+        await this.primeHistory(symbol);
+      } catch (error) {
+        this.logger.warn(
+          `Histórico de "${symbol}" no se pudo completar: ${(error as Error).message}`,
+        );
+      }
+    }
+  }
+
+  /** Igual que `ensureRecentHistory`, pero para los pares FX de las divisas soportadas. */
+  async ensureFxHistory(days: number): Promise<void> {
+    await this.ensureRecentHistory(this.fxSymbols(), days);
+  }
+
+  /**
+   * Pasada de arranque: se asegura de que TODOS los símbolos en uso (de cualquier usuario) y
+   * los pares FX tengan cobertura de `days` días. Barata si ya hay histórico (el guard de
+   * `ensureRecentHistory` no vuelve a pedir nada), así que es segura de correr en cada
+   * arranque del proceso — repara posiciones dadas de alta ANTES de que este backfill
+   * existiera, o cuyo `primeSymbol` falló en su momento, sin esperar al cron.
+   */
+  async ensureRecentHistoryForActivePositions(days: number = HISTORY_BACKFILL_DAYS): Promise<void> {
+    const tickers = await this.distinctTickers();
+    const instrumentSymbols = await this.resolveSymbols(tickers);
+    await this.ensureRecentHistory(instrumentSymbols, days);
+    await this.ensureFxHistory(days);
   }
 
   /**

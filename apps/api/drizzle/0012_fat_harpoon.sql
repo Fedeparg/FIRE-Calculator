@@ -1,0 +1,1 @@
+ALTER TABLE "portfolio_snapshots" ADD COLUMN "estimated" boolean DEFAULT false NOT NULL;

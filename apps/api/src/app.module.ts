@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
@@ -25,6 +26,9 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     // Habilita el cron nocturno de cartera (DailyJobsScheduler).
     ScheduleModule.forRoot(),
+    // Global: desacopla PositionsModule de PortfolioModule (que ya importa PositionsModule)
+    // sin forwardRef — ver `positions/position-events.ts`.
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     EmailModule,
     DonationsModule,

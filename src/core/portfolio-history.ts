@@ -18,6 +18,12 @@ export interface HistoryPointDto {
   pnlPct: number | null;
   valuedPositions: number;
   totalPositions: number;
+  /**
+   * `true` si este punto es un backfill (cantidad ACTUAL de las posiciones aplicada a los
+   * precios "como estaban" aquel día), no una captura real del cron nocturno de esa fecha. Ver
+   * `apps/api/src/portfolio/portfolio-snapshots.service.ts`.
+   */
+  estimated: boolean;
 }
 
 /** Respuesta completa de `GET /api/portfolio/history`. */
@@ -38,6 +44,7 @@ export type HistoryChartPoint = {
   date: string;
   invested: number;
   marketValue: number;
+  estimated: boolean;
 };
 
 /** Rangos ofrecidos en el selector. `days` es lo que se le pide a la API. */
@@ -80,6 +87,16 @@ export interface HistorySeries {
   /** Primera y última fecha de la serie pintada, o `null` si está vacía. */
   from: string | null;
   to: string | null;
+  /**
+   * Prefijo contiguo de puntos `estimated` desde el principio de la serie, o `null` si el
+   * primer punto ya es una captura real. Por diseño del backend, los estimados deberían ser
+   * siempre este prefijo (el backfill solo cubre los últimos `HISTORY_BACKFILL_DAYS` días
+   * ANTERIORES a hoy, nunca hoy mismo, y una captura real nunca se pisa). Aun así, esto se
+   * calcula como prefijo real (se para en el primer punto no estimado) y no como min/max de
+   * fechas: si esa invariante llegara a romperse, es preferible sub-señalar que marcar como
+   * "estimación" datos reales en medio o al final de la serie.
+   */
+  estimatedRange: { from: string; to: string } | null;
 }
 
 /**
@@ -107,6 +124,7 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
       date: point.date,
       invested: point.invested,
       marketValue: point.marketValue,
+      estimated: point.estimated,
     });
   }
 
@@ -118,6 +136,15 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
   const last = usable[usable.length - 1];
   const changeAbs = first && last && first !== last ? last.marketValue - first.marketValue : null;
 
+  // Prefijo real: se para en el primer punto NO estimado, en vez de tomar min/max de todas las
+  // fechas marcadas `estimated`. Si un backfill llegase a escribir una fila estimada suelta en
+  // medio o al final de la serie (rompiendo la invariante que documenta el backend), esto la
+  // ignora en vez de usarla para extender el rango señalado hasta ahí.
+  let prefixEnd = 0;
+  while (prefixEnd < usable.length && usable[prefixEnd].estimated) prefixEnd += 1;
+  const estimatedRange =
+    prefixEnd > 0 ? { from: usable[0].date, to: usable[prefixEnd - 1].date } : null;
+
   return {
     points: usable,
     dropped,
@@ -127,5 +154,6 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
       changeAbs !== null && first.marketValue > 0 ? (changeAbs / first.marketValue) * 100 : null,
     from: first?.date ?? null,
     to: last?.date ?? null,
+    estimatedRange,
   };
 }
