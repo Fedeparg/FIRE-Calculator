@@ -151,6 +151,9 @@ export default function PortfolioHistoryChart({ display }: Props) {
             showTotal={false}
             xMinTickGap={48}
             xInterval="preserveStartEnd"
+            // Un valor base alto con poca variación se aplana pegado al 0: se ajusta el eje
+            // al rango real de la cartera en vez de forzar el suelo en cero.
+            yDomain="fit"
           />
 
           {series.dropped > 0 && <p className="text-xs text-muted">{t("dropped", { count: series.dropped })}</p>}
