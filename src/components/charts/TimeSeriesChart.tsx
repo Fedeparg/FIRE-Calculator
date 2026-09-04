@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -90,7 +90,17 @@ type Props = {
    * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
    */
   extraColumns?: ChartTableColumn<DataRow>[];
+  /**
+   * Dominio del eje de valores. `"zero"` (por defecto) es el de siempre: arranca en 0, que es
+   * lo correcto para una proyección que crece desde cero. `"fit"` ajusta el eje al rango real
+   * de los datos (con un 1% de margen arriba y abajo) en vez de forzar el 0 como suelo; lo
+   * necesita la cartera, donde un valor base alto con poca variación se ve plana pegada a 0.
+   */
+  yDomain?: "zero" | "fit";
 };
+
+/** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
+const FIT_DOMAIN_PADDING_RATIO = 0.01;
 
 type Selection = { start: number; end: number } | null;
 type RechartsState = { activeLabel?: string | number } | null;
@@ -116,6 +126,7 @@ export default function TimeSeriesChart({
   xInterval = "preserveEnd",
   shadedRanges = [],
   extraColumns = [],
+  yDomain = "zero",
 }: Props) {
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
     useFormat();
@@ -130,6 +141,36 @@ export default function TimeSeriesChart({
   // desde cada una de las calculadoras que la usan.
   const tc = useTranslations("chart");
   const [selection, setSelection] = useState<Selection>(null);
+
+  // Recharts calcula el dominio de un `Area` apilado forzando el mínimo a 0 (el baseline del
+  // relleno) antes de que un `domain` en forma de función pueda tocarlo, así que un 1% de
+  // margen aplicado ahí nunca se nota. Con `yDomain="fit"` se calcula el rango a mano a partir
+  // de los propios datos (el total apilado de cada fila y las líneas superpuestas) para poder
+  // ajustar el eje al valor real en vez de al que Recharts asume para el relleno.
+  const fitYDomain = useMemo<[number, number] | undefined>(() => {
+    if (yDomain !== "fit") return undefined;
+    let min = Infinity;
+    let max = -Infinity;
+    for (const row of data) {
+      const stackTotal = stack.reduce((sum, s) => sum + toNum(row[s.key]), 0);
+      min = Math.min(min, stackTotal);
+      max = Math.max(max, stackTotal);
+      for (const l of lines) {
+        const v = toNum(row[l.key]);
+        min = Math.min(min, v);
+        max = Math.max(max, v);
+      }
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined;
+    if (min === max) {
+      const pad = Math.abs(max) * FIT_DOMAIN_PADDING_RATIO || 1;
+      return [min - pad, max + pad];
+    }
+    return [
+      min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO,
+      max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO,
+    ];
+  }, [data, stack, lines, yDomain]);
   const [dragging, setDragging] = useState(false);
 
   const totalKeys = stack.map((s) => s.key);
@@ -229,6 +270,10 @@ export default function TimeSeriesChart({
               tick={{ fontSize: 12, fill: "var(--muted)" }}
               tickFormatter={formatAxisValue}
               width={70}
+              domain={yDomain === "fit" && fitYDomain ? fitYDomain : [0, "auto"]}
+              // Sin esto Recharts extiende el dominio para incluir el baseline (0) que usa
+              // internamente para rellenar el área apilada, y el ajuste a 1% no se nota.
+              allowDataOverflow={yDomain === "fit"}
             />
             <Tooltip
               content={
