@@ -2,6 +2,213 @@
   "generatedFrom": "git log HEAD",
   "releases": [
     {
+      "date": "2026-09-25",
+      "title": {
+        "es": "Simulador FIRE Monte Carlo",
+        "en": "FIRE Monte Carlo simulator"
+      },
+      "summary": {
+        "es": "Nueva calculadora que simula 5.000 escenarios de mercado para decirte con qué probabilidad alcanzas la independencia financiera y, sobre todo, si tu dinero te dura toda la jubilación. En lugar de una única línea con una rentabilidad fija, verás un abanico de escenarios buenos y malos y cuándo llegas en cada caso. Además, se ponen al día las librerías del proyecto.",
+        "en": "A new calculator that simulates 5,000 market scenarios to tell you how likely you are to reach financial independence and, above all, whether your money lasts through retirement. Instead of a single line with a fixed return, you get a fan of good and bad scenarios and when you get there in each. The project's libraries are also brought up to date."
+      },
+      "highlight": true,
+      "entries": [
+        {
+          "hash": "d9733ac4",
+          "type": "perf",
+          "scope": "calculators",
+          "category": "performance",
+          "text": {
+            "es": "el simulador se recalcula sin bloquear los campos, para que escribir siga siendo fluido",
+            "en": "the simulator recalculates without blocking the fields, so typing stays smooth"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "748f23d4",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "el README y la hoja de ruta cuentan ya 27 calculadoras",
+            "en": "the README and the roadmap now count 27 calculators"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "fed0cc02",
+          "type": "feat",
+          "scope": "calculators",
+          "category": "feature",
+          "text": {
+            "es": "nuevo simulador FIRE Monte Carlo: probabilidad de alcanzar la independencia financiera y de que el dinero dure toda la jubilación, con un abanico de 5.000 escenarios y su explicación en la wiki",
+            "en": "new FIRE Monte Carlo simulator: the probability of reaching financial independence and of your money lasting through retirement, with a fan of 5,000 scenarios and its own explainer in the wiki"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "cc3cf101",
+          "type": "feat",
+          "scope": "charts",
+          "category": "feature",
+          "text": {
+            "es": "las gráficas pueden pintar bandas de escenarios además de líneas y áreas",
+            "en": "charts can draw bands of scenarios as well as lines and areas"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "fb16e80f",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "el motor de simulación es reproducible: los mismos datos dan siempre el mismo resultado, también al abrir un enlace compartido",
+            "en": "the simulation engine is reproducible: the same inputs always give the same result, including when opening a shared link"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "1e501fe3",
+          "type": "chore",
+          "scope": "deps",
+          "category": "internal",
+          "text": {
+            "es": "actualiza la librería de envío de correos a su última versión mayor",
+            "en": "updates the email-sending library to its latest major version"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e8b0fa2e",
+          "type": "chore",
+          "scope": "deps",
+          "category": "internal",
+          "text": {
+            "es": "actualiza la preparación de Node.js en la integración continua",
+            "en": "updates the Node.js setup step in continuous integration"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "ead8c11d",
+          "type": "chore",
+          "scope": "deps",
+          "category": "internal",
+          "text": {
+            "es": "actualiza la descarga del código en la integración continua",
+            "en": "updates the code checkout step in continuous integration"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "dc7553d8",
+          "type": "chore",
+          "scope": "deps",
+          "category": "internal",
+          "text": {
+            "es": "actualiza la instalación del gestor de paquetes en la integración continua",
+            "en": "updates the package-manager setup in continuous integration"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "title": {
+        "es": "Librerías al día",
+        "en": "Libraries brought up to date"
+      },
+      "summary": {
+        "es": "",
+        "en": ""
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "9056dbde",
+          "type": "chore",
+          "scope": "deps",
+          "category": "internal",
+          "text": {
+            "es": "actualiza 22 librerías a sus últimas versiones menores, entre ellas Next.js, React y NestJS",
+            "en": "updates 22 libraries to their latest minor versions, including Next.js, React and NestJS"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "date": "2026-09-04",
+      "title": {
+        "es": "Un histórico de cartera más completo",
+        "en": "A more complete portfolio history"
+      },
+      "summary": {
+        "es": "",
+        "en": ""
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "3d7cdc10",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "recupera el ajuste del eje de la gráfica de cartera, que se había perdido al integrar cambios",
+            "en": "restores the portfolio chart axis fit, which had been lost while merging changes"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "c2d87bde",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "el eje de la gráfica de cartera se ajusta al rango real de valores, para que los cambios se vean aunque el patrimonio sea alto",
+            "en": "the portfolio chart axis fits the actual range of values, so changes are visible even with a large net worth"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "55708cf0",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "cada posición muestra la fecha del precio con el que se valora",
+            "en": "each position shows the date of the price it is valued at"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "37a6ba89",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "los tramos de la gráfica de cartera calculados con precios estimados se marcan de forma visible",
+            "en": "stretches of the portfolio chart computed from estimated prices are clearly marked"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "84d0d1b0",
+          "type": "feat",
+          "scope": "api",
+          "category": "feature",
+          "text": {
+            "es": "al añadir un valor nuevo, la cartera reconstruye su último año de histórico en lugar de empezar de cero",
+            "en": "when you add a new holding, the portfolio rebuilds its last year of history instead of starting from scratch"
+          },
+          "hidden": false
+        }
+      ]
+    },
+    {
       "date": "2026-09-03",
       "title": {
         "es": "Histórico de cartera, IRPF por comunidad, objetivo FIRE y novedades",
@@ -13,6 +220,17 @@
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "3b43a1a2",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "pone al día el historial con las últimas entregas",
+            "en": "brings the history up to date with the latest releases"
+          },
+          "hidden": false
+        },
         {
           "hash": "2a329206",
           "type": "feat",
