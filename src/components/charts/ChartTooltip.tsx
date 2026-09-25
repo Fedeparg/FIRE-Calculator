@@ -4,7 +4,8 @@ import { useFormat } from "@/lib/format";
 
 type Entry = {
   name?: string;
-  value?: number | string;
+  /** Un valor, o un par [mínimo, máximo] si la serie es una banda. */
+  value?: number | string | readonly (number | string)[];
   color?: string;
   dataKey?: string | number;
 };
@@ -47,7 +48,7 @@ export default function ChartTooltip({
     totalKeys && totalKeys.length
       ? payload
           .filter((e) => totalKeys.includes(String(e.dataKey)))
-          .reduce((sum, e) => sum + Number(e.value ?? 0), 0)
+          .reduce((sum, e) => sum + (Array.isArray(e.value) ? 0 : Number(e.value ?? 0)), 0)
       : null;
 
   return (
@@ -67,7 +68,9 @@ export default function ChartTooltip({
               {e.name}
             </span>
             <span className="font-medium text-foreground">
-              {formatValue(Number(e.value ?? 0))}
+              {Array.isArray(e.value)
+                ? e.value.map((v) => formatValue(Number(v))).join(" – ")
+                : formatValue(Number(e.value ?? 0))}
             </span>
           </li>
         ))}
