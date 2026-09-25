@@ -50,7 +50,7 @@ Spanish, and every calculator runs in your browser — no account needed.
 
 | | |
 |---|---|
-| **26 calculators** | Compound interest, FIRE, mortgages (fixed rate / early repayment / buy-vs-rent / affordability), deposits, dividends, DCA, staking, inflation, ROI, budget, financial-health quiz… |
+| **27 calculators** | Compound interest, FIRE (plus a Monte Carlo simulator), mortgages (fixed rate / early repayment / buy-vs-rent / affordability), deposits, dividends, DCA, staking, inflation, ROI, budget, financial-health quiz… |
 | **A real Spanish tax engine** | IRPF via the AEAT dual-scale method, with the regional scale of each of the 15 common-regime communities, Social Security contributions with caps, payroll withholding, self-employed IRPF, wealth tax, gift tax by kinship group |
 | **Aggregated portfolio** | Positions across brokers in one place, with a daily price feed, FX conversion and P&L |
 | **Portfolio history** | Purchase lots per position, a year of prices fetched the first time a symbol is seen, nightly valuation snapshots, an evolution chart and a breakdown by asset, broker or currency |
@@ -59,7 +59,7 @@ Spanish, and every calculator runs in your browser — no account needed.
 | **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold, sharing saved scenarios with the FIRE calculator |
 | **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
 | **Bilingual** | Spanish (default) and English: 1,065 translation keys per locale, with parity enforced by a test, not by hope |
-| **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 26 tools, in both languages |
+| **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 27 tools, in both languages |
 | **No tracking** | No analytics, no ads, no third-party scripts. The CSP allowlist is `'self'` and nothing else. |
 
 > **Not financial advice.** Sextante computes and explains; it never recommends.
@@ -70,7 +70,7 @@ Spanish, and every calculator runs in your browser — no account needed.
 
 ## Screenshots
 
-### Calculator index — searchable, categorised, all 26 in one place
+### Calculator index — searchable, categorised, all 27 in one place
 
 <img src="docs/images/calculators-index.jpg" alt="Calculator index with search box and category filters" width="880">
 

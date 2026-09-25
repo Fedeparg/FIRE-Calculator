@@ -10,10 +10,10 @@ Where Sextante is today, what's next, and what it deliberately won't do.
 
 | Area | Status |
 |---|---|
-| **26 calculators** — investing, FIRE, mortgages, savings, Spanish tax, debt | ✅ All live |
+| **27 calculators** — investing, FIRE, mortgages, savings, Spanish tax, debt | ✅ All live |
 | **Spanish tax engine** — IRPF (dual-scale AEAT approximation) with **per-region scales for the 15 common-regime communities**, Social Security, wealth tax, gift tax, self-employed | ✅ Live, unit-tested |
 | **Bilingual UI** — Spanish (default) + English via `next-intl`, 1,065 keys per locale, parity enforced by test | ✅ Live |
-| **Wiki** — 30 articles + 26 calculator explainers, Markdown-driven, both locales | ✅ Live |
+| **Wiki** — 30 articles + 27 calculator explainers, Markdown-driven, both locales | ✅ Live |
 | **Passwordless auth** — magic link, SHA-256 hashed single-use tokens, JWT in an HttpOnly cookie | ✅ Live |
 | **Portfolio** — aggregated positions across brokers, daily price feed, FX conversion, P&L | ✅ Live |
 | **Portfolio history** — purchase lots per position, one year of prices fetched on first sight, nightly valuation snapshots, evolution chart and breakdown by asset / broker / currency | ✅ Live |
