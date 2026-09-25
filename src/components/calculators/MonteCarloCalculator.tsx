@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
   MAX_RETIREMENT_YEARS,
@@ -29,11 +29,15 @@ export default function MonteCarloCalculator() {
   const [withdrawalRate, setWithdrawalRate] = useNumberField("withdrawalRate", 4);
   const [retirementYears, setRetirementYears] = useNumberField("retirementYears", 40);
 
-  // 5.000 vidas × ~120 años: unos pocos milisegundos, así que basta con memoizar en el hilo
-  // principal. La semilla es fija, por eso el resultado es idéntico en servidor y cliente.
-  const result = useMemo(
-    () =>
-      simulateFire({
+  // 5.000 vidas × ~120 años cuestan unos 60 ms en un portátil (más en un móvil modesto), y se
+  // recalcula con cada tecla. `useDeferredValue` le dice a React que la simulación puede ir
+  // "por detrás": el campo se actualiza al instante y el resultado se recalcula con prioridad
+  // baja, descartando cálculos intermedios si se sigue tecleando. Se difiere un único objeto
+  // para que los siete valores cambien juntos. La semilla es fija, así que el resultado es
+  // idéntico en servidor y cliente.
+  const inputs = useDeferredValue(
+    useMemo(
+      () => ({
         annualExpenses,
         currentSavings,
         monthlySavings,
@@ -42,8 +46,10 @@ export default function MonteCarloCalculator() {
         withdrawalRate,
         retirementYears,
       }),
-    [annualExpenses, currentSavings, monthlySavings, annualReturn, volatility, withdrawalRate, retirementYears],
+      [annualExpenses, currentSavings, monthlySavings, annualReturn, volatility, withdrawalRate, retirementYears],
+    ),
   );
+  const result = useMemo(() => simulateFire(inputs), [inputs]);
 
   const { p10, p50, p90 } = result.yearsToFire;
   const medianLabel =
