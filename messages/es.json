@@ -232,7 +232,46 @@
         "withdrawalRate": "Qué porcentaje de tu patrimonio retiras cada año al jubilarte. La regla del 4% (Trinity) es el estándar prudente: una tasa mayor reduce el objetivo pero aumenta el riesgo de quedarte sin dinero.",
         "savingsGrowth": "Si subes tu aportación cada año (con el sueldo o la inflación), indícalo. Déjalo en 0 si es fija."
       },
-      "savingsGrowth": "Crecimiento anual del ahorro (%)"
+      "savingsGrowth": "Crecimiento anual del ahorro (%)",
+      "monteCarloLink": "¿Y si el mercado no da la misma rentabilidad cada año? Pruébalo en el simulador Monte Carlo."
+    },
+    "simulador-montecarlo": {
+      "title": "Simulador FIRE Monte Carlo",
+      "intro": "Simula miles de escenarios de mercado para ver con qué probabilidad alcanzas la independencia financiera y tu dinero te dura toda la jubilación.",
+      "annualExpenses": "Gasto anual deseado (€)",
+      "currentSavings": "Patrimonio invertido actual (€)",
+      "monthlySavings": "Ahorro mensual (€)",
+      "annualReturn": "Rentabilidad anual real media (%)",
+      "volatility": "Volatilidad anual (%)",
+      "withdrawalRate": "Tasa de retiro segura (%)",
+      "retirementYears": "Años de retiro",
+      "successRate": "Probabilidad de éxito",
+      "reachRate": "Llegas a FIRE (en 60 años)",
+      "survivalRate": "Una vez retirado, el dinero te dura",
+      "medianYears": "Años hasta FIRE (mediana)",
+      "years": "{years} años",
+      "notReached": "No se alcanza en la mayoría de escenarios",
+      "alreadyFree": "¡Ya eres libre financieramente!",
+      "range": "En el 80 % central de las simulaciones llegas entre los {p10} y los {p90} años.",
+      "rangeOpen": "En el 10 % de escenarios más favorables llegas en {p10} años o menos, pero en el 10 % menos favorable no llegas en 60 años.",
+      "deterministic": "Con una rentabilidad constante, sin volatilidad, llegarías en {years} años.",
+      "deterministicNotReached": "Con una rentabilidad constante, sin volatilidad, no llegarías en 60 años.",
+      "chartTitle": "Abanico de escenarios de patrimonio",
+      "band80": "80 % de los escenarios (p10–p90)",
+      "band50": "50 % de los escenarios (p25–p75)",
+      "seriesMedian": "Escenario mediano",
+      "seriesDeterministic": "Sin volatilidad",
+      "seriesTarget": "Objetivo FIRE",
+      "note": "Simulación orientativa de 5.000 escenarios con rentabilidades anuales aleatorias e independientes, en euros de hoy y sin impuestos ni comisiones. No predice el futuro ni es asesoramiento financiero.",
+      "help": {
+        "annualExpenses": "Cuánto necesitas gastar al año, en euros de hoy, una vez seas libre financieramente. Es también lo que retiras cada año de jubilación.",
+        "currentSavings": "El dinero que ya tienes invertido.",
+        "monthlySavings": "Cuánto inviertes al mes hasta alcanzar FIRE. Se suma una vez al año.",
+        "annualReturn": "Rentabilidad media anual descontada la inflación. Una cartera global de renta variable ha rondado el 5 % real a largo plazo.",
+        "volatility": "Cuánto varía la rentabilidad de un año a otro (desviación típica). La renta variable global ronda el 15-20 %; una cartera mixta con bonos, menos. Con 0 obtienes el resultado de la calculadora FIRE.",
+        "withdrawalRate": "Porcentaje del patrimonio que retiras el primer año de jubilación. Define tu número FIRE: con un 4 %, necesitas 25 veces tu gasto anual.",
+        "retirementYears": "Cuántos años tiene que durar el dinero una vez te retiras. Si te jubilas a los 40, piensa en 50 o más."
+      }
     },
     "hipoteca-fija": {
       "title": "Calculadora de hipoteca a tipo fijo",

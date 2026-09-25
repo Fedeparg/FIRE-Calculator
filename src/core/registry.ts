@@ -29,6 +29,17 @@ export const CALCULATORS: CalculatorMeta[] = [
     status: "live",
   },
   {
+    slug: "simulador-montecarlo",
+    name: { es: "Simulador FIRE Monte Carlo", en: "FIRE Monte Carlo simulator" },
+    category: "fire",
+    description: {
+      es: "Probabilidad de alcanzar FIRE y de que tu dinero dure toda la jubilación, en miles de escenarios.",
+      en: "Probability of reaching FIRE and of your money lasting through retirement, across thousands of scenarios.",
+    },
+    keywords: ["monte carlo", "montecarlo", "simulacion", "probabilidad", "fire", "jubilacion", "volatilidad", "trinity", "simulation", "probability", "retirement"],
+    status: "live",
+  },
+  {
     slug: "hipoteca-fija",
     name: { es: "Hipoteca a tipo fijo", en: "Fixed-rate mortgage" },
     category: "hipoteca",
@@ -40,7 +51,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     status: "live",
   },
 
-  // --- Próximamente ---
   { slug: "interes-simple", name: { es: "Interés simple", en: "Simple interest" }, category: "inversion", description: { es: "Cálculo básico de interés simple.", en: "Basic simple-interest calculation." }, keywords: ["interes", "simple", "interest"], status: "live" },
   { slug: "promediar-acciones", name: { es: "Promediar acciones (DCA)", en: "Average down (DCA)" }, category: "inversion", description: { es: "Precio medio ponderado de tus compras.", en: "Weighted average price of your purchases." }, keywords: ["promediar", "acciones", "dca", "average"], status: "live" },
   { slug: "dividendos", name: { es: "Dividendos de acciones", en: "Stock dividends" }, category: "inversion", description: { es: "Ingresos por dividendos y retención.", en: "Dividend income and withholding." }, keywords: ["dividendos", "dividends", "rentas"], status: "live" },

@@ -34,7 +34,8 @@ export interface FireResult {
   series: FireYearPoint[];
 }
 
-const MAX_YEARS = 60;
+/** Horizonte máximo de acumulación, en años (compartido con el simulador Monte Carlo). */
+export const MAX_YEARS = 60;
 
 export function computeFire(input: FireInput): FireResult {
   const annualExpenses = Math.max(0, input.annualExpenses || 0);

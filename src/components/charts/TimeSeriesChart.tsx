@@ -18,7 +18,19 @@ import { useFormat } from "@/lib/format";
 import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
 
-export type SeriesDef = { key: string; name: string; color: string };
+export type SeriesDef = {
+  key: string;
+  name: string;
+  color: string;
+  /** Solo para `lines`: trazo discontinuo (por defecto) o continuo. */
+  dashed?: boolean;
+};
+
+/**
+ * Banda entre dos series (p. ej. los percentiles 10 y 90 de una simulación). Se pinta como un
+ * área rellena entre `lowKey` y `highKey`, sin apilar sobre el resto.
+ */
+export type BandDef = { lowKey: string; highKey: string; name: string; color: string };
 
 /**
  * Una fila de datos. El eje X admite texto (una fecha ISO) además de número; las series
@@ -36,6 +48,8 @@ type Props = {
   stack: SeriesDef[];
   /** Líneas superpuestas opcionales (p.ej. objetivo FIRE). */
   lines?: SeriesDef[];
+  /** Bandas opcionales entre dos series (p.ej. un abanico de percentiles). */
+  bands?: BandDef[];
   valueKey: string;
   contributedKey?: string;
   interestKey?: string;
@@ -113,6 +127,7 @@ export default function TimeSeriesChart({
   xKey,
   stack,
   lines = [],
+  bands = [],
   valueKey,
   contributedKey,
   interestKey,
@@ -155,8 +170,8 @@ export default function TimeSeriesChart({
       const stackTotal = stack.reduce((sum, s) => sum + toNum(row[s.key]), 0);
       min = Math.min(min, stackTotal);
       max = Math.max(max, stackTotal);
-      for (const l of lines) {
-        const v = toNum(row[l.key]);
+      for (const key of [...lines.map((l) => l.key), ...bands.flatMap((b) => [b.lowKey, b.highKey])]) {
+        const v = toNum(row[key]);
         min = Math.min(min, v);
         max = Math.max(max, v);
       }
@@ -170,7 +185,7 @@ export default function TimeSeriesChart({
       min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO,
       max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO,
     ];
-  }, [data, stack, lines, yDomain]);
+  }, [data, stack, lines, bands, yDomain]);
   const [dragging, setDragging] = useState(false);
 
   const totalKeys = stack.map((s) => s.key);
@@ -200,6 +215,11 @@ export default function TimeSeriesChart({
     ...[...stack, ...lines].map((series) => ({
       label: series.name,
       value: (row: DataRow) => formatValue(Number(row[series.key])),
+    })),
+    ...bands.map((band) => ({
+      label: band.name,
+      value: (row: DataRow) =>
+        `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
     })),
     ...extraColumns,
   ];
@@ -300,6 +320,20 @@ export default function TimeSeriesChart({
                 strokeWidth={2}
               />
             ))}
+            {bands.map((b) => (
+              <Area
+                key={`${b.lowKey}-${b.highKey}`}
+                type="monotone"
+                // Recharts pinta un área de rango cuando `dataKey` devuelve [mínimo, máximo].
+                dataKey={(row: DataRow) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
+                name={b.name}
+                stroke="none"
+                fill={b.color}
+                fillOpacity={0.18}
+                activeDot={false}
+                isAnimationActive={false}
+              />
+            ))}
             {lines.map((l) => (
               <Line
                 key={l.key}
@@ -307,8 +341,8 @@ export default function TimeSeriesChart({
                 dataKey={l.key}
                 name={l.name}
                 stroke={l.color}
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
+                strokeWidth={l.dashed === false ? 2 : 1.5}
+                strokeDasharray={l.dashed === false ? undefined : "5 5"}
                 dot={false}
               />
             ))}
