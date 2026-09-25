@@ -117,6 +117,13 @@ jobs:
       - name: Podar imágenes colgadas
         run: docker image prune -f
 
+      # `up --build` deja en la caché de BuildKit las capas de cada despliegue (~4 GB con
+      # node_modules y el build de Next), y `image prune` no la toca: sin esto crecía sin
+      # límite en el disco del NAS. Se conserva lo usado más recientemente hasta el tope, así
+      # que el siguiente build sigue reutilizando las capas de dependencias.
+      - name: Acotar la caché de build
+        run: docker builder prune -f --max-used-space 8GB
+
       - name: Borrar el .env efímero
         if: always()
         run: rm -f .env
