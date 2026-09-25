@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeFire } from "@/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@/core/projection";
+import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
@@ -112,6 +113,15 @@ export default function FireCalculator() {
               ]}
             />
           )}
+
+          <p className="text-sm text-muted">
+            <Link
+              href="/calculadoras/simulador-montecarlo"
+              className="font-medium text-brand underline underline-offset-2"
+            >
+              {t("monteCarloLink")}
+            </Link>
+          </p>
         </>
       }
     />

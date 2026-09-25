@@ -232,7 +232,46 @@
         "withdrawalRate": "The percentage of your wealth you withdraw each year in retirement. The 4% rule (Trinity) is the prudent standard: a higher rate lowers the target but raises the risk of running out of money.",
         "savingsGrowth": "If you raise your contribution each year (with salary or inflation), enter it. Leave at 0 if fixed."
       },
-      "savingsGrowth": "Annual savings growth (%)"
+      "savingsGrowth": "Annual savings growth (%)",
+      "monteCarloLink": "What if the market doesn't return the same every year? Try the Monte Carlo simulator."
+    },
+    "simulador-montecarlo": {
+      "title": "FIRE Monte Carlo simulator",
+      "intro": "Simulate thousands of market scenarios to see how likely you are to reach financial independence and have your money last through retirement.",
+      "annualExpenses": "Desired annual spending (€)",
+      "currentSavings": "Current invested wealth (€)",
+      "monthlySavings": "Monthly savings (€)",
+      "annualReturn": "Average real annual return (%)",
+      "volatility": "Annual volatility (%)",
+      "withdrawalRate": "Safe withdrawal rate (%)",
+      "retirementYears": "Years in retirement",
+      "successRate": "Probability of success",
+      "reachRate": "You reach FIRE (within 60 years)",
+      "survivalRate": "Once retired, your money lasts",
+      "medianYears": "Years to FIRE (median)",
+      "years": "{years} years",
+      "notReached": "Not reached in most scenarios",
+      "alreadyFree": "You are already financially independent!",
+      "range": "In the middle 80% of simulations you get there in {p10} to {p90} years.",
+      "rangeOpen": "In the best 10% of scenarios you get there in {p10} years or less, but in the worst 10% you don't get there within 60 years.",
+      "deterministic": "With a constant return and no volatility, you would get there in {years} years.",
+      "deterministicNotReached": "With a constant return and no volatility, you would not get there within 60 years.",
+      "chartTitle": "Fan of wealth scenarios",
+      "band80": "80% of scenarios (p10–p90)",
+      "band50": "50% of scenarios (p25–p75)",
+      "seriesMedian": "Median scenario",
+      "seriesDeterministic": "No volatility",
+      "seriesTarget": "FIRE target",
+      "note": "Indicative simulation of 5,000 scenarios with random, independent annual returns, in today's euros and without taxes or fees. It does not predict the future and is not financial advice.",
+      "help": {
+        "annualExpenses": "How much you need to spend per year, in today's euros, once financially independent. It is also what you withdraw each year in retirement.",
+        "currentSavings": "The money you already have invested.",
+        "monthlySavings": "How much you invest per month until you reach FIRE. It is added once a year.",
+        "annualReturn": "Average annual return after inflation. A global equity portfolio has returned around 5% real over the long run.",
+        "volatility": "How much the return varies from one year to the next (standard deviation). Global equities are around 15-20%; a mixed portfolio with bonds, less. With 0 you get the FIRE calculator's result.",
+        "withdrawalRate": "The percentage of your wealth you withdraw in your first year of retirement. It sets your FIRE number: at 4%, you need 25 times your annual spending.",
+        "retirementYears": "How many years your money has to last once you retire. If you retire at 40, think 50 or more."
+      }
     },
     "hipoteca-fija": {
       "title": "Fixed-rate mortgage calculator",
