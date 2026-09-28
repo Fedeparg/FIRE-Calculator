@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/lib/session";
-import { fetchAllLots, fetchPositions } from "@/lib/portfolio.server";
+import { fetchPositionsWithLots } from "@/lib/portfolio.server";
+import Notice from "@/components/ui/Notice";
 import { Link } from "@/i18n/navigation";
 import RealisedGainsReport from "@/components/portfolio/RealisedGainsReport";
 
@@ -28,8 +29,7 @@ export default async function RealisedGainsPage({ params }: Props) {
   }
 
   const t = await getTranslations("portfolio.realisedGains");
-  // Las dos lecturas son independientes: en paralelo.
-  const [positions, lots] = await Promise.all([fetchPositions(), fetchAllLots()]);
+  const data = await fetchPositionsWithLots();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-12">
@@ -43,7 +43,11 @@ export default async function RealisedGainsPage({ params }: Props) {
         <h1 className="mt-2 text-2xl font-semibold text-foreground">{t("title")}</h1>
         <p className="text-sm text-muted">{t("subtitle")}</p>
       </div>
-      <RealisedGainsReport positions={positions} lots={lots} />
+      {data ? (
+        <RealisedGainsReport positions={data.positions} lots={data.lots} />
+      ) : (
+        <Notice variant="warning">{t("loadError")}</Notice>
+      )}
     </div>
   );
 }

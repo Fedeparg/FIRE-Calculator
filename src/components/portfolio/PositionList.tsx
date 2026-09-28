@@ -97,6 +97,9 @@ export default function PositionList({
   // Posición en confirmación cuyo histórico tiene ventas: borrarla las quita del informe de
   // plusvalías, y eso merece un aviso más fuerte que el "¿seguro?" normal.
   const [withSalesId, setWithSalesId] = useState<string | null>(null);
+  // Mientras se comprueba si tiene ventas, el botón de confirmar espera: si no, se podría
+  // borrar antes de que llegue el aviso.
+  const [checkingId, setCheckingId] = useState<string | null>(null);
   const [pnlMode, setPnlMode] = useState<PnlMode>("pct");
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
@@ -110,6 +113,7 @@ export default function PositionList({
   async function startConfirm(id: string) {
     setConfirmingId(id);
     setWithSalesId(null);
+    setCheckingId(id);
     try {
       const res = await fetch(`/api/positions/${id}/lots`, { cache: "no-store" });
       if (!res.ok) return;
@@ -117,6 +121,8 @@ export default function PositionList({
       if (lots.some((lot) => lot.kind === "sell")) setWithSalesId(id);
     } catch {
       // Sin red, el borrado sigue siendo posible; solo falta el aviso adicional.
+    } finally {
+      setCheckingId((current) => (current === id ? null : current));
     }
   }
 
@@ -409,7 +415,7 @@ export default function PositionList({
                         <button
                           type="button"
                           onClick={() => handleDelete(p.id)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || checkingId === p.id}
                           className="rounded-md bg-warning px-2.5 py-1 text-xs font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
                         >
                           {isDeleting ? t("deleting") : t("confirm")}

@@ -1389,7 +1389,7 @@
       "taxScale": "Estimated with the {scaleYear} savings scale. For earlier years the scale may have been different.",
       "noEurSales": "This year has no sales in euros, so no tax is estimated.",
       "foreignCurrency": "Sales in {currencies} are shown in their own currency. For the tax return, every purchase and sale must be converted to euros at the official exchange rate of its date, and Sextante does not keep that history: do not add them to the euro figures as they are.",
-      "scope": "Nets the gains and losses of sales within the same tax year. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
+      "scope": "Nets the gains and losses of sales within the same tax year and applies FIFO to each security as a whole, even if you hold it with several brokers. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
       "csv": {
         "date": "Sale date",
         "ticker": "Symbol",
@@ -1401,7 +1401,8 @@
         "transferValue": "Transfer value",
         "acquisitionValue": "Acquisition value",
         "gain": "Gain/loss"
-      }
+      },
+      "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures."
     }
   },
   "account": {

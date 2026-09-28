@@ -1389,7 +1389,7 @@
       "taxScale": "Estimación con la escala del ahorro de {scaleYear}. Si el ejercicio es anterior, la escala pudo ser distinta.",
       "noEurSales": "Este ejercicio no tiene ventas en euros, así que no se estima la cuota.",
       "foreignCurrency": "Las ventas en {currencies} se muestran en su divisa. Para la declaración hay que convertir cada compra y cada venta a euros con el tipo de cambio oficial de su fecha, y Sextante no guarda ese histórico: no las sumes a las de euros tal cual.",
-      "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
+      "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio y aplica el FIFO a cada valor entero, aunque lo tengas en varios brókers. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
       "csv": {
         "date": "Fecha de venta",
         "ticker": "Símbolo",
@@ -1401,7 +1401,8 @@
         "transferValue": "Valor de transmisión",
         "acquisitionValue": "Valor de adquisición",
         "gain": "Ganancia/pérdida"
-      }
+      },
+      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas."
     }
   },
   "account": {

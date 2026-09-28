@@ -14,9 +14,19 @@ export async function fetchPositions(): Promise<Position[]> {
 }
 
 /**
- * Carga TODAS las operaciones del usuario autenticado (todas sus posiciones) para el render
- * inicial. Devuelve `[]` ante cualquier fallo, igual que `fetchPositions`.
+ * Carga las posiciones y TODAS sus operaciones para el informe de plusvalías, o `null` si
+ * cualquiera de las dos lecturas falla. A diferencia de `fetchPositions`, aquí un fallo NO se
+ * disfraza de lista vacía: en un informe fiscal, "no tienes ventas" por un error transitorio
+ * sería un resultado falso, así que la página enseña el error.
  */
-export async function fetchAllLots(): Promise<PositionLot[]> {
-  return (await apiFetch<PositionLot[]>("/api/positions/lots")) ?? [];
+export async function fetchPositionsWithLots(): Promise<{
+  positions: Position[];
+  lots: PositionLot[];
+} | null> {
+  // Las dos lecturas son independientes: en paralelo.
+  const [positions, lots] = await Promise.all([
+    apiFetch<Position[]>("/api/positions"),
+    apiFetch<PositionLot[]>("/api/positions/lots"),
+  ]);
+  return positions && lots ? { positions, lots } : null;
 }
