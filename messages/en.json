@@ -1466,7 +1466,7 @@
       "loading": "Loading…",
       "loadError": "Your preferences could not be loaded. Reload the page to try again.",
       "fireAlerts": "Email me when my FIRE goal reaches a milestone",
-      "goal": "Your goal “{name}” is tracked: the one you saved or updated most recently.",
+      "goal": "Your goal “{name}” is tracked: the one you saved or updated most recently. If you change it, notices start counting from wherever you are at that point.",
       "noGoal": "You have not saved a goal yet, so there is nothing to track.",
       "noGoalLink": "Save it in your portfolio",
       "language": "Notices are sent in {language}, the language you turned them on in.",

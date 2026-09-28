@@ -28,7 +28,7 @@ function setup(env: Record<string, string> = {}) {
     ensureRecentHistoryForActivePositions: vi.fn(() => Promise.resolve()),
   };
   const snapshots = {
-    captureAll: vi.fn(() => Promise.resolve()),
+    captureAll: vi.fn(() => Promise.resolve({ date: '2026-09-28', users: 0, captured: 0, failed: 0 })),
     backfillAll: vi.fn(() => Promise.resolve()),
   };
   const fireAlerts = {
@@ -95,6 +95,12 @@ describe('DailyJobsScheduler', () => {
       (fn) => fn.mock.invocationCallOrder[0],
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it('las alertas evalúan la fecha de la captura, no una recalculada', async () => {
+    const { scheduler, fireAlerts } = setup();
+    await scheduler.run();
+    expect(fireAlerts.evaluateAll).toHaveBeenCalledWith('2026-09-28');
   });
 
   it('si hay un trabajo en marcha, el otro se salta en vez de solaparse', async () => {

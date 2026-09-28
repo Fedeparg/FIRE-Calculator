@@ -84,9 +84,10 @@ export class NotificationSettingsService {
   /** Escenario FIRE más reciente del usuario (el objetivo que vigilan las alertas). */
   async latestGoalInputs(
     userId: string,
-  ): Promise<{ name: string; updatedAt: Date; inputs: Record<string, unknown> } | null> {
+  ): Promise<{ id: string; name: string; updatedAt: Date; inputs: Record<string, unknown> } | null> {
     const [row] = await this.db
       .select({
+        id: savedScenarios.id,
         name: savedScenarios.name,
         updatedAt: savedScenarios.updatedAt,
         inputs: savedScenarios.inputs,

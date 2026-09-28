@@ -488,6 +488,12 @@ export type NewMcpAuditLogRow = typeof mcpAuditLog.$inferInsert;
  * sin referencia": la primera evaluación tras activar las alertas fija el hito actual SIN
  * enviar nada, para no estrenar la suscripción con un aviso de algo que ya se había pasado.
  *
+ * `fireGoalRef` identifica la versión del objetivo sobre la que se tomó esa referencia
+ * (`<id del escenario>@<updatedAt>`). Si el usuario cambia de objetivo o lo edita, la
+ * referencia se vuelve a tomar en silencio: un hito del objetivo anterior no dice nada del
+ * nuevo (subir el objetivo tras llegar al 100 % no debe dejar las alertas mudas, y bajarlo
+ * no debe disparar un aviso esa misma noche).
+ *
  * No hay token de baja guardado: el enlace lleva un HMAC del `userId` (ver
  * `notifications/unsubscribe-token.ts`), que no caduca ni hay que rotar.
  */
@@ -499,6 +505,7 @@ export const userNotificationSettings = pgTable('user_notification_settings', {
   /** Idioma de los emails (`es`/`en`): el de la interfaz cuando el usuario los activó. */
   locale: varchar('locale', { length: 5 }).notNull().default('es'),
   lastFireMilestone: smallint('last_fire_milestone'),
+  fireGoalRef: text('fire_goal_ref'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })
     .notNull()

@@ -32,7 +32,8 @@ function todayUtc(): string {
  *   1. Objetivo = el escenario FIRE guardado más reciente (sin escenario, nada que vigilar).
  *   2. Valor = el snapshot REAL de hoy (no uno estimado por backfill), convertido a la divisa
  *      del objetivo con las tasas FX guardadas en ese mismo snapshot.
- *   3. Si aún no hay referencia (recién activadas), se fija el hito actual sin enviar nada.
+ *   3. Si aún no hay referencia (recién activadas) o el objetivo ha cambiado desde que se tomó,
+ *      se fija el hito actual sin enviar nada.
  *   4. Si hay hito nuevo, se REGISTRA antes de enviar con un `UPDATE … WHERE hito < nuevo`:
  *      solo quien gana esa carrera envía, así que ni un reintento ni dos procesos a la vez
  *      pueden mandar el mismo aviso dos veces. El precio es que un envío fallido no se
@@ -56,12 +57,18 @@ export class FireAlertsService {
     this.secret = config.getOrThrow<string>('JWT_SECRET');
   }
 
+  /**
+   * `date` debe ser la de la captura de snapshots que se acaba de hacer (el trabajo nocturno
+   * se la pasa): recalcularla aquí podría caer ya en el día siguiente si la pasada cruza la
+   * medianoche UTC, y entonces no habría snapshot real que evaluar.
+   */
   async evaluateAll(date: string = todayUtc()): Promise<FireAlertsSummary> {
     const subscribers = await this.db
       .select({
         userId: userNotificationSettings.userId,
         locale: userNotificationSettings.locale,
         lastFireMilestone: userNotificationSettings.lastFireMilestone,
+        fireGoalRef: userNotificationSettings.fireGoalRef,
         email: users.email,
       })
       .from(userNotificationSettings)
@@ -81,12 +88,19 @@ export class FireAlertsService {
   }
 
   private async evaluateUser(
-    subscriber: { userId: string; locale: string; lastFireMilestone: number | null; email: string },
+    subscriber: {
+      userId: string;
+      locale: string;
+      lastFireMilestone: number | null;
+      fireGoalRef: string | null;
+      email: string;
+    },
     date: string,
   ): Promise<Outcome> {
     const { userId } = subscriber;
     const goal = await this.settings.latestGoalInputs(userId);
-    const target = goal ? fireTargetFromInputs(goal.inputs) : null;
+    if (!goal) return 'skipped';
+    const target = fireTargetFromInputs(goal.inputs);
     if (!target) return 'skipped';
 
     const [snapshot] = await this.db
@@ -106,10 +120,11 @@ export class FireAlertsService {
     if (value === null || !Number.isFinite(value)) return 'skipped';
     const progress = (value / target.target) * 100;
 
-    if (subscriber.lastFireMilestone === null) {
+    const goalRef = `${goal.id}@${goal.updatedAt.toISOString()}`;
+    if (subscriber.lastFireMilestone === null || subscriber.fireGoalRef !== goalRef) {
       await this.db
         .update(userNotificationSettings)
-        .set({ lastFireMilestone: reachedMilestone(progress) })
+        .set({ lastFireMilestone: reachedMilestone(progress), fireGoalRef: goalRef })
         .where(eq(userNotificationSettings.userId, userId));
       return 'skipped';
     }

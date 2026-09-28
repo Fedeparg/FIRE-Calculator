@@ -161,8 +161,10 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       this.logger.error(`Refresco de precios falló: ${(error as Error).message}`);
     }
 
+    // Fecha de la captura: las alertas evalúan EXACTAMENTE ese snapshot (ver `evaluateAll`).
+    let captureDate: string | undefined;
     try {
-      await this.snapshots.captureAll();
+      captureDate = (await this.snapshots.captureAll()).date;
     } catch (error) {
       this.logger.error(`Captura de snapshots falló: ${(error as Error).message}`);
     }
@@ -174,7 +176,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     }
 
     try {
-      const alerts = await this.fireAlerts.evaluateAll();
+      const alerts = await this.fireAlerts.evaluateAll(captureDate);
       if (alerts.users > 0) {
         this.logger.log(
           `Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`,

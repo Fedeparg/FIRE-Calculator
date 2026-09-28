@@ -1466,7 +1466,7 @@
       "loading": "Cargando…",
       "loadError": "No se pudieron cargar tus preferencias. Recarga la página para intentarlo de nuevo.",
       "fireAlerts": "Avisarme por email de los hitos de mi objetivo FIRE",
-      "goal": "Se vigila tu objetivo «{name}», el que guardaste o actualizaste más recientemente.",
+      "goal": "Se vigila tu objetivo «{name}», el que guardaste o actualizaste más recientemente. Si lo cambias, los avisos empiezan a contar desde donde estés entonces.",
       "noGoal": "Aún no has guardado ningún objetivo, así que no hay nada que vigilar.",
       "noGoalLink": "Guárdalo en tu cartera",
       "language": "Los avisos llegan en {language}, el idioma en el que los activaste.",

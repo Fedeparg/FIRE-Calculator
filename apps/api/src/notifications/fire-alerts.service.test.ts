@@ -51,19 +51,29 @@ describe('FireAlertsService (integración con Postgres)', () => {
   }
 
   /** Usuario con alertas activas, un objetivo de 600.000 € y ya con referencia tomada. */
+  /** Referencia del objetivo tal y como la guarda el servicio: `<id>@<updatedAt>`. */
+  async function goalRef(userId: string) {
+    const goal = await settings.latestGoalInputs(userId);
+    return goal ? `${goal.id}@${goal.updatedAt.toISOString()}` : null;
+  }
+
   async function subscriber(email: string, options: { last?: number | null; locale?: 'es' | 'en' } = {}) {
     const userId = await insertUser(db, email);
     await settings.update(userId, { fireAlertsEnabled: true, locale: options.locale ?? 'es' });
-    await db
-      .update(userNotificationSettings)
-      .set({ lastFireMilestone: options.last === undefined ? 0 : options.last })
-      .where(eq(userNotificationSettings.userId, userId));
     await db.insert(savedScenarios).values({
       userId,
       slug: FIRE_SCENARIO_SLUG,
       name: 'Mi objetivo',
       inputs: { annualExpenses: 24000, withdrawalRate: 4 },
     });
+    // Referencia ya tomada sobre ESTE objetivo (salvo que el test pida empezar sin ella).
+    await db
+      .update(userNotificationSettings)
+      .set({
+        lastFireMilestone: options.last === undefined ? 0 : options.last,
+        fireGoalRef: options.last === null ? null : await goalRef(userId),
+      })
+      .where(eq(userNotificationSettings.userId, userId));
     return userId;
   }
 
@@ -142,6 +152,27 @@ describe('FireAlertsService (integración con Postgres)', () => {
     expect(await lastMilestone(userId)).toBe(50);
   });
 
+  it('cambiar de objetivo vuelve a tomar referencia en silencio y después avisa del nuevo', async () => {
+    build();
+    const userId = await subscriber('a@example.com', { last: 100 });
+    // Objetivo mayor: 1.200.000 €. Con 420.000 € se está en el 35 %.
+    await db
+      .update(savedScenarios)
+      .set({ inputs: { annualExpenses: 48000, withdrawalRate: 4 } })
+      .where(eq(savedScenarios.userId, userId));
+    await snapshot(userId, 420_000);
+
+    await service.evaluateAll(DATE);
+    expect(sent).toHaveLength(0);
+    expect(await lastMilestone(userId)).toBe(25);
+
+    // Otra noche, ya por encima del 50 % del objetivo nuevo: ahora sí avisa.
+    await db.delete(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
+    await snapshot(userId, 650_000);
+    await service.evaluateAll(DATE);
+    expect(sent.map((s) => [s.email.milestone, s.email.target])).toEqual([[50, 1_200_000]]);
+  });
+
   it('convierte el valor en euros a la divisa del objetivo con las tasas del snapshot', async () => {
     build();
     const userId = await subscriber('a@example.com');
@@ -149,6 +180,11 @@ describe('FireAlertsService (integración con Postgres)', () => {
       .update(savedScenarios)
       .set({ inputs: { annualExpenses: 24000, withdrawalRate: 4, goalCurrency: 'USD' } })
       .where(eq(savedScenarios.userId, userId));
+    // Editar el objetivo cambia su versión: se deja la referencia ya tomada sobre la nueva.
+    await db
+      .update(userNotificationSettings)
+      .set({ fireGoalRef: await goalRef(userId) })
+      .where(eq(userNotificationSettings.userId, userId));
     // 150.000 € × 1,1 = 165.000 $ → 27,5 % de 600.000 $.
     await snapshot(userId, 150_000);
 
