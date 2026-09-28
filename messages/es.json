@@ -262,7 +262,7 @@
       "seriesMedian": "Escenario mediano",
       "seriesDeterministic": "Sin volatilidad",
       "seriesTarget": "Objetivo FIRE",
-      "note": "Simulación orientativa de 5.000 escenarios con rentabilidades anuales aleatorias e independientes, en euros de hoy y sin impuestos ni comisiones. No predice el futuro ni es asesoramiento financiero.",
+      "note": "Simulación orientativa de 5.000 escenarios, con rentabilidades aleatorias o con años reales del mercado de EE. UU. según el modelo elegido, en euros de hoy y sin impuestos ni comisiones. No predice el futuro ni es asesoramiento financiero.",
       "help": {
         "annualExpenses": "Cuánto necesitas gastar al año, en euros de hoy, una vez seas libre financieramente. Es también lo que retiras cada año de jubilación.",
         "currentSavings": "El dinero que ya tienes invertido.",
@@ -270,8 +270,20 @@
         "annualReturn": "Rentabilidad media anual descontada la inflación. Una cartera global de renta variable ha rondado el 5 % real a largo plazo.",
         "volatility": "Cuánto varía la rentabilidad de un año a otro (desviación típica). La renta variable global ronda el 15-20 %; una cartera mixta con bonos, menos. Con 0 obtienes el resultado de la calculadora FIRE.",
         "withdrawalRate": "Porcentaje del patrimonio que retiras el primer año de jubilación. Define tu número FIRE: con un 4 %, necesitas 25 veces tu gasto anual.",
-        "retirementYears": "Cuántos años tiene que durar el dinero una vez te retiras. Si te jubilas a los 40, piensa en 50 o más."
-      }
+        "retirementYears": "Cuántos años tiene que durar el dinero una vez te retiras. Si te jubilas a los 40, piensa en 50 o más.",
+        "model": "El aleatorio sortea cada año con la media y la volatilidad que indiques. El histórico encadena tramos de 10 años reales ({from}–{to}), así que incluye crisis como las de 1929, 1973 o 2008 tal como ocurrieron.",
+        "stockShare": "Qué parte de la cartera va en acciones; el resto, en bonos del Tesoro a 10 años. Se reequilibra cada año."
+      },
+      "model": "Modelo de rentabilidades",
+      "models": {
+        "lognormal": "Aleatorio (media y volatilidad)",
+        "historical": "Histórico (bolsa y bonos de EE. UU.)"
+      },
+      "stockShare": "Porcentaje en acciones (%)",
+      "sensitivityCaption": "Probabilidad de éxito según la tasa de retiro, con el resto de datos iguales y los mismos escenarios de mercado.",
+      "sensitivityRate": "Tasa de retiro",
+      "sensitivityTarget": "Número FIRE",
+      "historicalSource": "Datos históricos: Robert J. Shiller, «U.S. Stock Markets 1871-Present», rentabilidades reales de {from} a {to}. Es el mercado de EE. UU., uno de los que mejor han ido del mundo: el pasado no garantiza el futuro."
     },
     "hipoteca-fija": {
       "title": "Calculadora de hipoteca a tipo fijo",

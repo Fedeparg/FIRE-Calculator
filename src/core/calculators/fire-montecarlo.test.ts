@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { computeFire } from "./fire";
-import { simulateFire, type MonteCarloInput } from "./fire-montecarlo";
+import {
+  HISTORICAL_BLOCK_YEARS,
+  simulateFire,
+  withdrawalSensitivity,
+  type MonteCarloInput,
+} from "./fire-montecarlo";
+import { HISTORICAL_RETURNS } from "../data/shiller-returns";
 import { mulberry32, normalGenerator } from "../random";
 
 // Valores por defecto de la UI (MonteCarloCalculator).
@@ -191,5 +197,104 @@ describe("simulateFire", () => {
     `);
     expect(Math.round(result.successRate * 1000) / 1000).toMatchInlineSnapshot(`0.709`);
     expect(Math.round(result.reachRate * 1000) / 1000).toMatchInlineSnapshot(`0.993`);
+  });
+});
+
+describe("simulateFire — modelo histórico", () => {
+  const historical = (stockShare: number): MonteCarloInput => ({
+    ...base,
+    returnModel: { kind: "historical", stockShare },
+  });
+
+  it("es determinista con la misma semilla", () => {
+    expect(simulateFire(historical(60), fast)).toEqual(simulateFire(historical(60), fast));
+  });
+
+  it("ignora la rentabilidad y la volatilidad tecleadas", () => {
+    const a = simulateFire(historical(60), fast);
+    const b = simulateFire({ ...historical(60), annualReturn: 12, volatility: 40 }, fast);
+    expect(b).toEqual(a);
+  });
+
+  it("la referencia determinista usa la media histórica de la mezcla", () => {
+    const stocks = HISTORICAL_RETURNS.reduce((sum, y) => sum + y.stocks, 0) / HISTORICAL_RETURNS.length;
+    const result = simulateFire(historical(100), fast);
+    const expected = computeFire({
+      annualExpenses: base.annualExpenses,
+      currentSavings: base.currentSavings,
+      savings: base.monthlySavings * 12,
+      frequency: "annual",
+      annualReturn: stocks * 100,
+      withdrawalRate: base.withdrawalRate,
+    });
+    expect(result.deterministicYearsToFire).toBe(expected.yearsToFire);
+  });
+
+  it("100 % acciones llega antes que 100 % bonos", () => {
+    const stocks = simulateFire(historical(100), fast);
+    const bonds = simulateFire(historical(0), fast);
+    expect(stocks.yearsToFire.p50 ?? Infinity).toBeLessThan(bonds.yearsToFire.p50 ?? Infinity);
+    expect(stocks.reachRate).toBeGreaterThanOrEqual(bonds.reachRate);
+  });
+
+  it("acota el porcentaje en acciones a 0–100 y trata lo no finito como 0", () => {
+    expect(simulateFire(historical(150), fast)).toEqual(simulateFire(historical(100), fast));
+    expect(simulateFire(historical(-20), fast)).toEqual(simulateFire(historical(0), fast));
+    expect(simulateFire(historical(Number.NaN), fast)).toEqual(simulateFire(historical(0), fast));
+  });
+
+  it("los bloques recorren años consecutivos de la serie", () => {
+    // Con un solo camino y sin ahorro ni gasto, la riqueza año a año revela las rentabilidades:
+    // dentro de cada bloque tienen que ser años históricos consecutivos.
+    const result = simulateFire(
+      { ...historical(100), annualExpenses: 1e12, currentSavings: 1, monthlySavings: 0, retirementYears: 0 },
+      { paths: 1 },
+    );
+    const returns = result.series.slice(1).map((p, i) => p.p50 / result.series[i].p50 - 1);
+    const index = HISTORICAL_RETURNS.findIndex((y) => Math.abs(y.stocks - returns[0]) < 1e-12);
+    expect(index).toBeGreaterThanOrEqual(0);
+    for (let k = 1; k < HISTORICAL_BLOCK_YEARS; k++) {
+      const expected = HISTORICAL_RETURNS[(index + k) % HISTORICAL_RETURNS.length].stocks;
+      expect(returns[k]).toBeCloseTo(expected, 12);
+    }
+  });
+
+  it("no produce valores no finitos", () => {
+    const result = simulateFire(historical(60), fast);
+    for (const point of result.series) {
+      for (const key of ["p10", "p25", "p50", "p75", "p90", "deterministic"] as const) {
+        expect(Number.isFinite(point[key])).toBe(true);
+      }
+    }
+  });
+});
+
+describe("withdrawalSensitivity", () => {
+  it("devuelve una fila por tasa, con su número FIRE", () => {
+    const rows = withdrawalSensitivity(base, [3, 4, 5], fast);
+    expect(rows.map((r) => r.rate)).toEqual([3, 4, 5]);
+    expect(rows[0].fireNumber).toBeCloseTo(800_000);
+    expect(rows[1].fireNumber).toBeCloseTo(600_000);
+  });
+
+  it("cada fila coincide con simular esa tasa por separado", () => {
+    const [row] = withdrawalSensitivity(base, [3.5], fast);
+    expect(row.successRate).toBe(simulateFire({ ...base, withdrawalRate: 3.5 }, fast).successRate);
+  });
+
+  it("con un retiro largo, retirar más reduce la probabilidad de éxito", () => {
+    const rows = withdrawalSensitivity({ ...base, retirementYears: 50 }, [3, 4, 5, 6], fast);
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].successRate).toBeLessThanOrEqual(rows[i - 1].successRate);
+    }
+  });
+
+  it("funciona también con el modelo histórico", () => {
+    const rows = withdrawalSensitivity({ ...base, returnModel: { kind: "historical", stockShare: 60 } }, undefined, fast);
+    expect(rows).toHaveLength(5);
+    rows.forEach((r) => {
+      expect(r.successRate).toBeGreaterThanOrEqual(0);
+      expect(r.successRate).toBeLessThanOrEqual(1);
+    });
   });
 });
