@@ -41,7 +41,15 @@ export default async function RealisedGainsPage({ params }: Props) {
           {t("back")}
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-foreground">{t("title")}</h1>
-        <p className="text-sm text-muted">{t("subtitle")}</p>
+        <p className="text-sm text-muted">
+          {t("subtitle")}{" "}
+          <Link
+            href="/aprende/plusvalias-al-vender"
+            className="font-medium text-brand underline underline-offset-2"
+          >
+            {t("learnMore")}
+          </Link>
+        </p>
       </div>
       {data ? (
         <RealisedGainsReport positions={data.positions} lots={data.lots} />

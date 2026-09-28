@@ -85,6 +85,11 @@ agotar la cartera.
 - **Flexibilidad.** En la práctica, reducir el gasto en años malos de mercado
   mejora muchísimo la supervivencia de la cartera.
 
+Para ver cómo cambia la probabilidad de éxito entre un 3 % y un 5 % con tus propios
+números, prueba la tabla de tasas de retiro del [simulador Monte
+Carlo](/calculadoras/simulador-montecarlo), explicada en [simulaciones Monte
+Carlo](/aprende/simulacion-monte-carlo).
+
 ## Qué hacer con esto
 
 Usa el ×25 para fijarte un objetivo y medir cuánto te falta, pero no lo trates

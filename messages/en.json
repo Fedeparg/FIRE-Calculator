@@ -1403,8 +1403,10 @@
         "acquisitionValue": "Acquisition value",
         "gain": "Gain/loss"
       },
-      "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures."
-    }
+      "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures.",
+      "learnMore": "How capital gains are calculated."
+    },
+    "guideLink": "What can you do here? Portfolio guide"
   },
   "account": {
     "link": "My account",

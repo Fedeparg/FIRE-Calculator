@@ -23,6 +23,7 @@ export default async function PortfolioPage({ params }: Props) {
   const t = await getTranslations("auth.portfolio");
   const tAccount = await getTranslations("account");
   const tGains = await getTranslations("portfolio.realisedGains");
+  const tGuide = await getTranslations("portfolio");
   const positions = await fetchPositions();
 
   return (
@@ -31,6 +32,12 @@ export default async function PortfolioPage({ params }: Props) {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted">{t("greeting", { email: user.email })}</p>
+          <Link
+            href="/aprende/guia-de-la-cartera"
+            className="text-sm font-medium text-brand underline underline-offset-2"
+          >
+            {tGuide("guideLink")}
+          </Link>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link

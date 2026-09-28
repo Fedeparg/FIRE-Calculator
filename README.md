@@ -50,16 +50,17 @@ Spanish, and every calculator runs in your browser — no account needed.
 
 | | |
 |---|---|
-| **27 calculators** | Compound interest, FIRE (plus a Monte Carlo simulator), mortgages (fixed rate / early repayment / buy-vs-rent / affordability), deposits, dividends, DCA, staking, inflation, ROI, budget, financial-health quiz… |
+| **27 calculators** | Compound interest, FIRE (plus a Monte Carlo simulator with real market history since 1871), mortgages (fixed rate / early repayment / buy-vs-rent / affordability), deposits, dividends, DCA, staking, inflation, ROI, budget, financial-health quiz… |
 | **A real Spanish tax engine** | IRPF via the AEAT dual-scale method, with the regional scale of each of the 15 common-regime communities, Social Security contributions with caps, payroll withholding, self-employed IRPF, wealth tax, gift tax by kinship group |
-| **Aggregated portfolio** | Positions across brokers in one place, with a daily price feed, FX conversion and P&L |
+| **Aggregated portfolio** | Positions across brokers in one place, with prices refreshed every hour on weekdays, FX conversion and P&L |
 | **Portfolio history** | Purchase lots per position, a year of prices fetched the first time a symbol is seen, nightly valuation snapshots, an evolution chart and a breakdown by asset, broker or currency |
 | **Capital-gains simulator** | "What if I sell?" with FIFO lot matching, fees prorated across the shares still open, and an estimate on the savings scale — upfront about the rules it does not model |
+| **Realised gains report** | Your recorded sales matched FIFO per security across brokers, netted by tax year, with a tax estimate and a one-row-per-sale CSV for your return |
 | **Shareable and saveable** | Every input lives in the URL, so a calculation is a link; signed in, you can save named scenarios to your account |
-| **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold, sharing saved scenarios with the FIRE calculator |
+| **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold — and its Monte Carlo probability of success — sharing saved scenarios with the FIRE calculator. Opt-in emails tell you when you cross 25/50/75/100 % |
 | **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
-| **Bilingual** | Spanish (default) and English: 1,172 translation keys per locale, with parity enforced by a test, not by hope |
-| **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 27 tools, in both languages |
+| **Bilingual** | Spanish (default) and English: 1,260 translation keys per locale, with parity enforced by a test, not by hope |
+| **A wiki** | 33 explainer articles (including a portfolio guide) plus a "how this calculator works" page for each of the 27 tools, in both languages |
 | **No tracking** | No analytics, no ads, no third-party scripts. The CSP allowlist is `'self'` and nothing else. |
 
 > **Not financial advice.** Sextante computes and explains; it never recommends.
@@ -235,7 +236,7 @@ trust instantly, so `format.ts` funnels every non-finite value to an em dash.
 
 No UI string is ever hardcoded in a component; everything goes through
 `next-intl`. `messages/es.json` and `messages/en.json` are held at **exactly the
-same key set** (1,172 each) with the same ICU arguments — and a test fails the
+same key set** (1,260 each) with the same ICU arguments — and a test fails the
 build if they ever drift, so this is checked, not assumed.
 
 ---

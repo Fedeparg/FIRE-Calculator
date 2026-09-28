@@ -89,6 +89,10 @@ quede se arrastra a los **4 ejercicios siguientes**.
 > Ejemplo: ganas 3.000 € vendiendo un fondo y pierdes 1.000 € vendiendo otro.
 > Tributas solo por **2.000 €** netos, no por los 3.000 €.
 
+Cómo se calcula cada venta (FIFO entre todos tus brókers, comisiones, divisas) y cómo
+preparar el resumen anual con la cartera de Sextante, en [plusvalías al
+vender](/aprende/plusvalias-al-vender).
+
 ## Errores comunes
 
 - **Vender en diciembre sin mirar el saldo del año.** Si ya vas con plusvalías,

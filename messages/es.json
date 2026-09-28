@@ -1403,8 +1403,10 @@
         "acquisitionValue": "Valor de adquisición",
         "gain": "Ganancia/pérdida"
       },
-      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas."
-    }
+      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas.",
+      "learnMore": "Cómo se calculan las plusvalías."
+    },
+    "guideLink": "¿Qué puedes hacer aquí? Guía de la cartera"
   },
   "account": {
     "link": "Mi cuenta",

@@ -8,11 +8,110 @@
         "en": "Realised gains, hourly prices, milestone notices and Monte Carlo with real history"
       },
       "summary": {
-        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. Los precios de la cartera se actualizan cada hora en días laborables, y puedes pedir un email cuando tu cartera cruce el 25, 50, 75 y 100 % de tu objetivo. El objetivo de independencia financiera te dice con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
-        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. Portfolio prices refresh every hour on weekdays, and you can ask for an email when your portfolio crosses 25, 50, 75 and 100% of your goal. The financial independence goal tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
+        "es": "La entrega más grande hasta ahora. Nuevo informe de plusvalías: tus ventas emparejadas por FIFO entre todos tus brókers, compensadas por ejercicio, con la cuota estimada y un CSV para la renta. Los precios de la cartera se actualizan cada hora en días laborables, y puedes pedir un email cuando tu cartera cruce el 25, 50, 75 y 100 % de tu objetivo. El objetivo te dice ahora con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU. En Aprende hay una guía de la cartera y dos artículos nuevos que lo explican todo.",
+        "en": "The biggest release so far. New capital gains report: your sales matched FIFO across all your brokers, netted by tax year, with an estimated tax bill and a CSV for your return. Portfolio prices refresh every hour on weekdays, and you can ask for an email when your portfolio crosses 25, 50, 75 and 100% of your goal. The goal now tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds. Learn has a portfolio guide and two new articles explaining it all."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "ce6f8cf7",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "curate tonight's release",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "bcc49d20",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "record tonight's releases in the README and roadmap",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "f7df9389",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "link the portfolio guide and the capital gains article",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "e7a7c159",
+          "type": "fix",
+          "scope": "wiki",
+          "category": "fix",
+          "text": {
+            "es": "los enlaces dentro de los artículos en inglés ya no llevan a la versión en español",
+            "en": "links inside English articles no longer take you to the Spanish version"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "3d2beb04",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "internal",
+          "text": {
+            "es": "link the new articles from related ones",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "720c3c9d",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "feature",
+          "text": {
+            "es": "nueva guía de la cartera en Aprende: qué puedes hacer y dónde está cada cosa, enlazada desde la propia cartera",
+            "en": "new portfolio guide in Learn: what you can do and where everything is, linked from the portfolio itself"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "2d5fcd62",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "feature",
+          "text": {
+            "es": "nuevo artículo sobre simulaciones Monte Carlo: cómo leer una probabilidad de éxito y cuándo usar el modelo histórico",
+            "en": "new article on Monte Carlo simulations: how to read a probability of success and when to use the historical model"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "54697d23",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "feature",
+          "text": {
+            "es": "nuevo artículo sobre plusvalías al vender: FIFO entre brókers, compensación, regla de los dos meses y divisas",
+            "en": "new article on capital gains when selling: FIFO across brokers, offsetting, the two-month rule and currencies"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "ad6d2373",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "hide internal alert fix",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "045af8d2",
           "type": "fix",
