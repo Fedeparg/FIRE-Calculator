@@ -6,19 +6,31 @@ import {
   MAX_RETIREMENT_YEARS,
   MAX_VOLATILITY,
   simulateFire,
+  withdrawalSensitivity,
+  type ReturnModel,
 } from "@/core/calculators/fire-montecarlo";
+import { HISTORICAL_RETURNS } from "@/core/data/shiller-returns";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Notice from "../ui/Notice";
+import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
 import TimeSeriesChart from "../charts/TimeSeriesChart";
 import CalculatorLayout from "../CalculatorLayout";
-import { useNumberField } from "./CalculatorState";
+import { useNumberField, useOptionField } from "./CalculatorState";
+
+const MODELS = ["lognormal", "historical"] as const;
+type ModelKind = (typeof MODELS)[number];
+
+/** Vidas de la tabla de sensibilidad: cinco simulaciones seguidas, así que menos que la principal. */
+const SENSITIVITY_PATHS = 2000;
+const FIRST_YEAR = HISTORICAL_RETURNS[0].year;
+const LAST_YEAR = HISTORICAL_RETURNS[HISTORICAL_RETURNS.length - 1].year;
 
 export default function MonteCarloCalculator() {
   const t = useTranslations("calc.simulador-montecarlo");
   const tc = useTranslations("chart");
-  const { formatPercent } = useFormat();
+  const { formatCurrency, formatPercent } = useFormat();
 
   // Mismas claves que la calculadora FIRE donde el dato es el mismo.
   const [annualExpenses, setAnnualExpenses] = useNumberField("annualExpenses", 24000);
@@ -28,12 +40,14 @@ export default function MonteCarloCalculator() {
   const [volatility, setVolatility] = useNumberField("volatility", 15);
   const [withdrawalRate, setWithdrawalRate] = useNumberField("withdrawalRate", 4);
   const [retirementYears, setRetirementYears] = useNumberField("retirementYears", 40);
+  const [model, setModel] = useOptionField<ModelKind>("model", "lognormal", MODELS);
+  const [stockShare, setStockShare] = useNumberField("stockShare", 60);
 
   // 5.000 vidas × ~120 años cuestan unos 60 ms en un portátil (más en un móvil modesto), y se
   // recalcula con cada tecla. `useDeferredValue` le dice a React que la simulación puede ir
   // "por detrás": el campo se actualiza al instante y el resultado se recalcula con prioridad
   // baja, descartando cálculos intermedios si se sigue tecleando. Se difiere un único objeto
-  // para que los siete valores cambien juntos. La semilla es fija, así que el resultado es
+  // para que todos los valores cambien juntos. La semilla es fija, así que el resultado es
   // idéntico en servidor y cliente.
   const inputs = useDeferredValue(
     useMemo(
@@ -45,11 +59,19 @@ export default function MonteCarloCalculator() {
         volatility,
         withdrawalRate,
         retirementYears,
+        returnModel: (model === "historical"
+          ? { kind: "historical", stockShare }
+          : { kind: "lognormal" }) satisfies ReturnModel,
       }),
-      [annualExpenses, currentSavings, monthlySavings, annualReturn, volatility, withdrawalRate, retirementYears],
+      [annualExpenses, currentSavings, monthlySavings, annualReturn, volatility, withdrawalRate, retirementYears, model, stockShare],
     ),
   );
   const result = useMemo(() => simulateFire(inputs), [inputs]);
+  // Misma entrada con otras tasas de retiro, con las mismas secuencias de mercado (misma semilla).
+  const sensitivity = useMemo(
+    () => withdrawalSensitivity(inputs, undefined, { paths: SENSITIVITY_PATHS }),
+    [inputs],
+  );
 
   const { p10, p50, p90 } = result.yearsToFire;
   const medianLabel =
@@ -67,15 +89,29 @@ export default function MonteCarloCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={7}
+      inputCount={8}
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
           <NumberField label={t("annualExpenses")} value={annualExpenses} onChange={setAnnualExpenses} min={0} step={1000} help={t("help.annualExpenses")} />
           <NumberField label={t("currentSavings")} value={currentSavings} onChange={setCurrentSavings} min={0} step={1000} help={t("help.currentSavings")} />
           <NumberField label={t("monthlySavings")} value={monthlySavings} onChange={setMonthlySavings} min={0} step={50} help={t("help.monthlySavings")} />
-          <NumberField label={t("annualReturn")} value={annualReturn} onChange={setAnnualReturn} step={0.5} max={100} help={t("help.annualReturn")} />
-          <NumberField label={t("volatility")} value={volatility} onChange={setVolatility} step={1} min={0} max={MAX_VOLATILITY} help={t("help.volatility")} />
+          <SelectField
+            label={t("model")}
+            value={model}
+            onChange={setModel}
+            options={MODELS.map((m) => ({ value: m, label: t(`models.${m}`) }))}
+            help={t("help.model", { from: FIRST_YEAR, to: LAST_YEAR })}
+          />
+          {/* Cada modelo enseña solo sus parámetros; los del otro se conservan en la URL. */}
+          {model === "historical" ? (
+            <NumberField label={t("stockShare")} value={stockShare} onChange={setStockShare} step={5} min={0} max={100} help={t("help.stockShare")} />
+          ) : (
+            <>
+              <NumberField label={t("annualReturn")} value={annualReturn} onChange={setAnnualReturn} step={0.5} max={100} help={t("help.annualReturn")} />
+              <NumberField label={t("volatility")} value={volatility} onChange={setVolatility} step={1} min={0} max={MAX_VOLATILITY} help={t("help.volatility")} />
+            </>
+          )}
           <NumberField label={t("withdrawalRate")} value={withdrawalRate} onChange={setWithdrawalRate} step={0.1} min={1} max={100} help={t("help.withdrawalRate")} />
           <NumberField label={t("retirementYears")} value={retirementYears} onChange={setRetirementYears} step={1} min={0} max={MAX_RETIREMENT_YEARS} help={t("help.retirementYears")} />
         </>
@@ -113,6 +149,43 @@ export default function MonteCarloCalculator() {
             showTotal={false}
             labels={{ axisX: tc("axisYear") }}
           />
+
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full min-w-[24rem] text-left text-sm">
+              <caption className="px-3 pt-3 text-left text-xs text-muted">
+                {t("sensitivityCaption")}
+              </caption>
+              <thead>
+                <tr className="border-b border-border text-muted">
+                  <th scope="col" className="px-3 py-2 font-medium">{t("sensitivityRate")}</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("sensitivityTarget")}</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("successRate")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sensitivity.map((row) => (
+                  <tr
+                    key={row.rate}
+                    className={`border-b border-border last:border-0 ${row.rate === withdrawalRate ? "bg-surface-2" : ""}`}
+                  >
+                    <th scope="row" className="px-3 py-2 font-normal text-foreground">
+                      {formatPercent(row.rate)}
+                    </th>
+                    <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                      {formatCurrency(row.fireNumber, "EUR")}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                      {formatPercent(row.successRate * 100)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {model === "historical" && (
+            <p className="text-xs text-muted">{t("historicalSource", { from: FIRST_YEAR, to: LAST_YEAR })}</p>
+          )}
         </>
       }
     />

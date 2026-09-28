@@ -262,7 +262,7 @@
       "seriesMedian": "Median scenario",
       "seriesDeterministic": "No volatility",
       "seriesTarget": "FIRE target",
-      "note": "Indicative simulation of 5,000 scenarios with random, independent annual returns, in today's euros and without taxes or fees. It does not predict the future and is not financial advice.",
+      "note": "Indicative simulation of 5,000 scenarios, using random returns or real years of the US market depending on the chosen model, in today's euros and without taxes or fees. It does not predict the future and is not financial advice.",
       "help": {
         "annualExpenses": "How much you need to spend per year, in today's euros, once financially independent. It is also what you withdraw each year in retirement.",
         "currentSavings": "The money you already have invested.",
@@ -270,8 +270,20 @@
         "annualReturn": "Average annual return after inflation. A global equity portfolio has returned around 5% real over the long run.",
         "volatility": "How much the return varies from one year to the next (standard deviation). Global equities are around 15-20%; a mixed portfolio with bonds, less. With 0 you get the FIRE calculator's result.",
         "withdrawalRate": "The percentage of your wealth you withdraw in your first year of retirement. It sets your FIRE number: at 4%, you need 25 times your annual spending.",
-        "retirementYears": "How many years your money has to last once you retire. If you retire at 40, think 50 or more."
-      }
+        "retirementYears": "How many years your money has to last once you retire. If you retire at 40, think 50 or more.",
+        "model": "Random draws each year from the mean and volatility you set. Historical chains together real 10-year stretches ({from}–{to}), so it includes crises like 1929, 1973 or 2008 exactly as they happened.",
+        "stockShare": "How much of the portfolio is in stocks; the rest is in 10-year Treasury bonds. Rebalanced every year."
+      },
+      "model": "Return model",
+      "models": {
+        "lognormal": "Random (mean and volatility)",
+        "historical": "Historical (US stocks and bonds)"
+      },
+      "stockShare": "Share in stocks (%)",
+      "sensitivityCaption": "Probability of success by withdrawal rate, with everything else unchanged and the same market scenarios.",
+      "sensitivityRate": "Withdrawal rate",
+      "sensitivityTarget": "FIRE number",
+      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future."
     },
     "hipoteca-fija": {
       "title": "Fixed-rate mortgage calculator",
