@@ -14,6 +14,39 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "d18e8463",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "show a load error instead of an empty gains report",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "7375a0a6",
+          "type": "fix",
+          "scope": "fiscal",
+          "category": "fix",
+          "text": {
+            "es": "apply FIFO per security across brokers in the gains report",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "ba1516bf",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce the realised gains report",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
           "hash": "cd20c4ce",
           "type": "fix",
           "scope": "fiscal",
