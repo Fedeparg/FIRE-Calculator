@@ -217,6 +217,18 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     expect(prices.get('IWDA')).toMatchObject({ close: 97.3, date: '2026-03-15' });
   });
 
+  it('getPrices expone cuándo se leyó el precio (fetchedAt), para el "actualizado hace…"', async () => {
+    makeService();
+    provider.history = [quote('IWDA', '2026-03-15', 97.3)];
+    const before = Date.now();
+    await service.primeSymbol('IWDA');
+
+    const fetchedAt = (await service.getPrices(['IWDA'])).get('IWDA')?.fetchedAt;
+
+    expect(fetchedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(Date.parse(fetchedAt ?? '')).toBeGreaterThanOrEqual(before - 1000);
+  });
+
   describe('getPricesAsOf / getFxRatesAsOf — precio vigente en una fecha pasada', () => {
     it('devuelve el precio vigente en la fecha pedida, no el más reciente', async () => {
       makeService();
