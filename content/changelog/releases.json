@@ -14,6 +14,17 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "ce6f8cf7",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "curate tonight's release",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
           "hash": "bcc49d20",
           "type": "docs",
           "scope": null,
@@ -61,7 +72,7 @@
           "hash": "720c3c9d",
           "type": "docs",
           "scope": "wiki",
-          "category": "internal",
+          "category": "feature",
           "text": {
             "es": "nueva guía de la cartera en Aprende: qué puedes hacer y dónde está cada cosa, enlazada desde la propia cartera",
             "en": "new portfolio guide in Learn: what you can do and where everything is, linked from the portfolio itself"
@@ -72,7 +83,7 @@
           "hash": "2d5fcd62",
           "type": "docs",
           "scope": "wiki",
-          "category": "internal",
+          "category": "feature",
           "text": {
             "es": "nuevo artículo sobre simulaciones Monte Carlo: cómo leer una probabilidad de éxito y cuándo usar el modelo histórico",
             "en": "new article on Monte Carlo simulations: how to read a probability of success and when to use the historical model"
@@ -83,7 +94,7 @@
           "hash": "54697d23",
           "type": "docs",
           "scope": "wiki",
-          "category": "internal",
+          "category": "feature",
           "text": {
             "es": "nuevo artículo sobre plusvalías al vender: FIFO entre brókers, compensación, regla de los dos meses y divisas",
             "en": "new article on capital gains when selling: FIFO across brokers, offsetting, the two-month rule and currencies"
