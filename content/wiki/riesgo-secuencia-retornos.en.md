@@ -79,6 +79,13 @@ avoid selling at lows and drastically improve portfolio survival. It's the basis
 - **Treating the 4 % rule as autopilot.** It works on average; your specific
   retirement happens only **once**, with its particular sequence.
 
+## Try it with real crises
+
+The [Monte Carlo simulator](/calculadoras/simulador-montecarlo) has a **historical
+model** that chains real stretches of the market since 1871, with their runs of bad
+years exactly as they happened: the most direct way to see sequence risk on your own
+plan. How to read it: [Monte Carlo simulations](/aprende/simulacion-monte-carlo).
+
 ## What to do
 
 Arrive at the date with an already more defensive portfolio, a **1-3 year** expense

@@ -90,6 +90,10 @@ to the **next 4 tax years**.
 > Example: you make €3,000 selling one fund and lose €1,000 selling another. You
 > are taxed on just **€2,000** net, not on the €3,000.
 
+How each sale is calculated (FIFO across all your brokers, fees, currencies) and how
+to prepare the yearly summary with Sextante's portfolio: [capital gains when
+selling](/aprende/plusvalias-al-vender).
+
 ## Common mistakes
 
 - **Selling in December without checking the year's balance.** If you are already

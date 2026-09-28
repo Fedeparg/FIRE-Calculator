@@ -84,6 +84,11 @@ portfolio.
 - **Flexibility.** In practice, trimming spending in bad market years greatly
   improves portfolio survival.
 
+To see how the probability of success changes between 3% and 5% with your own
+numbers, try the withdrawal-rate table in the [Monte Carlo
+simulator](/calculadoras/simulador-montecarlo), explained in [Monte Carlo
+simulations](/aprende/simulacion-monte-carlo).
+
 ## What to do with this
 
 Use the ×25 to set a target and gauge how far you are, but don't treat it as a

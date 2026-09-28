@@ -82,6 +82,14 @@ cartera. Es la base de las
 - **Tratar la regla del 4 % como un piloto automático.** Funciona de media; tu
   jubilación concreta solo ocurre **una vez**, con su secuencia particular.
 
+## Pruébalo con crisis reales
+
+El [simulador Monte Carlo](/calculadoras/simulador-montecarlo) tiene un **modelo
+histórico** que encadena tramos reales del mercado desde 1871, con sus rachas de años
+malos tal como ocurrieron: la forma más directa de ver el riesgo de secuencia sobre
+tu propio plan. Cómo interpretarlo, en [simulaciones Monte
+Carlo](/aprende/simulacion-monte-carlo).
+
 ## Qué hacer
 
 Llega a la fecha con la cartera ya más defensiva, un colchón de **1-3 años** de
