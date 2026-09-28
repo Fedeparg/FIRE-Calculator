@@ -23,12 +23,12 @@ function setup(env: Record<string, string> = {}) {
   } as unknown as SchedulerRegistry;
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const prices = {
-    refreshAll: vi.fn(async () => SUMMARY),
-    ensureRecentHistoryForActivePositions: vi.fn(async () => undefined),
+    refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
+    ensureRecentHistoryForActivePositions: vi.fn(() => Promise.resolve()),
   };
   const snapshots = {
-    captureAll: vi.fn(async () => undefined),
-    backfillAll: vi.fn(async () => undefined),
+    captureAll: vi.fn(() => Promise.resolve()),
+    backfillAll: vi.fn(() => Promise.resolve()),
   };
   const scheduler = new DailyJobsScheduler(
     prices as unknown as PricesService,
