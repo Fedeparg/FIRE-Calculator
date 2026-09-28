@@ -14,6 +14,61 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "6acc0ef5",
+          "type": "test",
+          "scope": "calculators",
+          "category": "internal",
+          "text": {
+            "es": "cover the historical model in Monte Carlo properties",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "4200b166",
+          "type": "test",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "property-based tests for IRPF and number formatting",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "7598c651",
+          "type": "test",
+          "scope": "calculators",
+          "category": "internal",
+          "text": {
+            "es": "property-based tests for the Monte Carlo simulator",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "17398e2f",
+          "type": "test",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "property-based tests for the projection engine",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "c6e31106",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce the historical Monte Carlo model",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
           "hash": "76353107",
           "type": "docs",
           "scope": "wiki",
