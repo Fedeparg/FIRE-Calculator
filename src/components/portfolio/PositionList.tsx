@@ -15,7 +15,7 @@ import {
   type SortDir,
   type SortKey,
 } from "@/core/portfolio-sort";
-import type { PriceInfo, Position } from "@/lib/portfolio";
+import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {
   positions: Position[];
@@ -94,9 +94,37 @@ export default function PositionList({
   // id en confirmación de borrado / id en proceso de borrado.
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Posición en confirmación cuyo histórico tiene ventas: borrarla las quita del informe de
+  // plusvalías, y eso merece un aviso más fuerte que el "¿seguro?" normal.
+  const [withSalesId, setWithSalesId] = useState<string | null>(null);
+  // Mientras se comprueba si tiene ventas, el botón de confirmar espera: si no, se podría
+  // borrar antes de que llegue el aviso.
+  const [checkingId, setCheckingId] = useState<string | null>(null);
   const [pnlMode, setPnlMode] = useState<PnlMode>("pct");
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
+
+  /**
+   * Pide confirmación y, en paralelo, mira si la posición tiene ventas. Si la consulta falla
+   * se confirma igual, sin el aviso extra: no debe bloquear el borrado. El aviso solo se pinta
+   * mientras ESA posición sigue en confirmación, así que una respuesta tardía no se cuela en
+   * otra fila.
+   */
+  async function startConfirm(id: string) {
+    setConfirmingId(id);
+    setWithSalesId(null);
+    setCheckingId(id);
+    try {
+      const res = await fetch(`/api/positions/${id}/lots`, { cache: "no-store" });
+      if (!res.ok) return;
+      const lots = (await res.json()) as PositionLot[];
+      if (lots.some((lot) => lot.kind === "sell")) setWithSalesId(id);
+    } catch {
+      // Sin red, el borrado sigue siendo posible; solo falta el aviso adicional.
+    } finally {
+      setCheckingId((current) => (current === id ? null : current));
+    }
+  }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
@@ -378,11 +406,16 @@ export default function PositionList({
                   </td>
                   <td className="px-4 py-3 text-right">
                     {isConfirming ? (
-                      <span className="inline-flex items-center gap-2">
+                      <span className="inline-flex flex-wrap items-center justify-end gap-2">
+                        {withSalesId === p.id && (
+                          <span role="alert" className="w-full max-w-60 text-left text-xs text-warning">
+                            {t("confirmDeleteWithSales")}
+                          </span>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleDelete(p.id)}
-                          disabled={isDeleting}
+                          disabled={isDeleting || checkingId === p.id}
                           className="rounded-md bg-warning px-2.5 py-1 text-xs font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
                         >
                           {isDeleting ? t("deleting") : t("confirm")}
@@ -417,7 +450,7 @@ export default function PositionList({
                         </button>
                         <button
                           type="button"
-                          onClick={() => setConfirmingId(p.id)}
+                          onClick={() => void startConfirm(p.id)}
                           className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted transition hover:bg-surface-2 hover:text-foreground"
                         >
                           {t("delete")}

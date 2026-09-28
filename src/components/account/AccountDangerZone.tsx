@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import Notice from "@/components/ui/Notice";
+import { downloadBlob } from "@/lib/download";
 
 /** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
 type ErrorKey = "errorNetwork" | "errorSession" | "errorServer" | "errorGeneric";
@@ -66,16 +67,7 @@ export default function AccountDangerZone({ email }: Props) {
         setExportError(true);
         return;
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      // El nombre lo fija el cliente: el blob ignora el Content-Disposition del servidor.
-      anchor.download = "sextante-datos.json";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(await res.blob(), "sextante-datos.json");
     } catch {
       setExportError(true);
     } finally {

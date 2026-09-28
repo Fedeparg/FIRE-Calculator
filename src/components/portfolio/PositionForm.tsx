@@ -17,7 +17,13 @@ import InstrumentSearchField from "./InstrumentSearchField";
 type Status = "idle" | "submitting" | "combining";
 
 /** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
-type ErrorKey = "errorNetwork" | "errorSession" | "errorInvalid" | "errorServer" | "errorGeneric";
+type ErrorKey =
+  | "errorNetwork"
+  | "errorSession"
+  | "errorInvalid"
+  | "errorServer"
+  | "errorGeneric"
+  | "errorHasSales";
 
 /** Traduce un status HTTP a un mensaje específico (sin volcar el body crudo de la API). */
 function errorKeyForStatus(status: number): ErrorKey {
@@ -144,10 +150,17 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
         return;
       }
 
-      // 409: dos casos según el `code`. DUPLICATE → ya existe ese símbolo+bróker (en alta
+      // 409: tres casos según el `code`. DUPLICATE → ya existe ese símbolo+bróker (en alta
       // ofrecemos combinar). BROKER_REQUIRED → el símbolo ya existe y falta el bróker.
+      // HAS_SALES → la posición tiene ventas y cambiar cantidad/precio a mano borraría su
+      // histórico: hay que hacerlo desde sus operaciones.
       if (res.status === 409) {
         const body = (await res.json()) as { code?: string; existing?: Position };
+        if (body.code === "HAS_SALES") {
+          setErrorKey("errorHasSales");
+          setStatus("idle");
+          return;
+        }
         if (body.code === "BROKER_REQUIRED") {
           setBrokerRequired(true);
           setStatus("idle");

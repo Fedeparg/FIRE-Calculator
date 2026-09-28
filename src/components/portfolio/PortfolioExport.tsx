@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { buildPortfolioCsv, UTF8_BOM } from "@/core/portfolio-csv";
 import { asLocale } from "@/core/types";
+import { downloadBlob } from "@/lib/download";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {
@@ -27,7 +28,7 @@ const FILE_NAME = "sextante-cartera.csv";
  *
  * El texto lo construye `buildPortfolioCsv` (core puro y testeado), que decide el dialecto
  * según el idioma para que Excel lo abra bien. Aquí solo se traducen las cabeceras y se lanza
- * la descarga con el patrón de blob + enlace temporal que ya usa la exportación de la cuenta.
+ * la descarga (`downloadBlob`).
  */
 export default function PortfolioExport({ positions, prices, rates, display }: Props) {
   const t = useTranslations("portfolio.export");
@@ -59,16 +60,7 @@ export default function PortfolioExport({ positions, prices, rates, display }: P
       });
       // El BOM va delante del contenido: sin él, Excel lee el fichero en su página de códigos
       // local y destroza los acentos.
-      const url = URL.createObjectURL(
-        new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }),
-      );
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = FILE_NAME;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }), FILE_NAME);
     } catch {
       // Un fallo aquí solo puede venir del navegador (memoria, descargas bloqueadas): se avisa
       // en vez de dejar un botón que aparentemente no hace nada.

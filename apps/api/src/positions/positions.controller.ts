@@ -17,6 +17,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CombinePositionDto } from './dto/combine-position.dto.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
+import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
 import { UpdatePositionDto } from './dto/update-position.dto.js';
 import { PositionsService, type PositionResponse } from './positions.service.js';
 
@@ -38,7 +39,10 @@ import { PositionsService, type PositionResponse } from './positions.service.js'
 @Controller('positions')
 @UseGuards(JwtAuthGuard)
 export class PositionsController {
-  constructor(private readonly positions: PositionsService) {}
+  constructor(
+    private readonly positions: PositionsService,
+    private readonly lots: PositionLotsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -52,6 +56,16 @@ export class PositionsController {
   @Get()
   findAll(@CurrentUser() user: SessionUser): Promise<PositionResponse[]> {
     return this.positions.findAllByUser(user.id);
+  }
+
+  /**
+   * TODAS las operaciones del usuario, de todas sus posiciones, en orden cronológico. Evita una
+   * petición por posición en las vistas que recorren el histórico completo (informe de
+   * plusvalías). Cada lote lleva su `positionId`.
+   */
+  @Get('lots')
+  findAllLots(@CurrentUser() user: SessionUser): Promise<PositionLotResponse[]> {
+    return this.lots.findAllByUser(user.id);
   }
 
   /** Combina una nueva compra con una posición existente (media ponderada). */
