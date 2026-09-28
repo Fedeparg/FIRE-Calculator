@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 
 import { PROPERTY_PARAMS } from "../property-config";
 import { computeFire } from "./fire";
-import { simulateFire, type MonteCarloInput } from "./fire-montecarlo";
+import { simulateFire, withdrawalSensitivity, type MonteCarloInput } from "./fire-montecarlo";
 
 // Cada simulación cuesta milisegundos: menos casos y menos vidas que en el resto de propiedades.
 const PARAMS = { ...PROPERTY_PARAMS, numRuns: 40 };
@@ -18,6 +18,13 @@ const input = fc.record({
   withdrawalRate: fc.double({ min: 1, max: 10, noNaN: true }),
   retirementYears: fc.integer({ min: 0, max: 60 }),
 }) satisfies fc.Arbitrary<MonteCarloInput>;
+
+/** Misma entrada, con modelo lognormal o histórico con cualquier mezcla acciones/bonos. */
+const anyModel: fc.Arbitrary<MonteCarloInput> = fc
+  .tuple(input, fc.option(fc.double({ min: 0, max: 100, noNaN: true }), { nil: undefined }))
+  .map(([i, stockShare]) =>
+    stockShare === undefined ? i : { ...i, returnModel: { kind: "historical", stockShare } },
+  );
 
 describe("simulateFire — propiedades", () => {
   it("sin volatilidad coincide con la calculadora FIRE en frecuencia anual", () => {
@@ -40,7 +47,7 @@ describe("simulateFire — propiedades", () => {
 
   it("las tasas están en [0, 1] y el éxito nunca supera a la llegada", () => {
     fc.assert(
-      fc.property(input, (i) => {
+      fc.property(anyModel, (i) => {
         const r = simulateFire(i, OPTIONS);
         const inUnit = (x: number) => x >= 0 && x <= 1;
         const survivalOk = Number.isNaN(r.survivalRate) ? r.reachRate === 0 : inUnit(r.survivalRate);
@@ -52,7 +59,7 @@ describe("simulateFire — propiedades", () => {
 
   it("los percentiles están ordenados, son finitos y no negativos en todos los años", () => {
     fc.assert(
-      fc.property(input, (i) => {
+      fc.property(anyModel, (i) => {
         const r = simulateFire(i, OPTIONS);
         return r.series.every(
           (p) =>
@@ -69,7 +76,7 @@ describe("simulateFire — propiedades", () => {
 
   it("los años hasta FIRE están ordenados por percentil", () => {
     fc.assert(
-      fc.property(input, (i) => {
+      fc.property(anyModel, (i) => {
         const { p10, p50, p90 } = simulateFire(i, OPTIONS).yearsToFire;
         const order = (a: number | null, b: number | null) => a === null ? b === null : b === null || a <= b;
         return order(p10, p50) && order(p50, p90);
@@ -80,10 +87,20 @@ describe("simulateFire — propiedades", () => {
 
   it("más años de retiro nunca suben la probabilidad de éxito", () => {
     fc.assert(
-      fc.property(input, fc.integer({ min: 1, max: 20 }), (i, extra) => {
+      fc.property(anyModel, fc.integer({ min: 1, max: 20 }), (i, extra) => {
         const shorter = simulateFire({ ...i, retirementYears: Math.min(40, i.retirementYears) }, OPTIONS);
         const longer = simulateFire({ ...i, retirementYears: Math.min(40, i.retirementYears) + extra }, OPTIONS);
         return longer.successRate <= shorter.successRate;
+      }),
+      PARAMS,
+    );
+  });
+
+  it("la tabla de sensibilidad es la simulación de cada tasa por separado", () => {
+    fc.assert(
+      fc.property(anyModel, fc.double({ min: 1, max: 10, noNaN: true }), (i, rate) => {
+        const [row] = withdrawalSensitivity(i, [rate], OPTIONS);
+        return row.successRate === simulateFire({ ...i, withdrawalRate: rate }, OPTIONS).successRate;
       }),
       PARAMS,
     );
