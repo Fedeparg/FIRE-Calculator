@@ -184,7 +184,10 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
   const quantitySold = Math.min(quantity, available);
   const grossProceeds = quantitySold * price;
   // Las comisiones de venta se restan enteras: son de la operación, no de cada participación.
-  const transferValue = grossProceeds - sellFees;
+  // Si no se empareja nada (no hay existencias), no hay transmisión a la que imputarlas: una
+  // "pérdida" igual a la comisión no correspondería a ninguna participación vendida.
+  const fees = quantitySold > 0 ? sellFees : 0;
+  const transferValue = grossProceeds - fees;
 
   const matched: MatchedLot[] = [];
   let pending = quantitySold;
@@ -218,7 +221,7 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
   return {
     quantity: quantitySold,
     grossProceeds,
-    sellFees,
+    sellFees: fees,
     transferValue,
     acquisitionValue,
     gain: transferValue - acquisitionValue,

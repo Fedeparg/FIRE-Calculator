@@ -412,4 +412,11 @@ describe("walkLots", () => {
     expect(sales[0].gain).toBe(simulated?.gain);
     expect(sales[0].matched).toEqual(simulated?.matched);
   });
+
+  it("una venta sin existencias no imputa sus comisiones como pérdida", () => {
+    // Contraejemplo encontrado por el test de propiedades: sin compras que emparejar, la
+    // comisión no corresponde a ninguna participación vendida.
+    const { sales } = walkLots([lot({ id: "s", kind: "sell", quantity: 1, price: 10, fees: 2 })]);
+    expect(sales[0]).toMatchObject({ quantity: 0, sellFees: 0, transferValue: 0, gain: 0 });
+  });
 });
