@@ -33,6 +33,7 @@ export async function resetDb(db: Database): Promise<void> {
       position_lots,
       portfolio_snapshots,
       saved_scenarios,
+      user_notification_settings,
       positions,
       instrument_prices,
       instruments,

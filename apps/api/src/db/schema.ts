@@ -7,6 +7,7 @@ import {
   varchar,
   numeric,
   integer,
+  smallint,
   boolean,
   date,
   jsonb,
@@ -477,3 +478,32 @@ export const mcpAuditLog = pgTable(
 
 export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;
 export type NewMcpAuditLogRow = typeof mcpAuditLog.$inferInsert;
+
+/**
+ * Preferencias de notificación por email de cada usuario. Una fila por usuario, creada la
+ * primera vez que las toca: sin fila, todo está DESACTIVADO (las alertas son opt-in).
+ *
+ * `lastFireMilestone` es el último hito del objetivo FIRE (25/50/75/100 %) ya avisado. Solo
+ * sube: una caída del mercado no vuelve a disparar un hito ya enviado. `null` significa "aún
+ * sin referencia": la primera evaluación tras activar las alertas fija el hito actual SIN
+ * enviar nada, para no estrenar la suscripción con un aviso de algo que ya se había pasado.
+ *
+ * No hay token de baja guardado: el enlace lleva un HMAC del `userId` (ver
+ * `notifications/unsubscribe-token.ts`), que no caduca ni hay que rotar.
+ */
+export const userNotificationSettings = pgTable('user_notification_settings', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  fireAlertsEnabled: boolean('fire_alerts_enabled').notNull().default(false),
+  /** Idioma de los emails (`es`/`en`): el de la interfaz cuando el usuario los activó. */
+  locale: varchar('locale', { length: 5 }).notNull().default('es'),
+  lastFireMilestone: smallint('last_fire_milestone'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export type UserNotificationSettings = typeof userNotificationSettings.$inferSelect;
