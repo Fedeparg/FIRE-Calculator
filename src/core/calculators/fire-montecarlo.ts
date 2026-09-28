@@ -13,9 +13,25 @@
 // m y s para que E[1 + r] = 1 + μ y la desviación típica de r sea σ. A diferencia de una
 // normal, nunca produce pérdidas de más del 100 %. Con σ = 0 degenera en r = μ todos los años,
 // y el simulador coincide exactamente con la calculadora FIRE en frecuencia anual.
+//
+// Modelo histórico (opcional): en lugar de sortear rentabilidades de una distribución, se
+// reutilizan años REALES del mercado de EE. UU. (datos de Shiller, `core/data/shiller-returns.ts`)
+// con un bootstrap circular por bloques: cada vida encadena tramos de `HISTORICAL_BLOCK_YEARS`
+// años consecutivos que empiezan en un año al azar (dando la vuelta al final de la serie). Los
+// bloques conservan las rachas (1929-1932, 1973-1974, 2000-2002…) que un sorteo año a año
+// rompería, y con ellas el riesgo de secuencia. La mezcla acciones/bonos se rebalancea cada año.
 
 import { computeFire, MAX_YEARS } from "./fire";
-import { mulberry32, normalGenerator, percentileSorted } from "../random";
+import { HISTORICAL_RETURNS } from "../data/shiller-returns";
+import { mulberry32, normalGenerator, percentileSorted, type Rng } from "../random";
+
+/**
+ * Cómo se generan las rentabilidades anuales.
+ * - `lognormal`: media `annualReturn` y volatilidad `volatility` (el modelo por defecto).
+ * - `historical`: años reales remuestreados por bloques; `stockShare` es el porcentaje en
+ *   acciones (base 100), el resto en bonos. Ignora `annualReturn` y `volatility`.
+ */
+export type ReturnModel = { kind: "lognormal" } | { kind: "historical"; stockShare: number };
 
 export interface MonteCarloInput {
   /** Gasto anual deseado una vez retirado (y el que se retira cada año). */
@@ -32,6 +48,8 @@ export interface MonteCarloInput {
   withdrawalRate: number;
   /** Años que el patrimonio debe sostener el gasto una vez retirado. */
   retirementYears: number;
+  /** Modelo de rentabilidades. Si falta, lognormal. */
+  returnModel?: ReturnModel;
 }
 
 export interface MonteCarloOptions {
@@ -86,6 +104,10 @@ export const MAX_RETIREMENT_YEARS = 60;
 export const MAX_VOLATILITY = 100;
 /** Suelo de la rentabilidad media, en base 100: 1 + μ tiene que ser positivo. */
 const MIN_RETURN = -99;
+/** Longitud de los bloques del bootstrap histórico, en años. */
+export const HISTORICAL_BLOCK_YEARS = 10;
+/** Tasas de retiro (base 100) de la tabla de sensibilidad por defecto. */
+export const SENSITIVITY_RATES: readonly number[] = [3, 3.5, 4, 4.5, 5];
 
 /** Número finito y no negativo; cualquier otra cosa (NaN, ±∞, negativo) es 0. */
 const nonNegative = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0);
@@ -133,9 +155,16 @@ export function simulateFire(
   const annualExpenses = nonNegative(input.annualExpenses);
   const currentSavings = nonNegative(input.currentSavings);
   const annualSavings = nonNegative(input.monthlySavings) * 12;
-  const mean = clamp(Number.isFinite(input.annualReturn) ? input.annualReturn : 0, MIN_RETURN, Infinity) / 100;
-  const sigma = clamp(nonNegative(input.volatility), 0, MAX_VOLATILITY) / 100;
   const retirementYears = clamp(Math.round(nonNegative(input.retirementYears)), 0, MAX_RETIREMENT_YEARS);
+
+  const model = input.returnModel ?? { kind: "lognormal" };
+  const historical = model.kind === "historical" ? blendHistorical(model.stockShare) : null;
+  // Rentabilidad media: la tecleada en el modelo lognormal; la media histórica de la mezcla en el
+  // histórico. Es la que usan el número de años determinista y la trayectoria de referencia.
+  const mean = historical
+    ? historical.mean
+    : clamp(Number.isFinite(input.annualReturn) ? input.annualReturn : 0, MIN_RETURN, Infinity) / 100;
+  const sigma = clamp(nonNegative(input.volatility), 0, MAX_VOLATILITY) / 100;
 
   // El número FIRE y la referencia sin volatilidad salen de la calculadora FIRE, en frecuencia
   // anual para que las reglas de aportación coincidan con las de este simulador.
@@ -150,22 +179,20 @@ export function simulateFire(
   const fireNumber = fire.fireNumber;
   const params = { annualSavings, annualExpenses, fireNumber };
 
-  // Parámetros de la lognormal a partir de la media aritmética y la volatilidad.
-  const logVariance = Math.log(1 + (sigma * sigma) / ((1 + mean) * (1 + mean)));
-  const logSigma = Math.sqrt(logVariance);
-  const logMean = Math.log(1 + mean) - logVariance / 2;
-
   const horizon = MAX_YEARS + retirementYears;
   // Cada vida consume SIEMPRE el mismo número de rentabilidades (el horizonte máximo), aunque
   // solo se usen `horizon`. Así la vida i ve la misma secuencia de mercado sea cual sea la
   // entrada: cambiar los años de retiro no baraja de nuevo el azar y las comparaciones entre
   // escenarios reflejan el cambio de la entrada, no ruido de muestreo.
   const drawsPerPath = MAX_YEARS + MAX_RETIREMENT_YEARS;
+  const returns = new Float64Array(drawsPerPath);
+  const drawPath = historical
+    ? historicalSampler(historical.returns, mulberry32(seed))
+    : lognormalSampler(mean, sigma, mulberry32(seed));
   // wealthByYear[year][path]: se ordena cada año por separado para sacar percentiles.
   const wealthByYear = Array.from({ length: horizon + 1 }, () => new Float64Array(paths));
   const yearsToFire = new Float64Array(paths);
 
-  const normal = normalGenerator(mulberry32(seed));
   let reached = 0;
   let succeeded = 0;
 
@@ -176,12 +203,9 @@ export function simulateFire(
       depletedAt: null,
     };
     wealthByYear[0][path] = state.wealth;
-    for (let year = 1; year <= drawsPerPath; year++) {
-      const z = normal();
-      if (year > horizon) continue;
-      // Con σ = 0 se usa la media exacta: exp(log(1+μ)) − 1 no siempre devuelve μ al bit.
-      const r = logSigma === 0 ? mean : Math.exp(logMean + logSigma * z) - 1;
-      step(state, year, r, params);
+    drawPath(returns);
+    for (let year = 1; year <= horizon; year++) {
+      step(state, year, returns[year - 1], params);
       wealthByYear[year][path] = state.wealth;
     }
 
@@ -239,4 +263,78 @@ export function simulateFire(
     deterministicYearsToFire: fire.yearsToFire,
     series,
   };
+}
+
+/**
+ * Generador de la secuencia lognormal de una vida: rellena `out` con una rentabilidad por año.
+ * Consume exactamente `out.length` normales por vida, en orden, para que la vida i vea siempre
+ * la misma secuencia de mercado (ver `drawsPerPath`).
+ */
+function lognormalSampler(mean: number, sigma: number, rng: Rng): (out: Float64Array) => void {
+  // Parámetros de la lognormal a partir de la media aritmética y la volatilidad.
+  const logVariance = Math.log(1 + (sigma * sigma) / ((1 + mean) * (1 + mean)));
+  const logSigma = Math.sqrt(logVariance);
+  const logMean = Math.log(1 + mean) - logVariance / 2;
+  const normal = normalGenerator(rng);
+  return (out) => {
+    for (let i = 0; i < out.length; i++) {
+      const z = normal();
+      // Con σ = 0 se usa la media exacta: exp(log(1+μ)) − 1 no siempre devuelve μ al bit.
+      out[i] = logSigma === 0 ? mean : Math.exp(logMean + logSigma * z) - 1;
+    }
+  };
+}
+
+/**
+ * Generador del bootstrap circular por bloques: cada tramo de `HISTORICAL_BLOCK_YEARS` años
+ * empieza en un año histórico al azar y sigue en orden, dando la vuelta al final de la serie.
+ * Consume un número fijo de aleatorios por vida (un inicio por bloque), por la misma razón que
+ * el modelo lognormal.
+ */
+function historicalSampler(series: readonly number[], rng: Rng): (out: Float64Array) => void {
+  const n = series.length;
+  return (out) => {
+    for (let i = 0; i < out.length; i += HISTORICAL_BLOCK_YEARS) {
+      const start = Math.floor(rng() * n);
+      const end = Math.min(out.length, i + HISTORICAL_BLOCK_YEARS);
+      for (let k = i; k < end; k++) out[k] = series[(start + k - i) % n];
+    }
+  };
+}
+
+/**
+ * Serie histórica de una cartera con `stockShare` % en acciones y el resto en bonos, rebalanceada
+ * cada año, y su media aritmética. Un porcentaje no finito cuenta como 0; se acota a 0–100.
+ */
+function blendHistorical(stockShare: number): { returns: number[]; mean: number } {
+  const share = clamp(Number.isFinite(stockShare) ? stockShare : 0, 0, 100) / 100;
+  const returns = HISTORICAL_RETURNS.map((y) => share * y.stocks + (1 - share) * y.bonds);
+  const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+  return { returns, mean };
+}
+
+export interface SensitivityRow {
+  /** Tasa de retiro, en base 100. */
+  rate: number;
+  /** Número FIRE con esa tasa. */
+  fireNumber: number;
+  /** Fracción (0–1) de vidas que llegan y sostienen el retiro con esa tasa. */
+  successRate: number;
+}
+
+/**
+ * Probabilidad de éxito para varias tasas de retiro con el resto de la entrada fija. Todas las
+ * filas usan la misma semilla, y por tanto las mismas secuencias de mercado: las diferencias entre
+ * filas se deben a la tasa, no al azar. Una tasa más alta baja el objetivo (se llega antes) pero
+ * exige más a la cartera durante el retiro; la tabla enseña ese intercambio.
+ */
+export function withdrawalSensitivity(
+  input: MonteCarloInput,
+  rates: readonly number[] = SENSITIVITY_RATES,
+  options: MonteCarloOptions = {},
+): SensitivityRow[] {
+  return rates.map((rate) => {
+    const result = simulateFire({ ...input, withdrawalRate: rate }, options);
+    return { rate, fireNumber: result.fireNumber, successRate: result.successRate };
+  });
 }
