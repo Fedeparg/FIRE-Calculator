@@ -2,6 +2,42 @@
   "generatedFrom": "git log HEAD",
   "releases": [
     {
+      "date": "2026-09-28",
+      "title": {
+        "es": "Probabilidad de éxito sobre tu cartera real",
+        "en": "Success probability on your real portfolio"
+      },
+      "summary": {
+        "es": "Tu objetivo de independencia financiera en la cartera ahora también te dice con qué probabilidad lo alcanzas y tu dinero aguanta, simulando miles de escenarios de mercado a partir de lo que tienes invertido de verdad.",
+        "en": "The financial independence goal on your portfolio now also tells you how likely you are to reach it and make your money last, simulating thousands of market scenarios from what you actually have invested."
+      },
+      "highlight": true,
+      "entries": [
+        {
+          "hash": "23426261",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el objetivo de la cartera muestra la probabilidad de éxito con una simulación Monte Carlo sobre tu patrimonio real, con enlace al simulador con los mismos datos",
+            "en": "the portfolio goal shows your probability of success with a Monte Carlo simulation on your real wealth, with a link to the simulator pre-filled with the same data"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "bb53d547",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "simulate FIRE success probability from the real portfolio",
+            "en": ""
+          },
+          "hidden": true
+        }
+      ]
+    },
+    {
       "date": "2026-09-25",
       "title": {
         "es": "Simulador FIRE Monte Carlo",
@@ -13,6 +49,28 @@
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "52ab73c0",
+          "type": "ci",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "cap the BuildKit cache after each deploy",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "0cfcd88e",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "add the Monte Carlo release and curate pending entries",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "d9733ac4",
           "type": "perf",

@@ -1141,7 +1141,25 @@
       "update": "Actualizar",
       "saved": "Objetivo guardado como «{name}».",
       "updated": "Objetivo «{name}» actualizado.",
-      "loaded": "Objetivo «{name}» cargado."
+      "loaded": "Objetivo «{name}» cargado.",
+      "montecarlo": {
+        "title": "¿Y si el mercado no acompaña?",
+        "intro": "Simula miles de secuencias de rentabilidades aleatorias a partir del valor real de tu cartera y cuenta en cuántas llegas al objetivo y el patrimonio aguanta después.",
+        "volatility": "Volatilidad anual (%)",
+        "retirementYears": "Años de retiro a cubrir",
+        "help": {
+          "volatility": "Cuánto oscila la rentabilidad de un año a otro. Una cartera 100 % en acciones globales ronda el 15-18 %; con bonos, menos.",
+          "retirementYears": "Cuántos años tiene que sostener el patrimonio tu gasto una vez alcanzado el objetivo."
+        },
+        "successRate": "Probabilidad de éxito",
+        "medianYears": "Tiempo hasta el objetivo (mediana)",
+        "years": "{years, plural, one {# año} other {# años}}",
+        "now": "Ya alcanzado",
+        "never": "más de 60 años",
+        "range": "En el 80 % central de las simulaciones llegas entre {fast} y {slow}.",
+        "assumptions": "Usa la rentabilidad esperada de arriba como media, en euros de hoy, sin impuestos. Es una estimación, no una previsión ni un consejo de inversión.",
+        "openSimulator": "Abrir en el simulador Monte Carlo"
+      }
     },
     "export": {
       "button": "Descargar CSV",
