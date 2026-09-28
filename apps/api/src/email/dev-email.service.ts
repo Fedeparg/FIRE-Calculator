@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { EmailService } from './email.service.js';
+import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
 
 /**
  * Transporte de email para desarrollo: NO envía nada, escribe el enlace mágico en
@@ -14,6 +15,14 @@ export class DevEmailService implements EmailService {
   sendMagicLink(to: string, link: string): Promise<void> {
     this.logger.log(`Magic link para ${to}:`);
     this.logger.log(`  ${link}`);
+    return Promise.resolve();
+  }
+
+  sendFireMilestone(to: string, email: FireMilestoneEmail, oneClickUnsubscribeUrl: string): Promise<void> {
+    const rendered = renderFireMilestoneEmail(email, '/email-logo.png');
+    this.logger.log(`Aviso de hito para ${to}: ${rendered.subject}`);
+    this.logger.log(`  List-Unsubscribe: <${oneClickUnsubscribeUrl}>`);
+    this.logger.log(`  ${rendered.text.replace(/\n/g, '\n  ')}`);
     return Promise.resolve();
   }
 }
