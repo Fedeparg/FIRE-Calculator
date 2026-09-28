@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "045af8d2",
+          "type": "fix",
+          "scope": "notifications",
+          "category": "fix",
+          "text": {
+            "es": "re-baseline when the goal changes and evaluate the captured date",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "71f7f634",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce FIRE milestone notices",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
           "hash": "5e0a5ccc",
           "type": "docs",
           "scope": "legal",
