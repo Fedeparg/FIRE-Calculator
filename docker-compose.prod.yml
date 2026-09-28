@@ -71,6 +71,8 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:?define EMAIL_FROM (remitente verificado en Resend)}
       OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
       PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
+      # Refresco intradía de precios (por defecto cada hora L-V); "off" lo desactiva.
+      PRICE_INTRADAY_CRON: ${PRICE_INTRADAY_CRON:-}
       # Saltos de proxy de confianza para obtener la IP real (rate limiting). Ver
       # apps/api/.env.example: por defecto 1; súbelo si hay más de un proxy delante
       # y el rate limit agrupa a todos los usuarios en el mismo cubo.

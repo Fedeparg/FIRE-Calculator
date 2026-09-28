@@ -12,7 +12,15 @@ import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.serv
 import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
-const DEFAULT_CRON = '0 30 22 * * *';
+export const DEFAULT_CRON = '0 30 22 * * *';
+/**
+ * Refresco intradía por defecto: en punto, de 9:00 a 21:00 hora de Madrid, de lunes a viernes.
+ * Cubre la sesión europea (9:00-17:30) y casi toda la de EE. UU. (15:30-22:00), y termina antes
+ * del trabajo nocturno de las 22:30 para no pisarse con él.
+ */
+export const DEFAULT_INTRADAY_CRON = '0 0 9-21 * * 1-5';
+/** Valor de `PRICE_INTRADAY_CRON` que desactiva el refresco intradía (interruptor de emergencia). */
+export const INTRADAY_OFF = 'off';
 const TIME_ZONE = 'Europe/Madrid';
 
 /**
@@ -34,6 +42,15 @@ const TIME_ZONE = 'Europe/Madrid';
  * Hora: 22:30 de Madrid, ya cerrada tanto la bolsa europea como la estadounidense (que
  * cierra ~22:00 hora de Madrid). Configurable con `PRICE_REFRESH_CRON`.
  *
+ * Además hay un refresco INTRADÍA (`PRICE_INTRADAY_CRON`, por defecto cada hora en días
+ * laborables) que SOLO actualiza precios y FX: la fila del día se sobrescribe con el último
+ * precio y el trabajo nocturno la deja con el cierre. No captura snapshots, que son uno al día.
+ * `off` lo desactiva sin tocar el nocturno. Los dos comparten un cerrojo en memoria: si uno
+ * sigue en marcha cuando toca el otro, el segundo se salta (y se registra) en vez de lanzar
+ * dos rondas de peticiones a Yahoo a la vez.
+ *
+ * El cerrojo es de proceso, no distribuido: vale porque la API corre en UNA sola réplica.
+ *
  * POR QUÉ AQUÍ y no en `prices/`: el snapshot necesita la valoración (`PortfolioModule`), que
  * a su vez depende de `PricesModule`. Colgar el cron de `prices/` obligaría a la dependencia
  * inversa —un ciclo que solo se rompe con `forwardRef`—, así que el orquestador vive en su
@@ -43,6 +60,8 @@ const TIME_ZONE = 'Europe/Madrid';
 @Injectable()
 export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap {
   private readonly logger = new Logger(DailyJobsScheduler.name);
+  /** Cerrojo compartido por el trabajo nocturno y el intradía (ver la cabecera). */
+  private running = false;
 
   constructor(
     private readonly prices: PricesService,
@@ -58,6 +77,16 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     this.registry.addCronJob('daily-portfolio-jobs', job);
     job.start();
     this.logger.log(`Trabajo diario de cartera programado: "${cronTime}" (${TIME_ZONE})`);
+
+    const intradayTime = this.config.get<string>('PRICE_INTRADAY_CRON')?.trim() || DEFAULT_INTRADAY_CRON;
+    if (intradayTime.toLowerCase() === INTRADAY_OFF) {
+      this.logger.log('Refresco intradía de precios desactivado (PRICE_INTRADAY_CRON=off)');
+      return;
+    }
+    const intraday = new CronJob(intradayTime, () => void this.runIntraday(), null, false, TIME_ZONE);
+    this.registry.addCronJob('intraday-price-refresh', intraday);
+    intraday.start();
+    this.logger.log(`Refresco intradía de precios programado: "${intradayTime}" (${TIME_ZONE})`);
   }
 
   /**
@@ -89,7 +118,40 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
    * caída, el snapshot se guarda igual (con los precios de ayer, que es información válida y
    * mejor que un hueco en la serie), y ningún fallo tumba el proceso.
    */
-  private async run(): Promise<void> {
+  async run(): Promise<void> {
+    await this.exclusive('nocturno', () => this.runNightly());
+  }
+
+  /** Refresco intradía: solo precios y FX, sin snapshots. */
+  async runIntraday(): Promise<void> {
+    await this.exclusive('intradía', async () => {
+      try {
+        const summary = await this.prices.refreshAll();
+        this.logger.log(`Refresco intradía: ${summary.fetched}/${summary.symbols} símbolos`);
+      } catch (error) {
+        this.logger.error(`Refresco intradía de precios falló: ${(error as Error).message}`);
+      }
+    });
+  }
+
+  /**
+   * Ejecuta `task` si no hay otro trabajo en marcha; si lo hay, lo salta y lo registra. El
+   * cerrojo se libera siempre (`finally`), incluso si `task` lanza.
+   */
+  private async exclusive(label: string, task: () => Promise<void>): Promise<void> {
+    if (this.running) {
+      this.logger.warn(`Trabajo ${label} omitido: hay otro trabajo de precios en marcha`);
+      return;
+    }
+    this.running = true;
+    try {
+      await task();
+    } finally {
+      this.running = false;
+    }
+  }
+
+  private async runNightly(): Promise<void> {
     try {
       await this.prices.refreshAll();
     } catch (error) {

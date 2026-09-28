@@ -4,15 +4,70 @@
     {
       "date": "2026-09-28",
       "title": {
-        "es": "Plusvalías realizadas y Monte Carlo con historia real",
-        "en": "Realised gains and Monte Carlo with real history"
+        "es": "Plusvalías realizadas, precios cada hora y Monte Carlo con historia real",
+        "en": "Realised gains, hourly prices and Monte Carlo with real history"
       },
       "summary": {
-        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. El objetivo de independencia financiera de la cartera te dice ahora con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
-        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. The portfolio's financial independence goal now tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
+        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. Los precios de la cartera se actualizan cada hora en días laborables. El objetivo de independencia financiera te dice con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
+        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. Portfolio prices now refresh every hour on weekdays. The financial independence goal tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "e68eb3cb",
+          "type": "test",
+          "scope": "jobs",
+          "category": "internal",
+          "text": {
+            "es": "satisfy require-await in scheduler stubs",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "5ff998dc",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce hourly price refresh",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "dcccb8c8",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la cartera indica cuándo se actualizaron los precios por última vez y recoge los nuevos sin recargar la página",
+            "en": "the portfolio shows when prices were last updated and picks up new ones without reloading the page"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "31178a90",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "relative time and latest price fetch helpers",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "56eb162b",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "fold the report fixes into the release",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "d18e8463",
           "type": "fix",
@@ -34,6 +89,28 @@
             "en": ""
           },
           "hidden": true
+        },
+        {
+          "hash": "2642765b",
+          "type": "feat",
+          "scope": "prices",
+          "category": "feature",
+          "text": {
+            "es": "expose when each price was fetched",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "28723c6e",
+          "type": "feat",
+          "scope": "jobs",
+          "category": "feature",
+          "text": {
+            "es": "los precios de la cartera se actualizan cada hora de 9:00 a 21:00 en días laborables, no solo una vez al día",
+            "en": "portfolio prices refresh every hour from 9:00 to 21:00 on weekdays, not just once a day"
+          },
+          "hidden": false
         },
         {
           "hash": "ba1516bf",

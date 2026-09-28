@@ -222,3 +222,38 @@ export const formatLongDate = (iso: string, locale: Locale): string => {
   }
   return fmt.format(timestamp);
 };
+
+// Tiempo relativo por idioma ("hace 5 minutos" / "5 minutes ago"), memoizado igual que el resto.
+const relativeTimeFormatters = new Map<Locale, Intl.RelativeTimeFormat>();
+
+/** Escalones del tiempo relativo: la unidad se elige por el tamaño de la diferencia. */
+const RELATIVE_STEPS: readonly { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
+  { unit: "day", seconds: 86_400 },
+  { unit: "hour", seconds: 3_600 },
+  { unit: "minute", seconds: 60 },
+];
+
+/**
+ * Instante ISO → tiempo relativo a `now` (milisegundos), en el idioma dado: "hace un momento",
+ * "hace 5 minutos", "hace 2 horas", "ayer". Se redondea HACIA ABAJO (58 minutos son "hace 58
+ * minutos", no "hace 1 hora"), que es lo honesto al hablar de la frescura de un dato. Un
+ * instante futuro (relojes desajustados) cuenta como "ahora". Devuelve "—" si no se puede leer.
+ *
+ * `now` se recibe en vez de leer el reloj para que la función sea pura y testeable.
+ */
+export function formatRelativeTime(iso: string, now: number, locale: Locale): string {
+  const timestamp = Date.parse(iso);
+  if (Number.isNaN(timestamp) || !Number.isFinite(now)) return NON_FINITE;
+
+  let fmt = relativeTimeFormatters.get(locale);
+  if (!fmt) {
+    fmt = new Intl.RelativeTimeFormat(INTL_LOCALE[locale], { numeric: "auto" });
+    relativeTimeFormatters.set(locale, fmt);
+  }
+
+  const elapsed = Math.max(0, (now - timestamp) / 1000);
+  for (const { unit, seconds } of RELATIVE_STEPS) {
+    if (elapsed >= seconds) return fmt.format(-Math.floor(elapsed / seconds), unit);
+  }
+  return fmt.format(0, "second");
+}

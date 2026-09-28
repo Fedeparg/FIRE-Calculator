@@ -50,3 +50,27 @@ export function isStalePrice(price: DatedPrice | undefined, latest: string | nul
   if (!ISO_DATE.test(price.date)) return false;
   return price.date < latest;
 }
+
+/** Lo mínimo para saber cuándo se leyó un precio: el instante ISO en que se obtuvo. */
+export interface FetchedPrice {
+  fetchedAt?: string;
+}
+
+/**
+ * Instante (ISO) de la lectura más reciente entre los precios recibidos, o `null` si ninguno
+ * lo trae legible. Es lo que la cartera enseña como "precios actualizados hace…": con el
+ * refresco intradía, la fecha del precio (`date`) no cambia en todo el día, pero este sí.
+ */
+export function latestFetchedAt(prices: Record<string, FetchedPrice | undefined>): string | null {
+  let latest: string | null = null;
+  let latestMs = -Infinity;
+  for (const price of Object.values(prices)) {
+    const iso = price?.fetchedAt;
+    if (!iso) continue;
+    const ms = Date.parse(iso);
+    if (Number.isNaN(ms) || ms <= latestMs) continue;
+    latest = iso;
+    latestMs = ms;
+  }
+  return latest;
+}
