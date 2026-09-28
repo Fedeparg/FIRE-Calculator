@@ -22,6 +22,7 @@ export default async function PortfolioPage({ params }: Props) {
 
   const t = await getTranslations("auth.portfolio");
   const tAccount = await getTranslations("account");
+  const tGains = await getTranslations("portfolio.realisedGains");
   const positions = await fetchPositions();
 
   return (
@@ -31,7 +32,13 @@ export default async function PortfolioPage({ params }: Props) {
           <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
           <p className="text-sm text-muted">{t("greeting", { email: user.email })}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/portfolio/plusvalias"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-2"
+          >
+            {tGains("link")}
+          </Link>
           <Link
             href="/portfolio/cuenta"
             className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-2"

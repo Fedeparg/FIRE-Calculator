@@ -1201,7 +1201,8 @@
       "cancel": "Cancel",
       "deleting": "Deleting…",
       "noFxRate": "No {price}→{position} exchange rate yet to convert the value.",
-      "lots": "Lots"
+      "lots": "Lots",
+      "confirmDeleteWithSales": "It has recorded sales: deleting it also removes them from your capital gains report."
     },
     "form": {
       "title": "Add position",
@@ -1244,7 +1245,8 @@
           "currency": "Currency",
           "other": "Other"
         }
-      }
+      },
+      "errorHasSales": "This position has recorded sales. To change the quantity or average price, edit its transactions instead, so the sale history is kept."
     },
     "history": {
       "title": "Portfolio history",
@@ -1359,6 +1361,47 @@
       "remaining": "After the sale you would hold {quantity} units at an average price of {avgPrice}.",
       "disclaimer": "Indicative calculation, not tax advice. It looks at the sale in isolation: it does not apply the two-month rule (if you buy the same security back, the loss cannot be claimed), it does not offset other gains or losses of the year nor negative balances carried from previous years, and it does not add the rest of your savings tax base, which can push the gain into a higher bracket.",
       "disclaimerFx": "On top of that, your position is in {currency}: the gain is converted to euros at today's exchange rate, not the one that would apply on the day of a real sale."
+    },
+    "realisedGains": {
+      "link": "Capital gains",
+      "back": "← Back to portfolio",
+      "title": "Realised gains and losses",
+      "subtitle": "The sales you have recorded, matched against their purchases FIFO and grouped by tax year, to help with your Spanish tax return.",
+      "empty": "You have not recorded any sales yet. Once you add one to a position's transactions, it will show up here with its gain or loss.",
+      "yearLabel": "Tax year",
+      "download": "Download {year} CSV",
+      "downloadError": "The file could not be generated. Please try again.",
+      "groupTitle": "Sales in {currency}",
+      "gains": "Gains",
+      "losses": "Losses",
+      "net": "Net for the year",
+      "tableCaption": "Sales by position, amounts in {currency}. Transfer value = sale price − fees; acquisition value = cost of the lots sold + their fees.",
+      "position": "Position",
+      "sales": "Sales",
+      "quantity": "Units",
+      "transferValue": "Transfer value",
+      "acquisitionValue": "Acquisition value",
+      "gain": "Gain/loss",
+      "taxTitle": "Estimated tax for {year} (sales in euros)",
+      "taxBase": "Taxable positive net",
+      "tax": "Estimated tax",
+      "marginal": "Marginal rate",
+      "taxScale": "Estimated with the {scaleYear} savings scale. For earlier years the scale may have been different.",
+      "noEurSales": "This year has no sales in euros, so no tax is estimated.",
+      "foreignCurrency": "Sales in {currencies} are shown in their own currency. For the tax return, every purchase and sale must be converted to euros at the official exchange rate of its date, and Sextante does not keep that history: do not add them to the euro figures as they are.",
+      "scope": "Nets the gains and losses of sales within the same tax year. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
+      "csv": {
+        "date": "Sale date",
+        "ticker": "Symbol",
+        "name": "Name",
+        "currency": "Currency",
+        "quantity": "Units",
+        "price": "Sale price",
+        "fees": "Sale fees",
+        "transferValue": "Transfer value",
+        "acquisitionValue": "Acquisition value",
+        "gain": "Gain/loss"
+      }
     }
   },
   "account": {
