@@ -22,11 +22,18 @@ The [FIRE calculator](/calculadoras/independencia-financiera) assumes the market
 
 **Why volatility hurts even with the same average.** Losing 20% and then gaining 20% doesn't leave you where you started: it leaves you at 96%. The more returns swing, the more the typical portfolio grows below the average (this is *volatility drag*). On top of that there is [**sequence-of-returns risk**](/aprende/riesgo-secuencia-retornos): a big crash right as you start withdrawing forces you to sell low, and that part of the portfolio doesn't come back when the market rebounds.
 
+**Historical model.** Instead of drawing random returns, you can pick the **historical** model: each life chains together **real 10-year stretches** of the US market (1871–2023, data from Robert J. Shiller), each starting at a random year. Crises show up exactly as they happened (1929–1932, the 1973–1974 stagflation, 2008), with their runs of bad years in a row, which is precisely what makes sequence risk worse. You choose the share in stocks and the rest goes into 10-year Treasury bonds, rebalanced every year. This model does not use the return or volatility you typed: they come from the data.
+
+With the default values and a 60/40 portfolio, the probability of success rises to **around 90%** and the median drops to **25 years**. The model is not optimistic by construction: the average real return of that mix in the US has been a little over 6%, above the conservative 5% the random model starts with.
+
+**Sensitivity table.** Below the fan chart you will see the probability of success at withdrawal rates from 3% to 5%, with everything else unchanged and **the same market scenarios**, so the differences between rows come only from the rate. A higher rate lowers the target (you get there sooner) but asks more of the portfolio during retirement. With the default values in the random model, going from 4% to 3% raises success from 70% to 86%.
+
 **[The 4% rule](/aprende/regla-del-4).** It comes from the *Trinity study* (1998), which checked against US historical data that withdrawing 4% in the first year, adjusted for inflation, lasted 30 years in the vast majority of periods. For longer retirements, like FIRE ones, it is wise to lower the withdrawal rate or accept more risk. Try 50 years of retirement and 3.5% to see it.
 
 **Model limitations.**
 
-- Each year's return is **independent** of the others and follows a lognormal distribution. Real markets have streaks and specific crises that this model does not reproduce.
+- In the random model, each year's return is **independent** of the others and follows a lognormal distribution. Real markets have streaks and specific crises that this model does not reproduce; that is what the historical model is for.
+- The historical model uses **the US only**, one of the best-performing markets of the last century and a half (*survivorship bias*: others, like Japan since 1990, fared much worse). And history does not repeat exactly.
 - Everything is in **today's euros** (real terms), so the return you enter should be net of inflation.
 - It includes **no taxes or fees**. When you sell to withdraw money, capital gains are taxed. If you want a margin, lower the return.
 - Spending is fixed. In real life you can cut back in bad years, which greatly improves the odds of success.
