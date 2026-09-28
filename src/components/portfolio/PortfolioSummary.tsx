@@ -1,9 +1,10 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import type { PortfolioAggregate } from "@/core/fx";
-import { formatIsoDate } from "@/core/format";
+import { formatIsoDate, formatRelativeTime } from "@/core/format";
+import { asLocale } from "@/core/types";
 import { useFormat } from "@/lib/format";
 
 type Props = {
@@ -14,6 +15,10 @@ type Props = {
   agg: PortfolioAggregate;
   /** Fecha de las tasas FX usadas, o null si aún no hay. */
   fxAsOf: string | null;
+  /** Instante ISO de la lectura de precios más reciente, o null si no se sabe. */
+  pricesFetchedAt: string | null;
+  /** Cuándo recibió la pantalla esos precios (ms): el "ahora" del tiempo relativo. */
+  pricesCheckedAt: number | null;
   /**
    * Divisa elegida. La gobierna el padre —junto con su selector— porque la comparten el
    * objetivo, el histórico y la composición.
@@ -27,8 +32,15 @@ type Props = {
  * precio en su propia divisa y convertible al destino; el resto se excluye y se señala,
  * para no inflar el total con conversiones que no podemos hacer.
  */
-export default function PortfolioSummary({ agg, fxAsOf, display }: Props) {
+export default function PortfolioSummary({
+  agg,
+  fxAsOf,
+  pricesFetchedAt,
+  pricesCheckedAt,
+  display,
+}: Props) {
   const t = useTranslations("portfolio.summary");
+  const locale = asLocale(useLocale());
   const { formatCurrency, formatPercent } = useFormat();
 
   const excluded = agg.total - agg.valued;
@@ -77,6 +89,13 @@ export default function PortfolioSummary({ agg, fxAsOf, display }: Props) {
 
           <div className="flex flex-col gap-1 text-xs text-muted">
             {excluded > 0 && <p>{t("excluded", { count: excluded, total: agg.total })}</p>}
+            {pricesFetchedAt && pricesCheckedAt !== null && (
+              <p>
+                {t("pricesUpdated", {
+                  ago: formatRelativeTime(pricesFetchedAt, pricesCheckedAt, locale),
+                })}
+              </p>
+            )}
             {fxAsOf && <p>{t("fxAsOf", { date: formatIsoDate(fxAsOf) })}</p>}
             <p>{t("priceCadence")}</p>
           </div>

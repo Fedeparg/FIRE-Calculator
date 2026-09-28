@@ -1103,7 +1103,8 @@
       "noData": "Aún no hay precios para calcular el total. Vuelve cuando se haya actualizado el mercado.",
       "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
       "fxAsOf": "Tipos de cambio a {date}.",
-      "priceCadence": "Los precios se actualizan una vez al día (sobre las 22:30, hora de España). Una posición recién añadida puede no mostrar precio hasta el siguiente refresco."
+      "priceCadence": "Los precios se actualizan cada hora de 9:00 a 21:00 (hora de España) de lunes a viernes, y con el cierre sobre las 22:30. Una posición recién añadida puede no mostrar precio hasta el siguiente refresco.",
+      "pricesUpdated": "Precios actualizados {ago}."
     },
     "goal": {
       "title": "Tu objetivo de independencia financiera",

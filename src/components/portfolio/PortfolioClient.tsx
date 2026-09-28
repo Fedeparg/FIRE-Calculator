@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { aggregatePortfolio } from "@/core/fx";
+import { latestFetchedAt } from "@/core/portfolio-prices";
 import { useFormat } from "@/lib/format";
 import { PORTFOLIO_CURRENCIES, type FxRates, type PriceInfo, type Position } from "@/lib/portfolio";
 import PortfolioBreakdown from "./PortfolioBreakdown";
@@ -37,6 +38,19 @@ export default function PortfolioClient({ initialPositions }: Props) {
   const [editing, setEditing] = useState<Position | null>(null);
   // Últimos precios conocidos por ticker (desde nuestra DB, nunca de la API externa).
   const [prices, setPrices] = useState<Record<string, PriceInfo>>({});
+  /**
+   * Contador que fuerza volver a pedir los precios sin que cambie el conjunto de tickers. Lo
+   * sube el auto-refresco: con el refresco intradía del servidor, un precio puede cambiar
+   * durante el día y la pestaña abierta tiene que enterarse. Es una lectura de NUESTRA base de
+   * datos, nunca de la fuente externa, así que repetirla es barato.
+   */
+  const [priceTick, setPriceTick] = useState(0);
+  /**
+   * Cuándo se recibieron los precios (ms). Es el "ahora" contra el que se calcula el
+   * "actualizado hace…": se fija al llegar la respuesta, no al pintar, porque leer el reloj
+   * durante el render lo haría impuro. Como el auto-refresco vuelve a pedirlos, no envejece.
+   */
+  const [pricesCheckedAt, setPricesCheckedAt] = useState<number | null>(null);
   // Tasas FX para el total agregado (global, no dependen de las posiciones).
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
   // Divisa en la que se expresan el total, el histórico y la composición.
@@ -61,7 +75,10 @@ export default function PortfolioClient({ initialPositions }: Props) {
       try {
         const res = await fetch(`/api/prices?symbols=${encodeURIComponent(tickersKey)}`);
         const data: Record<string, PriceInfo> = res.ok ? await res.json() : {};
-        if (!cancelled) setPrices(data);
+        if (!cancelled) {
+          setPrices(data);
+          setPricesCheckedAt(Date.now());
+        }
       } catch {
         // Los precios son enriquecimiento: si fallan, la cartera sigue usable (P&L "—").
         if (!cancelled) setPrices({});
@@ -71,7 +88,7 @@ export default function PortfolioClient({ initialPositions }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tickersKey]);
+  }, [tickersKey, priceTick]);
 
   // Tasas FX: una sola carga (son globales y cambian poco; el total las usa para convertir).
   useEffect(() => {
@@ -111,7 +128,9 @@ export default function PortfolioClient({ initialPositions }: Props) {
   // pestaña visible (en segundo plano no consume nada).
   useEffect(() => {
     const refreshIfVisible = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState !== "visible") return;
+      void refresh();
+      setPriceTick((tick) => tick + 1);
     };
     document.addEventListener("visibilitychange", refreshIfVisible);
     window.addEventListener("focus", refreshIfVisible);
@@ -148,6 +167,8 @@ export default function PortfolioClient({ initialPositions }: Props) {
    * y el bloque de objetivo: si cada uno agregase por su cuenta, la misma pantalla podría
    * enseñar dos "patrimonios actuales" distintos.
    */
+  const pricesFetchedAt = useMemo(() => latestFetchedAt(prices), [prices]);
+
   const agg = useMemo(
     () => aggregatePortfolio({ positions, prices, rates, display }),
     [positions, prices, rates, display],
@@ -195,7 +216,13 @@ export default function PortfolioClient({ initialPositions }: Props) {
         </div>
       ) : (
         <>
-          <PortfolioSummary agg={agg} fxAsOf={fxRates?.asOf ?? null} display={display} />
+          <PortfolioSummary
+            agg={agg}
+            fxAsOf={fxRates?.asOf ?? null}
+            pricesFetchedAt={pricesFetchedAt}
+            pricesCheckedAt={pricesCheckedAt}
+            display={display}
+          />
           <PortfolioHistoryChart display={display} />
           <PortfolioBreakdown
             positions={positions}
