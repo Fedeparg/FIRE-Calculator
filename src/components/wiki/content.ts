@@ -6,6 +6,7 @@ import path from "node:path";
 import matter from "gray-matter";
 
 import { renderMarkdown } from "./markdown";
+import { asLocale } from "@/core/types";
 
 /** Niveles de dificultad usados para agrupar los artículos en el índice. */
 export const WIKI_LEVELS = ["basico", "intermedio", "avanzado"] as const;
@@ -129,7 +130,7 @@ export async function getArticle(slug: string, locale: string): Promise<Article 
   if (raw === null) return null;
   const { data, content } = matter(raw);
   const meta = parseArticleMeta(slug, data);
-  const html = await renderMarkdown(content);
+  const html = await renderMarkdown(content, asLocale(locale));
   return { ...meta, html };
 }
 
@@ -163,7 +164,7 @@ export async function getLegalDoc(slug: string, locale: string): Promise<LegalDo
   const raw = await readFileOrNull(path.join(LEGAL_DIR, `${slug}.${locale}.md`));
   if (raw === null) return null;
   const { data, content } = matter(raw);
-  const html = await renderMarkdown(content);
+  const html = await renderMarkdown(content, asLocale(locale));
   return {
     title: typeof data.title === "string" ? data.title : slug,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
@@ -215,7 +216,7 @@ export async function getExplainer(calcSlug: string, locale: string): Promise<Ex
   const raw = await readFileOrNull(path.join(EXPLAINERS_DIR, `${calcSlug}.${locale}.md`));
   if (raw === null) return null;
   const { data, content } = matter(raw);
-  const html = await renderMarkdown(content);
+  const html = await renderMarkdown(content, asLocale(locale));
   const title = typeof data.title === "string" ? data.title : undefined;
   return { title, html };
 }
