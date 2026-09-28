@@ -4,15 +4,70 @@
     {
       "date": "2026-09-28",
       "title": {
-        "es": "Probabilidad de éxito sobre tu cartera real",
-        "en": "Success probability on your real portfolio"
+        "es": "Monte Carlo sobre tu cartera y con historia real",
+        "en": "Monte Carlo on your portfolio and with real history"
       },
       "summary": {
-        "es": "Tu objetivo de independencia financiera en la cartera ahora también te dice con qué probabilidad lo alcanzas y tu dinero aguanta, simulando miles de escenarios de mercado a partir de lo que tienes invertido de verdad.",
-        "en": "The financial independence goal on your portfolio now also tells you how likely you are to reach it and make your money last, simulating thousands of market scenarios from what you actually have invested."
+        "es": "Tu objetivo de independencia financiera en la cartera ahora también te dice con qué probabilidad lo alcanzas y tu dinero aguanta, a partir de lo que tienes invertido de verdad. Y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU., con sus crisis tal como ocurrieron, y enseña cómo cambia la probabilidad de éxito con la tasa de retiro.",
+        "en": "The financial independence goal on your portfolio now also tells you how likely you are to reach it and make your money last, starting from what you actually have invested. And the Monte Carlo simulator can use over 150 real years of US stocks and bonds, with their crises exactly as they happened, and shows how the probability of success changes with the withdrawal rate."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "76353107",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "internal",
+          "text": {
+            "es": "explain the historical model and the sensitivity table",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "b67be937",
+          "type": "feat",
+          "scope": "calculators",
+          "category": "feature",
+          "text": {
+            "es": "el simulador Monte Carlo puede usar años reales de bolsa y bonos de EE. UU. desde 1871, en tramos de 10 años, eligiendo el porcentaje en acciones",
+            "en": "the Monte Carlo simulator can use real years of US stocks and bonds since 1871, in 10-year stretches, with your chosen share in stocks"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "271facd8",
+          "type": "feat",
+          "scope": "calculators",
+          "category": "feature",
+          "text": {
+            "es": "el simulador muestra una tabla con la probabilidad de éxito para tasas de retiro del 3 % al 5 %",
+            "en": "the simulator shows a table with the probability of success for withdrawal rates from 3% to 5%"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "1c870ffd",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "add Shiller's real US stock and bond returns 1871-2023",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "d89b2952",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce the portfolio success probability",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "23426261",
           "type": "feat",
@@ -31,6 +86,17 @@
           "category": "feature",
           "text": {
             "es": "simulate FIRE success probability from the real portfolio",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "629054c0",
+          "type": "docs",
+          "scope": "roadmap",
+          "category": "internal",
+          "text": {
+            "es": "plan the next batch and move tax research to Later",
             "en": ""
           },
           "hidden": true
