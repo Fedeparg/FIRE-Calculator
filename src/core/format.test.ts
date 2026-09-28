@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLongDate, getFormatters } from "./format";
+import { formatLongDate, formatRelativeTime, getFormatters } from "./format";
 
 const es = getFormatters("es");
 const en = getFormatters("en");
@@ -114,5 +114,29 @@ describe("formatLongDate", () => {
   it("devuelve la cadena tal cual si no es una fecha parseable", () => {
     expect(formatLongDate("no es una fecha", "es")).toBe("no es una fecha");
     expect(formatLongDate("", "es")).toBe("");
+  });
+});
+
+describe("formatRelativeTime", () => {
+  const now = Date.parse("2026-09-28T12:00:00Z");
+  const ago = (seconds: number) => new Date(now - seconds * 1000).toISOString();
+
+  it("menos de un minuto es «ahora»", () => {
+    expect(formatRelativeTime(ago(20), now, "es")).toBe("ahora");
+    expect(formatRelativeTime(ago(20), now, "en")).toBe("now");
+  });
+
+  it("elige la unidad por el tamaño y redondea hacia abajo", () => {
+    expect(formatRelativeTime(ago(5 * 60 + 59), now, "es")).toBe("hace 5 minutos");
+    expect(formatRelativeTime(ago(58 * 60), now, "en")).toBe("58 minutes ago");
+    expect(formatRelativeTime(ago(2 * 3600 + 10), now, "es")).toBe("hace 2 horas");
+    expect(formatRelativeTime(ago(26 * 3600), now, "es")).toBe("ayer");
+    expect(formatRelativeTime(ago(3 * 86_400), now, "en")).toBe("3 days ago");
+  });
+
+  it("un instante futuro cuenta como «ahora» y uno ilegible como «—»", () => {
+    expect(formatRelativeTime(ago(-3600), now, "es")).toBe("ahora");
+    expect(formatRelativeTime("no es una fecha", now, "es")).toBe("—");
+    expect(formatRelativeTime(ago(10), Number.NaN, "es")).toBe("—");
   });
 });

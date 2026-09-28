@@ -43,6 +43,12 @@ export interface PriceInfo {
   close: number;
   currency: string;
   date: string;
+  /**
+   * Instante (ISO) en que se obtuvo este precio de la fuente. Con el refresco intradía, la
+   * fila del día se reescribe varias veces: `date` dice de qué día es y `fetchedAt` cuándo se
+   * leyó, que es lo que la cartera enseña como "actualizado hace…".
+   */
+  fetchedAt: string;
 }
 
 /** Resumen de una ejecución del refresco (para logs y el trigger manual de dev). */
@@ -135,6 +141,7 @@ export class PricesService {
           close: Number(row.close),
           currency: row.currency,
           date: row.date,
+          fetchedAt: row.fetchedAt.toISOString(),
         });
       }
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isStalePrice, latestPriceDate } from "./portfolio-prices";
+import { isStalePrice, latestFetchedAt, latestPriceDate } from "./portfolio-prices";
 
 const prices = (dates: Record<string, string>) =>
   Object.fromEntries(Object.entries(dates).map(([ticker, date]) => [ticker, { date }]));
@@ -71,5 +71,28 @@ describe("isStalePrice", () => {
     const all = prices({ A: "2026-03-01", B: "2026-03-01" });
     const reference = latestPriceDate(all);
     expect(Object.values(all).every((p) => !isStalePrice(p, reference))).toBe(true);
+  });
+});
+
+describe("latestFetchedAt", () => {
+  it("devuelve el instante de lectura más reciente", () => {
+    expect(
+      latestFetchedAt({
+        IWDA: { fetchedAt: "2026-09-28T09:00:03.000Z" },
+        VWCE: { fetchedAt: "2026-09-28T11:00:05.000Z" },
+        FUND: { fetchedAt: "2026-09-27T20:30:00.000Z" },
+      }),
+    ).toBe("2026-09-28T11:00:05.000Z");
+  });
+
+  it("ignora los que no lo traen o no se pueden leer", () => {
+    expect(latestFetchedAt({ A: {}, B: { fetchedAt: "basura" }, C: undefined })).toBeNull();
+    expect(latestFetchedAt({ A: { fetchedAt: "basura" }, B: { fetchedAt: "2026-01-01T00:00:00Z" } })).toBe(
+      "2026-01-01T00:00:00Z",
+    );
+  });
+
+  it("sin precios no hay instante", () => {
+    expect(latestFetchedAt({})).toBeNull();
   });
 });

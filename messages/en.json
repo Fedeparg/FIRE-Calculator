@@ -1103,7 +1103,8 @@
       "noData": "No prices yet to compute the total. Check back once the market has refreshed.",
       "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
       "fxAsOf": "Exchange rates as of {date}.",
-      "priceCadence": "Prices update once a day (around 22:30 Spain time). A newly added position may not show a price until the next refresh."
+      "priceCadence": "Prices are refreshed every hour from 9:00 to 21:00 (Spanish time) Monday to Friday, and with the close at around 22:30. A newly added position may not show a price until the next refresh.",
+      "pricesUpdated": "Prices updated {ago}."
     },
     "goal": {
       "title": "Your financial independence goal",
