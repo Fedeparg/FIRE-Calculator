@@ -6,6 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { AccountModule } from './account/account.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { DatabaseModule } from './db/database.module.js';
 import { DonationsModule } from './donations/donations.module.js';
@@ -42,6 +43,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     OauthModule,
     McpModule,
     AccountModule,
+    NotificationsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { PortfolioModule } from '../portfolio/portfolio.module.js';
 import { PricesModule } from '../prices/prices.module.js';
 import { DailyJobsScheduler } from './daily-jobs.scheduler.js';
@@ -10,7 +11,7 @@ import { DailyJobsScheduler } from './daily-jobs.scheduler.js';
  * permite encadenarlos sin crear un ciclo entre ellos (ver `DailyJobsScheduler`).
  */
 @Module({
-  imports: [PricesModule, PortfolioModule],
+  imports: [PricesModule, PortfolioModule, NotificationsModule],
   providers: [DailyJobsScheduler],
 })
 export class DailyJobsModule {}

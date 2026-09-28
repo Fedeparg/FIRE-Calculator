@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 import type { EmailService } from './email.service.js';
+import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
 
 /**
  * Minutos de validez del enlace mágico que mostramos al usuario en el email.
@@ -67,6 +68,32 @@ export class ResendEmailService implements EmailService {
 
     if (error) {
       this.logger.error(`Error enviando magic link a ${to}: ${error.message}`);
+      throw new Error('No se pudo enviar el email');
+    }
+  }
+
+  async sendFireMilestone(
+    to: string,
+    email: FireMilestoneEmail,
+    oneClickUnsubscribeUrl: string,
+  ): Promise<void> {
+    const rendered = renderFireMilestoneEmail(email, `${this.appUrl}/email-logo.png`);
+    const { error } = await this.resend.emails.send({
+      from: this.from,
+      to,
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
+      // Baja en un clic (RFC 8058): los clientes de correo que la soportan hacen un POST a
+      // esta URL con el cuerpo `List-Unsubscribe=One-Click`, sin abrir nada.
+      headers: {
+        'List-Unsubscribe': `<${oneClickUnsubscribeUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+      },
+    });
+
+    if (error) {
+      this.logger.error(`Error enviando aviso de hito a ${to}: ${error.message}`);
       throw new Error('No se pudo enviar el email');
     }
   }

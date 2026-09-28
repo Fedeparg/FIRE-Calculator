@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 
+import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
 
@@ -24,10 +25,11 @@ export const INTRADAY_OFF = 'off';
 const TIME_ZONE = 'Europe/Madrid';
 
 /**
- * Trabajo nocturno de la cartera, en TRES pasos y en este orden:
+ * Trabajo nocturno de la cartera, en CUATRO pasos y en este orden:
  *   1. Refresco de precios de todos los símbolos en uso y de los pares FX.
  *   2. Snapshot de valoración de la cartera de cada usuario (captura REAL de hoy).
  *   3. Backfill de los últimos `HISTORY_BACKFILL_DAYS` días (autocurativo).
+ *   4. Alertas de hitos del objetivo FIRE (opt-in), sobre el snapshot real recién capturado.
  *
  * El orden de 1→2 importa: el snapshot valora con el último precio conocido, así que
  * capturarlo ANTES del refresco guardaría el cierre de ayer con fecha de hoy. El paso 3 va
@@ -66,6 +68,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   constructor(
     private readonly prices: PricesService,
     private readonly snapshots: PortfolioSnapshotsService,
+    private readonly fireAlerts: FireAlertsService,
     private readonly config: ConfigService,
     private readonly registry: SchedulerRegistry,
   ) {}
@@ -158,8 +161,10 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       this.logger.error(`Refresco de precios falló: ${(error as Error).message}`);
     }
 
+    // Fecha de la captura: las alertas evalúan EXACTAMENTE ese snapshot (ver `evaluateAll`).
+    let captureDate: string | undefined;
     try {
-      await this.snapshots.captureAll();
+      captureDate = (await this.snapshots.captureAll()).date;
     } catch (error) {
       this.logger.error(`Captura de snapshots falló: ${(error as Error).message}`);
     }
@@ -168,6 +173,17 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       await this.snapshots.backfillAll(HISTORY_BACKFILL_DAYS);
     } catch (error) {
       this.logger.error(`Backfill de snapshots falló: ${(error as Error).message}`);
+    }
+
+    try {
+      const alerts = await this.fireAlerts.evaluateAll(captureDate);
+      if (alerts.users > 0) {
+        this.logger.log(
+          `Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Evaluación de alertas FIRE falló: ${(error as Error).message}`);
     }
   }
 }
