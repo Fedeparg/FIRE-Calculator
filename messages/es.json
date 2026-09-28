@@ -1459,7 +1459,24 @@
     "errorSession": "Tu sesión ha caducado.",
     "errorSessionLink": "Vuelve a iniciar sesión",
     "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
+    "notifications": {
+      "title": "Avisos por email",
+      "intro": "Te escribimos cuando tu cartera cruza el 25, 50, 75 y 100 % de tu objetivo de independencia financiera. Un aviso por hito, nunca repetido, calculado cada noche con los precios del cierre.",
+      "loading": "Cargando…",
+      "loadError": "No se pudieron cargar tus preferencias. Recarga la página para intentarlo de nuevo.",
+      "fireAlerts": "Avisarme por email de los hitos de mi objetivo FIRE",
+      "goal": "Se vigila tu objetivo «{name}», el que guardaste o actualizaste más recientemente.",
+      "noGoal": "Aún no has guardado ningún objetivo, así que no hay nada que vigilar.",
+      "noGoalLink": "Guárdalo en tu cartera",
+      "language": "Los avisos llegan en {language}, el idioma en el que los activaste.",
+      "languages": {
+        "es": "español",
+        "en": "inglés"
+      },
+      "saveError": "No se pudo guardar el cambio. Inténtalo de nuevo.",
+      "disclaimer": "Son avisos informativos, no asesoramiento. Puedes darte de baja desde cualquiera de ellos."
+    }
   },
   "legal": {
     "lastUpdated": "Última actualización: {date}"
@@ -1517,5 +1534,15 @@
     "title": "¡Gracias por tu café!",
     "body": "Tu apoyo ayuda a mantener Sextante en marcha y a seguir mejorándolo. Lo aprecio de verdad.",
     "backHome": "Volver al inicio"
+  },
+  "unsubscribe": {
+    "title": "Darte de baja de los avisos",
+    "body": "Dejarás de recibir los avisos de hitos de tu objetivo FIRE. Podrás volver a activarlos cuando quieras desde tu cuenta.",
+    "confirm": "Confirmar la baja",
+    "submitting": "Dando de baja…",
+    "done": "Hecho: ya no recibirás más avisos de hitos.",
+    "manage": "Gestionar mis avisos",
+    "error": "No se pudo completar la baja. Inténtalo de nuevo en unos momentos.",
+    "missingToken": "El enlace está incompleto. Ábrelo de nuevo desde el email o gestiona tus avisos desde tu cuenta."
   }
 }

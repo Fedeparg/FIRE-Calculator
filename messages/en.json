@@ -1459,7 +1459,24 @@
     "errorSession": "Your session has expired.",
     "errorSessionLink": "Sign in again",
     "errorServer": "A server error occurred. Please try again in a few moments.",
-    "errorGeneric": "We couldn't complete the operation. Please try again."
+    "errorGeneric": "We couldn't complete the operation. Please try again.",
+    "notifications": {
+      "title": "Email notices",
+      "intro": "We email you when your portfolio crosses 25, 50, 75 and 100% of your financial independence goal. One notice per milestone, never repeated, calculated every night with closing prices.",
+      "loading": "Loading…",
+      "loadError": "Your preferences could not be loaded. Reload the page to try again.",
+      "fireAlerts": "Email me when my FIRE goal reaches a milestone",
+      "goal": "Your goal “{name}” is tracked: the one you saved or updated most recently.",
+      "noGoal": "You have not saved a goal yet, so there is nothing to track.",
+      "noGoalLink": "Save it in your portfolio",
+      "language": "Notices are sent in {language}, the language you turned them on in.",
+      "languages": {
+        "es": "Spanish",
+        "en": "English"
+      },
+      "saveError": "The change could not be saved. Please try again.",
+      "disclaimer": "These are informational notices, not advice. You can unsubscribe from any of them."
+    }
   },
   "legal": {
     "lastUpdated": "Last updated: {date}"
@@ -1517,5 +1534,15 @@
     "title": "Thanks for the coffee!",
     "body": "Your support helps keep Sextante running and improving. I really appreciate it.",
     "backHome": "Back to home"
+  },
+  "unsubscribe": {
+    "title": "Unsubscribe from notices",
+    "body": "You will stop receiving milestone notices for your FIRE goal. You can turn them back on at any time from your account.",
+    "confirm": "Confirm unsubscribe",
+    "submitting": "Unsubscribing…",
+    "done": "Done: you will not receive any more milestone notices.",
+    "manage": "Manage my notices",
+    "error": "The unsubscribe could not be completed. Please try again in a moment.",
+    "missingToken": "The link is incomplete. Open it again from the email or manage your notices from your account."
   }
 }

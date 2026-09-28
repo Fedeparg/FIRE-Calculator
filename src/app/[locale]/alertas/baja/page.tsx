@@ -1,0 +1,32 @@
+import type { Metadata } from "next";
+import { getTranslations, setRequestLocale } from "next-intl/server";
+
+import UnsubscribeConfirm from "@/components/account/UnsubscribeConfirm";
+
+type Props = {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ token?: string | string[] }>;
+};
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "unsubscribe" });
+  // Página a la que solo se llega desde un email: nada que indexar.
+  return { title: t("title"), robots: { index: false, follow: false } };
+}
+
+/** Baja de los avisos por email, desde el enlace del correo (sin sesión). */
+export default async function UnsubscribePage({ params, searchParams }: Props) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("unsubscribe");
+  const { token } = await searchParams;
+
+  return (
+    <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-20 text-center">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
+      <p className="text-muted">{t("body")}</p>
+      <UnsubscribeConfirm token={typeof token === "string" && token ? token : null} />
+    </section>
+  );
+}
