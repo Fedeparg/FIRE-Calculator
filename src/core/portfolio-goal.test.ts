@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { CALCULATORS } from "./registry";
 import {
   computePortfolioGoal,
+  monthlyContribution,
+  simulatePortfolioGoal,
   FIRE_CALCULATOR_SLUG,
   type PortfolioGoalInput,
 } from "./portfolio-goal";
@@ -111,5 +113,64 @@ describe("computePortfolioGoal", () => {
 
     expect(result.current).toBe(0);
     expect(result.progress).toBe(0);
+  });
+});
+
+describe("monthlyContribution", () => {
+  it("conserva el total anual de la aportación", () => {
+    expect(monthlyContribution(1000, "monthly")).toBe(1000);
+    expect(monthlyContribution(12000, "annual")).toBe(1000);
+    expect(monthlyContribution(3000, "quarterly")).toBe(1000);
+    expect(monthlyContribution(100, "weekly")).toBeCloseTo(5200 / 12, 10);
+  });
+});
+
+describe("simulatePortfolioGoal", () => {
+  const SIM = { ...BASE, frequency: "annual" as const, contribution: 12000, volatility: 15, retirementYears: 40 };
+
+  it("sin volatilidad coincide con el objetivo determinista en frecuencia anual", () => {
+    const deterministic = computePortfolioGoal(SIM);
+    const simulated = simulatePortfolioGoal({ ...SIM, volatility: 0 }, { paths: 50 });
+
+    expect(simulated.fireNumber).toBe(deterministic.target);
+    expect(simulated.yearsToFire.p50).toBe(deterministic.yearsToTarget);
+    expect(simulated.reachRate).toBe(1);
+  });
+
+  it("usa el valor de mercado real como patrimonio de partida", () => {
+    const result = simulatePortfolioGoal(SIM, { paths: 200 });
+
+    expect(result.series[0].p50).toBe(150000);
+  });
+
+  it("una cartera que ya cubre el objetivo arranca retirada", () => {
+    const result = simulatePortfolioGoal({ ...SIM, currentValue: 900000 }, { paths: 200 });
+
+    expect(result.reachRate).toBe(1);
+    expect(result.yearsToFire.p50).toBe(0);
+  });
+
+  it("una cartera vacía o no finita se trata como 0 y no produce NaN", () => {
+    const empty = simulatePortfolioGoal({ ...SIM, currentValue: Number.NaN }, { paths: 200 });
+
+    expect(empty.series[0].p50).toBe(0);
+    expect(Number.isFinite(empty.successRate)).toBe(true);
+  });
+
+  it("sin aportación ni rentabilidad no se llega nunca", () => {
+    const result = simulatePortfolioGoal(
+      { ...SIM, contribution: 0, annualReturn: 0, volatility: 0 },
+      { paths: 50 },
+    );
+
+    expect(result.reachRate).toBe(0);
+    expect(result.successRate).toBe(0);
+  });
+
+  it("la aportación mensual equivale a la anual con el mismo total", () => {
+    const annual = simulatePortfolioGoal(SIM, { paths: 300 });
+    const monthly = simulatePortfolioGoal({ ...SIM, frequency: "monthly", contribution: 1000 }, { paths: 300 });
+
+    expect(monthly.successRate).toBe(annual.successRate);
   });
 });
