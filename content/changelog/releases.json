@@ -4,15 +4,114 @@
     {
       "date": "2026-09-28",
       "title": {
-        "es": "Monte Carlo sobre tu cartera y con historia real",
-        "en": "Monte Carlo on your portfolio and with real history"
+        "es": "Plusvalías realizadas y Monte Carlo con historia real",
+        "en": "Realised gains and Monte Carlo with real history"
       },
       "summary": {
-        "es": "Tu objetivo de independencia financiera en la cartera ahora también te dice con qué probabilidad lo alcanzas y tu dinero aguanta, a partir de lo que tienes invertido de verdad. Y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU., con sus crisis tal como ocurrieron, y enseña cómo cambia la probabilidad de éxito con la tasa de retiro.",
-        "en": "The financial independence goal on your portfolio now also tells you how likely you are to reach it and make your money last, starting from what you actually have invested. And the Monte Carlo simulator can use over 150 real years of US stocks and bonds, with their crises exactly as they happened, and shows how the probability of success changes with the withdrawal rate."
+        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. El objetivo de independencia financiera de la cartera te dice ahora con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
+        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. The portfolio's financial independence goal now tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "cd20c4ce",
+          "type": "fix",
+          "scope": "fiscal",
+          "category": "fix",
+          "text": {
+            "es": "una venta registrada sin participaciones que vender ya no cuenta sus comisiones como pérdida",
+            "en": "a recorded sale with no units to sell no longer counts its fees as a loss"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "96737378",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "nuevo informe de plusvalías de la cartera: ventas por ejercicio emparejadas por FIFO, ganancias y pérdidas compensadas, cuota estimada del ahorro y descarga en CSV",
+            "en": "new portfolio capital gains report: sales by tax year matched FIFO, gains and losses netted, estimated savings tax and CSV download"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "62f10f27",
+          "type": "fix",
+          "scope": "api",
+          "category": "fix",
+          "text": {
+            "es": "editar a mano la cantidad o el precio medio de una posición con ventas ya no borra su histórico de ventas",
+            "en": "manually editing the quantity or average price of a position with sales no longer wipes its sale history"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "4c127d9d",
+          "type": "feat",
+          "scope": "api",
+          "category": "feature",
+          "text": {
+            "es": "list every lot of the user in one request",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "e158b6a8",
+          "type": "feat",
+          "scope": "fiscal",
+          "category": "feature",
+          "text": {
+            "es": "export realised gains as CSV, one row per sale",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "16c7136b",
+          "type": "refactor",
+          "scope": "csv",
+          "category": "internal",
+          "text": {
+            "es": "share the CSV dialect and the blob download helper",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "9030b0d9",
+          "type": "feat",
+          "scope": "fiscal",
+          "category": "feature",
+          "text": {
+            "es": "yearly realised gains report with in-year netting",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "30753b20",
+          "type": "refactor",
+          "scope": "fiscal",
+          "category": "internal",
+          "text": {
+            "es": "walk recorded sales with the same FIFO matcher as the simulator",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "68d5574e",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "record the property-based test suite",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "6acc0ef5",
           "type": "test",
