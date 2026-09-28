@@ -58,7 +58,7 @@ Spanish, and every calculator runs in your browser — no account needed.
 | **Shareable and saveable** | Every input lives in the URL, so a calculation is a link; signed in, you can save named scenarios to your account |
 | **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold, sharing saved scenarios with the FIRE calculator |
 | **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
-| **Bilingual** | Spanish (default) and English: 1,065 translation keys per locale, with parity enforced by a test, not by hope |
+| **Bilingual** | Spanish (default) and English: 1,172 translation keys per locale, with parity enforced by a test, not by hope |
 | **A wiki** | 30 explainer articles plus a "how this calculator works" page for each of the 27 tools, in both languages |
 | **No tracking** | No analytics, no ads, no third-party scripts. The CSP allowlist is `'self'` and nothing else. |
 
@@ -235,7 +235,7 @@ trust instantly, so `format.ts` funnels every non-finite value to an em dash.
 
 No UI string is ever hardcoded in a component; everything goes through
 `next-intl`. `messages/es.json` and `messages/en.json` are held at **exactly the
-same key set** (1,065 each) with the same ICU arguments — and a test fails the
+same key set** (1,172 each) with the same ICU arguments — and a test fails the
 build if they ever drift, so this is checked, not assumed.
 
 ---
