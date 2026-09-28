@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "e68eb3cb",
+          "type": "test",
+          "scope": "jobs",
+          "category": "internal",
+          "text": {
+            "es": "satisfy require-await in scheduler stubs",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "5ff998dc",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "announce hourly price refresh",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
           "hash": "dcccb8c8",
           "type": "feat",
           "scope": "portfolio",
