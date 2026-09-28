@@ -13,7 +13,8 @@
  */
 
 import { computeFire } from "./calculators/fire";
-import type { Frequency } from "./projection";
+import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "./calculators/fire-montecarlo";
+import { PERIODS_PER_YEAR, type Frequency } from "./projection";
 
 /**
  * Slug de la calculadora de independencia financiera en `registry.ts`. Identifica los
@@ -98,4 +99,51 @@ export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalRe
     yearsToTarget: reached ? 0 : fire.yearsToFire,
     reached,
   };
+}
+
+export interface PortfolioGoalSimulationInput extends PortfolioGoalInput {
+  /** Volatilidad anual de la cartera, en base 100 (15 = 15 %). */
+  volatility: number;
+  /** Años que el patrimonio debe sostener el gasto una vez alcanzado el objetivo. */
+  retirementYears: number;
+}
+
+/**
+ * Aportación del objetivo expresada como ahorro mensual, que es lo que recibe el simulador
+ * Monte Carlo (no tiene frecuencia propia). Se conserva el total anual: 1.000 € trimestrales
+ * equivalen a 333,33 € al mes. También la usa el enlace "Abrir en el simulador", para que el
+ * simulador reciba exactamente la cifra que se simula aquí.
+ */
+export function monthlyContribution(contribution: number, frequency: Frequency): number {
+  const periodsPerYear = PERIODS_PER_YEAR[frequency] ?? 12;
+  return (contribution * periodsPerYear) / 12;
+}
+
+/**
+ * Probabilidad de alcanzar y sostener el objetivo partiendo del patrimonio REAL de la cartera.
+ * Es `simulateFire` con el patrimonio actual sustituido por el valor de mercado, igual que
+ * `computePortfolioGoal` hace con `computeFire`: no hay un segundo modelo que pueda divergir.
+ *
+ * El simulador aporta el ahorro sumado al final de cada año, así que con volatilidad 0 coincide
+ * con `computePortfolioGoal` en frecuencia ANUAL; con aportación mensual la calculadora
+ * determinista capitaliza cada mes y puede adelantarse un año.
+ */
+export function simulatePortfolioGoal(
+  input: PortfolioGoalSimulationInput,
+  options?: MonteCarloOptions,
+): MonteCarloResult {
+  const current =
+    Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
+  return simulateFire(
+    {
+      annualExpenses: input.annualExpenses,
+      currentSavings: current,
+      monthlySavings: monthlyContribution(input.contribution, input.frequency),
+      annualReturn: input.annualReturn,
+      volatility: input.volatility,
+      withdrawalRate: input.withdrawalRate,
+      retirementYears: input.retirementYears,
+    },
+    options,
+  );
 }

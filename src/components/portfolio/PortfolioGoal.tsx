@@ -25,6 +25,7 @@ import Notice from "../ui/Notice";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
+import PortfolioGoalSimulation from "./PortfolioGoalSimulation";
 
 type Props = {
   /**
@@ -60,6 +61,10 @@ const GOAL_FIELD_SPECS: FieldSpecs = {
   frequency: { kind: "option", defaultValue: "monthly", allowed: FREQUENCIES },
   annualReturn: { kind: "number", defaultValue: 5 },
   withdrawalRate: { kind: "number", defaultValue: 4 },
+  // Mismas claves que el simulador Monte Carlo: la calculadora FIRE no las registra, así que
+  // allí se ignoran y `handleSave` las conserva al actualizar.
+  volatility: { kind: "number", defaultValue: 15 },
+  retirementYears: { kind: "number", defaultValue: 40 },
   goalCurrency: { kind: "option", defaultValue: "EUR", allowed: PORTFOLIO_CURRENCIES },
 };
 
@@ -120,6 +125,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   const [withdrawalRate, setWithdrawalRate] = useState(4);
   const [annualReturn, setAnnualReturn] = useState(5);
   const [frequency, setFrequency] = useState<Frequency>("monthly");
+  const [volatility, setVolatility] = useState(15);
+  const [retirementYears, setRetirementYears] = useState(40);
 
   /**
    * Cambia cada vez que los importes se aplican de golpe (cargar un escenario o convertir de
@@ -243,6 +250,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     if (typeof values.withdrawalRate === "number") setWithdrawalRate(values.withdrawalRate);
     if (typeof values.annualReturn === "number") setAnnualReturn(values.annualReturn);
     if (isFrequency(values.frequency)) setFrequency(values.frequency);
+    if (typeof values.volatility === "number") setVolatility(values.volatility);
+    if (typeof values.retirementYears === "number") setRetirementYears(values.retirementYears);
 
     setLoadedInputs(scenario.inputs);
     setName(scenario.name);
@@ -277,6 +286,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         frequency,
         annualReturn,
         withdrawalRate,
+        volatility,
+        retirementYears,
         goalCurrency: display,
       };
       const res = await fetch(
@@ -428,6 +439,21 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
       </div>
 
       <Notice variant="info">{t("assumptions")}</Notice>
+
+      {/* Misma `key` que los campos de arriba: cargar un escenario remonta también estos. */}
+      <PortfolioGoalSimulation
+        key={`sim-${version}`}
+        annualExpenses={shown.annualExpenses}
+        contribution={shown.contribution}
+        frequency={frequency}
+        withdrawalRate={withdrawalRate}
+        annualReturn={annualReturn}
+        currentValue={goal.current}
+        volatility={volatility}
+        onVolatilityChange={setVolatility}
+        retirementYears={retirementYears}
+        onRetirementYearsChange={setRetirementYears}
+      />
 
       {canSave && (
         <div className="flex flex-col gap-3 border-t border-border pt-4">

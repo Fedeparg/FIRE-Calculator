@@ -1129,7 +1129,25 @@
       "update": "Update",
       "saved": "Goal saved as “{name}”.",
       "updated": "Goal “{name}” updated.",
-      "loaded": "Goal “{name}” loaded."
+      "loaded": "Goal “{name}” loaded.",
+      "montecarlo": {
+        "title": "What if the market doesn't cooperate?",
+        "intro": "Simulates thousands of random return sequences starting from your portfolio's real value, and counts how often you reach the goal and your money then lasts.",
+        "volatility": "Annual volatility (%)",
+        "retirementYears": "Retirement years to cover",
+        "help": {
+          "volatility": "How much returns swing from one year to the next. A 100% global equity portfolio is around 15-18%; with bonds, less.",
+          "retirementYears": "How many years your portfolio has to fund your spending once you reach the goal."
+        },
+        "successRate": "Probability of success",
+        "medianYears": "Time to goal (median)",
+        "years": "{years, plural, one {# year} other {# years}}",
+        "now": "Already reached",
+        "never": "over 60 years",
+        "range": "In the middle 80% of simulations you get there in between {fast} and {slow}.",
+        "assumptions": "Uses the expected return above as the mean, in today's money, before tax. It is an estimate, not a forecast or investment advice.",
+        "openSimulator": "Open in the Monte Carlo simulator"
+      }
     },
     "export": {
       "button": "Download CSV",
