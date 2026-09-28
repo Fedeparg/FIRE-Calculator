@@ -1,6 +1,6 @@
 ---
 title: Privacy and cookie policy
-updatedAt: "2026-07-07"
+updatedAt: "2026-09-28"
 ---
 
 This policy explains what data we process when you visit **Sextante**
@@ -51,6 +51,19 @@ connection uses the **OAuth 2.1** standard:
 - You can view and **revoke** any application's access at any time from *My
   account → Connected applications*.
 - **Legal basis:** your **consent**, which you can withdraw at any time.
+
+### Email notices (optional)
+
+If you turn them on in *My account → Email notices*, we email you when your
+portfolio crosses 25, 50, 75 or 100% of the financial independence goal you have
+saved. To do so we use your email address, your saved goal and your portfolio's
+daily valuation, and we store whether they are on, the language you want them in
+and the last milestone notified (so it is not repeated). Emails are sent through
+our email delivery provider.
+
+- **Legal basis:** your **consent**: they are off until you turn them on.
+- You can **unsubscribe** at any time from the link in every email or from
+  *My account*; deleting your account also deletes these preferences.
 
 ## Cookies
 

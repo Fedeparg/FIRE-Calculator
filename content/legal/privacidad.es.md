@@ -1,6 +1,6 @@
 ---
 title: Política de privacidad y cookies
-updatedAt: "2026-07-07"
+updatedAt: "2026-09-28"
 ---
 
 Esta política explica qué datos tratamos cuando visitas **Sextante**
@@ -51,6 +51,19 @@ cartera en tu nombre. Esta conexión usa el estándar **OAuth 2.1**:
 - Puedes ver y **revocar** el acceso de cualquier aplicación en cualquier momento
   desde *Mi cuenta → Aplicaciones conectadas*.
 - **Base legal:** tu **consentimiento**, retirable en cualquier momento.
+
+### Avisos por email (opcional)
+
+Si los activas en *Mi cuenta → Avisos por email*, te escribimos cuando tu cartera
+cruza el 25, 50, 75 o 100 % del objetivo de independencia financiera que hayas
+guardado. Para ello usamos tu correo, tu objetivo guardado y la valoración diaria
+de tu cartera, y guardamos si los tienes activados, el idioma en que los quieres y
+el último hito avisado (para no repetirlo). El envío se hace a través de nuestro
+proveedor de correo electrónico.
+
+- **Base legal:** tu **consentimiento**: están desactivados hasta que los activas.
+- Puedes **darte de baja** en cualquier momento desde el enlace de cada correo o
+  desde *Mi cuenta*; al borrar la cuenta se eliminan también estas preferencias.
 
 ## Cookies
 
