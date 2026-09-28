@@ -4,6 +4,7 @@ import {
   buildOpenLots,
   estimateSavingsTax,
   simulateSale,
+  walkLots,
   type TradeLot,
 } from "./plusvalias";
 
@@ -313,5 +314,102 @@ describe("estimateSavingsTax", () => {
     const est = estimateSavingsTax(Number.POSITIVE_INFINITY);
     expect(Number.isNaN(est.tax)).toBe(true);
     expect(est.effectiveRate).toBeNull();
+  });
+});
+
+describe("walkLots", () => {
+  it("sin ventas no hay ganancias realizadas", () => {
+    const { sales, open } = walkLots([lot({ id: "a", quantity: 10 })]);
+    expect(sales).toEqual([]);
+    expect(open).toHaveLength(1);
+  });
+
+  it("realiza la ganancia de una venta parcial por FIFO, con comisiones de compra y venta", () => {
+    const { sales, open } = walkLots([
+      lot({ id: "a", quantity: 10, price: 50, fees: 10, tradedAt: "2024-01-10" }),
+      lot({ id: "b", quantity: 10, price: 80, tradedAt: "2024-02-10" }),
+      lot({ id: "s", kind: "sell", quantity: 4, price: 100, fees: 4, tradedAt: "2024-06-01" }),
+    ]);
+
+    expect(sales).toHaveLength(1);
+    const [sale] = sales;
+    expect(sale.lotId).toBe("s");
+    expect(sale.tradedAt).toBe("2024-06-01");
+    expect(sale.quantity).toBe(4);
+    // Transmisión 400 − 4; adquisición 4 × (50 + 1 de comisión prorrateada).
+    expect(sale.transferValue).toBe(396);
+    expect(sale.acquisitionValue).toBeCloseTo(204, 10);
+    expect(sale.gain).toBeCloseTo(192, 10);
+    expect(open.map((o) => [o.lotId, o.quantity])).toEqual([
+      ["a", 6],
+      ["b", 10],
+    ]);
+  });
+
+  it("una venta que cruza lotes desglosa cada uno y cuadra con el total", () => {
+    const { sales } = walkLots([
+      lot({ id: "a", quantity: 3, price: 10, tradedAt: "2024-01-01" }),
+      lot({ id: "b", quantity: 3, price: 20, tradedAt: "2024-01-02" }),
+      lot({ id: "s", kind: "sell", quantity: 5, price: 15, tradedAt: "2024-03-01" }),
+    ]);
+
+    const [sale] = sales;
+    expect(sale.matched.map((m) => [m.lotId, m.quantity])).toEqual([
+      ["a", 3],
+      ["b", 2],
+    ]);
+    const sum = sale.matched.reduce((acc, m) => acc + m.gain, 0);
+    expect(sum).toBeCloseTo(sale.gain, 10);
+    expect(sale.gain).toBeCloseTo(75 - 30 - 40, 10);
+  });
+
+  it("encadena varias ventas: la segunda empareja lo que dejó la primera", () => {
+    const { sales } = walkLots([
+      lot({ id: "a", quantity: 5, price: 10, tradedAt: "2023-01-01" }),
+      lot({ id: "b", quantity: 5, price: 30, tradedAt: "2023-06-01" }),
+      lot({ id: "s1", kind: "sell", quantity: 5, price: 20, tradedAt: "2023-12-01" }),
+      lot({ id: "s2", kind: "sell", quantity: 5, price: 20, tradedAt: "2024-02-01" }),
+    ]);
+
+    expect(sales.map((s) => [s.lotId, s.gain])).toEqual([
+      ["s1", 50],
+      ["s2", -50],
+    ]);
+  });
+
+  it("en el mismo día desempata por fecha de alta, como el backend", () => {
+    const { sales } = walkLots([
+      lot({ id: "s", kind: "sell", quantity: 1, price: 150, tradedAt: "2024-05-05", createdAt: "2024-05-05T10:00:00Z" }),
+      lot({ id: "a", quantity: 1, price: 100, tradedAt: "2024-05-05", createdAt: "2024-05-05T09:00:00Z" }),
+    ]);
+
+    expect(sales).toHaveLength(1);
+    expect(sales[0].gain).toBe(50);
+  });
+
+  it("una venta que excede lo disponible solo empareja lo que hay", () => {
+    const { sales, open } = walkLots([
+      lot({ id: "a", quantity: 2, price: 10 }),
+      lot({ id: "s", kind: "sell", quantity: 5, price: 20, tradedAt: "2024-02-01" }),
+    ]);
+
+    expect(sales[0].quantity).toBe(2);
+    expect(sales[0].gain).toBe(20);
+    expect(open).toEqual([]);
+  });
+
+  it("coincide con simular la misma venta sobre el histórico anterior", () => {
+    const history = [
+      lot({ id: "a", quantity: 7, price: 12, fees: 3, tradedAt: "2024-01-01" }),
+      lot({ id: "b", quantity: 4, price: 18, fees: 1, tradedAt: "2024-02-01" }),
+    ];
+    const simulated = simulateSale({ lots: history, quantity: 9, price: 25, fees: 2 });
+    const { sales } = walkLots([
+      ...history,
+      lot({ id: "s", kind: "sell", quantity: 9, price: 25, fees: 2, tradedAt: "2024-03-01" }),
+    ]);
+
+    expect(sales[0].gain).toBe(simulated?.gain);
+    expect(sales[0].matched).toEqual(simulated?.matched);
   });
 });
