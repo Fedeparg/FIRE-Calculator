@@ -6,6 +6,11 @@
 //
 // ⚠️ ALCANCE FISCAL. Sí modela:
 //   - FIFO, valores de adquisición y transmisión con comisiones (ver `plusvalias.ts`).
+//   - **FIFO por VALOR, no por posición**: el criterio de los valores homogéneos se aplica a
+//     todas las participaciones del contribuyente, estén en el bróker que estén. Si el mismo
+//     símbolo está en dos posiciones (dos brókers), una venta en cualquiera de ellas empareja
+//     primero la compra más antigua de las dos. Cada venta se sigue atribuyendo a la posición
+//     donde se registró.
 //   - **Integración y compensación dentro del ejercicio** (art. 49.1.b LIRPF): las ganancias y
 //     pérdidas por transmisión del mismo año se suman entre sí, y la cuota se estima sobre el
 //     saldo si es positivo.
@@ -90,20 +95,39 @@ function fiscalYear(tradedAt: string): number {
 }
 
 /**
+ * Clave de "valor homogéneo": mismo símbolo (sin distinguir mayúsculas) y misma divisa. La
+ * divisa entra en la clave porque los importes de dos divisas no se pueden emparejar entre sí.
+ */
+function securityKey(position: RealisedGainsPosition): string {
+  return `${position.ticker.trim().toUpperCase()}\u0000${position.currency}`;
+}
+
+/**
  * Construye el informe a partir de las posiciones y su histórico. Las posiciones sin ventas no
  * aparecen; una posición ya vendida del todo sí, porque sus ventas cuentan.
  */
 export function buildRealisedGainsReport(
   positions: readonly RealisedGainsPosition[],
 ): RealisedGainsReport {
+  const bySecurity = new Map<string, RealisedGainsPosition[]>();
+  for (const position of positions) {
+    const key = securityKey(position);
+    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+  }
+
   const byYear = new Map<number, RealisedGainsSale[]>();
 
-  for (const position of positions) {
-    for (const sale of walkLots(position.lots).sales) {
+  for (const group of bySecurity.values()) {
+    // Todas las operaciones del valor juntas: el FIFO se hace sobre el conjunto.
+    const owner = new Map<string, RealisedGainsPosition>();
+    for (const position of group) for (const lot of position.lots) owner.set(lot.id, position);
+
+    for (const sale of walkLots(group.flatMap((p) => p.lots)).sales) {
       // Una venta que no emparejó nada (histórico incoherente) no realiza ninguna ganancia.
       if (sale.quantity <= 0) continue;
       const year = fiscalYear(sale.tradedAt);
-      if (!Number.isInteger(year)) continue;
+      const position = owner.get(sale.lotId);
+      if (!Number.isInteger(year) || !position) continue;
       const list = byYear.get(year) ?? [];
       list.push({
         ...sale,

@@ -117,4 +117,30 @@ describe("buildRealisedGainsReport", () => {
     ]);
     expect(report.years.map((y) => y.year)).toEqual([2024, 2023]);
   });
+
+  it("aplica el FIFO al valor entero, aunque esté repartido en dos brókers", () => {
+    // Compra en un bróker en 2020 a 50 y en otro en 2023 a 90; se vende en el segundo. Para
+    // Hacienda sale primero la compra de 2020, esté donde esté.
+    const report = buildRealisedGainsReport([
+      position({ id: "degiro", ticker: "IWDA", lots: [buy("1", 10, 50, "2020-01-01")] }),
+      position({
+        id: "myinvestor",
+        ticker: "iwda",
+        lots: [buy("2", 10, 90, "2023-01-01"), sell("3", 5, 100, "2024-06-01")],
+      }),
+    ]);
+
+    const [year] = report.years;
+    expect(year.groups[0].net).toBe(250);
+    // La venta se atribuye a la posición donde se registró.
+    expect(year.groups[0].rows.map((r) => r.positionId)).toEqual(["myinvestor"]);
+  });
+
+  it("no empareja el mismo símbolo en divisas distintas", () => {
+    const report = buildRealisedGainsReport([
+      position({ id: "eur", ticker: "X", lots: [buy("1", 1, 10, "2020-01-01")] }),
+      position({ id: "usd", ticker: "X", currency: "USD", lots: [buy("2", 1, 50, "2021-01-01"), sell("3", 1, 60, "2024-01-01")] }),
+    ]);
+    expect(report.years[0].groups.map((g) => [g.currency, g.net])).toEqual([["USD", 10]]);
+  });
 });
