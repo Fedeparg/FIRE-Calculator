@@ -9,6 +9,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, users, type User } from '../db/schema.js';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
 import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
+import { NotificationSettingsService } from '../notifications/notification-settings.service.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 import {
   PortfolioSnapshotsService,
@@ -60,6 +61,12 @@ export type AccountExport = {
   portfolioHistory: PortfolioHistoryPoint[];
   savedScenarios: SavedScenarioResponse[];
   connectedApps: ConnectedAppExport[];
+  /** Preferencias de avisos por email (opt-in). */
+  notificationSettings: {
+    fireAlertsEnabled: boolean;
+    locale: string;
+    lastFireMilestone: number | null;
+  };
 };
 
 @Injectable()
@@ -77,6 +84,7 @@ export class AuthService {
     private readonly scenarios: SavedScenariosService,
     private readonly grants: OAuthGrantsService,
     private readonly clients: OAuthClientsStore,
+    private readonly notifications: NotificationSettingsService,
   ) {}
 
   /**
@@ -143,6 +151,7 @@ export class AuthService {
     // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
     const history = await this.snapshots.history(user.id, HISTORY_MAX_DAYS);
     const savedScenarios = await this.scenarios.findAllByUser(user.id);
+    const { fireAlertsEnabled, locale, lastFireMilestone } = await this.notifications.get(user.id);
     const grants = await this.grants.listForUser(user.id);
     const connectedApps: ConnectedAppExport[] = await Promise.all(
       grants.map(async (g) => {
@@ -164,13 +173,14 @@ export class AuthService {
       portfolioHistory: history.points,
       savedScenarios,
       connectedApps,
+      notificationSettings: { fireAlertsEnabled, locale, lastFireMilestone },
     };
   }
 
   /**
    * Borra la cuenta del usuario (RGPD: derecho de supresión). Elimina la fila de `users`; el
-   * resto (`positions`, `position_lots`, `portfolio_snapshots`, `saved_scenarios`, tokens y
-   * grants OAuth) cae por `ON DELETE CASCADE`. El `userId` viene del JWT.
+   * resto (`positions`, `position_lots`, `portfolio_snapshots`, `saved_scenarios`,
+   * `user_notification_settings`, tokens y grants OAuth) cae por `ON DELETE CASCADE`. El `userId` viene del JWT.
    */
   async deleteAccount(userId: string): Promise<void> {
     await this.db.delete(users).where(eq(users.id, userId));

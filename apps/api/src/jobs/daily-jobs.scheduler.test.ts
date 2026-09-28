@@ -3,6 +3,7 @@ import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import type { PricesService, RefreshSummary } from '../prices/prices.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
@@ -30,14 +31,18 @@ function setup(env: Record<string, string> = {}) {
     captureAll: vi.fn(() => Promise.resolve()),
     backfillAll: vi.fn(() => Promise.resolve()),
   };
+  const fireAlerts = {
+    evaluateAll: vi.fn(() => Promise.resolve({ users: 0, sent: 0, failed: 0 })),
+  };
   const scheduler = new DailyJobsScheduler(
     prices as unknown as PricesService,
     snapshots as unknown as PortfolioSnapshotsService,
+    fireAlerts as unknown as FireAlertsService,
     config,
     registry,
   );
   created.push(jobs);
-  return { scheduler, jobs, prices, snapshots };
+  return { scheduler, jobs, prices, snapshots, fireAlerts };
 }
 
 const created: Map<string, CronJob>[] = [];
@@ -70,22 +75,23 @@ describe('DailyJobsScheduler', () => {
     expect(jobs.get('intraday-price-refresh')?.cronTime.source).toBe(DEFAULT_INTRADAY_CRON);
   });
 
-  it('el intradía solo refresca precios: no captura ni rellena snapshots', async () => {
-    const { scheduler, prices, snapshots } = setup();
+  it('el intradía solo refresca precios: ni snapshots ni alertas', async () => {
+    const { scheduler, prices, snapshots, fireAlerts } = setup();
 
     await scheduler.runIntraday();
 
     expect(prices.refreshAll).toHaveBeenCalledTimes(1);
     expect(snapshots.captureAll).not.toHaveBeenCalled();
     expect(snapshots.backfillAll).not.toHaveBeenCalled();
+    expect(fireAlerts.evaluateAll).not.toHaveBeenCalled();
   });
 
-  it('el nocturno refresca, captura y rellena, en ese orden', async () => {
-    const { scheduler, prices, snapshots } = setup();
+  it('el nocturno refresca, captura, rellena y evalúa las alertas, en ese orden', async () => {
+    const { scheduler, prices, snapshots, fireAlerts } = setup();
 
     await scheduler.run();
 
-    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll].map(
+    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll, fireAlerts.evaluateAll].map(
       (fn) => fn.mock.invocationCallOrder[0],
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
 import { PortfolioModule } from '../portfolio/portfolio.module.js';
 import { PositionsModule } from '../positions/positions.module.js';
@@ -21,6 +22,8 @@ import { SESSION_TTL_SECONDS } from './session.constants.js';
     PortfolioModule,
     ScenariosModule,
     OauthModule,
+    // Preferencias de avisos por email, también datos personales.
+    NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
