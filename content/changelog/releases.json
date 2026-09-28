@@ -4,15 +4,70 @@
     {
       "date": "2026-09-28",
       "title": {
-        "es": "Plusvalías realizadas, precios cada hora y Monte Carlo con historia real",
-        "en": "Realised gains, hourly prices and Monte Carlo with real history"
+        "es": "Plusvalías realizadas, precios cada hora, avisos de hitos y Monte Carlo con historia real",
+        "en": "Realised gains, hourly prices, milestone notices and Monte Carlo with real history"
       },
       "summary": {
-        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. Los precios de la cartera se actualizan cada hora en días laborables. El objetivo de independencia financiera te dice con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
-        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. Portfolio prices now refresh every hour on weekdays. The financial independence goal tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
+        "es": "Nuevo informe de ganancias y pérdidas realizadas: tus ventas emparejadas por FIFO, compensadas por ejercicio, con la cuota estimada y un CSV para la declaración. Los precios de la cartera se actualizan cada hora en días laborables, y puedes pedir un email cuando tu cartera cruce el 25, 50, 75 y 100 % de tu objetivo. El objetivo de independencia financiera te dice con qué probabilidad lo alcanzas, y el simulador Monte Carlo puede usar más de 150 años reales de bolsa y bonos de EE. UU.",
+        "en": "New realised gains and losses report: your sales matched FIFO, netted by tax year, with an estimated tax bill and a CSV for your return. Portfolio prices refresh every hour on weekdays, and you can ask for an email when your portfolio crosses 25, 50, 75 and 100% of your goal. The financial independence goal tells you how likely you are to reach it, and the Monte Carlo simulator can use over 150 real years of US stocks and bonds."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "5e0a5ccc",
+          "type": "docs",
+          "scope": "legal",
+          "category": "internal",
+          "text": {
+            "es": "la política de privacidad explica los nuevos avisos por email",
+            "en": "the privacy policy explains the new email notices"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "b13ce087",
+          "type": "feat",
+          "scope": "account",
+          "category": "feature",
+          "text": {
+            "es": "avisos opcionales por email cuando tu cartera cruza el 25, 50, 75 y 100 % de tu objetivo FIRE, con baja en un clic",
+            "en": "optional email notices when your portfolio crosses 25, 50, 75 and 100% of your FIRE goal, with one-click unsubscribe"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "2299cb3e",
+          "type": "feat",
+          "scope": "notifications",
+          "category": "feature",
+          "text": {
+            "es": "evaluate FIRE milestones nightly and export settings in GDPR data",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "9b1a372b",
+          "type": "feat",
+          "scope": "notifications",
+          "category": "feature",
+          "text": {
+            "es": "FIRE milestone emails, settings and one-click unsubscribe",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "1d1bd3a6",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "hide internal test fix",
+            "en": ""
+          },
+          "hidden": true
+        },
         {
           "hash": "e68eb3cb",
           "type": "test",
@@ -20,6 +75,28 @@
           "category": "internal",
           "text": {
             "es": "satisfy require-await in scheduler stubs",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "4c161f80",
+          "type": "feat",
+          "scope": "notifications",
+          "category": "feature",
+          "text": {
+            "es": "milestone and unsubscribe-token logic",
+            "en": ""
+          },
+          "hidden": true
+        },
+        {
+          "hash": "cb6e224b",
+          "type": "feat",
+          "scope": "db",
+          "category": "feature",
+          "text": {
+            "es": "add user notification settings",
             "en": ""
           },
           "hidden": true
