@@ -2,7 +2,12 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -304,6 +309,76 @@ describe('PositionLotsService (integración con Postgres)', () => {
       await service.update(userId, position.id, { broker: 'Degiro' });
 
       expect(await lots.listByPosition(userId, position.id)).toEqual(before);
+    });
+  });
+
+  describe('protección del histórico con ventas', () => {
+    async function positionWithSale(userId: string) {
+      const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+      await lots.create(userId, position.id, {
+        kind: 'sell',
+        quantity: 4,
+        price: 150,
+        tradedAt: '2026-06-01',
+      });
+      return position;
+    }
+
+    it('rechaza declarar otra cantidad o precio medio (409 HAS_SALES) y no toca nada', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const position = await positionWithSale(userId);
+      const before = await lots.listByPosition(userId, position.id);
+
+      const attempt = service.update(userId, position.id, { quantity: 3, avgPrice: 90 });
+
+      await expect(attempt).rejects.toBeInstanceOf(ConflictException);
+      await expect(attempt).rejects.toMatchObject({ response: { code: 'HAS_SALES' } });
+      expect(await lots.listByPosition(userId, position.id)).toEqual(before);
+      const [row] = await db.select().from(positions).where(eq(positions.id, position.id));
+      expect(row.quantity).toBe('6.000000');
+    });
+
+    it('reenviar los MISMOS importes (formulario de edición) no falla ni toca los lotes', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const position = await positionWithSale(userId);
+      const before = await lots.listByPosition(userId, position.id);
+
+      const updated = await service.update(userId, position.id, {
+        quantity: 6,
+        avgPrice: 100,
+        broker: 'Degiro',
+        name: 'iShares World',
+      });
+
+      expect(updated).toMatchObject({ quantity: 6, avgPrice: 100, broker: 'Degiro', name: 'iShares World' });
+      expect(await lots.listByPosition(userId, position.id)).toEqual(before);
+    });
+
+    it('sin ventas se sigue pudiendo colapsar', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+      await lots.create(userId, position.id, { kind: 'buy', quantity: 1, price: 1, tradedAt: '2026-02-01' });
+
+      await expect(service.update(userId, position.id, { quantity: 2, avgPrice: 5 })).resolves.toMatchObject({
+        quantity: 2,
+      });
+    });
+  });
+
+  describe('listado de todas las operaciones del usuario', () => {
+    it('devuelve los lotes de todas sus posiciones en orden cronológico, y solo los suyos', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const otherId = await insertUser(db, 'b@example.com');
+      const a = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+      const b = await createBackdated(userId, { ticker: 'VWCE', quantity: 5, avgPrice: 90 });
+      await lots.create(userId, a.id, { kind: 'sell', quantity: 2, price: 120, tradedAt: '2026-03-01' });
+      await createBackdated(otherId, { ticker: 'IWDA', quantity: 1, avgPrice: 1 });
+
+      const all = await lots.findAllByUser(userId);
+
+      expect(all).toHaveLength(3);
+      expect(new Set(all.map((l) => l.positionId))).toEqual(new Set([a.id, b.id]));
+      expect(all.map((l) => l.tradedAt)).toEqual([START_DATE, START_DATE, '2026-03-01']);
     });
   });
 

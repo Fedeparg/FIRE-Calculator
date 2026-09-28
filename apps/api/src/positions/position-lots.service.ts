@@ -1,4 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, asc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -7,7 +13,9 @@ import { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
 import { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
 import {
   aggregateLots,
+  AMOUNT_SCALE,
   LotAggregateError,
+  parseDecimal,
   type AggregatableLot,
   type LotAggregate,
 } from './lot-aggregate.js';
@@ -189,12 +197,28 @@ export class PositionLotsService {
    *     del lote MÁS ANTIGUO (para no perder el inicio de la serie). Es destructivo a
    *     propósito: la alternativa —dejar lotes y posición descuadrados— rompería el siguiente
    *     recálculo. Para conservar el histórico hay que usar los endpoints de lotes.
+   *   - Si hay alguna VENTA, colapsar borraría ganancias ya realizadas (el informe anual de
+   *     plusvalías sale de ellas), así que se rechaza con 409 `HAS_SALES`. Salvo que los
+   *     importes declarados sean los que ya tiene la posición: el formulario de edición los
+   *     envía siempre, y cambiar solo el nombre o el bróker no debe fallar.
    */
   async declareState(
     tx: DatabaseOrTransaction,
     input: { positionId: string; userId: string; quantity: string; price: string },
   ): Promise<void> {
     const existing = await this.selectLots(tx, input.positionId);
+
+    if (existing.some((lot) => lot.kind === 'sell')) {
+      const current = this.aggregate(existing);
+      if (sameAmount(current.quantity, input.quantity) && sameAmount(current.avgPrice, input.price)) {
+        return;
+      }
+      throw new ConflictException({
+        code: 'HAS_SALES',
+        message:
+          'Esta posición tiene ventas registradas: cambia la cantidad o el precio medio desde sus operaciones para no perder el histórico',
+      });
+    }
 
     if (existing.length === 1) {
       await tx
@@ -278,6 +302,20 @@ export class PositionLotsService {
       throw new NotFoundException('Lote no encontrado');
     }
     return row;
+  }
+}
+
+/**
+ * ¿Dos importes son el mismo a la escala de la columna? Se compara en coma fija, nunca con
+ * `Number()`. Un valor que no se deja leer como decimal plano (p. ej. notación exponencial de
+ * un número diminuto) cuenta como distinto: ante la duda, se trata como un cambio real.
+ */
+function sameAmount(a: string, b: string): boolean {
+  try {
+    return parseDecimal(a, AMOUNT_SCALE) === parseDecimal(b, AMOUNT_SCALE);
+  } catch (error) {
+    if (error instanceof LotAggregateError) return false;
+    throw error;
   }
 }
 

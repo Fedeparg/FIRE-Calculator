@@ -1202,7 +1202,8 @@
       "cancel": "Cancelar",
       "deleting": "Eliminando…",
       "noFxRate": "Aún no hay tipo de cambio {price}→{position} para convertir el valor.",
-      "lots": "Lotes"
+      "lots": "Lotes",
+      "confirmDeleteWithSales": "Tiene ventas registradas: al borrarla desaparecerán también de tu informe de plusvalías."
     },
     "form": {
       "title": "Añadir posición",
@@ -1245,7 +1246,8 @@
           "currency": "Divisa",
           "other": "Otro"
         }
-      }
+      },
+      "errorHasSales": "Esta posición tiene ventas registradas. Para cambiar la cantidad o el precio medio, edita sus operaciones: así no se pierde el histórico de ventas."
     },
     "history": {
       "title": "Evolución de la cartera",
@@ -1360,6 +1362,48 @@
       "remaining": "Tras la venta quedarían {quantity} participaciones a un precio medio de {avgPrice}.",
       "disclaimer": "Cálculo orientativo, no es asesoramiento fiscal. Mira la venta de forma aislada: no aplica la regla de los dos meses (si recompras el mismo valor, la pérdida no se computa), no compensa con otras ganancias ni pérdidas del ejercicio ni con saldos negativos de años anteriores, y no suma el resto de tu base del ahorro, que puede llevar la ganancia a un tramo superior.",
       "disclaimerFx": "Además, tu posición está en {currency}: la ganancia se convierte a euros con el tipo de cambio de hoy, no con el que hubiera el día de una venta real."
+    },
+    "realisedGains": {
+      "link": "Plusvalías",
+      "back": "← Volver a la cartera",
+      "title": "Ganancias y pérdidas realizadas",
+      "subtitle": "Las ventas que has registrado, emparejadas con sus compras por FIFO y agrupadas por ejercicio, para preparar la declaración de la renta.",
+      "empty": "Aún no has registrado ninguna venta. Cuando anotes una en las operaciones de una posición, aparecerá aquí con su ganancia o pérdida.",
+      "yearLabel": "Ejercicio",
+      "download": "Descargar CSV de {year}",
+      "downloadError": "No se pudo generar el fichero. Inténtalo de nuevo.",
+      "groupTitle": "Ventas en {currency}",
+      "gains": "Ganancias",
+      "losses": "Pérdidas",
+      "net": "Saldo del ejercicio",
+      "tableCaption": "Ventas por posición, importes en {currency}. Valor de transmisión = precio de venta − comisiones; valor de adquisición = coste de los lotes vendidos + sus comisiones.",
+      "position": "Posición",
+      "sales": "Ventas",
+      "quantity": "Participaciones",
+      "transferValue": "Valor de transmisión",
+      "acquisitionValue": "Valor de adquisición",
+      "gain": "Ganancia/pérdida",
+      "taxTitle": "Cuota estimada del ejercicio {year} (ventas en euros)",
+      "taxBase": "Saldo positivo sujeto",
+      "tax": "Cuota estimada",
+      "marginal": "Tipo marginal",
+      "taxScale": "Estimación con la escala del ahorro de {scaleYear}. Si el ejercicio es anterior, la escala pudo ser distinta.",
+      "noEurSales": "Este ejercicio no tiene ventas en euros, así que no se estima la cuota.",
+      "foreignCurrency": "Las ventas en {currencies} se muestran en su divisa. Para la declaración hay que convertir cada compra y cada venta a euros con el tipo de cambio oficial de su fecha, y Sextante no guarda ese histórico: no las sumes a las de euros tal cual.",
+      "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio y aplica el FIFO a cada valor entero, aunque lo tengas en varios brókers. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
+      "csv": {
+        "date": "Fecha de venta",
+        "ticker": "Símbolo",
+        "name": "Nombre",
+        "currency": "Divisa",
+        "quantity": "Participaciones",
+        "price": "Precio de venta",
+        "fees": "Comisiones de venta",
+        "transferValue": "Valor de transmisión",
+        "acquisitionValue": "Valor de adquisición",
+        "gain": "Ganancia/pérdida"
+      },
+      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas."
     }
   },
   "account": {
