@@ -54,16 +54,8 @@ type Props = {
   valueKey: string;
   contributedKey?: string;
   interestKey?: string;
-  labels: {
-    axisX: string;
-    /** Etiqueta del total del tooltip. Innecesaria con `showTotal: false`. */
-    total?: string;
-    /** Etiquetas del resumen de selección. Innecesarias con `selectable: false`. */
-    selectionTitle?: string;
-    growth?: string;
-    contributed?: string;
-    interest?: string;
-  };
+  /** Nombre del eje X (cabecera de la tabla accesible y prefijo del tooltip). Por defecto, "Año". */
+  xLabel?: string;
   height?: number;
   /**
    * Divisa de los importes. Si se omite, se formatea en euros exactamente como siempre
@@ -144,7 +136,7 @@ export default function TimeSeriesChart({
   valueKey,
   contributedKey,
   interestKey,
-  labels,
+  xLabel,
   height = 300,
   currency,
   xFormat,
@@ -169,10 +161,10 @@ export default function TimeSeriesChart({
   const formatAxisValue = (n: number) =>
     (currency ? formatCompactCurrency(n, currency) : formatCompactEUR(n)).replace(/ /g, "\u00a0");
   const formatX = xFormat ?? ((value: string | number) => formatNumber(Number(value)));
-  // Las cadenas de accesibilidad son genéricas de cualquier gráfica, así que se
-  // leen del namespace compartido `chart` en lugar de propagarlas por `labels`
-  // desde cada una de las calculadoras que la usan.
+  // Las etiquetas (total, selección, accesibilidad) son genéricas de cualquier gráfica, así
+  // que se leen del namespace compartido `chart` en lugar de repetirlas en cada calculadora.
   const tc = useTranslations("chart");
+  const axisX = xLabel ?? tc("axisYear");
   const [selection, setSelection] = useState<Selection>(null);
 
   // Recharts calcula el dominio de un `Area` apilado forzando el mínimo a 0 (el baseline del
@@ -226,7 +218,7 @@ export default function TimeSeriesChart({
   })();
 
   const tableColumns: ChartTableColumn<DataRow>[] = [
-    { label: labels.axisX, value: (row) => formatX(row[xKey] as string | number) },
+    { label: axisX, value: (row) => formatX(row[xKey] as string | number) },
     ...[...stack, ...lines].map((series) => ({
       label: series.name,
       value: (row: DataRow) => formatValue(Number(row[series.key])),
@@ -253,14 +245,14 @@ export default function TimeSeriesChart({
         {summary && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
             <span className="text-muted">
-              {labels.selectionTitle} ({summary.from}–{summary.to})
+              {tc("selectionTitle")} ({summary.from}–{summary.to})
             </span>
             <span className="font-semibold text-foreground">
-              {labels.growth}: {formatValue(summary.growth)}
+              {tc("growth")}: {formatValue(summary.growth)}
             </span>
             {summary.interest !== null && (
               <span className="font-medium" style={{ color: "var(--accent)" }}>
-                {labels.interest}: {formatValue(summary.interest)}
+                {tc("interest")}: {formatValue(summary.interest)}
               </span>
             )}
           </div>
@@ -324,9 +316,9 @@ export default function TimeSeriesChart({
             <Tooltip
               content={
                 <ChartTooltip
-                  labelPrefix={labels.axisX}
+                  labelPrefix={axisX}
                   totalKeys={showTotal ? totalKeys : []}
-                  totalLabel={showTotal ? labels.total : undefined}
+                  totalLabel={showTotal ? tc("total") : undefined}
                   currency={currency}
                   labelFormat={xFormat}
                 />

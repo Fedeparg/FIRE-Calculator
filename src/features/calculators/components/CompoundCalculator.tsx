@@ -127,14 +127,6 @@ export default function CompoundCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

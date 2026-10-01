@@ -14,7 +14,6 @@ import { useNumberField } from "./CalculatorState";
 export default function DividendsCalculator() {
   const t = useTranslations("calc.dividendos");
   const { formatEUR, formatPercent } = useFormat();
-  const tc = useTranslations("chart");
 
   const [shares, setShares] = useNumberField("shares", 100);
   const [dividendPerShare, setDividendPerShare] = useNumberField("dividendPerShare", 1.5);
@@ -86,14 +85,6 @@ export default function DividendsCalculator() {
               xKey="year"
               stack={[{ key: "cumulativeNet", name: t("seriesCumulativeNet"), color: "var(--accent)" }]}
               valueKey="cumulativeNet"
-              labels={{
-                axisX: tc("axisYear"),
-                total: tc("total"),
-                selectionTitle: tc("selectionTitle"),
-                growth: tc("growth"),
-                contributed: tc("contributed"),
-                interest: tc("interest"),
-              }}
             />
           )}
         </>

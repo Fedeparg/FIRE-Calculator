@@ -15,7 +15,6 @@ import { useNumberField } from "./CalculatorState";
 export default function RetirementCalculator() {
   const t = useTranslations("calc.ahorro-jubilacion");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
-  const tc = useTranslations("chart");
 
   const [currentAge, setCurrentAge] = useNumberField("currentAge", 30);
   const [retirementAge, setRetirementAge] = useNumberField("retirementAge", 67);
@@ -146,14 +145,6 @@ export default function RetirementCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

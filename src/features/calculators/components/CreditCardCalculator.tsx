@@ -14,7 +14,6 @@ import { useNumberField, useOptionField } from "./CalculatorState";
 export default function CreditCardCalculator() {
   const t = useTranslations("calc.intereses-tarjeta-credito");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
-  const tc = useTranslations("chart");
 
   const [balance, setBalance] = useNumberField("balance", 2000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 22);
@@ -115,14 +114,7 @@ export default function CreditCardCalculator() {
                 { key: "interestPaid", name: t("seriesInterest"), color: "var(--accent)" },
               ]}
               valueKey="balance"
-              labels={{
-                axisX: t("axisMonth"),
-                total: tc("total"),
-                selectionTitle: tc("selectionTitle"),
-                growth: tc("growth"),
-                contributed: tc("contributed"),
-                interest: tc("interest"),
-              }}
+              xLabel={t("axisMonth")}
             />
           )}
         </>

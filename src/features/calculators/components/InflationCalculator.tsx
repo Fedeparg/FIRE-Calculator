@@ -13,7 +13,6 @@ import { useNumberField } from "./CalculatorState";
 export default function InflationCalculator() {
   const t = useTranslations("calc.inflacion");
   const { formatEUR, formatPercent } = useFormat();
-  const tc = useTranslations("chart");
 
   const [amount, setAmount] = useNumberField("amount", 10000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
@@ -73,14 +72,6 @@ export default function InflationCalculator() {
               { key: "realValue", name: t("seriesReal"), color: "var(--brand)" },
             ]}
             valueKey="realValue"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
         </>
       }

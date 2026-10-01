@@ -15,7 +15,6 @@ import { useNumberField } from "./CalculatorState";
 export default function StakingCalculator() {
   const t = useTranslations("calc.staking");
   const { formatEUR } = useFormat();
-  const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useNumberField("principal", 5000);
   const [apy, setApy] = useNumberField("apy", 8);
@@ -72,14 +71,6 @@ export default function StakingCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

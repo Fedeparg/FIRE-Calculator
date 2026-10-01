@@ -159,7 +159,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
             // coste como línea de referencia punteada, que es justo lo que es.
             stack={[{ key: "marketValue", name: t("marketValue"), color: "var(--brand)" }]}
             lines={[{ key: "invested", name: t("invested"), color: "var(--accent)" }]}
-            labels={{ axisX: t("date") }}
+            xLabel={t("date")}
             currency={display}
             xFormat={(value) => formatIsoDate(String(value))}
             // El eje X es una fecha, no una magnitud continua: seleccionar un tramo por

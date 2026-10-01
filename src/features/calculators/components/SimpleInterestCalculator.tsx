@@ -15,7 +15,6 @@ import { useNumberField } from "./CalculatorState";
 export default function SimpleInterestCalculator() {
   const t = useTranslations("calc.interes-simple");
   const { formatEUR } = useFormat();
-  const tc = useTranslations("chart");
 
   const [principal, setPrincipal] = useNumberField("principal", 10000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 4);
@@ -80,14 +79,6 @@ export default function SimpleInterestCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

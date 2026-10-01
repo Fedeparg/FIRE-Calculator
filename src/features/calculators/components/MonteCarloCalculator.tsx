@@ -29,7 +29,6 @@ const LAST_YEAR = HISTORICAL_RETURNS[HISTORICAL_RETURNS.length - 1].year;
 
 export default function MonteCarloCalculator() {
   const t = useTranslations("calc.simulador-montecarlo");
-  const tc = useTranslations("chart");
   const { formatCurrency, formatPercent } = useFormat();
 
   // Mismas claves que la calculadora FIRE donde el dato es el mismo.
@@ -208,7 +207,6 @@ export default function MonteCarloCalculator() {
             valueKey="p50"
             selectable={false}
             showTotal={false}
-            labels={{ axisX: tc("axisYear") }}
           />
 
           <div className="overflow-x-auto rounded-lg border border-border">
