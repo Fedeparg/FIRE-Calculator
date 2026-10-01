@@ -92,6 +92,8 @@ export class ImportsService {
         duplicates: group.duplicates,
         currentQuantity: current ? Number(current.quantity) : 0,
         resultingQuantity: simulation.ok ? Number(simulation.quantity) : null,
+        resultingAvgPrice:
+          simulation.ok && Number(simulation.quantity) > 0 ? Number(simulation.avgPrice) : null,
         blockedBy: simulation.ok ? null : simulation.failure,
         isDerivative: group.assetClass === 'derivative',
       });
@@ -375,7 +377,7 @@ function toLotInput(trade: ImportedTrade) {
 function simulate(
   currentLots: readonly PositionLot[],
   fresh: readonly ImportedTrade[],
-): { ok: true; quantity: string } | { ok: false; failure: ImportFailureCode } {
+): { ok: true; quantity: string; avgPrice: string } | { ok: false; failure: ImportFailureCode } {
   const base = Date.now();
   try {
     const aggregate = aggregateLots([
@@ -389,7 +391,7 @@ function simulate(
         createdAt: new Date(base + i),
       })),
     ]);
-    return { ok: true, quantity: aggregate.quantity };
+    return { ok: true, quantity: aggregate.quantity, avgPrice: aggregate.avgPrice };
   } catch (error) {
     if (error instanceof LotAggregateError) {
       return { ok: false, failure: error.code === 'NEGATIVE_QUANTITY' ? 'NEGATIVE_QUANTITY' : 'OVERFLOW' };

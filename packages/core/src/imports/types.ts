@@ -91,6 +91,11 @@ export type ImportPlanPosition = {
   currentQuantity: number;
   /** Cantidad tras importar. `null` si la secuencia sería inválida (ver `blockedBy`). */
   resultingQuantity: number | null;
+  /**
+   * Precio medio de coste tras importar, calculado con los precios de ejecución del fichero
+   * (nunca con cierres de mercado). `null` si la posición queda cerrada o la secuencia es inválida.
+   */
+  resultingAvgPrice: number | null;
   /** Presente si esta posición NO se podrá importar. */
   blockedBy: ImportFailureCode | null;
   /** Derivado: se registra pero Sextante no sigue su precio ni lo suma a los totales. No bloquea. */

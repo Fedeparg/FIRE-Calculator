@@ -1467,6 +1467,8 @@
         "colSells": "Sells",
         "colDuplicates": "Already imported",
         "colResulting": "Final quantity",
+        "colAvgPrice": "Average price",
+        "avgPriceNote": "Average cost after importing, using the price each trade was executed at according to Trade Republic. Every buy and sell shows up afterwards in the position details.",
         "closed": "Closed (0)",
         "action": {
           "create": "Created",
