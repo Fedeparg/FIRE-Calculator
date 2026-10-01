@@ -4,12 +4,7 @@ import path from "node:path";
 
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  listLocalizedFiles,
-  listLocalizedSlugs,
-  normalizeDate,
-  readLocalizedMarkdown,
-} from "./localized-markdown";
+import { listLocalizedFiles, listLocalizedSlugs, normalizeDate, readLocalizedMarkdown } from "./localized-markdown";
 
 let dir: string;
 
@@ -55,10 +50,7 @@ describe("listLocalizedFiles", () => {
     await write("a.es.md", "");
     await write("a.en.md", "");
     const files = await listLocalizedFiles(dir);
-    expect(files.map((f) => `${f.slug}:${f.locale}:${f.fileName}`).sort()).toEqual([
-      "a:en:a.en.md",
-      "a:es:a.es.md",
-    ]);
+    expect(files.map((f) => `${f.slug}:${f.locale}:${f.fileName}`).sort()).toEqual(["a:en:a.en.md", "a:es:a.es.md"]);
   });
 });
 

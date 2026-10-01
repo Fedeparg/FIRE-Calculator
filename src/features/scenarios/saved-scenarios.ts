@@ -87,6 +87,26 @@ export function replaceScenario(list: readonly SavedScenario[], scenario: SavedS
 }
 
 /**
+ * Lista corregida a mano tras una acción, atada a los datos de la consulta (`source`) de los que
+ * parte: cuando la consulta devuelve datos nuevos (otro array), la corrección se descarta.
+ */
+export type LocalScenarios = { source: SavedScenario[]; list: SavedScenario[] };
+
+/** Lista a mostrar: la corregida si sigue vigente respecto a `loaded`, y si no la cargada. */
+export function currentScenarios(local: LocalScenarios | null, loaded: SavedScenario[] | null): SavedScenario[] {
+  return (local && local.source === loaded ? local.list : loaded) ?? [];
+}
+
+/** Aplica `change` sobre la lista vigente y devuelve el nuevo estado local, atado a `loaded`. */
+export function applyScenarioChange(
+  prev: LocalScenarios | null,
+  loaded: SavedScenario[],
+  change: (list: readonly SavedScenario[]) => SavedScenario[],
+): LocalScenarios {
+  return { source: loaded, list: change(prev && prev.source === loaded ? prev.list : loaded) };
+}
+
+/**
  * Plan activo entre los escenarios FIRE guardados: el actualizado más recientemente. Es la
  * misma regla que siguen los avisos de hitos de la API, así que Resumen, Objetivo y avisos
  * miran siempre el mismo plan. Elegir otro plan lo "toca" (PATCH sin cambios) para activarlo.

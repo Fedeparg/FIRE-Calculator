@@ -6,10 +6,7 @@ import type { SessionUser } from '../auth/auth.service.js';
 import { NotificationSettingsService } from '../notifications/notification-settings.service.js';
 import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
-import {
-  PortfolioSnapshotsService,
-  HISTORY_MAX_DAYS,
-} from '../portfolio/portfolio-snapshots.service.js';
+import { PortfolioSnapshotsService, HISTORY_MAX_DAYS } from '../portfolio/portfolio-snapshots.service.js';
 import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';

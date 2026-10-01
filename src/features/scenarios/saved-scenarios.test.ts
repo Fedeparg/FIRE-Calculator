@@ -3,8 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/client";
 import {
   activeScenario,
+  applyScenarioChange,
   classifyScenariosQuery,
   createScenarioRequest,
+  currentScenarios,
   deleteScenarioRequest,
   promoteScenario,
   replaceScenario,
@@ -72,6 +74,32 @@ describe("list helpers", () => {
     const list = [scenario("a"), scenario("b")];
     const updated = scenario("b", "renamed");
     expect(replaceScenario(list, updated)).toEqual([list[0], updated]);
+  });
+});
+
+describe("local list corrections", () => {
+  it("shows the loaded list until an action corrects it", () => {
+    const loaded = [scenario("a"), scenario("b")];
+    expect(currentScenarios(null, loaded)).toBe(loaded);
+    expect(currentScenarios(null, null)).toEqual([]);
+  });
+
+  it("applies successive changes on top of the previous correction", () => {
+    const loaded = [scenario("a"), scenario("b")];
+    const first = applyScenarioChange(null, loaded, (list) => promoteScenario(list, scenario("b", "renamed")));
+    expect(currentScenarios(first, loaded).map((s) => s.name)).toEqual(["renamed", "a"]);
+    const second = applyScenarioChange(first, loaded, (list) => list.filter((s) => s.id !== "a"));
+    expect(currentScenarios(second, loaded).map((s) => s.id)).toEqual(["b"]);
+  });
+
+  it("drops the correction when the query returns new data", () => {
+    const loaded = [scenario("a")];
+    const local = applyScenarioChange(null, loaded, () => []);
+    const refetched = [scenario("a"), scenario("z")];
+    expect(currentScenarios(local, refetched)).toBe(refetched);
+    // Un cambio posterior parte de los datos nuevos, no de la corrección obsoleta.
+    const next = applyScenarioChange(local, refetched, (list) => [...list]);
+    expect(next.list.map((s) => s.id)).toEqual(["a", "z"]);
   });
 });
 

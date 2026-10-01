@@ -32,7 +32,10 @@ export default function NotificationSettings() {
 
   async function toggle(enabled: boolean) {
     const result = await save.run(() =>
-      apiJson<NotificationSettingsResponse>(NOTIFICATIONS_PATH, { method: "PATCH", body: { fireAlertsEnabled: enabled, locale } }),
+      apiJson<NotificationSettingsResponse>(NOTIFICATIONS_PATH, {
+        method: "PATCH",
+        body: { fireAlertsEnabled: enabled, locale },
+      }),
     );
     if (result.ok) setSaved(result.data);
   }
