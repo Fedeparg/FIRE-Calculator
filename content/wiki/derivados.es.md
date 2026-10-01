@@ -64,9 +64,10 @@ tienen su propio tratamiento, así que conviene comprobar el de cada uno.
 **La regla de los dos meses.** La norma que bloquea una pérdida si recompras el
 mismo valor en los dos meses anteriores o posteriores está redactada para **valores
 o participaciones**. La doctrina de la Dirección General de Tributos (por ejemplo,
-las consultas V2172-21 y V3282-18) entiende que los **futuros, las opciones y los
-CFD** son instrumentos financieros derivados y no valores negociables, y por tanto
-esa regla **no** se les aplica del mismo modo que a las acciones o los ETF. Los
+la consulta V2172-21, sobre opciones) entiende que los derivados como los **futuros
+y las opciones** son instrumentos financieros y no valores negociables, y por tanto
+esa regla **no** se les aplica. Con los **CFD** el razonamiento suele ser el mismo,
+pero conviene confirmarlo para tu caso. Los
 **warrants, turbos y certificados** cotizan como valores, y ahí la respuesta depende
 del producto concreto y de si hay valores homogéneos: no des por hecho ni que sí ni
 que no, y consúltalo.

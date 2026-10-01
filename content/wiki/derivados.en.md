@@ -62,9 +62,10 @@ as interest, or held for hedging) have their own treatment, so check each one.
 **The two-month rule.** The rule that blocks a loss if you buy back the same
 security within two months before or after is written for **securities and
 participations**. The doctrine of the tax authority's General Directorate (for
-example, binding rulings V2172-21 and V3282-18) holds that **futures, options and
-CFDs** are derivative financial instruments, not negotiable securities, so that rule
-is **not** applied to them in the same way as to shares or ETFs. **Warrants, turbos
+example, binding ruling V2172-21, on options) holds that derivatives such as
+**futures and options** are financial instruments, not negotiable securities, so
+that rule does **not** apply to them. The same reasoning is usually applied to
+**CFDs**, but check it for your own case. **Warrants, turbos
 and certificates** trade as securities, and there the answer depends on the specific
 product and on whether there are homogeneous securities: do not assume either way,
 and ask.
