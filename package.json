@@ -17,8 +17,8 @@
     "lint": "eslint && prettier --check \"**/*.{ts,tsx,js,mjs,css}\" && knip",
     "knip": "knip",
     "typecheck": "pnpm core:build && tsc --noEmit && pnpm --filter @sextante/core typecheck",
-    "test": "pnpm core:build && vitest run",
-    "test:watch": "pnpm core:build && vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "core:build": "pnpm --filter @sextante/core build",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,css}\""
   },
@@ -40,10 +40,10 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/typography": "^0.5.20",
-    "@types/node": "^24",
+    "@types/node": "^24.13.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "eslint": "^9",
+    "eslint": "^9.0.0",
     "eslint-config-next": "16.3.5",
     "fast-check": "^4.10.2",
     "knip": "^6.39.0",
