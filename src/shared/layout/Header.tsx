@@ -1,11 +1,12 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { BrandCompass, IconNavCalculator, IconNavLearn } from "../illustrations";
-import AuthNav from "@/features/auth/components/AuthNav";
+import type { ReactNode } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
-export default function Header() {
+// `authSlot` lo inyecta el layout: `shared` no puede depender de `features/auth`.
+export default function Header({ authSlot }: { authSlot: ReactNode }) {
   const t = useTranslations("site");
   const tNav = useTranslations("nav");
 
@@ -43,7 +44,7 @@ export default function Header() {
             <IconNavLearn className="hidden h-4 w-4 sm:block" />
             {tNav("learn")}
           </Link>
-          <AuthNav />
+          {authSlot}
         </nav>
       </div>
     </header>

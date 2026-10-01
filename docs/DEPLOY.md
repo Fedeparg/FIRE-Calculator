@@ -273,7 +273,7 @@ Privacidad, ya configurada: el tracker no envía la query string ni el hash (los
 cálculos compartibles llevan ahí sus valores), respeta Do Not Track y solo mide en
 el dominio canónico; Umami no guarda la IP y el ID de visita cambia cada día
 (`SALT_ROTATION=day`). Los eventos que se miden están en
-`src/features/analytics/track.ts`; si añades uno, recógelo también en la política
+`src/shared/analytics/track.ts`; si añades uno, recógelo también en la política
 de privacidad.
 
 ## Operación
