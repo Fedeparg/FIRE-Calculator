@@ -12,10 +12,7 @@ import type {
   PositionPayload,
   PriceInfo,
 } from "@sextante/core/portfolio/types";
-import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
-
-/** Opciones de `fetch` para lecturas que no deben servirse de caché (constante: estable entre renders). */
-export const NO_STORE = { cache: "no-store" } as const;
+import { ApiError, NO_STORE, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
 
 export const FX_PATH = "/api/prices/fx";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import { apiJson } from "@/shared/api/client";
+import { NO_STORE, apiJson } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Preferencias tal y como las devuelve `GET /api/account/notifications`. */
@@ -17,7 +17,6 @@ type Settings = {
 
 const NOTIFICATIONS_PATH = "/api/account/notifications";
 // Constante de módulo: `useApiQuery` exige opciones estables entre renders.
-const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Avisos por email de los hitos del objetivo FIRE (25/50/75/100 %). Opt-in: la casilla arranca

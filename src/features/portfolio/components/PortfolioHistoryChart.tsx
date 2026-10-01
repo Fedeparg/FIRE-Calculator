@@ -16,6 +16,7 @@ import {
 } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { useFormat } from "@/shared/format/use-format";
+import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
@@ -25,9 +26,6 @@ type Props = {
 };
 
 type Status = "loading" | "ready" | "error";
-
-// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
-const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Evolución diaria de la cartera.

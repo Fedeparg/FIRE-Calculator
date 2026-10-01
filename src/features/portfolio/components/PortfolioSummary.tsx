@@ -8,7 +8,8 @@ import { gainSince } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { asLocale } from "@/i18n/types";
 import { useFormat } from "@/shared/format/use-format";
-import { NO_STORE, historyPath } from "@/features/portfolio/api";
+import { historyPath } from "@/features/portfolio/api";
+import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 type Props = {

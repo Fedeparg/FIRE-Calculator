@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/shared/format/format";
 import { absoluteUrl } from "@/shared/seo/site";
-import { apiFetch } from "@/shared/api/client";
+import { NO_STORE, apiFetch } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
@@ -20,7 +20,6 @@ type Connection = {
 
 const CONNECTIONS_PATH = "/api/account/connections";
 // Constante de módulo: `useApiQuery` exige opciones estables entre renders.
-const NO_STORE = { cache: "no-store" } as const;
 
 const SCOPE_LABELS: Record<string, string> = {
   "portfolio:read": "scopeRead",
