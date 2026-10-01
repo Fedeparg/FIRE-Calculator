@@ -8,10 +8,12 @@ import { asLocale } from "@/i18n/types";
 import { SITE_NAME, SITE_URL } from "@/shared/seo/site";
 import { organizationSchema, websiteSchema } from "@/shared/seo/json-ld";
 import JsonLd from "@/shared/seo/JsonLd";
+import AuthNav from "@/features/auth/components/AuthNav";
+import { DONATIONS_ENABLED } from "@/features/donations/config";
 import Header from "@/shared/layout/Header";
 import Footer from "@/shared/layout/Footer";
 import ThemeScript from "@/shared/layout/ThemeScript";
-import AnalyticsScript from "@/features/analytics/components/AnalyticsScript";
+import AnalyticsScript from "@/shared/analytics/components/AnalyticsScript";
 import "../globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -63,9 +65,9 @@ export default async function LocaleLayout({ children, params }: Props) {
         <ThemeScript />
         <JsonLd data={[organizationSchema(), websiteSchema(asLocale(locale))]} />
         <NextIntlClientProvider>
-          <Header />
+          <Header authSlot={<AuthNav />} />
           <main className="flex-1">{children}</main>
-          <Footer />
+          <Footer showDonations={DONATIONS_ENABLED} />
         </NextIntlClientProvider>
         <AnalyticsScript />
       </body>

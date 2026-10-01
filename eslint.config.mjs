@@ -2,9 +2,120 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+// Fronteras de capas (ver "Dónde va cada cosa" en CLAUDE.md):
+//   app → features → shared, nunca al revés; `packages/core` no conoce `src/`.
+const FEATURES = [
+  "account",
+  "auth",
+  "calculators",
+  "changelog",
+  "donations",
+  "landing",
+  "oauth",
+  "portfolio",
+  "scenarios",
+  "wiki",
+];
+
+// Dependencias entre features permitidas a propósito (quien importa → de quién).
+// Todo lo demás falla en lint. Si necesitas añadir una, primero valora mover el
+// código común a `src/shared`.
+const FEATURE_EXCEPTIONS = {
+  // La página de una calculadora incrusta su explainer y el panel de escenarios.
+  calculators: ["wiki", "scenarios"],
+  // Los artículos enlazan a las calculadoras relacionadas (registry).
+  wiki: ["calculators"],
+  // El objetivo de la cartera se codifica como estado de URL de una calculadora
+  // y reutiliza los escenarios guardados.
+  portfolio: ["calculators", "scenarios"],
+  // El escenario activo se resuelve con el modelo del objetivo de la cartera.
+  scenarios: ["portfolio"],
+  // El changelog renderiza su Markdown con el renderer de la wiki.
+  changelog: ["wiki"],
+  // La landing compone el widget de donaciones.
+  landing: ["donations"],
+};
+
+const NEXT_LINK = {
+  name: "next/link",
+  message: "Usa `Link` de `@/i18n/navigation` para conservar el prefijo de idioma.",
+};
+
+const restrictImports = (groups) => ({
+  "no-restricted-imports": ["error", { paths: [NEXT_LINK], patterns: groups }],
+});
+
+const featureBoundaries = FEATURES.map((feature) => {
+  const allowed = FEATURE_EXCEPTIONS[feature] ?? [];
+  const forbidden = FEATURES.filter((other) => other !== feature && !allowed.includes(other));
+  return {
+    files: [`src/features/${feature}/**/*.{ts,tsx}`],
+    rules: restrictImports([
+      {
+        group: ["@/app/**"],
+        message: "Una feature no importa de `src/app`: las rutas componen las features.",
+      },
+      {
+        group: forbidden.map((other) => `@/features/${other}{,/**}`),
+        message:
+          "Una feature no importa de otra salvo excepciones listadas en FEATURE_EXCEPTIONS. Mueve lo común a `src/shared`.",
+      },
+    ]),
+  };
+});
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  ...featureBoundaries,
+  {
+    files: ["src/shared/**/*.{ts,tsx}"],
+    rules: restrictImports([
+      {
+        group: ["@/features/**", "@/app/**"],
+        message: "`src/shared` no depende de features ni de rutas: inyecta lo que falte por props.",
+      },
+    ]),
+  },
+  {
+    files: ["packages/core/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@/**", "**/src/**", "next", "next/**", "react", "react/**"],
+              message: "`packages/core` es lógica pura compartida con la API: no importa de `src/` ni de Next/React.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  // El acceso HTTP vive en `shared/api` (cliente), en los `api*.ts` de cada feature y
+  // en server components/páginas; la UI pura consume hooks, no `fetch`.
+  {
+    files: ["src/features/**/components/**/*.{ts,tsx}", "src/shared/{ui,charts,layout}/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        {
+          name: "fetch",
+          message: "Los componentes no llaman a `fetch`: usa `shared/api` o el `api.ts` de la feature.",
+        },
+      ],
+    },
+  },
+  // Tamaño de componente: por encima de ~300 líneas efectivas conviene extraer un
+  // hook o un subcomponente.
+  {
+    files: ["src/**/*.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: {
+      "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

@@ -91,7 +91,6 @@
   },
   "common": {
     "back": "Back to calculators",
-    "results": "Results",
     "disclaimerShort": "Information, not tax or financial advice.",
     "moreInfo": "More information"
   },
@@ -1657,8 +1656,7 @@
       "deny": "Deny",
       "working": "Connecting…",
       "error": "The connection could not be completed. Please try again.",
-      "missing": "Incomplete or invalid authorization request.",
-      "backHome": "Back to home"
+      "missing": "Incomplete or invalid authorization request."
     }
   },
   "donations": {

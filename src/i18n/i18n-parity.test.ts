@@ -4,37 +4,8 @@
 // este test es la única red de seguridad: una clave añadida en un solo idioma
 // deja la UI con el identificador crudo en el otro.
 
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const LOCALES = ["es", "en"] as const;
-
-type Locale = (typeof LOCALES)[number];
-type MessageTree = { readonly [key: string]: string | MessageTree };
-
-function loadMessages(locale: Locale): MessageTree {
-  const file = path.join(ROOT, "messages", `${locale}.json`);
-  return JSON.parse(readFileSync(file, "utf8")) as MessageTree;
-}
-
-/** Aplana el árbol de mensajes a rutas de hoja ("calc.roi.title"). */
-function flattenMessages(tree: MessageTree, prefix = ""): Map<string, string> {
-  const flat = new Map<string, string>();
-  for (const [key, value] of Object.entries(tree)) {
-    const fullKey = `${prefix}${key}`;
-    if (typeof value === "string") {
-      flat.set(fullKey, value);
-    } else {
-      for (const [nested, message] of flattenMessages(value, `${fullKey}.`)) {
-        flat.set(nested, message);
-      }
-    }
-  }
-  return flat;
-}
+import { flattenMessages, LOCALES, loadMessages, type Locale } from "./messages-fixtures";
 
 /**
  * Nombres de los argumentos ICU de un mensaje ("{year}" → "year";

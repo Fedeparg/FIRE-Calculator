@@ -1,7 +1,7 @@
 // Interés compuesto con aportaciones periódicas. Delega en el motor genérico
 // `project` (ver core/projection.ts) para no duplicar la lógica de cálculo.
 
-import { project, type Frequency, type ProjectionPoint, type ProjectionResult } from "../projection.js";
+import { project, type Frequency, type ProjectionResult } from "../projection.js";
 
 export interface CompoundInput {
   /** Capital inicial. */
@@ -22,7 +22,6 @@ export interface CompoundInput {
   inflationRate?: number;
 }
 
-export type CompoundYearPoint = ProjectionPoint;
 export type CompoundResult = ProjectionResult;
 
 export function computeCompound(input: CompoundInput): CompoundResult {

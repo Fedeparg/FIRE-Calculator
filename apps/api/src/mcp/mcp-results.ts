@@ -14,6 +14,3 @@ export function jsonResult(value: unknown, options: { compact?: boolean } = {}):
 export function errorResult(message: string): CallToolResult {
   return { content: [{ type: 'text', text: message }], isError: true };
 }
-
-/** Ejecuta el cuerpo de una tool con auditoría y traducción de errores (ver `McpService.run`). */
-export type ToolRunner = (tool: string, body: () => Promise<CallToolResult>) => Promise<CallToolResult>;

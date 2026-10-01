@@ -1,0 +1,27 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Un export usado solo dentro de su propio fichero no es muerto (p. ej. un tipo
+  // exportado por claridad), así que no se reporta.
+  "ignoreExportsUsedInFile": true,
+  "workspaces": {
+    // Frontend Next.js: las entradas (páginas, layouts, route handlers, proxy,
+    // next.config) las detecta el plugin de Next.
+    ".": {
+      // Incluye el CSS para que knip vea los `@import`/`@plugin` de Tailwind.
+      "project": ["src/**/*.{ts,tsx,css}"]
+    },
+    "apps/api": {
+      // `migrate.ts` no se importa: el servicio `migrate` de Compose lo ejecuta
+      // como `node dist/db/migrate.js`.
+      "entry": ["src/main.ts", "src/db/migrate.ts"],
+      "project": ["src/**/*.ts", "test/**/*.ts"]
+    },
+    // `@sextante/core` expone cada fichero de `src` vía `exports: ./*`; knip lo
+    // trata como entrada, y `includeEntryExports` hace que se reporten sus exports
+    // si nadie (otro paquete o su propio fichero) los usa.
+    "packages/core": {
+      "project": ["src/**/*.ts"],
+      "includeEntryExports": true
+    }
+  }
+}

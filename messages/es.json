@@ -91,7 +91,6 @@
   },
   "common": {
     "back": "Volver a las calculadoras",
-    "results": "Resultados",
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
     "moreInfo": "Más información"
   },
@@ -1657,8 +1656,7 @@
       "deny": "Denegar",
       "working": "Conectando…",
       "error": "No se pudo completar la conexión. Inténtalo de nuevo.",
-      "missing": "Solicitud de autorización incompleta o no válida.",
-      "backHome": "Volver al inicio"
+      "missing": "Solicitud de autorización incompleta o no válida."
     }
   },
   "donations": {

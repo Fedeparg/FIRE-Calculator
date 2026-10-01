@@ -1,9 +1,9 @@
 import { useTranslations } from "next-intl";
 
-import { DONATIONS_ENABLED } from "@/features/donations/config";
 import { Link } from "@/i18n/navigation";
 
-export default function Footer() {
+// `showDonations` lo decide el layout: `shared` no puede depender de `features/donations`.
+export default function Footer({ showDonations }: { showDonations: boolean }) {
   const t = useTranslations("footer");
 
   return (
@@ -25,7 +25,7 @@ export default function Footer() {
               ),
             })}
           </p>
-          {DONATIONS_ENABLED && (
+          {showDonations && (
             <Link
               href="/sobre-mi#apoya"
               className="inline-flex items-center gap-1 font-medium text-foreground transition hover:text-brand"

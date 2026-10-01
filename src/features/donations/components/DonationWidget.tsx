@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { trackEvent } from "@/features/analytics/track";
+import { trackEvent } from "@/shared/analytics/track";
 import { apiJson } from "@/shared/api/client";
 import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "../config";
 
