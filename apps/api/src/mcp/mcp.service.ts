@@ -2,10 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
-import { BREAKDOWN_GROUPS, type BreakdownGroupBy } from '@sextante/core/portfolio-breakdown';
-import { computeAmountGoal, computePortfolioGoal, simulatePortfolioGoal } from '@sextante/core/portfolio-goal';
+import { BREAKDOWN_GROUPS, type BreakdownGroupBy } from '@sextante/core/portfolio/breakdown';
+import { computeAmountGoal, computePortfolioGoal, simulatePortfolioGoal } from '@sextante/core/portfolio/goal';
 import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
-import { MAX_YEARS } from '@sextante/core/calculators/fire';
+import { CALCULATOR_CATEGORIES } from '@sextante/core/calculators/categories';
+import { FIRE_SEARCH_MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -27,7 +28,7 @@ import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider } from '../prices/instrument-search.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
-import { CALCULATOR_CATEGORIES, hasCalculator, listCalculators, runCalculator } from './calculator-tools.js';
+import { hasCalculator, listCalculators, runCalculator } from './calculator-tools.js';
 import { McpAuditService } from './mcp-audit.service.js';
 import { errorResult, jsonResult } from './mcp-results.js';
 
@@ -400,7 +401,7 @@ export class McpService {
             .number()
             .int()
             .min(0)
-            .max(MAX_YEARS)
+            .max(FIRE_SEARCH_MAX_YEARS)
             .optional()
             .describe('Modo cantidad: plazo en años enteros.'),
           contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
