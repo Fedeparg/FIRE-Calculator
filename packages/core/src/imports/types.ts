@@ -92,8 +92,8 @@ export type ImportPlanPosition = {
   resultingQuantity: number | null;
   /** Presente si esta posición NO se podrá importar. */
   blockedBy: ImportFailureCode | null;
-  /** Derivados y similares: el proveedor de precios puede no cotizarlos. No bloquea. */
-  priceMayBeUnavailable: boolean;
+  /** Derivado: se registra pero Sextante no sigue su precio ni lo suma a los totales. No bloquea. */
+  isDerivative: boolean;
 };
 
 export type ImportPlan = {

@@ -40,8 +40,8 @@ describe("aggregatePortfolio", () => {
       display,
       rates: RATES,
       positions: [
-        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR" }, // coste 800 €
-        { ticker: "AAPL", quantity: 5, avgPrice: 100, currency: "USD" }, // coste 500 $ → 500/1,1 €
+        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // coste 800 €
+        { ticker: "AAPL", quantity: 5, avgPrice: 100, currency: "USD", isDerivative: false }, // coste 500 $ → 500/1,1 €
       ],
       prices: {
         "EUNL.DE": { close: 90, currency: "EUR" }, // valor 900 €
@@ -64,7 +64,7 @@ describe("aggregatePortfolio", () => {
     const result = aggregatePortfolio({
       display, // EUR
       rates: RATES,
-      positions: [{ ticker: "BTC-USD", quantity: 1, avgPrice: 50_000, currency: "EUR" }],
+      positions: [{ ticker: "BTC-USD", quantity: 1, avgPrice: 50_000, currency: "EUR", isDerivative: false }],
       prices: { "BTC-USD": { close: 60_000, currency: "USD" } },
     });
 
@@ -80,9 +80,9 @@ describe("aggregatePortfolio", () => {
       display,
       rates: RATES,
       positions: [
-        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR" }, // valorada
-        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR" }, // sin precio → fuera
-        { ticker: "USDPRICE", quantity: 1, avgPrice: 10, currency: "EUR" }, // precio en USD → dentro
+        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // valorada
+        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // sin precio → fuera
+        { ticker: "USDPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // precio en USD → dentro
       ],
       prices: {
         "EUNL.DE": { close: 90, currency: "EUR" },
@@ -101,7 +101,7 @@ describe("aggregatePortfolio", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
-      positions: [{ ticker: "TYO", quantity: 1, avgPrice: 100, currency: "JPY" }],
+      positions: [{ ticker: "TYO", quantity: 1, avgPrice: 100, currency: "JPY", isDerivative: false }],
       prices: { TYO: { close: 120, currency: "JPY" } },
     });
 
@@ -114,11 +114,28 @@ describe("aggregatePortfolio", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
-      positions: [{ ticker: "A", quantity: 0, avgPrice: 0, currency: "EUR" }],
+      positions: [{ ticker: "A", quantity: 0, avgPrice: 0, currency: "EUR", isDerivative: false }],
       prices: { A: { close: 100, currency: "EUR" } },
     });
 
     expect(result.invested).toBe(0);
     expect(result.pnlPct).toBeNull();
+  });
+
+  it("deja los derivados fuera del total, aunque tengan precio", () => {
+    const result = aggregatePortfolio({
+      display,
+      rates: RATES,
+      positions: [
+        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false },
+        { ticker: "KO1", quantity: 100, avgPrice: 1, currency: "EUR", isDerivative: true },
+      ],
+      prices: { "EUNL.DE": { close: 90, currency: "EUR" }, KO1: { close: 0.1, currency: "EUR" } },
+    });
+
+    expect(result.invested).toBeCloseTo(800, 6);
+    expect(result.marketValue).toBeCloseTo(900, 6);
+    expect(result.valued).toBe(1);
+    expect(result.total).toBe(1);
   });
 });

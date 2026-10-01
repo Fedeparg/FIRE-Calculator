@@ -31,6 +31,8 @@ export type PositionResponse = {
   avgPrice: number;
   broker: string | null;
   currency: string;
+  /** Derivado: se registra pero no se valora ni entra en los totales. */
+  isDerivative: boolean;
   createdAt: string;
 };
 
@@ -327,6 +329,7 @@ export class PositionsService {
       avgPrice: Number(row.avgPrice),
       broker: row.broker,
       currency: row.currency,
+      isDerivative: row.isDerivative,
       createdAt: row.createdAt.toISOString(),
     };
   }

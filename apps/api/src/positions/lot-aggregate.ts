@@ -75,6 +75,15 @@ const MAX_AMOUNT_UNITS = 10n ** 12n;
 
 const ONE_AMOUNT = 10n ** BigInt(AMOUNT_SCALE);
 
+/**
+ * Tolerancia de redondeo de una venta: 1 unidad a la escala de la columna (10⁻⁶). Las cantidades
+ * se redondean a 6 decimales al guardarlas (el export de un bróker trae hasta 10), así que
+ * vender "todo" puede exceder lo comprado por esa diferencia de redondeo. Un exceso dentro de
+ * la tolerancia es ruido y deja la posición en exactamente 0; mayor, es una venta de más
+ * (no admitimos cortos) y falla.
+ */
+const SELL_ROUNDING_TOLERANCE = 1n;
+
 /** Solo decimales "planos" con signo opcional: nada de notación exponencial ni espacios. */
 const PLAIN_DECIMAL = /^[+-]?(\d+)(?:\.(\d+))?$/;
 
@@ -146,7 +155,8 @@ export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
  * 500 + 1000), no 133,33 (que sería promediar las compras ignorando la venta).
  *
  * @throws {LotAggregateError} `NEGATIVE_QUANTITY` si una venta deja la cantidad en negativo
- *   (no admitimos cortos: no se puede vender lo que no se tiene), `OVERFLOW` si el resultado
+ *   por más de la tolerancia de redondeo (no admitimos cortos: no se puede vender lo que no se
+ *   tiene; un exceso de hasta 10⁻⁶ se trata como 0), `OVERFLOW` si el resultado
  *   no cabe en `numeric(18,6)`.
  */
 export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
@@ -167,7 +177,8 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
       continue;
     }
 
-    const remaining = quantity - q;
+    let remaining = quantity - q;
+    if (remaining < 0n && -remaining <= SELL_ROUNDING_TOLERANCE) remaining = 0n;
     if (remaining < 0n) {
       throw new LotAggregateError(
         'NEGATIVE_QUANTITY',

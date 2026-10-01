@@ -26,7 +26,14 @@ export function convertCurrency(
 
 /** Entrada mínima para agregar (independiente de los tipos de la app, para poder testear). */
 export interface AggregateInput {
-  positions: { ticker: string; quantity: number; avgPrice: number; currency: string }[];
+  positions: {
+    ticker: string;
+    quantity: number;
+    avgPrice: number;
+    currency: string;
+    /** Los derivados no se valoran: quedan FUERA del total (y de `total`). Obligatorio a propósito: un llamante que lo olvidara los mezclaría en el P&L. */
+    isDerivative: boolean;
+  }[];
   /** Último precio por ticker; cada uno con su divisa nativa. */
   prices: Record<string, { close: number; currency: string }>;
   /** USD por unidad de cada divisa (USD = 1). */
@@ -47,7 +54,7 @@ export interface PortfolioAggregate {
   pnlPct: number | null;
   /** Nº de posiciones incluidas en el total. */
   valued: number;
-  /** Nº total de posiciones (valued + excluidas por falta de precio/divisa). */
+  /** Nº de posiciones valorables (valued + excluidas por falta de precio/divisa). No cuenta los derivados. */
   total: number;
   display: string;
 }
@@ -71,7 +78,10 @@ export function aggregatePortfolio({
   let marketValue = 0;
   let valued = 0;
 
-  for (const p of positions) {
+  // Sextante no sigue el precio de los derivados: sin cotización fiable distorsionarían el P&L.
+  const tracked = positions.filter((p) => !p.isDerivative);
+
+  for (const p of tracked) {
     const price = prices[p.ticker];
     if (!price) continue;
 
@@ -86,5 +96,5 @@ export function aggregatePortfolio({
 
   const pnlAbs = marketValue - invested;
   const pnlPct = invested > 0 ? (pnlAbs / invested) * 100 : null;
-  return { invested, marketValue, pnlAbs, pnlPct, valued, total: positions.length, display };
+  return { invested, marketValue, pnlAbs, pnlPct, valued, total: tracked.length, display };
 }

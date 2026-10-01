@@ -262,11 +262,35 @@ describe('ImportsService (integración con Postgres)', () => {
       newBuys: 1,
       newSells: 1,
       resultingQuantity: 0,
-      priceMayBeUnavailable: true,
+      isDerivative: true,
     });
-    expect(plan.positions.find((p) => p.isin === ETF)?.priceMayBeUnavailable).toBe(false);
+    expect(plan.positions.find((p) => p.isin === ETF)?.isDerivative).toBe(false);
     expect(await positionsOf(userId)).toEqual([]);
     expect(await lotsOf(userId)).toEqual([]);
+  });
+
+  it('guarda los derivados con la marca isDerivative y no el resto', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    await service.confirm(userId, csv(trade('BUY', DERIVATIVE, '100', '1.23', 3), trade('BUY', ETF, '1', '100', 3)));
+    const rows = await positionsOf(userId);
+    expect(rows.find((p) => p.ticker === DERIVATIVE)?.isDerivative).toBe(true);
+    expect(rows.find((p) => p.ticker === ETF)?.isDerivative).toBe(false);
+  });
+
+  it('un exceso de redondeo al vender todo deja la posición en 0 en vez de fallar', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    // 0.0000004 + 0.0000004 se guardan como 0 + 0, pero 1.0000004 + 1.0000004 = 2.000000 (6 dp)
+    // mientras la venta de 2.0000009 redondea a 2.000001: 1 unidad de más, dentro de la tolerancia.
+    const result = await service.confirm(
+      userId,
+      csv(
+        trade('BUY', ETF, '1.0000004', '10', 3),
+        trade('BUY', ETF, '1.0000004', '10', 4),
+        trade('SELL', ETF, '2.0000009', '11', 5),
+      ),
+    );
+    expect(result.totals.failedPositions).toBe(0);
+    expect((await positionsOf(userId))[0].quantity).toBe('0.000000');
   });
 
   it('resume las filas descartadas por motivo y propaga los avisos, solo con recuentos', async () => {

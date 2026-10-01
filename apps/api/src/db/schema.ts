@@ -96,6 +96,10 @@ export const positions = pgTable(
     // servicio lo exige solo cuando ya existe otra entrada del mismo símbolo.
     broker: varchar('broker', { length: 100 }),
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+    // Derivado (knock-out, warrant, turbo…): se registra con sus operaciones (cuenta para el
+    // informe de plusvalías) pero NO se valora ni entra en los totales de la cartera: Sextante
+    // no sigue su precio. Lo fija la importación según el tipo de activo del bróker.
+    isDerivative: boolean('is_derivative').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

@@ -172,6 +172,44 @@ describe('aggregateLots', () => {
     expect(result.avgPrice).toBe('0.200000');
   });
 
+  describe('tolerancia de redondeo de las ventas (10⁻⁶)', () => {
+    const buy = lot({ quantity: '5', price: '100', tradedAt: '2026-01-01' });
+
+    it('un exceso de exactamente 1 unidad a escala 6 deja la posición en 0', () => {
+      const result = aggregateLots([
+        buy,
+        lot({ kind: 'sell', quantity: '5.000001', price: '100', tradedAt: '2026-02-01' }),
+      ]);
+      expect(result).toEqual({ quantity: '0.000000', avgPrice: '0.000000', cost: '0.000000' });
+    });
+
+    it('un exceso de 2 unidades ya es una venta de más y falla', () => {
+      expect(() =>
+        aggregateLots([
+          buy,
+          lot({ kind: 'sell', quantity: '5.000002', price: '100', tradedAt: '2026-02-01' }),
+        ]),
+      ).toThrow(expect.objectContaining({ code: 'NEGATIVE_QUANTITY' }));
+    });
+
+    it('una venta exacta no cambia', () => {
+      const result = aggregateLots([
+        buy,
+        lot({ kind: 'sell', quantity: '5', price: '100', tradedAt: '2026-02-01' }),
+      ]);
+      expect(result.quantity).toBe('0.000000');
+    });
+
+    it('después de limpiar el resto, una compra posterior parte de cero', () => {
+      const result = aggregateLots([
+        buy,
+        lot({ kind: 'sell', quantity: '5.000001', price: '100', tradedAt: '2026-02-01' }),
+        lot({ quantity: '2', price: '50', tradedAt: '2026-03-01' }),
+      ]);
+      expect(result).toMatchObject({ quantity: '2.000000', avgPrice: '50.000000' });
+    });
+  });
+
   it('rechaza una venta que dejaría la posición en negativo (no hay cortos)', () => {
     expect(() =>
       aggregateLots([
