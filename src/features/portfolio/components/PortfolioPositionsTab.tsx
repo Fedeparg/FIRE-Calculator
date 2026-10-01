@@ -12,7 +12,7 @@ import {
   type PositionFilter,
 } from "@/core/portfolio-positions";
 import { usePathname, useRouter } from "@/i18n/navigation";
-import type { Position } from "@/lib/portfolio";
+import type { Position } from "@sextante/core/portfolio/types";
 import { ADD_POSITION_PARAM } from "../add-position";
 import DerivativesNotice from "./DerivativesNotice";
 import PortfolioExport from "./PortfolioExport";

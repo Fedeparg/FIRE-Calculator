@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { sanitizeDecimalInput } from "@/core/number-input";
 import { useFormat } from "@/lib/format";
-import type { InstrumentSearchResult } from "@/lib/portfolio";
+import type { InstrumentSearchResult } from "@sextante/core/portfolio/types";
 import InstrumentSearchField from "./InstrumentSearchField";
 
 /** Lo que el usuario teclea en el formulario de posición (las cantidades, como texto). */

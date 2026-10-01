@@ -1,7 +1,7 @@
 /**
  * Tipos y constantes de la cartera, compartidos por el server component y el island de
  * cliente. NO debe importar `server-only` ni `next/headers`: tiene que poder cargarse
- * en el bundle del cliente. El fetch server-side vive en `portfolio.server.ts`.
+ * en el bundle del cliente. El fetch server-side vive en `src/features/portfolio/api.server.ts`.
  */
 
 /** Precio de un instrumento tal y como lo sirve `GET /api/prices` (lectura de nuestra DB). */

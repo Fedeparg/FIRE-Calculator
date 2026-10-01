@@ -7,7 +7,7 @@ import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/con
 import { trackEvent } from "@/components/analytics/track";
 import { parseDecimalInput } from "@/core/number-input";
 import { Link } from "@/i18n/navigation";
-import { type Position } from "@/lib/portfolio";
+import { type Position } from "@sextante/core/portfolio/types";
 import {
   combinePosition,
   positionConflict,

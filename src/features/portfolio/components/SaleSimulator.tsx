@@ -10,7 +10,7 @@ import { formatIsoDate } from "@/core/format";
 import { convertCurrency } from "@sextante/core/fx";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { useFormat } from "@/lib/format";
-import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";
+import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
 
 type Props = {

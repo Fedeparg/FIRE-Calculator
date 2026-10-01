@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { MIN_INSTRUMENT_QUERY_LENGTH } from "@sextante/core/contracts";
-import type { InstrumentSearchResult, InstrumentType } from "@/lib/portfolio";
+import type { InstrumentSearchResult, InstrumentType } from "@sextante/core/portfolio/types";
 import { isAbortError } from "@/shared/api/client";
 import { searchInstruments } from "@/features/portfolio/api";
 

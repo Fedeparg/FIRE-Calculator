@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { dailyMovers } from "@/core/portfolio-positions";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import type { PriceInfo, Position } from "@/lib/portfolio";
+import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 
 type Props = {
   positions: Position[];

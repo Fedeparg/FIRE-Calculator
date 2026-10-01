@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { paletteColor } from "@/components/charts/palette";
 import { BREAKDOWN_GROUPS, buildBreakdown, type BreakdownGroupBy } from "@sextante/core/portfolio-breakdown";
 import { useFormat } from "@/lib/format";
-import type { PriceInfo, Position } from "@/lib/portfolio";
+import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 
 type Props = {
   positions: Position[];

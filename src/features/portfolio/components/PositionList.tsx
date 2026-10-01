@@ -14,7 +14,7 @@ import {
   type SortKey,
 } from "@/features/portfolio/model/sort";
 import { useFormat } from "@/lib/format";
-import type { PriceInfo, Position } from "@/lib/portfolio";
+import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 import ToggleGroup from "@/components/ui/ToggleGroup";
 import { PendingPrice, SortHeader, StaleBadge } from "./PositionListParts";
 

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { apiFetch } from "@/lib/api.server";
-import type { Position, PositionLot } from "@/lib/portfolio";
+import type { Position, PositionLot } from "@sextante/core/portfolio/types";
 
 /**
  * Carga las posiciones del usuario autenticado para el render inicial (SSR). La

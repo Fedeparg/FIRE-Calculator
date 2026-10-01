@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
 import { useFormat } from "@/lib/format";
-import type { PositionLot } from "@/lib/portfolio";
+import type { PositionLot } from "@sextante/core/portfolio/types";
 
 type Props = {
   lots: readonly PositionLot[];

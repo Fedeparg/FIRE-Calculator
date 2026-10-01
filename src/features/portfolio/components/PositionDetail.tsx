@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { LotPayload, PositionLot, PriceInfo, Position } from "@/lib/portfolio";
+import type { LotPayload, PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import LotList from "./LotList";
 import PositionDeleteBar from "./PositionDeleteBar";
 import PositionDetailSummary from "./PositionDetailSummary";

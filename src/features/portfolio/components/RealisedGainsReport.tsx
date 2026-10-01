@@ -16,7 +16,7 @@ import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains
 import { asLocale } from "@/core/types";
 import { downloadBlob } from "@/lib/download";
 import { useFormat } from "@/lib/format";
-import type { Position, PositionLot } from "@/lib/portfolio";
+import type { Position, PositionLot } from "@sextante/core/portfolio/types";
 
 type Props = {
   positions: Position[];

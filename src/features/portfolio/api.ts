@@ -11,7 +11,7 @@ import type {
   PositionLot,
   PositionPayload,
   PriceInfo,
-} from "@/lib/portfolio";
+} from "@sextante/core/portfolio/types";
 import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
 
 /** Opciones de `fetch` para lecturas que no deben servirse de caché (constante: estable entre renders). */

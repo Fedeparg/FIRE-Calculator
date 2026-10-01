@@ -2,7 +2,7 @@
 // Core puro (sin React), testeable.
 
 import { convertCurrency } from "@sextante/core/fx";
-import type { Position, PriceInfo } from "@/lib/portfolio";
+import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import { isStalePrice } from "@/core/portfolio-prices";
 import { dailyGain, valuePosition, type PositionValuation } from "@/core/portfolio-positions";
 import type { SortableRow } from "./sort";

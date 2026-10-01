@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { Position } from "@/lib/portfolio";
+import type { Position } from "@sextante/core/portfolio/types";
 import { ApiError } from "@/shared/api/client";
 import {
   combinePosition,

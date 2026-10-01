@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { lotErrorKey, type LotErrorKey } from "@/features/portfolio/model/lots";
-import type { LotPayload, PositionLot } from "@/lib/portfolio";
+import type { LotPayload, PositionLot } from "@sextante/core/portfolio/types";
 import { NO_STORE, deleteLot, lotsPath, saveLot } from "@/features/portfolio/api";
 import { useApiQuery } from "@/shared/api/use-api-query";
 

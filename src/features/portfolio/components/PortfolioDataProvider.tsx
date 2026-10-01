@@ -14,7 +14,7 @@ import {
 
 import { aggregatePortfolio, type PortfolioAggregate } from "@sextante/core/fx";
 import { isPricePending, latestFetchedAt } from "@/core/portfolio-prices";
-import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
+import type { FxRates, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import { FX_PATH, listPositions, pricesPath, type PricesBySymbol } from "@/features/portfolio/api";
 import { useApiQuery } from "@/shared/api/use-api-query";
 

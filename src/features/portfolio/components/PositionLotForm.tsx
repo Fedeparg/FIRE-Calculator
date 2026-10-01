@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
-import type { LotPayload, PositionLot, PositionLotKind } from "@/lib/portfolio";
+import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
 
 type Props = {
   /** Lote en edición, o `null` para dar de alta uno nuevo. */
