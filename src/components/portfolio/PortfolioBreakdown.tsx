@@ -115,7 +115,7 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
               onClick={() => setExpanded((open) => !open)}
               aria-expanded={expanded}
               aria-controls={listId}
-              className="-mt-2 inline-flex min-h-8 items-center gap-1 self-start rounded-lg text-xs font-medium text-brand transition hover:underline"
+              className="-mt-2 inline-flex min-h-8 items-center gap-1 self-start rounded-lg text-xs font-medium text-muted transition hover:text-foreground"
             >
               {expanded ? t("showLess") : t("showAll", { count: rest.length })}
               <svg
