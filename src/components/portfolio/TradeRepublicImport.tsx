@@ -278,6 +278,7 @@ function PlanView({
   formatQuantity: FormatQuantity;
 }) {
   const t = useTranslations("portfolio.import.preview");
+  const { formatCurrency } = useFormat();
   const created = plan.positions.filter((p) => p.action === "create" && !p.blockedBy).length;
   const extended = plan.positions.filter((p) => p.action === "extend" && !p.blockedBy).length;
   const importable = plan.positions.filter((p) => !p.blockedBy && p.newBuys + p.newSells > 0);
@@ -314,6 +315,7 @@ function PlanView({
                   <th scope="col" className="px-3 py-2 text-right font-medium">{t("colSells")}</th>
                   <th scope="col" className="px-3 py-2 text-right font-medium">{t("colDuplicates")}</th>
                   <th scope="col" className="px-3 py-2 text-right font-medium">{t("colResulting")}</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colAvgPrice")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -340,11 +342,16 @@ function PlanView({
                           ? t("closed")
                           : formatQuantity(p.resultingQuantity)}
                     </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-foreground">
+                      {/* El importador solo admite operaciones en EUR (ver el parser). */}
+                      {p.resultingAvgPrice === null ? "—" : formatCurrency(p.resultingAvgPrice, "EUR")}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          <p className="text-xs text-muted">{t("avgPriceNote")}</p>
         </>
       )}
 
