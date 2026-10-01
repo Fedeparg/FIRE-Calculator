@@ -5,7 +5,7 @@ import { getExplainer, getArticle } from "./content";
 import { getRelatedArticleSlugs } from "./relatedArticles";
 
 type Props = {
-  /** Slug de la calculadora (ver `src/core/registry.ts`). */
+  /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */
   calcSlug: string;
 };
 

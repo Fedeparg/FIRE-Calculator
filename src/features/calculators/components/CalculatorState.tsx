@@ -23,7 +23,7 @@ import CalculatorActions from "./CalculatorActions";
  * guardar y recargar desde la cuenta.
  */
 type CalculatorStateContextValue = {
-  /** Slug de la calculadora (`src/core/registry.ts`): identifica sus escenarios guardados. */
+  /** Slug de la calculadora (`src/features/calculators/registry.ts`): identifica sus escenarios guardados. */
   slug: string;
   /** Valores actuales. Solo contiene los campos que difieren de su valor por defecto. */
   values: FieldValues;

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { CALCULATORS } from "@/core/registry";
+import { CALCULATORS } from "@/features/calculators/registry";
 import { LOCALES } from "@/core/types";
 import { getArticleSlugs, getContentUpdatedDates, getLegalSlugs } from "@/components/wiki/content";
 import { getChangelogLastUpdated } from "@/components/changelog/content";

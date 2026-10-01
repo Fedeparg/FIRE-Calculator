@@ -13,7 +13,7 @@ type Props = {
   intro: string;
   children: React.ReactNode;
   /**
-   * Slug de la calculadora (ver `src/core/registry.ts`). Si se indica, se
+   * Slug de la calculadora (ver `src/features/calculators/registry.ts`). Si se indica, se
    * renderiza debajo el bloque divulgativo + chips de la wiki. Si se omite (o
    * no hay contenido para ese slug), no se muestra nada.
    */

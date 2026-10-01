@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { asLocale, CATEGORIES, LOCALES, type Locale } from "@/core/types";
-import { CALCULATORS } from "@/core/registry";
+import { CALCULATORS } from "@/features/calculators/registry";
 import { SITE_NAME } from "./site";
 
 /**

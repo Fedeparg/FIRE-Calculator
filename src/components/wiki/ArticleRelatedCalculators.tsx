@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { CALCULATORS } from "@/core/registry";
+import { CALCULATORS } from "@/features/calculators/registry";
 import { asLocale } from "@/core/types";
 import { getRelatedCalculatorSlugs } from "./relatedArticles";
 
