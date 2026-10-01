@@ -10,7 +10,7 @@ import { asLocale } from "@/i18n/types";
 
 /**
  * Novedades escritas a mano: una entrega por día, `content/changelog/<YYYY-MM-DD>.<locale>.md`.
- * Mismo patrón que la wiki (`components/wiki/content.ts`): frontmatter con `gray-matter`, cuerpo
+ * Mismo patrón que la wiki (`src/features/wiki/content.ts`): frontmatter con `gray-matter`, cuerpo
  * Markdown compilado en runtime y sufijo de idioma. La fecha sale del nombre del fichero, no del
  * frontmatter, para que no pueda discrepar de él. Frontmatter: `title` y `highlight` (hito, opcional).
  */

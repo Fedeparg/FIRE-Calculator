@@ -1,14 +1,14 @@
 /**
  * Construcción de ficheros CSV para Excel y compañía. Core puro (sin React ni DOM): recibe
  * cabeceras ya traducidas y filas de celdas, y devuelve el texto. La descarga (Blob + enlace)
- * la hace `lib/download.ts`.
+ * la hace `src/shared/format/download.ts`.
  *
  * **Dialecto según el idioma, por Excel.** Excel no lee el CSV con un dialecto fijo: usa el
  * separador de listas del sistema, que en un Windows/macOS en español es `;` y el decimal es
  * la coma; en inglés son `,` y el punto. Un fichero con comas y puntos abierto en un Excel
  * español mete toda la fila en una celda y lee "1234.56" como texto. Por eso el dialecto se
  * elige por idioma de la UI (`es` → `;` y coma; `en` → `,` y punto), que es el mismo criterio
- * con el que ya se formatean los números en pantalla (`core/format.ts`).
+ * con el que ya se formatean los números en pantalla (`src/shared/format/format.ts`).
  *
  * No se emite la línea `sep=;` (una extensión de Microsoft que Excel entiende, pero que
  * cualquier otro parser —pandas, Numbers, Google Sheets— lee como una fila de datos). Sí se

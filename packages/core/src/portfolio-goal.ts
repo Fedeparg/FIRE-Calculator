@@ -17,7 +17,7 @@ import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "./c
 import { PERIODS_PER_YEAR, project, type Frequency } from "./projection.js";
 
 /**
- * Slug de la calculadora de independencia financiera en `registry.ts`. Identifica los
+ * Slug de la calculadora de independencia financiera en `src/features/calculators/registry.ts`. Identifica los
  * escenarios guardados que comparten la calculadora y este bloque de la cartera: el objetivo
  * se guarda con este slug para que los dos sitios vean exactamente los mismos escenarios.
  */

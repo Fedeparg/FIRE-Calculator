@@ -1,7 +1,7 @@
 /**
  * Exportación de la cartera a CSV. Core puro (sin React ni DOM): recibe los mismos datos que
  * ya tiene la pantalla (posiciones, últimos precios y tasas FX) y devuelve el texto del
- * fichero. El dialecto, el escapado y el BOM son los de `core/csv.ts`.
+ * fichero. El dialecto, el escapado y el BOM son los de `src/shared/format/csv.ts`.
  */
 
 import { buildCsv, type CsvCell } from "@/shared/format/csv";

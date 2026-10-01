@@ -3,7 +3,7 @@
 // El idioma de la UI (`es` | `en`) determina el locale de `Intl`: `es-ES` (separador de
 // miles ".", decimal ",", y sin agrupar las cifras de 4 dígitos, según la norma española)
 // y `en-GB` (agrupa siempre desde 4 dígitos: "£2,000.00"). Los componentes obtienen el
-// juego de formateadores del idioma activo con el hook `useFormat()` (ver `@/lib/format`).
+// juego de formateadores del idioma activo con el hook `useFormat()` (ver `@/shared/format/use-format`).
 //
 // `getFormatters(locale)` memoiza un juego por idioma: `Intl.NumberFormat` es caro de crear,
 // así que se construye una sola vez por locale y se reutiliza en todos los renders.

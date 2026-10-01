@@ -1,7 +1,7 @@
 /**
  * CSV del informe de ganancias realizadas: una fila por VENTA del ejercicio, que es el nivel
  * de detalle que pide la declaración (cada transmisión con su valor de transmisión y de
- * adquisición). Dialecto, escapado y BOM: `core/csv.ts`.
+ * adquisición). Dialecto, escapado y BOM: `src/shared/format/csv.ts`.
  */
 
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
