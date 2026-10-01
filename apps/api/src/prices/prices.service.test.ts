@@ -1,11 +1,11 @@
 import { asc, eq } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices, positions } from '../db/schema.js';
+import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import type { PriceProvider, Quote } from './price-provider.interface.js';
-import { HISTORY_BACKFILL_DAYS, PricesService } from './prices.service.js';
+import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
+import { PricesService } from './prices.service.js';
 import type { SymbolResolver } from './symbol-resolver.js';
 
 /** Resolutor identidad: el ticker ES el símbolo (el caso del buscador, sin OpenFIGI). */
@@ -22,6 +22,7 @@ const identityResolver: SymbolResolver = {
 class StubProvider implements PriceProvider {
   readonly name = 'stub';
   history: Quote[] = [];
+  splits: SplitEvent[] = [];
   quotes: Quote[] = [];
   historyCalls: string[] = [];
   quoteCalls: string[][] = [];
@@ -34,9 +35,12 @@ class StubProvider implements PriceProvider {
     );
   }
 
-  getHistory(symbol: string): Promise<Quote[]> {
+  getHistory(symbol: string): Promise<PriceHistory> {
     this.historyCalls.push(symbol);
-    return Promise.resolve(this.history.filter((q) => q.symbol === symbol));
+    return Promise.resolve({
+      quotes: this.history.filter((q) => q.symbol === symbol),
+      splits: this.splits.filter((e) => e.symbol === symbol),
+    });
   }
 }
 
@@ -62,7 +66,13 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     ({ db, close } = createTestDb());
   });
 
+  // Reloj congelado (solo `Date`) para que las fechas relativas no se desfasen en la medianoche UTC.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date() });
+  });
+
   afterEach(async () => {
+    vi.useRealTimers();
     await resetDb(db);
   });
 
@@ -77,6 +87,7 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
   function makeService(): void {
     provider = new StubProvider();
     service = new PricesService(db, provider, identityResolver);
+    service.historyRequestDelayMs = 0;
   }
 
   /** Filas cacheadas de un símbolo, en orden cronológico. */
@@ -96,16 +107,14 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       quote('IWDA', '2026-03-15', 97.3),
     ];
 
-    // Divisa puente (USD): no dispara además el priming del par FX, que es un
-    // comportamiento aparte y no lo que comprueba este test.
-    await service.primeSymbol('IWDA', 'USD');
+    await service.primeSymbol('IWDA', 'EUR');
 
     const rows = await cachedRows('IWDA');
     expect(rows.map((r) => r.date)).toEqual(['2026-03-13', '2026-03-14', '2026-03-15']);
     expect(rows.map((r) => r.close)).toEqual(['95.10000000', '96.20000000', '97.30000000']);
     expect(rows[0].source).toBe('stub');
     // Una sola petición de histórico por símbolo: no se repite por cada cierre.
-    expect(provider.historyCalls).toEqual(['IWDA']);
+    expect(provider.historyCalls.filter((symbol) => symbol === 'IWDA')).toEqual(['IWDA']);
   });
 
   it('reprimar el mismo símbolo ACTUALIZA los cierres en vez de duplicar filas', async () => {
@@ -159,13 +168,16 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     expect(provider.quoteCalls).toEqual([['EURUSD=X']]);
   });
 
-  it('no pide par FX si la posición ya está en la divisa puente (USD)', async () => {
+  it('con la posición en USD no pide un par USDUSD: solo el EUR, la base de los snapshots', async () => {
     makeService();
-    provider.history = [quote('AAPL', '2026-03-13', 180, 'USD')];
+    provider.history = [
+      quote('AAPL', '2026-03-13', 180, 'USD'),
+      quote('EURUSD=X', '2026-03-13', 1.1, 'USD'),
+    ];
 
     await service.primeSymbol('AAPL', 'USD');
 
-    expect(provider.quoteCalls).toEqual([]);
+    expect(provider.historyCalls).toEqual(['AAPL', 'EURUSD=X']);
   });
 
   it('si la fuente no da histórico, cae al último cierre y la posición no se queda sin precio', async () => {
@@ -178,7 +190,9 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     const rows = await cachedRows('RARO');
     expect(rows).toHaveLength(1);
     expect(rows[0].close).toBe('12.50000000');
-    expect(provider.quoteCalls).toEqual([['RARO']]);
+    // Y, como el resto de altas, asegura la tasa EUR (la base de los snapshots): sin histórico
+    // del par, también cae a su último cierre.
+    expect(provider.quoteCalls).toEqual([['RARO'], ['EURUSD=X']]);
   });
 
   it('un fallo de la fuente no propaga el error (el alta de la posición no se rompe)', async () => {
@@ -246,67 +260,210 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     expect(Date.parse(fetchedAt ?? '')).toBeGreaterThanOrEqual(before - 1000);
   });
 
-  describe('getPricesAsOf / getFxRatesAsOf — precio vigente en una fecha pasada', () => {
-    it('devuelve el precio vigente en la fecha pedida, no el más reciente', async () => {
+  describe('getSeriesSince — series para reconstruir el histórico', () => {
+    it('devuelve la serie de cada ticker y de cada divisa con cierre, en una pasada', async () => {
       makeService();
       provider.history = [
-        quote('IWDA', '2026-03-10', 90),
-        quote('IWDA', '2026-03-12', 92),
-        quote('IWDA', '2026-03-15', 97.3),
+        quote('IWDA', daysAgo(3), 90),
+        quote('IWDA', daysAgo(2), 92),
+        quote('EURUSD=X', daysAgo(2), 1.1, 'USD'),
       ];
-      await service.primeSymbol('IWDA');
+      await service.ensureHistory(
+        new Map([
+          ['IWDA', daysAgo(3)],
+          ['EURUSD=X', daysAgo(3)],
+        ]),
+      );
 
-      const asOf = await service.getPricesAsOf(['IWDA'], '2026-03-13');
+      const { prices, fx } = await service.getSeriesSince(await service.resolveCachedTickers(['IWDA', 'DESCONOCIDO']), daysAgo(3));
 
-      expect(asOf.get('IWDA')).toMatchObject({ close: 92, date: '2026-03-12' });
+      expect(prices.IWDA.map((p) => p.close)).toEqual([90, 92]);
+      expect(prices.IWDA[0]).toEqual({ date: daysAgo(3), close: 90, currency: 'EUR' });
+      expect(prices.DESCONOCIDO).toBeUndefined();
+      expect(fx.EUR).toEqual([{ date: daysAgo(2), rate: 1.1 }]);
+      expect(fx.GBP).toBeUndefined();
     });
 
-    it('sin ningún precio anterior o igual a la fecha pedida, el ticker no aparece', async () => {
+    it('incluye unos días ANTERIORES a `from` para poder arrastrar el cierre previo', async () => {
       makeService();
-      provider.history = [quote('IWDA', '2026-03-15', 97.3)];
-      await service.primeSymbol('IWDA');
+      provider.history = [quote('IWDA', daysAgo(25), 80), quote('IWDA', daysAgo(8), 90), quote('IWDA', daysAgo(1), 95)];
+      await service.ensureHistory(new Map([['IWDA', daysAgo(25)]]));
 
-      const asOf = await service.getPricesAsOf(['IWDA'], '2026-03-10');
+      const { prices } = await service.getSeriesSince(await service.resolveCachedTickers(['IWDA']), daysAgo(5));
 
-      expect(asOf.has('IWDA')).toBe(false);
+      // `daysAgo(8)` entra (margen de arrastre); `daysAgo(25)` queda fuera.
+      expect(prices.IWDA.map((p) => p.close)).toEqual([90, 95]);
     });
 
-    it('getFxRatesAsOf usa la tasa FX vigente en la fecha pedida', async () => {
+    it('sin tickers ni símbolos con datos devuelve series vacías sin fallar', async () => {
       makeService();
-      provider.history = [
-        quote('EURUSD=X', '2026-03-10', 1.05, 'USD'),
-        quote('EURUSD=X', '2026-03-13', 1.1, 'USD'),
-      ];
-      await service.ensureRecentHistory(['EURUSD=X'], HISTORY_BACKFILL_DAYS);
 
-      const fx = await service.getFxRatesAsOf('2026-03-12');
-
-      expect(fx.rates.EUR).toBe(1.05);
-      expect(fx.asOf).toBe('2026-03-10');
+      await expect(service.getSeriesSince(new Map(), daysAgo(5))).resolves.toEqual({ prices: {}, fx: {}, splits: {} });
     });
   });
 
-  describe('ensureRecentHistory — guard de cobertura mínima', () => {
-    it('no vuelve a pedir histórico si el símbolo ya tiene cobertura suficiente', async () => {
+  describe('splits', () => {
+    it('cachea los splits con el histórico y getSeriesSince los devuelve por ticker', async () => {
       makeService();
-      provider.history = [quote('IWDA', daysAgo(1), 100), quote('IWDA', daysAgo(10), 90)];
-      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      provider.history = [quote('NVDA', daysAgo(2), 100, 'USD')];
+      provider.splits = [{ symbol: 'NVDA', date: daysAgo(5), ratio: 10 }];
+
+      await service.primeSymbol('NVDA', 'USD');
+      // Reprimar no duplica el split (PK symbol+date).
+      await service.primeSymbol('NVDA', 'USD');
+
+      const { splits } = await service.getSeriesSince(await service.resolveCachedTickers(['NVDA']), daysAgo(10));
+      expect(splits).toEqual({ NVDA: [{ date: daysAgo(5), ratio: 10 }] });
+    });
+  });
+
+  describe('marca de splits consultados', () => {
+    /** Símbolo ya cacheado ANTES de existir los splits: precios con cobertura, sin splits ni marca. */
+    async function seedLegacySymbol(): Promise<void> {
+      const userId = await insertUser(db, 'legacy@example.com');
+      const [position] = await db
+        .insert(positions)
+        .values({ userId, ticker: 'NVDA', quantity: '10', avgPrice: '100', currency: 'USD' })
+        .returning();
+      await db.insert(positionLots).values({
+        positionId: position.id,
+        userId,
+        kind: 'buy',
+        quantity: '10',
+        price: '100',
+        tradedAt: daysAgo(30),
+      });
+      await db.insert(instrumentPrices).values({
+        symbol: 'NVDA',
+        date: daysAgo(30),
+        close: '100',
+        currency: 'USD',
+        source: 'stub',
+      });
+    }
+
+    it('el arranque reconsulta un símbolo con cobertura suficiente pero sin marca, y carga sus splits', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      provider.splits = [{ symbol: 'NVDA', date: daysAgo(10), ratio: 10 }];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).toContain('NVDA');
+      expect(await db.select().from(instrumentSplits)).toHaveLength(1);
+      expect(await db.select().from(instrumentSplitChecks)).toHaveLength(1);
+    });
+
+    it('con la marca reciente no vuelve a pedir nada (aunque no haya splits)', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      await service.ensureHistoryForActivePositions();
+      provider.historyCalls = [];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).not.toContain('NVDA');
+    });
+
+    it('si la fuente falla (histórico vacío), no se escribe la marca', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = []; // Yahoo caído: `getHistory` devuelve vacío
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(await db.select().from(instrumentSplitChecks)).toEqual([]);
+    });
+
+    it('refreshStaleSplits respeta el tope por pasada y empieza por la marca más antigua', async () => {
+      makeService();
+      const userId = await insertUser(db, 'muchos@example.com');
+      const tickers = Array.from({ length: 45 }, (_, i) => `T${String(i).padStart(2, '0')}`);
+      await db.insert(positions).values(tickers.map((ticker) => ({ userId, ticker, quantity: '1', avgPrice: '1' })));
+      // T44 es el más antiguo de todos; el resto, marcas del mismo día vencidas.
+      await db.insert(instrumentSplitChecks).values(
+        tickers.map((symbol, i) => ({
+          symbol,
+          checkedAt: new Date(Date.now() - (i === 44 ? 30 : 8) * 86_400_000),
+        })),
+      );
+      provider.history = tickers.map((symbol) => quote(symbol, daysAgo(1), 1));
+
+      await service.refreshStaleSplits();
+
+      expect(provider.historyCalls).toHaveLength(40);
+      expect(provider.historyCalls[0]).toBe('T44');
+    });
+
+    it('refreshStaleSplits reconsulta solo los símbolos con la marca de más de 7 días', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      await service.ensureHistoryForActivePositions();
+      provider.historyCalls = [];
+
+      await service.refreshStaleSplits();
+      expect(provider.historyCalls).toEqual([]);
+
+      await db.update(instrumentSplitChecks).set({ checkedAt: new Date(Date.now() - 8 * 86_400_000) });
+      provider.splits = [{ symbol: 'NVDA', date: daysAgo(2), ratio: 4 }];
+      await service.refreshStaleSplits();
+
+      expect(provider.historyCalls).toEqual(['NVDA']);
+      expect((await db.select().from(instrumentSplits)).map((r) => r.ratio)).toEqual(['4.00000000']);
+    });
+  });
+
+  describe('ensureHistoryForTicker', () => {
+    it('pide histórico solo si la cobertura no llega a la fecha del lote', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(100), 90), quote('IWDA', daysAgo(1), 100)];
+      await service.ensureHistoryForTicker('IWDA', daysAgo(100));
+      provider.historyCalls = [];
+
+      await service.ensureHistoryForTicker('IWDA', daysAgo(50)); // ya cubierto
+      expect(provider.historyCalls).not.toContain('IWDA');
+
+      await service.ensureHistoryForTicker('IWDA', daysAgo(300)); // lote más antiguo
+      expect(provider.historyCalls).toContain('IWDA');
+    });
+  });
+
+  describe('ensureHistory — guard de cobertura', () => {
+    it('no vuelve a pedir histórico si el símbolo ya llega hasta la fecha requerida', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(1), 100), quote('IWDA', daysAgo(400), 90)];
+      const required = new Map([['IWDA', daysAgo(395)]]);
+      await service.ensureHistory(required);
       expect(provider.historyCalls).toEqual(['IWDA']);
 
       provider.historyCalls = [];
-      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      await service.ensureHistory(required);
 
       expect(provider.historyCalls).toEqual([]);
     });
 
-    it('vuelve a pedir histórico si la cobertura no llega a los días pedidos', async () => {
+    it('tolera que la primera barra caiga unos días después de la fecha (fin de semana)', async () => {
+      makeService();
+      provider.history = [quote('IWDA', daysAgo(97), 90), quote('IWDA', daysAgo(1), 100)];
+      await service.ensureHistory(new Map([['IWDA', daysAgo(100)]]));
+      provider.historyCalls = [];
+
+      await service.ensureHistory(new Map([['IWDA', daysAgo(100)]]));
+
+      expect(provider.historyCalls).toEqual([]);
+    });
+
+    it('vuelve a pedir histórico si la cobertura no llega a la fecha requerida', async () => {
       makeService();
       provider.history = [quote('IWDA', daysAgo(2), 100)];
-      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      await service.ensureHistory(new Map([['IWDA', daysAgo(30)]]));
       expect(provider.historyCalls).toEqual(['IWDA']);
 
       provider.historyCalls = [];
-      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      await service.ensureHistory(new Map([['IWDA', daysAgo(30)]]));
 
       // El stub no añade más historia entre llamadas: sigue faltando cobertura.
       expect(provider.historyCalls).toEqual(['IWDA']);
@@ -316,27 +473,60 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       makeService();
       provider.history = [quote('IWDA', daysAgo(1), 100)];
 
-      await service.ensureRecentHistory(['IWDA'], HISTORY_BACKFILL_DAYS);
+      await service.ensureHistory(new Map([['IWDA', daysAgo(1)]]));
 
       expect(provider.historyCalls).toEqual(['IWDA']);
       expect(await cachedRows('IWDA')).toHaveLength(1);
     });
+
+    it('cada símbolo se evalúa con su propia fecha: solo se piden los que no llegan', async () => {
+      makeService();
+      provider.history = [quote('AAA', daysAgo(200), 1), quote('BBB', daysAgo(5), 1)];
+      await service.ensureHistory(new Map([['AAA', daysAgo(200)], ['BBB', daysAgo(5)]]));
+      provider.historyCalls = [];
+
+      await service.ensureHistory(new Map([['AAA', daysAgo(190)], ['BBB', daysAgo(100)]]));
+
+      expect(provider.historyCalls).toEqual(['BBB']);
+    });
+
+    it('un fallo de la fuente en un símbolo no impide pedir el siguiente', async () => {
+      makeService();
+      provider.history = [quote('BBB', daysAgo(1), 1)];
+      const original = provider.getHistory.bind(provider);
+      provider.getHistory = (symbol) =>
+        symbol === 'AAA' ? Promise.reject(new Error('Yahoo caído')) : original(symbol);
+
+      await service.ensureHistory(new Map([['AAA', daysAgo(1)], ['BBB', daysAgo(1)]]));
+
+      expect(await cachedRows('BBB')).toHaveLength(1);
+    });
   });
 
-  describe('ensureRecentHistoryForActivePositions', () => {
-    it('asegura cobertura para los símbolos en uso y para todos los pares FX soportados', async () => {
-      makeService();
-      const userId = await insertUser(db, 'a@example.com');
-      await db.insert(positions).values({
+  describe('ensureHistoryForActivePositions', () => {
+    /** Posición con un único lote de compra en `tradedAt`. */
+    async function insertPositionWithLot(ticker: string, currency: string, tradedAt: string): Promise<void> {
+      const userId = await insertUser(db, `${ticker}@example.com`);
+      const [position] = await db
+        .insert(positions)
+        .values({ userId, ticker, quantity: '10', avgPrice: '150', currency })
+        .returning();
+      await db.insert(positionLots).values({
+        positionId: position.id,
         userId,
-        ticker: 'AAPL',
+        kind: 'buy',
         quantity: '10',
-        avgPrice: '150',
-        currency: 'USD',
+        price: '150',
+        tradedAt,
       });
-      provider.history = [quote('AAPL', daysAgo(1), 180, 'USD')];
+    }
 
-      await service.ensureRecentHistoryForActivePositions(HISTORY_BACKFILL_DAYS);
+    it('pide histórico de los símbolos en uso y de todos los pares FX soportados', async () => {
+      makeService();
+      await insertPositionWithLot('AAPL', 'USD', daysAgo(30));
+      provider.history = [quote('AAPL', daysAgo(30), 180, 'USD')];
+
+      await service.ensureHistoryForActivePositions();
 
       expect(await cachedRows('AAPL')).toHaveLength(1);
       // El par EUR/USD se asegura SIEMPRE (para el total agregado), aunque ninguna posición
@@ -344,10 +534,53 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       expect(provider.historyCalls).toEqual(expect.arrayContaining(['AAPL', 'EURUSD=X']));
     });
 
+    it('no vuelve a pedir nada cuando el histórico ya llega a la primera operación', async () => {
+      makeService();
+      await insertPositionWithLot('AAPL', 'USD', daysAgo(30));
+      provider.history = [quote('AAPL', daysAgo(30), 180, 'USD'), quote('EURUSD=X', daysAgo(30), 1.1, 'USD')];
+      await service.ensureHistoryForActivePositions();
+      provider.historyCalls = [];
+
+      await service.ensureHistoryForActivePositions();
+
+      // Los pares sin datos en el stub (GBP, JPY…) se reintentan; el instrumento y el EUR no.
+      expect(provider.historyCalls).not.toContain('AAPL');
+      expect(provider.historyCalls).not.toContain('EURUSD=X');
+    });
+
+    it('con una operación más antigua que el histórico cacheado, vuelve a pedirlo', async () => {
+      makeService();
+      await insertPositionWithLot('AAPL', 'USD', daysAgo(400));
+      await db.insert(instrumentPrices).values({
+        symbol: 'AAPL',
+        date: daysAgo(365),
+        close: '170',
+        currency: 'USD',
+        source: 'stub',
+      });
+      provider.history = [quote('AAPL', daysAgo(400), 150, 'USD')];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).toContain('AAPL');
+      expect((await cachedRows('AAPL')).map((r) => r.date)).toContain(daysAgo(400));
+    });
+
+    it('una posición sin lotes también entra, con su fecha de alta como primera operación', async () => {
+      makeService();
+      const userId = await insertUser(db, 'sinlotes@example.com');
+      await db.insert(positions).values({ userId, ticker: 'MSFT', quantity: '1', avgPrice: '1', currency: 'USD' });
+      provider.history = [quote('MSFT', daysAgo(0), 400, 'USD')];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).toContain('MSFT');
+    });
+
     it('sin posiciones, no pide histórico de instrumentos pero sí el de los pares FX', async () => {
       makeService();
 
-      await service.ensureRecentHistoryForActivePositions(HISTORY_BACKFILL_DAYS);
+      await service.ensureHistoryForActivePositions();
 
       expect(provider.historyCalls).toEqual(expect.arrayContaining(['EURUSD=X']));
       expect(provider.historyCalls).not.toContain('AAPL');

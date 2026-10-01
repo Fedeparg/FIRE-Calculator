@@ -13,6 +13,7 @@ import type { PricesService } from '../prices/prices.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
 import { PositionLotsService } from './position-lots.service.js';
+import { LOT_CHANGED_EVENT } from './position-events.js';
 import { PositionsService } from './positions.service.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
@@ -33,7 +34,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(db, pricesStub, new PositionLotsService(db), new EventEmitter2());
+    service = new PositionsService(db, pricesStub, new PositionLotsService(db, new EventEmitter2()), new EventEmitter2());
   });
 
   afterEach(async () => {
@@ -134,5 +135,20 @@ describe('PositionsService (integración con Postgres)', () => {
     await expect(
       service.create(randomUUID(), dto({ ticker: 'IWDA' })),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('editar cantidad o precio medio emite LOT_CHANGED_EVENT (los lotes se realinean)', async () => {
+    const events = new EventEmitter2();
+    const emitted: unknown[] = [];
+    events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
+    const svc = new PositionsService(db, pricesStub, new PositionLotsService(db, new EventEmitter2()), events);
+    const userId = await insertUser(db, 'a@example.com');
+    const position = await svc.create(userId, dto({ ticker: 'IWDA' }));
+
+    await svc.update(userId, position.id, { name: 'Solo el nombre' });
+    expect(emitted).toEqual([]);
+
+    await svc.update(userId, position.id, { quantity: 5 });
+    expect(emitted).toEqual([{ userId, positionId: position.id }]);
   });
 });

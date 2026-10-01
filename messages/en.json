@@ -1101,7 +1101,7 @@
       "sincePurchaseAmount": "{amount} since purchase",
       "thisYear": "This year",
       "thisYearSince": "Since {date}",
-      "thisYearEstimated": "This year's gain starts from an estimate: your current portfolio valued at the prices back then."
+      "thisYearEstimated": "This year's gain starts from a reconstruction based on your trades, not from a real capture of that date."
     },
     "goal": {
       "title": "Your financial independence goal",
@@ -1287,7 +1287,7 @@
       "date": "Date",
       "dropped": "{count, plural, =1 {One day in the period could not be converted to this currency and is not shown in the chart.} other {# days in the period could not be converted to this currency and are not shown in the chart.}}",
       "cadence": "Each point is that day's closing valuation. It is stored in euros together with the exchange rates of that day, so switching currency re-expresses it with the rates of the time, not today's.",
-      "estimatedNotice": "The shaded area (up to {date}) is an estimate: it applies your current portfolio to the prices of those days.",
+      "estimatedNotice": "The shaded areas are a reconstruction from your trades, valued at each day's closing prices; they are not real captures of those dates.",
       "legendMarketValue": "what the portfolio was worth each day.",
       "legendInvested": "what you had put in up to that day.",
       "estimatedShadeLabel": "Estimated",

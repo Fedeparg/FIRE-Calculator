@@ -14,3 +14,16 @@ export const POSITION_CREATED_EVENT = 'position.created';
 export interface PositionCreatedEvent {
   userId: string;
 }
+
+/**
+ * Emitido tras añadir, editar o borrar un lote de una posición existente (ver
+ * `position-lots.controller.ts`). Un lote con fecha anterior puede necesitar más histórico de
+ * precios y siempre cambia la reconstrucción de la evolución; `PortfolioSnapshotsService` lo
+ * atiende (mismo desacoplo por evento que `POSITION_CREATED_EVENT`).
+ */
+export const LOT_CHANGED_EVENT = 'position.lot-changed';
+
+export interface LotChangedEvent {
+  userId: string;
+  positionId: string;
+}

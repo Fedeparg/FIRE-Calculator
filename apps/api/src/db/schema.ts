@@ -227,13 +227,12 @@ export const portfolioSnapshots = pgTable(
     /** Tasas FX del día: USD por unidad de cada divisa (USD = 1). */
     fxRates: jsonb('fx_rates').$type<Record<string, number>>().notNull(),
     /**
-     * `true` si esta fila es una valoración BACKFILLED (cantidad ACTUAL de la cartera
-     * aplicada a los precios de un día pasado), no una captura real del cron de esa fecha.
-     * Una captura real (`PortfolioSnapshotsService.captureUser`) SIEMPRE la sustituye,
-     * pase lo que pase; una pasada de backfill posterior solo puede REFINAR una fila que ya
-     * era estimada (ver el `setWhere` del upsert en `backfillUser`), nunca pisar una real.
-     * El frontend la usa para no presentar una aproximación con la misma certeza que un
-     * dato real.
+     * `true` si esta fila es una RECONSTRUCCIÓN a partir de los lotes (la cantidad y el coste
+     * que se tenían ese día según las operaciones, valorados con los cierres de la caché), no una
+     * captura real del cron de esa fecha. Una captura real (`PortfolioSnapshotsService.captureUser`)
+     * SIEMPRE la sustituye, pase lo que pase; una reconstrucción posterior solo vuelve a escribir
+     * las filas estimadas (borra y regenera) y nunca pisa una real (ver `backfillUser`). El
+     * frontend la usa para no presentar una aproximación con la misma certeza que un dato real.
      */
     estimated: boolean('estimated').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -312,6 +311,35 @@ export const instrumentPrices = pgTable(
 
 export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
 export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
+
+/**
+ * Splits de un instrumento (fuente: `events=split` de la misma llamada de histórico). Los cierres
+ * de `instrument_prices` vienen ajustados por splits y las cantidades de los lotes son crudas, así
+ * que la reconstrucción del histórico de la cartera necesita saber cuándo hubo splits para
+ * expresar los lotes en acciones de hoy (ver `@sextante/core/portfolio-history`).
+ * `ratio` = acciones nuevas por cada antigua (10 en un 10:1, 0,5 en un 1:2 inverso). `date` es el
+ * primer día cotizando ya con el split (UTC). PK `(symbol, date)`.
+ */
+export const instrumentSplits = pgTable(
+  'instrument_splits',
+  {
+    symbol: varchar('symbol', { length: 40 }).notNull(),
+    date: date('date').notNull(),
+    ratio: numeric('ratio', { precision: 20, scale: 8 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.symbol, table.date] })],
+);
+
+/**
+ * Marca de "splits consultados" por símbolo. Una `instrument_splits` sin filas no distingue "sin
+ * splits" de "nunca consultado" (los símbolos cacheados antes de existir esta tabla), así que la
+ * consulta deja aquí su fecha: el arranque consulta los símbolos en uso sin marca y refresca los
+ * de marca antigua (un split posterior al priming no se vería de otro modo).
+ */
+export const instrumentSplitChecks = pgTable('instrument_split_checks', {
+  symbol: varchar('symbol', { length: 40 }).primaryKey(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 /**
  * Caché de resolución ticker/ISIN → símbolo de la fuente de precios. La traducción real

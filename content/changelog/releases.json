@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "06fd1202",
+          "type": "fix",
+          "scope": "api",
+          "category": "fix",
+          "text": {
+            "es": "acota y ordena el refresco semanal de splits",
+            "en": "cap and order the weekly splits refresh"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "76fec057",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe los arreglos de la cabecera móvil",
+            "en": "describe the mobile header fixes"
+          },
+          "hidden": true
+        },
+        {
           "hash": "9109f61e",
           "type": "fix",
           "scope": "ui",
@@ -23,6 +45,17 @@
             "en": "on phones the header takes less room, help buttons and links are easier to tap and chart axis figures no longer wrap"
           },
           "hidden": false
+        },
+        {
+          "hash": "f514fcc2",
+          "type": "fix",
+          "scope": "api",
+          "category": "fix",
+          "text": {
+            "es": "registra los splits consultados, los refresca cada semana y agrupa las reconstrucciones",
+            "en": "track checked splits, refresh them weekly and coalesce rebuilds"
+          },
+          "hidden": true
         },
         {
           "hash": "7042e855",
@@ -43,6 +76,28 @@
           "text": {
             "es": "al importar desde Trade Republic, la vista previa muestra el precio medio resultante, calculado con el precio real de cada operación, para que lo compares antes de confirmar",
             "en": "the Trade Republic import preview shows the resulting average price, computed from each trade’s actual price, so you can check it before confirming"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "d5048c25",
+          "type": "fix",
+          "scope": "api",
+          "category": "fix",
+          "text": {
+            "es": "guarda los splits, escribe solo las diferencias y bloquea reconstrucciones simultáneas",
+            "en": "store splits, write only diffs and lock concurrent rebuilds"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "6eb326f7",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "la evolución tiene en cuenta los splits y sombrea por separado cada tramo estimado",
+            "en": "the history accounts for stock splits and shades each estimated stretch separately"
           },
           "hidden": false
         },
@@ -157,6 +212,17 @@
           "hidden": true
         },
         {
+          "hash": "9b7fcb79",
+          "type": "feat",
+          "scope": "api",
+          "category": "feature",
+          "text": {
+            "es": "la evolución de la cartera llega hasta 5 años atrás, desde tu primera operación y con lo que tenías cada día, en vez de solo la última semana",
+            "en": "portfolio history now goes back up to 5 years, from your first trade and with what you actually held each day, instead of just the last week"
+          },
+          "hidden": false
+        },
+        {
           "hash": "0235220a",
           "type": "docs",
           "scope": "changelog",
@@ -177,6 +243,17 @@
             "en": "the history block is simpler: a short title, compact ranges, the period change on one line and a clear legend for the estimated area"
           },
           "hidden": false
+        },
+        {
+          "hash": "09b4d600",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "reconstrucción del histórico de la cartera a partir de los lotes",
+            "en": "rebuild portfolio history from lots"
+          },
+          "hidden": true
         },
         {
           "hash": "f5f1c360",

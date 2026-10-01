@@ -10,7 +10,7 @@ import { CronJob } from 'cron';
 
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
-import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
+import { PricesService } from '../prices/prices.service.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
@@ -28,14 +28,16 @@ const TIME_ZONE = 'Europe/Madrid';
  * Trabajo nocturno de la cartera, en CUATRO pasos y en este orden:
  *   1. Refresco de precios de todos los símbolos en uso y de los pares FX.
  *   2. Snapshot de valoración de la cartera de cada usuario (captura REAL de hoy).
- *   3. Backfill de los últimos `HISTORY_BACKFILL_DAYS` días (autocurativo).
+ *   3. Reconstrucción del histórico desde la primera operación (autocurativa).
  *   4. Alertas de hitos del objetivo FIRE (opt-in), sobre el snapshot real recién capturado.
  *
  * El orden de 1→2 importa: el snapshot valora con el último precio conocido, así que
  * capturarlo ANTES del refresco guardaría el cierre de ayer con fecha de hoy. El paso 3 va
- * el último y es barato si ya hay datos (los guards de `ensureRecentHistory`/el `setWhere`
- * del upsert de `backfillUser` lo hacen no-op): sirve para reparar backfills parciales de
- * altas de posición que corrieron mientras el histórico aún se estaba trayendo.
+ * después y solo LEE precios de la caché (3 lecturas y unas pocas escrituras por usuario): no
+ * llama a la fuente externa, así que el histórico largo (5 años) no se vuelve a descargar cada
+ * noche. Sirve para reparar reconstrucciones parciales de altas que corrieron mientras el
+ * histórico aún se estaba trayendo; el histórico que falte lo pide `ensureHistoryForActivePositions`
+ * al arrancar y `primeSymbol` al dar de alta.
  *
  * Se ejecuta TODOS los días (no solo en días de bolsa): en findes/festivos las acciones
  * devuelven el último cierre y la cripto —que cotiza 24/7— se actualiza igualmente; el
@@ -100,17 +102,19 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
    * y sin bloquear `listen()`: `void`, tolerante a fallos en sus dos pasos.
    */
   onApplicationBootstrap(): void {
-    void this.bootstrapBackfill();
+    // Bajo el mismo cerrojo que el nocturno y el intradía: la pasada de arranque puede pedir
+    // decenas de históricos a Yahoo y no debe solaparse con un refresco.
+    void this.exclusive('arranque', () => this.bootstrapBackfill());
   }
 
   private async bootstrapBackfill(): Promise<void> {
     try {
-      await this.prices.ensureRecentHistoryForActivePositions(HISTORY_BACKFILL_DAYS);
+      await this.prices.ensureHistoryForActivePositions();
     } catch (error) {
       this.logger.error(`Backfill de histórico de precios al arrancar falló: ${(error as Error).message}`);
     }
     try {
-      await this.snapshots.backfillAll(HISTORY_BACKFILL_DAYS);
+      await this.snapshots.backfillAll();
     } catch (error) {
       this.logger.error(`Backfill de snapshots al arrancar falló: ${(error as Error).message}`);
     }
@@ -170,7 +174,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     }
 
     try {
-      await this.snapshots.backfillAll(HISTORY_BACKFILL_DAYS);
+      await this.snapshots.backfillAll();
     } catch (error) {
       this.logger.error(`Backfill de snapshots falló: ${(error as Error).message}`);
     }
@@ -184,6 +188,14 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       }
     } catch (error) {
       this.logger.error(`Evaluación de alertas FIRE falló: ${(error as Error).message}`);
+    }
+
+    // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
+    // Va el último: el snapshot y los avisos no deben esperar a Yahoo.
+    try {
+      await this.prices.refreshStaleSplits();
+    } catch (error) {
+      this.logger.error(`Refresco de splits falló: ${(error as Error).message}`);
     }
   }
 }

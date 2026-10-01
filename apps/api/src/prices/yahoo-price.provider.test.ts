@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   epochToUtcDate,
   parseYahooChart,
   parseYahooChartHistory,
+  parseYahooSplits,
+  YahooPriceProvider,
 } from './yahoo-price.provider.js';
 
 /** Construye una respuesta de Yahoo con el `meta` indicado. */
@@ -156,5 +158,67 @@ describe('parseYahooChartHistory', () => {
     ['sin closes', { chart: { result: [{ meta: { currency: 'EUR' }, timestamp: [DAY_1] }] } }],
   ])('devuelve [] con una respuesta inutilizable: %s', (_label, body) => {
     expect(parseYahooChartHistory('X', body)).toEqual([]);
+  });
+});
+
+describe('YahooPriceProvider.getHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('pide 5 años de cierres diarios en UNA sola llamada', async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          chart: {
+            result: [
+              { meta: { currency: 'EUR' }, timestamp: [1_773_570_600], indicators: { quote: [{ close: [95.4] }] } },
+            ],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const history = await new YahooPriceProvider().getHistory('IWDA.AS');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as unknown as [string];
+    expect(url).toContain('/IWDA.AS?');
+    expect(url).toContain('range=5y');
+    expect(url).toContain('interval=1d');
+    expect(url).toContain('events=split');
+    expect(history.quotes).toEqual([{ symbol: 'IWDA.AS', close: 95.4, currency: 'EUR', date: '2026-03-15' }]);
+    expect(history.splits).toEqual([]);
+  });
+});
+
+describe('parseYahooSplits', () => {
+  const body = (splits: unknown): unknown => ({ chart: { result: [{ events: { splits } }] } });
+
+  it('extrae los splits con su ratio y fecha UTC, ordenados', () => {
+    expect(
+      parseYahooSplits(
+        'NVDA',
+        body({
+          b: { date: 1_718_026_200, numerator: 10, denominator: 1 },
+          a: { date: 1_600_000_000, numerator: 1, denominator: 2 },
+        }),
+      ),
+    ).toEqual([
+      { symbol: 'NVDA', date: '2020-09-13', ratio: 0.5 },
+      { symbol: 'NVDA', date: '2024-06-10', ratio: 10 },
+    ]);
+  });
+
+  it.each([
+    ['sin events', {}],
+    ['sin splits', { chart: { result: [{ events: {} }] } }],
+    ['ratio cero', body({ a: { date: 1_718_026_200, numerator: 0, denominator: 1 } })],
+    ['denominador no numérico', body({ a: { date: 1_718_026_200, numerator: 2, denominator: '1' } })],
+    ['sin fecha', body({ a: { numerator: 2, denominator: 1 } })],
+    ['null', null],
+  ])('descarta lo inutilizable: %s', (_label, input) => {
+    expect(parseYahooSplits('X', input)).toEqual([]);
   });
 });

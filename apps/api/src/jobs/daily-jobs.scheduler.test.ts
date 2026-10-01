@@ -25,7 +25,8 @@ function setup(env: Record<string, string> = {}) {
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
-    ensureRecentHistoryForActivePositions: vi.fn(() => Promise.resolve()),
+    refreshStaleSplits: vi.fn(() => Promise.resolve()),
+    ensureHistoryForActivePositions: vi.fn(() => Promise.resolve()),
   };
   const snapshots = {
     captureAll: vi.fn(() => Promise.resolve({ date: '2026-09-28', users: 0, captured: 0, failed: 0 })),
@@ -53,6 +54,24 @@ afterEach(() => {
 });
 
 describe('DailyJobsScheduler', () => {
+  it('la pasada de arranque corre bajo el cerrojo: un refresco intradía simultáneo se omite', async () => {
+    const { scheduler, prices } = setup();
+    let release: () => void = () => undefined;
+    prices.ensureHistoryForActivePositions.mockImplementation(
+      () => new Promise<void>((resolve) => (release = resolve)),
+    );
+
+    scheduler.onApplicationBootstrap();
+    await scheduler.runIntraday(); // el arranque aún tiene el cerrojo
+    expect(prices.refreshAll).not.toHaveBeenCalled();
+
+    release();
+    await vi.waitFor(async () => {
+      await scheduler.runIntraday();
+      expect(prices.refreshAll).toHaveBeenCalled();
+    });
+  });
+
   it('registra el trabajo nocturno y el intradía con su horario por defecto', () => {
     const { scheduler, jobs } = setup();
     scheduler.onModuleInit();

@@ -1101,7 +1101,7 @@
       "sincePurchaseAmount": "{amount} desde la compra",
       "thisYear": "Este año",
       "thisYearSince": "Desde el {date}",
-      "thisYearEstimated": "La ganancia del año parte de una estimación: tu cartera actual valorada con los precios de entonces."
+      "thisYearEstimated": "La ganancia del año parte de una reconstrucción a partir de tus operaciones, no de una captura real de esa fecha."
     },
     "goal": {
       "title": "Tu objetivo de independencia financiera",
@@ -1287,7 +1287,7 @@
       "date": "Fecha",
       "dropped": "{count, plural, =1 {Un día del periodo no se ha podido convertir a esta divisa y no aparece en la gráfica.} other {# días del periodo no se han podido convertir a esta divisa y no aparecen en la gráfica.}}",
       "cadence": "Cada punto es la valoración de cierre de ese día. Se guarda en euros junto con los tipos de cambio de la jornada, así que al cambiar de divisa se reexpresa con las tasas de entonces, no con las de hoy.",
-      "estimatedNotice": "La zona sombreada (hasta el {date}) es una estimación: aplica tu cartera actual a los precios de aquellos días.",
+      "estimatedNotice": "Las zonas sombreadas son una reconstrucción a partir de tus operaciones, valoradas con los cierres de cada día; no son capturas reales de esas fechas.",
       "legendMarketValue": "lo que valía la cartera cada día.",
       "legendInvested": "lo que habías puesto hasta ese día.",
       "estimatedShadeLabel": "Estimado",

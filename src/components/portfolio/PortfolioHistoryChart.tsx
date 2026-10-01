@@ -166,28 +166,22 @@ export default function PortfolioHistoryChart({ display }: Props) {
             showTotal={false}
             xMinTickGap={48}
             xInterval="preserveStartEnd"
-            shadedRanges={
-              series.estimatedRange
-                ? [
-                    {
-                      from: series.estimatedRange.from,
-                      to: series.estimatedRange.to,
-                      label: t("estimatedShadeLabel"),
-                    },
-                  ]
-                : []
-            }
+            shadedRanges={series.estimatedRanges.map((range) => ({
+              from: range.from,
+              to: range.to,
+              label: t("estimatedShadeLabel"),
+            }))}
             extraColumns={[estimatedColumn]}
             // Un valor base alto con poca variación se aplana pegado al 0: se ajusta el eje
             // al rango real de la cartera en vez de forzar el suelo en cero.
             yDomain="fit"
           />
 
-          {series.estimatedRange && (
+          {series.estimatedRanges.length > 0 && (
             <p className="flex items-center gap-2 text-xs text-muted">
               {/* Misma tinta que la zona sombreada de la gráfica (`--warning` al 10 %). */}
               <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-sm border border-border bg-warning/10" />
-              {t("estimatedNotice", { date: formatIsoDate(series.estimatedRange.to) })}
+              {t("estimatedNotice")}
             </p>
           )}
           <ul className="flex flex-col gap-1 text-xs text-muted">
