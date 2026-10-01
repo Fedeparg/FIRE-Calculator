@@ -9,6 +9,7 @@ import { convertCurrency } from '@sextante/core/fx';
 import { fireTargetFromInputs, newMilestone, reachedMilestone } from './fire-milestones.js';
 import { NotificationSettingsService } from './notification-settings.service.js';
 import { createUnsubscribeToken } from './unsubscribe-token.js';
+import { todayUtc } from '../common/dates.js';
 
 /** Resultado de una pasada, para el log del trabajo nocturno. */
 export interface FireAlertsSummary {
@@ -20,9 +21,6 @@ export interface FireAlertsSummary {
 type Outcome = 'sent' | 'skipped';
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que los snapshots. */
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /**
  * Evalúa los hitos del objetivo FIRE de cada usuario con alertas activas, justo después de la

@@ -1,15 +1,14 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
 import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
+import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 15 * * * *';
-const TIME_ZONE = 'Europe/Madrid';
 
 /**
  * Retenciones por defecto, en días. Criterios:
@@ -62,11 +61,12 @@ export class OAuthReaper implements OnModuleInit {
   ) {}
 
   onModuleInit(): void {
-    // `|| DEFAULT_CRON` (no `??`): la env vacía del compose llega como "" y debe caer al default.
-    const cronTime = this.config.get<string>('OAUTH_REAPER_CRON')?.trim() || DEFAULT_CRON;
-    const job = new CronJob(cronTime, () => void this.runSafely(), null, false, TIME_ZONE);
-    this.registry.addCronJob('oauth-reaper', job);
-    job.start();
+    const cronTime = scheduleFromEnv(this.registry, {
+      name: 'oauth-reaper',
+      cronTime: this.config.get<string>('OAUTH_REAPER_CRON'),
+      defaultCron: DEFAULT_CRON,
+      handler: () => void this.runSafely(),
+    });
     this.logger.log(`Limpieza programada: "${cronTime}" (${TIME_ZONE})`);
   }
 
