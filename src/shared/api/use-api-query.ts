@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
 import { ApiError, apiJson, isAbortError } from "./client";
 
@@ -9,7 +9,7 @@ export type ApiQueryState<T> =
   | { status: "ready"; data: T }
   | { status: "error"; error: ApiError };
 
-export type ApiQueryOptions = {
+export type ApiQueryOptions<T = unknown> = {
   /** Opciones de `fetch` (p. ej. `cache: "no-store"`). Deben ser estables entre renders (constante de módulo). */
   init?: Omit<RequestInit, "signal" | "body">;
   /**
@@ -17,6 +17,12 @@ export type ApiQueryOptions = {
    * en vez de `loading`: evita que la interfaz parpadee en recargas de fondo.
    */
   keepPrevious?: boolean;
+  /**
+   * Se llama cuando una petición termina (con datos o con error), no cuando se cancela. Para
+   * efectos que dependen de la llegada de la respuesta (p. ej. fijar "cuándo se recibió"),
+   * que no pueden calcularse durante el render. Siempre ve la versión más reciente del callback.
+   */
+  onSettled?: (state: Exclude<ApiQueryState<T>, { status: "loading" }>) => void;
 };
 
 /**
@@ -47,7 +53,7 @@ export async function runApiQuery<T>(
  */
 export function useApiQuery<T>(
   path: string | null,
-  options?: ApiQueryOptions,
+  options?: ApiQueryOptions<T>,
 ): ApiQueryState<T> & { refetch: () => void } {
   const init = options?.init;
   const keepPrevious = options?.keepPrevious ?? false;
@@ -58,10 +64,19 @@ export function useApiQuery<T>(
   const requestKey = `${path ?? ""}#${reloadKey}`;
   const [result, setResult] = useState<{ key: string; state: ApiQueryState<T> } | null>(null);
 
+  // `useEffectEvent`: el callback se lee fresco dentro del effect sin que su identidad
+  // (normalmente una función inline) relance la petición.
+  const notifySettled = useEffectEvent((state: Exclude<ApiQueryState<T>, { status: "loading" }>) =>
+    options?.onSettled?.(state),
+  );
+
   useEffect(() => {
     if (path === null) return;
     const controller = new AbortController();
-    void runApiQuery<T>(path, init, controller.signal, (state) => setResult({ key: requestKey, state }));
+    void runApiQuery<T>(path, init, controller.signal, (state) => {
+      setResult({ key: requestKey, state });
+      if (state.status !== "loading") notifySettled(state);
+    });
     return () => controller.abort();
   }, [path, init, requestKey]);
 
