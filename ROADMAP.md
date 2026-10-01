@@ -24,7 +24,7 @@ Where Sextante is today, what's next, and what it deliberately won't do.
 | **FIRE goal on your real money** — the portfolio tracks progress towards your independence target and its Monte Carlo probability of success, sharing scenarios with the calculator; CSV export included | ✅ Live |
 | **FIRE milestone emails** — opt-in notice at 25/50/75/100 % of your goal, at most once per milestone, re-baselined when the goal changes, one-click unsubscribe (RFC 8058) with a signed, non-expiring link | ✅ Live |
 | **Changelog** — a public What's new page built from the project's own commit history, kept honest by a generator | ✅ Live |
-| **Remote MCP server** — 41 tools over Streamable HTTP: the portfolio, its realised gains by tax year, breakdown and FIRE goal progress, saved scenarios and **every calculator**, running the same `@sextante/core` code as the web. OAuth 2.1, per-tool scope step-up, per-token rate limit | ✅ Live |
+| **Remote MCP server** — 42 tools over Streamable HTTP: the portfolio, its realised gains by tax year, breakdown and FIRE goal progress, saved scenarios and **every calculator**, running the same `@sextante/core` code as the web. OAuth 2.1, per-tool scope step-up, per-token rate limit | ✅ Live |
 | **GDPR tooling** — data export, account deletion with cascade, connected-app revocation | ✅ Live |
 | **SEO** — canonical URLs, hreflang, sitemap, JSON-LD, dynamic OG images | ✅ Live |
 | **Ops** — CI-gated deploy, Dockerized rootless containers, encrypted off-site Postgres backups verified as restorable before upload | ✅ Live |

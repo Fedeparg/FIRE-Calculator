@@ -275,7 +275,7 @@ standard — not personal access tokens.
 **Calculators** (any connected token; they read nothing from the account): one tool
 per calculator — `calculate_mortgage`, `calculate_net_salary`, `calculate_fire`,
 `simulate_fire_monte_carlo`, `compare_buy_vs_rent`, `calculate_wealth_tax`,
-`score_financial_health` and the rest, 25 in all. They run the **same
+`score_financial_health` and the rest, 26 in all. They run the **same
 `@sextante/core` code as the web**, so the assistant and the page can never
 disagree, and every input is bounded so a call can't make the server simulate a
 million lives.

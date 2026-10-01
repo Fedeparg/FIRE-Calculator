@@ -125,7 +125,7 @@ reexpresar el histórico en cualquier divisa soportada sin recalcularlo.
 
 ## Tools MCP
 
-41 tools: 16 de cartera, cada una con su scope, y 25 calculadoras. Las de escritura
+42 tools: 16 de cartera, cada una con su scope, y 26 calculadoras. Las de escritura
 exigen `portfolio:write` en tiempo de ejecución (step-up por tool, no un 403 HTTP) y
 todas quedan en `mcp_audit_log` (nombre de la tool y resultado, nunca los argumentos).
 
@@ -172,7 +172,7 @@ tool y su entrada de muestra en `calculator-tools.test.ts` (el test lo exige).
 | `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |
 | `src/jobs/` | Cron nocturno: refresco de precios → captura de snapshots, en ese orden. |
 | `src/oauth/` | Authorization Server OAuth 2.1 del MCP: clientes, grants, códigos, tokens y reaper. |
-| `src/mcp/` | Servidor MCP remoto (Streamable HTTP), sus 41 tools y el log de auditoría. |
+| `src/mcp/` | Servidor MCP remoto (Streamable HTTP), sus 42 tools y el log de auditoría. |
 | `src/account/` | Cuenta del usuario: apps conectadas, export y borrado (RGPD). |
 | `src/donations/` | Sesión de Stripe Checkout para las donaciones. |
 | `src/health/` | `/api/health` (comprueba la conexión a Postgres). |
