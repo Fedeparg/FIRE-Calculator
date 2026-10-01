@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, it } from "vitest";
 
 import { getFormatters } from "./format";
-import { PROPERTY_PARAMS } from "@sextante/core/property-config";
+import { PROPERTY_PARAMS } from "../../../packages/core/src/test-support/property-config";
 import { LOCALES } from "@/i18n/types";
 
 const NON_FINITE = "—";

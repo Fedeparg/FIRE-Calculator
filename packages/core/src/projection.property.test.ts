@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "./property-config.js";
+import { PROPERTY_PARAMS } from "./test-support/property-config.js";
 import { FREQUENCIES, project, type ProjectionInput } from "./projection.js";
 
 /** Entradas "normales": importes y tasas no negativos, horizonte razonable. */
