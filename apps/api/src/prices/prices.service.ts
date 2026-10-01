@@ -49,6 +49,8 @@ const COVERAGE_TOLERANCE_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Antigüedad (días) a partir de la cual se vuelven a consultar los splits de un símbolo. */
 const SPLITS_REFRESH_DAYS = 7;
+/** Tope de símbolos que reconsulta `refreshStaleSplits` por pasada (los vencimientos nacen el mismo día). */
+const SPLITS_REFRESH_MAX_PER_RUN = 40;
 /** `YYYY-MM-DD` (UTC) de hace `days` días. */
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * MS_PER_DAY).toISOString().slice(0, 10);
@@ -537,20 +539,22 @@ export class PricesService {
       .from(instrumentSplitChecks)
       .where(inArray(instrumentSplitChecks.symbol, [...symbols]));
     const checkedAt = new Map(rows.map((r) => [r.symbol, r.checkedAt]));
-    return symbols.filter((symbol) => {
-      const at = checkedAt.get(symbol);
-      return !at || at < cutoff;
-    });
+    // Los nunca consultados primero y después los de marca más antigua.
+    const time = (symbol: string): number => checkedAt.get(symbol)?.getTime() ?? 0;
+    return symbols.filter((symbol) => time(symbol) < cutoff.getTime()).sort((a, b) => time(a) - time(b));
   }
 
   /**
    * Reconsulta los splits de los símbolos en uso sin marca o con marca de más de 7 días (una
    * llamada de histórico por símbolo, con pausa). Lo llama el cron nocturno: acotado a
-   * 1 llamada por símbolo y semana, no a una por noche.
+   * 1 llamada por símbolo y semana, y a `SPLITS_REFRESH_MAX_PER_RUN` por pasada (los más antiguos
+   * primero) para escalonar los vencimientos. Usa la resolución CACHEADA: no vuelve a OpenFIGI.
+   * El upsert es `DO UPDATE`, así que los cierres antiguos también se reajustan tras un split.
    */
   async refreshStaleSplits(): Promise<void> {
-    const symbols = await this.resolveSymbols(await this.distinctTickers());
-    await this.ensureHistory(new Map(), await this.symbolsWithStaleSplits(symbols));
+    const tickerToSymbol = await this.resolveCachedTickers(await this.distinctTickers());
+    const stale = await this.symbolsWithStaleSplits([...new Set(tickerToSymbol.values())]);
+    await this.ensureHistory(new Map(), stale.slice(0, SPLITS_REFRESH_MAX_PER_RUN));
   }
 
   /** Upsert de los splits de un símbolo (PK `(symbol, date)`): reprimar no duplica filas. */

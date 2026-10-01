@@ -367,6 +367,36 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       expect(provider.historyCalls).not.toContain('NVDA');
     });
 
+    it('si la fuente falla (histórico vacío), no se escribe la marca', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = []; // Yahoo caído: `getHistory` devuelve vacío
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(await db.select().from(instrumentSplitChecks)).toEqual([]);
+    });
+
+    it('refreshStaleSplits respeta el tope por pasada y empieza por la marca más antigua', async () => {
+      makeService();
+      const userId = await insertUser(db, 'muchos@example.com');
+      const tickers = Array.from({ length: 45 }, (_, i) => `T${String(i).padStart(2, '0')}`);
+      await db.insert(positions).values(tickers.map((ticker) => ({ userId, ticker, quantity: '1', avgPrice: '1' })));
+      // T44 es el más antiguo de todos; el resto, marcas del mismo día vencidas.
+      await db.insert(instrumentSplitChecks).values(
+        tickers.map((symbol, i) => ({
+          symbol,
+          checkedAt: new Date(Date.now() - (i === 44 ? 30 : 8) * 86_400_000),
+        })),
+      );
+      provider.history = tickers.map((symbol) => quote(symbol, daysAgo(1), 1));
+
+      await service.refreshStaleSplits();
+
+      expect(provider.historyCalls).toHaveLength(40);
+      expect(provider.historyCalls[0]).toBe('T44');
+    });
+
     it('refreshStaleSplits reconsulta solo los símbolos con la marca de más de 7 días', async () => {
       makeService();
       await seedLegacySymbol();

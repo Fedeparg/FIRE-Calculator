@@ -165,13 +165,6 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       this.logger.error(`Refresco de precios falló: ${(error as Error).message}`);
     }
 
-    // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
-    try {
-      await this.prices.refreshStaleSplits();
-    } catch (error) {
-      this.logger.error(`Refresco de splits falló: ${(error as Error).message}`);
-    }
-
     // Fecha de la captura: las alertas evalúan EXACTAMENTE ese snapshot (ver `evaluateAll`).
     let captureDate: string | undefined;
     try {
@@ -195,6 +188,14 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       }
     } catch (error) {
       this.logger.error(`Evaluación de alertas FIRE falló: ${(error as Error).message}`);
+    }
+
+    // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
+    // Va el último: el snapshot y los avisos no deben esperar a Yahoo.
+    try {
+      await this.prices.refreshStaleSplits();
+    } catch (error) {
+      this.logger.error(`Refresco de splits falló: ${(error as Error).message}`);
     }
   }
 }
