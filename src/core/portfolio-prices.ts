@@ -74,3 +74,41 @@ export function latestFetchedAt(prices: Record<string, FetchedPrice | undefined>
   }
   return latest;
 }
+
+/**
+ * Ventana en la que una posición sin precio se considera "buscando precio" y no "sin precio".
+ * Resolver un ISIN a una cotización (búsqueda en Yahoo con pausas + OpenFIGI) tarda de
+ * segundos a un par de minutos; 10 minutos deja margen de sobra sin dejar un spinner eterno
+ * para un símbolo que de verdad no cotiza.
+ */
+export const PENDING_PRICE_WINDOW_MS = 10 * 60_000;
+
+/** Lo mínimo de una posición para decidir si su precio está en camino. */
+export interface PendingPricePosition {
+  isDerivative: boolean;
+  /** Instante ISO de alta de la posición. */
+  createdAt: string;
+}
+
+/**
+ * `true` si la posición aún no tiene precio PERO es lo bastante reciente como para que el
+ * servidor siga buscándolo en segundo plano (el alta lo lanza sin esperar).
+ *
+ * POR QUÉ LA EDAD Y NO UN CAMPO DEL SERVIDOR: la API no distingue "pendiente" de "no existe";
+ * la antigüedad de la posición es la señal más simple y robusta, y no requiere estado nuevo.
+ * Un `createdAt` ilegible nunca es pendiente; una edad negativa (reloj del navegador
+ * desajustado) cuenta como recién creada.
+ *
+ * Los derivados nunca se valoran, así que nunca están pendientes.
+ */
+export function isPricePending(
+  position: PendingPricePosition,
+  price: unknown,
+  nowMs: number,
+  windowMs: number = PENDING_PRICE_WINDOW_MS,
+): boolean {
+  if (position.isDerivative || price !== undefined) return false;
+  const createdMs = Date.parse(position.createdAt);
+  if (Number.isNaN(createdMs)) return false;
+  return nowMs - createdMs < windowMs;
+}

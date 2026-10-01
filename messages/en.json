@@ -1188,6 +1188,8 @@
       "priceAsOf": "Price as of {date}",
       "stalePrice": "Price as of {date}, older than the portfolio's last refresh ({latest}): this value is not up to date.",
       "sortBy": "Sort by {field}",
+      "pricePending": "Looking up price…",
+      "pricePendingHint": "We are locating this symbol's quote; it will update by itself in a moment.",
       "noPrice": "No market price yet for this symbol.",
       "actions": "Actions",
       "edit": "Edit",
