@@ -14,6 +14,39 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "ab628559",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "en el móvil, la evolución elige el rango en un desplegable y muestra arriba el valor y la variación en lugar del eje",
+            "en": "on phones, the history picks its range from a dropdown and shows the value and change above instead of an axis"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "62b43f8e",
+          "type": "fix",
+          "scope": "ui",
+          "category": "fix",
+          "text": {
+            "es": "en iPhone, las cajas de la cartera ya no se salen de la pantalla, y la cabecera y las pestañas caben mejor",
+            "en": "on iPhone, portfolio boxes no longer spill off the screen, and the header and tabs fit better"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "8dce65b8",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el histórico de 5 años",
+            "en": "describe the 5-year portfolio history"
+          },
+          "hidden": true
+        },
+        {
           "hash": "06fd1202",
           "type": "fix",
           "scope": "api",
