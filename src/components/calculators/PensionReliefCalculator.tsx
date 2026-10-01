@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
+import { computePensionRelief } from "@sextante/core/calculators/desgravacion-plan-pensiones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   SELECTABLE_REGIONS,

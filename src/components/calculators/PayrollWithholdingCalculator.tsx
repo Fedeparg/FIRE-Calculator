@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
+import { computePayrollWithholding } from "@sextante/core/calculators/irpf-nomina";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   CONTRACT_TYPES,

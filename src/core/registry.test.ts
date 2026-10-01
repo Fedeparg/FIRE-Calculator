@@ -12,6 +12,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { describe, expect, it } from "vitest";
 
 import { CALCULATORS } from "./registry";
@@ -82,5 +83,13 @@ describe("registry: sin material huérfano", () => {
       .map((file) => file.replace(/\.(es|en)\.md$/, ""))
       .filter((slug) => !allSlugs.has(slug));
     expect([...new Set(orphans)]).toEqual([]);
+  });
+});
+
+describe("objetivo de la cartera", () => {
+  it("el slug de la calculadora FIRE existe en el registro", () => {
+    // Si alguien renombra la calculadora, los escenarios guardados dejarían de encontrarse:
+    // este test lo convierte en un fallo ruidoso en vez de un bloque vacío en producción.
+    expect(CALCULATORS.some((c) => c.slug === FIRE_CALCULATOR_SLUG)).toBe(true);
   });
 });

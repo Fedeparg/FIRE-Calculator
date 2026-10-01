@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeSimpleInterest } from "@/core/calculators/interes-simple";
+import { computeSimpleInterest } from "@sextante/core/calculators/interes-simple";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeSelfEmployedTax } from "@/core/calculators/irpf-autonomos";
+import { computeSelfEmployedTax } from "@sextante/core/calculators/irpf-autonomos";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   DISABILITY_GRADES,

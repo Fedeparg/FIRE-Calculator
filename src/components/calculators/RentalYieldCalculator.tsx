@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeRentalYield } from "@/core/calculators/rentabilidad-alquiler";
+import { computeRentalYield } from "@sextante/core/calculators/rentabilidad-alquiler";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

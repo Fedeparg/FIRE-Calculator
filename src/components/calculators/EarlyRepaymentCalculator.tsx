@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeEarlyRepayment } from "@/core/calculators/amortizacion-anticipada";
+import { computeEarlyRepayment } from "@sextante/core/calculators/amortizacion-anticipada";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";
