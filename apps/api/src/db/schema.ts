@@ -35,7 +35,6 @@ export const users = pgTable('users', {
 });
 
 export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
 
 /**
  * Tokens de inicio de sesión sin contraseña (magic link).
@@ -54,7 +53,6 @@ export const loginTokens = pgTable('login_tokens', {
 });
 
 export type LoginToken = typeof loginTokens.$inferSelect;
-export type NewLoginToken = typeof loginTokens.$inferInsert;
 
 /**
  * Posiciones de la cartera introducidas manualmente por el usuario. Sextante es un
@@ -117,7 +115,6 @@ export const positions = pgTable(
 );
 
 export type Position = typeof positions.$inferSelect;
-export type NewPosition = typeof positions.$inferInsert;
 
 /**
  * Lotes (transacciones individuales) de una posición: cada compra o venta concreta, con su
@@ -188,7 +185,6 @@ export const positionLots = pgTable(
 export type PositionLotKind = 'buy' | 'sell';
 
 export type PositionLot = typeof positionLots.$inferSelect;
-export type NewPositionLot = typeof positionLots.$inferInsert;
 
 /**
  * Foto diaria del valor de la cartera de un usuario. Es lo que convierte el portfolio en una
@@ -250,7 +246,6 @@ export const portfolioSnapshots = pgTable(
 );
 
 export type PortfolioSnapshot = typeof portfolioSnapshots.$inferSelect;
-export type NewPortfolioSnapshot = typeof portfolioSnapshots.$inferInsert;
 
 /**
  * Configuraciones guardadas de una calculadora ("mi plan FIRE a los 45"). `slug` identifica
@@ -285,7 +280,6 @@ export const savedScenarios = pgTable(
 );
 
 export type SavedScenario = typeof savedScenarios.$inferSelect;
-export type NewSavedScenario = typeof savedScenarios.$inferInsert;
 
 /**
  * Precios de cierre (EOD) por símbolo y día. Caché propia: el frontend SIEMPRE lee de
@@ -315,7 +309,6 @@ export const instrumentPrices = pgTable(
 );
 
 export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
-export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
 
 /**
  * Splits de un instrumento (fuente: `events=split` de la misma llamada de histórico). Los cierres
@@ -366,7 +359,6 @@ export const instruments = pgTable('instruments', {
 });
 
 export type Instrument = typeof instruments.$inferSelect;
-export type NewInstrument = typeof instruments.$inferInsert;
 
 /* ------------------------------------------------------------------------- */
 /* MCP / OAuth 2.1                                                            */
@@ -404,7 +396,6 @@ export const oauthClients = pgTable('oauth_clients', {
 });
 
 export type OAuthClientRow = typeof oauthClients.$inferSelect;
-export type NewOAuthClientRow = typeof oauthClients.$inferInsert;
 
 /**
  * Consentimientos: qué scopes ha concedido un usuario a un cliente. Es la base jurídica
@@ -431,7 +422,6 @@ export const oauthGrants = pgTable(
 );
 
 export type OAuthGrant = typeof oauthGrants.$inferSelect;
-export type NewOAuthGrant = typeof oauthGrants.$inferInsert;
 
 /**
  * Códigos de autorización (PKCE), efímeros y de UN SOLO USO. Se guardan SOLO hasheados.
@@ -457,7 +447,6 @@ export const oauthAuthCodes = pgTable('oauth_auth_codes', {
 });
 
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
-export type NewOAuthAuthCode = typeof oauthAuthCodes.$inferInsert;
 
 /**
  * Access y refresh tokens, SOLO hasheados (SHA-256), nunca en claro. Cada token lleva su
@@ -493,7 +482,6 @@ export const oauthTokens = pgTable(
 );
 
 export type OAuthTokenRow = typeof oauthTokens.$inferSelect;
-export type NewOAuthTokenRow = typeof oauthTokens.$inferInsert;
 
 /**
  * Registro de auditoría de invocaciones MCP: quién (usuario+cliente) llamó a qué tool y
@@ -524,7 +512,6 @@ export const mcpAuditLog = pgTable(
 );
 
 export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;
-export type NewMcpAuditLogRow = typeof mcpAuditLog.$inferInsert;
 
 /**
  * Preferencias de notificación por email de cada usuario. Una fila por usuario, creada la

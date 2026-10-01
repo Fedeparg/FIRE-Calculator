@@ -8,7 +8,7 @@ import CalculatorBody from "@/components/calculators/CalculatorBody";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-const LIVE_SLUGS = CALCULATORS.filter((c) => c.status === "live").map((c) => c.slug);
+const SLUGS = CALCULATORS.map((c) => c.slug);
 
 // ISR: la calculadora es estática, pero el explainer de la wiki se lee de Markdown en runtime;
 // revalidar permite actualizarlo sin redeploy.
@@ -18,7 +18,7 @@ export const revalidate = 3600;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return LIVE_SLUGS.map((slug) => ({ slug }));
+  return SLUGS.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { locale, slug } = await params;
-  if (!LIVE_SLUGS.includes(slug)) notFound();
+  if (!SLUGS.includes(slug)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations(`calc.${slug}`);
 

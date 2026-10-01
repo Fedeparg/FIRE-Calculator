@@ -1,7 +1,8 @@
 import { Transform, Type } from 'class-transformer';
 import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
 
-import { NUMERIC_MAX, SUPPORTED_CURRENCIES, type SupportedCurrency } from './create-position.dto.js';
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
+import { NUMERIC_MAX } from './create-position.dto.js';
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 

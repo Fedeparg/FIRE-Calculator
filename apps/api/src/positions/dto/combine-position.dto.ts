@@ -1,7 +1,8 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsNumber, IsOptional, IsPositive, Max, Min } from 'class-validator';
 
-import { NUMERIC_MAX, SUPPORTED_CURRENCIES, type SupportedCurrency } from './create-position.dto.js';
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
+import { NUMERIC_MAX } from './create-position.dto.js';
 
 /**
  * Cuerpo de POST /api/positions/:id/combine. La cantidad y el precio de la NUEVA compra

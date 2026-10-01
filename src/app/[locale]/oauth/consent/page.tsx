@@ -1,3 +1,4 @@
+import { SESSION_COOKIE } from "@sextante/core/contracts";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
@@ -53,7 +54,7 @@ export default async function ConsentPage({ params, searchParams }: Props) {
   let clientName: string | null = null;
   try {
     const res = await fetch(`${API_URL}/api/oauth/consent/client/${encodeURIComponent(clientId)}`, {
-      headers: { cookie: `sextante_session=${await sessionToken()}` },
+      headers: { cookie: `${SESSION_COOKIE}=${await sessionToken()}` },
       cache: "no-store",
     });
     if (res.ok) {
@@ -82,5 +83,5 @@ export default async function ConsentPage({ params, searchParams }: Props) {
 /** Lee la cookie de sesión para reenviarla a la API server-side. */
 async function sessionToken(): Promise<string> {
   const { cookies } = await import("next/headers");
-  return (await cookies()).get("sextante_session")?.value ?? "";
+  return (await cookies()).get(SESSION_COOKIE)?.value ?? "";
 }

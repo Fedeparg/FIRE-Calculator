@@ -1,8 +1,6 @@
 import "server-only";
+import { SESSION_COOKIE } from "@sextante/core/contracts";
 import { cookies } from "next/headers";
-
-/** Debe coincidir con SESSION_COOKIE de la API (apps/api). */
-const SESSION_COOKIE = "sextante_session";
 
 /** Base de la API para llamadas server-side (Next server -> NestJS directo). */
 const API_URL = process.env.API_URL ?? "http://localhost:3001";

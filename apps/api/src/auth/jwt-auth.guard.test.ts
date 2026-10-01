@@ -7,7 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { JwtAuthGuard, type AuthedRequest } from './jwt-auth.guard.js';
-import { SESSION_COOKIE } from './session.constants.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
 
 const SECRET = 'test-secret';
 

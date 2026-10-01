@@ -15,7 +15,7 @@ import {
 } from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { decodeCalculatorInputs, type FieldSpecs } from "./calculator-url-state";
-import { PORTFOLIO_CURRENCIES } from "../lib/portfolio";
+import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 
 /**
  * Campos del objetivo, con las MISMAS claves que la calculadora de independencia financiera
@@ -36,7 +36,7 @@ export const GOAL_FIELD_SPECS: FieldSpecs = {
   // Mismas claves que el simulador Monte Carlo: la calculadora FIRE no las registra.
   volatility: { kind: "number", defaultValue: 15 },
   retirementYears: { kind: "number", defaultValue: 40 },
-  goalCurrency: { kind: "option", defaultValue: "EUR", allowed: PORTFOLIO_CURRENCIES },
+  goalCurrency: { kind: "option", defaultValue: "EUR", allowed: SUPPORTED_CURRENCIES },
   // Modo "X en N años": claves propias del objetivo, que la calculadora ignora.
   goalMode: { kind: "option", defaultValue: "fire", allowed: GOAL_MODES },
   targetAmount: { kind: "number", defaultValue: 100000 },

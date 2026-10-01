@@ -1,3 +1,4 @@
+import { MIN_INSTRUMENT_QUERY_LENGTH } from '@sextante/core/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { InstrumentSearchProvider, InstrumentSearchResult, InstrumentType } from './instrument-search.js';
@@ -12,8 +13,6 @@ const REQUEST_TIMEOUT_MS = 8_000;
  * UA que imitan un navegador completo desde IPs de datacenter, pero deja pasar uno mínimo.
  */
 const USER_AGENT = 'Mozilla/5.0';
-/** Longitud mínima de consulta: por debajo, no merece la pena llamar a la fuente. */
-export const MIN_QUERY_LENGTH = 2;
 
 /** `quoteType` de Yahoo → nuestro tipo normalizado. Los no contemplados caen en 'other'. */
 const TYPE_MAP: Record<string, InstrumentType> = {
@@ -78,7 +77,7 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
 
   async search(query: string): Promise<InstrumentSearchResult[]> {
     const q = query.trim();
-    if (q.length < MIN_QUERY_LENGTH) return [];
+    if (q.length < MIN_INSTRUMENT_QUERY_LENGTH) return [];
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

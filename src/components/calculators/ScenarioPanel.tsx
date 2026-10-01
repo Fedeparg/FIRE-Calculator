@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
 import { trackEvent } from "@/components/analytics/track";
 import { Link } from "@/i18n/navigation";
 import {
-  MAX_SCENARIOS_PER_USER,
-  SCENARIO_NAME_MAX_LENGTH,
   scenarioErrorKeyForResponse,
   scenarioErrorKeyForStatus,
   type SavedScenario,

@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { trackEvent } from "@/components/analytics/track";
 import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import {
-  PORTFOLIO_CURRENCIES,
-  type InstrumentSearchResult,
-  type Position,
-  type PortfolioCurrency,
-} from "@/lib/portfolio";
+import { type InstrumentSearchResult, type Position } from "@/lib/portfolio";
 import InstrumentSearchField from "./InstrumentSearchField";
 
 /** Id del título: da nombre al panel que contiene el formulario. */
@@ -45,8 +41,8 @@ type Props = {
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
-function toCurrency(value: string | undefined): PortfolioCurrency {
-  return PORTFOLIO_CURRENCIES.includes(value as PortfolioCurrency) ? (value as PortfolioCurrency) : "EUR";
+function toCurrency(value: string | undefined): SupportedCurrency {
+  return SUPPORTED_CURRENCIES.includes(value as SupportedCurrency) ? (value as SupportedCurrency) : "EUR";
 }
 
 /**
@@ -65,7 +61,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const [quantity, setQuantity] = useState(editing ? String(editing.quantity) : "");
   const [avgPrice, setAvgPrice] = useState(editing ? String(editing.avgPrice) : "");
   const [broker, setBroker] = useState(editing?.broker ?? "");
-  const [currency, setCurrency] = useState<PortfolioCurrency>(toCurrency(editing?.currency));
+  const [currency, setCurrency] = useState<SupportedCurrency>(toCurrency(editing?.currency));
   const [status, setStatus] = useState<Status>("idle");
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null);
   // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
@@ -303,10 +299,10 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           <select
             id="currency"
             value={currency}
-            onChange={(e) => setCurrency(e.target.value as PortfolioCurrency)}
+            onChange={(e) => setCurrency(e.target.value as SupportedCurrency)}
             className={inputClass}
           >
-            {PORTFOLIO_CURRENCIES.map((c) => (
+            {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {currencyLabel(c)}
               </option>

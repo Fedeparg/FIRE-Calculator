@@ -21,7 +21,8 @@ import { CurrentUser } from './current-user.decorator.js';
 import { RequestLinkDto } from './dto/request-link.dto.js';
 import { VerifyDto } from './dto/verify.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
-import { SESSION_COOKIE, SESSION_TTL_SECONDS } from './session.constants.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
+import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 @Controller('auth')
 export class AuthController {

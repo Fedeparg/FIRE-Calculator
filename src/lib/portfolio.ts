@@ -4,14 +4,6 @@
  * en el bundle del cliente. El fetch server-side vive en `portfolio.server.ts`.
  */
 
-/**
- * Divisas admitidas: las 10 más negociadas del mundo (turnover FX, BIS). Debe mantenerse
- * EN PARIDAD EXACTA con el backend `SUPPORTED_CURRENCIES` (`@IsIn`): una divisa que el
- * backend no acepte provocaría un 400 al guardar. EUR primero (es el valor por defecto).
- */
-export const PORTFOLIO_CURRENCIES = ["EUR", "USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "HKD", "SGD"] as const;
-export type PortfolioCurrency = (typeof PORTFOLIO_CURRENCIES)[number];
-
 /** Precio de un instrumento tal y como lo sirve `GET /api/prices` (lectura de nuestra DB). */
 export type PriceInfo = {
   symbol: string;

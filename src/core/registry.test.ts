@@ -1,13 +1,8 @@
 // Guardarraíl del catálogo: `registry.ts` alimenta el selector Y el sitemap, así
 // que una entrada sin componente produce un 404 indexado, y una sin mensajes o sin
 // explainer produce una página rota o a medias. Este test comprueba que cada
-// calculadora publicada tiene sus cuatro piezas, y que no queda material
+// calculadora del catálogo tiene sus cuatro piezas, y que no queda material
 // huérfano de una calculadora retirada.
-//
-// REGLA REAL: los checks se aplican a las calculadoras con `status: "live"`. Las
-// de `status: "soon"` aparecen en el selector como «próximamente» y por
-// definición todavía no tienen ni página ni mensajes ni explainer. Hoy las 26
-// entradas son "live" y las 26 tienen las cuatro piezas.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -35,7 +30,6 @@ const calcNamespaces = new Map<Locale, ReadonlySet<string>>(
   LOCALES.map((locale) => [locale, loadCalcNamespaces(locale)]),
 );
 
-const liveSlugs = CALCULATORS.filter((c) => c.status === "live").map((c) => c.slug);
 const allSlugs = new Set(CALCULATORS.map((c) => c.slug));
 
 describe("registry: coherencia del catálogo", () => {
@@ -43,19 +37,19 @@ describe("registry: coherencia del catálogo", () => {
     expect(allSlugs.size).toBe(CALCULATORS.length);
   });
 
-  it("cada calculadora publicada tiene su componente en la ruta única", () => {
-    const missing = liveSlugs.filter((slug) => !(slug in CALCULATOR_COMPONENTS));
+  it("cada calculadora tiene su componente en la ruta única", () => {
+    const missing = [...allSlugs].filter((slug) => !(slug in CALCULATOR_COMPONENTS));
     expect(missing).toEqual([]);
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su namespace calc.<slug> en %s", (locale) => {
     const namespaces = calcNamespaces.get(locale)!;
-    const missing = liveSlugs.filter((slug) => !namespaces.has(slug));
+    const missing = [...allSlugs].filter((slug) => !namespaces.has(slug));
     expect(missing).toEqual([]);
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su explainer en %s", (locale) => {
-    const missing = liveSlugs.filter((slug) => !existsSync(path.join(EXPLAINERS_DIR, `${slug}.${locale}.md`)));
+    const missing = [...allSlugs].filter((slug) => !existsSync(path.join(EXPLAINERS_DIR, `${slug}.${locale}.md`)));
     expect(missing).toEqual([]);
   });
 });
