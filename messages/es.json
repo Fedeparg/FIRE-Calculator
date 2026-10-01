@@ -1400,6 +1400,123 @@
       "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas.",
       "learnMore": "Cómo se calculan las plusvalías."
     },
+    "import": {
+      "link": "Importar de Trade Republic",
+      "back": "← Volver a la cartera",
+      "title": "Importar desde Trade Republic",
+      "subtitle": "Sube la exportación de transacciones de Trade Republic y Sextante creará tus posiciones y registrará cada compra y venta con su fecha, para ver su evolución y preparar las plusvalías.",
+      "howTo": {
+        "title": "Cómo conseguir el fichero",
+        "step1": "En la app de Trade Republic, abre Perfil.",
+        "step2": "Entra en Extractos de cuenta.",
+        "step3": "Elige Exportación de transacciones y selecciona el periodo «desde la apertura de la cuenta».",
+        "step4": "Descarga el fichero CSV y súbelo aquí abajo.",
+        "fullHistory": "Importa siempre el histórico completo: si falta una compra, una venta posterior dejaría esa posición en negativo y no se podría importar."
+      },
+      "scope": {
+        "title": "Qué se importa y qué no",
+        "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro. La comisión de cada operación se guarda como coste de la operación.",
+        "notYet": "Todavía no se importan los dividendos, los intereses ni los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta). Tampoco las criptomonedas.",
+        "migrations": "Los cambios de custodia internos de Trade Republic se ignoran: no cambian lo que tienes.",
+        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste.",
+        "derivatives": "Los derivados (knock-outs, warrants y similares) se importan con sus operaciones, pero Sextante no sigue su precio: van a una sección aparte y no suman a los totales."
+      },
+      "privacy": "El fichero se procesa solo para esta importación y no se guarda. Los datos de terceros que incluye (contrapartes, IBAN, referencias de pago) se descartan al leerlo.",
+      "file": {
+        "label": "Fichero CSV de Trade Republic",
+        "hint": "Máximo 2 MB. Al elegirlo, verás una vista previa antes de importar nada."
+      },
+      "analysing": "Analizando el fichero…",
+      "importing": "Importando…",
+      "errorTooLarge": "El fichero supera los 2 MB. Comprueba que has elegido la exportación de transacciones.",
+      "errorNotTradeRepublic": "Este fichero no parece una exportación de transacciones de Trade Republic. Comprueba que has elegido «Exportación de transacciones».",
+      "errorEmpty": "El fichero no contiene operaciones.",
+      "errorMalformed": "El fichero no es un CSV válido.",
+      "errorTooManyRows": "El fichero tiene demasiadas filas (el máximo es 20.000).",
+      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
+      "errorRateLimit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
+      "errorNetwork": "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorServer": "Ha habido un problema en el servidor. Inténtalo de nuevo en unos minutos.",
+      "errorGeneric": "No se pudo procesar el fichero. Inténtalo de nuevo.",
+      "preview": {
+        "title": "Esto es lo que se importará",
+        "nothingToImport": "El fichero no contiene compras ni ventas que importar.",
+        "statCreated": "Posiciones nuevas",
+        "statExtended": "Posiciones ampliadas",
+        "statNewLots": "Operaciones nuevas",
+        "statDuplicates": "Ya importadas",
+        "tableCaption": "Posiciones del fichero y operaciones que se crearán",
+        "colInstrument": "Instrumento",
+        "colAction": "Qué pasa",
+        "colBuys": "Compras",
+        "colSells": "Ventas",
+        "colDuplicates": "Ya importadas",
+        "colResulting": "Cantidad final",
+        "closed": "Cerrada (0)",
+        "action": {
+          "create": "Se crea",
+          "extend": "Se amplía"
+        },
+        "blocked": {
+          "NEGATIVE_QUANTITY": "Las ventas superan lo comprado: falta historial anterior. Esta posición no se importará.",
+          "OVERFLOW": "La cantidad resultante es demasiado grande. Esta posición no se importará.",
+          "UNEXPECTED": "No se puede importar esta posición."
+        },
+        "confirm": "Importar {count, plural, one {# operación} other {# operaciones}}",
+        "confirming": "Importando…",
+        "alreadyImported": "Todas las operaciones de este fichero ya están importadas, o no se pueden importar. No hay nada nuevo que añadir.",
+        "derivativeTag": "Derivado: sin seguimiento de precio"
+      },
+      "warnings": {
+        "tradeTax": "{count, plural, one {# operación trae un impuesto en su fila, que no se suma al coste.} other {# operaciones traen un impuesto en su fila, que no se suma al coste.}}",
+        "unbalancedMigration": "{count, plural, one {Hay # cambio de custodia sin su pareja: puede faltar historial de ese instrumento.} other {Hay # cambios de custodia sin su pareja: puede faltar historial de esos instrumentos.}}"
+      },
+      "skipped": {
+        "title": "Filas que no se importan",
+        "item": "{reason}: {count}"
+      },
+      "skipReasons": {
+        "dividend": "Dividendos",
+        "interest": "Intereses",
+        "benefit": "Ventajas (saveback, stockperk)",
+        "ipo_subscription": "Suscripciones a salidas a bolsa",
+        "cash_movement": "Movimientos de efectivo (ingresos, retiradas, tarjeta)",
+        "migration_pair": "Cambios de custodia (se anulan entre sí)",
+        "migration_unbalanced": "Cambios de custodia sin pareja",
+        "crypto": "Criptomonedas (aún no admitidas)",
+        "unsupported_currency": "Operaciones en una divisa distinta del euro",
+        "duplicate_row": "Filas repetidas",
+        "invalid_row": "Filas no válidas",
+        "unknown_type": "Tipos de operación desconocidos"
+      },
+      "result": {
+        "title": "Importación completada",
+        "summary": "{count, plural, =0 {No se ha creado ninguna operación nueva} one {Se ha importado # operación} other {Se han importado # operaciones}}. Ya estaban importadas: {duplicates}.",
+        "failedNote": "{count, plural, one {# posición no se ha importado; el resto sí.} other {# posiciones no se han importado; el resto sí.}}",
+        "status": {
+          "created": "Creada",
+          "extended": "Ampliada",
+          "unchanged": "Sin cambios",
+          "failed": "No importada"
+        },
+        "failure": {
+          "NEGATIVE_QUANTITY": "Las ventas superan lo comprado: falta historial anterior.",
+          "OVERFLOW": "La cantidad resultante es demasiado grande.",
+          "UNEXPECTED": "Error inesperado. Inténtalo de nuevo más tarde."
+        },
+        "pricesNote": "Los precios de las posiciones nuevas pueden tardar unos minutos en aparecer.",
+        "viewPortfolio": "Ver mi cartera"
+      },
+      "disclaimer": "Información orientativa, no es asesoramiento financiero ni fiscal. Revisa los datos importados contra tu extracto de Trade Republic."
+    },
+    "closed": {
+      "toggle": "Mostrar posiciones cerradas ({count})"
+    },
+    "derivatives": {
+      "title": "Derivados ({count})",
+      "notice": "Sextante no sigue el precio de los derivados (futuros, opciones, warrants, knock-outs…). Se guardan con sus operaciones y cuentan en el informe de plusvalías, pero no se valoran ni entran en los totales de la cartera.",
+      "learnMore": "Qué son los derivados"
+    },
     "guideLink": "¿Qué puedes hacer aquí? Guía de la cartera"
   },
   "account": {

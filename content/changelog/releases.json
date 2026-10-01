@@ -4,15 +4,202 @@
     {
       "date": "2026-10-01",
       "title": {
-        "es": "Estadísticas de uso propias y sin cookies",
-        "en": "First-party, cookieless usage statistics"
+        "es": "Importa tu cartera desde Trade Republic y estadísticas de uso sin cookies",
+        "en": "Import your portfolio from Trade Republic, and cookieless usage statistics"
       },
       "summary": {
-        "es": "Sextante empieza a medir qué páginas y herramientas se usan, para decidir qué mejorar. Lo hace con Umami alojado en nuestro propio servidor: sin cookies, sin terceros, sin guardar tu IP y sin recoger los valores de las calculadoras, que nunca salen de la URL. Si tu navegador pide no ser rastreado, no se mide nada. La política de privacidad explica exactamente qué se registra.",
-        "en": "Sextante now measures which pages and tools are used, to decide what to improve. It does so with Umami hosted on our own server: no cookies, no third parties, no stored IP address, and none of the values you type into the calculators, which never leave the URL. If your browser asks not to be tracked, nothing is measured. The privacy policy explains exactly what is recorded."
+        "es": "Ya puedes traer tus compras y ventas de Trade Republic: subes el fichero de exportación de transacciones, ves una vista previa de lo que se creará y, al confirmar, Sextante registra cada operación con su fecha y su comisión. Reimportar el mismo fichero no duplica nada. Además, las posiciones vendidas del todo se ocultan de la lista (con una casilla para verlas) y los derivados van a una sección aparte, plegada, sin sumar a los totales; hay un nuevo artículo en Aprende que explica qué son. Y Sextante empieza a medir qué páginas y herramientas se usan, con Umami alojado en nuestro propio servidor: sin cookies, sin terceros, sin guardar tu IP y sin recoger los valores de las calculadoras. La política de privacidad explica exactamente qué se registra.",
+        "en": "You can now bring your Trade Republic buys and sells: upload the transaction export file, see a preview of what will be created and, once you confirm, Sextante records every transaction with its date and fee. Importing the same file again does not duplicate anything. In addition, positions sold in full are hidden from the list (with a checkbox to show them) and derivatives go to a separate, collapsed section that does not add to the totals; a new Learn article explains what they are. And Sextante now measures which pages and tools are used, with Umami hosted on our own server: no cookies, no third parties, no stored IP address, and none of the values you type into the calculators. The privacy policy explains exactly what is recorded."
       },
-      "highlight": false,
+      "highlight": true,
       "entries": [
+        {
+          "hash": "62ab9d06",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "feature",
+          "text": {
+            "es": "nuevo artículo de Aprende sobre derivados: qué son, su riesgo y cómo tributan",
+            "en": "new Learn article on derivatives: what they are, their risk and how they are taxed"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "7990bfc0",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "las posiciones vendidas del todo se ocultan (con casilla para mostrarlas) y los derivados van a una sección aparte que no suma a los totales",
+            "en": "positions sold in full are hidden (with a checkbox to show them) and derivatives go to a separate section that does not add to the totals"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "d17d52e6",
+          "type": "feat",
+          "scope": "api",
+          "category": "feature",
+          "text": {
+            "es": "los derivados no entran en la valoración y el redondeo de las ventas ya no deja la posición en negativo",
+            "en": "derivatives stay out of the valuation and sale rounding no longer leaves a position negative"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "821dc5c5",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "se documenta la importación de Trade Republic y su evento de analítica",
+            "en": "the Trade Republic import and its analytics event are documented"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "bca4a399",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "importa tus compras y ventas desde la exportación de transacciones de Trade Republic, con vista previa y sin duplicar al reimportar",
+            "en": "import your buys and sells from the Trade Republic transaction export, with a preview and no duplicates when you import again"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "0e978e85",
+          "type": "refactor",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "contrato de la importación compartido con la interfaz",
+            "en": "import contract shared with the interface"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "2345a34f",
+          "type": "feat",
+          "scope": "api",
+          "category": "feature",
+          "text": {
+            "es": "servicio de importación con vista previa y confirmación",
+            "en": "import service with preview and confirmation"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "6e5a9586",
+          "type": "feat",
+          "scope": "db",
+          "category": "feature",
+          "text": {
+            "es": "las operaciones guardan el identificador de origen para no duplicarse",
+            "en": "transactions keep their source identifier so they are not duplicated"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "6cb0a545",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "lectura del fichero de exportación de Trade Republic",
+            "en": "reading of the Trade Republic export file"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "8a4e62cb",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se retira el anuncio de código abierto de la entrega del 3 de agosto",
+            "en": "the open-source announcement is withdrawn from the August 3 release"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "b668558b",
+          "type": "chore",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "el proyecto pasa a ser propietario desde el 2026-10-01",
+            "en": "the project becomes proprietary from 2026-10-01"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "c541c429",
+          "type": "docs",
+          "scope": "readme",
+          "category": "internal",
+          "text": {
+            "es": "documentación del README actualizada",
+            "en": "README documentation updated"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "23b3e0e4",
+          "type": "build",
+          "scope": "docker",
+          "category": "internal",
+          "text": {
+            "es": "ajustes de las imágenes Docker",
+            "en": "Docker image adjustments"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "1d84780f",
+          "type": "refactor",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "la API reutiliza código compartido",
+            "en": "the API reuses shared code"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "09a84327",
+          "type": "refactor",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "reorganización interna del código",
+            "en": "internal code reorganisation"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "529417b5",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se redacta la entrega de las estadísticas de uso",
+            "en": "the usage statistics release is written up"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "2ea55189",
+          "type": "chore",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "la conexión de Umami exige también la contraseña de su base de datos",
+            "en": "Umami's connection also requires its database password"
+          },
+          "hidden": true
+        },
         {
           "hash": "9460e0a9",
           "type": "ci",
@@ -78,9 +265,9 @@
           "category": "internal",
           "text": {
             "es": "show the new Learn articles as features",
-            "en": ""
+            "en": "the new Learn articles are shown as features in the changelog"
           },
-          "hidden": false
+          "hidden": true
         },
         {
           "hash": "ce6f8cf7",

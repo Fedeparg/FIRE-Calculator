@@ -11,6 +11,7 @@ export type AnalyticsEvent =
   | { name: "scenario-saved"; data: { calculator: string } }
   | { name: "login-link-requested" }
   | { name: "position-added" }
+  | { name: "broker-import-completed"; data: { broker: string } }
   | { name: "donation-checkout-started" };
 
 type EventData = Record<string, string>;

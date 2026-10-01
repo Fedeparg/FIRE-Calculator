@@ -166,6 +166,7 @@ tool y su entrada de muestra en `calculator-tools.test.ts` (el test lo exige).
 | `src/auth/` | Magic link: token hasheado SHA-256, canje atómico single-use, JWT en cookie HttpOnly. |
 | `src/email/` | Transporte de correo: `dev` (log) o Resend, según `EMAIL_TRANSPORT`. |
 | `src/positions/` | CRUD de posiciones y de sus **lotes** (compras/ventas). `lot-aggregate.ts` deriva cantidad y precio medio de los lotes con aritmética decimal exacta. |
+| `src/imports/` | Importación de operaciones desde un bróker (hoy Trade Republic): `preview` (plan sin escribir) y `confirm` (una transacción por posición, idempotente por `position_lots.external_id`). El CSV viaja como `text/csv` con tope de 2 MB. El parser vive en `@sextante/core/imports`. |
 | `src/prices/` | Feed de cotizaciones y tasas FX; resolución ISIN/ticker → símbolo (OpenFIGI); histórico anual al dar de alta un símbolo. |
 | `src/portfolio/` | Valoración y P&L de la cartera (`valuation.ts`) e **histórico diario** de valoración (`portfolio-snapshots.service.ts`). |
 | `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |

@@ -33,6 +33,11 @@ bróker y divisa). Estos datos son necesarios para prestarte el servicio de
 seguimiento de cartera.
 
 - **Base legal:** la **ejecución del servicio** que solicitas al registrarte.
+- Si **importas operaciones de un bróker** (por ejemplo, el fichero de
+  transacciones de Trade Republic), guardamos solo tus compras y ventas (instrumento,
+  fecha, cantidad, precio y comisión). El fichero **no se conserva** y los datos de
+  terceros que pueda contener (contrapartes, IBAN, referencias de pago) se
+  descartan al leerlo.
 - Puedes **exportar** todos tus datos (formato JSON) y **borrar tu cuenta** en
   cualquier momento desde *Mi cuenta*; al borrarla se eliminan tu cuenta, tus
   posiciones y los accesos concedidos a aplicaciones.
@@ -81,7 +86,8 @@ los datos no se envían a ningún tercero.
   de pantalla y una ubicación aproximada (país, región y ciudad) deducida de la IP
   en el momento de la visita. También algunas **acciones**, sin cifras ni datos
   personales: copiar el enlace de un cálculo, guardar un escenario, pedir el enlace
-  de acceso, añadir una posición e iniciar una donación.
+  de acceso, añadir una posición, importar operaciones de un bróker e iniciar
+  una donación.
 - **Qué no se registra:** ni tu dirección IP, ni tu correo, ni los valores de las
   calculadoras o de tu cartera. **No se usan cookies**: las visitas de un mismo día
   se agrupan con un código irreversible que **cambia cada día**, así que no es

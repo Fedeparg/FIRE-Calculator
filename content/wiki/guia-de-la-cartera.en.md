@@ -33,6 +33,31 @@ average price come from those transactions, and so does the capital gains report
 > changed from its transactions, not from the edit form, so the sale history is not
 > lost.
 
+### Importing from Trade Republic
+
+If you trade with Trade Republic you do not have to type anything in: from
+[Import from Trade Republic](/portfolio/importar) you upload its transaction
+export and Sextante creates your positions with all their buys and sells.
+
+1. In the Trade Republic app, open **Profile → Account statements →
+   Transaction export**.
+2. Pick the period **since account opening** and download the CSV.
+3. Upload it to Sextante: before anything is written you will see a preview with
+   the new positions, the ones that will be extended and the transactions that
+   were already imported.
+4. Confirm. You can import the same file (or a newer one) again safely: the
+   transactions already imported are not duplicated.
+
+**Buys and sells** are imported (savings plan executions too), with their fee.
+Dividends, interest and cash movements are **not imported yet**. The file is not
+stored, and the third-party data it carries is discarded.
+
+**Derivatives** (knock-outs, warrants and the like) are imported with their
+transactions and count in the capital gains report, but Sextante **does not track
+their price**: they go to a separate, collapsed section and do not add to the
+totals. Here is [what derivatives are](/aprende/derivados) and why. Positions sold
+in full are hidden from the list; tick *Show closed positions* to see them.
+
 ## 2. The summary and prices
 
 **Portfolio total** shows the amount invested, the market value and the gain or

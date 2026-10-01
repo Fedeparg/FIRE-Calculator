@@ -33,6 +33,31 @@ la cantidad y el precio medio de la posición, y también el informe de plusval�
 > cambian desde sus operaciones, no desde el formulario de edición: así no se pierde
 > el histórico de ventas.
 
+### Importar desde Trade Republic
+
+Si operas en Trade Republic, no hace falta que introduzcas nada a mano: desde
+[Importar de Trade Republic](/portfolio/importar) subes su exportación de
+transacciones y Sextante crea tus posiciones con todas sus compras y ventas.
+
+1. En la app de Trade Republic, abre **Perfil → Extractos de cuenta →
+   Exportación de transacciones**.
+2. Elige el periodo **desde la apertura de la cuenta** y descarga el CSV.
+3. Súbelo en Sextante: antes de escribir nada verás una vista previa con las
+   posiciones nuevas, las que se amplían y las operaciones que ya estaban importadas.
+4. Confirma. Puedes volver a importar el mismo fichero (o uno más reciente) sin
+   miedo: las operaciones ya importadas no se duplican.
+
+Se importan las **compras y ventas** (también las de los planes de ahorro), con su
+comisión. **Todavía no** se importan los dividendos, los intereses ni los movimientos
+de efectivo. El fichero no se guarda y los datos de terceros que trae se descartan.
+
+Los **derivados** (knock-outs, warrants y similares) se importan con sus
+operaciones y cuentan en el informe de plusvalías, pero Sextante **no sigue su
+precio**: van a una sección aparte, plegada, y no suman a los totales. Aquí
+explicamos [qué son los derivados](/aprende/derivados) y por qué. Las posiciones
+vendidas del todo se ocultan de la lista; se muestran con la casilla *Mostrar
+posiciones cerradas*.
+
 ## 2. El resumen y los precios
 
 **Total de la cartera** muestra lo invertido, el valor de mercado y la

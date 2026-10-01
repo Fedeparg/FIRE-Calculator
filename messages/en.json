@@ -1400,6 +1400,123 @@
       "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures.",
       "learnMore": "How capital gains are calculated."
     },
+    "import": {
+      "link": "Import from Trade Republic",
+      "back": "← Back to the portfolio",
+      "title": "Import from Trade Republic",
+      "subtitle": "Upload your Trade Republic transaction export and Sextante will create your positions and record every buy and sell with its date, so you can follow their evolution and prepare capital gains.",
+      "howTo": {
+        "title": "How to get the file",
+        "step1": "In the Trade Republic app, open Profile.",
+        "step2": "Go to Account statements.",
+        "step3": "Choose Transaction export and select the period \"since account opening\".",
+        "step4": "Download the CSV file and upload it below.",
+        "fullHistory": "Always import the full history: if a purchase is missing, a later sale would leave that position negative and it could not be imported."
+      },
+      "scope": {
+        "title": "What is imported and what is not",
+        "included": "Buys and sells of stocks, ETFs, funds and derivatives are imported, including savings plan executions. The fee of each trade is stored as a trade cost.",
+        "notYet": "Dividends, interest and cash movements (deposits, withdrawals, card payments) are not imported yet. Neither are cryptocurrencies.",
+        "migrations": "Trade Republic's internal custody migrations are ignored: they do not change what you hold.",
+        "tax": "The taxes shown on some trades are not added to the cost.",
+        "derivatives": "Derivatives (knock-outs, warrants and the like) are imported with their transactions, but Sextante does not track their price: they go to a separate section and do not count in the totals."
+      },
+      "privacy": "The file is processed only for this import and is not stored. Third-party data it contains (counterparties, IBANs, payment references) is discarded as it is read.",
+      "file": {
+        "label": "Trade Republic CSV file",
+        "hint": "Up to 2 MB. When you pick it, you will see a preview before anything is imported."
+      },
+      "analysing": "Analysing the file…",
+      "importing": "Importing…",
+      "errorTooLarge": "The file is larger than 2 MB. Check that you picked the transaction export.",
+      "errorNotTradeRepublic": "This file does not look like a Trade Republic transaction export. Check that you picked \"Transaction export\".",
+      "errorEmpty": "The file contains no transactions.",
+      "errorMalformed": "The file is not a valid CSV.",
+      "errorTooManyRows": "The file has too many rows (the maximum is 20,000).",
+      "errorSession": "Your session has expired. Please sign in again.",
+      "errorRateLimit": "Too many attempts in a row. Wait a minute and try again.",
+      "errorNetwork": "Could not connect. Check your connection and try again.",
+      "errorServer": "There was a problem on the server. Please try again in a few minutes.",
+      "errorGeneric": "The file could not be processed. Please try again.",
+      "preview": {
+        "title": "This is what will be imported",
+        "nothingToImport": "The file contains no buys or sells to import.",
+        "statCreated": "New positions",
+        "statExtended": "Extended positions",
+        "statNewLots": "New transactions",
+        "statDuplicates": "Already imported",
+        "tableCaption": "Positions in the file and the transactions that will be created",
+        "colInstrument": "Instrument",
+        "colAction": "What happens",
+        "colBuys": "Buys",
+        "colSells": "Sells",
+        "colDuplicates": "Already imported",
+        "colResulting": "Final quantity",
+        "closed": "Closed (0)",
+        "action": {
+          "create": "Created",
+          "extend": "Extended"
+        },
+        "blocked": {
+          "NEGATIVE_QUANTITY": "Sales exceed purchases: earlier history is missing. This position will not be imported.",
+          "OVERFLOW": "The resulting quantity is too large. This position will not be imported.",
+          "UNEXPECTED": "This position cannot be imported."
+        },
+        "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
+        "confirming": "Importing…",
+        "alreadyImported": "Every transaction in this file is already imported, or cannot be imported. There is nothing new to add.",
+        "derivativeTag": "Derivative: price not tracked"
+      },
+      "warnings": {
+        "tradeTax": "{count, plural, one {# transaction carries a tax on its row, which is not added to the cost.} other {# transactions carry a tax on their rows, which is not added to the cost.}}",
+        "unbalancedMigration": "{count, plural, one {There is # custody migration without its pair: history for that instrument may be missing.} other {There are # custody migrations without their pair: history for those instruments may be missing.}}"
+      },
+      "skipped": {
+        "title": "Rows that are not imported",
+        "item": "{reason}: {count}"
+      },
+      "skipReasons": {
+        "dividend": "Dividends",
+        "interest": "Interest",
+        "benefit": "Perks (saveback, stockperk)",
+        "ipo_subscription": "IPO subscriptions",
+        "cash_movement": "Cash movements (deposits, withdrawals, card)",
+        "migration_pair": "Custody migrations (they cancel each other out)",
+        "migration_unbalanced": "Custody migrations without a pair",
+        "crypto": "Cryptocurrencies (not supported yet)",
+        "unsupported_currency": "Transactions in a currency other than the euro",
+        "duplicate_row": "Repeated rows",
+        "invalid_row": "Invalid rows",
+        "unknown_type": "Unknown transaction types"
+      },
+      "result": {
+        "title": "Import complete",
+        "summary": "{count, plural, =0 {No new transaction was created} one {# transaction was imported} other {# transactions were imported}}. Already imported: {duplicates}.",
+        "failedNote": "{count, plural, one {# position was not imported; the rest were.} other {# positions were not imported; the rest were.}}",
+        "status": {
+          "created": "Created",
+          "extended": "Extended",
+          "unchanged": "Unchanged",
+          "failed": "Not imported"
+        },
+        "failure": {
+          "NEGATIVE_QUANTITY": "Sales exceed purchases: earlier history is missing.",
+          "OVERFLOW": "The resulting quantity is too large.",
+          "UNEXPECTED": "Unexpected error. Please try again later."
+        },
+        "pricesNote": "Prices for the new positions may take a few minutes to appear.",
+        "viewPortfolio": "View my portfolio"
+      },
+      "disclaimer": "Indicative information, not financial or tax advice. Check the imported data against your Trade Republic statement."
+    },
+    "closed": {
+      "toggle": "Show closed positions ({count})"
+    },
+    "derivatives": {
+      "title": "Derivatives ({count})",
+      "notice": "Sextante does not track the price of derivatives (futures, options, warrants, knock-outs…). They are stored with their transactions and count in the capital gains report, but they are not valued and do not enter the portfolio totals.",
+      "learnMore": "What derivatives are"
+    },
     "guideLink": "What can you do here? Portfolio guide"
   },
   "account": {
