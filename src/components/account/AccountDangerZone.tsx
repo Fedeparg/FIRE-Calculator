@@ -6,15 +6,15 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import Notice from "@/components/ui/Notice";
 import { downloadBlob } from "@/lib/download";
+import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
 
-/** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
-type ErrorKey = "errorNetwork" | "errorSession" | "errorServer" | "errorGeneric";
+/** Claves de error que define el namespace `account` (no tiene `errorInvalid`). */
+type ErrorKey = Exclude<ApiErrorKey, "errorInvalid">;
 
-/** Traduce un status HTTP a un mensaje específico (sin volcar el body crudo de la API). */
-function errorKeyForStatus(status: number): ErrorKey {
-  if (status === 401) return "errorSession";
-  if (status >= 500) return "errorServer";
-  return "errorGeneric";
+/** Traduce el fallo (red, sesión, servidor) a un mensaje específico, sin volcar el body crudo de la API. */
+function errorKeyFor(error: unknown): ErrorKey {
+  const key = apiErrorKey(error);
+  return key === "errorInvalid" ? "errorGeneric" : key;
 }
 
 type Props = {
@@ -61,11 +61,7 @@ export default function AccountDangerZone({ email }: Props) {
     setExporting(true);
     setExportError(false);
     try {
-      const res = await fetch("/api/auth/account/export");
-      if (!res.ok) {
-        setExportError(true);
-        return;
-      }
+      const res = await apiFetch("/api/auth/account/export");
       downloadBlob(await res.blob(), "sextante-datos.json");
     } catch {
       setExportError(true);
@@ -80,21 +76,15 @@ export default function AccountDangerZone({ email }: Props) {
     setDeleteStatus("deleting");
     setDeleteError(null);
     try {
-      const res = await fetch("/api/auth/account", { method: "DELETE" });
-      if (res.ok) {
-        setDeleteStatus("done");
-        // Breve pausa para que el usuario vea el aviso antes de salir.
-        redirectTimer.current = setTimeout(() => {
-          router.replace("/");
-          router.refresh();
-        }, 1500);
-        return;
-      }
-      setDeleteError(errorKeyForStatus(res.status));
-      setDeleteStatus("idle");
-    } catch {
-      // La promesa de fetch solo rechaza por fallo de red/conexión.
-      setDeleteError("errorNetwork");
+      await apiFetch("/api/auth/account", { method: "DELETE" });
+      setDeleteStatus("done");
+      // Breve pausa para que el usuario vea el aviso antes de salir.
+      redirectTimer.current = setTimeout(() => {
+        router.replace("/");
+        router.refresh();
+      }, 1500);
+    } catch (error) {
+      setDeleteError(errorKeyFor(error));
       setDeleteStatus("idle");
     }
   }

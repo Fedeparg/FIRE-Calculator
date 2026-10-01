@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { trackEvent } from "@/components/analytics/track";
+import { apiJson } from "@/shared/api/client";
 import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "./config";
 
 type Status = "idle" | "loading" | "error";
@@ -25,13 +26,10 @@ export default function DonationWidget() {
     if (!valid) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/donations/checkout", {
+      const { url } = await apiJson<{ url: string }>("/api/donations/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount, locale }),
+        body: { amount, locale },
       });
-      if (!res.ok) throw new Error("checkout failed");
-      const { url } = (await res.json()) as { url: string };
       trackEvent({ name: "donation-checkout-started" });
       window.location.href = url;
     } catch {

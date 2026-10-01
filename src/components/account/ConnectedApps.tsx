@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
 import { absoluteUrl } from "@/lib/site";
+import { apiFetch } from "@/shared/api/client";
+import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
 type Connection = {
@@ -16,7 +18,9 @@ type Connection = {
   lastUsedAt: string | null;
 };
 
-type LoadState = "loading" | "loaded" | "error";
+const CONNECTIONS_PATH = "/api/account/connections";
+// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
+const NO_STORE = { cache: "no-store" } as const;
 
 const SCOPE_LABELS: Record<string, string> = {
   "portfolio:read": "scopeRead",
@@ -37,8 +41,11 @@ const MCP_URL = absoluteUrl("/api/mcp");
  */
 export default function ConnectedApps() {
   const t = useTranslations("account.connections");
-  const [state, setState] = useState<LoadState>("loading");
-  const [items, setItems] = useState<Connection[]>([]);
+  const query = useApiQuery<Connection[]>(CONNECTIONS_PATH, { init: NO_STORE });
+  // Las revocadas se ocultan sin volver a pedir la lista.
+  const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
+  const state = query.status === "ready" ? "loaded" : query.status;
+  const items = query.status === "ready" ? query.data.filter((c) => !revoked.has(c.clientId)) : [];
   const [revoking, setRevoking] = useState<string | null>(null);
   const [revokeError, setRevokeError] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,44 +60,12 @@ export default function ConnectedApps() {
     }
   }
 
-  // Carga inicial. El estado arranca en "loading", así que no fijamos estado de forma
-  // síncrona en el effect (solo tras el await), igual que `PortfolioDataProvider`.
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/account/connections", { cache: "no-store" });
-        if (!res.ok) {
-          if (!cancelled) setState("error");
-          return;
-        }
-        const data = (await res.json()) as Connection[];
-        if (!cancelled) {
-          setItems(data);
-          setState("loaded");
-        }
-      } catch {
-        if (!cancelled) setState("error");
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   async function revoke(clientId: string) {
     setRevoking(clientId);
     setRevokeError(false);
     try {
-      const res = await fetch(`/api/account/connections/${encodeURIComponent(clientId)}`, {
-        method: "DELETE",
-      });
-      if (!res.ok && res.status !== 204) {
-        setRevokeError(true);
-        return;
-      }
-      setItems((prev) => prev.filter((c) => c.clientId !== clientId));
+      await apiFetch(`/api/account/connections/${encodeURIComponent(clientId)}`, { method: "DELETE" });
+      setRevoked((prev) => new Set(prev).add(clientId));
     } catch {
       setRevokeError(true);
     } finally {
