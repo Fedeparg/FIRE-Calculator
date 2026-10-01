@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
+import Button from "@/shared/ui/Button";
 
 type Props = {
   name: string;
@@ -42,13 +43,9 @@ export default function PortfolioGoalPlanForm({ name, onNameChange, updating, qu
             className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           />
         </div>
-        <button
-          type="submit"
-          disabled={saving || (!updating && quotaReached)}
-          className="rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type="submit" disabled={saving || (!updating && quotaReached)}>
           {saving ? ts("saving") : updating ? t("update") : ts("save")}
-        </button>
+        </Button>
       </form>
 
       {!updating && quotaReached && <p className="text-xs text-muted">{ts("quotaReached")}</p>}

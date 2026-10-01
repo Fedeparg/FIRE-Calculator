@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { trackEvent } from "@/shared/analytics/track";
 import { apiFetch } from "@/shared/api/client";
+import Button from "@/shared/ui/Button";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -59,13 +60,9 @@ export default function LoginForm() {
 
       {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
 
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="w-full rounded-lg bg-brand px-4 py-2.5 font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
-      >
+      <Button size="lg" type="submit" disabled={status === "sending"} className="w-full">
         {status === "sending" ? t("sending") : t("submit")}
-      </button>
+      </Button>
     </form>
   );
 }

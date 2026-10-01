@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { apiFetch } from "@/shared/api/client";
+import Button from "@/shared/ui/Button";
 
 type Status = "idle" | "submitting" | "done" | "error";
 
@@ -46,14 +47,14 @@ export default function UnsubscribeConfirm({ token }: { token: string | null }) 
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <button
-        type="button"
+      <Button
+        size="cta"
         onClick={() => void confirm()}
         disabled={status === "submitting"}
-        className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-fg transition hover:opacity-90 disabled:opacity-50"
+        className="inline-flex items-center justify-center"
       >
         {status === "submitting" ? t("submitting") : t("confirm")}
-      </button>
+      </Button>
       {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
     </div>
   );

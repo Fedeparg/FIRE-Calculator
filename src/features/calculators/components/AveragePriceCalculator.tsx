@@ -6,6 +6,7 @@ import { computeAveragePrice } from "@sextante/core/calculators/promediar-accion
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
+import Button from "@/shared/ui/Button";
 
 type Row = { id: number; price: number; shares: number; commission: number };
 
@@ -79,13 +80,9 @@ export default function AveragePriceCalculator() {
             </li>
           ))}
         </ul>
-        <button
-          type="button"
-          onClick={addRow}
-          className="mt-4 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand-soft"
-        >
+        <Button variant="accent" size="sm" onClick={addRow} className="mt-4">
           + {t("addRow")}
-        </button>
+        </Button>
 
         <div className="mt-5 border-t border-border pt-4 sm:max-w-xs">
           <NumberField

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { formatIsoDate } from "@/shared/format/format";
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot } from "@sextante/core/portfolio/types";
+import Button from "@/shared/ui/Button";
 
 type Props = {
   lots: readonly PositionLot[];
@@ -69,22 +70,12 @@ export default function LotList({
             </span>
             {confirmingId === lot.id ? (
               <span className="flex shrink-0 gap-2">
-                <button
-                  type="button"
-                  onClick={() => onConfirmDelete(lot.id)}
-                  disabled={submitting}
-                  className="rounded-md bg-warning px-2.5 py-1.5 font-medium text-brand-fg disabled:opacity-50"
-                >
+                <Button variant="warning" size="xs" onClick={() => onConfirmDelete(lot.id)} disabled={submitting}>
                   {t("confirmDelete")}
-                </button>
-                <button
-                  type="button"
-                  onClick={onCancelDelete}
-                  disabled={submitting}
-                  className="rounded-md border border-border px-2.5 py-1.5 font-medium text-foreground disabled:opacity-50"
-                >
+                </Button>
+                <Button variant="secondary" size="xs" onClick={onCancelDelete} disabled={submitting}>
                   {t("cancel")}
-                </button>
+                </Button>
               </span>
             ) : (
               <span className="flex shrink-0 gap-1">

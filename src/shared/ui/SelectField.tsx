@@ -36,12 +36,7 @@ export default function SelectField<T extends string = string>({ label, value, o
         </label>
         {help && <HelpTooltip text={help} />}
       </div>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value as T)}
-        className={fieldClass}
-      >
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value as T)} className={fieldClass}>
         {options.map((o) => (
           <option key={o.value} value={o.value} disabled={o.disabled}>
             {o.label}

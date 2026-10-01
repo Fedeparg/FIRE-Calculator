@@ -10,6 +10,7 @@ import { type SavedScenario } from "@/features/scenarios/saved-scenarios";
 import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 import { useCalculatorState } from "./CalculatorState";
 import { inputClass } from "@/shared/ui/field-classes";
+import Button from "@/shared/ui/Button";
 
 const inputClassSm = `${inputClass} text-sm`;
 
@@ -115,13 +116,9 @@ export default function ScenarioPanel() {
             className={`mt-1 ${inputClassSm}`}
           />
         </div>
-        <button
-          type="submit"
-          disabled={saving || quotaReached}
-          className="rounded-lg bg-brand px-3 py-2 text-sm font-medium text-brand-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <Button type="submit" disabled={saving || quotaReached}>
           {saving ? t("saving") : t("save")}
-        </button>
+        </Button>
       </form>
 
       {quotaReached && <p className="text-xs text-muted">{t("quotaReached")}</p>}
@@ -151,62 +148,50 @@ export default function ScenarioPanel() {
                       autoComplete="off"
                       className={`min-w-40 flex-1 ${inputClassSm}`}
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleRename(scenario.id)}
-                      className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-fg transition hover:opacity-90"
-                    >
+                    <Button size="xs" onClick={() => handleRename(scenario.id)}>
                       {t("renameSave")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRenamingId(null)}
-                      className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-surface-2"
-                    >
+                    </Button>
+                    <Button variant="secondary" size="xs" onClick={() => setRenamingId(null)}>
                       {t("cancel")}
-                    </button>
+                    </Button>
                   </>
                 ) : (
                   <>
                     <span className="mr-auto truncate text-sm text-foreground">{scenario.name}</span>
                     {isConfirming ? (
                       <>
-                        <button
-                          type="button"
+                        <Button
+                          variant="warning"
+                          size="xs"
                           onClick={() => handleDelete(scenario.id)}
                           disabled={isDeleting}
-                          className="rounded-md bg-warning px-2.5 py-1 text-xs font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
                         >
                           {isDeleting ? t("deleting") : t("confirmDelete")}
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="xs"
                           onClick={() => setConfirmingId(null)}
                           disabled={isDeleting}
-                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-surface-2 disabled:opacity-50"
                         >
                           {t("cancel")}
-                        </button>
+                        </Button>
                       </>
                     ) : (
                       <>
-                        <button
-                          type="button"
-                          onClick={() => handleLoad(scenario)}
-                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-brand transition hover:bg-brand-soft"
-                        >
+                        <Button variant="accent" size="xs" onClick={() => handleLoad(scenario)}>
                           {t("load")}
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="xs"
                           onClick={() => {
                             setRenamingId(scenario.id);
                             setRenameValue(scenario.name);
                           }}
-                          className="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-foreground transition hover:bg-surface-2"
                         >
                           {t("rename")}
-                        </button>
+                        </Button>
                         <button
                           type="button"
                           onClick={() => setConfirmingId(scenario.id)}

@@ -7,6 +7,7 @@ import { formatIsoDate } from "@/shared/format/format";
 import { absoluteUrl } from "@/shared/seo/site";
 import { NO_STORE, apiFetch } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import Button from "@/shared/ui/Button";
 
 /** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
 type Connection = {
@@ -103,14 +104,14 @@ export default function ConnectedApps() {
                   {c.lastUsedAt ? t("lastUsed", { date: formatIsoDate(c.lastUsedAt.slice(0, 10)) }) : t("neverUsed")}
                 </span>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="dangerOutline"
                 onClick={() => revoke(c.clientId)}
                 disabled={revoking === c.clientId}
-                className="self-start rounded-lg border border-danger-border px-3 py-2 text-sm font-medium text-danger transition hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
+                className="self-start"
               >
                 {revoking === c.clientId ? t("revoking") : t("revoke")}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

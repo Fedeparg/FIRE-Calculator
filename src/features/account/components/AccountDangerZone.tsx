@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
+import Button from "@/shared/ui/Button";
 import Notice from "@/shared/ui/Notice";
 import { downloadBlob } from "@/shared/format/download";
 import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
@@ -23,8 +24,6 @@ type Props = {
 };
 
 type DeleteStatus = "idle" | "deleting" | "done";
-
-const buttonBase = "rounded-lg px-4 py-2.5 font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
 
 /**
  * Zona de cuenta con los dos derechos RGPD: exportar mis datos (descarga un JSON) y
@@ -95,14 +94,9 @@ export default function AccountDangerZone({ email }: Props) {
       <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
         <h2 className="text-lg font-semibold text-foreground">{t("export.title")}</h2>
         <p className="text-sm text-muted">{t("export.description")}</p>
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={exporting}
-          className={`${buttonBase} self-start border border-border text-foreground hover:bg-surface-2`}
-        >
+        <Button variant="secondary" size="lg" onClick={handleExport} disabled={exporting} className="self-start">
           {exporting ? t("export.exporting") : t("export.button")}
-        </button>
+        </Button>
         {exportError && <p className="text-sm text-warning">{t("export.error")}</p>}
       </section>
 
@@ -128,14 +122,15 @@ export default function AccountDangerZone({ email }: Props) {
           />
         </div>
 
-        <button
-          type="button"
+        <Button
+          variant="danger"
+          size="lg"
           onClick={handleDelete}
           disabled={!emailMatches || deleteStatus !== "idle"}
-          className={`${buttonBase} self-start bg-danger text-danger-fg hover:opacity-90`}
+          className="self-start"
         >
           {deleteStatus === "deleting" ? t("delete.deleting") : t("delete.button")}
-        </button>
+        </Button>
 
         {deleteStatus === "done" && <Notice variant="info">{t("delete.success")}</Notice>}
 

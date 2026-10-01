@@ -17,6 +17,7 @@ import { asLocale } from "@/i18n/types";
 import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import type { Position, PositionLot } from "@sextante/core/portfolio/types";
+import Button from "@/shared/ui/Button";
 
 type Props = {
   positions: Position[];
@@ -112,13 +113,9 @@ export default function RealisedGainsReport({ positions, lots }: Props) {
           />
         </div>
         <div className="flex flex-col items-end gap-1">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-2"
-          >
+          <Button variant="secondary" onClick={handleDownload}>
             {t("download", { year: year.year })}
-          </button>
+          </Button>
           {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
         </div>
       </div>
