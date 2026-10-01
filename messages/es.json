@@ -103,7 +103,7 @@
   },
   "frequency": {
     "label": "Frecuencia de aportación",
-    "help": "Cada cuánto añades dinero. Aportar más a menudo capitaliza antes, así que el resultado mejora ligeramente.",
+    "help": "Cada cuánto añades dinero. Aportar más a menudo hace que el dinero empiece a rendir antes; no cambia cada cuánto se capitalizan los intereses.",
     "weekly": "Semanal",
     "monthly": "Mensual",
     "quarterly": "Trimestral",
@@ -168,16 +168,18 @@
       "help": {
         "initial": "El dinero con el que empiezas hoy, antes de cualquier aportación.",
         "contribution": "Cuánto añades en cada aportación periódica (según la frecuencia elegida).",
-        "annualRate": "Rentabilidad media anual que esperas. La bolsa mundial ha rondado históricamente el 7% nominal, pero no está garantizado.",
+        "annualRate": "Rentabilidad media anual que esperas. Con capitalización anual es la rentabilidad anual efectiva; con otra, se lee como tipo nominal anual (TIN). La bolsa mundial ha rondado históricamente el 7% nominal, pero no está garantizado.",
         "years": "Durante cuántos años mantienes la inversión. El tiempo es el factor más potente del interés compuesto.",
         "annualFee": "Gastos anuales del producto (TER de un fondo/ETF). Restan a tu rentabilidad neta. Un fondo indexado suele rondar el 0,1-0,4%.",
         "contributionGrowth": "Si subes tu aportación cada año (con la inflación o el sueldo), indícalo aquí. Déjalo en 0 si es fija.",
-        "inflationRate": "Si lo indicas, verás el valor final en poder adquisitivo de hoy. Déjalo en 0 para razonar en euros nominales."
+        "inflationRate": "Si lo indicas, verás el valor final en poder adquisitivo de hoy. Déjalo en 0 para razonar en euros nominales.",
+        "compounding": "Cada cuánto se abonan los intereses y empiezan a generar intereses ellos mismos. Es independiente de la frecuencia de aportación: con la anual, la rentabilidad es la anual efectiva; con la mensual, la tasa anual se divide en 12 (tipo nominal, como el TIN) y rinde algo más. Con aportación 0, el resultado solo depende de esta opción."
       },
       "annualFee": "Comisión anual del fondo (TER) (%)",
       "contributionGrowth": "Crecimiento anual de la aportación (%)",
       "inflationRate": "Inflación anual estimada (%)",
-      "finalRealValue": "Valor final real (hoy)"
+      "finalRealValue": "Valor final real (hoy)",
+      "compounding": "Capitalización de intereses"
     },
     "independencia-financiera": {
       "title": "Calculadora de independencia financiera (FIRE)",
@@ -520,7 +522,7 @@
       "title": "Calculadora de intereses de tarjeta de crédito",
       "intro": "Descubre cuánto tardas en pagar una deuda de tarjeta y cuántos intereses te cuesta.",
       "balance": "Saldo de la deuda (€)",
-      "annualRate": "Tipo de interés anual (%)",
+      "annualRate": "Tipo de interés TIN (%)",
       "paymentMode": "Modo de pago",
       "modeFixed": "Cuota fija",
       "modePercent": "Cuota mínima (% del saldo)",
@@ -538,7 +540,7 @@
       "never": "Con estos parámetros la deuda nunca se salda: la cuota no llega a cubrir ni los intereses. Aumenta el pago mensual (o, en modo revolving, la cuota mínima en euros).",
       "help": {
         "balance": "Lo que debes ahora mismo en la tarjeta.",
-        "annualRate": "El interés anual de la tarjeta. Las tarjetas 'revolving' suelen rondar el 20% o más.",
+        "annualRate": "El TIN anual de la tarjeta; cada mes se aplica dividido entre 12. Las tarjetas 'revolving' suelen rondar el 20% o más (la TAE publicada es algo mayor).",
         "paymentMode": "Cuota fija: pagas siempre lo mismo. Cuota mínima: pagas un % del saldo cada mes (modo 'revolving'); al bajar el saldo baja la cuota, así que la deuda dura años.",
         "monthlyPayment": "Cuánto pagas cada mes. Si es muy bajo, casi todo se va en intereses.",
         "minPercent": "Porcentaje del saldo que exige la tarjeta como cuota mínima cada mes. Suele rondar el 2-5%.",

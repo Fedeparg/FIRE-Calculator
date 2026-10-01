@@ -103,7 +103,7 @@
   },
   "frequency": {
     "label": "Contribution frequency",
-    "help": "How often you add money. Contributing more often compounds sooner, so the result improves slightly.",
+    "help": "How often you add money. Contributing more often puts your money to work sooner; it does not change how often interest is compounded.",
     "weekly": "Weekly",
     "monthly": "Monthly",
     "quarterly": "Quarterly",
@@ -168,16 +168,18 @@
       "help": {
         "initial": "The money you start with today, before any contributions.",
         "contribution": "How much you add on each periodic contribution (based on the chosen frequency).",
-        "annualRate": "The average annual return you expect. Global stocks have historically returned around 7% nominal, but it is not guaranteed.",
+        "annualRate": "The average annual return you expect. With annual compounding it is the effective annual return; otherwise it is read as a nominal annual rate. Global stocks have historically returned around 7% nominal, but it is not guaranteed.",
         "years": "How many years you stay invested. Time is the most powerful factor in compound interest.",
         "annualFee": "Annual product costs (a fund/ETF TER). They subtract from your net return. An index fund is usually around 0.1-0.4%.",
         "contributionGrowth": "If you raise your contribution each year (with inflation or salary), enter it here. Leave at 0 if fixed.",
-        "inflationRate": "If set, you will see the final value in today purchasing power. Leave at 0 to reason in nominal euros."
+        "inflationRate": "If set, you will see the final value in today purchasing power. Leave at 0 to reason in nominal euros.",
+        "compounding": "How often interest is credited and starts earning interest itself. It is independent of the contribution frequency: with annual compounding the return is the effective annual return; with monthly, the annual rate is split into 12 (a nominal rate, like a TIN) and earns slightly more. With a contribution of 0 the result depends only on this option."
       },
       "annualFee": "Annual fund fee (TER) (%)",
       "contributionGrowth": "Annual contribution growth (%)",
       "inflationRate": "Estimated annual inflation (%)",
-      "finalRealValue": "Real final value (today)"
+      "finalRealValue": "Real final value (today)",
+      "compounding": "Interest compounding"
     },
     "independencia-financiera": {
       "title": "Financial independence (FIRE) calculator",
@@ -520,7 +522,7 @@
       "title": "Credit card interest calculator",
       "intro": "See how long it takes to pay off a card debt and how much interest it costs you.",
       "balance": "Debt balance (€)",
-      "annualRate": "Annual interest rate (%)",
+      "annualRate": "Interest rate (TIN) (%)",
       "paymentMode": "Payment mode",
       "modeFixed": "Fixed payment",
       "modePercent": "Minimum payment (% of balance)",
@@ -538,7 +540,7 @@
       "never": "With these settings the debt is never paid off: the payment doesn't even cover the interest. Increase the monthly payment (or, in revolving mode, the minimum payment floor).",
       "help": {
         "balance": "What you currently owe on the card.",
-        "annualRate": "The card's annual interest. 'Revolving' cards are often 20% or more.",
+        "annualRate": "The card's nominal annual rate (TIN); each month it is applied divided by 12. 'Revolving' cards are often 20% or more (the advertised APR is slightly higher).",
         "paymentMode": "Fixed payment: you always pay the same. Minimum payment: you pay a % of the balance each month ('revolving' mode); as the balance falls so does the payment, so the debt drags on for years.",
         "monthlyPayment": "How much you pay each month. If it is too low, almost all goes to interest.",
         "minPercent": "The percentage of the balance the card requires as a minimum payment each month. Usually around 2-5%.",

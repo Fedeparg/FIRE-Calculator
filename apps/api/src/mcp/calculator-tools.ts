@@ -38,7 +38,7 @@ import { computeStaking } from '@sextante/core/calculators/staking';
 import { computeCreditCard, PAYMENT_MODES } from '@sextante/core/calculators/tarjeta-credito';
 import { CONTRACT_TYPES, DISABILITY_GRADES, estimateNetSalary } from '@sextante/core/fiscal/irpf';
 import { REGION_CODES, type RegionCode } from '@sextante/core/fiscal/regions';
-import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
+import { COMPOUNDING_FREQUENCIES, FREQUENCIES, type Frequency } from '@sextante/core/projection';
 
 /**
  * Registro de las calculadoras de Sextante expuestas por MCP con DOS tools genéricas
@@ -102,6 +102,14 @@ const frequency = z
   .enum(FREQUENCIES as [Frequency, ...Frequency[]])
   .optional()
   .describe('Frecuencia de las aportaciones (por defecto monthly).');
+
+const compounding = z
+  .enum(COMPOUNDING_FREQUENCIES as [Frequency, ...Frequency[]])
+  .optional()
+  .describe(
+    'Capitalización de los intereses, independiente de la frecuencia de aportación (por defecto annual). ' +
+      'Con annual, annualRate es la rentabilidad anual efectiva; con otra, es un tipo nominal anual (TIN) que capitaliza ese número de veces al año.',
+  );
 
 const region = z
   .enum(REGION_CODES as [RegionCode, ...RegionCode[]])
@@ -174,6 +182,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         initial: amount('Capital inicial.'),
         contribution: amount('Importe de cada aportación.'),
         frequency,
+        compounding,
         annualRate: percent('Rentabilidad anual esperada.', -99, 100),
         years: horizon('Horizonte en años.'),
         annualFee: percent('Comisión anual del producto (TER).').optional(),

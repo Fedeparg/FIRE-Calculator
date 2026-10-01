@@ -43,7 +43,7 @@ describe("computeRetirement", () => {
     expect(grown.totalContributed).toBeGreaterThan(computeRetirement(base).totalContributed);
   });
 
-  it("golden: valores por defecto del componente (6% nominal, 2,5% inflación, 0,3% TER)", () => {
+  it("golden: valores por defecto del componente (6% anual efectivo, 2,5% inflación, 0,3% TER)", () => {
     const r = computeRetirement({
       currentAge: 30,
       retirementAge: 67,
@@ -56,9 +56,9 @@ describe("computeRetirement", () => {
     });
     expect(r.yearsToRetirement).toBe(37);
     expect(r.totalContributed).toBe(148200);
-    expect(Math.round(r.finalValue)).toBe(577655);
-    expect(Math.round(r.finalRealValue)).toBe(229279);
-    expect(r.monthlyIncome).toBeCloseTo(764.26, 2);
+    expect(Math.round(r.finalValue)).toBe(555693);
+    expect(Math.round(r.finalRealValue)).toBe(222870);
+    expect(r.monthlyIncome).toBeCloseTo(742.9, 2);
   });
 
   it("si ya estás en edad de jubilación, no proyecta (años 0)", () => {

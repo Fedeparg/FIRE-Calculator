@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FREQUENCIES } from "../projection.js";
 import { computeCompound } from "./interes-compuesto.js";
 
 describe("computeCompound", () => {
@@ -10,12 +11,13 @@ describe("computeCompound", () => {
     expect(r.totalInterest).toBe(0);
   });
 
-  it("coincide con la fórmula cerrada de la anualidad (capitalización mensual)", () => {
+  it("coincide con la fórmula cerrada de la anualidad (tasa anual efectiva, periodo mensual equivalente)", () => {
     const initial = 5000;
     const contribution = 300;
     const annualRate = 7;
     const years = 25;
-    const i = annualRate / 100 / 12;
+    // tasa efectiva anual → tasa mensual equivalente (1 + r)^(1/12) − 1
+    const i = Math.pow(1 + annualRate / 100, 1 / 12) - 1;
     const n = years * 12;
     const expected = initial * Math.pow(1 + i, n) + contribution * ((Math.pow(1 + i, n) - 1) / i);
 
@@ -78,11 +80,10 @@ describe("computeCompound", () => {
     expect(creciente.totalContributed).toBeGreaterThan(fija.totalContributed);
   });
 
-  it("la inflación descuenta el valor real con la misma periodicidad que el interés", () => {
+  it("la inflación efectiva anual descuenta el valor real como (1 + i)^años", () => {
     const r = computeCompound({ initial: 10000, contribution: 0, annualRate: 0, years: 10, inflationRate: 3 });
     expect(r.finalValue).toBe(10000);
-    // Descuento mensual: 10.000 / (1 + 0,03/12)^120.
-    expect(r.finalRealValue).toBeCloseTo(10000 / Math.pow(1 + 0.03 / 12, 120), 4);
+    expect(r.finalRealValue).toBeCloseTo(10000 / Math.pow(1.03, 10), 4);
   });
 
   it("si la rentabilidad iguala a la inflación, el valor real se mantiene constante", () => {
@@ -108,5 +109,26 @@ describe("computeCompound", () => {
     });
     expect(r.finalValue).toBe(0);
     expect(r.totalContributed).toBe(0);
+  });
+
+  it("con aportación 0 y 1 año, 10.000 € al 7 % dan 10.700 € con cualquier frecuencia", () => {
+    for (const frequency of FREQUENCIES) {
+      const r = computeCompound({ initial: 10000, contribution: 0, frequency, annualRate: 7, years: 1 });
+      expect(r.finalValue).toBeCloseTo(10700, 8);
+    }
+  });
+
+  it("la capitalización se elige aparte de la aportación: mensual a tipo nominal 7 % da (1 + 0,07/12)^12", () => {
+    for (const frequency of FREQUENCIES) {
+      const r = computeCompound({
+        initial: 10000,
+        contribution: 0,
+        frequency,
+        compounding: "monthly",
+        annualRate: 7,
+        years: 1,
+      });
+      expect(r.finalValue).toBeCloseTo(10000 * Math.pow(1 + 0.07 / 12, 12), 8);
+    }
   });
 });
