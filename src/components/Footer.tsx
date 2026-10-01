@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 
-import { DONATIONS_ENABLED } from "@/components/donations/config";
+import { DONATIONS_ENABLED } from "@/features/donations/config";
 import { Link } from "@/i18n/navigation";
 
 export default function Footer() {

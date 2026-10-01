@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { trackEvent } from "@/components/analytics/track";
 import { apiJson } from "@/shared/api/client";
-import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "./config";
+import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "../config";
 
 type Status = "idle" | "loading" | "error";
 

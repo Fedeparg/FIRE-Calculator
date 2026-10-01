@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 
-import DonationWidget from "@/components/donations/DonationWidget";
-import { DONATIONS_ENABLED } from "@/components/donations/config";
+import DonationWidget from "@/features/donations/components/DonationWidget";
+import { DONATIONS_ENABLED } from "@/features/donations/config";
 import { Link } from "@/i18n/navigation";
 
 /**

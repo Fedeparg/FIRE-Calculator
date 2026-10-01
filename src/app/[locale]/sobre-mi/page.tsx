@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import DonationWidget from "@/components/donations/DonationWidget";
-import { DONATIONS_ENABLED } from "@/components/donations/config";
+import DonationWidget from "@/features/donations/components/DonationWidget";
+import { DONATIONS_ENABLED } from "@/features/donations/config";
 import { buildMetadata } from "@/lib/seo";
 
 type Props = { params: Promise<{ locale: string }> };
