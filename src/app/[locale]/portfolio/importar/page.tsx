@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/lib/session";
 import { Link } from "@/i18n/navigation";
-import TradeRepublicImport from "@/components/portfolio/TradeRepublicImport";
+import TradeRepublicImport from "@/features/portfolio/components/TradeRepublicImport";
 
 type Props = { params: Promise<{ locale: string }> };
 

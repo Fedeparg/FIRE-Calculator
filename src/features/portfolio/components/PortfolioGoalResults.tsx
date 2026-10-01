@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { CurrencyNote } from "@/core/portfolio-goal-amounts";
 import type { GoalOutcome } from "@/core/portfolio-goal-scenario";
 import { useFormat } from "@/lib/format";
-import Stat from "../ui/Stat";
+import Stat from "@/components/ui/Stat";
 
 type Props = {
   goal: GoalOutcome;

@@ -9,7 +9,7 @@ import { buildPositionRows, type GainMode } from "@/core/portfolio-rows";
 import { DEFAULT_SORT_DIR, DEFAULT_SORT_KEY, sortPositions, type SortDir, type SortKey } from "@/core/portfolio-sort";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
-import ToggleGroup from "../ui/ToggleGroup";
+import ToggleGroup from "@/components/ui/ToggleGroup";
 import { PendingPrice, SortHeader, StaleBadge } from "./PositionListParts";
 
 type Props = {

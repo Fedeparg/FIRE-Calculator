@@ -6,9 +6,9 @@ import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getSessionUser } from "@/lib/session";
 import { fetchPositions } from "@/lib/portfolio.server";
-import { ADD_POSITION_HREF } from "@/components/portfolio/add-position";
-import PortfolioDataProvider from "@/components/portfolio/PortfolioDataProvider";
-import PortfolioTabs from "@/components/portfolio/PortfolioTabs";
+import { ADD_POSITION_HREF } from "@/features/portfolio/components/add-position";
+import PortfolioDataProvider from "@/features/portfolio/components/PortfolioDataProvider";
+import PortfolioTabs from "@/features/portfolio/components/PortfolioTabs";
 
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
