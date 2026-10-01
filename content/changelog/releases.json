@@ -1111,12 +1111,12 @@
     {
       "date": "2026-08-03",
       "title": {
-        "es": "Código abierto y refuerzo de la seguridad",
-        "en": "Open source and a security tightening"
+        "es": "Refuerzo de la seguridad",
+        "en": "A security tightening"
       },
       "summary": {
-        "es": "Sextante se publica con licencia AGPL-3.0, así que cualquiera puede leer y auditar el código que hace los cálculos. En el mismo lote se cierra la puerta a cualquier recurso externo en el navegador, se deja de exponer la base de datos en la red local y se traducen los últimos textos que seguían apareciendo en castellano en la versión inglesa.",
-        "en": "Sextante is released under the AGPL-3.0 licence, so anyone can read and audit the code behind the calculations. The same batch shuts the door on any external resource in the browser, stops exposing the database on the local network, and translates the last texts that still showed up in Spanish on the English site."
+        "es": "Se cierra la puerta a cualquier recurso externo en el navegador, se deja de exponer la base de datos en la red local y se traducen los últimos textos que seguían apareciendo en castellano en la versión inglesa.",
+        "en": "Shuts the door on any external resource in the browser, stops exposing the database on the local network, and translates the last texts that still showed up in Spanish on the English site."
       },
       "highlight": false,
       "entries": [
@@ -1140,7 +1140,7 @@
             "es": "presentación del proyecto en inglés y documentación de instalación reutilizable por cualquiera",
             "en": "an English introduction to the project and setup documentation anyone can reuse"
           },
-          "hidden": false
+          "hidden": true
         },
         {
           "hash": "5f8de188",
@@ -1173,7 +1173,7 @@
             "es": "licencia AGPL-3.0 y normas de contribución del repositorio",
             "en": "AGPL-3.0 licence and contribution rules for the repository"
           },
-          "hidden": false
+          "hidden": true
         }
       ]
     },
