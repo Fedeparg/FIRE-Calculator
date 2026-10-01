@@ -1,4 +1,3 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
 import { computeRetirement } from '@sextante/core/calculators/ahorro-jubilacion';
@@ -40,56 +39,59 @@ import { CONTRACT_TYPES, DISABILITY_GRADES, estimateNetSalary } from '@sextante/
 import { REGION_CODES, type RegionCode } from '@sextante/core/fiscal/regions';
 import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
 
-import { jsonResult, type ToolRunner } from './mcp-results.js';
-
 /**
- * Las calculadoras de Sextante expuestas como tools MCP. Ejecutan EXACTAMENTE el mismo código
- * que la web (`@sextante/core`), así que el asistente y la calculadora no pueden dar cifras
- * distintas. No leen datos del usuario: son funciones puras sobre lo que el cliente envía.
+ * Registro de las calculadoras de Sextante expuestas por MCP con DOS tools genéricas
+ * (`list_calculators` y `calculate`, ver `McpService`), en vez de una tool por calculadora.
+ * Ejecutan EXACTAMENTE el mismo código que la web (`@sextante/core`), así que el asistente y la
+ * calculadora no pueden dar cifras distintas. No leen datos del usuario: son funciones puras
+ * sobre lo que el cliente envía. La clave es el slug de la web (el mismo que devuelve
+ * `list_saved_scenarios`).
  *
- * Cada tool declara su esquema con límites (importes, tasas, años, simulaciones). Además de
- * documentar las unidades al cliente, los límites acotan el trabajo que una llamada puede
- * pedir al servidor: el Monte Carlo corre aquí, no en el navegador.
+ * Cada entrada declara su esquema zod con límites (importes, tasas, años, simulaciones). Además de
+ * documentar las unidades al cliente (se publica como JSON Schema en `list_calculators`), los
+ * límites acotan el trabajo que una llamada puede pedir al servidor: el Monte Carlo corre aquí,
+ * no en el navegador. Añadir una calculadora es añadir UNA entrada a `CALCULATORS`.
  */
 
-/** Una tool de calculadora: se registra en el servidor y se puede ejecutar sin él (tests). */
-export interface CalculatorTool {
-  readonly name: string;
-  /** Valida la entrada con el esquema de la tool y calcula. Lanza si la entrada no es válida. */
-  execute(input: unknown): unknown;
-  register(server: McpServer, run: ToolRunner): void;
+/** Familias de calculadoras, las mismas que agrupa la web. */
+export const CALCULATOR_CATEGORIES = [
+  'inversion',
+  'fire',
+  'hipoteca',
+  'ahorro',
+  'fiscalidad',
+  'deuda',
+  'herramientas',
+] as const;
+export type CalculatorCategory = (typeof CALCULATOR_CATEGORIES)[number];
+
+export interface CalculatorEntry {
+  readonly category: CalculatorCategory;
+  readonly title: string;
+  readonly description: string;
+  /** Esquema de entrada. Estricto: una clave desconocida es un error, no se ignora en silencio. */
+  readonly schema: z.ZodType;
+  /** Valida la entrada con `schema` (lanza `ZodError` si no cumple) y calcula. */
+  readonly run: (input: unknown) => unknown;
 }
 
 const CURRENCY_NOTE =
-  'Los importes van en la divisa que use el usuario (las tools fiscales, en euros). ' +
+  'Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). ' +
   'Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; ' +
   'es una estimación orientativa, no asesoramiento.';
 
-function defineTool<S extends z.ZodRawShape>(
-  name: string,
+function defineCalculator<S extends z.ZodRawShape>(
+  category: CalculatorCategory,
   config: { title: string; description: string; inputSchema: S },
   compute: (args: z.infer<z.ZodObject<S>>) => unknown,
-): CalculatorTool {
-  const schema = z.object(config.inputSchema);
-  const execute = (input: unknown): unknown => compute(schema.parse(input));
+): CalculatorEntry {
+  const schema = z.strictObject(config.inputSchema);
   return {
-    name,
-    execute,
-    register(server, run) {
-      // El SDK tipa el callback a partir del esquema; con el genérico `S` sin resolver no sabe
-      // inferirlo, así que se registra con la forma base y `execute` vuelve a validar y tipar.
-      const inputSchema: z.ZodRawShape = config.inputSchema;
-      server.registerTool(
-        name,
-        {
-          title: config.title,
-          description: `${config.description} ${CURRENCY_NOTE}`,
-          inputSchema,
-          annotations: { readOnlyHint: true, openWorldHint: false },
-        },
-        (args) => run(name, () => Promise.resolve(jsonResult(execute(args)))),
-      );
-    },
+    category,
+    title: config.title,
+    description: `${config.description} ${CURRENCY_NOTE}`,
+    schema,
+    run: (input) => compute(schema.parse(input)),
   };
 }
 
@@ -148,10 +150,29 @@ const MONTHS_PER_YEAR = 12;
 
 // ---------------------------------------------------------------------------------------------
 
-export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
+/** Depósito a plazo fijo y cuenta remunerada comparten cálculo (TAE) y esquema. */
+const DEPOSIT = defineCalculator(
+  'ahorro',
+  {
+    title: 'Depósito a plazo fijo o cuenta remunerada',
+    description:
+      'Intereses de un depósito a plazo fijo o de una cuenta remunerada a partir de la TAE, ' +
+      'brutos y netos de la retención, y valor final en poder adquisitivo de hoy.',
+    inputSchema: {
+      principal: amount('Capital depositado.'),
+      apr: percent('TAE.', 0, 50),
+      years: horizon('Plazo en años (admite decimales: 0,5 = 6 meses).', 50),
+      withholdingRate: percent('Retención sobre los intereses (por defecto 19 %).').optional(),
+      inflationRate: percent('Inflación anual estimada.', -50, 100).optional(),
+    },
+  },
+  (args) => computeDeposit(args),
+);
+
+export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   // --- Inversión ------------------------------------------------------------------------------
-  defineTool(
-    'calculate_compound_interest',
+  'interes-compuesto': defineCalculator(
+    'inversion',
     {
       title: 'Calculadora de interés compuesto',
       description:
@@ -171,8 +192,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeCompound(args),
   ),
-  defineTool(
-    'calculate_simple_interest',
+  'interes-simple': defineCalculator(
+    'inversion',
     {
       title: 'Calculadora de interés simple',
       description:
@@ -187,8 +208,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeSimpleInterest(args),
   ),
-  defineTool(
-    'calculate_average_price',
+  'promediar-acciones': defineCalculator(
+    'inversion',
     {
       title: 'Promediar acciones (precio medio ponderado)',
       description:
@@ -211,8 +232,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeAveragePrice(args),
   ),
-  defineTool(
-    'calculate_dividends',
+  dividendos: defineCalculator(
+    'inversion',
     {
       title: 'Calculadora de dividendos',
       description:
@@ -229,8 +250,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeDividends(args),
   ),
-  defineTool(
-    'calculate_roi',
+  roi: defineCalculator(
+    'inversion',
     {
       title: 'Calculadora de ROI',
       description:
@@ -247,8 +268,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeRoi(args),
   ),
-  defineTool(
-    'calculate_staking',
+  staking: defineCalculator(
+    'inversion',
     {
       title: 'Calculadora de staking (cripto)',
       description:
@@ -265,8 +286,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
   ),
 
   // --- FIRE y jubilación ----------------------------------------------------------------------
-  defineTool(
-    'calculate_fire',
+  'independencia-financiera': defineCalculator(
+    'fire',
     {
       title: 'Calculadora de independencia financiera (FIRE)',
       description:
@@ -286,8 +307,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeFire(args),
   ),
-  defineTool(
-    'simulate_fire_monte_carlo',
+  'simulador-montecarlo': defineCalculator(
+    'fire',
     {
       title: 'Simulador FIRE Monte Carlo',
       description:
@@ -340,8 +361,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
       };
     },
   ),
-  defineTool(
-    'calculate_retirement_savings',
+  'ahorro-jubilacion': defineCalculator(
+    'fire',
     {
       title: 'Calculadora de ahorro para la jubilación',
       description:
@@ -360,8 +381,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeRetirement(args),
   ),
-  defineTool(
-    'calculate_budget',
+  'presupuesto-mensual': defineCalculator(
+    'fire',
     {
       title: 'Presupuesto mensual (regla 50/30/20)',
       description:
@@ -377,8 +398,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
   ),
 
   // --- Hipoteca e inmuebles -------------------------------------------------------------------
-  defineTool(
-    'calculate_mortgage',
+  'hipoteca-fija': defineCalculator(
+    'hipoteca',
     {
       title: 'Hipoteca a tipo fijo',
       description:
@@ -394,8 +415,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeMortgage(args),
   ),
-  defineTool(
-    'calculate_mortgage_affordability',
+  'que-hipoteca-me-puedo-permitir': defineCalculator(
+    'hipoteca',
     {
       title: '¿Qué hipoteca me puedo permitir?',
       description:
@@ -414,8 +435,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeAffordability(args),
   ),
-  defineTool(
-    'compare_buy_vs_rent',
+  'hipoteca-vs-alquiler': defineCalculator(
+    'hipoteca',
     {
       title: 'Hipoteca frente a alquiler',
       description:
@@ -438,8 +459,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeBuyVsRent(args),
   ),
-  defineTool(
-    'calculate_early_repayment',
+  'amortizacion-anticipada': defineCalculator(
+    'hipoteca',
     {
       title: 'Amortización anticipada de hipoteca',
       description:
@@ -455,8 +476,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeEarlyRepayment(args),
   ),
-  defineTool(
-    'calculate_rental_yield',
+  'rentabilidad-alquiler': defineCalculator(
+    'hipoteca',
     {
       title: 'Rentabilidad de un alquiler',
       description:
@@ -475,8 +496,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeRentalYield(args),
   ),
-  defineTool(
-    'calculate_holiday_rental_yield',
+  'rentabilidad-alquiler-vacacional': defineCalculator(
+    'hipoteca',
     {
       title: 'Rentabilidad de un alquiler vacacional',
       description:
@@ -497,27 +518,12 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
   ),
 
   // --- Ahorro ---------------------------------------------------------------------------------
-  defineTool(
-    'calculate_deposit',
-    {
-      title: 'Depósito a plazo fijo o cuenta remunerada',
-      description:
-        'Intereses de un depósito a plazo fijo o de una cuenta remunerada a partir de la TAE, ' +
-        'brutos y netos de la retención, y valor final en poder adquisitivo de hoy.',
-      inputSchema: {
-        principal: amount('Capital depositado.'),
-        apr: percent('TAE.', 0, 50),
-        years: horizon('Plazo en años (admite decimales: 0,5 = 6 meses).', 50),
-        withholdingRate: percent('Retención sobre los intereses (por defecto 19 %).').optional(),
-        inflationRate: percent('Inflación anual estimada.', -50, 100).optional(),
-      },
-    },
-    (args) => computeDeposit(args),
-  ),
+  'deposito-plazo-fijo': DEPOSIT,
+  'cuenta-remunerada': DEPOSIT,
 
   // --- Fiscalidad -----------------------------------------------------------------------------
-  defineTool(
-    'calculate_net_salary',
+  'salario-bruto-neto': defineCalculator(
+    'fiscalidad',
     {
       title: 'Salario bruto a neto',
       description:
@@ -527,8 +533,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => estimateNetSalary(args),
   ),
-  defineTool(
-    'calculate_payroll_withholding',
+  'irpf-nomina': defineCalculator(
+    'fiscalidad',
     {
       title: 'Retención de IRPF en nómina',
       description:
@@ -538,8 +544,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computePayrollWithholding(args),
   ),
-  defineTool(
-    'calculate_self_employed_tax',
+  'irpf-autonomos': defineCalculator(
+    'fiscalidad',
     {
       title: 'IRPF de autónomos',
       description:
@@ -559,8 +565,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeSelfEmployedTax(args),
   ),
-  defineTool(
-    'calculate_pension_plan_relief',
+  'desgravacion-plan-pensiones': defineCalculator(
+    'fiscalidad',
     {
       title: 'Desgravación del plan de pensiones',
       description:
@@ -575,8 +581,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computePensionRelief(args),
   ),
-  defineTool(
-    'calculate_gift_tax',
+  'impuesto-donaciones': defineCalculator(
+    'fiscalidad',
     {
       title: 'Impuesto de donaciones',
       description:
@@ -598,8 +604,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeGiftTax(args),
   ),
-  defineTool(
-    'calculate_wealth_tax',
+  'impuesto-patrimonio': defineCalculator(
+    'fiscalidad',
     {
       title: 'Impuesto sobre el patrimonio',
       description:
@@ -616,8 +622,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
   ),
 
   // --- Deuda y herramientas -------------------------------------------------------------------
-  defineTool(
-    'calculate_credit_card_payoff',
+  'intereses-tarjeta-credito': defineCalculator(
+    'deuda',
     {
       title: 'Intereses de tarjeta de crédito',
       description:
@@ -643,8 +649,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
       return { ...result, yearlySeries: yearly };
     },
   ),
-  defineTool(
-    'calculate_inflation',
+  inflacion: defineCalculator(
+    'herramientas',
     {
       title: 'Inflación y poder adquisitivo',
       description:
@@ -659,8 +665,8 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => computeInflation(args),
   ),
-  defineTool(
-    'score_financial_health',
+  'salud-financiera': defineCalculator(
+    'herramientas',
     {
       title: 'Test de salud financiera',
       description:
@@ -690,4 +696,75 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
     },
     (args) => scoreFinancialHealthOptions(FINANCIAL_HEALTH_QUESTIONS.map((q) => args[q.id] ?? 0)),
   ),
-];
+};
+
+/** Calculadora cuyo slug no existe (se traduce a error de tool con la lista de válidos). */
+export class UnknownCalculatorError extends Error {
+  constructor(slug: string) {
+    super(`Calculadora desconocida: "${slug}". Usa list_calculators para ver los slugs disponibles.`);
+  }
+}
+
+export interface CalculatorListing {
+  slug: string;
+  category: CalculatorCategory;
+  title: string;
+  description: string;
+  /** JSON Schema de `inputs` (tipos, mínimos, máximos y descripción con unidades de cada campo). */
+  inputSchema: unknown;
+}
+
+/** Un slug es válido solo si es una clave propia (evita `__proto__`, `constructor`, etc.). */
+function findCalculator(slug: string): CalculatorEntry | undefined {
+  return Object.hasOwn(CALCULATORS, slug) ? CALCULATORS[slug] : undefined;
+}
+
+/** Esquema JSON de cada calculadora, derivado del zod una sola vez (los esquemas son estáticos). */
+const listingCache = new Map<string, CalculatorListing>();
+
+function toListing(slug: string, entry: CalculatorEntry): CalculatorListing {
+  let listing = listingCache.get(slug);
+  if (!listing) {
+    const inputSchema = z.toJSONSchema(entry.schema, { io: 'input' });
+    delete inputSchema.$schema; // ruido: el borrador de JSON Schema ya lo sabe el cliente
+    listing = { slug, category: entry.category, title: entry.title, description: entry.description, inputSchema };
+    listingCache.set(slug, listing);
+  }
+  return listing;
+}
+
+/** Catálogo para `list_calculators`: todas, o las de una categoría / un slug. */
+export function listCalculators(filter: { category?: CalculatorCategory; slug?: string } = {}): CalculatorListing[] {
+  return Object.entries(CALCULATORS)
+    .filter(
+      ([slug, entry]) =>
+        (!filter.slug || slug === filter.slug) && (!filter.category || entry.category === filter.category),
+    )
+    .map(([slug, entry]) => toListing(slug, entry));
+}
+
+/** Resumen legible de los errores de validación de zod, sin volcar el JSON interno. */
+function describeIssues(error: z.ZodError): string {
+  return error.issues.map((issue) => `${issue.path.join('.') || 'inputs'}: ${issue.message}`).join('; ');
+}
+
+/**
+ * Valida `inputs` con el esquema de ESA calculadora y calcula. Lanza `UnknownCalculatorError` si
+ * el slug no existe y un `Error` con los campos inválidos si la entrada no cumple el esquema
+ * (fuera de rango, de otro tipo o desconocida): en ambos casos no se calcula nada.
+ */
+export function runCalculator(slug: string, inputs: unknown): unknown {
+  const entry = findCalculator(slug);
+  if (!entry) throw new UnknownCalculatorError(slug);
+  try {
+    return entry.run(inputs);
+  } catch (error) {
+    if (error instanceof z.ZodError) throw new Error(`Entrada no válida para ${slug}: ${describeIssues(error)}`);
+    throw error;
+  }
+}
+
+/** ¿Existe la calculadora? Para auditar solo slugs conocidos (la columna es de longitud fija). */
+export function hasCalculator(slug: string): boolean {
+  return findCalculator(slug) !== undefined;
+}

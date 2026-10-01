@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "56c995d5",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura la fase 1",
+            "en": "curate phase 1"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "51bfc77c",
+          "type": "feat",
+          "scope": "mcp",
+          "category": "feature",
+          "text": {
+            "es": "tu asistente de IA usa las calculadoras con dos herramientas: una para descubrirlas con sus datos de entrada y otra para calcular",
+            "en": "your AI assistant now uses the calculators through two tools: one to discover them and their inputs, and one to calculate"
+          },
+          "hidden": false
+        },
+        {
           "hash": "75d0b22b",
           "type": "docs",
           "scope": "changelog",
