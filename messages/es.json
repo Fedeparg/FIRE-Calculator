@@ -1467,6 +1467,8 @@
         "colSells": "Ventas",
         "colDuplicates": "Ya importadas",
         "colResulting": "Cantidad final",
+        "colAvgPrice": "Precio medio",
+        "avgPriceNote": "Precio medio de coste tras importar, con el precio al que se ejecutó cada operación según Trade Republic. Cada compra y venta se ve después en el detalle de la posición.",
         "closed": "Cerrada (0)",
         "action": {
           "create": "Se crea",

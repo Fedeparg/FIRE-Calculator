@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "0589d606",
+          "type": "feat",
+          "scope": "import",
+          "category": "feature",
+          "text": {
+            "es": "al importar desde Trade Republic, la vista previa muestra el precio medio resultante, calculado con el precio real de cada operación, para que lo compares antes de confirmar",
+            "en": "the Trade Republic import preview shows the resulting average price, computed from each trade’s actual price, so you can check it before confirming"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "985bd8ab",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura la poda de documentación",
+            "en": "curate the docs pruning"
+          },
+          "hidden": true
+        },
+        {
           "hash": "b2d3032a",
           "type": "docs",
           "scope": "api",
