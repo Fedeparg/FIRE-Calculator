@@ -14,6 +14,17 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "002c21f0",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se describen los arreglos de importación y precios",
+            "en": "the import and price fixes are described"
+          },
+          "hidden": true
+        },
+        {
           "hash": "df4de965",
           "type": "fix",
           "scope": "import",
@@ -41,8 +52,8 @@
           "scope": "changelog",
           "category": "internal",
           "text": {
-            "es": "se cuentan las 26 herramientas de calculadora",
-            "en": "the 26 calculator tools are counted"
+            "es": "se anuncia el MCP completo como hito",
+            "en": "the full MCP is announced as a milestone"
           },
           "hidden": true
         },
@@ -52,8 +63,8 @@
           "scope": null,
           "category": "internal",
           "text": {
-            "es": "se anuncia el MCP completo como hito",
-            "en": "the full MCP is announced as a milestone"
+            "es": "se cuentan las 26 herramientas de calculadora",
+            "en": "the 26 calculator tools are counted"
           },
           "hidden": true
         },
