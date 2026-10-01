@@ -18,7 +18,8 @@ push a main ─▶ ci (runners de GitHub) ─▶ ¿verde? ─▶ deploy ─▶ r
                                         ├─ api  (NestJS, solo red interna)
                                         ├─ web  (Next, puerto WEB_PORT) ◀─ proxy inverso (TLS)
                                         ├─ analytics-db (volumen sextante_analytics_pgdata)
-                                        └─ analytics (Umami; panel en ANALYTICS_PORT, solo red local)
+                                        ├─ analytics (Umami; panel en ANALYTICS_PORT, solo red local)
+                                        └─ backup (pg_dump → gpg → rclone, cron diario; ver §6)
 ```
 
 ---
@@ -124,10 +125,35 @@ build del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret
 
 ## 3. Email (Resend)
 
-Verifica el dominio de envío y pon los registros DNS (SPF/DKIM/DMARC + MX) según
-**`apps/api/README.md` → sección "Email (Resend)"**. El test e2e real del magic
-link solo funciona cuando el dominio (paso 5) resuelve, porque el enlace usa
-`APP_URL`.
+El login es passwordless: la API envía un magic link por email. `EMAIL_TRANSPORT`
+elige el transporte: `dev` (por defecto) solo escribe el enlace en el log;
+`resend` envía de verdad vía [Resend](https://resend.com) y es lo que usa
+producción (el workflow ya fija `EMAIL_TRANSPORT=resend` y `EMAIL_FROM`; la key es
+el secret `RESEND_API_KEY`). Con `resend`, si falta `RESEND_API_KEY` o `EMAIL_FROM`
+la API **falla al arrancar** en vez de enviar a ningún sitio.
+
+`EMAIL_FROM` no tiene valor por defecto: depende del dominio verificado en tu
+cuenta de Resend. Conviene un **subdominio de envío dedicado** (`send.<tu-dominio>`)
+para aislar la reputación del dominio raíz.
+
+Verificar el dominio:
+
+1. En Resend, **Domains → Add Domain** con `send.<tu-dominio>`.
+2. Resend muestra los **registros DNS concretos**; cópialos tal cual (los valores,
+   en especial la clave DKIM, los genera Resend y varían por dominio y región) en
+   la zona DNS de tu dominio.
+3. Espera a que el dominio figure como **Verified** (de minutos a unas horas).
+
+| Tipo | Host (ejemplo) | Para qué sirve |
+|---|---|---|
+| **MX** | `send.<tu-dominio>` | Return-Path / rebotes del subdominio de envío. Necesario para verificar. |
+| **TXT (SPF)** | `send.<tu-dominio>` | Autoriza a los servidores de Resend a enviar en nombre del dominio. |
+| **TXT (DKIM)** | `resend._domainkey.send.<tu-dominio>` (o el que indique Resend) | Firma que prueba que el correo no se ha manipulado. |
+| **TXT (DMARC)** _(recomendado)_ | `_dmarc.send.<tu-dominio>` | Política para el correo que falle SPF/DKIM. Empieza laxo: `v=DMARC1; p=none; rua=mailto:tu@correo`. |
+
+Comprueba el flujo completo pidiendo un magic link a tu propia dirección: debe
+llegar desde `no-reply@send.<tu-dominio>` con el botón **Entrar en Sextante**. El
+enlace usa `APP_URL`, así que solo funciona cuando el dominio público (§5) resuelve.
 
 ## 4. Primer despliegue
 
