@@ -1,7 +1,5 @@
-// Script de tema renderizado en SERVIDOR. Se ejecuta antes del primer paint para
-// aplicar la clase `.dark` desde localStorage o la preferencia del sistema (sin
-// parpadeo). Al ser un componente de servidor, no dispara el warning de React 19
-// sobre <script> en componentes de cliente.
+// Aplica `.dark` antes del primer paint (sin parpadeo). Componente de servidor: en uno de
+// cliente React 19 avisa por el <script>.
 const themeInit = `(function(){try{var s=localStorage.getItem('theme');var d=s?s==='dark':window.matchMedia('(prefers-color-scheme:dark)').matches;document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
 
 export default function ThemeScript() {

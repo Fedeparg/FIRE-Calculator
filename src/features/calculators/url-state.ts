@@ -1,56 +1,29 @@
-/**
- * Estado de una calculadora en la query string: serialización y parseo.
- *
- * Sirve para compartir un cálculo por enlace y para cargar un escenario guardado en la
- * cuenta. Las dos fuentes son ENTRADA NO FIABLE —una URL la puede editar cualquiera a mano,
- * y unos `inputs` guardados pueden haber quedado obsoletos o venir de la API/MCP—, así que
- * ambas pasan por el mismo validador: cada campo se decodifica contra su `FieldSpec` y lo
- * que no encaja cae al valor por defecto EN SILENCIO, sin romper la página.
- *
- * La defensa frente a inyección no es escapar nada: es que, después de decodificar, un valor
- * solo puede ser un número finito o un miembro de una lista cerrada de opciones. Una cadena
- * arbitraria de la URL nunca llega a la UI.
- *
- * Módulo puro (sin React ni DOM): recibe y devuelve cadenas de query string.
- */
+// Estado de una calculadora en la query string (enlaces compartidos y escenarios guardados).
+// Ambas fuentes son entrada no fiable: cada campo se decodifica contra su `FieldSpec` y lo
+// inválido cae al valor por defecto en silencio. La defensa frente a inyección es que un
+// valor solo puede ser un número finito o un miembro de una lista cerrada.
 
 import { formatDecimalInput } from "@/shared/format/number-input";
 
-/** Valor de un campo de calculadora: un escalar que cabe en una query string. */
 export type FieldValue = number | string;
 
 /**
- * Qué es un campo y qué valores admite. `number` acepta cualquier número finito (no se
- * acota al rango: en `NumberField` los `min`/`max` gobiernan solo las flechas, y hay tasas
- * legítimamente negativas —un año en pérdidas, deflación—; acotar aquí haría que la URL
- * reescribiese en silencio un valor que el campo sí deja teclear). `option` es una lista
- * cerrada, así que ahí lo desconocido sí se rechaza.
+ * `number` acepta cualquier finito sin acotar al rango (`min`/`max` solo gobiernan las flechas
+ * y hay tasas negativas legítimas); `option` es lista cerrada y rechaza lo desconocido.
  */
 export type FieldSpec =
   | { readonly kind: "number"; readonly defaultValue: number }
   | { readonly kind: "option"; readonly defaultValue: string; readonly allowed: readonly string[] };
 
-/** Los campos registrados por una calculadora, por clave de query string. */
 export type FieldSpecs = Readonly<Record<string, FieldSpec>>;
 
-/** Valores de los campos de una calculadora, por clave. */
 export type FieldValues = Readonly<Record<string, FieldValue>>;
 
-/**
- * Número en notación posicional: dígitos, un punto decimal opcional y signo negativo.
- *
- * Es deliberadamente MÁS ESTRICTO que `parseDecimalInput` (el del teclado del móvil, que
- * tolera comas y separadores de miles): en una URL, `1.234,56` es ambiguo, y admitir
- * notación científica dejaría entrar `1e400`, que es `Infinity`. Aquí solo hay una forma
- * válida de escribir un número, que es justo la que produce `encodeFieldValue`.
- */
+// Más estricto que `parseDecimalInput`: en una URL `1.234,56` es ambiguo y la notación
+// científica dejaría entrar `1e400` (Infinity). Solo admite lo que produce `encodeFieldValue`.
 const NUMBER_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
-/**
- * Decodifica el valor crudo de un campo, o `null` si no es válido para su `spec`.
- * Devolver `null` (y no el valor por defecto) permite a quien llama distinguir "no venía"
- * de "venía mal"; ambos acaban en el valor por defecto, pero solo uno se puede contar.
- */
+/** `null` si no es válido (no el valor por defecto: permite distinguir "venía mal"). */
 export function decodeFieldValue(spec: FieldSpec, raw: string): FieldValue | null {
   if (spec.kind === "option") {
     return spec.allowed.includes(raw) ? raw : null;
@@ -58,25 +31,18 @@ export function decodeFieldValue(spec: FieldSpec, raw: string): FieldValue | nul
 
   if (!NUMBER_PATTERN.test(raw)) return null;
   const parsed = Number(raw);
-  // El patrón ya descarta `NaN`/`Infinity`, pero un literal larguísimo sí puede desbordar.
+  // Un literal larguísimo puede desbordar a Infinity pese al patrón.
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/**
- * Escribe un valor para la URL. Los números van siempre con punto y en notación posicional
- * (nunca `1e+21`, que al releerse no pasaría `NUMBER_PATTERN`), de modo que el viaje de ida
- * y vuelta conserva el valor.
- */
+/** Números con punto y en notación posicional (`1e+21` no pasaría `NUMBER_PATTERN` al releerse). */
 export function encodeFieldValue(value: FieldValue): string {
   return typeof value === "number" ? formatDecimalInput(value, ".") : value;
 }
 
 /**
- * Lee el estado de la calculadora de una query string.
- *
- * Solo se miran las claves registradas: cualquier otro parámetro (`utm_*`, lo que sea) se
- * ignora aquí y lo conserva `encodeCalculatorState`. Las claves conocidas con un valor
- * inválido se omiten, y quien llama las resuelve con el valor por defecto de su `spec`.
+ * Solo mira las claves registradas (el resto, p. ej. `utm_*`, lo conserva
+ * `encodeCalculatorState`); los valores inválidos se omiten.
  */
 export function decodeCalculatorState(search: string, specs: FieldSpecs): FieldValues {
   const params = new URLSearchParams(search);
@@ -92,11 +58,7 @@ export function decodeCalculatorState(search: string, specs: FieldSpecs): FieldV
   return values;
 }
 
-/**
- * Lee el estado de la calculadora de unos `inputs` JSON (un escenario guardado en la
- * cuenta). Misma validación que la URL —de ahí que ambos caminos compartan este módulo—,
- * con la diferencia de que aquí un número puede llegar ya como `number` y no como texto.
- */
+/** Como la URL, pero desde `inputs` JSON de un escenario guardado (un número puede venir ya como `number`). */
 export function decodeCalculatorInputs(inputs: unknown, specs: FieldSpecs): FieldValues {
   if (typeof inputs !== "object" || inputs === null || Array.isArray(inputs)) return {};
   const source = inputs as Record<string, unknown>;
@@ -117,16 +79,8 @@ export function decodeCalculatorInputs(inputs: unknown, specs: FieldSpecs): Fiel
 }
 
 /**
- * Devuelve la query string que representa `values`, partiendo de `search` para NO perder
- * parámetros ajenos a la calculadora.
- *
- * Un campo que valga lo mismo que su valor por defecto se omite: así una calculadora recién
- * abierta tiene una URL limpia y los enlaces compartidos solo llevan lo que se ha cambiado.
- * Como efecto secundario, un parámetro conocido con un valor inválido desaparece de la URL,
- * que es coherente con que la calculadora lo esté ignorando.
- *
- * El resultado incluye el `?` inicial, o es cadena vacía si no queda ningún parámetro
- * (comparable directamente con `window.location.search`).
+ * Parte de `search` para no perder parámetros ajenos. Omite los campos iguales a su valor por
+ * defecto (URL limpia) y los inválidos. Devuelve `?...` o "" (comparable con `location.search`).
  */
 export function encodeCalculatorState(search: string, values: FieldValues, specs: FieldSpecs): string {
   const params = new URLSearchParams(search);
@@ -144,11 +98,7 @@ export function encodeCalculatorState(search: string, values: FieldValues, specs
   return query ? `?${query}` : "";
 }
 
-/**
- * Valores completos de la calculadora: lo que hay en `values` y, para el resto de campos
- * registrados, su valor por defecto. Es lo que se guarda como `inputs` de un escenario, para
- * que al cargarlo se reproduzca el cálculo entero y no solo lo que se tocó.
- */
+/** `values` más el valor por defecto del resto: lo que se guarda como `inputs` de un escenario. */
 export function completeValues(values: FieldValues, specs: FieldSpecs): FieldValues {
   const complete: Record<string, FieldValue> = {};
   for (const [key, spec] of Object.entries(specs)) {
