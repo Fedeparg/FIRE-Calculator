@@ -33,7 +33,16 @@ export default function RentalYieldCalculator() {
         insuranceAnnual,
         maintenanceAnnual,
       }),
-    [purchasePrice, purchaseCosts, monthlyRent, vacancyRate, ibiAnnual, communityMonthly, insuranceAnnual, maintenanceAnnual],
+    [
+      purchasePrice,
+      purchaseCosts,
+      monthlyRent,
+      vacancyRate,
+      ibiAnnual,
+      communityMonthly,
+      insuranceAnnual,
+      maintenanceAnnual,
+    ],
   );
 
   return (
@@ -41,14 +50,63 @@ export default function RentalYieldCalculator() {
       inputCount={8}
       inputs={
         <>
-          <NumberField label={t("purchasePrice")} value={purchasePrice} onChange={setPurchasePrice} step={5000} help={t("help.purchasePrice")} />
-          <NumberField label={t("purchaseCosts")} value={purchaseCosts} onChange={setPurchaseCosts} step={1000} help={t("help.purchaseCosts")} />
-          <NumberField label={t("monthlyRent")} value={monthlyRent} onChange={setMonthlyRent} step={50} help={t("help.monthlyRent")} />
-          <NumberField label={t("vacancyRate")} value={vacancyRate} onChange={setVacancyRate} step={1} max={100} help={t("help.vacancyRate")} />
-          <NumberField label={t("ibiAnnual")} value={ibiAnnual} onChange={setIbiAnnual} step={50} help={t("help.ibiAnnual")} />
-          <NumberField label={t("communityMonthly")} value={communityMonthly} onChange={setCommunityMonthly} step={10} help={t("help.communityMonthly")} />
-          <NumberField label={t("insuranceAnnual")} value={insuranceAnnual} onChange={setInsuranceAnnual} step={50} help={t("help.insuranceAnnual")} />
-          <NumberField label={t("maintenanceAnnual")} value={maintenanceAnnual} onChange={setMaintenanceAnnual} step={100} help={t("help.maintenanceAnnual")} />
+          <NumberField
+            label={t("purchasePrice")}
+            value={purchasePrice}
+            onChange={setPurchasePrice}
+            step={5000}
+            help={t("help.purchasePrice")}
+          />
+          <NumberField
+            label={t("purchaseCosts")}
+            value={purchaseCosts}
+            onChange={setPurchaseCosts}
+            step={1000}
+            help={t("help.purchaseCosts")}
+          />
+          <NumberField
+            label={t("monthlyRent")}
+            value={monthlyRent}
+            onChange={setMonthlyRent}
+            step={50}
+            help={t("help.monthlyRent")}
+          />
+          <NumberField
+            label={t("vacancyRate")}
+            value={vacancyRate}
+            onChange={setVacancyRate}
+            step={1}
+            max={100}
+            help={t("help.vacancyRate")}
+          />
+          <NumberField
+            label={t("ibiAnnual")}
+            value={ibiAnnual}
+            onChange={setIbiAnnual}
+            step={50}
+            help={t("help.ibiAnnual")}
+          />
+          <NumberField
+            label={t("communityMonthly")}
+            value={communityMonthly}
+            onChange={setCommunityMonthly}
+            step={10}
+            help={t("help.communityMonthly")}
+          />
+          <NumberField
+            label={t("insuranceAnnual")}
+            value={insuranceAnnual}
+            onChange={setInsuranceAnnual}
+            step={50}
+            help={t("help.insuranceAnnual")}
+          />
+          <NumberField
+            label={t("maintenanceAnnual")}
+            value={maintenanceAnnual}
+            onChange={setMaintenanceAnnual}
+            step={100}
+            help={t("help.maintenanceAnnual")}
+          />
         </>
       }
       results={

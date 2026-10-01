@@ -1,10 +1,4 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import type { Request } from 'express';
@@ -51,11 +45,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    const [user] = await this.db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, payload.sub))
-      .limit(1);
+    const [user] = await this.db.select({ id: users.id }).from(users).where(eq(users.id, payload.sub)).limit(1);
     if (!user) {
       // Firma válida pero el usuario ya no existe: sesión muerta.
       throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');

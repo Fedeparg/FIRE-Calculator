@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -73,11 +67,7 @@ export class SavedScenariosService {
   }
 
   /** Renombra o actualiza los `inputs` de un escenario del usuario. */
-  async update(
-    userId: string,
-    id: string,
-    dto: UpdateSavedScenarioDto,
-  ): Promise<SavedScenarioResponse> {
+  async update(userId: string, id: string, dto: UpdateSavedScenarioDto): Promise<SavedScenarioResponse> {
     const current = await this.findOwned(userId, id);
     if (dto.inputs !== undefined) this.assertInputsSize(dto.inputs);
 

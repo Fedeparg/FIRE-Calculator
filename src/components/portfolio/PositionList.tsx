@@ -201,11 +201,18 @@ export default function PositionList({
         </div>
       </div>
 
-      <div className={`hidden gap-3 border-b border-border bg-surface-2 px-5 py-2.5 text-xs font-semibold text-muted md:grid ${COLUMNS}`}>
+      <div
+        className={`hidden gap-3 border-b border-border bg-surface-2 px-5 py-2.5 text-xs font-semibold text-muted md:grid ${COLUMNS}`}
+      >
         <SortHeader column="name" label={t("asset")} align="left" {...headerProps} />
         <span>{t("weight")}</span>
         <SortHeader column="marketValue" label={t("marketValue")} align="right" {...headerProps} />
-        <SortHeader column="pnl" label={t(gainMode === "today" ? "gainToday" : "gain")} align="right" {...headerProps} />
+        <SortHeader
+          column="pnl"
+          label={t(gainMode === "today" ? "gainToday" : "gain")}
+          align="right"
+          {...headerProps}
+        />
       </div>
 
       <ul>
@@ -291,9 +298,7 @@ export default function PositionList({
                     {row.pending ? (
                       <PendingPrice label={t("pricePending")} hint={t("pricePendingHint")} />
                     ) : (
-                      <span className="text-xs text-muted">
-                        {p.isDerivative ? t("notTracked") : t("noPriceShort")}
-                      </span>
+                      <span className="text-xs text-muted">{p.isDerivative ? t("notTracked") : t("noPriceShort")}</span>
                     )}
                   </span>
                 )}

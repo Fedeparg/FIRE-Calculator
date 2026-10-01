@@ -3,7 +3,13 @@ import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots, positions as positionsTable } from '../db/schema.js';
+import {
+  instrumentPrices,
+  instrumentSplits,
+  portfolioSnapshots,
+  positionLots,
+  positions as positionsTable,
+} from '../db/schema.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
@@ -44,12 +50,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     const prices = new PricesService(db, silentProvider, identityResolver);
     const lots = new PositionLotsService(db, new EventEmitter2());
     positions = new PositionsService(db, prices, lots, new EventEmitter2());
-    snapshots = new PortfolioSnapshotsService(
-      db,
-      new PortfolioValuationService(positions, prices),
-      prices,
-      positions,
-    );
+    snapshots = new PortfolioSnapshotsService(db, new PortfolioValuationService(positions, prices), prices, positions);
   });
 
   // Reloj congelado (solo `Date`): una ejecución que cruce la medianoche UTC no debe cambiar el
@@ -73,18 +74,12 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   }
 
   /** Igual que `cachePrice`, pero en una fecha concreta (para sembrar histórico pasado). */
-  async function cachePriceOn(
-    symbol: string,
-    date: string,
-    close_: string,
-    currency: string,
-  ): Promise<void> {
+  async function cachePriceOn(symbol: string, date: string, close_: string, currency: string): Promise<void> {
     await db.insert(instrumentPrices).values({ symbol, date, close: close_, currency, source: 'test' });
   }
 
   /** Fecha de hace `days` días, en UTC. */
-  const daysAgo = (days: number): string =>
-    new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const daysAgo = (days: number): string => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
   it('guarda la valoración en EUR junto con las tasas FX del día', async () => {
     const userId = await insertUser(db, 'a@example.com');
@@ -450,7 +445,10 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
         await cacheFlatPrices(11);
         for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '1000.00000000');
         // Edición del lote (como `declareState` o el PATCH de lotes): `updatedAt` = ahora.
-        await db.update(positionLots).set({ quantity: '20', updatedAt: new Date() }).where(eq(positionLots.positionId, id));
+        await db
+          .update(positionLots)
+          .set({ quantity: '20', updatedAt: new Date() })
+          .where(eq(positionLots.positionId, id));
 
         await snapshots.backfillUser(userId);
 
@@ -814,7 +812,10 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     it('reconstruye el histórico del usuario del evento', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const { id } = await positions.create(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
-      await db.update(positionLots).set({ tradedAt: daysAgo(3) }).where(eq(positionLots.positionId, id));
+      await db
+        .update(positionLots)
+        .set({ tradedAt: daysAgo(3) })
+        .where(eq(positionLots.positionId, id));
       await cachePriceOn('IWDA', daysAgo(1), '100', 'EUR');
 
       await snapshots.onPositionCreated({ userId });
@@ -856,7 +857,10 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     it('una ráfaga de cambios se coalesce: pocas reconstrucciones y el resultado final correcto', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const { id } = await positions.create(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
-      await db.update(positionLots).set({ tradedAt: daysAgo(4) }).where(eq(positionLots.positionId, id));
+      await db
+        .update(positionLots)
+        .set({ tradedAt: daysAgo(4) })
+        .where(eq(positionLots.positionId, id));
       for (const days of [4, 3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
       const rebuild = vi.spyOn(snapshots, 'backfillUser');
 
@@ -870,7 +874,10 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
     it('un fallo no se propaga', async () => {
       await expect(
-        snapshots.onLotChanged({ userId: '00000000-0000-0000-0000-000000000000', positionId: '00000000-0000-0000-0000-000000000000' }),
+        snapshots.onLotChanged({
+          userId: '00000000-0000-0000-0000-000000000000',
+          positionId: '00000000-0000-0000-0000-000000000000',
+        }),
       ).resolves.toBeUndefined();
     });
   });

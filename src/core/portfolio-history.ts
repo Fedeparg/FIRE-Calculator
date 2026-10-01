@@ -152,8 +152,7 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
     dropped,
     insufficient: usable.length < MIN_HISTORY_POINTS,
     changeAbs,
-    changePct:
-      changeAbs !== null && first.marketValue > 0 ? (changeAbs / first.marketValue) * 100 : null,
+    changePct: changeAbs !== null && first.marketValue > 0 ? (changeAbs / first.marketValue) * 100 : null,
     from: first?.date ?? null,
     to: last?.date ?? null,
     estimatedRanges,

@@ -153,9 +153,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       const remaining = await db
         .select({ tokenHash: oauthTokens.tokenHash })
         .from(oauthTokens)
-        .where(
-          and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, CLIENT.client_id)),
-        );
+        .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, CLIENT.client_id)));
       expect(remaining).toHaveLength(0);
     });
 
@@ -164,9 +162,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       const refresh = await seedToken({ type: 'refresh', userId });
 
       const otherClient = { ...CLIENT, client_id: 'client-2' };
-      await expect(
-        provider.exchangeRefreshToken(otherClient, refresh),
-      ).rejects.toThrow(/not issued to this client/i);
+      await expect(provider.exchangeRefreshToken(otherClient, refresh)).rejects.toThrow(/not issued to this client/i);
     });
   });
 });

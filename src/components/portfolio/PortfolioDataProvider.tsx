@@ -95,8 +95,7 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
   // (no al editar cantidad/precio medio). Es justo el `?symbols=` que espera la API.
   const tickersKey = useMemo(
     // Los derivados no se valoran: no se piden sus precios.
-    () =>
-      [...new Set(positions.filter((p) => !p.isDerivative).map((p) => p.ticker))].sort().join(","),
+    () => [...new Set(positions.filter((p) => !p.isDerivative).map((p) => p.ticker))].sort().join(","),
     [positions],
   );
 
@@ -130,10 +129,7 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
   }, [tickersKey, priceTick]);
 
   const pendingIds = useMemo(
-    () =>
-      new Set(
-        positions.filter((p) => isPricePending(p, prices[p.ticker], now)).map((p) => p.id),
-      ),
+    () => new Set(positions.filter((p) => isPricePending(p, prices[p.ticker], now)).map((p) => p.id)),
     [positions, prices, now],
   );
   const hasPending = pendingIds.size > 0;

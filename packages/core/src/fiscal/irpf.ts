@@ -97,15 +97,13 @@ export function workIncomeReduction(netWorkIncome: number): number {
   if (r <= WORK_INCOME_REDUCTION_TIER2_LIMIT) {
     return Math.max(
       0,
-      WORK_INCOME_REDUCTION_MAX -
-        WORK_INCOME_REDUCTION_TIER2_SLOPE * (r - WORK_INCOME_REDUCTION_FULL_LIMIT),
+      WORK_INCOME_REDUCTION_MAX - WORK_INCOME_REDUCTION_TIER2_SLOPE * (r - WORK_INCOME_REDUCTION_FULL_LIMIT),
     );
   }
   if (r <= WORK_INCOME_REDUCTION_TIER3_LIMIT) {
     return Math.max(
       0,
-      WORK_INCOME_REDUCTION_TIER3_BASE -
-        WORK_INCOME_REDUCTION_TIER3_SLOPE * (r - WORK_INCOME_REDUCTION_TIER2_LIMIT),
+      WORK_INCOME_REDUCTION_TIER3_BASE - WORK_INCOME_REDUCTION_TIER3_SLOPE * (r - WORK_INCOME_REDUCTION_TIER2_LIMIT),
     );
   }
   return 0;
@@ -117,10 +115,7 @@ export function workIncomeReduction(netWorkIncome: number): number {
  * cuadro estatal y con el autonómico, que difieren en los importes pero no en la
  * forma de acumularlos.
  */
-function minimumFromSchedule(
-  schedule: PersonalMinimumSchedule,
-  c: PersonalCircumstances,
-): number {
+function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircumstances): number {
   const age = Math.max(0, c.age ?? 0);
   let min = age >= 75 ? schedule.taxpayer75 : age >= 65 ? schedule.taxpayer65 : schedule.taxpayer;
 
@@ -156,8 +151,7 @@ export function personalAndFamilyMinimum(c: PersonalCircumstances = {}): number 
  * en caso contrario o si no se indica comunidad.
  */
 export function regionalPersonalAndFamilyMinimum(c: PersonalCircumstances = {}): number {
-  const schedule =
-    c.region === undefined ? STATE_PERSONAL_MINIMUM : regionalMinimumSchedule(c.region);
+  const schedule = c.region === undefined ? STATE_PERSONAL_MINIMUM : regionalMinimumSchedule(c.region);
   return minimumFromSchedule(schedule, c);
 }
 
@@ -201,8 +195,7 @@ export function generalIncomeTax(
 
   const stateQuota = Math.max(
     0,
-    applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL) -
-      applyProgressiveBrackets(stateMinimum, IRPF_ESTATAL_GENERAL),
+    applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL) - applyProgressiveBrackets(stateMinimum, IRPF_ESTATAL_GENERAL),
   );
   const regionalQuota = Math.max(
     0,
@@ -218,10 +211,7 @@ export function generalIncomeTax(
  */
 export function generalMarginalRate(taxableBase: number, region?: RegionCode): number {
   if (region === undefined) return marginalRate(taxableBase, IRPF_GENERAL);
-  return (
-    marginalRate(taxableBase, IRPF_ESTATAL_GENERAL) +
-    marginalRate(taxableBase, regionalScale(region))
-  );
+  return marginalRate(taxableBase, IRPF_ESTATAL_GENERAL) + marginalRate(taxableBase, regionalScale(region));
 }
 
 export interface NetSalaryInput extends PersonalCircumstances {

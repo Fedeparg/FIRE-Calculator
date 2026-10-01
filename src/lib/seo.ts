@@ -67,8 +67,7 @@ export interface BuildMetadataOptions {
  * Cada `generateMetadata` la fusiona con su `title`/`description` ya traducidos.
  */
 export function buildMetadata(options: BuildMetadataOptions): Metadata {
-  const { path, title, description, titleAbsolute, ogSubtitle, ogType = "website", noindex } =
-    options;
+  const { path, title, description, titleAbsolute, ogSubtitle, ogType = "website", noindex } = options;
   const locale = asLocale(options.locale);
   const canonical = localizedPath(locale, path);
   const image = ogImagePath(title, locale, ogSubtitle);

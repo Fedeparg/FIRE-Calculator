@@ -15,17 +15,10 @@ import { NextResponse, type NextRequest } from "next/server";
 // El token vive en `.env` (REVALIDATE_TOKEN) y nunca se expone al cliente.
 
 // Patrones de ruta (con segmento [locale]) que dependen del contenido editable.
-const WIKI_ROUTE_PATTERNS = [
-  "/[locale]/aprende",
-  "/[locale]/aprende/[slug]",
-  "/[locale]/calculadoras/[slug]",
-] as const;
+const WIKI_ROUTE_PATTERNS = ["/[locale]/aprende", "/[locale]/aprende/[slug]", "/[locale]/calculadoras/[slug]"] as const;
 
 function getToken(request: NextRequest): string | null {
-  return (
-    request.headers.get("x-revalidate-token") ??
-    request.nextUrl.searchParams.get("token")
-  );
+  return request.headers.get("x-revalidate-token") ?? request.nextUrl.searchParams.get("token");
 }
 
 /**
@@ -42,18 +35,12 @@ function tokensMatch(provided: string, expected: string): boolean {
 export async function POST(request: NextRequest) {
   const expected = process.env.REVALIDATE_TOKEN;
   if (!expected) {
-    return NextResponse.json(
-      { revalidated: false, message: "REVALIDATE_TOKEN is not configured." },
-      { status: 500 },
-    );
+    return NextResponse.json({ revalidated: false, message: "REVALIDATE_TOKEN is not configured." }, { status: 500 });
   }
 
   const provided = getToken(request);
   if (!provided || !tokensMatch(provided, expected)) {
-    return NextResponse.json(
-      { revalidated: false, message: "Invalid or missing token." },
-      { status: 401 },
-    );
+    return NextResponse.json({ revalidated: false, message: "Invalid or missing token." }, { status: 401 });
   }
 
   for (const pattern of WIKI_ROUTE_PATTERNS) {

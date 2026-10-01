@@ -161,9 +161,7 @@ describe("encodeCalculatorState", () => {
   });
 
   it("conserva los parámetros ajenos a la calculadora", () => {
-    expect(encodeCalculatorState("?utm_source=news", { amount: 2500 }, SPECS)).toBe(
-      "?utm_source=news&amount=2500",
-    );
+    expect(encodeCalculatorState("?utm_source=news", { amount: 2500 }, SPECS)).toBe("?utm_source=news&amount=2500");
   });
 
   it("borra de la URL un parámetro conocido con valor inválido", () => {

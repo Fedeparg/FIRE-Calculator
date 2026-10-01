@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, asc, eq } from 'drizzle-orm';
 
@@ -111,11 +105,7 @@ export class PositionLotsService {
    * secuencia resultante fuese inválida (una venta que deja la cantidad en negativo), se
    * revierte y NO queda el lote suelto descuadrando la posición.
    */
-  async create(
-    userId: string,
-    positionId: string,
-    dto: CreatePositionLotDto,
-  ): Promise<PositionLotResponse> {
+  async create(userId: string, positionId: string, dto: CreatePositionLotDto): Promise<PositionLotResponse> {
     const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
 
@@ -324,11 +314,7 @@ export class PositionLotsService {
     if (existing.length === 1) {
       const [only] = existing;
       // Declarar lo que ya hay no es un cambio: no se toca el lote (ver `staleSnapshotDates`).
-      if (
-        only.kind === 'buy' &&
-        sameAmount(only.quantity, input.quantity) &&
-        sameAmount(only.price, input.price)
-      ) {
+      if (only.kind === 'buy' && sameAmount(only.quantity, input.quantity) && sameAmount(only.price, input.price)) {
         return;
       }
       await tx
@@ -399,11 +385,7 @@ export class PositionLotsService {
    * Localiza un lote DENTRO de la posición indicada. Filtrar por `positionId` (ya validada
    * como propia) impide que un id de lote de otro usuario se cuele por la ruta: sería 404.
    */
-  private async findLot(
-    tx: DatabaseOrTransaction,
-    positionId: string,
-    lotId: string,
-  ): Promise<PositionLot> {
+  private async findLot(tx: DatabaseOrTransaction, positionId: string, lotId: string): Promise<PositionLot> {
     const [row] = await tx
       .select()
       .from(positionLots)

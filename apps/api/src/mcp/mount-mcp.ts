@@ -2,10 +2,7 @@ import { Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { NextFunction, Request, Response } from 'express';
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
-import {
-  getOAuthProtectedResourceMetadataUrl,
-  mcpAuthRouter,
-} from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { getOAuthProtectedResourceMetadataUrl, mcpAuthRouter } from '@modelcontextprotocol/sdk/server/auth/router.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 
 import { SCOPES_SUPPORTED } from '../oauth/oauth.constants.js';
@@ -95,8 +92,7 @@ export function mountMcp(app: NestExpressApplication): void {
   // Endpoint MCP (Streamable HTTP, sin estado: un transporte por petición).
   server_.post('/api/mcp', bearer, async (req: Request, res: Response) => {
     const auth = req.auth;
-    const userId =
-      auth?.extra && typeof auth.extra.userId === 'string' ? auth.extra.userId : undefined;
+    const userId = auth?.extra && typeof auth.extra.userId === 'string' ? auth.extra.userId : undefined;
     if (!auth || !userId) {
       res.status(401).json({ error: 'invalid_token' });
       return;
@@ -124,7 +120,5 @@ export function mountMcp(app: NestExpressApplication): void {
     }
   });
 
-  logger.log(
-    `Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_RATE_LIMIT_MAX} req/min por token)`,
-  );
+  logger.log(`Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_RATE_LIMIT_MAX} req/min por token)`);
 }

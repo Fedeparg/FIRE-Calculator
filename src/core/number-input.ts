@@ -32,9 +32,7 @@ export function sanitizeDecimalInput(raw: string): string {
 
   const decimalAt = Math.max(unsigned.lastIndexOf(","), unsigned.lastIndexOf("."));
   const body =
-    decimalAt === -1
-      ? unsigned
-      : unsigned.slice(0, decimalAt).replace(SEPARATORS, "") + unsigned.slice(decimalAt);
+    decimalAt === -1 ? unsigned : unsigned.slice(0, decimalAt).replace(SEPARATORS, "") + unsigned.slice(decimalAt);
 
   return negative ? `-${body}` : body;
 }

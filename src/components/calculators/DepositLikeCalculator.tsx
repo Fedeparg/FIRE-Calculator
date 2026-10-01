@@ -27,12 +27,7 @@ type Props = {
  * etiquetas (namespace), la clave del primer campo y los valores por defecto.
  * Así no duplicamos la maquetación entre dos calculadoras casi idénticas.
  */
-export default function DepositLikeCalculator({
-  namespace,
-  principalKey,
-  defaultPrincipal,
-  defaultApr,
-}: Props) {
+export default function DepositLikeCalculator({ namespace, principalKey, defaultPrincipal, defaultApr }: Props) {
   const t = useTranslations(`calc.${namespace}`);
   const { formatEUR } = useFormat();
   // La clave de la URL es la del campo ("principal" o "balance"), no un nombre fijo: el
@@ -53,11 +48,31 @@ export default function DepositLikeCalculator({
       inputCount={5}
       inputs={
         <>
-          <NumberField label={t(principalKey)} value={principal} onChange={setPrincipal} step={1000} help={t(`help.${principalKey}`)} />
+          <NumberField
+            label={t(principalKey)}
+            value={principal}
+            onChange={setPrincipal}
+            step={1000}
+            help={t(`help.${principalKey}`)}
+          />
           <NumberField label={t("apr")} value={apr} onChange={setApr} step={0.1} max={100} help={t("help.apr")} />
           <NumberField label={t("years")} value={years} onChange={setYears} step={0.5} help={t("help.years")} />
-          <NumberField label={t("withholdingRate")} value={withholdingRate} onChange={setWithholdingRate} step={1} max={100} help={t("help.withholdingRate")} />
-          <NumberField label={t("inflationRate")} value={inflationRate} onChange={setInflationRate} step={0.5} max={100} help={t("help.inflationRate")} />
+          <NumberField
+            label={t("withholdingRate")}
+            value={withholdingRate}
+            onChange={setWithholdingRate}
+            step={1}
+            max={100}
+            help={t("help.withholdingRate")}
+          />
+          <NumberField
+            label={t("inflationRate")}
+            value={inflationRate}
+            onChange={setInflationRate}
+            step={0.5}
+            max={100}
+            help={t("help.inflationRate")}
+          />
         </>
       }
       results={

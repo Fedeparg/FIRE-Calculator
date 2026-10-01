@@ -101,12 +101,9 @@ const MAX_AMOUNT = 1e12;
 const MAX_YEARS = 100;
 
 const amount = (description: string) => z.number().min(0).max(MAX_AMOUNT).describe(description);
-const percent = (description: string, min = 0, max = 100) =>
-  z.number().min(min).max(max).describe(description);
-const horizon = (description: string, max = MAX_YEARS) =>
-  z.number().min(0).max(max).describe(description);
-const count = (description: string, max: number) =>
-  z.number().int().min(0).max(max).describe(description);
+const percent = (description: string, min = 0, max = 100) => z.number().min(min).max(max).describe(description);
+const horizon = (description: string, max = MAX_YEARS) => z.number().min(0).max(max).describe(description);
+const count = (description: string, max: number) => z.number().int().min(0).max(max).describe(description);
 
 const frequency = z
   .enum(FREQUENCIES as [Frequency, ...Frequency[]])
@@ -124,10 +121,7 @@ const region = z
 /** Circunstancias personales del IRPF, comunes a nómina, salario neto y autónomos. */
 const personalCircumstances = {
   age: count('Edad del contribuyente (afecta al mínimo personal).', 120).optional(),
-  contractType: z
-    .enum(CONTRACT_TYPES)
-    .optional()
-    .describe('Tipo de contrato (cambia la cotización por desempleo).'),
+  contractType: z.enum(CONTRACT_TYPES).optional().describe('Tipo de contrato (cambia la cotización por desempleo).'),
   children: count('Hijos o descendientes a cargo.', 20).optional(),
   childrenUnder3: count('De esos hijos, cuántos tienen menos de 3 años.', 20).optional(),
   ascendants: count('Ascendientes mayores de 65 años a cargo.', 10).optional(),
@@ -633,10 +627,7 @@ export const CALCULATOR_TOOLS: readonly CalculatorTool[] = [
       inputSchema: {
         balance: amount('Saldo pendiente.'),
         annualRate: percent('Tipo de interés anual.', 0, 100),
-        paymentMode: z
-          .enum(PAYMENT_MODES)
-          .optional()
-          .describe('fixed (cuota fija) o percent (% del saldo con suelo).'),
+        paymentMode: z.enum(PAYMENT_MODES).optional().describe('fixed (cuota fija) o percent (% del saldo con suelo).'),
         monthlyPayment: amount('Pago mensual fijo (modo fixed).'),
         minPercent: percent('Cuota mínima, % del saldo (modo percent).').optional(),
         minFloor: amount('Suelo de la cuota mínima (modo percent).').optional(),

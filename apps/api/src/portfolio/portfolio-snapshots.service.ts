@@ -148,9 +148,7 @@ export class PortfolioSnapshotsService {
         captured += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(
-          `Snapshot de cartera fallido (usuario ${userId}): ${(error as Error).message}`,
-        );
+        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
       }
     }
 
@@ -254,13 +252,12 @@ export class PortfolioSnapshotsService {
    * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar ese día
    * (`valuedPositions < totalPositions`), igual que la captura diaria.
    */
-  async backfillUser(
-    userId: string,
-    options: { invalidateFrom?: string | null } = {},
-  ): Promise<void> {
+  async backfillUser(userId: string, options: { invalidateFrom?: string | null } = {}): Promise<void> {
     // La resolución ticker → símbolo (otra lectura) se hace ANTES de abrir la transacción: dentro,
     // pediría una segunda conexión mientras esta mantiene una, y con el pool agotado se bloquearía.
-    const tickers = (await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))).map((p) => p.ticker);
+    const tickers = (
+      await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))
+    ).map((p) => p.ticker);
     const tickerToSymbol = await this.prices.resolveCachedTickers([...new Set(tickers)]);
 
     // Todo bajo un cerrojo consultivo por usuario: dos reconstrucciones concurrentes del mismo
@@ -308,9 +305,7 @@ export class PortfolioSnapshotsService {
       }));
 
       // Inicio del seguimiento en Sextante (no de las operaciones): ver "QUÉ ES ESTIMADO" arriba.
-      const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime())))
-        .toISOString()
-        .slice(0, 10);
+      const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))).toISOString().slice(0, 10);
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
@@ -354,10 +349,7 @@ export class PortfolioSnapshotsService {
       // Instante previo a la lectura: una real reescrita por la captura nocturna DESPUÉS de leerla
       // es fresca y no debe pisarse (ver `setWhere`).
       const readAt = new Date();
-      const existing = await tx
-        .select()
-        .from(portfolioSnapshots)
-        .where(eq(portfolioSnapshots.userId, userId));
+      const existing = await tx.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
       const staleReal = staleSnapshotDates({
         snapshots: existing
           .filter((row) => !row.estimated)
@@ -450,14 +442,11 @@ export class PortfolioSnapshotsService {
         backfilled += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(
-          `Backfill de cartera fallido (usuario ${userId}): ${(error as Error).message}`,
-        );
+        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
       }
     }
     this.logger.log(
-      `Backfill de histórico: ${backfilled}/${userIds.length} usuarios` +
-        (failed ? ` — ${failed} con error` : ''),
+      `Backfill de histórico: ${backfilled}/${userIds.length} usuarios` + (failed ? ` — ${failed} con error` : ''),
     );
   }
 
@@ -471,9 +460,7 @@ export class PortfolioSnapshotsService {
     try {
       await this.backfillUser(userId);
     } catch (error) {
-      this.logger.warn(
-        `Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`,
-      );
+      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`);
     }
   }
 
@@ -554,18 +541,8 @@ export class PortfolioSnapshotsService {
       .orderBy(asc(portfolioSnapshots.date));
 
     const points = rows.map((row): PortfolioHistoryPoint => {
-      const invested = convertCurrency(
-        Number(row.invested),
-        SNAPSHOT_BASE_CURRENCY,
-        display,
-        row.fxRates,
-      );
-      const marketValue = convertCurrency(
-        Number(row.marketValue),
-        SNAPSHOT_BASE_CURRENCY,
-        display,
-        row.fxRates,
-      );
+      const invested = convertCurrency(Number(row.invested), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
+      const marketValue = convertCurrency(Number(row.marketValue), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
       const pnlAbs = invested !== null && marketValue !== null ? marketValue - invested : null;
       return {
         date: row.date,

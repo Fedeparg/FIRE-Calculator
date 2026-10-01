@@ -3,8 +3,7 @@ import { IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 
 import { CALCULATOR_SLUG_PATTERN } from './create-saved-scenario.dto.js';
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Query de GET /api/scenarios. Es una CLASE para que el `ValidationPipe` global

@@ -50,9 +50,7 @@ describe("buildPortfolioCsv", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
-      positions: [
-        position({ ticker: "VWCE", name: "Vanguard All-World", quantity: 12.5, avgPrice: 98.75 }),
-      ],
+      positions: [position({ ticker: "VWCE", name: "Vanguard All-World", quantity: 12.5, avgPrice: 98.75 })],
       prices: { VWCE: { close: 110.4, currency: "EUR", date: "2026-09-02" } },
     });
 
@@ -96,9 +94,7 @@ describe("buildPortfolioCsv", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
-      positions: [
-        position({ ticker: "SXR8", name: 'iShares "Core"; MSCI', broker: "MyInvestor; SA" }),
-      ],
+      positions: [position({ ticker: "SXR8", name: 'iShares "Core"; MSCI', broker: "MyInvestor; SA" })],
       prices: {},
     });
 

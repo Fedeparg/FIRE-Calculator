@@ -85,10 +85,7 @@ describe("simulateFire", () => {
   });
 
   it("sin ahorro ni rentabilidad nunca se llega: años null y éxito 0 %", () => {
-    const result = simulateFire(
-      { ...base, monthlySavings: 0, annualReturn: 0, volatility: 0 },
-      fast,
-    );
+    const result = simulateFire({ ...base, monthlySavings: 0, annualReturn: 0, volatility: 0 }, fast);
     expect(result.reachRate).toBe(0);
     expect(result.successRate).toBe(0);
     expect(result.survivalRate).toBeNaN();
@@ -290,7 +287,11 @@ describe("withdrawalSensitivity", () => {
   });
 
   it("funciona también con el modelo histórico", () => {
-    const rows = withdrawalSensitivity({ ...base, returnModel: { kind: "historical", stockShare: 60 } }, undefined, fast);
+    const rows = withdrawalSensitivity(
+      { ...base, returnModel: { kind: "historical", stockShare: 60 } },
+      undefined,
+      fast,
+    );
     expect(rows).toHaveLength(5);
     rows.forEach((r) => {
       expect(r.successRate).toBeGreaterThanOrEqual(0);

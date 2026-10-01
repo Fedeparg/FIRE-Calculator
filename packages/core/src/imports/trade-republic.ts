@@ -169,8 +169,7 @@ type Row = {
 };
 
 function toRow(record: CsvRecord, index: Record<string, number>): Row {
-  const get = (column: (typeof TRADE_REPUBLIC_HEADER)[number]): string =>
-    record.fields[index[column]].trim();
+  const get = (column: (typeof TRADE_REPUBLIC_HEADER)[number]): string => record.fields[index[column]].trim();
   return {
     line: record.line,
     datetime: get("datetime"),
@@ -240,10 +239,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     throw new TradeRepublicParseError("EMPTY_FILE", "The file has no transactions");
   }
   if (dataRecords.length > MAX_IMPORT_ROWS) {
-    throw new TradeRepublicParseError(
-      "TOO_MANY_ROWS",
-      `The file has more than ${MAX_IMPORT_ROWS} rows`,
-    );
+    throw new TradeRepublicParseError("TOO_MANY_ROWS", `The file has more than ${MAX_IMPORT_ROWS} rows`);
   }
 
   const index = Object.fromEntries(TRADE_REPUBLIC_HEADER.map((column, i) => [column, i]));
@@ -293,8 +289,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     const tax = row.tax === "" ? 0n : parseUnits(row.tax, AMOUNT_SCALE);
     const executedAt = normalizeDatetime(row.datetime);
     // BUY lleva cantidad positiva y SELL negativa; cualquier otra cosa es una fila corrupta.
-    const signMatches =
-      shares !== null && (row.type === "BUY" ? shares > 0n : shares < 0n);
+    const signMatches = shares !== null && (row.type === "BUY" ? shares > 0n : shares < 0n);
 
     if (
       !ISIN.test(row.symbol) ||
@@ -374,9 +369,14 @@ function resolveBonusIssues(
   for (const row of rows) {
     const shares = parseUnits(row.shares, AMOUNT_SCALE);
     const executedAt = normalizeDatetime(row.datetime);
-    const signMatches =
-      shares !== null && (row.type === "BONUS_ISSUE" ? shares > 0n : shares < 0n);
-    if (!ISIN.test(row.symbol) || !isValidDate(row.date) || executedAt === null || row.transactionId === "" || !signMatches) {
+    const signMatches = shares !== null && (row.type === "BONUS_ISSUE" ? shares > 0n : shares < 0n);
+    if (
+      !ISIN.test(row.symbol) ||
+      !isValidDate(row.date) ||
+      executedAt === null ||
+      row.transactionId === "" ||
+      !signMatches
+    ) {
       skip(row, "invalid_row");
       continue;
     }
@@ -395,9 +395,7 @@ function resolveBonusIssues(
       issued.push(entry);
       continue;
     }
-    const at = issued.findLastIndex(
-      (issue) => issue.row.symbol === entry.row.symbol && issue.shares === -entry.shares,
-    );
+    const at = issued.findLastIndex((issue) => issue.row.symbol === entry.row.symbol && issue.shares === -entry.shares);
     if (at !== -1) skip(issued.splice(at, 1)[0].row, "bonus_issue_cancelled");
     skip(entry.row, "bonus_issue_cancelled");
   }

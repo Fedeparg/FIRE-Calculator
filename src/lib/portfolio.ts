@@ -9,18 +9,7 @@
  * EN PARIDAD EXACTA con el backend `SUPPORTED_CURRENCIES` (`@IsIn`): una divisa que el
  * backend no acepte provocaría un 400 al guardar. EUR primero (es el valor por defecto).
  */
-export const PORTFOLIO_CURRENCIES = [
-  "EUR",
-  "USD",
-  "GBP",
-  "JPY",
-  "CHF",
-  "CAD",
-  "AUD",
-  "CNY",
-  "HKD",
-  "SGD",
-] as const;
+export const PORTFOLIO_CURRENCIES = ["EUR", "USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "HKD", "SGD"] as const;
 export type PortfolioCurrency = (typeof PORTFOLIO_CURRENCIES)[number];
 
 /** Precio de un instrumento tal y como lo sirve `GET /api/prices` (lectura de nuestra DB). */
@@ -42,14 +31,7 @@ export type FxRates = {
 };
 
 /** Tipo de instrumento normalizado que sirve `GET /api/instruments/search`. */
-export type InstrumentType =
-  | "equity"
-  | "etf"
-  | "fund"
-  | "crypto"
-  | "index"
-  | "currency"
-  | "other";
+export type InstrumentType = "equity" | "etf" | "fund" | "crypto" | "index" | "currency" | "other";
 
 /** Un resultado del buscador de instrumentos: símbolo exacto a guardar + cómo distinguirlo. */
 export type InstrumentSearchResult = {

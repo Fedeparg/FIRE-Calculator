@@ -49,10 +49,7 @@ describe('parseYahooChart', () => {
   });
 
   it('cae a la fecha de hoy (UTC) si falta regularMarketTime', () => {
-    const quote = parseYahooChart(
-      'EUNL.DE',
-      chart({ symbol: 'EUNL.DE', regularMarketPrice: 95.42, currency: 'EUR' }),
-    );
+    const quote = parseYahooChart('EUNL.DE', chart({ symbol: 'EUNL.DE', regularMarketPrice: 95.42, currency: 'EUR' }));
 
     expect(quote?.date).toBe(new Date().toISOString().slice(0, 10));
   });
@@ -127,10 +124,7 @@ describe('parseYahooChartHistory', () => {
   });
 
   it('ignora cierres no numéricos o no finitos', () => {
-    const quotes = parseYahooChartHistory(
-      'X',
-      series([DAY_1, DAY_2, DAY_3], ['95.1', Number.NaN, 96.5]),
-    );
+    const quotes = parseYahooChartHistory('X', series([DAY_1, DAY_2, DAY_3], ['95.1', Number.NaN, 96.5]));
 
     expect(quotes).toHaveLength(1);
     expect(quotes[0].close).toBe(96.5);

@@ -4,11 +4,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@sextante/core/calculators/desgravacion-plan-pensiones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
-import {
-  SELECTABLE_REGIONS,
-  toSupportedRegion,
-  type RegionSelection,
-} from "@sextante/core/fiscal/regions";
+import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
@@ -42,9 +38,28 @@ export default function PensionReliefCalculator() {
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
-          <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />
-          <NumberField label={t("contribution")} value={contribution} onChange={setContribution} step={100} help={t("help.contribution")} />
-          <NumberField label={t("employerContribution")} value={employerContribution} onChange={setEmployerContribution} min={0} step={500} help={t("help.employerContribution")} />
+          <NumberField
+            label={t("grossAnnual")}
+            value={grossAnnual}
+            onChange={setGrossAnnual}
+            step={1000}
+            help={t("help.grossAnnual")}
+          />
+          <NumberField
+            label={t("contribution")}
+            value={contribution}
+            onChange={setContribution}
+            step={100}
+            help={t("help.contribution")}
+          />
+          <NumberField
+            label={t("employerContribution")}
+            value={employerContribution}
+            onChange={setEmployerContribution}
+            min={0}
+            step={500}
+            help={t("help.employerContribution")}
+          />
           <RegionSelectField value={region} onChange={setRegion} />
         </>
       }
@@ -55,7 +70,9 @@ export default function PensionReliefCalculator() {
           <Stat label={t("netCost")} value={formatEUR(result.netCost)} />
           <Stat label={t("savingRate")} value={formatPercent(result.savingRate)} />
           {result.excess > 0 && <Stat label={t("excess")} value={formatEUR(result.excess)} />}
-          {result.employerApplied > 0 && <Stat label={t("employerApplied")} value={formatEUR(result.employerApplied)} />}
+          {result.employerApplied > 0 && (
+            <Stat label={t("employerApplied")} value={formatEUR(result.employerApplied)} />
+          )}
           {result.employerApplied > 0 && <Stat label={t("totalApplied")} value={formatEUR(result.totalApplied)} />}
         </div>
       }

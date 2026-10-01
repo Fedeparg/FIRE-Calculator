@@ -180,9 +180,7 @@ export async function getLegalDoc(slug: string, locale: string): Promise<LegalDo
  * Solo aparecen los slugs que declaran fecha; los demás se omiten del mapa (y del
  * `lastmod`) en vez de recibir la fecha de hoy.
  */
-export async function getContentUpdatedDates(
-  kind: "wiki" | "legal",
-): Promise<Map<string, string>> {
+export async function getContentUpdatedDates(kind: "wiki" | "legal"): Promise<Map<string, string>> {
   const dir = kind === "wiki" ? WIKI_DIR : LEGAL_DIR;
   const field = kind === "wiki" ? "updated" : "updatedAt";
 

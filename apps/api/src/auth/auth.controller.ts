@@ -46,10 +46,7 @@ export class AuthController {
   /** Canjea el token del enlace por una sesión (cookie HttpOnly con el JWT). */
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async verify(
-    @Body() dto: VerifyDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<SessionUser> {
+  async verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: Response): Promise<SessionUser> {
     const user = await this.auth.verify(dto.token);
     const jwt = await this.auth.signSession(user);
     res.cookie(SESSION_COOKIE, jwt, this.cookieOptions());
@@ -89,10 +86,7 @@ export class AuthController {
   @Delete('account')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteAccount(
-    @CurrentUser() user: SessionUser,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
+  async deleteAccount(@CurrentUser() user: SessionUser, @Res({ passthrough: true }) res: Response): Promise<void> {
     await this.auth.deleteAccount(user.id);
     res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
   }

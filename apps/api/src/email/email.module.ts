@@ -20,9 +20,7 @@ import { ResendEmailService } from './resend-email.service.js';
       provide: EMAIL_SERVICE,
       inject: [ConfigService],
       useFactory: (config: ConfigService): EmailService =>
-        config.get<string>('EMAIL_TRANSPORT') === 'resend'
-          ? new ResendEmailService(config)
-          : new DevEmailService(),
+        config.get<string>('EMAIL_TRANSPORT') === 'resend' ? new ResendEmailService(config) : new DevEmailService(),
     },
   ],
   exports: [EMAIL_SERVICE],

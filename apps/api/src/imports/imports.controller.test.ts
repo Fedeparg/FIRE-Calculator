@@ -66,9 +66,7 @@ describe('ImportsController (HTTP)', () => {
 
     app = await NestFactory.create(AppModule, { abortOnError: false, logger: false });
     app.use(cookieParser());
-    app.useGlobalPipes(
-      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-    );
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
     baseUrl = `${await app.getUrl()}/api/imports/trade-republic`;

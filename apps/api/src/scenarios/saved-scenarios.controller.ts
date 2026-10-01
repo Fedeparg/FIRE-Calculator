@@ -19,10 +19,7 @@ import type { SessionUser } from '../auth/auth.service.js';
 import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import { SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto.js';
 import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
-import {
-  SavedScenariosService,
-  type SavedScenarioResponse,
-} from './saved-scenarios.service.js';
+import { SavedScenariosService, type SavedScenarioResponse } from './saved-scenarios.service.js';
 
 /**
  * Escenarios guardados de calculadora. TODOS los endpoints están autenticados y el `userId`
@@ -36,19 +33,13 @@ export class SavedScenariosController {
 
   /** `?slug=fire-basico` filtra por calculadora; sin filtro, todos los del usuario. */
   @Get()
-  findAll(
-    @CurrentUser() user: SessionUser,
-    @Query() query: SavedScenariosQueryDto,
-  ): Promise<SavedScenarioResponse[]> {
+  findAll(@CurrentUser() user: SessionUser, @Query() query: SavedScenariosQueryDto): Promise<SavedScenarioResponse[]> {
     return this.scenarios.findAllByUser(user.id, query.slug);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @CurrentUser() user: SessionUser,
-    @Body() dto: CreateSavedScenarioDto,
-  ): Promise<SavedScenarioResponse> {
+  create(@CurrentUser() user: SessionUser, @Body() dto: CreateSavedScenarioDto): Promise<SavedScenarioResponse> {
     return this.scenarios.create(user.id, dto);
   }
 
@@ -63,10 +54,7 @@ export class SavedScenariosController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
-    @CurrentUser() user: SessionUser,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  remove(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.scenarios.remove(user.id, id);
   }
 }

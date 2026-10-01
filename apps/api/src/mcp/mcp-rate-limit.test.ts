@@ -49,9 +49,7 @@ describe('mcpRateLimitKey', () => {
   });
 
   it('cae a la IP si el Authorization no es un Bearer válido', () => {
-    expect(mcpRateLimitKey(request({ authorization: 'Basic dXNlcjpwYXNz', ip: '10.0.0.1' }))).toBe(
-      'ip:10.0.0.1',
-    );
+    expect(mcpRateLimitKey(request({ authorization: 'Basic dXNlcjpwYXNz', ip: '10.0.0.1' }))).toBe('ip:10.0.0.1');
     expect(mcpRateLimitKey(request({ authorization: 'Bearer', ip: '10.0.0.1' }))).toBe('ip:10.0.0.1');
   });
 

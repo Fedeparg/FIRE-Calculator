@@ -15,7 +15,4 @@ export function errorResult(message: string): CallToolResult {
 }
 
 /** Ejecuta el cuerpo de una tool con auditoría y traducción de errores (ver `McpService.run`). */
-export type ToolRunner = (
-  tool: string,
-  body: () => Promise<CallToolResult>,
-) => Promise<CallToolResult>;
+export type ToolRunner = (tool: string, body: () => Promise<CallToolResult>) => Promise<CallToolResult>;

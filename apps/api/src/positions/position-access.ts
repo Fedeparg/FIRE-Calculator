@@ -5,9 +5,7 @@ import type { Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 
 /** Cliente Drizzle o transacción: las consultas de acceso valen para ambos. */
-export type DatabaseOrTransaction =
-  | Database
-  | Parameters<Parameters<Database['transaction']>[0]>[0];
+export type DatabaseOrTransaction = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /**
  * Localiza una posición por id VERIFICANDO propiedad: 404 si no existe, 403 si es de otro
@@ -18,11 +16,7 @@ export type DatabaseOrTransaction =
  * posiciones ya depende del de lotes para mantener sincronizados `quantity`/`avgPrice`).
  * Duplicar la regla de 404/403 en dos sitios sería mucho peor: es una regla de SEGURIDAD.
  */
-export async function findOwnedPosition(
-  db: DatabaseOrTransaction,
-  userId: string,
-  id: string,
-): Promise<Position> {
+export async function findOwnedPosition(db: DatabaseOrTransaction, userId: string, id: string): Promise<Position> {
   const [row] = await db.select().from(positions).where(eq(positions.id, id));
   if (!row) {
     throw new NotFoundException('Posición no encontrada');

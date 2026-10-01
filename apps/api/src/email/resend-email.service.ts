@@ -72,11 +72,7 @@ export class ResendEmailService implements EmailService {
     }
   }
 
-  async sendFireMilestone(
-    to: string,
-    email: FireMilestoneEmail,
-    oneClickUnsubscribeUrl: string,
-  ): Promise<void> {
+  async sendFireMilestone(to: string, email: FireMilestoneEmail, oneClickUnsubscribeUrl: string): Promise<void> {
     const rendered = renderFireMilestoneEmail(email, `${this.appUrl}/email-logo.png`);
     const { error } = await this.resend.emails.send({
       from: this.from,

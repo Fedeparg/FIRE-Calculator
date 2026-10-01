@@ -128,11 +128,7 @@ export function decodeCalculatorInputs(inputs: unknown, specs: FieldSpecs): Fiel
  * El resultado incluye el `?` inicial, o es cadena vacía si no queda ningún parámetro
  * (comparable directamente con `window.location.search`).
  */
-export function encodeCalculatorState(
-  search: string,
-  values: FieldValues,
-  specs: FieldSpecs,
-): string {
+export function encodeCalculatorState(search: string, values: FieldValues, specs: FieldSpecs): string {
   const params = new URLSearchParams(search);
 
   for (const [key, spec] of Object.entries(specs)) {

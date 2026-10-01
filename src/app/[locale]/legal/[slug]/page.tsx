@@ -41,11 +41,7 @@ export default async function LegalPage({ params }: Props) {
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="text-3xl font-bold text-foreground">{doc.title}</h1>
-      {doc.updatedAt && (
-        <p className="mt-2 text-sm text-muted">
-          {t("lastUpdated", { date: doc.updatedAt })}
-        </p>
-      )}
+      {doc.updatedAt && <p className="mt-2 text-sm text-muted">{t("lastUpdated", { date: doc.updatedAt })}</p>}
       <div
         className="prose prose-neutral mt-6 max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-brand prose-strong:text-foreground"
         dangerouslySetInnerHTML={{ __html: doc.html }}

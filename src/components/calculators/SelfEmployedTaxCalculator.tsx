@@ -10,11 +10,7 @@ import {
   type DisabilityGrade,
   type JointReturnOption,
 } from "@sextante/core/fiscal/irpf";
-import {
-  SELECTABLE_REGIONS,
-  toSupportedRegion,
-  type RegionSelection,
-} from "@sextante/core/fiscal/regions";
+import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
@@ -35,28 +31,16 @@ export default function SelfEmployedTaxCalculator() {
   const [income, setIncome] = useNumberField("income", 40000);
   const [expenses, setExpenses] = useNumberField("expenses", 8000);
   const [socialSecurity, setSocialSecurity] = useNumberField("socialSecurity", 4000);
-  const [regime, setRegime] = useOptionField<ExpenseRegime>(
-    "regime",
-    "simplificada",
-    EXPENSE_REGIMES,
-  );
+  const [regime, setRegime] = useOptionField<ExpenseRegime>("regime", "simplificada", EXPENSE_REGIMES);
   const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
   const [pensionContribution, setPensionContribution] = useNumberField("pensionContribution", 0);
   // Situación personal y familiar
   const [age, setAge] = useNumberField("age", 30);
-  const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>(
-    "jointReturn",
-    "no",
-    JOINT_RETURN_OPTIONS,
-  );
+  const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>("jointReturn", "no", JOINT_RETURN_OPTIONS);
   const [children, setChildren] = useNumberField("children", 0);
   const [childrenUnder3, setChildrenUnder3] = useNumberField("childrenUnder3", 0);
   const [ascendants, setAscendants] = useNumberField("ascendants", 0);
-  const [disability, setDisability] = useOptionField<DisabilityGrade>(
-    "disability",
-    "none",
-    DISABILITY_GRADES,
-  );
+  const [disability, setDisability] = useOptionField<DisabilityGrade>("disability", "none", DISABILITY_GRADES);
 
   const result = useMemo(
     () =>
@@ -74,7 +58,20 @@ export default function SelfEmployedTaxCalculator() {
         ascendants,
         disability,
       }),
-    [income, expenses, socialSecurity, regime, region, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
+    [
+      income,
+      expenses,
+      socialSecurity,
+      regime,
+      region,
+      pensionContribution,
+      age,
+      jointReturn,
+      children,
+      childrenUnder3,
+      ascendants,
+      disability,
+    ],
   );
 
   return (
@@ -84,8 +81,20 @@ export default function SelfEmployedTaxCalculator() {
       inputs={
         <>
           <NumberField label={t("income")} value={income} onChange={setIncome} step={1000} help={t("help.income")} />
-          <NumberField label={t("expenses")} value={expenses} onChange={setExpenses} step={500} help={t("help.expenses")} />
-          <NumberField label={t("socialSecurity")} value={socialSecurity} onChange={setSocialSecurity} step={250} help={t("help.socialSecurity")} />
+          <NumberField
+            label={t("expenses")}
+            value={expenses}
+            onChange={setExpenses}
+            step={500}
+            help={t("help.expenses")}
+          />
+          <NumberField
+            label={t("socialSecurity")}
+            value={socialSecurity}
+            onChange={setSocialSecurity}
+            step={250}
+            help={t("help.socialSecurity")}
+          />
           <SelectField
             label={t("regime")}
             value={regime}
@@ -96,9 +105,23 @@ export default function SelfEmployedTaxCalculator() {
             ]}
             help={t("help.regime")}
           />
-          <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
+          <NumberField
+            label={t("pensionContribution")}
+            value={pensionContribution}
+            onChange={setPensionContribution}
+            step={100}
+            help={t("help.pensionContribution")}
+          />
           <RegionSelectField value={region} onChange={setRegion} />
-          <NumberField label={t("age")} value={age} onChange={setAge} min={16} max={120} step={1} help={t("help.age")} />
+          <NumberField
+            label={t("age")}
+            value={age}
+            onChange={setAge}
+            min={16}
+            max={120}
+            step={1}
+            help={t("help.age")}
+          />
           <SelectField
             label={t("jointReturn")}
             value={jointReturn}
@@ -109,9 +132,30 @@ export default function SelfEmployedTaxCalculator() {
             ]}
             help={t("help.jointReturn")}
           />
-          <NumberField label={t("children")} value={children} onChange={setChildren} min={0} step={1} help={t("help.children")} />
-          <NumberField label={t("childrenUnder3")} value={childrenUnder3} onChange={setChildrenUnder3} min={0} step={1} help={t("help.childrenUnder3")} />
-          <NumberField label={t("ascendants")} value={ascendants} onChange={setAscendants} min={0} step={1} help={t("help.ascendants")} />
+          <NumberField
+            label={t("children")}
+            value={children}
+            onChange={setChildren}
+            min={0}
+            step={1}
+            help={t("help.children")}
+          />
+          <NumberField
+            label={t("childrenUnder3")}
+            value={childrenUnder3}
+            onChange={setChildrenUnder3}
+            min={0}
+            step={1}
+            help={t("help.childrenUnder3")}
+          />
+          <NumberField
+            label={t("ascendants")}
+            value={ascendants}
+            onChange={setAscendants}
+            min={0}
+            step={1}
+            help={t("help.ascendants")}
+          />
           <SelectField
             label={t("disability")}
             value={disability}

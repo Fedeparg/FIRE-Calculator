@@ -22,10 +22,7 @@ type Chip = { slug: string; title: string };
  */
 export default async function CalculatorExplainer({ calcSlug }: Props) {
   const locale = await getLocale();
-  const [explainer, chips] = await Promise.all([
-    getExplainer(calcSlug, locale),
-    resolveChips(calcSlug, locale),
-  ]);
+  const [explainer, chips] = await Promise.all([getExplainer(calcSlug, locale), resolveChips(calcSlug, locale)]);
 
   if (!explainer && chips.length === 0) return null;
 
@@ -35,9 +32,7 @@ export default async function CalculatorExplainer({ calcSlug }: Props) {
     <section className="mt-12 border-t border-border pt-8">
       {explainer && (
         <>
-          <h2 className="text-xl font-bold tracking-tight text-foreground">
-            {explainer.title ?? t("heading")}
-          </h2>
+          <h2 className="text-xl font-bold tracking-tight text-foreground">{explainer.title ?? t("heading")}</h2>
           <div
             className="prose prose-neutral mt-4 max-w-none dark:prose-invert prose-headings:text-foreground prose-a:text-brand prose-strong:text-foreground"
             dangerouslySetInnerHTML={{ __html: explainer.html }}
@@ -47,9 +42,7 @@ export default async function CalculatorExplainer({ calcSlug }: Props) {
 
       {chips.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
-            {t("relatedHeading")}
-          </h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">{t("relatedHeading")}</h3>
           <ul className="mt-3 flex flex-wrap gap-2">
             {chips.map((chip) => (
               <li key={chip.slug}>

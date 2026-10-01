@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEFAULT_SORT_DIR,
-  DEFAULT_SORT_KEY,
-  sortPositions,
-  type SortableRow,
-} from "./portfolio-sort";
+import { DEFAULT_SORT_DIR, DEFAULT_SORT_KEY, sortPositions, type SortableRow } from "./portfolio-sort";
 
 /** Crea una fila con valores por defecto neutros; se sobreescribe lo relevante por test. */
 function row(ticker: string, sortable: Partial<SortableRow> = {}) {
@@ -30,20 +25,12 @@ describe("sortPositions", () => {
     expect(DEFAULT_SORT_KEY).toBe("invested");
     expect(DEFAULT_SORT_DIR).toBe("desc");
 
-    const rows = [
-      row("A", { invested: 100 }),
-      row("B", { invested: 300 }),
-      row("C", { invested: 200 }),
-    ];
+    const rows = [row("A", { invested: 100 }), row("B", { invested: 300 }), row("C", { invested: 200 })];
     expect(order(sortPositions(rows, "invested", "desc"))).toEqual(["B", "C", "A"]);
   });
 
   it("el sentido ascendente invierte el orden", () => {
-    const rows = [
-      row("A", { invested: 100 }),
-      row("B", { invested: 300 }),
-      row("C", { invested: 200 }),
-    ];
+    const rows = [row("A", { invested: 100 }), row("B", { invested: 300 }), row("C", { invested: 200 })];
     expect(order(sortPositions(rows, "invested", "asc"))).toEqual(["A", "C", "B"]);
   });
 
@@ -55,11 +42,7 @@ describe("sortPositions", () => {
   });
 
   it("los valores nulos van siempre al final, tanto en asc como en desc", () => {
-    const rows = [
-      row("A", { marketValue: null }),
-      row("B", { marketValue: 50 }),
-      row("C", { marketValue: 200 }),
-    ];
+    const rows = [row("A", { marketValue: null }), row("B", { marketValue: 50 }), row("C", { marketValue: 200 })];
     expect(order(sortPositions(rows, "marketValue", "desc"))).toEqual(["C", "B", "A"]);
     expect(order(sortPositions(rows, "marketValue", "asc"))).toEqual(["B", "C", "A"]);
   });
@@ -77,32 +60,20 @@ describe("sortPositions", () => {
   });
 
   it("ordena el P&L por el número mostrado (positivos y negativos)", () => {
-    const rows = [
-      row("A", { pnl: -10 }),
-      row("B", { pnl: 25 }),
-      row("C", { pnl: 5 }),
-    ];
+    const rows = [row("A", { pnl: -10 }), row("B", { pnl: 25 }), row("C", { pnl: 5 })];
     expect(order(sortPositions(rows, "pnl", "desc"))).toEqual(["B", "C", "A"]);
     expect(order(sortPositions(rows, "pnl", "asc"))).toEqual(["A", "C", "B"]);
   });
 
   it("desempata por ticker cuando el campo coincide (orden determinista)", () => {
-    const rows = [
-      row("ZZZ", { invested: 100 }),
-      row("AAA", { invested: 100 }),
-      row("MMM", { invested: 100 }),
-    ];
+    const rows = [row("ZZZ", { invested: 100 }), row("AAA", { invested: 100 }), row("MMM", { invested: 100 })];
     expect(order(sortPositions(rows, "invested", "desc"))).toEqual(["AAA", "MMM", "ZZZ"]);
     // El desempate por ticker es ascendente aunque el sentido sea desc.
     expect(order(sortPositions(rows, "invested", "asc"))).toEqual(["AAA", "MMM", "ZZZ"]);
   });
 
   it("ordena por cantidad con números crudos (sin conversión de divisa)", () => {
-    const rows = [
-      row("A", { quantity: 0.5 }),
-      row("B", { quantity: 12 }),
-      row("C", { quantity: 3 }),
-    ];
+    const rows = [row("A", { quantity: 0.5 }), row("B", { quantity: 12 }), row("C", { quantity: 3 })];
     expect(order(sortPositions(rows, "quantity", "desc"))).toEqual(["B", "C", "A"]);
   });
 });

@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type {
-  InstrumentSearchProvider,
-  InstrumentSearchResult,
-  InstrumentType,
-} from './instrument-search.js';
+import type { InstrumentSearchProvider, InstrumentSearchResult, InstrumentType } from './instrument-search.js';
 
 /** Endpoint público de autocompletado de Yahoo (mismo que alimenta su buscador web). */
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
@@ -87,9 +83,7 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
     try {
-      const url =
-        `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` +
-        `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
+      const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` + `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
       const res = await fetch(url, {
         headers: { 'User-Agent': USER_AGENT },
         signal: controller.signal,

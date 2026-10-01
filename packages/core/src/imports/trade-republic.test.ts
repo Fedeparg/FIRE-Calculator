@@ -12,10 +12,7 @@ import {
 } from "./trade-republic.js";
 
 /** Export sintético (valores inventados) con una fila de cada tipo relevante. */
-const FIXTURE = readFileSync(
-  resolve(import.meta.dirname, "fixtures/tr-transaction-export.synthetic.csv"),
-  "utf8",
-);
+const FIXTURE = readFileSync(resolve(import.meta.dirname, "fixtures/tr-transaction-export.synthetic.csv"), "utf8");
 
 const HEADER_LINE = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(",");
 
@@ -154,14 +151,30 @@ describe("parseTradeRepublicCsv — export sintético", () => {
 
   it("no filtra datos de terceros en ninguna parte del resultado", () => {
     const serialized = JSON.stringify(result);
-    for (const leaked of ["Jane Doe", "John Roe", "ES0000000000000000000000", "ES1111111111111111111111", "Example Shop", "5411"]) {
+    for (const leaked of [
+      "Jane Doe",
+      "John Roe",
+      "ES0000000000000000000000",
+      "ES1111111111111111111111",
+      "Example Shop",
+      "5411",
+    ]) {
       expect(serialized).not.toContain(leaked);
     }
     // Las operaciones solo tienen los campos del tipo genérico; las filas descartadas, solo línea/tipo/motivo.
     for (const trade of result.trades) {
-      expect(Object.keys(trade).sort()).toEqual(
-        ["assetClass", "executedAt", "externalId", "fees", "isin", "kind", "name", "price", "quantity", "tradedAt"],
-      );
+      expect(Object.keys(trade).sort()).toEqual([
+        "assetClass",
+        "executedAt",
+        "externalId",
+        "fees",
+        "isin",
+        "kind",
+        "name",
+        "price",
+        "quantity",
+        "tradedAt",
+      ]);
     }
     for (const skippedRow of result.skipped) {
       expect(Object.keys(skippedRow).sort()).toEqual(["line", "reason", "type"]);
@@ -176,9 +189,7 @@ describe("parseTradeRepublicCsv — filas", () => {
   });
 
   it("usa `date` como fecha de operación aunque el día UTC difiera", () => {
-    const { trades } = parseTradeRepublicCsv(
-      csv(row({ datetime: "2025-03-01T23:30:00.000000Z", date: "2025-03-02" })),
-    );
+    const { trades } = parseTradeRepublicCsv(csv(row({ datetime: "2025-03-01T23:30:00.000000Z", date: "2025-03-02" })));
     expect(trades[0]).toMatchObject({ tradedAt: "2025-03-02", executedAt: "2025-03-01T23:30:00.000000Z" });
   });
 
@@ -193,9 +204,7 @@ describe("parseTradeRepublicCsv — filas", () => {
   });
 
   it("respeta el orden del fichero ante el mismo instante", () => {
-    const { trades } = parseTradeRepublicCsv(
-      csv(row({ transaction_id: "z" }), row({ transaction_id: "a" })),
-    );
+    const { trades } = parseTradeRepublicCsv(csv(row({ transaction_id: "z" }), row({ transaction_id: "a" })));
     expect(trades.map((t) => t.externalId)).toEqual(["z", "a"]);
   });
 
@@ -256,10 +265,7 @@ describe("parseTradeRepublicCsv — filas", () => {
 
   it("descarta cripto y divisas distintas de EUR", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
-      csv(
-        row({ asset_class: "CRYPTO", transaction_id: "a" }),
-        row({ currency: "USD", transaction_id: "b" }),
-      ),
+      csv(row({ asset_class: "CRYPTO", transaction_id: "a" }), row({ currency: "USD", transaction_id: "b" })),
     );
     expect(trades).toEqual([]);
     expect(skipped.map((s) => s.reason)).toEqual(["crypto", "unsupported_currency"]);
@@ -272,7 +278,16 @@ describe("parseTradeRepublicCsv — filas", () => {
 
   it("trata las retiradas de efectivo como movimiento de efectivo", () => {
     const { skipped } = parseTradeRepublicCsv(
-      csv(row({ type: "CUSTOMER_OUTBOUND_REQUEST", category: "CASH", asset_class: "", symbol: "", shares: "", price: "" })),
+      csv(
+        row({
+          type: "CUSTOMER_OUTBOUND_REQUEST",
+          category: "CASH",
+          asset_class: "",
+          symbol: "",
+          shares: "",
+          price: "",
+        }),
+      ),
     );
     expect(skipped.map((s) => s.reason)).toEqual(["cash_movement"]);
   });
@@ -291,15 +306,22 @@ describe("parseTradeRepublicCsv — filas", () => {
 
 describe("parseTradeRepublicCsv — migraciones", () => {
   const migration = (shares: string, id: string, extra: RowFields = {}): string =>
-    row({ type: "MIGRATION", category: "DELIVERY", asset_class: "FUND", symbol: "ZZ00MIGRA004", shares, price: "200", amount: "", transaction_id: id, ...extra });
+    row({
+      type: "MIGRATION",
+      category: "DELIVERY",
+      asset_class: "FUND",
+      symbol: "ZZ00MIGRA004",
+      shares,
+      price: "200",
+      amount: "",
+      transaction_id: id,
+      ...extra,
+    });
 
   it("ignora la pareja salida/entrada equilibrada", () => {
     const { trades, skipped, warnings } = parseTradeRepublicCsv(
       // Como en un export real, las dos patas difieren unos milisegundos.
-      csv(
-        migration("-3.0", "a"),
-        migration("3.0000000000", "b", { datetime: "2025-03-01T10:15:00.127456Z" }),
-      ),
+      csv(migration("-3.0", "a"), migration("3.0000000000", "b", { datetime: "2025-03-01T10:15:00.127456Z" })),
     );
     expect(trades).toEqual([]);
     expect(skipped.map((s) => s.reason)).toEqual(["migration_pair", "migration_pair"]);
@@ -314,11 +336,7 @@ describe("parseTradeRepublicCsv — migraciones", () => {
 
   it("no empareja migraciones de distinta cantidad o separadas más de un segundo", () => {
     const { warnings } = parseTradeRepublicCsv(
-      csv(
-        migration("-3", "a"),
-        migration("2", "b"),
-        migration("3", "c", { datetime: "2025-03-01T10:15:05.123456Z" }),
-      ),
+      csv(migration("-3", "a"), migration("2", "b"), migration("3", "c", { datetime: "2025-03-01T10:15:05.123456Z" })),
     );
     expect(warnings).toHaveLength(3);
   });
@@ -344,7 +362,15 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
       csv(bonus("BONUS_ISSUE", "2.5", "a", "2025-07-30T06:25:21.431Z")),
     );
     expect(trades).toEqual([
-      expect.objectContaining({ externalId: "a", isin: "ZZ00BONUS005", kind: "buy", quantity: "2.5", price: "0", fees: "0", tradedAt: "2025-07-30" }),
+      expect.objectContaining({
+        externalId: "a",
+        isin: "ZZ00BONUS005",
+        kind: "buy",
+        quantity: "2.5",
+        price: "0",
+        fees: "0",
+        tradedAt: "2025-07-30",
+      }),
     ]);
     expect(skipped).toEqual([]);
   });
@@ -388,9 +414,7 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
   });
 
   it("descarta con `invalid_row` una emisión con signo incoherente", () => {
-    const { trades, skipped } = parseTradeRepublicCsv(
-      csv(bonus("BONUS_ISSUE", "-1", "a", "2025-07-30T06:25:21.431Z")),
-    );
+    const { trades, skipped } = parseTradeRepublicCsv(csv(bonus("BONUS_ISSUE", "-1", "a", "2025-07-30T06:25:21.431Z")));
     expect(trades).toEqual([]);
     expect(skipped.map((s) => s.reason)).toEqual(["invalid_row"]);
   });

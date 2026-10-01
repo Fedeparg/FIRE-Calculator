@@ -150,9 +150,7 @@ export default function RealisedGainsReport({ positions, lots }: Props) {
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted">{t("marginal")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">
-                {formatPercent(year.tax.marginal)}
-              </dd>
+              <dd className="text-lg font-semibold tabular-nums text-foreground">{formatPercent(year.tax.marginal)}</dd>
             </div>
           </dl>
           <p className="text-xs text-muted">{t("taxScale", { scaleYear: FISCAL_YEAR_LABEL })}</p>
@@ -182,15 +180,11 @@ function CurrencyGroup({ group }: { group: RealisedGainsCurrencyGroup }) {
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1">
           <dt className="text-sm text-muted">{t("gains")}</dt>
-          <dd className="text-lg font-semibold tabular-nums text-success">
-            {formatCurrency(group.gains, currency)}
-          </dd>
+          <dd className="text-lg font-semibold tabular-nums text-success">{formatCurrency(group.gains, currency)}</dd>
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-sm text-muted">{t("losses")}</dt>
-          <dd className="text-lg font-semibold tabular-nums text-danger">
-            {formatCurrency(group.losses, currency)}
-          </dd>
+          <dd className="text-lg font-semibold tabular-nums text-danger">{formatCurrency(group.losses, currency)}</dd>
         </div>
         <div className="flex flex-col gap-1">
           <dt className="text-sm text-muted">{t("net")}</dt>
@@ -203,17 +197,27 @@ function CurrencyGroup({ group }: { group: RealisedGainsCurrencyGroup }) {
 
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full min-w-[40rem] text-left text-sm">
-          <caption className="px-3 pt-3 text-left text-xs text-muted">
-            {t("tableCaption", { currency })}
-          </caption>
+          <caption className="px-3 pt-3 text-left text-xs text-muted">{t("tableCaption", { currency })}</caption>
           <thead>
             <tr className="border-b border-border text-muted">
-              <th scope="col" className="px-3 py-2 font-medium">{t("position")}</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">{t("sales")}</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">{t("quantity")}</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">{t("transferValue")}</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">{t("acquisitionValue")}</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">{t("gain")}</th>
+              <th scope="col" className="px-3 py-2 font-medium">
+                {t("position")}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">
+                {t("sales")}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">
+                {t("quantity")}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">
+                {t("transferValue")}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">
+                {t("acquisitionValue")}
+              </th>
+              <th scope="col" className="px-3 py-2 text-right font-medium">
+                {t("gain")}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -224,9 +228,7 @@ function CurrencyGroup({ group }: { group: RealisedGainsCurrencyGroup }) {
                   {row.name && <span className="block text-xs text-muted">{row.name}</span>}
                 </th>
                 <td className="px-3 py-2 text-right tabular-nums text-foreground">{row.sales}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                  {formatQuantity(row.quantity)}
-                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-foreground">{formatQuantity(row.quantity)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-foreground">
                   {formatCurrency(row.transferValue, currency)}
                 </td>

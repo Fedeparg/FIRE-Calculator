@@ -13,9 +13,7 @@ const prices = (dates: Record<string, string>) =>
 
 describe("latestPriceDate", () => {
   it("devuelve la fecha más reciente de todas", () => {
-    expect(
-      latestPriceDate(prices({ IWDA: "2026-03-13", VWCE: "2026-03-15", FUND: "2026-03-10" })),
-    ).toBe("2026-03-15");
+    expect(latestPriceDate(prices({ IWDA: "2026-03-13", VWCE: "2026-03-15", FUND: "2026-03-10" }))).toBe("2026-03-15");
   });
 
   it("con un solo precio devuelve su propia fecha", () => {
@@ -27,9 +25,7 @@ describe("latestPriceDate", () => {
   });
 
   it("ignora fechas ilegibles en lugar de contaminar el máximo", () => {
-    expect(latestPriceDate(prices({ A: "2026-03-13", B: "ayer", C: "2026-3-9" }))).toBe(
-      "2026-03-13",
-    );
+    expect(latestPriceDate(prices({ A: "2026-03-13", B: "ayer", C: "2026-3-9" }))).toBe("2026-03-13");
   });
 
   it("sin ninguna fecha legible no hay referencia", () => {

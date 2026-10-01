@@ -16,8 +16,7 @@ import type { PositionLotKind } from '../../db/schema.js';
 import { NUMERIC_MAX } from './create-position.dto.js';
 import { ISO_DATE_PATTERN, POSITION_LOT_KINDS } from './create-position-lot.dto.js';
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Cuerpo de PATCH /api/positions/:positionId/lots/:lotId. Todos los campos son opcionales

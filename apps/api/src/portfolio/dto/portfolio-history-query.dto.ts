@@ -1,10 +1,7 @@
 import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
-import {
-  SUPPORTED_CURRENCIES,
-  type SupportedCurrency,
-} from '../../positions/dto/create-position.dto.js';
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '../../positions/dto/create-position.dto.js';
 import { HISTORY_MAX_DAYS } from '../portfolio-snapshots.service.js';
 
 /**

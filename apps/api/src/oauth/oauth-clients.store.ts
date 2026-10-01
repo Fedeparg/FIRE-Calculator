@@ -25,9 +25,7 @@ export class OAuthClientsStore implements OAuthRegisteredClientsStore {
     return row?.data;
   }
 
-  async registerClient(
-    client: OAuthClientInformationFull,
-  ): Promise<OAuthClientInformationFull> {
+  async registerClient(client: OAuthClientInformationFull): Promise<OAuthClientInformationFull> {
     await this.db
       .insert(oauthClients)
       .values({ clientId: client.client_id, data: client })
@@ -44,9 +42,6 @@ export class OAuthClientsStore implements OAuthRegisteredClientsStore {
    * Es lo que permite al reaper distinguir un registro DCR abandonado de uno activo.
    */
   async touch(clientId: string): Promise<void> {
-    await this.db
-      .update(oauthClients)
-      .set({ lastUsedAt: new Date() })
-      .where(eq(oauthClients.clientId, clientId));
+    await this.db.update(oauthClients).set({ lastUsedAt: new Date() }).where(eq(oauthClients.clientId, clientId));
   }
 }

@@ -31,9 +31,25 @@ export default function InflationCalculator() {
       inputs={
         <>
           <NumberField label={t("amount")} value={amount} onChange={setAmount} step={1000} help={t("help.amount")} />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.1} min={-100} max={100} help={t("help.annualRate")} />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.1}
+            min={-100}
+            max={100}
+            help={t("help.annualRate")}
+          />
           <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField label={t("nominalReturn")} value={nominalReturn} onChange={setNominalReturn} step={0.1} min={0} max={100} help={t("help.nominalReturn")} />
+          <NumberField
+            label={t("nominalReturn")}
+            value={nominalReturn}
+            onChange={setNominalReturn}
+            step={0.1}
+            min={0}
+            max={100}
+            help={t("help.nominalReturn")}
+          />
         </>
       }
       results={

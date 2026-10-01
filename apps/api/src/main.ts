@@ -50,9 +50,7 @@ async function bootstrap(): Promise<void> {
   app.use(cookieParser());
 
   // Validación + saneo de DTOs en todas las rutas.
-  app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
-  );
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
   // Todas las rutas cuelgan de /api para encajar con la topología same-origin
   // (Caddy en prod / rewrites de Next en dev enrutan /api -> esta API).

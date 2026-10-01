@@ -105,9 +105,7 @@ export default function ConnectedApps() {
 
       {state === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
       {state === "error" && <p className="text-sm text-warning">{t("error")}</p>}
-      {state === "loaded" && items.length === 0 && (
-        <p className="text-sm text-muted">{t("empty")}</p>
-      )}
+      {state === "loaded" && items.length === 0 && <p className="text-sm text-muted">{t("empty")}</p>}
 
       {state === "loaded" && items.length > 0 && (
         <ul className="flex flex-col gap-3">
@@ -117,15 +115,10 @@ export default function ConnectedApps() {
               className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="flex flex-col gap-2">
-                <span className="font-medium text-foreground">
-                  {c.clientName ?? t("unnamed")}
-                </span>
+                <span className="font-medium text-foreground">{c.clientName ?? t("unnamed")}</span>
                 <div className="flex flex-wrap gap-1.5">
                   {c.scopes.map((scope) => (
-                    <span
-                      key={scope}
-                      className="rounded-md bg-accent-soft px-2 py-0.5 text-xs text-foreground"
-                    >
+                    <span key={scope} className="rounded-md bg-accent-soft px-2 py-0.5 text-xs text-foreground">
                       {SCOPE_LABELS[scope] ? t(SCOPE_LABELS[scope]) : scope}
                     </span>
                   ))}
@@ -133,9 +126,7 @@ export default function ConnectedApps() {
                 <span className="text-xs text-muted">
                   {t("connected", { date: formatIsoDate(c.createdAt.slice(0, 10)) })}
                   {" · "}
-                  {c.lastUsedAt
-                    ? t("lastUsed", { date: formatIsoDate(c.lastUsedAt.slice(0, 10)) })
-                    : t("neverUsed")}
+                  {c.lastUsedAt ? t("lastUsed", { date: formatIsoDate(c.lastUsedAt.slice(0, 10)) }) : t("neverUsed")}
                 </span>
               </div>
               <button
@@ -155,9 +146,7 @@ export default function ConnectedApps() {
 
       {/* Cómo conectar un asistente de IA al servidor MCP de Sextante. */}
       <details className="mt-1 rounded-xl border border-border bg-background p-4">
-        <summary className="cursor-pointer text-sm font-medium text-foreground">
-          {t("howToTitle")}
-        </summary>
+        <summary className="cursor-pointer text-sm font-medium text-foreground">{t("howToTitle")}</summary>
         <div className="mt-3 flex flex-col gap-3">
           <p className="text-sm text-muted">{t("howToIntro")}</p>
           <div className="flex flex-col gap-1.5">

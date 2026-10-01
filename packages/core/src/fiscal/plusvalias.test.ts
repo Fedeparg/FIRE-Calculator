@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildOpenLots,
-  estimateSavingsTax,
-  simulateSale,
-  walkLots,
-  type TradeLot,
-} from "./plusvalias.js";
+import { buildOpenLots, estimateSavingsTax, simulateSale, walkLots, type TradeLot } from "./plusvalias.js";
 
 /** Constructor breve de lotes: los tests solo fijan lo que les importa. */
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
@@ -34,10 +28,7 @@ describe("buildOpenLots", () => {
   });
 
   it("ordena cronológicamente aunque lleguen desordenados", () => {
-    const open = buildOpenLots([
-      lot({ id: "b", tradedAt: "2024-03-01" }),
-      lot({ id: "a", tradedAt: "2024-01-10" }),
-    ]);
+    const open = buildOpenLots([lot({ id: "b", tradedAt: "2024-03-01" }), lot({ id: "a", tradedAt: "2024-01-10" })]);
 
     expect(open.map((o) => o.lotId)).toEqual(["a", "b"]);
   });
@@ -379,7 +370,14 @@ describe("walkLots", () => {
 
   it("en el mismo día desempata por fecha de alta, como el backend", () => {
     const { sales } = walkLots([
-      lot({ id: "s", kind: "sell", quantity: 1, price: 150, tradedAt: "2024-05-05", createdAt: "2024-05-05T10:00:00Z" }),
+      lot({
+        id: "s",
+        kind: "sell",
+        quantity: 1,
+        price: 150,
+        tradedAt: "2024-05-05",
+        createdAt: "2024-05-05T10:00:00Z",
+      }),
       lot({ id: "a", quantity: 1, price: 100, tradedAt: "2024-05-05", createdAt: "2024-05-05T09:00:00Z" }),
     ]);
 

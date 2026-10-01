@@ -25,13 +25,7 @@ type Props = {
  * - Muchos campos (> threshold): campos en una rejilla horizontal arriba +
  *   resultados debajo a todo el ancho. Evita una columna lateral kilométrica.
  */
-export default function CalculatorLayout({
-  inputs,
-  inputCount,
-  results,
-  notice,
-  threshold = 5,
-}: Props) {
+export default function CalculatorLayout({ inputs, inputCount, results, notice, threshold = 5 }: Props) {
   const horizontal = inputCount > threshold;
 
   return (
@@ -47,9 +41,7 @@ export default function CalculatorLayout({
         </>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 content-start">
-            {inputs}
-          </div>
+          <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 content-start">{inputs}</div>
           <div className="grid gap-6 content-start">{results}</div>
         </div>
       )}

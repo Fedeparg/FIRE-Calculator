@@ -69,9 +69,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
   // fiscal, justo donde el usuario está mirando una cifra de impuestos.
   const priceText =
     typedPrice ??
-    (suggestedPrice !== null
-      ? formatDecimalInput(Number(suggestedPrice.toFixed(6)), decimalSeparator)
-      : "");
+    (suggestedPrice !== null ? formatDecimalInput(Number(suggestedPrice.toFixed(6)), decimalSeparator) : "");
 
   const quantityNum = parseDecimalInput(quantity) ?? Number.NaN;
   const priceNum = parseDecimalInput(priceText) ?? Number.NaN;
@@ -104,9 +102,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
 
   // Ganancia llevada a euros para poder aplicar `IRPF_AHORRO`. `null` = no convertible.
   const gainInEur =
-    simulation && !simulation.insufficient
-      ? convertCurrency(simulation.gain, currency, TAX_CURRENCY, rates)
-      : null;
+    simulation && !simulation.insufficient ? convertCurrency(simulation.gain, currency, TAX_CURRENCY, rates) : null;
   const tax = gainInEur !== null ? estimateSavingsTax(gainInEur) : null;
 
   const showResults = simulation !== null && !simulation.insufficient;
@@ -138,9 +134,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
             onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
             className={inputClass}
           />
-          <p className="text-xs text-muted">
-            {t("available", { quantity: formatQuantity(position.quantity) })}
-          </p>
+          <p className="text-xs text-muted">{t("available", { quantity: formatQuantity(position.quantity) })}</p>
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -206,9 +200,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
               </dd>
             </div>
             <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">
-                {simulation.gain < 0 ? t("loss") : t("gain")}
-              </dt>
+              <dt className="text-sm text-muted">{simulation.gain < 0 ? t("loss") : t("gain")}</dt>
               <dd className={`text-lg font-semibold tabular-nums ${gainColor}`}>
                 {simulation.gain > 0 ? "+" : ""}
                 {formatCurrency(simulation.gain, currency)}
@@ -217,9 +209,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
           </dl>
 
           {tax === null ? (
-            <p className="text-sm text-warning">
-              {t("taxNotConvertible", { from: currency, to: TAX_CURRENCY })}
-            </p>
+            <p className="text-sm text-warning">{t("taxNotConvertible", { from: currency, to: TAX_CURRENCY })}</p>
           ) : (
             <dl className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-surface-2 p-4 @lg:grid-cols-3">
               <div className="flex flex-col gap-1">
@@ -233,9 +223,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
                 <dd className="text-lg font-semibold tabular-nums text-foreground">
                   {formatCurrency(tax.tax, TAX_CURRENCY)}
                   {tax.effectiveRate !== null && (
-                    <span className="ml-1.5 text-sm font-medium text-muted">
-                      ({formatPercent(tax.effectiveRate)})
-                    </span>
+                    <span className="ml-1.5 text-sm font-medium text-muted">({formatPercent(tax.effectiveRate)})</span>
                   )}
                 </dd>
               </div>
@@ -251,9 +239,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
           {simulation.matched.length > 0 && (
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full min-w-[34rem] text-left text-sm">
-                <caption className="px-3 pt-3 text-left text-xs text-muted">
-                  {t("fifoCaption")}
-                </caption>
+                <caption className="px-3 pt-3 text-left text-xs text-muted">{t("fifoCaption")}</caption>
                 <thead>
                   <tr className="border-b border-border text-muted">
                     <th scope="col" className="px-3 py-2 font-medium">
@@ -290,11 +276,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
                       </td>
                       <td
                         className={`px-3 py-2 text-right tabular-nums ${
-                          match.gain > 0
-                            ? "text-success"
-                            : match.gain < 0
-                              ? "text-danger"
-                              : "text-foreground"
+                          match.gain > 0 ? "text-success" : match.gain < 0 ? "text-danger" : "text-foreground"
                         }`}
                       >
                         {match.gain > 0 ? "+" : ""}

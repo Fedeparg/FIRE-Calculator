@@ -2,11 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import {
-  KINSHIP_GROUPS,
-  computeGiftTax,
-  type KinshipGroup,
-} from "@sextante/core/calculators/impuesto-donaciones";
+import { KINSHIP_GROUPS, computeGiftTax, type KinshipGroup } from "@sextante/core/calculators/impuesto-donaciones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -37,7 +33,13 @@ export default function GiftTaxCalculator() {
       inputs={
         <>
           <NumberField label={t("amount")} value={amount} onChange={setAmount} step={5000} help={t("help.amount")} />
-          <NumberField label={t("reduction")} value={reduction} onChange={setReduction} step={1000} help={t("help.reduction")} />
+          <NumberField
+            label={t("reduction")}
+            value={reduction}
+            onChange={setReduction}
+            step={1000}
+            help={t("help.reduction")}
+          />
           <SelectField
             label={t("kinship")}
             value={kinship}
@@ -49,8 +51,23 @@ export default function GiftTaxCalculator() {
             ]}
             help={t("help.kinship")}
           />
-          <NumberField label={t("preexistingWealth")} value={preexistingWealth} onChange={setPreexistingWealth} min={0} step={10000} help={t("help.preexistingWealth")} />
-          <NumberField label={t("regionalRebate")} value={regionalRebate} onChange={setRegionalRebate} min={0} max={100} step={5} help={t("help.regionalRebate")} />
+          <NumberField
+            label={t("preexistingWealth")}
+            value={preexistingWealth}
+            onChange={setPreexistingWealth}
+            min={0}
+            step={10000}
+            help={t("help.preexistingWealth")}
+          />
+          <NumberField
+            label={t("regionalRebate")}
+            value={regionalRebate}
+            onChange={setRegionalRebate}
+            min={0}
+            max={100}
+            step={5}
+            help={t("help.regionalRebate")}
+          />
         </>
       }
       results={

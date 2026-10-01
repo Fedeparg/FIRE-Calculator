@@ -7,14 +7,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import {
-  loginTokens,
-  mcpAuditLog,
-  oauthAuthCodes,
-  oauthClients,
-  oauthGrants,
-  oauthTokens,
-} from '../db/schema.js';
+import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { OAuthReaper } from './oauth-reaper.js';
 
@@ -155,10 +148,7 @@ describe('OAuthReaper (integración con Postgres)', () => {
 
       expect(summary.loginTokens).toBe(2);
       const remaining = await db.select({ hash: loginTokens.tokenHash }).from(loginTokens);
-      expect(remaining.map((r) => r.hash).sort()).toEqual([
-        'antiguo-pero-vigente',
-        'reciente-consumido',
-      ]);
+      expect(remaining.map((r) => r.hash).sort()).toEqual(['antiguo-pero-vigente', 'reciente-consumido']);
     });
 
     it('respeta LOGIN_TOKEN_RETENTION_DAYS', async () => {
@@ -222,9 +212,7 @@ describe('OAuthReaper (integración con Postgres)', () => {
     it('NUNCA borra un cliente con un consentimiento vivo, por antiguo que sea', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('con-grant', { createdAt: daysAgo(400) });
-      await db
-        .insert(oauthGrants)
-        .values({ userId, clientId: 'con-grant', scopes: ['portfolio:read'] });
+      await db.insert(oauthGrants).values({ userId, clientId: 'con-grant', scopes: ['portfolio:read'] });
 
       const summary = await reaper().run();
 

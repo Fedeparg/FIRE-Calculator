@@ -4,13 +4,7 @@
 
 export type Frequency = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
 
-export const FREQUENCIES: Frequency[] = [
-  "weekly",
-  "monthly",
-  "quarterly",
-  "semiannual",
-  "annual",
-];
+export const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "semiannual", "annual"];
 
 export const PERIODS_PER_YEAR: Record<Frequency, number> = {
   weekly: 52,
@@ -90,7 +84,7 @@ export function project(input: ProjectionInput): ProjectionResult {
   // interés. Así, si la rentabilidad neta iguala a la inflación, el valor real se
   // mantiene exactamente constante (sin ganancias ni pérdidas fantasma por
   // mezclar capitalización mensual con descuento anual).
-  const inflationPeriodRate = (Math.max(0, input.inflationRate || 0) / 100) / periodsPerYear;
+  const inflationPeriodRate = Math.max(0, input.inflationRate || 0) / 100 / periodsPerYear;
 
   const series: ProjectionPoint[] = [
     { year: 0, contributed: initial, interest: 0, value: initial, realValue: initial },

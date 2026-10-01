@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
@@ -138,17 +132,11 @@ export class PositionsService {
    * La divisa de la compra debe coincidir con la de la posición (no tiene sentido
    * promediar un precio en EUR con otro en USD) → 400 si difieren.
    */
-  async combine(
-    userId: string,
-    id: string,
-    dto: CombinePositionDto,
-  ): Promise<PositionResponse> {
+  async combine(userId: string, id: string, dto: CombinePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
 
     if (dto.currency && dto.currency !== current.currency) {
-      throw new BadRequestException(
-        'No se pueden combinar posiciones en distinta divisa',
-      );
+      throw new BadRequestException('No se pueden combinar posiciones en distinta divisa');
     }
 
     const row = await this.db.transaction(async (tx) => {
@@ -172,16 +160,11 @@ export class PositionsService {
    * Actualiza una posición del usuario (edición manual). Si el cambio de `ticker`/`broker`
    * chocaría con OTRA posición del usuario (excluyendo la propia), lanza 409.
    */
-  async update(
-    userId: string,
-    id: string,
-    dto: UpdatePositionDto,
-  ): Promise<PositionResponse> {
+  async update(userId: string, id: string, dto: UpdatePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
 
     const ticker = dto.ticker !== undefined ? this.normalizeTicker(dto.ticker) : current.ticker;
-    const broker =
-      dto.broker !== undefined ? (dto.broker.trim() || '') : (current.broker ?? '');
+    const broker = dto.broker !== undefined ? dto.broker.trim() || '' : (current.broker ?? '');
 
     const tickerChanged = ticker !== current.ticker;
     const brokerChanged = broker.toLowerCase() !== (current.broker ?? '').toLowerCase();
@@ -310,11 +293,7 @@ export class PositionsService {
   }
 
   /** ¿El usuario ya tiene alguna posición de este símbolo (cualquier bróker)? */
-  private async symbolExists(
-    userId: string,
-    ticker: string,
-    excludeId?: string,
-  ): Promise<boolean> {
+  private async symbolExists(userId: string, ticker: string, excludeId?: string): Promise<boolean> {
     const conditions = [eq(positions.userId, userId), eq(positions.ticker, ticker)];
     if (excludeId) {
       conditions.push(ne(positions.id, excludeId));

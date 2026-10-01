@@ -13,10 +13,7 @@ export default function Header() {
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3">
         <Link href="/" className="order-1 flex items-center gap-2 font-semibold">
-          <span
-            aria-hidden
-            className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-fg"
-          >
+          <span aria-hidden className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-fg">
             <BrandCompass className="h-5 w-5" />
           </span>
           <span className="text-foreground">{t("title")}</span>

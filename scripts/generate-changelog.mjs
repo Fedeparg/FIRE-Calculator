@@ -17,11 +17,11 @@
 // Convención: los mensajes de commit siguen conventional-commits en castellano
 // (`feat(portfolio): …`). El tipo determina la categoría que pinta la página.
 
-import { execFileSync } from 'node:child_process';
-import fs from 'node:fs';
-import path from 'node:path';
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
-const OUTPUT = path.join(process.cwd(), 'content', 'changelog', 'releases.json');
+const OUTPUT = path.join(process.cwd(), "content", "changelog", "releases.json");
 
 /**
  * Tipos de conventional-commit que SÍ le importan a alguien que usa la web, y a
@@ -31,49 +31,43 @@ const OUTPUT = path.join(process.cwd(), 'content', 'changelog', 'releases.json')
  * enterrar las novedades de verdad entre fontanería.
  */
 const CATEGORY_BY_TYPE = {
-  feat: 'feature',
-  fix: 'fix',
-  perf: 'performance',
-  release: 'milestone',
-  seguridad: 'security',
+  feat: "feature",
+  fix: "fix",
+  perf: "performance",
+  release: "milestone",
+  seguridad: "security",
 };
 
 /** Ámbitos que denotan seguridad aunque el tipo sea `fix`. */
-const SECURITY_SCOPES = new Set(['seguridad', 'security', 'hardening', 'backup', 'docker']);
+const SECURITY_SCOPES = new Set(["seguridad", "security", "hardening", "backup", "docker"]);
 
 /** Commits de fontanería del repositorio que no aportan nada al lector. */
-const INTERNAL_TYPES = new Set(['chore', 'docs', 'test', 'refactor', 'ci', 'build', 'style']);
+const INTERNAL_TYPES = new Set(["chore", "docs", "test", "refactor", "ci", "build", "style"]);
 
 function git(args) {
-  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
+  return execFileSync("git", args, { encoding: "utf8", maxBuffer: 32 * 1024 * 1024 });
 }
 
 /** Un commit del histórico, ya troceado. */
 function parseCommit(line) {
-  const [hash, date, subject] = line.split('\x1f');
+  const [hash, date, subject] = line.split("\x1f");
   const match = /^(\w+)(?:\(([^)]+)\))?!?:\s*(.+)$/.exec(subject);
   if (!match) return { hash, date, type: null, scope: null, title: subject };
   return { hash, date, type: match[1].toLowerCase(), scope: match[2] ?? null, title: match[3] };
 }
 
 function categoryFor({ type, scope }) {
-  if (scope && SECURITY_SCOPES.has(scope.toLowerCase()) && type === 'fix') return 'security';
+  if (scope && SECURITY_SCOPES.has(scope.toLowerCase()) && type === "fix") return "security";
   if (type && CATEGORY_BY_TYPE[type]) return CATEGORY_BY_TYPE[type];
-  if (type && INTERNAL_TYPES.has(type)) return 'internal';
-  return 'internal';
+  if (type && INTERNAL_TYPES.has(type)) return "internal";
+  return "internal";
 }
 
 // Se lee la rama ACTUAL, no `main` fijo: el changelog se redacta en la misma rama
 // que trae los cambios, antes de fusionar, para que la entrega salga publicada a la
 // vez que el código que describe. Con `main` fijo, lo escrito en una rama no se veía.
-const commits = git([
-  'log',
-  '--no-merges',
-  '--date=short',
-  '--pretty=format:%H\x1f%ad\x1f%s',
-  'HEAD',
-])
-  .split('\n')
+const commits = git(["log", "--no-merges", "--date=short", "--pretty=format:%H\x1f%ad\x1f%s", "HEAD"])
+  .split("\n")
   .filter(Boolean)
   .map(parseCommit)
   // "Initial commit" no dice nada a nadie.
@@ -89,9 +83,7 @@ for (const commit of commits) {
 }
 
 /** Lo ya curado a mano, indexado por hash, para no perderlo al regenerar. */
-const previous = fs.existsSync(OUTPUT)
-  ? JSON.parse(fs.readFileSync(OUTPUT, 'utf8'))
-  : { releases: [] };
+const previous = fs.existsSync(OUTPUT) ? JSON.parse(fs.readFileSync(OUTPUT, "utf8")) : { releases: [] };
 const curatedEntries = new Map();
 const curatedReleases = new Map();
 for (const release of previous.releases ?? []) {
@@ -107,8 +99,8 @@ const releases = [...byDate.entries()]
       date,
       // Titular y resumen de la entrega: se escriben a mano (el script no inventa
       // prosa). Quedan vacíos hasta que alguien los rellene, y `--check` avisa.
-      title: previousRelease.title ?? { es: '', en: '' },
-      summary: previousRelease.summary ?? { es: '', en: '' },
+      title: previousRelease.title ?? { es: "", en: "" },
+      summary: previousRelease.summary ?? { es: "", en: "" },
       highlight: previousRelease.highlight ?? false,
       entries: items.map((commit) => {
         // OJO: el índice se construye con los hashes YA ACORTADOS que guarda el
@@ -125,7 +117,7 @@ const releases = [...byDate.entries()]
           // `es` sale del mensaje de commit; `en` se traduce a mano una sola vez.
           text: {
             es: curated.text?.es ?? commit.title,
-            en: curated.text?.en ?? '',
+            en: curated.text?.en ?? "",
           },
           hidden: curated.hidden ?? false,
         };
@@ -133,9 +125,9 @@ const releases = [...byDate.entries()]
     };
   });
 
-const output = { generatedFrom: 'git log HEAD', releases };
+const output = { generatedFrom: "git log HEAD", releases };
 
-if (process.argv.includes('--check')) {
+if (process.argv.includes("--check")) {
   const missing = [];
   for (const release of releases) {
     if (!release.title.es || !release.title.en) missing.push(`${release.date}: falta el título`);
@@ -144,7 +136,7 @@ if (process.argv.includes('--check')) {
     }
   }
   if (missing.length) {
-    console.error('Changelog incompleto:\n  ' + missing.join('\n  '));
+    console.error("Changelog incompleto:\n  " + missing.join("\n  "));
     process.exit(1);
   }
   console.log(`Changelog completo: ${releases.length} entregas, ${commits.length} cambios.`);
@@ -152,7 +144,5 @@ if (process.argv.includes('--check')) {
 }
 
 fs.mkdirSync(path.dirname(OUTPUT), { recursive: true });
-fs.writeFileSync(OUTPUT, JSON.stringify(output, null, 2) + '\n');
-console.log(
-  `Escrito ${path.relative(process.cwd(), OUTPUT)}: ${releases.length} entregas, ${commits.length} cambios.`,
-);
+fs.writeFileSync(OUTPUT, JSON.stringify(output, null, 2) + "\n");
+console.log(`Escrito ${path.relative(process.cwd(), OUTPUT)}: ${releases.length} entregas, ${commits.length} cambios.`);

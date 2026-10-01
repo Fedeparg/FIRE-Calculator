@@ -37,7 +37,14 @@ describe("computeDividends", () => {
 
   // Valores por defecto de la calculadora (ver explainer).
   it("golden: defaults 100 acc., 1,50 €, precio 50 €, 19%, +5%/año, 10 años", () => {
-    const r = computeDividends({ shares: 100, dividendPerShare: 1.5, sharePrice: 50, withholdingRate: 19, annualGrowth: 5, years: 10 });
+    const r = computeDividends({
+      shares: 100,
+      dividendPerShare: 1.5,
+      sharePrice: 50,
+      withholdingRate: 19,
+      annualGrowth: 5,
+      years: 10,
+    });
     expect(r.gross).toBe(150);
     expect(r.withheld).toBeCloseTo(28.5, 6);
     expect(r.net).toBeCloseTo(121.5, 6);

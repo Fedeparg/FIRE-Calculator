@@ -320,18 +320,13 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         targetAmount: shown.targetAmount,
         targetYears,
       };
-      const res = await fetch(
-        updating ? `/api/scenarios/${loaded.id}` : "/api/scenarios",
-        {
-          method: updating ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            updating
-              ? { name: trimmed, inputs }
-              : { slug: FIRE_CALCULATOR_SLUG, name: trimmed, inputs },
-          ),
-        },
-      );
+      const res = await fetch(updating ? `/api/scenarios/${loaded.id}` : "/api/scenarios", {
+        method: updating ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          updating ? { name: trimmed, inputs } : { slug: FIRE_CALCULATOR_SLUG, name: trimmed, inputs },
+        ),
+      });
       if (!res.ok) {
         setErrorKey(await scenarioErrorKeyForResponse(res));
         return;
@@ -471,9 +466,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted">{t("progressAria")}</span>
-            <span className="font-semibold tabular-nums text-foreground">
-              {formatPercent(goal.progress)}
-            </span>
+            <span className="font-semibold tabular-nums text-foreground">{formatPercent(goal.progress)}</span>
           </div>
           <div
             role="progressbar"
@@ -487,10 +480,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
             aria-valuetext={t("progressValue", { percent: formatPercent(goal.progress) })}
             className="h-3 w-full overflow-hidden rounded-full bg-surface-2"
           >
-            <div
-              className="h-full rounded-full bg-brand transition-[width]"
-              style={{ width: `${goal.progress}%` }}
-            />
+            <div className="h-full rounded-full bg-brand transition-[width]" style={{ width: `${goal.progress}%` }} />
           </div>
         </div>
       )}
@@ -516,10 +506,10 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         <p>{t("currencyHint", { currency: display })}</p>
         {shown.note && (
           <p className={shown.note.kind === "notConvertible" ? "text-warning" : undefined}>
-            {t(
-              shown.note.kind === "converted" ? "currencyConverted" : "currencyNotConvertible",
-              { from: shown.note.from, to: shown.note.to },
-            )}
+            {t(shown.note.kind === "converted" ? "currencyConverted" : "currencyNotConvertible", {
+              from: shown.note.from,
+              to: shown.note.to,
+            })}
           </p>
         )}
       </div>

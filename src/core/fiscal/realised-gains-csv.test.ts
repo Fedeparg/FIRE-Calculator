@@ -11,9 +11,8 @@ const lots: TradeLot[] = [
   { id: "2", kind: "sell", quantity: 2, price: 12.5, fees: 0.5, tradedAt: "2024-05-02" },
 ];
 
-const year = buildRealisedGainsReport([
-  { id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots },
-]).years[0];
+const year = buildRealisedGainsReport([{ id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots }])
+  .years[0];
 
 describe("buildRealisedGainsCsv", () => {
   it("una fila por venta, con el dialecto español", () => {

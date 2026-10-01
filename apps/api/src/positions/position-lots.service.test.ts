@@ -2,12 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
-import {
-  BadRequestException,
-  ConflictException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -79,10 +74,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
    * que sin esto los tests que añaden lotes con fechas fijas dependerían de la fecha del
    * sistema (una venta anterior a la compra daría, con razón, cantidad negativa).
    */
-  async function createBackdated(
-    userId: string,
-    partial: Partial<CreatePositionDto> & { ticker: string },
-  ) {
+  async function createBackdated(userId: string, partial: Partial<CreatePositionDto> & { ticker: string }) {
     const position = await service.create(userId, dto(partial));
     const [initial] = await lots.listByPosition(userId, position.id);
     await lots.update(userId, position.id, initial.id, { tradedAt: START_DATE });
@@ -107,10 +99,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
 
       await db.execute(sql.raw(readBackfillStatement()));
 
-      const rows = await db
-        .select()
-        .from(positionLots)
-        .where(eq(positionLots.positionId, existing.id));
+      const rows = await db.select().from(positionLots).where(eq(positionLots.positionId, existing.id));
 
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({
@@ -132,9 +121,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
 
     it('es idempotente: reejecutarlo no duplica lotes', async () => {
       const userId = await insertUser(db, 'a@example.com');
-      await db
-        .insert(positions)
-        .values({ userId, ticker: 'VWCE', quantity: '3', avgPrice: '110', currency: 'EUR' });
+      await db.insert(positions).values({ userId, ticker: 'VWCE', quantity: '3', avgPrice: '110', currency: 'EUR' });
 
       const backfill = readBackfillStatement();
       await db.execute(sql.raw(backfill));
@@ -389,9 +376,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const userB = await insertUser(db, 'b@example.com');
       const position = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(lots.listByPosition(userB, position.id)).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(lots.listByPosition(userB, position.id)).rejects.toBeInstanceOf(ForbiddenException);
       await expect(
         lots.create(userB, position.id, {
           kind: 'buy',
@@ -408,16 +393,12 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const second = await service.create(userId, dto({ ticker: 'VWCE' }));
       const [foreignLot] = await lots.listByPosition(userId, second.id);
 
-      await expect(
-        lots.remove(userId, first.id, foreignLot.id),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(lots.remove(userId, first.id, foreignLot.id)).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('una posición inexistente da 404', async () => {
       const userId = await insertUser(db, 'a@example.com');
-      await expect(lots.listByPosition(userId, randomUUID())).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(lots.listByPosition(userId, randomUUID())).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 

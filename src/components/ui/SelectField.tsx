@@ -24,13 +24,7 @@ type Props<T extends string> = {
  * (`Frequency`, `ContractType`…) viajan con seguridad de tipos extremo a extremo
  * y no hacen falta casts en quien lo usa.
  */
-export default function SelectField<T extends string = string>({
-  label,
-  value,
-  options,
-  onChange,
-  help,
-}: Props<T>) {
+export default function SelectField<T extends string = string>({ label, value, options, onChange, help }: Props<T>) {
   const id = useId();
 
   return (

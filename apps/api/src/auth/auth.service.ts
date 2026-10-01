@@ -16,18 +16,9 @@ import {
   HISTORY_MAX_DAYS,
   type PortfolioHistoryPoint,
 } from '../portfolio/portfolio-snapshots.service.js';
-import {
-  PositionLotsService,
-  type PositionLotResponse,
-} from '../positions/position-lots.service.js';
-import {
-  PositionsService,
-  type PositionResponse,
-} from '../positions/positions.service.js';
-import {
-  SavedScenariosService,
-  type SavedScenarioResponse,
-} from '../scenarios/saved-scenarios.service.js';
+import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
+import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
+import { SavedScenariosService, type SavedScenarioResponse } from '../scenarios/saved-scenarios.service.js';
 
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos

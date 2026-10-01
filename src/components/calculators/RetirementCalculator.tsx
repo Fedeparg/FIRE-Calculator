@@ -38,7 +38,16 @@ export default function RetirementCalculator() {
         annualFee,
         contributionGrowth,
       }),
-    [currentAge, retirementAge, currentSavings, monthlySavings, annualReturn, inflationRate, annualFee, contributionGrowth],
+    [
+      currentAge,
+      retirementAge,
+      currentSavings,
+      monthlySavings,
+      annualReturn,
+      inflationRate,
+      annualFee,
+      contributionGrowth,
+    ],
   );
 
   return (
@@ -47,14 +56,72 @@ export default function RetirementCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField label={t("currentAge")} value={currentAge} onChange={setCurrentAge} step={1} max={100} help={t("help.currentAge")} />
-          <NumberField label={t("retirementAge")} value={retirementAge} onChange={setRetirementAge} step={1} max={100} help={t("help.retirementAge")} />
-          <NumberField label={t("currentSavings")} value={currentSavings} onChange={setCurrentSavings} step={1000} help={t("help.currentSavings")} />
-          <NumberField label={t("monthlySavings")} value={monthlySavings} onChange={setMonthlySavings} step={50} help={t("help.monthlySavings")} />
-          <NumberField label={t("annualReturn")} value={annualReturn} onChange={setAnnualReturn} step={0.5} min={-100} max={100} help={t("help.annualReturn")} />
-          <NumberField label={t("inflationRate")} value={inflationRate} onChange={setInflationRate} step={0.1} min={0} max={100} help={t("help.inflationRate")} />
-          <NumberField label={t("annualFee")} value={annualFee} onChange={setAnnualFee} step={0.1} min={0} max={100} help={t("help.annualFee")} />
-          <NumberField label={t("contributionGrowth")} value={contributionGrowth} onChange={setContributionGrowth} step={0.5} min={0} max={100} help={t("help.contributionGrowth")} />
+          <NumberField
+            label={t("currentAge")}
+            value={currentAge}
+            onChange={setCurrentAge}
+            step={1}
+            max={100}
+            help={t("help.currentAge")}
+          />
+          <NumberField
+            label={t("retirementAge")}
+            value={retirementAge}
+            onChange={setRetirementAge}
+            step={1}
+            max={100}
+            help={t("help.retirementAge")}
+          />
+          <NumberField
+            label={t("currentSavings")}
+            value={currentSavings}
+            onChange={setCurrentSavings}
+            step={1000}
+            help={t("help.currentSavings")}
+          />
+          <NumberField
+            label={t("monthlySavings")}
+            value={monthlySavings}
+            onChange={setMonthlySavings}
+            step={50}
+            help={t("help.monthlySavings")}
+          />
+          <NumberField
+            label={t("annualReturn")}
+            value={annualReturn}
+            onChange={setAnnualReturn}
+            step={0.5}
+            min={-100}
+            max={100}
+            help={t("help.annualReturn")}
+          />
+          <NumberField
+            label={t("inflationRate")}
+            value={inflationRate}
+            onChange={setInflationRate}
+            step={0.1}
+            min={0}
+            max={100}
+            help={t("help.inflationRate")}
+          />
+          <NumberField
+            label={t("annualFee")}
+            value={annualFee}
+            onChange={setAnnualFee}
+            step={0.1}
+            min={0}
+            max={100}
+            help={t("help.annualFee")}
+          />
+          <NumberField
+            label={t("contributionGrowth")}
+            value={contributionGrowth}
+            onChange={setContributionGrowth}
+            step={0.5}
+            min={0}
+            max={100}
+            help={t("help.contributionGrowth")}
+          />
         </>
       }
       results={

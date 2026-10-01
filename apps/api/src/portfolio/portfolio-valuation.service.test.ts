@@ -8,9 +8,36 @@ import { PortfolioValuationService } from './portfolio-valuation.service.js';
  */
 function makeService() {
   const positions = [
-    { id: 'p1', ticker: 'IWDA.AS', name: 'World', quantity: 10, avgPrice: 80, broker: 'TR', currency: 'EUR', isDerivative: false },
-    { id: 'p2', ticker: 'AAPL', name: 'Apple', quantity: 1, avgPrice: 150, broker: null, currency: 'USD', isDerivative: false },
-    { id: 'p3', ticker: 'DE000KO1', name: 'Knock-out', quantity: 100, avgPrice: 1, broker: 'TR', currency: 'EUR', isDerivative: true },
+    {
+      id: 'p1',
+      ticker: 'IWDA.AS',
+      name: 'World',
+      quantity: 10,
+      avgPrice: 80,
+      broker: 'TR',
+      currency: 'EUR',
+      isDerivative: false,
+    },
+    {
+      id: 'p2',
+      ticker: 'AAPL',
+      name: 'Apple',
+      quantity: 1,
+      avgPrice: 150,
+      broker: null,
+      currency: 'USD',
+      isDerivative: false,
+    },
+    {
+      id: 'p3',
+      ticker: 'DE000KO1',
+      name: 'Knock-out',
+      quantity: 100,
+      avgPrice: 1,
+      broker: 'TR',
+      currency: 'EUR',
+      isDerivative: true,
+    },
   ];
   const prices = new Map([
     ['IWDA.AS', { close: 100, currency: 'EUR', date: '2026-10-01' }],

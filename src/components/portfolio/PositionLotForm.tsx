@@ -42,13 +42,7 @@ function todayUtc(): string {
  * y trae el calendario y la navegación por teclado del sistema, que ninguna implementación
  * propia igualaría.
  */
-export default function PositionLotForm({
-  editing,
-  currency,
-  submitting,
-  onSubmit,
-  onCancelEdit,
-}: Props) {
+export default function PositionLotForm({ editing, currency, submitting, onSubmit, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.lots");
   // Un id por instancia para poder etiquetar cada campo sin colisionar con el resto de la
   // página (hay otro formulario de posición debajo).
@@ -89,9 +83,7 @@ export default function PositionLotForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 rounded-xl border border-border bg-surface-2 p-4">
-      <h4 className="text-sm font-semibold text-foreground">
-        {editing ? t("formEditTitle") : t("formAddTitle")}
-      </h4>
+      <h4 className="text-sm font-semibold text-foreground">{editing ? t("formEditTitle") : t("formAddTitle")}</h4>
 
       <div className="grid grid-cols-1 gap-3 @xs:grid-cols-2">
         <div className="flex flex-col gap-1.5">

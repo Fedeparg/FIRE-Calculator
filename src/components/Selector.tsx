@@ -22,17 +22,17 @@ type Props = {
 // NFD separa la letra de su diacrítico; eliminamos el rango de combinantes
 // (U+0300–U+036F).
 const normalize = (s: string): string =>
-  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 
 export default function Selector({ items, categories }: Props) {
   const t = useTranslations("selector");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
 
-  const categoryLabels = useMemo(
-    () => new Map(categories.map((c) => [c.id, c.label])),
-    [categories],
-  );
+  const categoryLabels = useMemo(() => new Map(categories.map((c) => [c.id, c.label])), [categories]);
 
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
@@ -55,18 +55,9 @@ export default function Selector({ items, categories }: Props) {
       />
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <CategoryChip
-          active={category === "all"}
-          onClick={() => setCategory("all")}
-          label={t("allCategories")}
-        />
+        <CategoryChip active={category === "all"} onClick={() => setCategory("all")} label={t("allCategories")} />
         {categories.map((c) => (
-          <CategoryChip
-            key={c.id}
-            active={category === c.id}
-            onClick={() => setCategory(c.id)}
-            label={c.label}
-          />
+          <CategoryChip key={c.id} active={category === c.id} onClick={() => setCategory(c.id)} label={c.label} />
         ))}
       </div>
 
@@ -87,23 +78,13 @@ export default function Selector({ items, categories }: Props) {
   );
 }
 
-function CategoryChip({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}) {
+function CategoryChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-sm transition-colors ${
-        active
-          ? "border-brand bg-brand text-brand-fg"
-          : "border-border bg-surface text-muted hover:text-foreground"
+        active ? "border-brand bg-brand text-brand-fg" : "border-border bg-surface text-muted hover:text-foreground"
       }`}
     >
       {label}
@@ -111,38 +92,24 @@ function CategoryChip({
   );
 }
 
-function Card({
-  item,
-  categoryLabel,
-}: {
-  item: SelectorItem;
-  categoryLabel: string;
-}) {
+function Card({ item, categoryLabel }: { item: SelectorItem; categoryLabel: string }) {
   const t = useTranslations("selector");
 
   const inner = (
     <div
       className={`flex h-full flex-col rounded-xl border border-border bg-surface p-4 transition-all ${
-        item.status === "live"
-          ? "hover:-translate-y-0.5 hover:border-brand hover:shadow-sm"
-          : "opacity-60"
+        item.status === "live" ? "hover:-translate-y-0.5 hover:border-brand hover:shadow-sm" : "opacity-60"
       }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-muted">
-          {categoryLabel}
-        </span>
+        <span className="text-xs font-medium uppercase tracking-wide text-muted">{categoryLabel}</span>
         {item.status === "soon" && (
-          <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted">
-            {t("soon")}
-          </span>
+          <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted">{t("soon")}</span>
         )}
       </div>
       <h3 className="mt-2 font-semibold text-foreground">{item.name}</h3>
       <p className="mt-1 flex-1 text-sm text-muted">{item.description}</p>
-      {item.status === "live" && (
-        <span className="mt-3 text-sm font-medium text-brand">{t("open")} →</span>
-      )}
+      {item.status === "live" && <span className="mt-3 text-sm font-medium text-brand">{t("open")} →</span>}
     </div>
   );
 

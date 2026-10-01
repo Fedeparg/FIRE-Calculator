@@ -9,20 +9,9 @@ import {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
-import {
-  instrumentPrices,
-  instrumentSplitChecks,
-  instrumentSplits,
-  positionLots,
-  positions,
-} from '../db/schema.js';
+import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
 import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
-import {
-  PRICE_PROVIDER,
-  type PriceHistory,
-  type PriceProvider,
-  type Quote,
-} from './price-provider.interface.js';
+import { PRICE_PROVIDER, type PriceHistory, type PriceProvider, type Quote } from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
@@ -374,14 +363,10 @@ export class PricesService {
       if (symbol) await this.primeHistory(symbol);
 
       const fxCurrencies = new Set([currency, 'EUR']);
-      const fxPairs = [...fxCurrencies]
-        .filter((c): c is string => !!c && c !== FX_QUOTE)
-        .map(fxSymbol);
+      const fxPairs = [...fxCurrencies].filter((c): c is string => !!c && c !== FX_QUOTE).map(fxSymbol);
       await this.ensureHistory(new Map(fxPairs.map((pair) => [pair, daysAgo(HISTORY_MAX_DAYS)])));
     } catch (error) {
-      this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${
-        (error as Error).message
-      }`);
+      this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${(error as Error).message}`);
     }
   }
 
@@ -407,14 +392,16 @@ export class PricesService {
       .groupBy(instrumentPrices.symbol);
 
     const earliest = new Map(rows.map((r) => [r.symbol, r.minDate]));
-    return [...required].filter(([symbol, since]) => {
-      const minDate = earliest.get(symbol);
-      if (!minDate) return true;
-      const limit = new Date(Date.parse(`${since}T00:00:00Z`) + COVERAGE_TOLERANCE_DAYS * MS_PER_DAY)
-        .toISOString()
-        .slice(0, 10);
-      return minDate > limit;
-    }).map(([symbol]) => symbol);
+    return [...required]
+      .filter(([symbol, since]) => {
+        const minDate = earliest.get(symbol);
+        if (!minDate) return true;
+        const limit = new Date(Date.parse(`${since}T00:00:00Z`) + COVERAGE_TOLERANCE_DAYS * MS_PER_DAY)
+          .toISOString()
+          .slice(0, 10);
+        return minDate > limit;
+      })
+      .map(([symbol]) => symbol);
   }
 
   /**
@@ -423,19 +410,14 @@ export class PricesService {
    * solo para el hueco real). `alsoSymbols` se piden además de lo que falte por cobertura (p. ej.
    * los de splits sin consultar). Tolerante por símbolo: uno que falle no bloquea el resto.
    */
-  async ensureHistory(
-    required: ReadonlyMap<string, string>,
-    alsoSymbols: readonly string[] = [],
-  ): Promise<void> {
+  async ensureHistory(required: ReadonlyMap<string, string>, alsoSymbols: readonly string[] = []): Promise<void> {
     const missing = [...new Set([...(await this.symbolsNeedingHistory(required)), ...alsoSymbols])];
     for (const [i, symbol] of missing.entries()) {
       if (i > 0 && this.historyRequestDelayMs > 0) await delay(this.historyRequestDelayMs);
       try {
         await this.primeHistory(symbol);
       } catch (error) {
-        this.logger.warn(
-          `Histórico de "${symbol}" no se pudo completar: ${(error as Error).message}`,
-        );
+        this.logger.warn(`Histórico de "${symbol}" no se pudo completar: ${(error as Error).message}`);
       }
     }
   }
@@ -509,9 +491,7 @@ export class PricesService {
       await this.upsertQuoteList(quotes);
       await this.upsertSplits(splits);
       await this.markSplitsChecked(symbol);
-      this.logger.log(
-        `Histórico de ${symbol}: ${quotes.length} cierres y ${splits.length} splits cacheados`,
-      );
+      this.logger.log(`Histórico de ${symbol}: ${quotes.length} cierres y ${splits.length} splits cacheados`);
       return;
     }
     await this.upsertQuotes(await this.provider.getQuotes([symbol]));

@@ -152,10 +152,7 @@ describe("simulatePortfolioGoal", () => {
   });
 
   it("sin aportación ni rentabilidad no se llega nunca", () => {
-    const result = simulatePortfolioGoal(
-      { ...SIM, contribution: 0, annualReturn: 0, volatility: 0 },
-      { paths: 50 },
-    );
+    const result = simulatePortfolioGoal({ ...SIM, contribution: 0, annualReturn: 0, volatility: 0 }, { paths: 50 });
 
     expect(result.reachRate).toBe(0);
     expect(result.successRate).toBe(0);

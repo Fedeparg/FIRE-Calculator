@@ -64,7 +64,16 @@ export default function PortfolioGoalSimulation({
         volatility,
         retirementYears,
       }),
-      [annualExpenses, contribution, frequency, withdrawalRate, annualReturn, currentValue, volatility, retirementYears],
+      [
+        annualExpenses,
+        contribution,
+        frequency,
+        withdrawalRate,
+        annualReturn,
+        currentValue,
+        volatility,
+        retirementYears,
+      ],
     ),
   );
   const result = useMemo(() => simulatePortfolioGoal(inputs), [inputs]);
@@ -89,7 +98,16 @@ export default function PortfolioGoalSimulation({
       retirementYears: encodeFieldValue(retirementYears),
     });
     return `/calculadoras/simulador-montecarlo?${params.toString()}`;
-  }, [annualExpenses, currentValue, contribution, frequency, annualReturn, volatility, withdrawalRate, retirementYears]);
+  }, [
+    annualExpenses,
+    currentValue,
+    contribution,
+    frequency,
+    annualReturn,
+    volatility,
+    withdrawalRate,
+    retirementYears,
+  ]);
 
   return (
     <div className="flex flex-col gap-4 border-t border-border pt-4">
@@ -125,8 +143,7 @@ export default function PortfolioGoalSimulation({
       </div>
 
       <p className="text-xs text-muted">
-        {p10 !== null && t("range", { fast: yearsLabel(p10), slow: yearsLabel(p90) })}{" "}
-        {t("assumptions")}{" "}
+        {p10 !== null && t("range", { fast: yearsLabel(p10), slow: yearsLabel(p90) })} {t("assumptions")}{" "}
         <Link href={simulatorHref} className="font-medium text-brand underline underline-offset-2">
           {t("openSimulator")}
         </Link>

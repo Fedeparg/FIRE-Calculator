@@ -11,7 +11,12 @@ export const revalidate = 3600;
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "calc.que-hipoteca-me-puedo-permitir" });
-  return calculatorMetadata({ locale, slug: "que-hipoteca-me-puedo-permitir", title: t("title"), description: t("intro") });
+  return calculatorMetadata({
+    locale,
+    slug: "que-hipoteca-me-puedo-permitir",
+    title: t("title"),
+    description: t("intro"),
+  });
 }
 
 export default async function Page({ params }: Props) {

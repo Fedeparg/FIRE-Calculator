@@ -77,7 +77,11 @@ describe('FireAlertsService (integración con Postgres)', () => {
     return userId;
   }
 
-  async function snapshot(userId: string, marketValueEur: number, extra: Partial<typeof portfolioSnapshots.$inferInsert> = {}) {
+  async function snapshot(
+    userId: string,
+    marketValueEur: number,
+    extra: Partial<typeof portfolioSnapshots.$inferInsert> = {},
+  ) {
     await db.insert(portfolioSnapshots).values({
       userId,
       date: DATE,

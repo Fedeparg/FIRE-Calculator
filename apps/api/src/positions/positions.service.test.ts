@@ -1,10 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import {
-  ForbiddenException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -34,7 +30,12 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(db, pricesStub, new PositionLotsService(db, new EventEmitter2()), new EventEmitter2());
+    service = new PositionsService(
+      db,
+      pricesStub,
+      new PositionLotsService(db, new EventEmitter2()),
+      new EventEmitter2(),
+    );
   });
 
   afterEach(async () => {
@@ -78,16 +79,12 @@ describe('PositionsService (integración con Postgres)', () => {
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(
-        service.update(userB, a.id, { quantity: 999 }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(ForbiddenException);
     });
 
     it('borrar/actualizar una posición inexistente da 404', async () => {
       const userA = await insertUser(db, 'a@example.com');
-      await expect(service.remove(userA, randomUUID())).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.remove(userA, randomUUID())).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
@@ -105,9 +102,9 @@ describe('PositionsService (integración con Postgres)', () => {
       const user = await insertUser(db, 'a@example.com');
       await service.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' }));
 
-      await expect(
-        service.create(user, dto({ ticker: 'IWDA', broker: 'degiro' })),
-      ).rejects.toMatchObject({ response: { code: 'DUPLICATE' } });
+      await expect(service.create(user, dto({ ticker: 'IWDA', broker: 'degiro' }))).rejects.toMatchObject({
+        response: { code: 'DUPLICATE' },
+      });
     });
 
     it('permite el mismo símbolo en brókers distintos', async () => {
@@ -132,9 +129,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   it('traduce una violación de FK (usuario inexistente) a 401, no 500', async () => {
     // JWT con firma válida pero `sub` que ya no existe en BD.
-    await expect(
-      service.create(randomUUID(), dto({ ticker: 'IWDA' })),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(service.create(randomUUID(), dto({ ticker: 'IWDA' }))).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('editar cantidad o precio medio emite LOT_CHANGED_EVENT (los lotes se realinean)', async () => {

@@ -1,11 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import {
-  REGION_CODES,
-  UNSUPPORTED_REGIONS,
-  type RegionSelection,
-} from "@sextante/core/fiscal/regions";
+import { REGION_CODES, UNSUPPORTED_REGIONS, type RegionSelection } from "@sextante/core/fiscal/regions";
 import SelectField from "../ui/SelectField";
 
 type Props = {

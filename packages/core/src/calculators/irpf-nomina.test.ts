@@ -37,9 +37,6 @@ describe("computePayrollWithholding", () => {
 
   it("neto = bruto − SS − IRPF por paga", () => {
     const r = computePayrollWithholding({ grossAnnual: 28000, payments: 12 });
-    expect(r.netPerPayment).toBeCloseTo(
-      r.grossPerPayment - r.socialSecurityPerPayment - r.withholdingPerPayment,
-      4,
-    );
+    expect(r.netPerPayment).toBeCloseTo(r.grossPerPayment - r.socialSecurityPerPayment - r.withholdingPerPayment, 4);
   });
 });

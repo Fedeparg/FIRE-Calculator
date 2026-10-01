@@ -104,13 +104,7 @@ const CATEGORY_ICONS: Record<ChangelogCategory, (props: IconProps) => React.Reac
 };
 
 /** Icono de una categoría de cambio. Decorativo: el texto de la etiqueta va aparte. */
-export function CategoryIcon({
-  category,
-  className,
-}: {
-  category: ChangelogCategory;
-  className?: string;
-}) {
+export function CategoryIcon({ category, className }: { category: ChangelogCategory; className?: string }) {
   const Icon = CATEGORY_ICONS[category];
   return <Icon className={className} />;
 }
@@ -119,16 +113,8 @@ export function CategoryIcon({
 export function SparkleIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
-      <path
-        d="M12 2.2l2.1 6 6 2.1-6 2.1-2.1 6-2.1-6-6-2.1 6-2.1z"
-        fill="currentColor"
-        stroke="none"
-      />
-      <path
-        d="M18.8 15.4l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8z"
-        fill="currentColor"
-        stroke="none"
-      />
+      <path d="M12 2.2l2.1 6 6 2.1-6 2.1-2.1 6-2.1-6-6-2.1 6-2.1z" fill="currentColor" stroke="none" />
+      <path d="M18.8 15.4l.8 2.3 2.3.8-2.3.8-.8 2.3-.8-2.3-2.3-.8 2.3-.8z" fill="currentColor" stroke="none" />
     </Svg>
   );
 }

@@ -15,7 +15,9 @@ const RATES = { USD: 1, EUR: 1.1 };
 
 describe("valuePosition", () => {
   it("valora en la divisa de la posición cuando el precio va en la misma", () => {
-    expect(valuePosition({ quantity: 10, avgPrice: 80, currency: "EUR" }, { close: 90, currency: "EUR" }, RATES)).toEqual({
+    expect(
+      valuePosition({ quantity: 10, avgPrice: 80, currency: "EUR" }, { close: 90, currency: "EUR" }, RATES),
+    ).toEqual({
       invested: 800,
       marketValue: 900,
       pnlAbs: 100,
@@ -24,14 +26,23 @@ describe("valuePosition", () => {
   });
 
   it("convierte un precio en otra divisa a la de la posición", () => {
-    const result = valuePosition({ quantity: 1, avgPrice: 100, currency: "EUR" }, { close: 110, currency: "USD" }, RATES);
+    const result = valuePosition(
+      { quantity: 1, avgPrice: 100, currency: "EUR" },
+      { close: 110, currency: "USD" },
+      RATES,
+    );
     expect(result.marketValue).toBeCloseTo(100, 10);
     expect(result.pnlAbs).toBeCloseTo(0, 10);
   });
 
   it("deja sin valorar si no hay precio o falta la tasa", () => {
     const position = { quantity: 1, avgPrice: 100, currency: "EUR" };
-    expect(valuePosition(position, undefined, RATES)).toEqual({ invested: 100, marketValue: null, pnlAbs: null, pnlPct: null });
+    expect(valuePosition(position, undefined, RATES)).toEqual({
+      invested: 100,
+      marketValue: null,
+      pnlAbs: null,
+      pnlPct: null,
+    });
     expect(valuePosition(position, { close: 5, currency: "JPY" }, RATES).marketValue).toBeNull();
   });
 
@@ -92,7 +103,11 @@ describe("dailyMovers", () => {
   it("ordena por variación absoluta y respeta el límite", () => {
     const moves = dailyMovers(
       [mover("A", "A"), mover("B", "B"), mover("C", "C")],
-      { A: { close: 101, previousClose: 100 }, B: { close: 95, previousClose: 100 }, C: { close: 102, previousClose: 100 } },
+      {
+        A: { close: 101, previousClose: 100 },
+        B: { close: 95, previousClose: 100 },
+        C: { close: 102, previousClose: 100 },
+      },
       2,
     );
     expect(moves.map((m) => [m.id, Math.round(m.changePct)])).toEqual([
@@ -103,7 +118,12 @@ describe("dailyMovers", () => {
 
   it("deja fuera cerradas, derivados y precios sin cierre anterior válido", () => {
     const moves = dailyMovers(
-      [mover("closed", "X", { quantity: 0 }), mover("der", "Y", { isDerivative: true }), mover("first", "Z"), mover("zero", "W")],
+      [
+        mover("closed", "X", { quantity: 0 }),
+        mover("der", "Y", { isDerivative: true }),
+        mover("first", "Z"),
+        mover("zero", "W"),
+      ],
       {
         X: { close: 2, previousClose: 1 },
         Y: { close: 2, previousClose: 1 },

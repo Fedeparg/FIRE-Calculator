@@ -35,7 +35,8 @@ const INTL_LOCALE: Record<EmailLocale, string> = { es: 'es-ES', en: 'en-GB' };
 
 const COPY = {
   es: {
-    subject: (m: number) => (m >= 100 ? 'Tu cartera ha alcanzado tu objetivo FIRE' : `Tu cartera ha llegado al ${m} % de tu objetivo FIRE`),
+    subject: (m: number) =>
+      m >= 100 ? 'Tu cartera ha alcanzado tu objetivo FIRE' : `Tu cartera ha llegado al ${m} % de tu objetivo FIRE`,
     heading: (m: number) => (m >= 100 ? 'Has alcanzado tu objetivo' : `Has llegado al ${m} % de tu objetivo`),
     body: (value: string, target: string) =>
       `Según la valoración de esta noche, tu cartera suma ${value}, frente a un objetivo de independencia financiera de ${target}.`,
@@ -46,7 +47,8 @@ const COPY = {
     unsubscribe: 'Dejar de recibir estos avisos',
   },
   en: {
-    subject: (m: number) => (m >= 100 ? 'Your portfolio has reached your FIRE goal' : `Your portfolio has reached ${m}% of your FIRE goal`),
+    subject: (m: number) =>
+      m >= 100 ? 'Your portfolio has reached your FIRE goal' : `Your portfolio has reached ${m}% of your FIRE goal`,
     heading: (m: number) => (m >= 100 ? 'You have reached your goal' : `You have reached ${m}% of your goal`),
     body: (value: string, target: string) =>
       `Based on tonight's valuation, your portfolio is worth ${value}, against a financial independence goal of ${target}.`,

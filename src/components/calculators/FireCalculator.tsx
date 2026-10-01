@@ -49,8 +49,7 @@ export default function FireCalculator() {
         ? t("alreadyFree")
         : t("years", { years: result.yearsToFire });
 
-  const firePoint =
-    result.series.find((p) => p.year === result.yearsToFire) ?? result.series.at(-1);
+  const firePoint = result.series.find((p) => p.year === result.yearsToFire) ?? result.series.at(-1);
 
   const frequencyOptions = FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
 
@@ -59,8 +58,20 @@ export default function FireCalculator() {
       inputCount={7}
       inputs={
         <>
-          <NumberField label={t("annualExpenses")} value={annualExpenses} onChange={setAnnualExpenses} step={1000} help={t("help.annualExpenses")} />
-          <NumberField label={t("currentSavings")} value={currentSavings} onChange={setCurrentSavings} step={1000} help={t("help.currentSavings")} />
+          <NumberField
+            label={t("annualExpenses")}
+            value={annualExpenses}
+            onChange={setAnnualExpenses}
+            step={1000}
+            help={t("help.annualExpenses")}
+          />
+          <NumberField
+            label={t("currentSavings")}
+            value={currentSavings}
+            onChange={setCurrentSavings}
+            step={1000}
+            help={t("help.currentSavings")}
+          />
           <NumberField label={t("savings")} value={savings} onChange={setSavings} step={50} help={t("help.savings")} />
           <SelectField
             label={tf("label")}
@@ -69,9 +80,31 @@ export default function FireCalculator() {
             onChange={setFrequency}
             help={tf("help")}
           />
-          <NumberField label={t("annualReturn")} value={annualReturn} onChange={setAnnualReturn} step={0.5} max={100} help={t("help.annualReturn")} />
-          <NumberField label={t("withdrawalRate")} value={withdrawalRate} onChange={setWithdrawalRate} step={0.1} min={1} max={100} help={t("help.withdrawalRate")} />
-          <NumberField label={t("savingsGrowth")} value={savingsGrowth} onChange={setSavingsGrowth} step={0.5} max={100} help={t("help.savingsGrowth")} />
+          <NumberField
+            label={t("annualReturn")}
+            value={annualReturn}
+            onChange={setAnnualReturn}
+            step={0.5}
+            max={100}
+            help={t("help.annualReturn")}
+          />
+          <NumberField
+            label={t("withdrawalRate")}
+            value={withdrawalRate}
+            onChange={setWithdrawalRate}
+            step={0.1}
+            min={1}
+            max={100}
+            help={t("help.withdrawalRate")}
+          />
+          <NumberField
+            label={t("savingsGrowth")}
+            value={savingsGrowth}
+            onChange={setSavingsGrowth}
+            step={0.5}
+            max={100}
+            help={t("help.savingsGrowth")}
+          />
         </>
       }
       results={

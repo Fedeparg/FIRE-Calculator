@@ -33,7 +33,16 @@ export default function HolidayRentalCalculator() {
         avgStayNights,
         annualExpenses,
       }),
-    [purchasePrice, purchaseCosts, nightlyRate, occupiedNights, managementRate, cleaningFee, avgStayNights, annualExpenses],
+    [
+      purchasePrice,
+      purchaseCosts,
+      nightlyRate,
+      occupiedNights,
+      managementRate,
+      cleaningFee,
+      avgStayNights,
+      annualExpenses,
+    ],
   );
 
   return (
@@ -41,14 +50,67 @@ export default function HolidayRentalCalculator() {
       inputCount={8}
       inputs={
         <>
-          <NumberField label={t("purchasePrice")} value={purchasePrice} onChange={setPurchasePrice} step={5000} help={t("help.purchasePrice")} />
-          <NumberField label={t("purchaseCosts")} value={purchaseCosts} onChange={setPurchaseCosts} step={1000} help={t("help.purchaseCosts")} />
-          <NumberField label={t("nightlyRate")} value={nightlyRate} onChange={setNightlyRate} step={5} help={t("help.nightlyRate")} />
-          <NumberField label={t("occupiedNights")} value={occupiedNights} onChange={setOccupiedNights} min={0} max={365} step={5} help={t("help.occupiedNights")} />
-          <NumberField label={t("managementRate")} value={managementRate} onChange={setManagementRate} min={0} max={100} step={1} help={t("help.managementRate")} />
-          <NumberField label={t("cleaningFee")} value={cleaningFee} onChange={setCleaningFee} step={5} help={t("help.cleaningFee")} />
-          <NumberField label={t("avgStayNights")} value={avgStayNights} onChange={setAvgStayNights} min={1} step={1} help={t("help.avgStayNights")} />
-          <NumberField label={t("annualExpenses")} value={annualExpenses} onChange={setAnnualExpenses} step={250} help={t("help.annualExpenses")} />
+          <NumberField
+            label={t("purchasePrice")}
+            value={purchasePrice}
+            onChange={setPurchasePrice}
+            step={5000}
+            help={t("help.purchasePrice")}
+          />
+          <NumberField
+            label={t("purchaseCosts")}
+            value={purchaseCosts}
+            onChange={setPurchaseCosts}
+            step={1000}
+            help={t("help.purchaseCosts")}
+          />
+          <NumberField
+            label={t("nightlyRate")}
+            value={nightlyRate}
+            onChange={setNightlyRate}
+            step={5}
+            help={t("help.nightlyRate")}
+          />
+          <NumberField
+            label={t("occupiedNights")}
+            value={occupiedNights}
+            onChange={setOccupiedNights}
+            min={0}
+            max={365}
+            step={5}
+            help={t("help.occupiedNights")}
+          />
+          <NumberField
+            label={t("managementRate")}
+            value={managementRate}
+            onChange={setManagementRate}
+            min={0}
+            max={100}
+            step={1}
+            help={t("help.managementRate")}
+          />
+          <NumberField
+            label={t("cleaningFee")}
+            value={cleaningFee}
+            onChange={setCleaningFee}
+            step={5}
+            help={t("help.cleaningFee")}
+          />
+          <NumberField
+            label={t("avgStayNights")}
+            value={avgStayNights}
+            onChange={setAvgStayNights}
+            min={1}
+            step={1}
+            help={t("help.avgStayNights")}
+          />
+          <NumberField
+            label={t("annualExpenses")}
+            value={annualExpenses}
+            onChange={setAnnualExpenses}
+            step={250}
+            help={t("help.annualExpenses")}
+          />
         </>
       }
       results={

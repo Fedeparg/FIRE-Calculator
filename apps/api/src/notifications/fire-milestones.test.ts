@@ -12,7 +12,10 @@ describe('fireTargetFromInputs', () => {
   });
 
   it('objetivo = gasto / tasa de retiro, como la calculadora FIRE', () => {
-    expect(fireTargetFromInputs({ annualExpenses: 24000, withdrawalRate: 4 })).toEqual({ target: 600000, currency: 'EUR' });
+    expect(fireTargetFromInputs({ annualExpenses: 24000, withdrawalRate: 4 })).toEqual({
+      target: 600000,
+      currency: 'EUR',
+    });
     expect(fireTargetFromInputs({ annualExpenses: 30000, withdrawalRate: 3, goalCurrency: 'USD' })).toEqual({
       target: 1_000_000,
       currency: 'USD',

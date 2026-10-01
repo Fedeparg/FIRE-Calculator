@@ -39,11 +39,7 @@ export default function LoginForm() {
   }
 
   if (status === "sent") {
-    return (
-      <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-foreground">
-        {t("sent")}
-      </p>
-    );
+    return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-foreground">{t("sent")}</p>;
   }
 
   return (
@@ -64,9 +60,7 @@ export default function LoginForm() {
         />
       </div>
 
-      {status === "error" && (
-        <p className="text-sm text-warning">{t("error")}</p>
-      )}
+      {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
 
       <button
         type="submit"

@@ -77,10 +77,9 @@ export default function InstrumentSearchField({
     setLoading(true);
     const handle = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `/api/instruments/search?q=${encodeURIComponent(query)}`,
-          { signal: controller.signal },
-        );
+        const res = await fetch(`/api/instruments/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
         if (!res.ok) {
           setResults([]);
           setOpen(false);
@@ -162,9 +161,7 @@ export default function InstrumentSearchField({
         aria-expanded={showDropdown}
         aria-controls={listboxId}
         aria-autocomplete="list"
-        aria-activedescendant={
-          activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined
-        }
+        aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
       />
 
       {showDropdown && (
@@ -177,12 +174,7 @@ export default function InstrumentSearchField({
             <li className="px-3 py-2 text-sm text-muted">{t("searching")}</li>
           ) : (
             results.map((r, i) => (
-              <li
-                key={`${r.symbol}-${i}`}
-                id={`${listboxId}-opt-${i}`}
-                role="option"
-                aria-selected={i === activeIndex}
-              >
+              <li key={`${r.symbol}-${i}`} id={`${listboxId}-opt-${i}`} role="option" aria-selected={i === activeIndex}>
                 <button
                   type="button"
                   // `onMouseDown` (no `onClick`): se dispara antes del blur del input, así

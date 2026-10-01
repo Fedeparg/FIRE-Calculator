@@ -51,8 +51,20 @@ export default function CompoundCalculator() {
       inputCount={8}
       inputs={
         <>
-          <NumberField label={t("initial")} value={initial} onChange={setInitial} step={1000} help={t("help.initial")} />
-          <NumberField label={t("contribution")} value={contribution} onChange={setContribution} step={50} help={t("help.contribution")} />
+          <NumberField
+            label={t("initial")}
+            value={initial}
+            onChange={setInitial}
+            step={1000}
+            help={t("help.initial")}
+          />
+          <NumberField
+            label={t("contribution")}
+            value={contribution}
+            onChange={setContribution}
+            step={50}
+            help={t("help.contribution")}
+          />
           <SelectField
             label={tf("label")}
             value={frequency}
@@ -60,11 +72,39 @@ export default function CompoundCalculator() {
             onChange={setFrequency}
             help={tf("help")}
           />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.5} max={100} help={t("help.annualRate")} />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.5}
+            max={100}
+            help={t("help.annualRate")}
+          />
           <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField label={t("annualFee")} value={annualFee} onChange={setAnnualFee} step={0.1} max={100} help={t("help.annualFee")} />
-          <NumberField label={t("contributionGrowth")} value={contributionGrowth} onChange={setContributionGrowth} step={0.5} max={100} help={t("help.contributionGrowth")} />
-          <NumberField label={t("inflationRate")} value={inflationRate} onChange={setInflationRate} step={0.5} max={100} help={t("help.inflationRate")} />
+          <NumberField
+            label={t("annualFee")}
+            value={annualFee}
+            onChange={setAnnualFee}
+            step={0.1}
+            max={100}
+            help={t("help.annualFee")}
+          />
+          <NumberField
+            label={t("contributionGrowth")}
+            value={contributionGrowth}
+            onChange={setContributionGrowth}
+            step={0.5}
+            max={100}
+            help={t("help.contributionGrowth")}
+          />
+          <NumberField
+            label={t("inflationRate")}
+            value={inflationRate}
+            onChange={setInflationRate}
+            step={0.5}
+            max={100}
+            help={t("help.inflationRate")}
+          />
         </>
       }
       results={

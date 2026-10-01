@@ -1,22 +1,8 @@
-import {
-  Controller,
-  ForbiddenException,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, ForbiddenException, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import {
-  PricesService,
-  type FxRates,
-  type PriceInfo,
-  type RefreshSummary,
-} from './prices.service.js';
+import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
 
 /**
  * Endpoints de precios. La lectura sale SIEMPRE de nuestra DB (caché), nunca de la API

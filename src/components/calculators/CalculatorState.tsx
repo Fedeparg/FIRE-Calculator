@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  Fragment,
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   completeValues,
@@ -148,11 +139,7 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
   useEffect(() => {
     if (!hydrated) return;
     const timer = setTimeout(() => {
-      const search = encodeCalculatorState(
-        window.location.search,
-        values,
-        specsRef.current,
-      );
+      const search = encodeCalculatorState(window.location.search, values, specsRef.current);
       if (search === window.location.search) return;
       // Se reescribe solo la query: la ruta y el ancla (los enlaces del bloque de la wiki)
       // se conservan tal cual.
@@ -227,8 +214,7 @@ export function useOptionField<T extends string>(
   registerField(key, { kind: "option", defaultValue, allowed });
 
   const raw = values[key];
-  const value =
-    typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : defaultValue;
+  const value = typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : defaultValue;
   const set = useCallback((next: T) => setValue(key, next), [setValue, key]);
 
   return [value, set];

@@ -89,8 +89,7 @@ export function computeMortgage(input: MortgageInput): MortgageResult {
   const openingFeeRate = Math.max(0, input.openingFeeRate || 0);
   const annualInsurance = Math.max(0, input.annualInsurance || 0);
 
-  const monthlyPayment =
-    i === 0 ? principal / n : (principal * i) / (1 - Math.pow(1 + i, -n));
+  const monthlyPayment = i === 0 ? principal / n : (principal * i) / (1 - Math.pow(1 + i, -n));
 
   const schedule: MortgageYearPoint[] = [];
   let balance = principal;

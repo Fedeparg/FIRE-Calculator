@@ -1,20 +1,9 @@
 import { Transform, Type } from 'class-transformer';
-import {
-  IsIn,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
 
 import { NUMERIC_MAX, SUPPORTED_CURRENCIES, type SupportedCurrency } from './create-position.dto.js';
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Cuerpo de PATCH /api/positions/:id. Todos los campos son opcionales (se actualiza solo

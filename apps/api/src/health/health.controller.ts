@@ -27,9 +27,7 @@ function readVersion(): string {
     const raw = readFileSync(join(import.meta.dirname, '..', '..', 'package.json'), 'utf8');
     const parsed: unknown = JSON.parse(raw);
     const version =
-      typeof parsed === 'object' && parsed !== null
-        ? (parsed as { version?: unknown }).version
-        : undefined;
+      typeof parsed === 'object' && parsed !== null ? (parsed as { version?: unknown }).version : undefined;
     return typeof version === 'string' ? version : 'unknown';
   } catch {
     return 'unknown';

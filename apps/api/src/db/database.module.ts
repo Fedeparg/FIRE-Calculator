@@ -34,8 +34,7 @@ const PG_CLIENT = Symbol('PG_CLIENT');
     {
       provide: DRIZZLE,
       inject: [PG_CLIENT],
-      useFactory: (client: ReturnType<typeof postgres>): Database =>
-        drizzle(client, { schema }),
+      useFactory: (client: ReturnType<typeof postgres>): Database => drizzle(client, { schema }),
     },
   ],
   exports: [DRIZZLE],

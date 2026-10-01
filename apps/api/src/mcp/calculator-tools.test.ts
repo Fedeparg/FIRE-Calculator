@@ -154,17 +154,15 @@ describe('CALCULATOR_TOOLS', () => {
   it('añade la tabla de sensibilidad solo si se pide', () => {
     const tool = toolByName('simulate_fire_monte_carlo');
     expect(tool.execute(SAMPLES.simulate_fire_monte_carlo)).not.toHaveProperty('sensitivity');
-    expect(
-      tool.execute({ ...SAMPLES.simulate_fire_monte_carlo, includeSensitivity: true }),
-    ).toHaveProperty('sensitivity');
+    expect(tool.execute({ ...SAMPLES.simulate_fire_monte_carlo, includeSensitivity: true })).toHaveProperty(
+      'sensitivity',
+    );
   });
 
   it('rechaza entradas fuera de rango antes de calcular', () => {
     const monteCarlo = toolByName('simulate_fire_monte_carlo');
     expect(() => monteCarlo.execute({ ...SAMPLES.simulate_fire_monte_carlo, paths: 1_000_000 })).toThrow();
-    expect(() =>
-      monteCarlo.execute({ ...SAMPLES.simulate_fire_monte_carlo, retirementYears: 500 }),
-    ).toThrow();
+    expect(() => monteCarlo.execute({ ...SAMPLES.simulate_fire_monte_carlo, retirementYears: 500 })).toThrow();
 
     const compound = toolByName('calculate_compound_interest');
     expect(() => compound.execute({ ...SAMPLES.calculate_compound_interest, years: 10_000 })).toThrow();
@@ -175,9 +173,10 @@ describe('CALCULATOR_TOOLS', () => {
   });
 
   it('la tarjeta resume la serie mensual en el saldo de cada año y el último mes', () => {
-    const result = toolByName('calculate_credit_card_payoff').execute(
-      SAMPLES.calculate_credit_card_payoff,
-    ) as { monthsToPayoff: number; yearlySeries: { month: number }[] };
+    const result = toolByName('calculate_credit_card_payoff').execute(SAMPLES.calculate_credit_card_payoff) as {
+      monthsToPayoff: number;
+      yearlySeries: { month: number }[];
+    };
     const months = result.yearlySeries.map((p) => p.month);
     expect(months[0]).toBe(0);
     expect(months.at(-1)).toBe(result.monthsToPayoff);

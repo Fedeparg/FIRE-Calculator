@@ -21,8 +21,7 @@ export const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly Po
 /** Fecha en formato `YYYY-MM-DD` (la columna `traded_at` es un `date`, sin hora). */
 export const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Cuerpo de POST /api/positions/:positionId/lots — una compra o venta concreta.

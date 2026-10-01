@@ -46,10 +46,7 @@ export class PositionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(
-    @CurrentUser() user: SessionUser,
-    @Body() dto: CreatePositionDto,
-  ): Promise<PositionResponse> {
+  create(@CurrentUser() user: SessionUser, @Body() dto: CreatePositionDto): Promise<PositionResponse> {
     return this.positions.create(user.id, dto);
   }
 
@@ -90,10 +87,7 @@ export class PositionsController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
-    @CurrentUser() user: SessionUser,
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<void> {
+  remove(@CurrentUser() user: SessionUser, @Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.positions.remove(user.id, id);
   }
 }

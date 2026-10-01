@@ -22,9 +22,7 @@ const input = fc.record({
 /** Misma entrada, con modelo lognormal o histórico con cualquier mezcla acciones/bonos. */
 const anyModel: fc.Arbitrary<MonteCarloInput> = fc
   .tuple(input, fc.option(fc.double({ min: 0, max: 100, noNaN: true }), { nil: undefined }))
-  .map(([i, stockShare]) =>
-    stockShare === undefined ? i : { ...i, returnModel: { kind: "historical", stockShare } },
-  );
+  .map(([i, stockShare]) => (stockShare === undefined ? i : { ...i, returnModel: { kind: "historical", stockShare } }));
 
 describe("simulateFire — propiedades", () => {
   it("sin volatilidad coincide con la calculadora FIRE en frecuencia anual", () => {
@@ -78,7 +76,7 @@ describe("simulateFire — propiedades", () => {
     fc.assert(
       fc.property(anyModel, (i) => {
         const { p10, p50, p90 } = simulateFire(i, OPTIONS).yearsToFire;
-        const order = (a: number | null, b: number | null) => a === null ? b === null : b === null || a <= b;
+        const order = (a: number | null, b: number | null) => (a === null ? b === null : b === null || a <= b);
         return order(p10, p50) && order(p50, p90);
       }),
       PARAMS,

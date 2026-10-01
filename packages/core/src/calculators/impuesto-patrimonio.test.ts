@@ -3,7 +3,12 @@ import { computeWealthTax } from "./impuesto-patrimonio.js";
 
 describe("computeWealthTax", () => {
   it("valores por defecto del componente (golden)", () => {
-    const r = computeWealthTax({ totalWealth: 1500000, primaryResidenceValue: 300000, exemptMinimum: 700000, regionalRebate: 0 });
+    const r = computeWealthTax({
+      totalWealth: 1500000,
+      primaryResidenceValue: 300000,
+      exemptMinimum: 700000,
+      regionalRebate: 0,
+    });
     expect(r.residenceExemption).toBe(300000);
     expect(r.taxableBase).toBe(500000);
     // 167129,45×0,2% + (334252,88−167129,45)×0,3% + (500000−334252,88)×0,5%
