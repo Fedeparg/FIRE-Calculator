@@ -2,7 +2,7 @@ import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices, positionLots, positions } from '../db/schema.js';
+import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
 import { PricesService } from './prices.service.js';
@@ -314,6 +314,75 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
 
       const { splits } = await service.getSeriesSince(await service.resolveCachedTickers(['NVDA']), daysAgo(10));
       expect(splits).toEqual({ NVDA: [{ date: daysAgo(5), ratio: 10 }] });
+    });
+  });
+
+  describe('marca de splits consultados', () => {
+    /** Símbolo ya cacheado ANTES de existir los splits: precios con cobertura, sin splits ni marca. */
+    async function seedLegacySymbol(): Promise<void> {
+      const userId = await insertUser(db, 'legacy@example.com');
+      const [position] = await db
+        .insert(positions)
+        .values({ userId, ticker: 'NVDA', quantity: '10', avgPrice: '100', currency: 'USD' })
+        .returning();
+      await db.insert(positionLots).values({
+        positionId: position.id,
+        userId,
+        kind: 'buy',
+        quantity: '10',
+        price: '100',
+        tradedAt: daysAgo(30),
+      });
+      await db.insert(instrumentPrices).values({
+        symbol: 'NVDA',
+        date: daysAgo(30),
+        close: '100',
+        currency: 'USD',
+        source: 'stub',
+      });
+    }
+
+    it('el arranque reconsulta un símbolo con cobertura suficiente pero sin marca, y carga sus splits', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      provider.splits = [{ symbol: 'NVDA', date: daysAgo(10), ratio: 10 }];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).toContain('NVDA');
+      expect(await db.select().from(instrumentSplits)).toHaveLength(1);
+      expect(await db.select().from(instrumentSplitChecks)).toHaveLength(1);
+    });
+
+    it('con la marca reciente no vuelve a pedir nada (aunque no haya splits)', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      await service.ensureHistoryForActivePositions();
+      provider.historyCalls = [];
+
+      await service.ensureHistoryForActivePositions();
+
+      expect(provider.historyCalls).not.toContain('NVDA');
+    });
+
+    it('refreshStaleSplits reconsulta solo los símbolos con la marca de más de 7 días', async () => {
+      makeService();
+      await seedLegacySymbol();
+      provider.history = [quote('NVDA', daysAgo(30), 100, 'USD')];
+      await service.ensureHistoryForActivePositions();
+      provider.historyCalls = [];
+
+      await service.refreshStaleSplits();
+      expect(provider.historyCalls).toEqual([]);
+
+      await db.update(instrumentSplitChecks).set({ checkedAt: new Date(Date.now() - 8 * 86_400_000) });
+      provider.splits = [{ symbol: 'NVDA', date: daysAgo(2), ratio: 4 }];
+      await service.refreshStaleSplits();
+
+      expect(provider.historyCalls).toEqual(['NVDA']);
+      expect((await db.select().from(instrumentSplits)).map((r) => r.ratio)).toEqual(['4.00000000']);
     });
   });
 

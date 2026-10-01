@@ -127,6 +127,13 @@
       "when": 1790874439228,
       "tag": "0017_bitter_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790875422600,
+      "tag": "0018_smart_gladiator",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ function setup(env: Record<string, string> = {}) {
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
+    refreshStaleSplits: vi.fn(() => Promise.resolve()),
     ensureHistoryForActivePositions: vi.fn(() => Promise.resolve()),
   };
   const snapshots = {

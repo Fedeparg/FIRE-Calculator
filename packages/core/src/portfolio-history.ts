@@ -14,6 +14,8 @@
  * en la fecha del split. Por eso la cantidad de cada lote se multiplica por el ratio acumulado de
  * los splits POSTERIORES a su fecha (y su precio se divide, para que el coste `cantidad · precio`
  * no cambie). Supone que los lotes llevan la cantidad cruda de la operación, no ya reajustada.
+ * Los splits se reconsultan a la fuente cada 7 días: un split reciente puede tardar hasta una
+ * semana en reflejarse, y los cierres cacheados antes de ese split no se reajustan.
  *
  * LIMITACIÓN: los bonus/regalos de bróker (p. ej. acciones gratis de Trade Republic) llegan como
  * una compra a precio 0; entran con coste 0 y bajan el precio medio, tal cual, sin tratamiento

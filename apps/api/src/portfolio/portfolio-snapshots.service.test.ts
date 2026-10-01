@@ -558,6 +558,21 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       expect(rows.map((r) => r.date).sort()).toEqual([4, 3, 2, 1].map(daysAgo).sort());
     });
 
+    it('una ráfaga de cambios se coalesce: pocas reconstrucciones y el resultado final correcto', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const { id } = await positions.create(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+      await db.update(positionLots).set({ tradedAt: daysAgo(4) }).where(eq(positionLots.positionId, id));
+      for (const days of [4, 3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+      const rebuild = vi.spyOn(snapshots, 'backfillUser');
+
+      await Promise.all(Array.from({ length: 20 }, () => snapshots.onLotChanged({ userId, positionId: id })));
+
+      // La primera pasada y UNA repetición que cubre las 19 restantes.
+      expect(rebuild.mock.calls.length).toBeLessThanOrEqual(2);
+      const rows = await db.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
+      expect(rows).toHaveLength(4);
+    });
+
     it('un fallo no se propaga', async () => {
       await expect(
         snapshots.onLotChanged({ userId: '00000000-0000-0000-0000-000000000000', positionId: '00000000-0000-0000-0000-000000000000' }),

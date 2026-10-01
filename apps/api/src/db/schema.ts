@@ -331,6 +331,17 @@ export const instrumentSplits = pgTable(
 );
 
 /**
+ * Marca de "splits consultados" por símbolo. Una `instrument_splits` sin filas no distingue "sin
+ * splits" de "nunca consultado" (los símbolos cacheados antes de existir esta tabla), así que la
+ * consulta deja aquí su fecha: el arranque consulta los símbolos en uso sin marca y refresca los
+ * de marca antigua (un split posterior al priming no se vería de otro modo).
+ */
+export const instrumentSplitChecks = pgTable('instrument_split_checks', {
+  symbol: varchar('symbol', { length: 40 }).primaryKey(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Caché de resolución ticker/ISIN → símbolo de la fuente de precios. La traducción real
  * (OpenFIGI: ISIN → ticker+mercado, validado contra Yahoo) es cara y NO cambia con el
  * tiempo, así que se cachea aquí permanentemente.

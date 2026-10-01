@@ -9,7 +9,13 @@ import {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
-import { instrumentPrices, instrumentSplits, positionLots, positions } from '../db/schema.js';
+import {
+  instrumentPrices,
+  instrumentSplitChecks,
+  instrumentSplits,
+  positionLots,
+  positions,
+} from '../db/schema.js';
 import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
 import {
   PRICE_PROVIDER,
@@ -41,6 +47,8 @@ export const HISTORY_MAX_DAYS = 1825;
  */
 const COVERAGE_TOLERANCE_DAYS = 7;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+/** Antigüedad (días) a partir de la cual se vuelven a consultar los splits de un símbolo. */
+const SPLITS_REFRESH_DAYS = 7;
 /** `YYYY-MM-DD` (UTC) de hace `days` días. */
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * MS_PER_DAY).toISOString().slice(0, 10);
@@ -410,10 +418,14 @@ export class PricesService {
   /**
    * Se asegura de que cada símbolo tenga histórico hasta su fecha (`símbolo → YYYY-MM-DD`),
    * pidiéndolo SOLO a los que no lo cubren (guard barato: una query agrupada, y el fetch real
-   * solo para el hueco real). Tolerante por símbolo: uno que falle no bloquea el resto.
+   * solo para el hueco real). `alsoSymbols` se piden además de lo que falte por cobertura (p. ej.
+   * los de splits sin consultar). Tolerante por símbolo: uno que falle no bloquea el resto.
    */
-  async ensureHistory(required: ReadonlyMap<string, string>): Promise<void> {
-    const missing = await this.symbolsNeedingHistory(required);
+  async ensureHistory(
+    required: ReadonlyMap<string, string>,
+    alsoSymbols: readonly string[] = [],
+  ): Promise<void> {
+    const missing = [...new Set([...(await this.symbolsNeedingHistory(required)), ...alsoSymbols])];
     for (const [i, symbol] of missing.entries()) {
       if (i > 0 && this.historyRequestDelayMs > 0) await delay(this.historyRequestDelayMs);
       try {
@@ -459,7 +471,12 @@ export class PricesService {
     }
     for (const pair of this.fxSymbols()) required.set(pair, earliest ?? floor);
 
-    await this.ensureHistory(required);
+    // Los símbolos cacheados antes de existir los splits (o con la marca vencida) se reconsultan
+    // aunque su cobertura de fechas sea suficiente: es la única forma de cargar sus splits.
+    const stale = await this.symbolsWithStaleSplits(
+      [...required.keys()].filter((symbol) => !this.fxSymbols().includes(symbol)),
+    );
+    await this.ensureHistory(required, stale);
   }
 
   /**
@@ -489,12 +506,51 @@ export class PricesService {
     if (quotes.length > 0) {
       await this.upsertQuoteList(quotes);
       await this.upsertSplits(splits);
+      await this.markSplitsChecked(symbol);
       this.logger.log(
         `Histórico de ${symbol}: ${quotes.length} cierres y ${splits.length} splits cacheados`,
       );
       return;
     }
     await this.upsertQuotes(await this.provider.getQuotes([symbol]));
+  }
+
+  /** Deja constancia de que los splits del símbolo se consultaron ahora (aunque no tenga ninguno). */
+  private async markSplitsChecked(symbol: string): Promise<void> {
+    await this.db
+      .insert(instrumentSplitChecks)
+      .values({ symbol })
+      .onConflictDoUpdate({ target: instrumentSplitChecks.symbol, set: { checkedAt: new Date() } });
+  }
+
+  /**
+   * Símbolos, de entre los pedidos, cuyos splits nunca se consultaron (cacheados antes de que
+   * existieran) o se consultaron hace más de `SPLITS_REFRESH_DAYS`: sin la marca, "sin filas en
+   * `instrument_splits`" no distingue "sin splits" de "nunca consultado", y un split posterior al
+   * priming no se vería nunca.
+   */
+  private async symbolsWithStaleSplits(symbols: readonly string[]): Promise<string[]> {
+    if (symbols.length === 0) return [];
+    const cutoff = new Date(Date.now() - SPLITS_REFRESH_DAYS * MS_PER_DAY);
+    const rows = await this.db
+      .select()
+      .from(instrumentSplitChecks)
+      .where(inArray(instrumentSplitChecks.symbol, [...symbols]));
+    const checkedAt = new Map(rows.map((r) => [r.symbol, r.checkedAt]));
+    return symbols.filter((symbol) => {
+      const at = checkedAt.get(symbol);
+      return !at || at < cutoff;
+    });
+  }
+
+  /**
+   * Reconsulta los splits de los símbolos en uso sin marca o con marca de más de 7 días (una
+   * llamada de histórico por símbolo, con pausa). Lo llama el cron nocturno: acotado a
+   * 1 llamada por símbolo y semana, no a una por noche.
+   */
+  async refreshStaleSplits(): Promise<void> {
+    const symbols = await this.resolveSymbols(await this.distinctTickers());
+    await this.ensureHistory(new Map(), await this.symbolsWithStaleSplits(symbols));
   }
 
   /** Upsert de los splits de un símbolo (PK `(symbol, date)`): reprimar no duplica filas. */

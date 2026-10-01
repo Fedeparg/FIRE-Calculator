@@ -112,6 +112,8 @@ function toNumeric(value: number): string | null {
 @Injectable()
 export class PortfolioSnapshotsService {
   private readonly logger = new Logger(PortfolioSnapshotsService.name);
+  /** Usuarios con una reconstrucción por lote en curso → posiciones anotadas para repetirla (ver `onLotChanged`). */
+  private readonly rebuilding = new Map<string, Set<string>>();
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -419,20 +421,44 @@ export class PortfolioSnapshotsService {
    */
   @OnEvent(LOT_CHANGED_EVENT)
   async onLotChanged({ userId, positionId }: LotChangedEvent): Promise<void> {
+    // COALESCE por usuario: una ráfaga de ediciones (importar a mano, corregir fechas) dispararía
+    // una reconstrucción por evento, cada una con su conexión esperando el cerrojo del usuario, y
+    // más de ~10 agotarían el pool. Si ya hay una en curso, solo se anota la posición: la pasada
+    // en curso hace UNA repetición al terminar que cubre todas las anotadas.
+    const running = this.rebuilding.get(userId);
+    if (running) {
+      running.add(positionId);
+      return;
+    }
+    const pending = new Set([positionId]);
+    this.rebuilding.set(userId, pending);
     try {
-      const [position] = await this.db.select().from(positions).where(eq(positions.id, positionId));
-      const [first] = await this.db
-        .select({ firstTrade: min(positionLots.tradedAt) })
-        .from(positionLots)
-        .where(eq(positionLots.positionId, positionId));
-      if (position && first?.firstTrade) {
-        await this.prices.ensureHistoryForTicker(position.ticker, first.firstTrade);
+      while (pending.size > 0) {
+        const batch = [...pending];
+        pending.clear();
+        try {
+          for (const id of batch) await this.ensureLotHistory(id);
+          await this.backfillUser(userId);
+        } catch (error) {
+          this.logger.warn(
+            `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
+          );
+        }
       }
-      await this.backfillUser(userId);
-    } catch (error) {
-      this.logger.warn(
-        `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
-      );
+    } finally {
+      this.rebuilding.delete(userId);
+    }
+  }
+
+  /** Pide el histórico de precios que falte para la operación más antigua de una posición. */
+  private async ensureLotHistory(positionId: string): Promise<void> {
+    const [position] = await this.db.select().from(positions).where(eq(positions.id, positionId));
+    const [first] = await this.db
+      .select({ firstTrade: min(positionLots.tradedAt) })
+      .from(positionLots)
+      .where(eq(positionLots.positionId, positionId));
+    if (position && first?.firstTrade) {
+      await this.prices.ensureHistoryForTicker(position.ticker, first.firstTrade);
     }
   }
 

@@ -16,7 +16,12 @@ import { CreatePositionDto } from './dto/create-position.dto.js';
 import { UpdatePositionDto } from './dto/update-position.dto.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { PositionLotsService, todayUtc } from './position-lots.service.js';
-import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from './position-events.js';
+import {
+  LOT_CHANGED_EVENT,
+  POSITION_CREATED_EVENT,
+  type LotChangedEvent,
+  type PositionCreatedEvent,
+} from './position-events.js';
 
 /**
  * Posición tal y como la consume el frontend. Drizzle devuelve `numeric` como `string`
@@ -219,6 +224,9 @@ export class PositionsService {
     if (row.ticker !== current.ticker) {
       await this.prices.primeSymbol(row.ticker, row.currency);
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
+    } else if (declaresAmounts) {
+      // `declareState` realineó los lotes: la película reconstruida cambia aunque el símbolo no.
+      this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: id } satisfies LotChangedEvent);
     }
     return this.toResponse(row);
   }
