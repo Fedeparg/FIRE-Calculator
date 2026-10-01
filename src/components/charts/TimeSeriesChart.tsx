@@ -111,6 +111,13 @@ type Props = {
    * necesita la cartera, donde un valor base alto con poca variación se ve plana pegada a 0.
    */
   yDomain?: "zero" | "fit";
+  /**
+   * Oculta el título a la vista (sigue en el DOM para lectores de pantalla y da nombre a la
+   * tabla accesible). Para cuando el bloque que lo contiene ya lo dice.
+   */
+  hideTitle?: boolean;
+  /** Dibuja la leyenda de Recharts. Se apaga cuando quien llama pinta una propia, más explicada. */
+  showLegend?: boolean;
 };
 
 /** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
@@ -142,6 +149,8 @@ export default function TimeSeriesChart({
   shadedRanges = [],
   extraColumns = [],
   yDomain = "zero",
+  hideTitle = false,
+  showLegend = true,
 }: Props) {
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
     useFormat();
@@ -226,8 +235,8 @@ export default function TimeSeriesChart({
 
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
-      <div className="mb-3 flex min-h-[20px] items-center justify-between gap-3">
-        <h2 className="text-sm font-medium text-foreground">{title}</h2>
+      <div className={`flex items-center justify-between gap-3 ${hideTitle && !summary ? "" : "mb-3 min-h-[20px]"}`}>
+        <h2 className={hideTitle ? "sr-only" : "text-sm font-medium text-foreground"}>{title}</h2>
         {summary && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
             <span className="text-muted">
@@ -306,7 +315,7 @@ export default function TimeSeriesChart({
                 />
               }
             />
-            <Legend />
+            {showLegend && <Legend />}
             {stack.map((s) => (
               <Area
                 key={s.key}

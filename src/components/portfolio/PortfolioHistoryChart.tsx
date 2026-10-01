@@ -92,9 +92,9 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-        <div className="inline-flex rounded-lg border border-border p-0.5" role="group" aria-label={t("rangeLabel")}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold text-foreground">{t("title")}</h2>
+        <div className="inline-flex shrink-0 rounded-lg border border-border p-0.5" role="group" aria-label={t("rangeLabel")}>
           {HISTORY_RANGES.map(({ key }) => (
             <button
               key={key}
@@ -123,15 +123,10 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
       {status === "ready" && !series.insufficient && (
         <>
-          {series.estimatedRange && (
-            <Notice variant="warning">
-              {t("estimatedNotice", { date: formatIsoDate(series.estimatedRange.to) })}
-            </Notice>
-          )}
-
+          {/* La variación del periodo, en una sola línea: el importe manda y el rango de fechas
+              acompaña. */}
           {series.changeAbs !== null && series.from && series.to && (
-            <p className="text-sm text-muted">
-              {t("since", { from: formatIsoDate(series.from), to: formatIsoDate(series.to) })}{" "}
+            <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
               <span className={`font-semibold tabular-nums ${changeColor}`}>
                 {series.changeAbs > 0 ? "+" : ""}
                 {formatCurrency(series.changeAbs, display)}
@@ -142,11 +137,19 @@ export default function PortfolioHistoryChart({ display }: Props) {
                   </span>
                 )}
               </span>
+              <span className="text-xs text-muted">
+                {t("since", { from: formatIsoDate(series.from), to: formatIsoDate(series.to) })}
+              </span>
             </p>
           )}
 
           <TimeSeriesChart
             title={t("chartTitle")}
+            // El título del bloque ya dice de qué va esto: el de la gráfica queda solo para
+            // lectores de pantalla y para la tabla accesible.
+            hideTitle
+            // La leyenda propia (abajo) explica cada serie; la de Recharts solo repetiría el nombre.
+            showLegend={false}
             data={series.points}
             xKey="date"
             valueKey="marketValue"
@@ -179,6 +182,32 @@ export default function PortfolioHistoryChart({ display }: Props) {
             // al rango real de la cartera en vez de forzar el suelo en cero.
             yDomain="fit"
           />
+
+          {series.estimatedRange && (
+            <p className="flex items-center gap-2 text-xs text-muted">
+              {/* Misma tinta que la zona sombreada de la gráfica (`--warning` al 10 %). */}
+              <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-sm border border-border bg-warning/10" />
+              {t("estimatedNotice", { date: formatIsoDate(series.estimatedRange.to) })}
+            </p>
+          )}
+          <ul className="flex flex-col gap-1 text-xs text-muted">
+            <li className="flex items-center gap-2">
+              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: "var(--brand)" }} />
+              <span>
+                <span className="font-medium text-foreground">{t("marketValue")}</span>: {t("legendMarketValue")}
+              </span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="h-0 w-2.5 shrink-0 border-t-2 border-dashed"
+                style={{ borderColor: "var(--accent)" }}
+              />
+              <span>
+                <span className="font-medium text-foreground">{t("invested")}</span>: {t("legendInvested")}
+              </span>
+            </li>
+          </ul>
 
           {series.dropped > 0 && <p className="text-xs text-muted">{t("dropped", { count: series.dropped })}</p>}
           <p className="text-xs text-muted">{t("cadence")}</p>
