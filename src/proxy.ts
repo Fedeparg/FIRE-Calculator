@@ -11,5 +11,6 @@ export const config = {
   // OAuth del servidor MCP (authorize/token/register/revoke; los .well-known ya
   // quedan excluidos por contener un punto). Estos se reescriben a la API en
   // next.config. (sitemap.xml y robots.txt ya quedan fuera por tener punto.)
-  matcher: ["/((?!api|_next|_vercel|og|authorize|token|register|revoke|.*\\..*).*)"],
+  // `stats` es la analítica propia (Umami), también reescrita en next.config.
+  matcher: ["/((?!api|_next|_vercel|og|authorize|token|register|revoke|stats|.*\\..*).*)"],
 };

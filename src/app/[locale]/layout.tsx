@@ -11,6 +11,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeScript from "@/components/ThemeScript";
+import AnalyticsScript from "@/components/analytics/AnalyticsScript";
 import "../globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -70,6 +71,7 @@ export default async function LocaleLayout({ children, params }: Props) {
           <main className="flex-1">{children}</main>
           <Footer />
         </NextIntlClientProvider>
+        <AnalyticsScript />
       </body>
     </html>
   );

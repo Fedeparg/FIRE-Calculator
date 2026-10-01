@@ -16,7 +16,9 @@ push a main ─▶ ci (runners de GitHub) ─▶ ¿verde? ─▶ deploy ─▶ r
                                         ├─ postgres (volumen sextante_pgdata)
                                         ├─ migrate (one-shot)
                                         ├─ api  (NestJS, solo red interna)
-                                        └─ web  (Next, puerto WEB_PORT) ◀─ proxy inverso (TLS)
+                                        ├─ web  (Next, puerto WEB_PORT) ◀─ proxy inverso (TLS)
+                                        ├─ analytics-db (volumen sextante_analytics_pgdata)
+                                        └─ analytics (Umami; panel en ANALYTICS_PORT, solo red local)
 ```
 
 ---
@@ -100,6 +102,8 @@ efímero con permisos 600 y lo borra al terminar.
 | `BACKUP_GPG_PASSPHRASE` | Cifra los backups (AES256) antes de subirlos | `openssl rand -base64 32` |
 | `RCLONE_CONF_BASE64` | Config de rclone (acceso al Drive destino), en base64 | Ver §6 |
 | `STRIPE_SECRET_KEY` | Donaciones; la consume el `api`. Vacía/ausente = donaciones desactivadas | Dashboard de Stripe → Developers → API keys |
+| `ANALYTICS_DB_PASSWORD` | Contraseña del Postgres de la analítica (Umami) | `openssl rand -base64 24` |
+| `ANALYTICS_APP_SECRET` | Firma las sesiones del panel de Umami y los IDs de visita | `openssl rand -base64 48` |
 
 Valores **no secretos** (van fijos en el workflow; edítalos ahí si cambian):
 `APP_URL`, `NEXT_PUBLIC_SITE_URL`, `EMAIL_FROM`, `WEB_PORT`, `COOKIE_SECURE=true`,
@@ -108,7 +112,8 @@ Valores **no secretos** (van fijos en el workflow; edítalos ahí si cambian):
 **Variables** (no secretas; **Settings → Secrets and variables → Actions → Variables**):
 `NEXT_PUBLIC_DONATIONS_ENABLED=1` enciende el botón de donación (se hornea en el
 build del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret
-`STRIPE_SECRET_KEY`.
+`STRIPE_SECRET_KEY`. `NEXT_PUBLIC_ANALYTICS_WEBSITE_ID` es el ID del sitio en Umami
+(ver §7); vacía, no se carga el tracker.
 
 > ⚠️ Guarda `BACKUP_GPG_PASSPHRASE` también **fuera** del servidor (gestor de
 > contraseñas). Sin ella los backups son irrecuperables — es la pieza que los
@@ -213,6 +218,38 @@ read -rs PGPASSWORD; export PGPASSWORD
 
 ---
 
+## 7. Analítica (Umami)
+
+Analítica propia y sin cookies. Umami corre en su contenedor con **su propio
+Postgres** (no se mezcla con los datos de usuarios ni entra en los backups de §6:
+son métricas agregadas y perderlas no compromete nada). Desde el origen público
+solo existen `/stats/script.js` y `/stats/api/send`, que el `web` reenvía a
+`http://analytics:3000` por la red interna; el CSP sigue siendo `'self'`.
+
+**El panel NO pasa por el proxy público.** Se publica en `ANALYTICS_PORT` (8791 por
+defecto) del host: entra por la red local o Tailscale, `http://<ip-del-nas>:8791`.
+No añadas ese puerto al proxy inverso.
+
+Puesta en marcha (una vez):
+
+1. Crea los secrets `ANALYTICS_DB_PASSWORD` y `ANALYTICS_APP_SECRET` (§2) y añádelos
+   al `env:` y al heredoc del paso "Materializar el .env" de `deploy.yml`, junto con
+   la variable `NEXT_PUBLIC_ANALYTICS_WEBSITE_ID`. Sin los dos secrets, `docker
+   compose` se niega a arrancar (producción se queda en la versión anterior).
+2. Despliega. Entra al panel con `admin` / `umami` y **cambia la contraseña en el
+   acto**.
+3. En el panel, *Settings → Websites → Add website* con el dominio público. Copia
+   el **Website ID** (un UUID) a la variable `NEXT_PUBLIC_ANALYTICS_WEBSITE_ID`.
+4. Redespliega (se hornea en el build del `web`). Comprueba en el navegador que
+   `/stats/script.js` responde 200 y que la visita aparece en *Realtime*.
+
+Privacidad, ya configurada: el tracker no envía la query string ni el hash (los
+cálculos compartibles llevan ahí sus valores), respeta Do Not Track y solo mide en
+el dominio canónico; Umami no guarda la IP y el ID de visita cambia cada día
+(`SALT_ROTATION=day`). Los eventos que se miden están en
+`src/components/analytics/track.ts`; si añades uno, recógelo también en la política
+de privacidad.
+
 ## Operación
 
 - **Actualizar:** push a `main` → CI y, si pasa, redeploy automático. El volumen
@@ -224,7 +261,7 @@ read -rs PGPASSWORD; export PGPASSWORD
   el disparo manual, que es deliberadamente explícito.
 - **NUNCA** `docker compose ... down -v` en producción: borra la base de datos.
   Tampoco cambies `JWT_SECRET` salvo que quieras desloguear a todo el mundo.
-- **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web`.
+- **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web analytics`.
 - **Backups:** ver §6.
 
 ## Alternativa: build en GitHub + pull (recomendada si el repo es público)

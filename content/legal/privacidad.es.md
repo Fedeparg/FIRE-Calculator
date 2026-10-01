@@ -1,6 +1,6 @@
 ---
 title: Política de privacidad y cookies
-updatedAt: "2026-09-28"
+updatedAt: "2026-10-01"
 ---
 
 Esta política explica qué datos tratamos cuando visitas **Sextante**
@@ -65,6 +65,29 @@ proveedor de correo electrónico.
 - Puedes **darte de baja** en cualquier momento desde el enlace de cada correo o
   desde *Mi cuenta*; al borrar la cuenta se eliminan también estas preferencias.
 
+### Estadísticas de uso (analítica propia)
+
+Para saber qué páginas y herramientas se usan, medimos las visitas con **Umami**,
+una herramienta de código abierto que alojamos en **nuestros propios servidores**:
+los datos no se envían a ningún tercero.
+
+- **Qué se registra:** la página visitada (**sin los parámetros de la URL**, que es
+  donde los cálculos compartibles guardan sus valores), la página de procedencia,
+  el idioma, el tipo de dispositivo, el navegador, el sistema operativo, el tamaño
+  de pantalla y una ubicación aproximada (país, región y ciudad) deducida de la IP
+  en el momento de la visita. También algunas **acciones**, sin cifras ni datos
+  personales: copiar el enlace de un cálculo, guardar un escenario, pedir el enlace
+  de acceso, añadir una posición e iniciar una donación.
+- **Qué no se registra:** ni tu dirección IP, ni tu correo, ni los valores de las
+  calculadoras o de tu cartera. **No se usan cookies**: las visitas de un mismo día
+  se agrupan con un código irreversible que **cambia cada día**, así que no es
+  posible seguirte de un día a otro.
+- Si tu navegador tiene activada la opción **"No rastrear" (Do Not Track)**, no se
+  registra nada.
+- **Base legal:** nuestro **interés legítimo** en conocer el uso agregado del sitio
+  para mejorarlo, con un impacto mínimo en tu privacidad. Puedes **oponerte**
+  activando "No rastrear" o bloqueando el script en tu navegador.
+
 ## Cookies
 
 Usamos los siguientes tipos de cookies:
@@ -73,7 +96,8 @@ Usamos los siguientes tipos de cookies:
 | --- | --- | --- |
 | **Técnicas / preferencias** | Recordar ajustes como el tema claro/oscuro. Se guardan en tu navegador. | No requiere |
 
-No usamos cookies de **publicidad ni de analítica**. Puedes configurar o bloquear
+No usamos cookies de **publicidad ni de analítica**: las estadísticas de uso
+descritas arriba funcionan sin cookies. Puedes configurar o bloquear
 las cookies desde tu navegador sin que ello impida usar las calculadoras.
 
 ## Destinatarios y transferencias internacionales
@@ -86,7 +110,8 @@ con fines propios.
 ## Conservación
 
 Si no usas la cartera, **no conservamos datos personales tuyos** en nuestros
-servidores. Si la usas, conservamos tu cuenta y tus posiciones **hasta que borras
+servidores más allá de las estadísticas de uso, que no permiten identificarte y
+conservamos para comparar el uso del sitio a lo largo del tiempo. Si la usas, conservamos tu cuenta y tus posiciones **hasta que borras
 tu cuenta**. Los accesos concedidos a aplicaciones (OAuth/MCP) se conservan hasta
 que los **revocas**, y los tokens caducados se eliminan automáticamente.
 

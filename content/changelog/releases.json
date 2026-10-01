@@ -2,6 +2,64 @@
   "generatedFrom": "git log HEAD",
   "releases": [
     {
+      "date": "2026-10-01",
+      "title": {
+        "es": "Estadísticas de uso propias y sin cookies",
+        "en": "First-party, cookieless usage statistics"
+      },
+      "summary": {
+        "es": "Sextante empieza a medir qué páginas y herramientas se usan, para decidir qué mejorar. Lo hace con Umami alojado en nuestro propio servidor: sin cookies, sin terceros, sin guardar tu IP y sin recoger los valores de las calculadoras, que nunca salen de la URL. Si tu navegador pide no ser rastreado, no se mide nada. La política de privacidad explica exactamente qué se registra.",
+        "en": "Sextante now measures which pages and tools are used, to decide what to improve. It does so with Umami hosted on our own server: no cookies, no third parties, no stored IP address, and none of the values you type into the calculators, which never leave the URL. If your browser asks not to be tracked, nothing is measured. The privacy policy explains exactly what is recorded."
+      },
+      "highlight": false,
+      "entries": [
+        {
+          "hash": "9460e0a9",
+          "type": "ci",
+          "scope": "deploy",
+          "category": "internal",
+          "text": {
+            "es": "el despliegue recibe los secretos de la analítica",
+            "en": "the deploy receives the analytics secrets"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "21b23273",
+          "type": "docs",
+          "scope": "legal",
+          "category": "internal",
+          "text": {
+            "es": "la política de privacidad describe las estadísticas de uso",
+            "en": "the privacy policy describes the usage statistics"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "c9b80d63",
+          "type": "feat",
+          "scope": "analytics",
+          "category": "feature",
+          "text": {
+            "es": "estadísticas de uso propias, sin cookies y sin terceros: no se recogen los valores de las calculadoras y se respeta \"No rastrear\"",
+            "en": "first-party usage statistics with no cookies or third parties: calculator values are never collected and Do Not Track is honoured"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "0e5b34aa",
+          "type": "feat",
+          "scope": "analytics",
+          "category": "feature",
+          "text": {
+            "es": "Umami alojado en el propio servidor, servido desde el mismo dominio",
+            "en": "Umami self-hosted on our own server, served from the same domain"
+          },
+          "hidden": true
+        }
+      ]
+    },
+    {
       "date": "2026-09-28",
       "title": {
         "es": "Plusvalías realizadas, precios cada hora, avisos de hitos y Monte Carlo con historia real",
@@ -13,6 +71,17 @@
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "fad92abd",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "show the new Learn articles as features",
+            "en": ""
+          },
+          "hidden": false
+        },
         {
           "hash": "ce6f8cf7",
           "type": "docs",

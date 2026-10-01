@@ -1,6 +1,6 @@
 ---
 title: Privacy and cookie policy
-updatedAt: "2026-09-28"
+updatedAt: "2026-10-01"
 ---
 
 This policy explains what data we process when you visit **Sextante**
@@ -65,6 +65,28 @@ our email delivery provider.
 - You can **unsubscribe** at any time from the link in every email or from
   *My account*; deleting your account also deletes these preferences.
 
+### Usage statistics (first-party analytics)
+
+To learn which pages and tools are used, we measure visits with **Umami**, an
+open-source tool that we host on **our own servers**: the data is not sent to any
+third party.
+
+- **What is recorded:** the page visited (**without the URL parameters**, which is
+  where shareable calculations keep their values), the referring page, language,
+  device type, browser, operating system, screen size and an approximate location
+  (country, region and city) derived from the IP address at the time of the visit.
+  Also a few **actions**, with no amounts or personal data: copying a calculation
+  link, saving a scenario, requesting a sign-in link, adding a position and
+  starting a donation.
+- **What is not recorded:** your IP address, your email, or the values in the
+  calculators or your portfolio. **No cookies are used**: visits on the same day are
+  grouped under an irreversible code that **changes every day**, so you cannot be
+  followed from one day to the next.
+- If your browser has **Do Not Track** turned on, nothing is recorded.
+- **Legal basis:** our **legitimate interest** in understanding aggregate use of the
+  site to improve it, with minimal impact on your privacy. You can **object** by
+  turning on Do Not Track or blocking the script in your browser.
+
 ## Cookies
 
 We use the following types of cookies:
@@ -73,7 +95,8 @@ We use the following types of cookies:
 | --- | --- | --- |
 | **Essential / preferences** | Remember settings such as light/dark theme. Stored in your browser. | Not required |
 
-We do not use **advertising or analytics** cookies. You can configure or block
+We do not use **advertising or analytics** cookies: the usage statistics described
+above work without cookies. You can configure or block
 cookies in your browser without preventing you from using the calculators.
 
 ## Recipients and international transfers
@@ -86,7 +109,8 @@ for their own purposes.
 ## Retention
 
 If you do not use the portfolio, **we do not retain any personal data of yours**
-on our servers. If you do, we retain your account and your positions **until you
+on our servers beyond the usage statistics, which cannot identify you and which we
+keep to compare how the site is used over time. If you do, we retain your account and your positions **until you
 delete your account**. Access granted to applications (OAuth/MCP) is retained
 until you **revoke** it, and expired tokens are deleted automatically.
 
