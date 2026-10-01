@@ -29,7 +29,7 @@ export default function LanguageSwitcher() {
           type="button"
           aria-current={locale === code}
           onClick={() => switchTo(code)}
-          className={`rounded-md px-2.5 py-1 font-medium transition-colors ${
+          className={`min-h-8 rounded-md px-2.5 py-1 font-medium transition-colors ${
             locale === code
               ? "bg-brand text-brand-fg"
               : "text-muted hover:text-foreground"
