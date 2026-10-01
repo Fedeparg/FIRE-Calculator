@@ -12,12 +12,11 @@ import {
   GOAL_MODES,
   type GoalMode,
 } from "@sextante/core/portfolio-goal";
+import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
 import { MAX_YEARS } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/lib/format";
 import {
-  MAX_SCENARIOS_PER_USER,
-  SCENARIO_NAME_MAX_LENGTH,
   scenarioErrorKeyForResponse,
   scenarioErrorKeyForStatus,
   type SavedScenario,

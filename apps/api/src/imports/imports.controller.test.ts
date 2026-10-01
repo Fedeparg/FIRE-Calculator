@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
 import { AppModule } from '../app.module.js';
-import { SESSION_COOKIE } from '../auth/session.constants.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
 import type { Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';

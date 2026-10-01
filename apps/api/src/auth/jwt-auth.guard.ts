@@ -6,7 +6,7 @@ import type { Request } from 'express';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { users } from '../db/schema.js';
 import type { SessionUser } from './auth.service.js';
-import { SESSION_COOKIE } from './session.constants.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
 
 type JwtPayload = { sub: string; email: string };
 

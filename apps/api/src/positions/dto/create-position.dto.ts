@@ -1,13 +1,6 @@
 import { Transform, Type } from 'class-transformer';
+import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
 import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
-
-/**
- * Divisas admitidas: las 10 más negociadas del mundo (turnover FX, BIS). EN PARIDAD con
- * el `PORTFOLIO_CURRENCIES` del frontend: si difieren, una divisa válida en la UI podría
- * dar 400 aquí (o viceversa).
- */
-export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'CNY', 'HKD', 'SGD'] as const;
-export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 /**
  * Tope superior de `quantity` y `avgPrice`. `numeric(18,6)` admite 12 dígitos enteros;

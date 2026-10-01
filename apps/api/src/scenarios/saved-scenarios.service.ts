@@ -1,3 +1,4 @@
+import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 
@@ -12,13 +13,6 @@ import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
  * puerta a usar la cuenta como almacén de ficheros.
  */
 export const MAX_INPUTS_BYTES = 8 * 1024;
-
-/**
- * Tope de escenarios por usuario. Es una conveniencia de la cuenta ("mi plan a los 45", "mi
- * plan pesimista"), no un gestor documental: 50 es holgado para el uso real y acota el coste
- * de un usuario que automatizase el guardado.
- */
-export const MAX_SCENARIOS_PER_USER = 50;
 
 /** Escenario tal y como lo consume el frontend (fechas como ISO string). */
 export type SavedScenarioResponse = {

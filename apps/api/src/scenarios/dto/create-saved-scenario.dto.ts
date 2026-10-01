@@ -1,3 +1,4 @@
+import { SCENARIO_NAME_MAX_LENGTH } from '@sextante/core/contracts';
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsObject, IsString, Matches, MaxLength } from 'class-validator';
 
@@ -29,7 +30,7 @@ export class CreateSavedScenarioDto {
   @IsString()
   @Transform(trim)
   @IsNotEmpty()
-  @MaxLength(100)
+  @MaxLength(SCENARIO_NAME_MAX_LENGTH)
   name!: string;
 
   @IsObject()
