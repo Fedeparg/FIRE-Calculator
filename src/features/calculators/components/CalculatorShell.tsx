@@ -6,22 +6,22 @@ import { calculatorSchema } from "@/shared/seo/json-ld";
 import CalculatorStateProvider from "./CalculatorState";
 import Breadcrumbs from "@/shared/seo/Breadcrumbs";
 import JsonLd from "@/shared/seo/JsonLd";
-import CalculatorExplainer from "@/features/wiki/components/CalculatorExplainer";
 
 type Props = {
   title: string;
   intro: string;
   children: React.ReactNode;
-  /**
-   * Slug de la calculadora (ver `src/features/calculators/registry.ts`). Si se indica, se
-   * renderiza debajo el bloque divulgativo + chips de la wiki. Si se omite (o
-   * no hay contenido para ese slug), no se muestra nada.
-   */
+  /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */
   slug?: string;
+  /**
+   * Bloque divulgativo de la wiki que se pinta bajo el aviso legal. Lo compone la ruta (no el
+   * shell) para que `calculators` no dependa de `wiki`.
+   */
+  explainer?: React.ReactNode;
 };
 
 /** Estructura común a todas las páginas de calculadora. */
-export default function CalculatorShell({ title, intro, children, slug }: Props) {
+export default function CalculatorShell({ title, intro, children, slug, explainer }: Props) {
   const t = useTranslations("common");
   const tNav = useTranslations("nav");
   const locale = asLocale(useLocale());
@@ -59,7 +59,7 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
 
         <p className="mt-8 text-xs text-muted">{t("disclaimerShort")}</p>
 
-        {slug && <CalculatorExplainer calcSlug={slug} />}
+        {explainer}
       </div>
     </section>
   );

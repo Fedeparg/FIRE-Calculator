@@ -14,7 +14,7 @@ import {
   type PortfolioGoalResult,
 } from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
-import { decodeCalculatorInputs, type FieldSpecs } from "@/features/calculators/url-state";
+import { decodeCalculatorInputs, type FieldSpecs } from "@/shared/url-state/url-state";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 
 /**
@@ -123,17 +123,4 @@ export function goalProgress(
     mode: "fire",
     ...computePortfolioGoal({ ...common, annualExpenses, withdrawalRate: settings.withdrawalRate }),
   };
-}
-
-/**
- * Plan activo entre los escenarios FIRE guardados: el actualizado más recientemente. Es la
- * misma regla que siguen los avisos de hitos de la API, así que Resumen, Objetivo y avisos
- * miran siempre el mismo plan. Elegir otro plan lo "toca" (PATCH sin cambios) para activarlo.
- */
-export function activeScenario<T extends { updatedAt: string }>(scenarios: readonly T[]): T | null {
-  let active: T | null = null;
-  for (const scenario of scenarios) {
-    if (active === null || Date.parse(scenario.updatedAt) > Date.parse(active.updatedAt)) active = scenario;
-  }
-  return active;
 }

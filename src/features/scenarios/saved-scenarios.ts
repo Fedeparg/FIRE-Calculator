@@ -39,9 +39,6 @@ export function scenarioErrorKey(error: unknown): ScenarioErrorKey {
   return apiErrorKey(error);
 }
 
-/** Opciones de `fetch` de la lista: siempre fresca (constante de módulo, estable entre renders). */
-export const SCENARIOS_QUERY_INIT = { cache: "no-store" } as const;
-
 export function scenariosListPath(slug: string): string {
   return `/api/scenarios?slug=${encodeURIComponent(slug)}`;
 }
@@ -93,4 +90,17 @@ export function promoteScenario(list: readonly SavedScenario[], scenario: SavedS
 /** Sustituye un escenario conservando su posición. */
 export function replaceScenario(list: readonly SavedScenario[], scenario: SavedScenario): SavedScenario[] {
   return list.map((s) => (s.id === scenario.id ? scenario : s));
+}
+
+/**
+ * Plan activo entre los escenarios FIRE guardados: el actualizado más recientemente. Es la
+ * misma regla que siguen los avisos de hitos de la API, así que Resumen, Objetivo y avisos
+ * miran siempre el mismo plan. Elegir otro plan lo "toca" (PATCH sin cambios) para activarlo.
+ */
+export function activeScenario<T extends { updatedAt: string }>(scenarios: readonly T[]): T | null {
+  let active: T | null = null;
+  for (const scenario of scenarios) {
+    if (active === null || Date.parse(scenario.updatedAt) > Date.parse(active.updatedAt)) active = scenario;
+  }
+  return active;
 }

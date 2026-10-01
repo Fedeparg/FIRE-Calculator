@@ -6,7 +6,9 @@ import { routing } from "@/i18n/routing";
 import { asLocale } from "@/i18n/types";
 import { SITE_NAME } from "@/shared/seo/site";
 import { articleSchema } from "@/shared/seo/json-ld";
+import { CALCULATORS } from "@/features/calculators/registry";
 import { getArticle, getArticleSlugs } from "@/features/wiki/content";
+import { getRelatedCalculatorSlugs } from "@/features/wiki/related-articles";
 import ArticleRelatedCalculators from "@/features/wiki/components/ArticleRelatedCalculators";
 import { buildMetadata } from "@/shared/seo/seo";
 import Breadcrumbs from "@/shared/seo/Breadcrumbs";
@@ -47,6 +49,12 @@ export default async function ArticlePage({ params }: Props) {
   const article = await getArticle(slug, locale);
   if (!article) notFound();
 
+  const relatedSlugs = new Set(getRelatedCalculatorSlugs(slug));
+  const relatedCalculators = CALCULATORS.filter((c) => relatedSlugs.has(c.slug)).map((c) => ({
+    slug: c.slug,
+    name: c.name[asLocale(locale)],
+  }));
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10">
       <Breadcrumbs
@@ -72,7 +80,7 @@ export default async function ArticlePage({ params }: Props) {
       />
 
       {/* Enlazado interno: calculadoras que usan este concepto. */}
-      <ArticleRelatedCalculators articleSlug={slug} />
+      <ArticleRelatedCalculators calculators={relatedCalculators} />
     </article>
   );
 }

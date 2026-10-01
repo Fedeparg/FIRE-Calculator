@@ -1,27 +1,21 @@
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { CALCULATORS } from "@/features/calculators/registry";
-import { asLocale } from "@/i18n/types";
-import { getRelatedCalculatorSlugs } from "../relatedArticles";
 
 type Props = {
-  /** Slug del artículo de la wiki (ver `content/wiki/<slug>.<locale>.md`). */
-  articleSlug: string;
+  /** Calculadoras relacionadas, ya resueltas (con el nombre en el idioma activo) por la ruta. */
+  calculators: readonly { slug: string; name: string }[];
 };
 
 /**
  * Enlazado interno inverso: desde un artículo hacia las calculadoras que lo
- * referencian (mapeo central en `relatedArticles.ts`). Complementa los chips de
+ * referencian (la ruta resuelve el mapeo de `related-articles.ts` contra el registry, para que
+ * la wiki no dependa de las calculadoras). Complementa los chips de
  * "sigue aprendiendo" que van en sentido calculadora → artículo, cerrando el
  * círculo de enlaces. Degradación elegante: si no hay calculadoras
  * relacionadas, no se renderiza nada.
  */
-export default async function ArticleRelatedCalculators({ articleSlug }: Props) {
-  const locale = asLocale(await getLocale());
-  const relatedSlugs = new Set(getRelatedCalculatorSlugs(articleSlug));
-  const calculators = CALCULATORS.filter((c) => relatedSlugs.has(c.slug));
-
+export default async function ArticleRelatedCalculators({ calculators }: Props) {
   if (calculators.length === 0) return null;
 
   const t = await getTranslations("wiki");
@@ -36,7 +30,7 @@ export default async function ArticleRelatedCalculators({ articleSlug }: Props) 
               href={`/calculadoras/${calc.slug}`}
               className="inline-block rounded-full border border-border bg-surface-2 px-3 py-1 text-sm text-foreground transition-colors hover:border-brand hover:text-brand"
             >
-              {calc.name[locale]}
+              {calc.name}
             </Link>
           </li>
         ))}

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/shared/api/client";
 import {
+  activeScenario,
   classifyScenariosQuery,
   createScenarioRequest,
   deleteScenarioRequest,
@@ -111,5 +112,27 @@ describe("requests", () => {
     vi.stubGlobal("fetch", async () => Response.json({ code: "SCENARIO_QUOTA_EXCEEDED" }, { status: 400 }));
     const failure = await createScenarioRequest("fire", "Plan", {}).catch((e: unknown) => e);
     expect(scenarioErrorKey(failure)).toBe("errorQuota");
+  });
+});
+
+describe("activeScenario", () => {
+  const plan = (id: string, updatedAt: string) => ({ id, updatedAt });
+
+  it("devuelve null sin planes", () => {
+    expect(activeScenario([])).toBeNull();
+  });
+
+  it("elige el actualizado más recientemente, sin fiarse del orden de la lista", () => {
+    const plans = [
+      plan("a", "2026-09-01T10:00:00.000Z"),
+      plan("b", "2026-10-01T09:00:00.000Z"),
+      plan("c", "2026-09-30T23:59:59.000Z"),
+    ];
+    expect(activeScenario(plans)?.id).toBe("b");
+  });
+
+  it("con la misma fecha se queda con el primero de la lista", () => {
+    const at = "2026-10-01T09:00:00.000Z";
+    expect(activeScenario([plan("a", at), plan("b", at)])?.id).toBe("a");
   });
 });

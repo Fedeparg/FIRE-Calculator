@@ -5,7 +5,7 @@ import path from "node:path";
 
 import matter from "gray-matter";
 
-import { renderMarkdown } from "./markdown";
+import { renderMarkdown } from "@/shared/content/markdown";
 import { asLocale } from "@/i18n/types";
 
 /** Niveles de dificultad usados para agrupar los artículos en el índice. */

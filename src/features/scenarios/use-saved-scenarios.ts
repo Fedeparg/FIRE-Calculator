@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { activeScenario } from "@/features/portfolio/model/goal-scenario";
+import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import {
-  SCENARIOS_QUERY_INIT,
+  activeScenario,
   classifyScenariosQuery,
   createScenarioRequest,
   deleteScenarioRequest,
@@ -49,7 +49,7 @@ export type SavedScenariosApi = {
  */
 export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
   const query = useApiQuery<SavedScenario[]>(slug ? scenariosListPath(slug) : null, {
-    init: SCENARIOS_QUERY_INIT,
+    init: NO_STORE,
   });
   const { status, loadError } = classifyScenariosQuery(query);
   const loaded = query.status === "ready" ? query.data : null;

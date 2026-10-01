@@ -5,6 +5,7 @@ import { CALCULATORS } from "@/features/calculators/registry";
 import { calculatorMetadata } from "@/features/calculators/seo";
 import CalculatorShell from "@/features/calculators/components/CalculatorShell";
 import CalculatorBody from "@/features/calculators/components/CalculatorBody";
+import CalculatorExplainer from "@/features/wiki/components/CalculatorExplainer";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
@@ -34,7 +35,12 @@ export default async function Page({ params }: Props) {
   const t = await getTranslations(`calc.${slug}`);
 
   return (
-    <CalculatorShell title={t("title")} intro={t("intro")} slug={slug}>
+    <CalculatorShell
+      title={t("title")}
+      intro={t("intro")}
+      slug={slug}
+      explainer={<CalculatorExplainer calcSlug={slug} />}
+    >
       <CalculatorBody slug={slug} />
     </CalculatorShell>
   );
