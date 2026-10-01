@@ -79,6 +79,9 @@ importers:
       fast-check:
         specifier: ^4.10.2
         version: 4.10.2
+      prettier:
+        specifier: ^3.8.5
+        version: 3.8.5
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
@@ -9871,8 +9874,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.8.5:
-    optional: true
+  prettier@3.8.5: {}
 
   process-nextick-args@2.0.1: {}
 
