@@ -4,7 +4,7 @@
 # `pnpm deploy`) -> runtime delgado.
 
 # ---- Base común ----
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 ENV CI=true
 RUN corepack enable
 # Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
@@ -41,7 +41,7 @@ RUN rm -rf /app/deploy/src /app/deploy/test /app/deploy/vitest.config.ts \
     /app/deploy/*.tsbuildinfo /app/deploy/drizzle.config.ts
 
 # ---- Runtime ----
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
