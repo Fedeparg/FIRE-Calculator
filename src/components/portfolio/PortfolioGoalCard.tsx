@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
-import { goalProgress, goalSettingsFromInputs, type GoalSettings } from "@/core/portfolio-goal-scenario";
+import {
+  activeScenario,
+  goalProgress,
+  goalSettingsFromInputs,
+  type GoalSettings,
+} from "@/core/portfolio-goal-scenario";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import type { SavedScenario } from "@/lib/scenarios";
@@ -17,12 +22,15 @@ type Props = {
 };
 
 /** Estado de la carga del objetivo guardado. */
-type Loaded = { kind: "loading" } | { kind: "none" } | { kind: "goal"; settings: GoalSettings };
+type Loaded =
+  | { kind: "loading" }
+  | { kind: "none" }
+  | { kind: "goal"; name: string; settings: GoalSettings };
 
 /**
  * Resumen del objetivo FIRE en la pestaña Resumen: el porcentaje conseguido y el tiempo que
- * falta, con el escenario guardado más reciente de la calculadora FIRE (el mismo que carga la
- * pestaña Objetivo). Sin escenario guardado invita a definirlo, en vez de inventar uno.
+ * falta, con el plan activo (`activeScenario`, el mismo que carga la pestaña Objetivo), y su
+ * nombre para que se sepa cuál es. Sin escenario guardado invita a definirlo, en vez de inventar uno.
  */
 export default function PortfolioGoalCard({ marketValue, display, rates }: Props) {
   const t = useTranslations("portfolio.goalCard");
@@ -36,10 +44,13 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
       try {
         const res = await fetch(`/api/scenarios?slug=${FIRE_CALCULATOR_SLUG}`, { cache: "no-store" });
         const scenarios = res.ok ? ((await res.json()) as SavedScenario[]) : [];
-        // La API los devuelve del más reciente al más antiguo.
-        const latest = scenarios[0];
+        const active = activeScenario(scenarios);
         if (!cancelled) {
-          setLoaded(latest ? { kind: "goal", settings: goalSettingsFromInputs(latest.inputs) } : { kind: "none" });
+          setLoaded(
+            active
+              ? { kind: "goal", name: active.name, settings: goalSettingsFromInputs(active.inputs) }
+              : { kind: "none" },
+          );
         }
       } catch {
         if (!cancelled) setLoaded({ kind: "none" });
@@ -63,6 +74,7 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
         </Link>
       </div>
 
+      {loaded.kind === "goal" && <p className="-mt-2 truncate text-sm text-muted">{t("plan", { name: loaded.name })}</p>}
       {loaded.kind === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
       {loaded.kind === "none" && <p className="text-sm text-muted">{t("empty")}</p>}
       {loaded.kind === "goal" && progress === null && <p className="text-sm text-muted">{t("notConvertible")}</p>}
