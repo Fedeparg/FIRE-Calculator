@@ -54,7 +54,7 @@ export default function ConnectedApps() {
   }
 
   // Carga inicial. El estado arranca en "loading", así que no fijamos estado de forma
-  // síncrona en el effect (solo tras el await), igual que `PortfolioClient`.
+  // síncrona en el effect (solo tras el await), igual que `PortfolioDataProvider`.
   useEffect(() => {
     let cancelled = false;
     const load = async () => {

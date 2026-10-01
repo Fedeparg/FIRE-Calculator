@@ -30,7 +30,7 @@ import PortfolioGoalSimulation from "./PortfolioGoalSimulation";
 type Props = {
   /**
    * Valor de mercado de la cartera, en `display`. Es EXACTAMENTE el mismo agregado que muestra
-   * el resumen (lo calcula `PortfolioClient` una sola vez): comparar el objetivo con otra cifra
+   * el resumen (lo calcula `PortfolioDataProvider` una sola vez): comparar el objetivo con otra cifra
    * daría dos "patrimonios actuales" distintos en la misma pantalla.
    */
   marketValue: number;
