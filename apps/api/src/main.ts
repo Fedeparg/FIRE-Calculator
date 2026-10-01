@@ -4,7 +4,7 @@ import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 
@@ -29,8 +29,6 @@ async function bootstrap(): Promise<void> {
   app.set('trust proxy', config.get('TRUST_PROXY_HOPS', { infer: true }));
 
   app.use(cookieParser());
-
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
   // /api encaja con la topología same-origin (Caddy en prod, rewrites de Next en dev).
   app.setGlobalPrefix('api');

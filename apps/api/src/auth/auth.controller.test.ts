@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 
-import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -39,7 +38,6 @@ async function bootApp(): Promise<{ app: NestExpressApplication; baseUrl: string
   // cliente. Los tests lo usan para no compartir el cupo de throttling de `/auth/request`.
   app.set('trust proxy', 1);
   app.use(cookieParser());
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.setGlobalPrefix('api');
   await app.listen(0, '127.0.0.1');
   return { app, baseUrl: `${await app.getUrl()}/api/auth` };

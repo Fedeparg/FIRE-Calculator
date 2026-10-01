@@ -1,8 +1,6 @@
-import { SCENARIO_NAME_MAX_LENGTH } from '@sextante/core/contracts';
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { z } from 'zod';
 
-const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
+import { SCENARIO_NAME_MAX_LENGTH } from '@sextante/core/contracts';
 
 /**
  * Cuerpo de PATCH /api/scenarios/:id. Solo se puede renombrar y cambiar los `inputs`: el
@@ -10,15 +8,9 @@ const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'stri
  * cambiarlo convertiría unos inputs en basura para la calculadora de destino. Para eso,
  * guardar uno nuevo.
  */
-export class UpdateSavedScenarioDto {
-  @IsOptional()
-  @IsString()
-  @Transform(trim)
-  @IsNotEmpty()
-  @MaxLength(SCENARIO_NAME_MAX_LENGTH)
-  name?: string;
+export const updateSavedScenarioSchema = z.strictObject({
+  name: z.string().trim().min(1).max(SCENARIO_NAME_MAX_LENGTH).optional(),
+  inputs: z.record(z.string(), z.unknown()).optional(),
+});
 
-  @IsOptional()
-  @IsObject()
-  inputs?: Record<string, unknown>;
-}
+export type UpdateSavedScenarioDto = z.infer<typeof updateSavedScenarioSchema>;

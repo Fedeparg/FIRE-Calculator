@@ -1,12 +1,11 @@
-import { IsBoolean, IsIn } from 'class-validator';
+import { z } from 'zod';
 
-import { NOTIFICATION_LOCALES, type NotificationLocale } from '@sextante/core/contracts';
+import { NOTIFICATION_LOCALES } from '@sextante/core/contracts';
 
-export class UpdateNotificationSettingsDto {
-  @IsBoolean()
-  fireAlertsEnabled!: boolean;
-
+export const updateNotificationSettingsSchema = z.strictObject({
+  fireAlertsEnabled: z.boolean(),
   /** Idioma de los emails: el de la interfaz desde la que se activan. */
-  @IsIn(NOTIFICATION_LOCALES)
-  locale!: NotificationLocale;
-}
+  locale: z.enum(NOTIFICATION_LOCALES),
+});
+
+export type UpdateNotificationSettingsDto = z.infer<typeof updateNotificationSettingsSchema>;

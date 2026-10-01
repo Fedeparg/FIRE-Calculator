@@ -5,9 +5,9 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 import { PricesService } from '../prices/prices.service.js';
-import { CombinePositionDto } from './dto/combine-position.dto.js';
-import { CreatePositionDto } from './dto/create-position.dto.js';
-import { UpdatePositionDto } from './dto/update-position.dto.js';
+import type { CombinePositionDto } from './dto/combine-position.dto.js';
+import type { CreatePositionDto } from './dto/create-position.dto.js';
+import type { UpdatePositionDto } from './dto/update-position.dto.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { PositionLotsService, sameAmount } from './position-lots.service.js';
 import {

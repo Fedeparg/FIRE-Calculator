@@ -1,17 +1,14 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
 import { z } from 'zod';
 
-import { CombinePositionDto } from '../../positions/dto/combine-position.dto.js';
-import { CreatePositionDto } from '../../positions/dto/create-position.dto.js';
-import { CreatePositionLotDto } from '../../positions/dto/create-position-lot.dto.js';
-import { UpdatePositionDto } from '../../positions/dto/update-position.dto.js';
+import { combinePositionSchema } from '../../positions/dto/combine-position.dto.js';
+import { createPositionSchema } from '../../positions/dto/create-position.dto.js';
+import { createPositionLotSchema } from '../../positions/dto/create-position-lot.dto.js';
+import { updatePositionSchema } from '../../positions/dto/update-position.dto.js';
 import { PositionLotsService } from '../../positions/position-lots.service.js';
 import { PositionsService } from '../../positions/positions.service.js';
 import { jsonResult } from '../mcp-results.js';
-import { CURRENCY_VALUES } from './tool-schemas.js';
-import { InvalidToolInputError, type ToolRunner } from './tool-runner.js';
+import type { ToolRunner } from './tool-runner.js';
 
 export type WriteToolDeps = {
   positions: PositionsService;
@@ -19,25 +16,13 @@ export type WriteToolDeps = {
 };
 
 /**
- * Valida la entrada de una tool de escritura con el mismo DTO (class-validator) que usa la
- * API REST, de modo que el camino MCP no sea una vía de escritura más débil (divisa fuera de
- * la lista, cantidades negativas, etc.). Lanza con los mensajes de validación si falla.
- */
-async function validateDto<T extends object>(cls: new () => T, input: unknown): Promise<T> {
-  const dto = plainToInstance(cls, input);
-  const errors = await validate(dto, { whitelist: true, forbidNonWhitelisted: true });
-  if (errors.length > 0) {
-    const messages = errors.flatMap((e) => Object.values(e.constraints ?? {})).join('; ');
-    throw new InvalidToolInputError(messages || 'Entrada no válida');
-  }
-  return dto;
-}
-
-/**
  * Tools de escritura (scope `portfolio:write`). Se registran siempre (para que el host las
  * descubra), pero cada una verifica el scope en tiempo de ejecución: un token solo-lectura
  * recibe un error de tool pidiendo reconectar con permiso de escritura (step-up). No es un
  * 403 HTTP: todas las tools comparten el mismo endpoint, así que el control es por-tool.
+ *
+ * El `inputSchema` de cada tool sale de los esquemas zod de `positions/dto` (los mismos que validan
+ * la API REST): así el camino MCP no es una vía de escritura más débil y no puede divergir de ella.
  */
 export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: WriteToolDeps): void {
   server.registerTool(
@@ -48,20 +33,12 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
         'Crea una nueva posición en la cartera. Si ya existe el mismo símbolo, indica el ' +
         'bróker para distinguirla; si el (símbolo, bróker) exacto ya existe, usa ' +
         '`combine_position` en su lugar. Requiere permiso de escritura.',
-      inputSchema: {
-        ticker: z.string().min(1).max(20).describe('Símbolo (p. ej. "IWDA", "AAPL").'),
-        name: z.string().max(100).optional().describe('Nombre legible (opcional).'),
-        quantity: z.number().positive().describe('Número de participaciones/acciones.'),
-        avgPrice: z.number().min(0).describe('Precio medio de compra.'),
-        broker: z.string().max(100).optional().describe('Bróker (opcional).'),
-        currency: z.enum(CURRENCY_VALUES).optional().describe('Divisa (por defecto EUR).'),
-      },
+      inputSchema: createPositionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
     (args) =>
       runner.runWrite('add_position', async () => {
-        const dto = await validateDto(CreatePositionDto, args);
-        const position = await deps.positions.create(runner.userId, dto);
+        const position = await deps.positions.create(runner.userId, args);
         return jsonResult({ position });
       }),
   );
@@ -75,19 +52,13 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
         'los campos enviados. Requiere permiso de escritura.',
       inputSchema: {
         id: z.string().min(1).describe('Id de la posición a editar.'),
-        ticker: z.string().min(1).max(20).optional(),
-        name: z.string().max(100).optional(),
-        quantity: z.number().positive().optional(),
-        avgPrice: z.number().min(0).optional(),
-        broker: z.string().max(100).optional(),
-        currency: z.enum(CURRENCY_VALUES).optional(),
+        ...updatePositionSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ id, ...rest }) =>
       runner.runWrite('update_position', async () => {
-        const dto = await validateDto(UpdatePositionDto, rest);
-        const position = await deps.positions.update(runner.userId, id, dto);
+        const position = await deps.positions.update(runner.userId, id, rest);
         return jsonResult({ position });
       }),
   );
@@ -102,16 +73,13 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
         'Requiere permiso de escritura.',
       inputSchema: {
         id: z.string().min(1).describe('Id de la posición existente.'),
-        quantity: z.number().positive().describe('Cantidad de la nueva compra.'),
-        avgPrice: z.number().min(0).describe('Precio de la nueva compra.'),
-        currency: z.enum(CURRENCY_VALUES).optional(),
+        ...combinePositionSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
     ({ id, ...rest }) =>
       runner.runWrite('combine_position', async () => {
-        const dto = await validateDto(CombinePositionDto, rest);
-        const position = await deps.positions.combine(runner.userId, id, dto);
+        const position = await deps.positions.combine(runner.userId, id, rest);
         return jsonResult({ position });
       }),
   );
@@ -147,19 +115,13 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
         'tiene se rechaza. Requiere permiso de escritura.',
       inputSchema: {
         positionId: z.string().min(1).describe('Id de la posición.'),
-        kind: z.enum(['buy', 'sell']).describe('Tipo de operación: compra o venta.'),
-        quantity: z.number().positive().describe('Cantidad operada.'),
-        price: z.number().min(0).describe('Precio unitario de la operación.'),
-        fees: z.number().min(0).optional().describe('Comisiones (opcional).'),
-        tradedAt: z.string().describe('Fecha de la operación en formato YYYY-MM-DD.'),
-        note: z.string().max(200).optional().describe('Nota libre (opcional).'),
+        ...createPositionLotSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
     ({ positionId, ...rest }) =>
       runner.runWrite('add_position_lot', async () => {
-        const dto = await validateDto(CreatePositionLotDto, rest);
-        const lot = await deps.lots.create(runner.userId, positionId, dto);
+        const lot = await deps.lots.create(runner.userId, positionId, rest);
         return jsonResult({ lot });
       }),
   );

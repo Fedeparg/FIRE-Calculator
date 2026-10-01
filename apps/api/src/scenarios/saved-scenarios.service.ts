@@ -4,8 +4,8 @@ import { and, count, desc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { savedScenarios, type SavedScenario } from '../db/schema.js';
-import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
-import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
+import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
+import type { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
 
 /**
  * Tope de tamaño de `inputs`, medido en bytes UTF-8 del JSON serializado. 8 KiB sobran para

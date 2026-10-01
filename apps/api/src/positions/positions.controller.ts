@@ -12,13 +12,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
-import { CombinePositionDto } from './dto/combine-position.dto.js';
-import { CreatePositionDto } from './dto/create-position.dto.js';
+import { combinePositionSchema, type CombinePositionDto } from './dto/combine-position.dto.js';
+import { createPositionSchema, type CreatePositionDto } from './dto/create-position.dto.js';
 import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
-import { UpdatePositionDto } from './dto/update-position.dto.js';
+import { updatePositionSchema, type UpdatePositionDto } from './dto/update-position.dto.js';
 import { PositionsService, type PositionResponse } from './positions.service.js';
 
 /**
@@ -37,7 +38,10 @@ export class PositionsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@CurrentUser() user: SessionUser, @Body() dto: CreatePositionDto): Promise<PositionResponse> {
+  create(
+    @CurrentUser() user: SessionUser,
+    @Body(new ZodValidationPipe(createPositionSchema)) dto: CreatePositionDto,
+  ): Promise<PositionResponse> {
     return this.positions.create(user.id, dto);
   }
 
@@ -56,7 +60,7 @@ export class PositionsController {
   combine(
     @CurrentUser() user: SessionUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: CombinePositionDto,
+    @Body(new ZodValidationPipe(combinePositionSchema)) dto: CombinePositionDto,
   ): Promise<PositionResponse> {
     return this.positions.combine(user.id, id, dto);
   }
@@ -65,7 +69,7 @@ export class PositionsController {
   update(
     @CurrentUser() user: SessionUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdatePositionDto,
+    @Body(new ZodValidationPipe(updatePositionSchema)) dto: UpdatePositionDto,
   ): Promise<PositionResponse> {
     return this.positions.update(user.id, id, dto);
   }

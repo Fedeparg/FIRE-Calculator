@@ -4,8 +4,8 @@ import { and, asc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type PositionLot } from '../db/schema.js';
-import { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
-import { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
+import type { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
+import type { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
 import {
   aggregateLots,
   AMOUNT_SCALE,

@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -73,7 +72,6 @@ describe('ImportsController (HTTP)', () => {
 
     app = await NestFactory.create(await loadAppModule(), { abortOnError: false, logger: false });
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
     // Sin esto el primer TRUNCATE podía interbloquearse con la pasada de arranque en segundo plano.
