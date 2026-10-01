@@ -14,6 +14,17 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "0235220a",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe la ganancia de hoy en Posiciones",
+            "en": "describe today's gain in Positions"
+          },
+          "hidden": true
+        },
+        {
           "hash": "f5f1c360",
           "type": "docs",
           "scope": "changelog",
@@ -23,6 +34,28 @@
             "en": "describe the active FIRE plan"
           },
           "hidden": true
+        },
+        {
+          "hash": "241df735",
+          "type": "style",
+          "scope": "portfolio",
+          "category": "internal",
+          "text": {
+            "es": "tono atenuado para el botón de la composición",
+            "en": "use the muted tone for the breakdown toggle"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "556c7ff6",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la composición del Resumen se despliega para ver todos los grupos, con los mismos pesos que la lista de Posiciones",
+            "en": "the Summary composition expands to show every group, with the same weights as the Positions list"
+          },
+          "hidden": false
         },
         {
           "hash": "e880bd31",

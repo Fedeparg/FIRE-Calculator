@@ -92,6 +92,10 @@ export function buildBreakdown({
       rates,
     );
     if (value === null || !Number.isFinite(value) || value < 0) continue;
+    // `aggregatePortfolio` (el total del Resumen y el denominador del peso en Posiciones) también
+    // exige poder convertir la divisa de la POSICIÓN para valorar el coste. Se exige igual aquí:
+    // si no, el reparto sumaría una posición que ese total deja fuera y los pesos no cuadrarían.
+    if (convertCurrency(1, position.currency, display, rates) === null) continue;
 
     const { key, label } =
       groupBy === "asset"

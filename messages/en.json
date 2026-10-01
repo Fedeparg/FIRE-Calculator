@@ -1292,7 +1292,9 @@
       "noBroker": "No broker",
       "noData": "The portfolio cannot be split yet: no position has a price convertible to the selected currency.",
       "excluded": "{count} of {total} positions are left out of the split (no price, or currency not convertible).",
-      "more": "{count, plural, one {# more} other {# more}}"
+      "more": "{count, plural, one {# more} other {# more}}",
+      "showAll": "Show the other {count, plural, one {# group} other {# groups}}",
+      "showLess": "Show less"
     },
     "lots": {
       "loading": "Loading trades…",
