@@ -93,7 +93,7 @@ export default function PositionLotForm({
         {editing ? t("formEditTitle") : t("formAddTitle")}
       </h4>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 @xs:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor={`${uid}-kind`} className="text-sm font-medium text-foreground">
             {t("kind")}

@@ -15,6 +15,9 @@ import {
 } from "@/lib/portfolio";
 import InstrumentSearchField from "./InstrumentSearchField";
 
+/** Id del título: da nombre al panel que contiene el formulario. */
+export const POSITION_FORM_TITLE_ID = "position-form-title";
+
 type Status = "idle" | "submitting" | "combining";
 
 /** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
@@ -210,15 +213,12 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6"
-    >
-      <h2 className="text-lg font-semibold text-foreground">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <h2 id={POSITION_FORM_TITLE_ID} className="pr-14 text-lg font-semibold text-foreground lg:pr-12">
         {isEditing ? t("editTitle", { ticker: editing!.ticker }) : t("title")}
       </h2>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ticker" className="text-sm font-medium text-foreground">
             {t("ticker")} <span className="text-warning">*</span>

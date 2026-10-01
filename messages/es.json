@@ -1158,7 +1158,6 @@
     },
     "export": {
       "button": "Descargar CSV",
-      "hint": "Descarga tus posiciones en CSV, listo para abrir en Excel o en Google Sheets.",
       "error": "No se pudo generar el fichero. Inténtalo de nuevo.",
       "headers": {
         "ticker": "Símbolo",
@@ -1174,32 +1173,33 @@
       }
     },
     "list": {
-      "ticker": "Símbolo / ISIN",
-      "name": "Nombre",
       "quantity": "Cantidad",
       "avgPrice": "Precio medio",
-      "broker": "Bróker",
       "invested": "Invertido",
       "marketValue": "Valor actual",
-      "pnl": "P&L",
-      "pnlMode": "P&L en",
-      "pnlModePct": "%",
-      "pnlModeAbs": "Importe",
-      "priceAsOf": "Precio a {date}",
       "stalePrice": "Precio a {date}, anterior al último refresco de la cartera ({latest}): este valor no está al día.",
       "sortBy": "Ordenar por {field}",
       "pricePending": "Buscando precio…",
       "pricePendingHint": "Estamos localizando la cotización de este símbolo; se actualizará sola en unos instantes.",
       "noPrice": "Aún no hay precio de mercado para este símbolo.",
-      "actions": "Acciones",
-      "edit": "Editar",
-      "delete": "Eliminar",
       "confirm": "Sí, eliminar",
       "cancel": "Cancelar",
       "deleting": "Eliminando…",
-      "noFxRate": "Aún no hay tipo de cambio {price}→{position} para convertir el valor.",
-      "lots": "Lotes",
-      "confirmDeleteWithSales": "Tiene ventas registradas: al borrarla desaparecerán también de tu informe de plusvalías."
+      "confirmDeleteWithSales": "Tiene ventas registradas: al borrarla desaparecerán también de tu informe de plusvalías.",
+      "asset": "Activo",
+      "weight": "Peso",
+      "gain": "Ganancia",
+      "sortLabel": "Ordenar por",
+      "sort": {
+        "invested": "Lo invertido",
+        "name": "Nombre",
+        "marketValue": "Valor actual",
+        "pnl": "Ganancia"
+      },
+      "sortedAsc": "{field}, orden ascendente. Pulsa para invertir",
+      "sortedDesc": "{field}, orden descendente. Pulsa para invertir",
+      "notTracked": "Sin seguimiento de precio",
+      "noPriceShort": "Sin precio"
     },
     "form": {
       "title": "Añadir posición",
@@ -1290,10 +1290,6 @@
       "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible)."
     },
     "lots": {
-      "title": "Operaciones de {ticker}",
-      "snapshot": "Ahora mismo: {quantity} participaciones a un precio medio de {avgPrice}.",
-      "explainer": "La posición es la foto (cuánto tienes y a qué precio medio) y los lotes son la película (cada compra y cada venta, con su fecha). Al añadir, editar o borrar un lote, el servidor recalcula solo la cantidad y el precio medio de la posición.",
-      "close": "Cerrar",
       "loading": "Cargando las operaciones…",
       "loadError": "No se han podido cargar las operaciones. Inténtalo de nuevo en unos momentos.",
       "empty": "Esta posición todavía no tiene operaciones registradas.",
@@ -1303,11 +1299,9 @@
       "kindBuy": "Compra",
       "kindSell": "Venta",
       "quantity": "Cantidad",
-      "priceShort": "Precio",
       "feesShort": "Comisiones",
       "note": "Nota",
       "notePlaceholder": "p. ej. aportación mensual",
-      "actions": "Acciones",
       "edit": "Editar",
       "delete": "Eliminar",
       "confirmDelete": "Sí, eliminar",
@@ -1510,11 +1504,7 @@
       },
       "disclaimer": "Información orientativa, no es asesoramiento financiero ni fiscal. Revisa los datos importados contra tu extracto de Trade Republic."
     },
-    "closed": {
-      "toggle": "Mostrar posiciones cerradas ({count})"
-    },
     "derivatives": {
-      "title": "Derivados ({count})",
       "notice": "Sextante no sigue el precio de los derivados (futuros, opciones, warrants, knock-outs…). Se guardan con sus operaciones y cuentan en el informe de plusvalías, pero no se valoran ni entran en los totales de la cartera.",
       "learnMore": "Qué son los derivados"
     },
@@ -1530,6 +1520,34 @@
       "summaryTitle": "Tu cartera",
       "positionsTitle": "Posiciones de tu cartera",
       "goalTitle": "Tu objetivo FIRE"
+    },
+    "panel": {
+      "close": "Cerrar panel"
+    },
+    "detail": {
+      "priceOn": "Precio ({date})",
+      "viewLabel": "Qué ver de esta posición",
+      "viewLots": "Operaciones",
+      "viewSale": "Simular venta",
+      "editPosition": "Editar posición",
+      "deletePosition": "Eliminar",
+      "deleteError": "No se pudo eliminar la posición. Inténtalo de nuevo."
+    },
+    "positions": {
+      "searchLabel": "Buscar posiciones",
+      "searchPlaceholder": "Buscar por nombre, símbolo o bróker",
+      "filterLabel": "Qué posiciones ver",
+      "filter": {
+        "open": "Abiertas",
+        "closed": "Cerradas",
+        "derivatives": "Derivados"
+      },
+      "noMatches": "Ninguna posición coincide con la búsqueda.",
+      "empty": {
+        "open": "No tienes posiciones abiertas.",
+        "closed": "No tienes posiciones cerradas: aquí aparecen las que has vendido del todo.",
+        "derivatives": "No tienes derivados."
+      }
     }
   },
   "account": {

@@ -70,12 +70,15 @@ export default function PortfolioExport({ positions, prices, rates, display }: P
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <p className="text-xs text-muted">{t("hint")}</p>
-      {failed && <p className="text-sm text-warning">{t("error")}</p>}
+      {failed && (
+        <p role="alert" className="text-sm text-warning">
+          {t("error")}
+        </p>
+      )}
       <button
         type="button"
         onClick={handleDownload}
-        className="rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition hover:bg-surface-2"
+        className="h-11 rounded-xl border border-border bg-surface px-4 text-sm font-medium text-foreground transition hover:bg-surface-2"
       >
         {t("button")}
       </button>
