@@ -51,19 +51,10 @@ export interface PortfolioCsvInput {
  * convertir a la divisa elegida, se exporta igualmente: solo quedan vacías las celdas que no
  * se pueden calcular (último precio y/o valoración).
  */
-export function buildPortfolioCsv({
-  positions,
-  prices,
-  rates,
-  display,
-  headers,
-  locale,
-}: PortfolioCsvInput): string {
+export function buildPortfolioCsv({ positions, prices, rates, display, headers, locale }: PortfolioCsvInput): string {
   const rows: CsvCell[][] = positions.map((position) => {
     const price = prices[position.ticker];
-    const rawValue = price
-      ? convertCurrency(position.quantity * price.close, price.currency, display, rates)
-      : null;
+    const rawValue = price ? convertCurrency(position.quantity * price.close, price.currency, display, rates) : null;
     // La valoración es el ÚNICO importe calculado aquí (cantidad × precio y, encima, un
     // cambio de divisa): se redondea a céntimos para no volcar el ruido binario del coma
     // flotante ("1999,9999999999998") en una hoja de cálculo. El resto de importes salen tal

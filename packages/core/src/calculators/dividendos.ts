@@ -61,9 +61,7 @@ export function computeDividends(input: DividendInput): DividendResult {
   const grossYield = invested > 0 ? (gross / invested) * 100 : null;
   const netYield = invested > 0 ? (net / invested) * 100 : null;
 
-  const series: DividendYearPoint[] = [
-    { year: 0, grossAnnual: 0, netAnnual: 0, cumulativeNet: 0 },
-  ];
+  const series: DividendYearPoint[] = [{ year: 0, grossAnnual: 0, netAnnual: 0, cumulativeNet: 0 }];
   let cumulativeNet = 0;
   let finalYearNet = net;
   for (let year = 1; year <= years; year++) {

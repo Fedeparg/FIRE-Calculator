@@ -28,9 +28,7 @@ export default async function ArticleRelatedCalculators({ articleSlug }: Props) 
 
   return (
     <section className="mt-12 border-t border-border pt-8">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
-        {t("relatedCalculators")}
-      </h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{t("relatedCalculators")}</h2>
       <ul className="mt-3 flex flex-wrap gap-2">
         {calculators.map((calc) => (
           <li key={calc.slug}>

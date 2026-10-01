@@ -85,12 +85,7 @@ export function buildBreakdown({
     const price = prices[position.ticker];
     if (!price) continue;
 
-    const value = convertCurrency(
-      position.quantity * price.close,
-      price.currency,
-      display,
-      rates,
-    );
+    const value = convertCurrency(position.quantity * price.close, price.currency, display, rates);
     if (value === null || !Number.isFinite(value) || value < 0) continue;
     // `aggregatePortfolio` (el total del Resumen y el denominador del peso en Posiciones) también
     // exige poder convertir la divisa de la POSICIÓN para valorar el coste. Se exige igual aquí:

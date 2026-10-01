@@ -67,10 +67,7 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
 
   const grossNetIncome = Math.max(0, income - expenses - socialSecurity);
   const difficultExpenses = input.simplifiedRegime
-    ? Math.min(
-        grossNetIncome * (SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE / 100),
-        SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
-      )
+    ? Math.min(grossNetIncome * (SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE / 100), SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP)
     : 0;
   const netIncome = Math.max(0, grossNetIncome - difficultExpenses);
 

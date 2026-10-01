@@ -2,17 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeMortgage, type MortgageYearPoint } from "@sextante/core/calculators/hipoteca";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
@@ -52,11 +42,45 @@ export default function MortgageCalculator() {
       inputCount={5}
       inputs={
         <>
-          <NumberField label={t("principal")} value={principal} onChange={setPrincipal} step={5000} help={t("help.principal")} />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.1} max={100} help={t("help.annualRate")} />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} min={1} max={40} help={t("help.years")} />
-          <NumberField label={t("openingFeeRate")} value={openingFeeRate} onChange={setOpeningFeeRate} step={0.1} max={100} help={t("help.openingFeeRate")} />
-          <NumberField label={t("annualInsurance")} value={annualInsurance} onChange={setAnnualInsurance} step={50} help={t("help.annualInsurance")} />
+          <NumberField
+            label={t("principal")}
+            value={principal}
+            onChange={setPrincipal}
+            step={5000}
+            help={t("help.principal")}
+          />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.1}
+            max={100}
+            help={t("help.annualRate")}
+          />
+          <NumberField
+            label={t("years")}
+            value={years}
+            onChange={setYears}
+            step={1}
+            min={1}
+            max={40}
+            help={t("help.years")}
+          />
+          <NumberField
+            label={t("openingFeeRate")}
+            value={openingFeeRate}
+            onChange={setOpeningFeeRate}
+            step={0.1}
+            max={100}
+            help={t("help.openingFeeRate")}
+          />
+          <NumberField
+            label={t("annualInsurance")}
+            value={annualInsurance}
+            onChange={setAnnualInsurance}
+            step={50}
+            help={t("help.annualInsurance")}
+          />
         </>
       }
       results={
@@ -87,16 +111,19 @@ export default function MortgageCalculator() {
                   <Legend />
                   <Bar dataKey="principalPaid" name={t("seriesPrincipal")} stackId="cuota" fill="var(--brand)" />
                   <Bar dataKey="interestPaid" name={t("seriesInterest")} stackId="cuota" fill="var(--accent)" />
-                  <Line type="monotone" dataKey="balance" name={t("seriesBalance")} stroke="var(--muted)" strokeWidth={2} dot={false} />
+                  <Line
+                    type="monotone"
+                    dataKey="balance"
+                    name={t("seriesBalance")}
+                    stroke="var(--muted)"
+                    strokeWidth={2}
+                    dot={false}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
 
-            <ChartDataTable
-              title={t("chartTitle")}
-              columns={scheduleColumns}
-              rows={result.schedule}
-            />
+            <ChartDataTable title={t("chartTitle")} columns={scheduleColumns} rows={result.schedule} />
           </div>
 
           <BreakdownDonut

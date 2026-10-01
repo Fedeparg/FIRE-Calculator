@@ -57,8 +57,7 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
 
   // 1) Préstamo máximo por capacidad de pago (regla del esfuerzo).
   const maxMonthlyPayment = Math.max(0, income * effort - debts);
-  const maxLoanByPayment =
-    i === 0 ? maxMonthlyPayment * n : (maxMonthlyPayment * (1 - Math.pow(1 + i, -n))) / i;
+  const maxLoanByPayment = i === 0 ? maxMonthlyPayment * n : (maxMonthlyPayment * (1 - Math.pow(1 + i, -n))) / i;
 
   // 2) Precio máximo: el mayor P tal que el efectivo necesario ≤ ahorro, donde
   //    préstamo(P) = min(maxLoanByPayment, ltv·P) y

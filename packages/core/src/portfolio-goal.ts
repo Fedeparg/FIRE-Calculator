@@ -72,8 +72,7 @@ export interface PortfolioGoalResult {
  *   así que ningún `NaN` sale de aquí.
  */
 export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalResult {
-  const current =
-    Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
+  const current = Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
 
   const fire = computeFire({
     annualExpenses: input.annualExpenses,
@@ -86,8 +85,7 @@ export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalRe
 
   const target = fire.fireNumber;
   const reached = current >= target;
-  const progress =
-    Number.isFinite(target) && target > 0 ? Math.min(100, (current / target) * 100) : null;
+  const progress = Number.isFinite(target) && target > 0 ? Math.min(100, (current / target) * 100) : null;
 
   return {
     target,
@@ -147,8 +145,7 @@ export interface AmountGoalResult extends PortfolioGoalResult {
  * aportación necesaria despeja P en `VF = C·(1+i)^n + P·((1+i)^n − 1) / i` (con i = 0, P·n).
  */
 export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
-  const current =
-    Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
+  const current = Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
   const target = Number.isFinite(input.targetAmount) && input.targetAmount > 0 ? input.targetAmount : 0;
   const deadlineYears = Math.max(0, Math.round(Number.isFinite(input.years) ? input.years : 0));
   const reached = current >= target;
@@ -220,8 +217,7 @@ export function simulatePortfolioGoal(
   input: PortfolioGoalSimulationInput,
   options?: MonteCarloOptions,
 ): MonteCarloResult {
-  const current =
-    Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
+  const current = Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
   return simulateFire(
     {
       annualExpenses: input.annualExpenses,

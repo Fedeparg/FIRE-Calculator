@@ -5,14 +5,7 @@ import { CronJob } from 'cron';
 import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import {
-  loginTokens,
-  mcpAuditLog,
-  oauthAuthCodes,
-  oauthClients,
-  oauthGrants,
-  oauthTokens,
-} from '../db/schema.js';
+import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 15 * * * *';
@@ -135,11 +128,7 @@ export class OAuthReaper implements OnModuleInit {
    * fecha que fija de verdad cuánto tiempo llevamos guardando el dato.
    */
   private async reapLoginTokens(now: Date): Promise<number> {
-    const cutoff = this.cutoff(
-      now,
-      'LOGIN_TOKEN_RETENTION_DAYS',
-      DEFAULT_LOGIN_TOKEN_RETENTION_DAYS,
-    );
+    const cutoff = this.cutoff(now, 'LOGIN_TOKEN_RETENTION_DAYS', DEFAULT_LOGIN_TOKEN_RETENTION_DAYS);
     const rows = await this.db
       .delete(loginTokens)
       .where(
@@ -172,11 +161,7 @@ export class OAuthReaper implements OnModuleInit {
    * criterio "sin grants ni tokens" las salva. Un cliente en uso real siempre tiene grant.
    */
   private async reapAbandonedClients(now: Date): Promise<number> {
-    const cutoff = this.cutoff(
-      now,
-      'OAUTH_CLIENT_RETENTION_DAYS',
-      DEFAULT_OAUTH_CLIENT_RETENTION_DAYS,
-    );
+    const cutoff = this.cutoff(now, 'OAUTH_CLIENT_RETENTION_DAYS', DEFAULT_OAUTH_CLIENT_RETENTION_DAYS);
     const rows = await this.db
       .delete(oauthClients)
       .where(

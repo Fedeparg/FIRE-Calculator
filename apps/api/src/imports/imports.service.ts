@@ -97,8 +97,7 @@ export class ImportsService {
         duplicates: group.duplicates,
         currentQuantity: current ? Number(current.quantity) : 0,
         resultingQuantity: simulation.ok ? Number(simulation.quantity) : null,
-        resultingAvgPrice:
-          simulation.ok && Number(simulation.quantity) > 0 ? Number(simulation.avgPrice) : null,
+        resultingAvgPrice: simulation.ok && Number(simulation.quantity) > 0 ? Number(simulation.avgPrice) : null,
         blockedBy: simulation.ok ? null : simulation.failure,
         isDerivative: group.assetClass === 'derivative',
       });
@@ -161,7 +160,10 @@ export class ImportsService {
 
     if (created.length > 0) {
       // Los derivados no se valoran: no se piden sus precios.
-      void this.primeInBackground(userId, created.filter((p) => !p.isDerivative));
+      void this.primeInBackground(
+        userId,
+        created.filter((p) => !p.isDerivative),
+      );
     }
 
     // Importar sobre posiciones que ya existían puede traer operaciones antiguas: se rehace el
@@ -251,10 +253,7 @@ export class ImportsService {
   }
 
   /** Agrupa por ISIN y separa lo ya importado de lo nuevo. */
-  private async groupByInstrument(
-    userId: string,
-    trades: readonly ImportedTrade[],
-  ): Promise<InstrumentGroup[]> {
+  private async groupByInstrument(userId: string, trades: readonly ImportedTrade[]): Promise<InstrumentGroup[]> {
     const isins = new Set(trades.map((trade) => trade.isin));
     if (isins.size > MAX_INSTRUMENTS) {
       throw new BadRequestException({
@@ -284,10 +283,7 @@ export class ImportsService {
   }
 
   /** `external_id` de las operaciones del fichero que el usuario ya tiene importadas. */
-  private async findImportedIds(
-    userId: string,
-    trades: readonly ImportedTrade[],
-  ): Promise<Set<string>> {
+  private async findImportedIds(userId: string, trades: readonly ImportedTrade[]): Promise<Set<string>> {
     const known = new Set<string>();
     const ids = trades.map(externalIdOf);
     // Por lotes: un export grande no debe generar un IN de miles de parámetros.
@@ -295,12 +291,7 @@ export class ImportsService {
       const rows = await this.db
         .select({ externalId: positionLots.externalId })
         .from(positionLots)
-        .where(
-          and(
-            eq(positionLots.userId, userId),
-            inArray(positionLots.externalId, ids.slice(i, i + ID_BATCH_SIZE)),
-          ),
-        );
+        .where(and(eq(positionLots.userId, userId), inArray(positionLots.externalId, ids.slice(i, i + ID_BATCH_SIZE))));
       for (const row of rows) if (row.externalId) known.add(row.externalId);
     }
     return known;
@@ -327,11 +318,7 @@ export class ImportsService {
     return new Map(rows.map((row) => [row.ticker, row]));
   }
 
-  private async findPosition(
-    db: DatabaseOrTransaction,
-    userId: string,
-    isin: string,
-  ): Promise<Position | undefined> {
+  private async findPosition(db: DatabaseOrTransaction, userId: string, isin: string): Promise<Position | undefined> {
     const [row] = await db
       .select()
       .from(positions)
@@ -346,9 +333,7 @@ export class ImportsService {
   }
 
   /** Lotes de las posiciones dadas (en el orden canónico del agregado), agrupados por posición. */
-  private async selectLotsByPosition(
-    existing: readonly Position[],
-  ): Promise<Map<string, PositionLot[]>> {
+  private async selectLotsByPosition(existing: readonly Position[]): Promise<Map<string, PositionLot[]>> {
     const byPosition = new Map<string, PositionLot[]>();
     if (existing.length === 0) return byPosition;
     const rows = await this.db

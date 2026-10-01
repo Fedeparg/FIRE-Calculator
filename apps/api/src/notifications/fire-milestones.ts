@@ -24,8 +24,7 @@ export interface FireTarget {
   currency: string;
 }
 
-const finite = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null;
+const finite = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
 /**
  * Objetivo a partir de los `inputs` de un escenario de la calculadora FIRE, o `null` si no se
@@ -34,9 +33,7 @@ const finite = (value: unknown): number | null =>
  */
 export function fireTargetFromInputs(inputs: Record<string, unknown>): FireTarget | null {
   const currency =
-    typeof inputs.goalCurrency === 'string' && /^[A-Z]{3}$/.test(inputs.goalCurrency)
-      ? inputs.goalCurrency
-      : 'EUR';
+    typeof inputs.goalCurrency === 'string' && /^[A-Z]{3}$/.test(inputs.goalCurrency) ? inputs.goalCurrency : 'EUR';
   // Modo cantidad ("X en N años"): el objetivo es la cifra tal cual.
   if (goalModeFromInputs(inputs) === 'amount') {
     const amount = finite(inputs.targetAmount);

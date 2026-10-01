@@ -63,7 +63,15 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
           aria-label={t("close")}
           className="absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-xl border border-border text-muted transition hover:bg-surface-2 hover:text-foreground lg:h-9 lg:w-9"
         >
-          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
             <path d="M6 6l12 12M18 6 6 18" />
           </svg>
         </button>

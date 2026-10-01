@@ -14,11 +14,7 @@ import {
   type JointReturnOption,
   type PaymentCount,
 } from "@sextante/core/fiscal/irpf";
-import {
-  SELECTABLE_REGIONS,
-  toSupportedRegion,
-  type RegionSelection,
-} from "@sextante/core/fiscal/regions";
+import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
@@ -34,28 +30,16 @@ export default function PayrollWithholdingCalculator() {
   // Datos de la nómina
   const [grossAnnual, setGrossAnnual] = useNumberField("grossAnnual", 30000);
   const [payments, setPayments] = useOptionField<PaymentCount>("payments", "14", PAYMENT_COUNTS);
-  const [contractType, setContractType] = useOptionField<ContractType>(
-    "contractType",
-    "indefinido",
-    CONTRACT_TYPES,
-  );
+  const [contractType, setContractType] = useOptionField<ContractType>("contractType", "indefinido", CONTRACT_TYPES);
   const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
   const [pensionContribution, setPensionContribution] = useNumberField("pensionContribution", 0);
   // Situación personal y familiar
   const [age, setAge] = useNumberField("age", 30);
-  const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>(
-    "jointReturn",
-    "no",
-    JOINT_RETURN_OPTIONS,
-  );
+  const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>("jointReturn", "no", JOINT_RETURN_OPTIONS);
   const [children, setChildren] = useNumberField("children", 0);
   const [childrenUnder3, setChildrenUnder3] = useNumberField("childrenUnder3", 0);
   const [ascendants, setAscendants] = useNumberField("ascendants", 0);
-  const [disability, setDisability] = useOptionField<DisabilityGrade>(
-    "disability",
-    "none",
-    DISABILITY_GRADES,
-  );
+  const [disability, setDisability] = useOptionField<DisabilityGrade>("disability", "none", DISABILITY_GRADES);
 
   const result = useMemo(
     () =>
@@ -72,7 +56,19 @@ export default function PayrollWithholdingCalculator() {
         ascendants,
         disability,
       }),
-    [grossAnnual, payments, contractType, region, pensionContribution, age, jointReturn, children, childrenUnder3, ascendants, disability],
+    [
+      grossAnnual,
+      payments,
+      contractType,
+      region,
+      pensionContribution,
+      age,
+      jointReturn,
+      children,
+      childrenUnder3,
+      ascendants,
+      disability,
+    ],
   );
 
   return (
@@ -81,7 +77,13 @@ export default function PayrollWithholdingCalculator() {
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
-          <NumberField label={t("grossAnnual")} value={grossAnnual} onChange={setGrossAnnual} step={1000} help={t("help.grossAnnual")} />
+          <NumberField
+            label={t("grossAnnual")}
+            value={grossAnnual}
+            onChange={setGrossAnnual}
+            step={1000}
+            help={t("help.grossAnnual")}
+          />
           <SelectField
             label={t("payments")}
             value={payments}
@@ -102,9 +104,23 @@ export default function PayrollWithholdingCalculator() {
             ]}
             help={t("help.contractType")}
           />
-          <NumberField label={t("pensionContribution")} value={pensionContribution} onChange={setPensionContribution} step={100} help={t("help.pensionContribution")} />
+          <NumberField
+            label={t("pensionContribution")}
+            value={pensionContribution}
+            onChange={setPensionContribution}
+            step={100}
+            help={t("help.pensionContribution")}
+          />
           <RegionSelectField value={region} onChange={setRegion} />
-          <NumberField label={t("age")} value={age} onChange={setAge} min={16} max={120} step={1} help={t("help.age")} />
+          <NumberField
+            label={t("age")}
+            value={age}
+            onChange={setAge}
+            min={16}
+            max={120}
+            step={1}
+            help={t("help.age")}
+          />
           <SelectField
             label={t("jointReturn")}
             value={jointReturn}
@@ -115,9 +131,30 @@ export default function PayrollWithholdingCalculator() {
             ]}
             help={t("help.jointReturn")}
           />
-          <NumberField label={t("children")} value={children} onChange={setChildren} min={0} step={1} help={t("help.children")} />
-          <NumberField label={t("childrenUnder3")} value={childrenUnder3} onChange={setChildrenUnder3} min={0} step={1} help={t("help.childrenUnder3")} />
-          <NumberField label={t("ascendants")} value={ascendants} onChange={setAscendants} min={0} step={1} help={t("help.ascendants")} />
+          <NumberField
+            label={t("children")}
+            value={children}
+            onChange={setChildren}
+            min={0}
+            step={1}
+            help={t("help.children")}
+          />
+          <NumberField
+            label={t("childrenUnder3")}
+            value={childrenUnder3}
+            onChange={setChildrenUnder3}
+            min={0}
+            step={1}
+            help={t("help.childrenUnder3")}
+          />
+          <NumberField
+            label={t("ascendants")}
+            value={ascendants}
+            onChange={setAscendants}
+            min={0}
+            step={1}
+            help={t("help.ascendants")}
+          />
           <SelectField
             label={t("disability")}
             value={disability}

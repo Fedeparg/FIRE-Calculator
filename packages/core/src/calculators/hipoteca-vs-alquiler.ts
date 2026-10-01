@@ -75,8 +75,7 @@ export function computeBuyVsRent(input: BuyVsRentInput): BuyVsRentResult {
   const ownershipCosts = price * (annualCostRate / 100) * horizon;
 
   // Deuda pendiente al final del horizonte (0 si ya está amortizada).
-  const balanceEnd =
-    horizon >= term ? 0 : (mortgage.schedule[horizon - 1]?.balance ?? loan);
+  const balanceEnd = horizon >= term ? 0 : (mortgage.schedule[horizon - 1]?.balance ?? loan);
   const homeValueEnd = price * Math.pow(1 + appreciation, horizon);
   // Patrimonio neto si vendieras: valor de mercado − gastos de venta − deuda.
   const buyEquityEnd = homeValueEnd * (1 - sellingCostsRate) - balanceEnd;
@@ -94,8 +93,7 @@ export function computeBuyVsRent(input: BuyVsRentInput): BuyVsRentResult {
   const rentNetCost = totalRentPaid - investmentGain;
 
   const difference = rentNetCost - buyNetCost;
-  const cheaper: BuyVsRentResult["cheaper"] =
-    Math.abs(difference) < 1 ? "tie" : difference > 0 ? "buy" : "rent";
+  const cheaper: BuyVsRentResult["cheaper"] = Math.abs(difference) < 1 ? "tie" : difference > 0 ? "buy" : "rent";
 
   return {
     buyNetCost,

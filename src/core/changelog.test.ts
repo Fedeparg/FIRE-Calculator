@@ -106,11 +106,7 @@ describe("parseChangelog: validación", () => {
       ],
     });
 
-    expect(parsed.releases.map((r) => r.date)).toEqual([
-      "2026-09-03",
-      "2026-07-15",
-      "2026-06-27",
-    ]);
+    expect(parsed.releases.map((r) => r.date)).toEqual(["2026-09-03", "2026-07-15", "2026-06-27"]);
   });
 
   it("descarta entregas sin fecha utilizable", () => {
@@ -236,10 +232,7 @@ describe("localizeReleases: elección de idioma y degradación", () => {
   });
 
   it("deja título y resumen a null cuando no hay texto en ningún idioma", () => {
-    const [localized] = localizeReleases(
-      [release({ title: { es: "", en: "" }, summary: { es: "", en: "" } })],
-      "es",
-    );
+    const [localized] = localizeReleases([release({ title: { es: "", en: "" }, summary: { es: "", en: "" } })], "es");
 
     expect(localized.title).toBeNull();
     expect(localized.summary).toBeNull();
@@ -338,13 +331,7 @@ describe("filterReleases: categoría e internos", () => {
   it("muestra los internos cuando se piden", () => {
     const filtered = filterReleases(localized, { category: "all", includeInternal: true });
 
-    expect(filtered.flatMap((r) => r.entries.map((e) => e.hash))).toEqual([
-      "f1",
-      "i1",
-      "h1",
-      "s1",
-      "i2",
-    ]);
+    expect(filtered.flatMap((r) => r.entries.map((e) => e.hash))).toEqual(["f1", "i1", "h1", "s1", "i2"]);
   });
 
   it("filtra por categoría", () => {

@@ -62,16 +62,13 @@ export interface GoalSettings {
 }
 
 /** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
-export type GoalOutcome =
-  | ({ mode: "fire" } & PortfolioGoalResult)
-  | ({ mode: "amount" } & AmountGoalResult);
+export type GoalOutcome = ({ mode: "fire" } & PortfolioGoalResult) | ({ mode: "amount" } & AmountGoalResult);
 
 function isFrequency(value: unknown): value is Frequency {
   return typeof value === "string" && (FREQUENCIES as readonly string[]).includes(value);
 }
 
-const number = (value: unknown, fallback: number): number =>
-  typeof value === "number" ? value : fallback;
+const number = (value: unknown, fallback: number): number => (typeof value === "number" ? value : fallback);
 
 /**
  * Objetivo a partir de los `inputs` de un escenario. Un campo ausente o inválido toma el valor

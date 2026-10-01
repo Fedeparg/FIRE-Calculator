@@ -68,9 +68,7 @@ export function positionFilterOf(position: FilterablePosition): PositionFilter {
 }
 
 /** Cuántas posiciones hay en cada grupo (para los contadores del filtro). */
-export function countByFilter(
-  positions: readonly FilterablePosition[],
-): Record<PositionFilter, number> {
+export function countByFilter(positions: readonly FilterablePosition[]): Record<PositionFilter, number> {
   const counts: Record<PositionFilter, number> = { open: 0, closed: 0, derivatives: 0 };
   for (const position of positions) counts[positionFilterOf(position)] += 1;
   return counts;
@@ -78,7 +76,10 @@ export function countByFilter(
 
 /** Minúsculas y sin acentos: "Bróker" encuentra "broker" y al revés. */
 function normalize(text: string): string {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  return text
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 }
 
 /**

@@ -88,10 +88,7 @@ export default function NumberField({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
-        <label
-          htmlFor={id}
-          className={hideLabel ? "sr-only" : "text-sm font-medium text-foreground"}
-        >
+        <label htmlFor={id} className={hideLabel ? "sr-only" : "text-sm font-medium text-foreground"}>
           {label}
         </label>
         {help && <HelpTooltip text={help} />}

@@ -10,14 +10,7 @@
  */
 
 /** Tipos de instrumento que exponemos al usuario (normalizados desde la fuente). */
-export type InstrumentType =
-  | 'equity'
-  | 'etf'
-  | 'fund'
-  | 'crypto'
-  | 'index'
-  | 'currency'
-  | 'other';
+export type InstrumentType = 'equity' | 'etf' | 'fund' | 'crypto' | 'index' | 'currency' | 'other';
 
 /** Un resultado de búsqueda: el símbolo exacto a guardar más lo necesario para distinguirlo. */
 export interface InstrumentSearchResult {

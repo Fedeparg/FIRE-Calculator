@@ -73,18 +73,98 @@ export default function BuyVsRentCalculator() {
       notice={<Notice variant="info">{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField label={t("purchasePrice")} value={purchasePrice} onChange={setPurchasePrice} step={5000} help={t("help.purchasePrice")} />
-          <NumberField label={t("purchaseCosts")} value={purchaseCosts} onChange={setPurchaseCosts} step={1000} help={t("help.purchaseCosts")} />
-          <NumberField label={t("downPayment")} value={downPayment} onChange={setDownPayment} step={5000} help={t("help.downPayment")} />
-          <NumberField label={t("mortgageRate")} value={mortgageRate} onChange={setMortgageRate} step={0.1} max={100} help={t("help.mortgageRate")} />
-          <NumberField label={t("mortgageTerm")} value={mortgageTerm} onChange={setMortgageTerm} min={1} step={1} help={t("help.mortgageTerm")} />
-          <NumberField label={t("annualCostRate")} value={annualCostRate} onChange={setAnnualCostRate} step={0.1} max={100} help={t("help.annualCostRate")} />
-          <NumberField label={t("appreciationRate")} value={appreciationRate} onChange={setAppreciationRate} step={0.5} min={-100} help={t("help.appreciationRate")} />
-          <NumberField label={t("monthlyRent")} value={monthlyRent} onChange={setMonthlyRent} step={50} help={t("help.monthlyRent")} />
-          <NumberField label={t("rentGrowthRate")} value={rentGrowthRate} onChange={setRentGrowthRate} step={0.5} min={-100} help={t("help.rentGrowthRate")} />
-          <NumberField label={t("investmentReturn")} value={investmentReturn} onChange={setInvestmentReturn} step={0.5} min={-100} help={t("help.investmentReturn")} />
-          <NumberField label={t("horizonYears")} value={horizonYears} onChange={setHorizonYears} min={1} step={1} help={t("help.horizonYears")} />
-          <NumberField label={t("sellingCostsRate")} value={sellingCostsRate} onChange={setSellingCostsRate} step={0.5} max={100} help={t("help.sellingCostsRate")} />
+          <NumberField
+            label={t("purchasePrice")}
+            value={purchasePrice}
+            onChange={setPurchasePrice}
+            step={5000}
+            help={t("help.purchasePrice")}
+          />
+          <NumberField
+            label={t("purchaseCosts")}
+            value={purchaseCosts}
+            onChange={setPurchaseCosts}
+            step={1000}
+            help={t("help.purchaseCosts")}
+          />
+          <NumberField
+            label={t("downPayment")}
+            value={downPayment}
+            onChange={setDownPayment}
+            step={5000}
+            help={t("help.downPayment")}
+          />
+          <NumberField
+            label={t("mortgageRate")}
+            value={mortgageRate}
+            onChange={setMortgageRate}
+            step={0.1}
+            max={100}
+            help={t("help.mortgageRate")}
+          />
+          <NumberField
+            label={t("mortgageTerm")}
+            value={mortgageTerm}
+            onChange={setMortgageTerm}
+            min={1}
+            step={1}
+            help={t("help.mortgageTerm")}
+          />
+          <NumberField
+            label={t("annualCostRate")}
+            value={annualCostRate}
+            onChange={setAnnualCostRate}
+            step={0.1}
+            max={100}
+            help={t("help.annualCostRate")}
+          />
+          <NumberField
+            label={t("appreciationRate")}
+            value={appreciationRate}
+            onChange={setAppreciationRate}
+            step={0.5}
+            min={-100}
+            help={t("help.appreciationRate")}
+          />
+          <NumberField
+            label={t("monthlyRent")}
+            value={monthlyRent}
+            onChange={setMonthlyRent}
+            step={50}
+            help={t("help.monthlyRent")}
+          />
+          <NumberField
+            label={t("rentGrowthRate")}
+            value={rentGrowthRate}
+            onChange={setRentGrowthRate}
+            step={0.5}
+            min={-100}
+            help={t("help.rentGrowthRate")}
+          />
+          <NumberField
+            label={t("investmentReturn")}
+            value={investmentReturn}
+            onChange={setInvestmentReturn}
+            step={0.5}
+            min={-100}
+            help={t("help.investmentReturn")}
+          />
+          <NumberField
+            label={t("horizonYears")}
+            value={horizonYears}
+            onChange={setHorizonYears}
+            min={1}
+            step={1}
+            help={t("help.horizonYears")}
+          />
+          <NumberField
+            label={t("sellingCostsRate")}
+            value={sellingCostsRate}
+            onChange={setSellingCostsRate}
+            step={0.5}
+            max={100}
+            help={t("help.sellingCostsRate")}
+          />
         </>
       }
       results={

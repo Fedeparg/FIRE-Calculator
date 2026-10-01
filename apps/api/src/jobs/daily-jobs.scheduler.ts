@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  type OnApplicationBootstrap,
-  type OnModuleInit,
-} from '@nestjs/common';
+import { Injectable, Logger, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
@@ -182,9 +177,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       const alerts = await this.fireAlerts.evaluateAll(captureDate);
       if (alerts.users > 0) {
-        this.logger.log(
-          `Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`,
-        );
+        this.logger.log(`Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`);
       }
     } catch (error) {
       this.logger.error(`Evaluación de alertas FIRE falló: ${(error as Error).message}`);

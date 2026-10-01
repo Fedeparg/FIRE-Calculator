@@ -17,10 +17,7 @@ export default function BudgetCalculator() {
   const [needs, setNeeds] = useNumberField("needs", 1000);
   const [wants, setWants] = useNumberField("wants", 600);
 
-  const result = useMemo(
-    () => computeBudget({ income, needs, wants }),
-    [income, needs, wants],
-  );
+  const result = useMemo(() => computeBudget({ income, needs, wants }), [income, needs, wants]);
 
   const rows = [
     { key: "needs", actual: result.needsRate, target: 50, recommended: result.recommendedNeeds },
@@ -56,9 +53,13 @@ export default function BudgetCalculator() {
               </div>
               {rows.map((r) => (
                 <div key={r.key} className="grid grid-cols-3 items-center border-t border-border pt-2">
-                  <span className="text-foreground">{t(`slice${r.key === "needs" ? "Needs" : r.key === "wants" ? "Wants" : "Savings"}`)}</span>
+                  <span className="text-foreground">
+                    {t(`slice${r.key === "needs" ? "Needs" : r.key === "wants" ? "Wants" : "Savings"}`)}
+                  </span>
                   <span className="text-right font-medium text-foreground">{formatPercent(r.actual)}</span>
-                  <span className="text-right text-muted">{formatPercent(r.target)} · {formatEUR(r.recommended)}</span>
+                  <span className="text-right text-muted">
+                    {formatPercent(r.target)} · {formatEUR(r.recommended)}
+                  </span>
                 </div>
               ))}
             </div>

@@ -12,11 +12,7 @@ import { absoluteUrl } from "@/lib/site";
 export default function robots(): MetadataRoute.Robots {
   // Cada ruta privada en sus dos variantes de idioma (es sin prefijo, en con /en).
   const privatePaths = ["/portfolio", "/entrar", "/oauth"];
-  const disallow = [
-    "/api/",
-    ...privatePaths,
-    ...privatePaths.map((p) => `/en${p}`),
-  ];
+  const disallow = ["/api/", ...privatePaths, ...privatePaths.map((p) => `/en${p}`)];
 
   return {
     rules: { userAgent: "*", allow: "/", disallow },

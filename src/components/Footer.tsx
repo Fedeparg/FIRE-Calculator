@@ -34,16 +34,10 @@ export default function Footer() {
               {t("coffee")}
             </Link>
           )}
-          <Link
-            href="/novedades"
-            className="font-medium text-foreground transition hover:text-brand"
-          >
+          <Link href="/novedades" className="font-medium text-foreground transition hover:text-brand">
             {t("changelog")}
           </Link>
-          <Link
-            href="/legal/privacidad"
-            className="font-medium text-foreground transition hover:text-brand"
-          >
+          <Link href="/legal/privacidad" className="font-medium text-foreground transition hover:text-brand">
             {t("privacy")}
           </Link>
         </div>

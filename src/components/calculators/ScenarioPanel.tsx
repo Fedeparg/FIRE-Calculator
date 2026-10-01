@@ -264,9 +264,7 @@ export default function ScenarioPanel() {
                   </>
                 ) : (
                   <>
-                    <span className="mr-auto truncate text-sm text-foreground">
-                      {scenario.name}
-                    </span>
+                    <span className="mr-auto truncate text-sm text-foreground">{scenario.name}</span>
                     {isConfirming ? (
                       <>
                         <button
@@ -334,10 +332,7 @@ export default function ScenarioPanel() {
           {errorKey === "errorSession" && (
             <>
               {" "}
-              <Link
-                href="/entrar"
-                className="font-medium text-brand underline underline-offset-2"
-              >
+              <Link href="/entrar" className="font-medium text-brand underline underline-offset-2">
                 {t("errorSessionLink")}
               </Link>
             </>

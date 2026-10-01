@@ -33,10 +33,30 @@ export default function SimpleInterestCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField label={t("principal")} value={principal} onChange={setPrincipal} step={1000} help={t("help.principal")} />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.5} max={100} help={t("help.annualRate")} />
+          <NumberField
+            label={t("principal")}
+            value={principal}
+            onChange={setPrincipal}
+            step={1000}
+            help={t("help.principal")}
+          />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.5}
+            max={100}
+            help={t("help.annualRate")}
+          />
           <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField label={t("withholdingRate")} value={withholdingRate} onChange={setWithholdingRate} step={1} max={100} help={t("help.withholdingRate")} />
+          <NumberField
+            label={t("withholdingRate")}
+            value={withholdingRate}
+            onChange={setWithholdingRate}
+            step={1}
+            max={100}
+            help={t("help.withholdingRate")}
+          />
         </>
       }
       results={

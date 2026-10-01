@@ -61,15 +61,13 @@ export function computeInflation(input: InflationInput): InflationResult {
       year,
       nominalNeeded: amount * inflationFactor,
       realValue: inflationFactor !== 0 ? amount / inflationFactor : amount,
-      realValueInvested:
-        inflationFactor !== 0 ? (amount * investFactor) / inflationFactor : amount * investFactor,
+      realValueInvested: inflationFactor !== 0 ? (amount * investFactor) / inflationFactor : amount * investFactor,
     });
   }
 
   const finalFactor = Math.pow(1 + rate, years);
   const realValue = finalFactor !== 0 ? amount / finalFactor : amount;
-  const realValueInvested =
-    finalFactor !== 0 ? (amount * Math.pow(1 + ret, years)) / finalFactor : amount;
+  const realValueInvested = finalFactor !== 0 ? (amount * Math.pow(1 + ret, years)) / finalFactor : amount;
 
   // Rentabilidad real anualizada (efecto Fisher exacto): (1+r)/(1+i) − 1.
   const realReturn = ((1 + ret) / (1 + rate) - 1) * 100;

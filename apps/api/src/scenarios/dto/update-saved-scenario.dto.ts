@@ -1,8 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Cuerpo de PATCH /api/scenarios/:id. Solo se puede renombrar y cambiar los `inputs`: el

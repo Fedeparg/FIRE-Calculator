@@ -27,7 +27,13 @@
 //     falsa. Por eso los importes se agrupan por divisa y la cuota solo se estima sobre el
 //     grupo en euros.
 
-import { walkLots, estimateSavingsTax, type RealisedSale, type SavingsTaxEstimate, type TradeLot } from "./plusvalias.js";
+import {
+  walkLots,
+  estimateSavingsTax,
+  type RealisedSale,
+  type SavingsTaxEstimate,
+  type TradeLot,
+} from "./plusvalias.js";
 
 /** Divisa sobre la que se estima la cuota (la del IRPF). */
 export const TAX_CURRENCY = "EUR";
@@ -106,9 +112,7 @@ function securityKey(position: RealisedGainsPosition): string {
  * Construye el informe a partir de las posiciones y su histórico. Las posiciones sin ventas no
  * aparecen; una posición ya vendida del todo sí, porque sus ventas cuentan.
  */
-export function buildRealisedGainsReport(
-  positions: readonly RealisedGainsPosition[],
-): RealisedGainsReport {
+export function buildRealisedGainsReport(positions: readonly RealisedGainsPosition[]): RealisedGainsReport {
   const bySecurity = new Map<string, RealisedGainsPosition[]>();
   for (const position of positions) {
     const key = securityKey(position);
@@ -140,9 +144,7 @@ export function buildRealisedGainsReport(
     }
   }
 
-  const years = [...byYear.entries()]
-    .sort(([a], [b]) => b - a)
-    .map(([year, sales]) => buildYear(year, sales));
+  const years = [...byYear.entries()].sort(([a], [b]) => b - a).map(([year, sales]) => buildYear(year, sales));
 
   return { years };
 }

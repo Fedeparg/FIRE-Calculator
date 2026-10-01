@@ -45,19 +45,17 @@ export default async function ConsentPage({ params, searchParams }: Props) {
     // Conserva la URL de consentimiento para volver tras iniciar sesión.
     const returnTo = `/oauth/consent?client_id=${encodeURIComponent(
       clientId,
-    )}&scope=${encodeURIComponent(scope)}&authorize_params=${encodeURIComponent(
-      authorizeParams,
-    )}`;
+    )}&scope=${encodeURIComponent(scope)}&authorize_params=${encodeURIComponent(authorizeParams)}`;
     redirect({ href: { pathname: "/entrar", query: { returnTo } }, locale });
   }
 
   // Nombre legible de la aplicación (best-effort; si falla, intro genérica).
   let clientName: string | null = null;
   try {
-    const res = await fetch(
-      `${API_URL}/api/oauth/consent/client/${encodeURIComponent(clientId)}`,
-      { headers: { cookie: `sextante_session=${await sessionToken()}` }, cache: "no-store" },
-    );
+    const res = await fetch(`${API_URL}/api/oauth/consent/client/${encodeURIComponent(clientId)}`, {
+      headers: { cookie: `sextante_session=${await sessionToken()}` },
+      cache: "no-store",
+    });
     if (res.ok) {
       const info = (await res.json()) as { clientName: string | null };
       clientName = info.clientName;
@@ -72,16 +70,10 @@ export default async function ConsentPage({ params, searchParams }: Props) {
     <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-16">
       <div className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
-        <p className="text-sm text-muted">
-          {clientName ? t("intro", { app: clientName }) : t("introGeneric")}
-        </p>
+        <p className="text-sm text-muted">{clientName ? t("intro", { app: clientName }) : t("introGeneric")}</p>
       </div>
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <ConsentClient
-          clientId={clientId}
-          scopes={scopes}
-          authorizeParams={authorizeParams}
-        />
+        <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
       </div>
     </div>
   );

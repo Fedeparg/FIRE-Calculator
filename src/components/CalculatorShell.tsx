@@ -42,15 +42,9 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
         </Link>
       )}
 
-      {slug && (
-        <JsonLd
-          data={calculatorSchema({ locale, slug, name: title, description: intro })}
-        />
-      )}
+      {slug && <JsonLd data={calculatorSchema({ locale, slug, name: title, description: intro })} />}
 
-      <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-        {title}
-      </h1>
+      <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
       <p className="mt-2 max-w-2xl text-muted">{intro}</p>
 
       <div className="mt-6">
@@ -61,11 +55,7 @@ export default function CalculatorShell({ title, intro, children, slug }: Props)
           sola vez y no calculadora a calculadora. Añade además la barra de acciones cuando
           la calculadora declara sus campos (ver `CalculatorState.tsx`).
         */}
-        {slug ? (
-          <CalculatorStateProvider slug={slug}>{children}</CalculatorStateProvider>
-        ) : (
-          children
-        )}
+        {slug ? <CalculatorStateProvider slug={slug}>{children}</CalculatorStateProvider> : children}
 
         <p className="mt-8 text-xs text-muted">{t("disclaimerShort")}</p>
 

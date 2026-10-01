@@ -68,12 +68,7 @@ export interface PortfolioAggregate {
  * activo que cotiza en USD) y el FX las unifica. Invertido, valor y P&L se calculan sobre el
  * MISMO subconjunto para que P&L = valor − invertido cuadre siempre.
  */
-export function aggregatePortfolio({
-  positions,
-  prices,
-  rates,
-  display,
-}: AggregateInput): PortfolioAggregate {
+export function aggregatePortfolio({ positions, prices, rates, display }: AggregateInput): PortfolioAggregate {
   let invested = 0;
   let marketValue = 0;
   let valued = 0;

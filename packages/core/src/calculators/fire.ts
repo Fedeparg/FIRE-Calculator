@@ -58,10 +58,7 @@ export function computeFire(input: FireInput): FireResult {
   });
 
   // Recortar la gráfica unos años después de alcanzar el objetivo (legibilidad).
-  const trimmed =
-    yearsToFire === null
-      ? series
-      : series.filter((p) => p.year <= (yearsToFire as number) + 3);
+  const trimmed = yearsToFire === null ? series : series.filter((p) => p.year <= (yearsToFire as number) + 3);
 
   return { fireNumber, yearsToFire, series: trimmed };
 }

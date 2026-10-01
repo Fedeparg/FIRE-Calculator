@@ -3,11 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { PricesService, type PriceInfo } from '../prices/prices.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
-import {
-  buildBreakdown,
-  type BreakdownGroupBy,
-  type BreakdownResult,
-} from '@sextante/core/portfolio-breakdown';
+import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio-breakdown';
 
 /** Etiqueta del grupo de posiciones sin bróker en el reparto (la API habla castellano). */
 const UNKNOWN_BROKER_LABEL = 'Sin bróker';
@@ -179,8 +175,7 @@ export class PortfolioValuationService {
       pnlAbs,
       pnlPct,
       priced,
-      unpricedReason:
-        price === undefined ? 'no_price' : !priced ? 'currency_mismatch' : undefined,
+      unpricedReason: price === undefined ? 'no_price' : !priced ? 'currency_mismatch' : undefined,
     };
   }
 }

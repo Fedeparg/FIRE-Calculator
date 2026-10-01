@@ -8,7 +8,13 @@ describe("computeSelfEmployedTax", () => {
   });
 
   it("valores por defecto del componente (golden, estimación directa simplificada)", () => {
-    const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, age: 30, simplifiedRegime: true });
+    const r = computeSelfEmployedTax({
+      income: 40000,
+      expenses: 8000,
+      socialSecurity: 4000,
+      age: 30,
+      simplifiedRegime: true,
+    });
     expect(r.grossNetIncome).toBe(28000);
     expect(r.difficultExpenses).toBe(1400); // 5 % de 28.000
     expect(r.netIncome).toBe(26600);
@@ -22,7 +28,13 @@ describe("computeSelfEmployedTax", () => {
 
   it("las circunstancias familiares aumentan el mínimo y bajan el IRPF", () => {
     const solo = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
-    const familia = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, children: 2, childrenUnder3: 1 });
+    const familia = computeSelfEmployedTax({
+      income: 40000,
+      expenses: 8000,
+      socialSecurity: 4000,
+      children: 2,
+      childrenUnder3: 1,
+    });
     expect(familia.personalMinimum).toBe(13450); // 5550 + 2400 + 2700 + 2800
     expect(familia.incomeTax).toBe(3960);
     expect(familia.incomeTax).toBeLessThan(solo.incomeTax);
@@ -43,7 +55,12 @@ describe("computeSelfEmployedTax", () => {
 
   it("aportar a un plan de pensiones reduce el IRPF", () => {
     const sin = computeSelfEmployedTax({ income: 40000, expenses: 5000, socialSecurity: 4000 });
-    const con = computeSelfEmployedTax({ income: 40000, expenses: 5000, socialSecurity: 4000, pensionContribution: 1500 });
+    const con = computeSelfEmployedTax({
+      income: 40000,
+      expenses: 5000,
+      socialSecurity: 4000,
+      pensionContribution: 1500,
+    });
     expect(con.incomeTax).toBeLessThan(sin.incomeTax);
   });
 
@@ -76,7 +93,12 @@ describe("computeSelfEmployedTax", () => {
 
   it("los gastos de difícil justificación reducen el IRPF", () => {
     const normal = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
-    const simplificada = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
+    const simplificada = computeSelfEmployedTax({
+      income: 40000,
+      expenses: 8000,
+      socialSecurity: 4000,
+      simplifiedRegime: true,
+    });
     expect(simplificada.incomeTax).toBeLessThan(normal.incomeTax);
   });
 });

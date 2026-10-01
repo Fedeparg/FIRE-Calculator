@@ -57,10 +57,9 @@ export default function PortfolioHistoryChart({ display }: Props) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(
-          `/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`,
-          { cache: "no-store" },
-        );
+        const res = await fetch(`/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`, {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as PortfolioHistoryDto;
         if (!cancelled) setResult({ key: requestKey, history: data });
@@ -75,8 +74,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
   }, [days, display, requestKey]);
 
   const history = result?.key === requestKey ? result.history : null;
-  const status: Status =
-    result?.key !== requestKey ? "loading" : history === null ? "error" : "ready";
+  const status: Status = result?.key !== requestKey ? "loading" : history === null ? "error" : "ready";
 
   // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
   // la serie en el día de hoy para que la gráfica no se quede en ayer.
@@ -142,9 +140,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
       {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
 
       {status === "ready" && series.insufficient && (
-        <Notice variant="info">
-          {series.points.length === 0 ? t("emptyBody") : t("singlePointBody")}
-        </Notice>
+        <Notice variant="info">{series.points.length === 0 ? t("emptyBody") : t("singlePointBody")}</Notice>
       )}
 
       {status === "ready" && !series.insufficient && (
@@ -152,9 +148,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
           {/* La variación del periodo, en una sola línea: el importe manda y el rango de fechas
               acompaña. */}
           {lastValue !== null && (
-            <p className="text-2xl font-semibold tabular-nums text-foreground">
-              {formatCurrency(lastValue, display)}
-            </p>
+            <p className="text-2xl font-semibold tabular-nums text-foreground">{formatCurrency(lastValue, display)}</p>
           )}
           {series.changeAbs !== null && series.from && series.to && (
             <p className="-mt-3 flex flex-wrap items-baseline gap-x-2 text-sm">
@@ -219,7 +213,11 @@ export default function PortfolioHistoryChart({ display }: Props) {
           )}
           <ul className="flex flex-col gap-1 text-xs text-muted">
             <li className="flex items-center gap-2">
-              <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: "var(--brand)" }} />
+              <span
+                aria-hidden="true"
+                className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                style={{ backgroundColor: "var(--brand)" }}
+              />
               <span>
                 <span className="font-medium text-foreground">{t("marketValue")}</span>: {t("legendMarketValue")}
               </span>

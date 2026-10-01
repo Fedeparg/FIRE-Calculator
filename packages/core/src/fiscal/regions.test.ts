@@ -19,8 +19,7 @@ import {
 
 /** Bases de prueba: cero, tramos bajos, cada frontera relevante y rentas altas. */
 const SAMPLE_BASES = [
-  0, 1, 5550, 12450, 12450.01, 20200, 35200, 57320.4, 60000, 100000, 123745, 175000, 300000,
-  400000, 1000000,
+  0, 1, 5550, 12450, 12450.01, 20200, 35200, 57320.4, 60000, 100000, 123745, 175000, 300000, 400000, 1000000,
 ];
 
 describe("escala estatal (art. 63.1.1º LIRPF)", () => {
@@ -177,14 +176,7 @@ describe("mínimo personal y familiar autonómico", () => {
 
   it("las 6 comunidades con mínimo propio lo suben respecto del estatal", () => {
     const withOwnMinimum = REGION_CODES.filter((r) => REGIONS[r].minimum !== undefined);
-    expect(withOwnMinimum).toEqual([
-      "andalucia",
-      "asturias",
-      "canarias",
-      "galicia",
-      "madrid",
-      "valencia",
-    ]);
+    expect(withOwnMinimum).toEqual(["andalucia", "asturias", "canarias", "galicia", "madrid", "valencia"]);
 
     for (const region of withOwnMinimum) {
       const schedule = regionalMinimumSchedule(region);

@@ -7,8 +7,7 @@ import { IsNotEmpty, IsObject, IsString, Matches, MaxLength } from 'class-valida
  */
 export const CALCULATOR_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
  * Cuerpo de POST /api/scenarios. El `userId` NO va aquí: se lee del JWT.

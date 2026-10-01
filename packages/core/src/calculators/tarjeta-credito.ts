@@ -89,17 +89,14 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
   let totalInterest = 0;
   let months = 0;
   let firstPayment = 0;
-  const series: CreditCardPoint[] = [
-    { month: 0, balance: round2(balance), interestPaid: 0 },
-  ];
+  const series: CreditCardPoint[] = [{ month: 0, balance: round2(balance), interestPaid: 0 }];
 
   while (remaining > 0 && months < MAX_MONTHS) {
     const interest = remaining * monthlyRate;
     totalInterest += interest;
     const due = remaining + interest;
 
-    const scheduled =
-      mode === "percent" ? Math.max(minFloor, remaining * minPercent) : fixedPayment;
+    const scheduled = mode === "percent" ? Math.max(minFloor, remaining * minPercent) : fixedPayment;
     const pay = Math.min(scheduled, due);
 
     remaining = due - pay;

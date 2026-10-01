@@ -202,10 +202,7 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
   // cantidad y precio medio dentro de rango es perfectamente válido y no debe rechazarse.
   for (const units of [quantity, avgPrice]) {
     if (units >= MAX_AMOUNT_UNITS * ONE_AMOUNT) {
-      throw new LotAggregateError(
-        'OVERFLOW',
-        'El resultado de los lotes excede el máximo admitido por la posición',
-      );
+      throw new LotAggregateError('OVERFLOW', 'El resultado de los lotes excede el máximo admitido por la posición');
     }
   }
 

@@ -33,10 +33,7 @@ export default async function RealisedGainsPage({ params }: Props) {
         <h2 className="text-xl font-semibold text-foreground">{t("title")}</h2>
         <p className="text-sm text-muted">
           {t("subtitle")}{" "}
-          <Link
-            href="/aprende/plusvalias-al-vender"
-            className="font-medium text-brand underline underline-offset-2"
-          >
+          <Link href="/aprende/plusvalias-al-vender" className="font-medium text-brand underline underline-offset-2">
             {t("learnMore")}
           </Link>
         </p>

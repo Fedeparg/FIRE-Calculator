@@ -12,9 +12,7 @@ export default function LearnCallout() {
         <WaveDivider className="h-10 w-full" />
         <div className="flex flex-col items-start gap-6 px-6 pb-8 sm:flex-row sm:items-center sm:justify-between sm:px-8">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {t("heading")}
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t("heading")}</h2>
             <p className="mt-3 max-w-xl text-muted">{t("body")}</p>
           </div>
           <CtaLink href="/aprende" variant="primary" className="shrink-0">

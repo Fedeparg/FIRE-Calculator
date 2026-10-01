@@ -49,10 +49,7 @@ export class DonationsService {
             unit_amount: amountEur * 100,
             product_data: {
               name: locale === 'en' ? 'Support Sextante' : 'Apoya a Sextante',
-              description:
-                locale === 'en'
-                  ? 'A coffee for the developer'
-                  : 'Un café para el desarrollador',
+              description: locale === 'en' ? 'A coffee for the developer' : 'Un café para el desarrollador',
             },
           },
         },

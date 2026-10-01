@@ -17,7 +17,15 @@ describe("localizeHref", () => {
   });
 
   it("no toca enlaces externos, anclas, mailto, rutas de red ni los ya prefijados", () => {
-    for (const href of ["https://aeat.es", "#tramos", "mailto:a@b.c", "//cdn.example/x", "/en/aprende", "/en", "/es/aprende"]) {
+    for (const href of [
+      "https://aeat.es",
+      "#tramos",
+      "mailto:a@b.c",
+      "//cdn.example/x",
+      "/en/aprende",
+      "/en",
+      "/es/aprende",
+    ]) {
       expect(localizeHref(href, "en")).toBe(href);
     }
   });

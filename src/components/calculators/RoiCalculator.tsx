@@ -36,7 +36,14 @@ export default function RoiCalculator() {
           <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={80} help={t("help.years")} />
           <NumberField label={t("costs")} value={costs} onChange={setCosts} step={10} help={t("help.costs")} />
           <NumberField label={t("income")} value={income} onChange={setIncome} step={10} help={t("help.income")} />
-          <NumberField label={t("taxRate")} value={taxRate} onChange={setTaxRate} step={1} max={100} help={t("help.taxRate")} />
+          <NumberField
+            label={t("taxRate")}
+            value={taxRate}
+            onChange={setTaxRate}
+            step={1}
+            max={100}
+            help={t("help.taxRate")}
+          />
         </>
       }
       results={

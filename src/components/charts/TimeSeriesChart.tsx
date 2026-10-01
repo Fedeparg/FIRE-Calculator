@@ -161,8 +161,7 @@ export default function TimeSeriesChart({
 }: Props) {
   const isSmUp = useMediaQuery("(min-width: 640px)", true);
   const showYAxis = yAxis === "always" || isSmUp;
-  const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
-    useFormat();
+  const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } = useFormat();
   // Sin `currency` el formato es EXACTAMENTE el de antes; con divisa se delega en `Intl`.
   const formatValue = currency ? (n: number) => formatCurrency(n, currency) : formatEUR;
   // Espacios duros: Recharts parte las etiquetas de eje por los espacios normales cuando no
@@ -200,10 +199,7 @@ export default function TimeSeriesChart({
       const pad = Math.abs(max) * FIT_DOMAIN_PADDING_RATIO || 1;
       return [min - pad, max + pad];
     }
-    return [
-      min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO,
-      max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO,
-    ];
+    return [min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO, max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO];
   }, [data, stack, lines, bands, yDomain]);
   const [dragging, setDragging] = useState(false);
 
@@ -237,8 +233,7 @@ export default function TimeSeriesChart({
     })),
     ...bands.map((band) => ({
       label: band.name,
-      value: (row: DataRow) =>
-        `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
+      value: (row: DataRow) => `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
     })),
     ...extraColumns,
   ];
@@ -246,7 +241,13 @@ export default function TimeSeriesChart({
   return (
     // Sin eje Y (móvil compacto) la gráfica ya vive dentro de la tarjeta de quien la usa: sin
     // segunda caja, para aprovechar todo el ancho.
-    <div className={showYAxis ? "rounded-xl border border-border bg-surface p-4" : "sm:rounded-xl sm:border sm:border-border sm:bg-surface sm:p-4"}>
+    <div
+      className={
+        showYAxis
+          ? "rounded-xl border border-border bg-surface p-4"
+          : "sm:rounded-xl sm:border sm:border-border sm:bg-surface sm:p-4"
+      }
+    >
       <div className={`flex items-center justify-between gap-3 ${hideTitle && !summary ? "" : "mb-3 min-h-[20px]"}`}>
         <h2 className={hideTitle ? "sr-only" : "text-sm font-medium text-foreground"}>{title}</h2>
         {summary && (

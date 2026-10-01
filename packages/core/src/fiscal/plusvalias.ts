@@ -293,12 +293,7 @@ export interface SaleSimulationInput {
  *
  * El emparejamiento es `matchSale`, el mismo que usa `walkLots` para las ventas registradas.
  */
-export function simulateSale({
-  lots,
-  quantity,
-  price,
-  fees = 0,
-}: SaleSimulationInput): SaleSimulation | null {
+export function simulateSale({ lots, quantity, price, fees = 0 }: SaleSimulationInput): SaleSimulation | null {
   if (!Number.isFinite(quantity) || quantity <= 0) return null;
   if (!Number.isFinite(price) || price < 0) return null;
   const sellFees = cleanFees(fees);

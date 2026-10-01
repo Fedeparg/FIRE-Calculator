@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  DEFAULT_CHANGELOG_FILTER,
-  decodeChangelogFilter,
-  encodeChangelogFilter,
-} from "./changelog-url-state";
+import { DEFAULT_CHANGELOG_FILTER, decodeChangelogFilter, encodeChangelogFilter } from "./changelog-url-state";
 
 describe("decodeChangelogFilter", () => {
   it("sin query devuelve el estado por defecto", () => {
@@ -48,15 +44,11 @@ describe("encodeChangelogFilter", () => {
   });
 
   it("escribe categoría e internos", () => {
-    expect(encodeChangelogFilter("", { category: "fix", includeInternal: true })).toBe(
-      "?cat=fix&internal=1",
-    );
+    expect(encodeChangelogFilter("", { category: "fix", includeInternal: true })).toBe("?cat=fix&internal=1");
   });
 
   it("borra los parámetros al volver a los valores por defecto", () => {
-    expect(
-      encodeChangelogFilter("?cat=fix&internal=1", DEFAULT_CHANGELOG_FILTER),
-    ).toBe("");
+    expect(encodeChangelogFilter("?cat=fix&internal=1", DEFAULT_CHANGELOG_FILTER)).toBe("");
   });
 
   it("conserva los parámetros ajenos", () => {

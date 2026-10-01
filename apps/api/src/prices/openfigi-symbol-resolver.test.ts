@@ -119,7 +119,12 @@ describe('searchCandidates', () => {
 
   it('descarta lo que no puede ser el instrumento de un ISIN y no repite', () => {
     expect(
-      searchCandidates([result('^GSPC', 'index'), result('EURUSD=X', 'currency'), result('aapl', 'equity'), result('AAPL', 'equity')]),
+      searchCandidates([
+        result('^GSPC', 'index'),
+        result('EURUSD=X', 'currency'),
+        result('aapl', 'equity'),
+        result('AAPL', 'equity'),
+      ]),
     ).toEqual(['AAPL']);
   });
 
@@ -170,9 +175,9 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
   });
 
   it('salta a OpenFIGI si ningún resultado de la búsqueda cotiza', async () => {
-    const openFigi = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify([{ data: [{ ticker: 'VWCE' }] }]), { status: 200 }),
-    );
+    const openFigi = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify([{ data: [{ ticker: 'VWCE' }] }]), { status: 200 }));
     vi.stubGlobal('fetch', openFigi);
     const { resolver } = makeResolver([result('NOPE.L')], ['VWCE.AS']);
 

@@ -42,12 +42,7 @@ export function websiteSchema(locale: Locale) {
 }
 
 /** Artículo de la wiki. */
-export function articleSchema(args: {
-  locale: Locale;
-  slug: string;
-  title: string;
-  description: string;
-}) {
+export function articleSchema(args: { locale: Locale; slug: string; title: string; description: string }) {
   const { locale, slug, title, description } = args;
   const url = absoluteUrl(localizedPath(locale, `/aprende/${slug}`));
   return {
@@ -64,12 +59,7 @@ export function articleSchema(args: {
 }
 
 /** Calculadora como aplicación web gratuita. */
-export function calculatorSchema(args: {
-  locale: Locale;
-  slug: string;
-  name: string;
-  description: string;
-}) {
+export function calculatorSchema(args: { locale: Locale; slug: string; name: string; description: string }) {
   const { locale, slug, name, description } = args;
   return {
     "@context": "https://schema.org",

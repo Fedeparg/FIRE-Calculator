@@ -61,8 +61,7 @@ export function computeAveragePrice(input: AveragePriceInput): AveragePriceResul
   const hasPrice = currentPrice !== undefined && currentPrice > 0 && totalShares > 0;
   const marketValue = hasPrice ? currentPrice * totalShares : null;
   const unrealizedGain = marketValue !== null ? marketValue - totalCost : null;
-  const returnPct =
-    unrealizedGain !== null && totalCost > 0 ? (unrealizedGain / totalCost) * 100 : null;
+  const returnPct = unrealizedGain !== null && totalCost > 0 ? (unrealizedGain / totalCost) * 100 : null;
 
   return {
     totalShares,

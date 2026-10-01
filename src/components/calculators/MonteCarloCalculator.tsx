@@ -63,25 +63,26 @@ export default function MonteCarloCalculator() {
           ? { kind: "historical", stockShare }
           : { kind: "lognormal" }) satisfies ReturnModel,
       }),
-      [annualExpenses, currentSavings, monthlySavings, annualReturn, volatility, withdrawalRate, retirementYears, model, stockShare],
+      [
+        annualExpenses,
+        currentSavings,
+        monthlySavings,
+        annualReturn,
+        volatility,
+        withdrawalRate,
+        retirementYears,
+        model,
+        stockShare,
+      ],
     ),
   );
   const result = useMemo(() => simulateFire(inputs), [inputs]);
   // Misma entrada con otras tasas de retiro, con las mismas secuencias de mercado (misma semilla).
-  const sensitivity = useMemo(
-    () => withdrawalSensitivity(inputs, undefined, { paths: SENSITIVITY_PATHS }),
-    [inputs],
-  );
+  const sensitivity = useMemo(() => withdrawalSensitivity(inputs, undefined, { paths: SENSITIVITY_PATHS }), [inputs]);
 
   const { p10, p50, p90 } = result.yearsToFire;
-  const medianLabel =
-    p50 === null ? t("notReached") : p50 === 0 ? t("alreadyFree") : t("years", { years: p50 });
-  const rangeLabel =
-    p10 === null
-      ? null
-      : p90 === null
-        ? t("rangeOpen", { p10 })
-        : t("range", { p10, p90 });
+  const medianLabel = p50 === null ? t("notReached") : p50 === 0 ? t("alreadyFree") : t("years", { years: p50 });
+  const rangeLabel = p10 === null ? null : p90 === null ? t("rangeOpen", { p10 }) : t("range", { p10, p90 });
   const deterministicLabel =
     result.deterministicYearsToFire === null
       ? t("deterministicNotReached")
@@ -93,9 +94,30 @@ export default function MonteCarloCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField label={t("annualExpenses")} value={annualExpenses} onChange={setAnnualExpenses} min={0} step={1000} help={t("help.annualExpenses")} />
-          <NumberField label={t("currentSavings")} value={currentSavings} onChange={setCurrentSavings} min={0} step={1000} help={t("help.currentSavings")} />
-          <NumberField label={t("monthlySavings")} value={monthlySavings} onChange={setMonthlySavings} min={0} step={50} help={t("help.monthlySavings")} />
+          <NumberField
+            label={t("annualExpenses")}
+            value={annualExpenses}
+            onChange={setAnnualExpenses}
+            min={0}
+            step={1000}
+            help={t("help.annualExpenses")}
+          />
+          <NumberField
+            label={t("currentSavings")}
+            value={currentSavings}
+            onChange={setCurrentSavings}
+            min={0}
+            step={1000}
+            help={t("help.currentSavings")}
+          />
+          <NumberField
+            label={t("monthlySavings")}
+            value={monthlySavings}
+            onChange={setMonthlySavings}
+            min={0}
+            step={50}
+            help={t("help.monthlySavings")}
+          />
           <SelectField
             label={t("model")}
             value={model}
@@ -105,15 +127,54 @@ export default function MonteCarloCalculator() {
           />
           {/* Cada modelo enseña solo sus parámetros; los del otro se conservan en la URL. */}
           {model === "historical" ? (
-            <NumberField label={t("stockShare")} value={stockShare} onChange={setStockShare} step={5} min={0} max={100} help={t("help.stockShare")} />
+            <NumberField
+              label={t("stockShare")}
+              value={stockShare}
+              onChange={setStockShare}
+              step={5}
+              min={0}
+              max={100}
+              help={t("help.stockShare")}
+            />
           ) : (
             <>
-              <NumberField label={t("annualReturn")} value={annualReturn} onChange={setAnnualReturn} step={0.5} max={100} help={t("help.annualReturn")} />
-              <NumberField label={t("volatility")} value={volatility} onChange={setVolatility} step={1} min={0} max={MAX_VOLATILITY} help={t("help.volatility")} />
+              <NumberField
+                label={t("annualReturn")}
+                value={annualReturn}
+                onChange={setAnnualReturn}
+                step={0.5}
+                max={100}
+                help={t("help.annualReturn")}
+              />
+              <NumberField
+                label={t("volatility")}
+                value={volatility}
+                onChange={setVolatility}
+                step={1}
+                min={0}
+                max={MAX_VOLATILITY}
+                help={t("help.volatility")}
+              />
             </>
           )}
-          <NumberField label={t("withdrawalRate")} value={withdrawalRate} onChange={setWithdrawalRate} step={0.1} min={1} max={100} help={t("help.withdrawalRate")} />
-          <NumberField label={t("retirementYears")} value={retirementYears} onChange={setRetirementYears} step={1} min={0} max={MAX_RETIREMENT_YEARS} help={t("help.retirementYears")} />
+          <NumberField
+            label={t("withdrawalRate")}
+            value={withdrawalRate}
+            onChange={setWithdrawalRate}
+            step={0.1}
+            min={1}
+            max={100}
+            help={t("help.withdrawalRate")}
+          />
+          <NumberField
+            label={t("retirementYears")}
+            value={retirementYears}
+            onChange={setRetirementYears}
+            step={1}
+            min={0}
+            max={MAX_RETIREMENT_YEARS}
+            help={t("help.retirementYears")}
+          />
         </>
       }
       results={
@@ -152,14 +213,18 @@ export default function MonteCarloCalculator() {
 
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full min-w-[24rem] text-left text-sm">
-              <caption className="px-3 pt-3 text-left text-xs text-muted">
-                {t("sensitivityCaption")}
-              </caption>
+              <caption className="px-3 pt-3 text-left text-xs text-muted">{t("sensitivityCaption")}</caption>
               <thead>
                 <tr className="border-b border-border text-muted">
-                  <th scope="col" className="px-3 py-2 font-medium">{t("sensitivityRate")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("sensitivityTarget")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("successRate")}</th>
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    {t("sensitivityRate")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("sensitivityTarget")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("successRate")}
+                  </th>
                 </tr>
               </thead>
               <tbody>

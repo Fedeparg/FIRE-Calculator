@@ -11,12 +11,7 @@ import {
 } from "./portfolio-history";
 
 /** Punto de serie con lo mínimo: el resto de campos no influye en la construcción. */
-function point(
-  date: string,
-  invested: number | null,
-  marketValue: number | null,
-  estimated = false,
-): HistoryPointDto {
+function point(date: string, invested: number | null, marketValue: number | null, estimated = false): HistoryPointDto {
   return {
     date,
     invested,
@@ -50,10 +45,7 @@ describe("buildHistorySeries", () => {
   });
 
   it("dos puntos ya son suficientes y resumen la variación del periodo", () => {
-    const series = buildHistorySeries([
-      point("2026-01-01", 1000, 1000),
-      point("2026-01-31", 1000, 1250),
-    ]);
+    const series = buildHistorySeries([point("2026-01-01", 1000, 1000), point("2026-01-31", 1000, 1250)]);
 
     expect(series.insufficient).toBe(false);
     expect(series.changeAbs).toBe(250);
@@ -63,10 +55,7 @@ describe("buildHistorySeries", () => {
   });
 
   it("una caída da una variación negativa", () => {
-    const series = buildHistorySeries([
-      point("2026-01-01", 1000, 2000),
-      point("2026-02-01", 1000, 1500),
-    ]);
+    const series = buildHistorySeries([point("2026-01-01", 1000, 2000), point("2026-02-01", 1000, 1500)]);
 
     expect(series.changeAbs).toBe(-500);
     expect(series.changePct).toBeCloseTo(-25, 10);
@@ -104,29 +93,19 @@ describe("buildHistorySeries", () => {
       point("2026-02-01", 1000, 1200),
     ]);
 
-    expect(series.points.map((p) => p.date)).toEqual([
-      "2026-01-01",
-      "2026-02-01",
-      "2026-03-01",
-    ]);
+    expect(series.points.map((p) => p.date)).toEqual(["2026-01-01", "2026-02-01", "2026-03-01"]);
     expect(series.changeAbs).toBe(300);
   });
 
   it("no calcula el porcentaje si se partía de cero (evita dividir por 0)", () => {
-    const series = buildHistorySeries([
-      point("2026-01-01", 0, 0),
-      point("2026-01-02", 100, 120),
-    ]);
+    const series = buildHistorySeries([point("2026-01-01", 0, 0), point("2026-01-02", 100, 120)]);
 
     expect(series.changeAbs).toBe(120);
     expect(series.changePct).toBeNull();
   });
 
   it("sin puntos estimados, estimatedRanges está vacío", () => {
-    const series = buildHistorySeries([
-      point("2026-01-01", 1000, 1000),
-      point("2026-01-02", 1000, 1100),
-    ]);
+    const series = buildHistorySeries([point("2026-01-01", 1000, 1000), point("2026-01-02", 1000, 1100)]);
     expect(series.estimatedRanges).toEqual([]);
   });
 
@@ -215,7 +194,15 @@ describe("withLivePoint", () => {
     totalPositions: 1,
     estimated: false,
   });
-  const live = { date: "2026-10-01", marketValue: 120, invested: 100, pnlAbs: 20, pnlPct: 20, valuedPositions: 1, totalPositions: 1 };
+  const live = {
+    date: "2026-10-01",
+    marketValue: 120,
+    invested: 100,
+    pnlAbs: 20,
+    pnlPct: 20,
+    valuedPositions: 1,
+    totalPositions: 1,
+  };
 
   it("cierra la serie con el valor de hoy", () => {
     const points = withLivePoint([snapshot("2026-09-30")], live);

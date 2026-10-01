@@ -309,13 +309,27 @@ function PlanView({
               <caption className="px-3 pt-3 text-left text-xs text-muted">{t("tableCaption")}</caption>
               <thead>
                 <tr className="border-b border-border text-muted">
-                  <th scope="col" className="px-3 py-2 font-medium">{t("colInstrument")}</th>
-                  <th scope="col" className="px-3 py-2 font-medium">{t("colAction")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colBuys")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colSells")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colDuplicates")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colResulting")}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-medium">{t("colAvgPrice")}</th>
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    {t("colInstrument")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 font-medium">
+                    {t("colAction")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("colBuys")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("colSells")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("colDuplicates")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("colResulting")}
+                  </th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">
+                    {t("colAvgPrice")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -327,9 +341,7 @@ function PlanView({
                       {p.blockedBy && (
                         <span className="mt-1 block text-xs text-warning">{t(`blocked.${p.blockedBy}`)}</span>
                       )}
-                      {p.isDerivative && (
-                        <span className="mt-1 block text-xs text-muted">{t("derivativeTag")}</span>
-                      )}
+                      {p.isDerivative && <span className="mt-1 block text-xs text-muted">{t("derivativeTag")}</span>}
                     </th>
                     <td className="px-3 py-2 text-foreground">{t(`action.${p.action}`)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-foreground">{p.newBuys}</td>

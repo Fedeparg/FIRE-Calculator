@@ -30,10 +30,36 @@ export default function WealthTaxCalculator() {
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
-          <NumberField label={t("totalWealth")} value={totalWealth} onChange={setTotalWealth} step={50000} help={t("help.totalWealth")} />
-          <NumberField label={t("primaryResidenceValue")} value={primaryResidenceValue} onChange={setPrimaryResidenceValue} step={25000} help={t("help.primaryResidenceValue")} />
-          <NumberField label={t("exemptMinimum")} value={exemptMinimum} onChange={setExemptMinimum} step={50000} help={t("help.exemptMinimum")} />
-          <NumberField label={t("regionalRebate")} value={regionalRebate} onChange={setRegionalRebate} min={0} max={100} step={5} help={t("help.regionalRebate")} />
+          <NumberField
+            label={t("totalWealth")}
+            value={totalWealth}
+            onChange={setTotalWealth}
+            step={50000}
+            help={t("help.totalWealth")}
+          />
+          <NumberField
+            label={t("primaryResidenceValue")}
+            value={primaryResidenceValue}
+            onChange={setPrimaryResidenceValue}
+            step={25000}
+            help={t("help.primaryResidenceValue")}
+          />
+          <NumberField
+            label={t("exemptMinimum")}
+            value={exemptMinimum}
+            onChange={setExemptMinimum}
+            step={50000}
+            help={t("help.exemptMinimum")}
+          />
+          <NumberField
+            label={t("regionalRebate")}
+            value={regionalRebate}
+            onChange={setRegionalRebate}
+            min={0}
+            max={100}
+            step={5}
+            help={t("help.regionalRebate")}
+          />
         </>
       }
       results={

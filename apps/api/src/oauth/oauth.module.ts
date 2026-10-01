@@ -28,14 +28,7 @@ import { SextanteOAuthProvider } from './oauth.provider.js';
     }),
   ],
   controllers: [ConsentController],
-  providers: [
-    OAuthUrls,
-    OAuthClientsStore,
-    OAuthGrantsService,
-    SextanteOAuthProvider,
-    OAuthReaper,
-    JwtAuthGuard,
-  ],
+  providers: [OAuthUrls, OAuthClientsStore, OAuthGrantsService, SextanteOAuthProvider, OAuthReaper, JwtAuthGuard],
   exports: [SextanteOAuthProvider, OAuthUrls, OAuthGrantsService, OAuthClientsStore],
 })
 export class OauthModule {}

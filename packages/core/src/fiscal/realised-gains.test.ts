@@ -7,12 +7,15 @@ function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
   return { kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-01", ...overrides };
 }
 
-function position(overrides: Partial<RealisedGainsPosition> & Pick<RealisedGainsPosition, "id" | "lots">): RealisedGainsPosition {
+function position(
+  overrides: Partial<RealisedGainsPosition> & Pick<RealisedGainsPosition, "id" | "lots">,
+): RealisedGainsPosition {
   return { ticker: overrides.id.toUpperCase(), name: null, currency: "EUR", ...overrides };
 }
 
 const buy = (id: string, quantity: number, price: number, tradedAt: string) => lot({ id, quantity, price, tradedAt });
-const sell = (id: string, quantity: number, price: number, tradedAt: string) => lot({ id, kind: "sell", quantity, price, tradedAt });
+const sell = (id: string, quantity: number, price: number, tradedAt: string) =>
+  lot({ id, kind: "sell", quantity, price, tradedAt });
 
 describe("buildRealisedGainsReport", () => {
   it("sin ventas, el informe está vacío", () => {
@@ -139,7 +142,12 @@ describe("buildRealisedGainsReport", () => {
   it("no empareja el mismo símbolo en divisas distintas", () => {
     const report = buildRealisedGainsReport([
       position({ id: "eur", ticker: "X", lots: [buy("1", 1, 10, "2020-01-01")] }),
-      position({ id: "usd", ticker: "X", currency: "USD", lots: [buy("2", 1, 50, "2021-01-01"), sell("3", 1, 60, "2024-01-01")] }),
+      position({
+        id: "usd",
+        ticker: "X",
+        currency: "USD",
+        lots: [buy("2", 1, 50, "2021-01-01"), sell("3", 1, 60, "2024-01-01")],
+      }),
     ]);
     expect(report.years[0].groups.map((g) => [g.currency, g.net])).toEqual([["USD", 10]]);
   });

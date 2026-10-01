@@ -153,9 +153,7 @@ function build(locale: Locale): Formatters {
     formatCompactEUR: (n) => (Number.isFinite(n) ? `${compact.format(n)} €` : NON_FINITE),
     formatCompactCurrency,
     formatPercent: (n, options) =>
-      Number.isFinite(n)
-        ? (options?.minDecimals === 2 ? pctFixed2 : pct).format(n / 100)
-        : NON_FINITE,
+      Number.isFinite(n) ? (options?.minDecimals === 2 ? pctFixed2 : pct).format(n / 100) : NON_FINITE,
     formatCurrency,
     currencySymbol,
     // El código ISO va SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY).
@@ -165,8 +163,7 @@ function build(locale: Locale): Formatters {
       return symbol === currency ? currency : `${symbol} ${currency}`;
     },
     // `num` redondea a entero, así que no sirve para sondear el separador: usamos uno limpio.
-    decimalSeparator:
-      new Intl.NumberFormat(l).formatToParts(1.1).find((p) => p.type === "decimal")?.value ?? ".",
+    decimalSeparator: new Intl.NumberFormat(l).formatToParts(1.1).find((p) => p.type === "decimal")?.value ?? ".",
   };
 }
 

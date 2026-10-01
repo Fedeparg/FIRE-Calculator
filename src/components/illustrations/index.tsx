@@ -15,13 +15,7 @@ type SvgProps = {
  */
 export function HeroSextant({ className }: SvgProps) {
   return (
-    <svg
-      viewBox="0 0 400 384"
-      role="presentation"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
+    <svg viewBox="0 0 400 384" role="presentation" aria-hidden="true" focusable="false" className={className}>
       {/* Halo suave de fondo */}
       <circle cx="200" cy="198" r="160" className="fill-brand-soft" />
 
@@ -38,48 +32,48 @@ export function HeroSextant({ className }: SvgProps) {
 
       {/* Instrumento (reducido para dejar margen con el borde del halo) */}
       <g transform="translate(200 198) scale(0.84) translate(-200 -198)">
-      {/* Lados del marco (la cuña del sextante) */}
-      <g className="stroke-brand" strokeWidth="16" strokeLinecap="round">
-        <line x1="200" y1="98" x2="58" y2="292" />
-        <line x1="200" y1="98" x2="342" y2="292" />
-      </g>
-
-      {/* Bastidor interior: arcos que rigidizan el marco, concéntricos con el limbo */}
-      <g fill="none" className="stroke-brand" strokeWidth="9" strokeLinecap="round">
-        <path d="M92 276 A237 237 0 0 0 308 276" />
-        <path d="M126 256 A205 205 0 0 0 274 256" />
-      </g>
-
-      {/* Limbo: arco graduado ancho en la base. Su centro es la perilla del
-          vértice (200,66), así que la curvatura se aleja de ella. */}
-      <path
-        d="M54 292 A270 270 0 0 0 346 292"
-        fill="none"
-        className="stroke-accent"
-        strokeWidth="18"
-        strokeLinecap="round"
-      />
-
-      {/* Catalejo: cilindro horizontal con anillos y boca, montado junto al vértice */}
-      <g strokeLinejoin="round" strokeLinecap="round">
-        <rect x="208" y="106" width="150" height="26" rx="13" className="fill-brand stroke-surface" strokeWidth="3" />
-        <g className="stroke-surface" strokeWidth="5">
-          <line x1="244" y1="106" x2="244" y2="132" />
-          <line x1="262" y1="106" x2="262" y2="132" />
+        {/* Lados del marco (la cuña del sextante) */}
+        <g className="stroke-brand" strokeWidth="16" strokeLinecap="round">
+          <line x1="200" y1="98" x2="58" y2="292" />
+          <line x1="200" y1="98" x2="342" y2="292" />
         </g>
-        <rect x="352" y="100" width="14" height="38" rx="5" className="fill-brand stroke-surface" strokeWidth="3" />
-      </g>
 
-      {/* Brazo central (alidada): del vértice al tambor */}
-      <rect x="187" y="72" width="26" height="248" rx="11" className="fill-brand" />
+        {/* Bastidor interior: arcos que rigidizan el marco, concéntricos con el limbo */}
+        <g fill="none" className="stroke-brand" strokeWidth="9" strokeLinecap="round">
+          <path d="M92 276 A237 237 0 0 0 308 276" />
+          <path d="M126 256 A205 205 0 0 0 274 256" />
+        </g>
 
-      {/* Perilla / ojal en el vértice, con su agujero */}
-      <circle cx="200" cy="66" r="26" className="fill-brand" />
-      <circle cx="200" cy="60" r="10" className="fill-surface" />
+        {/* Limbo: arco graduado ancho en la base. Su centro es la perilla del
+          vértice (200,66), así que la curvatura se aleja de ella. */}
+        <path
+          d="M54 292 A270 270 0 0 0 346 292"
+          fill="none"
+          className="stroke-accent"
+          strokeWidth="18"
+          strokeLinecap="round"
+        />
 
-      {/* Tambor micrométrico con lente, montado sobre el limbo al pie de la alidada */}
-      <rect x="174" y="300" width="52" height="48" rx="15" className="fill-brand stroke-surface" strokeWidth="4" />
-      <circle cx="200" cy="322" r="14" className="fill-accent stroke-surface" strokeWidth="3" />
+        {/* Catalejo: cilindro horizontal con anillos y boca, montado junto al vértice */}
+        <g strokeLinejoin="round" strokeLinecap="round">
+          <rect x="208" y="106" width="150" height="26" rx="13" className="fill-brand stroke-surface" strokeWidth="3" />
+          <g className="stroke-surface" strokeWidth="5">
+            <line x1="244" y1="106" x2="244" y2="132" />
+            <line x1="262" y1="106" x2="262" y2="132" />
+          </g>
+          <rect x="352" y="100" width="14" height="38" rx="5" className="fill-brand stroke-surface" strokeWidth="3" />
+        </g>
+
+        {/* Brazo central (alidada): del vértice al tambor */}
+        <rect x="187" y="72" width="26" height="248" rx="11" className="fill-brand" />
+
+        {/* Perilla / ojal en el vértice, con su agujero */}
+        <circle cx="200" cy="66" r="26" className="fill-brand" />
+        <circle cx="200" cy="60" r="10" className="fill-surface" />
+
+        {/* Tambor micrométrico con lente, montado sobre el limbo al pie de la alidada */}
+        <rect x="174" y="300" width="52" height="48" rx="15" className="fill-brand stroke-surface" strokeWidth="4" />
+        <circle cx="200" cy="322" r="14" className="fill-accent stroke-surface" strokeWidth="3" />
       </g>
     </svg>
   );
@@ -91,13 +85,7 @@ export function HeroSextant({ className }: SvgProps) {
  */
 export function BrandCompass({ className }: SvgProps) {
   return (
-    <svg
-      viewBox="0 0 32 32"
-      role="presentation"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
+    <svg viewBox="0 0 32 32" role="presentation" aria-hidden="true" focusable="false" className={className}>
       <circle cx="16" cy="16" r="13" fill="none" className="stroke-current" strokeWidth="2.5" />
       {/* Aguja (rumbo), girada 27° en sentido horario */}
       <g transform="rotate(27 16 16)">
@@ -126,13 +114,7 @@ export function IconSuite({ className }: SvgProps) {
 export function IconTax({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
-      <g
-        className="stroke-brand"
-        strokeWidth="3.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <g className="stroke-brand" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <line x1="36" y1="16" x2="36" y2="54" />
         <line x1="20" y1="54" x2="52" y2="54" />
         <line x1="18" y1="26" x2="54" y2="26" />
@@ -149,13 +131,7 @@ export function IconTax({ className }: SvgProps) {
 export function IconLearn({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
-      <g
-        className="stroke-brand"
-        strokeWidth="3.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <g className="stroke-brand" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         <path d="M36 22 C30 17 20 17 14 20 L14 50 C20 47 30 47 36 52" className="fill-brand-soft" />
         <path d="M36 22 C42 17 52 17 58 20 L58 50 C52 47 42 47 36 52" />
       </g>
@@ -170,13 +146,7 @@ export function IconLearn({ className }: SvgProps) {
 export function IconPortfolio({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
-      <g
-        className="stroke-brand"
-        strokeWidth="3.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
+      <g className="stroke-brand" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
         {/* Ejes */}
         <path d="M16 14 L16 56 L58 56" />
         {/* Barras */}
@@ -247,12 +217,7 @@ export function WaveDivider({ className }: SvgProps) {
       focusable="false"
       className={className}
     >
-      <path
-        d="M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30"
-        fill="none"
-        className="stroke-border"
-        strokeWidth="3"
-      />
+      <path d="M0 30 Q150 0 300 30 T600 30 T900 30 T1200 30" fill="none" className="stroke-border" strokeWidth="3" />
     </svg>
   );
 }
@@ -261,13 +226,7 @@ export function WaveDivider({ className }: SvgProps) {
 
 function PillarFrame({ className, children }: SvgProps & { children: React.ReactNode }) {
   return (
-    <svg
-      viewBox="0 0 72 72"
-      role="presentation"
-      aria-hidden="true"
-      focusable="false"
-      className={className}
-    >
+    <svg viewBox="0 0 72 72" role="presentation" aria-hidden="true" focusable="false" className={className}>
       {children}
     </svg>
   );

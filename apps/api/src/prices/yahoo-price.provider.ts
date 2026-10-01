@@ -62,17 +62,11 @@ export function parseYahooChart(symbol: string, body: unknown): Quote | null {
   const meta = (body as YahooChartResponse)?.chart?.result?.[0]?.meta;
   if (!meta) return null;
   const { regularMarketPrice, currency, regularMarketTime } = meta;
-  if (
-    typeof regularMarketPrice !== 'number' ||
-    !Number.isFinite(regularMarketPrice) ||
-    typeof currency !== 'string'
-  ) {
+  if (typeof regularMarketPrice !== 'number' || !Number.isFinite(regularMarketPrice) || typeof currency !== 'string') {
     return null;
   }
   const date =
-    typeof regularMarketTime === 'number'
-      ? epochToUtcDate(regularMarketTime)
-      : new Date().toISOString().slice(0, 10);
+    typeof regularMarketTime === 'number' ? epochToUtcDate(regularMarketTime) : new Date().toISOString().slice(0, 10);
   return { symbol, close: regularMarketPrice, currency, date };
 }
 
@@ -198,12 +192,7 @@ export class YahooPriceProvider implements PriceProvider {
    * El cuerpo se devuelve SIN parsear (`unknown`): el parseo frágil vive en las funciones
    * puras `parseYahooChart` / `parseYahooChartHistory`.
    */
-  private async fetchChart(
-    symbol: string,
-    range: string,
-    interval: string,
-    events?: string,
-  ): Promise<unknown> {
+  private async fetchChart(symbol: string, range: string, interval: string, events?: string): Promise<unknown> {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);

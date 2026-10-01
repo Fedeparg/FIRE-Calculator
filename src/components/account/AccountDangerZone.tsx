@@ -24,8 +24,7 @@ type Props = {
 
 type DeleteStatus = "idle" | "deleting" | "done";
 
-const buttonBase =
-  "rounded-lg px-4 py-2.5 font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
+const buttonBase = "rounded-lg px-4 py-2.5 font-medium transition disabled:cursor-not-allowed disabled:opacity-50";
 
 /**
  * Zona de cuenta con los dos derechos RGPD: exportar mis datos (descarga un JSON) y
@@ -148,9 +147,7 @@ export default function AccountDangerZone({ email }: Props) {
           {deleteStatus === "deleting" ? t("delete.deleting") : t("delete.button")}
         </button>
 
-        {deleteStatus === "done" && (
-          <Notice variant="info">{t("delete.success")}</Notice>
-        )}
+        {deleteStatus === "done" && <Notice variant="info">{t("delete.success")}</Notice>}
 
         {deleteError && (
           <p className="text-sm text-warning">
@@ -158,10 +155,7 @@ export default function AccountDangerZone({ email }: Props) {
             {deleteError === "errorSession" && (
               <>
                 {" "}
-                <Link
-                  href="/entrar"
-                  className="font-medium text-brand underline underline-offset-2"
-                >
+                <Link href="/entrar" className="font-medium text-brand underline underline-offset-2">
                   {t("errorSessionLink")}
                 </Link>
               </>

@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Delete,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
 
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -60,10 +52,7 @@ export class ConnectionsController {
   /** Revoca el acceso de un cliente: borra el consentimiento y todos sus tokens. */
   @Delete(':clientId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async revoke(
-    @CurrentUser() user: SessionUser,
-    @Param('clientId') clientId: string,
-  ): Promise<void> {
+  async revoke(@CurrentUser() user: SessionUser, @Param('clientId') clientId: string): Promise<void> {
     await this.grants.revoke(user.id, clientId);
   }
 }

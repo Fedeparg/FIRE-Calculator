@@ -43,14 +43,68 @@ export default function AffordabilityCalculator() {
       inputCount={8}
       inputs={
         <>
-          <NumberField label={t("netMonthlyIncome")} value={netMonthlyIncome} onChange={setNetMonthlyIncome} step={100} help={t("help.netMonthlyIncome")} />
-          <NumberField label={t("monthlyDebts")} value={monthlyDebts} onChange={setMonthlyDebts} step={50} help={t("help.monthlyDebts")} />
-          <NumberField label={t("downPayment")} value={downPayment} onChange={setDownPayment} step={5000} help={t("help.downPayment")} />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.1} max={100} help={t("help.annualRate")} />
-          <NumberField label={t("termYears")} value={termYears} onChange={setTermYears} step={1} min={1} max={40} help={t("help.termYears")} />
-          <NumberField label={t("effortRatio")} value={effortRatio} onChange={setEffortRatio} step={1} max={100} help={t("help.effortRatio")} />
-          <NumberField label={t("maxLtv")} value={maxLtv} onChange={setMaxLtv} step={5} max={100} help={t("help.maxLtv")} />
-          <NumberField label={t("purchaseCostsRate")} value={purchaseCostsRate} onChange={setPurchaseCostsRate} step={1} max={100} help={t("help.purchaseCostsRate")} />
+          <NumberField
+            label={t("netMonthlyIncome")}
+            value={netMonthlyIncome}
+            onChange={setNetMonthlyIncome}
+            step={100}
+            help={t("help.netMonthlyIncome")}
+          />
+          <NumberField
+            label={t("monthlyDebts")}
+            value={monthlyDebts}
+            onChange={setMonthlyDebts}
+            step={50}
+            help={t("help.monthlyDebts")}
+          />
+          <NumberField
+            label={t("downPayment")}
+            value={downPayment}
+            onChange={setDownPayment}
+            step={5000}
+            help={t("help.downPayment")}
+          />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.1}
+            max={100}
+            help={t("help.annualRate")}
+          />
+          <NumberField
+            label={t("termYears")}
+            value={termYears}
+            onChange={setTermYears}
+            step={1}
+            min={1}
+            max={40}
+            help={t("help.termYears")}
+          />
+          <NumberField
+            label={t("effortRatio")}
+            value={effortRatio}
+            onChange={setEffortRatio}
+            step={1}
+            max={100}
+            help={t("help.effortRatio")}
+          />
+          <NumberField
+            label={t("maxLtv")}
+            value={maxLtv}
+            onChange={setMaxLtv}
+            step={5}
+            max={100}
+            help={t("help.maxLtv")}
+          />
+          <NumberField
+            label={t("purchaseCostsRate")}
+            value={purchaseCostsRate}
+            onChange={setPurchaseCostsRate}
+            step={1}
+            max={100}
+            help={t("help.purchaseCostsRate")}
+          />
         </>
       }
       results={

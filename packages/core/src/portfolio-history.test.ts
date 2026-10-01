@@ -93,9 +93,7 @@ describe("reconstructHistory", () => {
   it("compra y venta total en el periodo: desaparece tras vender y reaparece al recomprar", () => {
     const days = reconstructHistory(
       input({
-        positions: [
-          position("A", [buy("2026-01-02", 10, 100), sell("2026-01-04", 10, 110), buy("2026-01-07", 4, 90)]),
-        ],
+        positions: [position("A", [buy("2026-01-02", 10, 100), sell("2026-01-04", 10, 110), buy("2026-01-07", 4, 90)])],
         prices: { A: daily("2026-01-01", Array<number>(10).fill(100)) },
       }),
     );

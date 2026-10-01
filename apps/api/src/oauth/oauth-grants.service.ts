@@ -48,9 +48,7 @@ export class OAuthGrantsService {
       return;
     }
 
-    await this.db
-      .insert(oauthGrants)
-      .values({ userId, clientId, scopes, lastUsedAt: new Date() });
+    await this.db.insert(oauthGrants).values({ userId, clientId, scopes, lastUsedAt: new Date() });
   }
 
   /** Marca el consentimiento como usado (al emitir un token). Best-effort. */
@@ -67,18 +65,14 @@ export class OAuthGrantsService {
    * refresh. El scoping por `userId` impide revocar lo de otro.
    */
   async revoke(userId: string, clientId: string): Promise<void> {
-    await this.db
-      .delete(oauthTokens)
-      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, clientId)));
-    await this.db
-      .delete(oauthGrants)
-      .where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)));
+    await this.db.delete(oauthTokens).where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, clientId)));
+    await this.db.delete(oauthGrants).where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)));
   }
 
   /** Lista los consentimientos del usuario (para "Aplicaciones conectadas"). */
-  async listForUser(userId: string): Promise<
-    { clientId: string; scopes: string[]; createdAt: Date; lastUsedAt: Date | null }[]
-  > {
+  async listForUser(
+    userId: string,
+  ): Promise<{ clientId: string; scopes: string[]; createdAt: Date; lastUsedAt: Date | null }[]> {
     return this.db
       .select({
         clientId: oauthGrants.clientId,

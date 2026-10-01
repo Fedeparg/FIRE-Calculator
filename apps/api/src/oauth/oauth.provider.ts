@@ -4,10 +4,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import type {
-  AuthorizationParams,
-  OAuthServerProvider,
-} from '@modelcontextprotocol/sdk/server/auth/provider.js';
+import type { AuthorizationParams, OAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import type {
   OAuthClientInformationFull,
@@ -74,11 +71,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
    *     tras aprobar vuelve a esta misma URL.
    *  3. Con sesión y consentimiento → emite el código y redirige al cliente.
    */
-  async authorize(
-    client: OAuthClientInformationFull,
-    params: AuthorizationParams,
-    res: Response,
-  ): Promise<void> {
+  async authorize(client: OAuthClientInformationFull, params: AuthorizationParams, res: Response): Promise<void> {
     // RFC 8707: el token debe ir destinado a NUESTRO servidor MCP.
     const audience = this.validateResource(params.resource);
     const scopes = this.effectiveScopes(params.scopes);
@@ -127,10 +120,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /** Devuelve el `code_challenge` del código (el SDK lo usa para validar PKCE). No consume. */
-  async challengeForAuthorizationCode(
-    _client: OAuthClientInformationFull,
-    authorizationCode: string,
-  ): Promise<string> {
+  async challengeForAuthorizationCode(_client: OAuthClientInformationFull, authorizationCode: string): Promise<string> {
     const [row] = await this.db
       .select({ codeChallenge: oauthAuthCodes.codeChallenge })
       .from(oauthAuthCodes)
@@ -211,9 +201,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     }
     if (row.consumedAt) {
       // Reuso de un refresh ya rotado: posible robo → revoca toda la cadena del cliente.
-      this.logger.warn(
-        `Refresh token reuse detected (user=${row.userId}, client=${row.clientId}); revoking`,
-      );
+      this.logger.warn(`Refresh token reuse detected (user=${row.userId}, client=${row.clientId}); revoking`);
       await this.grants.revoke(row.userId, row.clientId);
       throw new InvalidGrantError('Refresh token reuse detected; access revoked');
     }
@@ -280,18 +268,10 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /** Revoca un token concreto (access o refresh) de este cliente. Idempotente. */
-  async revokeToken(
-    client: OAuthClientInformationFull,
-    request: OAuthTokenRevocationRequest,
-  ): Promise<void> {
+  async revokeToken(client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest): Promise<void> {
     await this.db
       .delete(oauthTokens)
-      .where(
-        and(
-          eq(oauthTokens.tokenHash, this.hash(request.token)),
-          eq(oauthTokens.clientId, client.client_id),
-        ),
-      );
+      .where(and(eq(oauthTokens.tokenHash, this.hash(request.token)), eq(oauthTokens.clientId, client.client_id)));
   }
 
   /* --------------------------------- helpers -------------------------------- */

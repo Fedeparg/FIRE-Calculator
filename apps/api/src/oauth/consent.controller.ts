@@ -1,14 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  NotFoundException,
-  Param,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
 
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -51,10 +41,7 @@ export class ConsentController {
   /** Registra el consentimiento del usuario para el cliente y los scopes indicados. */
   @Post()
   @HttpCode(HttpStatus.OK)
-  async approve(
-    @CurrentUser() user: SessionUser,
-    @Body() dto: ConsentDto,
-  ): Promise<{ ok: true }> {
+  async approve(@CurrentUser() user: SessionUser, @Body() dto: ConsentDto): Promise<{ ok: true }> {
     await this.grants.recordConsent(user.id, dto.clientId, dto.scopes);
     return { ok: true };
   }

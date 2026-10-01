@@ -23,10 +23,7 @@ export default function AveragePriceCalculator() {
   const [rows, setRows] = useState<Row[]>(() => [makeRow(10, 10, 5), makeRow(8, 15, 5)]);
   const [currentPrice, setCurrentPrice] = useState(12);
 
-  const result = useMemo(
-    () => computeAveragePrice({ purchases: rows, currentPrice }),
-    [rows, currentPrice],
-  );
+  const result = useMemo(() => computeAveragePrice({ purchases: rows, currentPrice }), [rows, currentPrice]);
 
   function updateRow(id: number, patch: Partial<Row>) {
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -107,18 +104,12 @@ export default function AveragePriceCalculator() {
         <Stat label={t("totalShares")} value={formatNumber(result.totalShares)} />
         <Stat label={t("totalCost")} value={formatEUR(result.totalCost)} />
         <Stat label={t("totalCommission")} value={formatEUR(result.totalCommission)} />
-        <Stat
-          label={t("marketValue")}
-          value={result.marketValue === null ? "—" : formatEUR(result.marketValue)}
-        />
+        <Stat label={t("marketValue")} value={result.marketValue === null ? "—" : formatEUR(result.marketValue)} />
         <Stat
           label={t("unrealizedGain")}
           value={result.unrealizedGain === null ? "—" : formatEUR(result.unrealizedGain)}
         />
-        <Stat
-          label={t("returnPct")}
-          value={result.returnPct === null ? "—" : formatPercent(result.returnPct)}
-        />
+        <Stat label={t("returnPct")} value={result.returnPct === null ? "—" : formatPercent(result.returnPct)} />
       </div>
     </div>
   );

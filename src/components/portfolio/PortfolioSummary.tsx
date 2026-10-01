@@ -50,10 +50,9 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
     const { from, days } = startOfYear(new Date());
     const load = async () => {
       try {
-        const res = await fetch(
-          `/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`,
-          { cache: "no-store" },
-        );
+        const res = await fetch(`/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`, {
+          cache: "no-store",
+        });
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as PortfolioHistoryDto;
         if (!cancelled) setYearGain({ display, gain: gainSince(data.points, from) });
@@ -111,7 +110,9 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
           {gain && (
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted">
-                {gain.since.endsWith("-01-01") ? t("thisYear") : t("thisYearSince", { date: formatIsoDate(gain.since) })}
+                {gain.since.endsWith("-01-01")
+                  ? t("thisYear")
+                  : t("thisYearSince", { date: formatIsoDate(gain.since) })}
               </dt>
               <dd className={`text-xl font-semibold tabular-nums ${pnlClass(gain.gain)}`}>
                 {gain.gain > 0 ? "+" : ""}

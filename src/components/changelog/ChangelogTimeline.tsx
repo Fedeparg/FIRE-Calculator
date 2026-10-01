@@ -3,10 +3,7 @@
 import { useCallback, useMemo, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 
-import {
-  decodeChangelogFilter,
-  encodeChangelogFilter,
-} from "@/core/changelog-url-state";
+import { decodeChangelogFilter, encodeChangelogFilter } from "@/core/changelog-url-state";
 import {
   availableCategories,
   filterReleases,
@@ -152,8 +149,7 @@ export default function ChangelogTimeline({ releases, locale }: Props) {
   const updateFilter = useCallback(
     (next: ChangelogFilter) => {
       const available = next.includeInternal ? allCategories : publicCategories;
-      const category =
-        next.category === "all" || available.includes(next.category) ? next.category : "all";
+      const category = next.category === "all" || available.includes(next.category) ? next.category : "all";
       writeSearch(encodeChangelogFilter(window.location.search, { ...next, category }));
     },
     [allCategories, publicCategories],
@@ -170,11 +166,7 @@ export default function ChangelogTimeline({ releases, locale }: Props) {
 
   return (
     <div className="mt-8">
-      <dl
-        className="grid gap-3 sm:grid-cols-3"
-        aria-live="polite"
-        aria-label={t("summary.label")}
-      >
+      <dl className="grid gap-3 sm:grid-cols-3" aria-live="polite" aria-label={t("summary.label")}>
         <SummaryStat label={t("summary.releases")} value={String(summary.releaseCount)} />
         <SummaryStat label={t("summary.changes")} value={String(summary.changeCount)} />
         <SummaryStat
@@ -266,16 +258,11 @@ function FilterChip({
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm transition-colors ${
-        active
-          ? "border-brand bg-brand text-brand-fg"
-          : "border-border bg-surface text-muted hover:text-foreground"
+        active ? "border-brand bg-brand text-brand-fg" : "border-border bg-surface text-muted hover:text-foreground"
       }`}
     >
       {category && (
-        <CategoryIcon
-          category={category}
-          className={`h-3.5 w-3.5 ${active ? "" : CATEGORY_STYLES[category].icon}`}
-        />
+        <CategoryIcon category={category} className={`h-3.5 w-3.5 ${active ? "" : CATEGORY_STYLES[category].icon}`} />
       )}
       {label}
     </button>
@@ -301,9 +288,7 @@ function ReleaseItem({
           8 px) y el hilo va a 7 px, de modo que ambos comparten eje. El hilo se
           dibuja por elemento y llega justo al siguiente (`-bottom-8` = el hueco de
           `space-y-8`), en vez de ser una barra única que sobresaldría por el final. */}
-      {connected && (
-        <span aria-hidden className="absolute -bottom-8 left-[7px] top-6 w-px bg-border" />
-      )}
+      {connected && <span aria-hidden className="absolute -bottom-8 left-[7px] top-6 w-px bg-border" />}
       <span
         aria-hidden
         className={`absolute left-0 top-1.5 h-4 w-4 rounded-full border-2 ${
@@ -320,10 +305,7 @@ function ReleaseItem({
           {/* Sin titular redactado, la fecha ES el titular: nunca se duplica. */}
           {release.title ? (
             <>
-              <time
-                dateTime={release.date}
-                className="text-xs font-semibold uppercase tracking-wide text-muted"
-              >
+              <time dateTime={release.date} className="text-xs font-semibold uppercase tracking-wide text-muted">
                 {longDate}
               </time>
               {release.highlight && <HighlightBadge label={t("highlight")} />}
@@ -351,9 +333,7 @@ function ReleaseItem({
                     <CategoryIcon category={entry.category} className={`h-3 w-3 ${styles.icon}`} />
                     {t(`category.${entry.category}`)}
                   </span>
-                  {entry.scope && (
-                    <span className="shrink-0 font-mono text-xs text-muted">{entry.scope}</span>
-                  )}
+                  {entry.scope && <span className="shrink-0 font-mono text-xs text-muted">{entry.scope}</span>}
                   {/* En móvil el texto ocupa su propia línea a ancho completo
                       (`basis-full` dentro de un contenedor `flex-wrap`): compartir
                       línea con la etiqueta dejaría una columna de ~200 px y un

@@ -13,8 +13,7 @@ import PortfolioSummary from "./PortfolioSummary";
 /** Pestaña Resumen: cómo va la cartera, sin tabla ni formularios. */
 export default function PortfolioSummaryTab() {
   const t = useTranslations("portfolio");
-  const { positions, prices, rates, display, agg, fxAsOf, pricesFetchedAt, pricesCheckedAt } =
-    usePortfolioData();
+  const { positions, prices, rates, display, agg, fxAsOf, pricesFetchedAt, pricesCheckedAt } = usePortfolioData();
 
   if (positions.length === 0) {
     return (

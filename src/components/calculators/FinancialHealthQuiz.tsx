@@ -21,14 +21,9 @@ const CATEGORY_STYLES: Record<HealthCategory, string> = {
 export default function FinancialHealthQuiz() {
   const t = useTranslations("calc.salud-financiera");
 
-  const [answers, setAnswers] = useState<number[]>(() =>
-    FINANCIAL_HEALTH_QUESTIONS.map(() => 0),
-  );
+  const [answers, setAnswers] = useState<number[]>(() => FINANCIAL_HEALTH_QUESTIONS.map(() => 0));
 
-  const result = useMemo(
-    () => scoreFinancialHealthOptions(answers),
-    [answers],
-  );
+  const result = useMemo(() => scoreFinancialHealthOptions(answers), [answers]);
 
   function setAnswer(index: number, value: string) {
     setAnswers((prev) => {

@@ -145,10 +145,7 @@ function step(
   state.wealth = (state.wealth - params.annualExpenses) * (1 + r);
 }
 
-export function simulateFire(
-  input: MonteCarloInput,
-  options: MonteCarloOptions = {},
-): MonteCarloResult {
+export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions = {}): MonteCarloResult {
   const paths = Math.max(1, Math.round(options.paths ?? DEFAULT_PATHS));
   const seed = options.seed ?? DEFAULT_SEED;
 
@@ -212,8 +209,7 @@ export function simulateFire(
     yearsToFire[path] = state.retiredAt ?? Infinity;
     if (state.retiredAt !== null) {
       reached++;
-      const survived =
-        state.depletedAt === null || state.depletedAt > state.retiredAt + retirementYears;
+      const survived = state.depletedAt === null || state.depletedAt > state.retiredAt + retirementYears;
       if (survived) succeeded++;
     }
   }

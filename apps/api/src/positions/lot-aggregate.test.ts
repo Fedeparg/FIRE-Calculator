@@ -185,18 +185,12 @@ describe('aggregateLots', () => {
 
     it('un exceso de 2 unidades ya es una venta de más y falla', () => {
       expect(() =>
-        aggregateLots([
-          buy,
-          lot({ kind: 'sell', quantity: '5.000002', price: '100', tradedAt: '2026-02-01' }),
-        ]),
+        aggregateLots([buy, lot({ kind: 'sell', quantity: '5.000002', price: '100', tradedAt: '2026-02-01' })]),
       ).toThrow(expect.objectContaining({ code: 'NEGATIVE_QUANTITY' }));
     });
 
     it('una venta exacta no cambia', () => {
-      const result = aggregateLots([
-        buy,
-        lot({ kind: 'sell', quantity: '5', price: '100', tradedAt: '2026-02-01' }),
-      ]);
+      const result = aggregateLots([buy, lot({ kind: 'sell', quantity: '5', price: '100', tradedAt: '2026-02-01' })]);
       expect(result.quantity).toBe('0.000000');
     });
 
@@ -230,9 +224,7 @@ describe('aggregateLots', () => {
 
   it('acepta un coste enorme mientras cantidad y precio medio quepan en su columna', () => {
     // El coste (10¹² · 10¹² = 10²⁴) no tiene columna: solo se guardan cantidad y medio.
-    const result = aggregateLots([
-      lot({ quantity: '999999999999', price: '999999999999', tradedAt: '2026-01-01' }),
-    ]);
+    const result = aggregateLots([lot({ quantity: '999999999999', price: '999999999999', tradedAt: '2026-01-01' })]);
 
     expect(result.quantity).toBe('999999999999.000000');
     expect(result.avgPrice).toBe('999999999999.000000');

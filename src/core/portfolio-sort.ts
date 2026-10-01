@@ -5,15 +5,7 @@
 // vive la comparación: nulos siempre al final, desempate estable por ticker.
 
 /** Campo por el que se puede ordenar la tabla de posiciones. */
-export type SortKey =
-  | "ticker"
-  | "name"
-  | "quantity"
-  | "avgPrice"
-  | "broker"
-  | "invested"
-  | "marketValue"
-  | "pnl";
+export type SortKey = "ticker" | "name" | "quantity" | "avgPrice" | "broker" | "invested" | "marketValue" | "pnl";
 
 /** Sentido de la ordenación: descendente (mayor a menor) o ascendente. */
 export type SortDir = "asc" | "desc";

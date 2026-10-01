@@ -1,12 +1,7 @@
 // Interés compuesto con aportaciones periódicas. Delega en el motor genérico
 // `project` (ver core/projection.ts) para no duplicar la lógica de cálculo.
 
-import {
-  project,
-  type Frequency,
-  type ProjectionPoint,
-  type ProjectionResult,
-} from "../projection.js";
+import { project, type Frequency, type ProjectionPoint, type ProjectionResult } from "../projection.js";
 
 export interface CompoundInput {
   /** Capital inicial. */

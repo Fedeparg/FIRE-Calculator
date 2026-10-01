@@ -14,11 +14,12 @@
     "dev": "pnpm core:build && next dev",
     "build": "pnpm core:build && next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint && prettier --check \"**/*.{ts,tsx,js,mjs,css}\"",
     "typecheck": "pnpm core:build && tsc --noEmit && pnpm --filter @sextante/core typecheck",
     "test": "pnpm core:build && vitest run",
     "test:watch": "pnpm core:build && vitest",
-    "core:build": "pnpm --filter @sextante/core build"
+    "core:build": "pnpm --filter @sextante/core build",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,css}\""
   },
   "dependencies": {
     "@sextante/core": "workspace:*",
@@ -44,6 +45,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "fast-check": "^4.10.2",
+    "prettier": "^3.8.5",
     "tailwindcss": "^4.3.3",
     "typescript": "^5",
     "vitest": "^5.0.2"

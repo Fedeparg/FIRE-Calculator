@@ -21,13 +21,7 @@ export const POSITION_FORM_TITLE_ID = "position-form-title";
 type Status = "idle" | "submitting" | "combining";
 
 /** Tipo de error mostrado al usuario, derivado del fallo concreto (status o red). */
-type ErrorKey =
-  | "errorNetwork"
-  | "errorSession"
-  | "errorInvalid"
-  | "errorServer"
-  | "errorGeneric"
-  | "errorHasSales";
+type ErrorKey = "errorNetwork" | "errorSession" | "errorInvalid" | "errorServer" | "errorGeneric" | "errorHasSales";
 
 /** Traduce un status HTTP a un mensaje específico (sin volcar el body crudo de la API). */
 function errorKeyForStatus(status: number): ErrorKey {
@@ -52,9 +46,7 @@ const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
 function toCurrency(value: string | undefined): PortfolioCurrency {
-  return PORTFOLIO_CURRENCIES.includes(value as PortfolioCurrency)
-    ? (value as PortfolioCurrency)
-    : "EUR";
+  return PORTFOLIO_CURRENCIES.includes(value as PortfolioCurrency) ? (value as PortfolioCurrency) : "EUR";
 }
 
 /**
@@ -134,14 +126,11 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     }
     setStatus("submitting");
     try {
-      const res = await fetch(
-        isEditing ? `/api/positions/${editing!.id}` : "/api/positions",
-        {
-          method: isEditing ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload()),
-        },
-      );
+      const res = await fetch(isEditing ? `/api/positions/${editing!.id}` : "/api/positions", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload()),
+      });
 
       if (res.ok) {
         const saved = (await res.json()) as Position;
@@ -303,12 +292,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             aria-invalid={brokerRequired || brokerEmptied}
             className={`${inputClass} ${brokerRequired || brokerEmptied ? "border-warning" : ""}`}
           />
-          {brokerRequired && (
-            <p className="text-xs text-warning">{t("brokerRequired")}</p>
-          )}
-          {brokerEmptied && (
-            <p className="text-xs text-warning">{t("brokerCannotEmpty")}</p>
-          )}
+          {brokerRequired && <p className="text-xs text-warning">{t("brokerRequired")}</p>}
+          {brokerEmptied && <p className="text-xs text-warning">{t("brokerCannotEmpty")}</p>}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -353,10 +338,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
           {errorKey === "errorSession" && (
             <>
               {" "}
-              <Link
-                href="/entrar"
-                className="font-medium text-brand underline underline-offset-2"
-              >
+              <Link href="/entrar" className="font-medium text-brand underline underline-offset-2">
                 {t("errorSessionLink")}
               </Link>
             </>

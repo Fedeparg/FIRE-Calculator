@@ -38,10 +38,7 @@ export interface RetirementResult extends ProjectionResult {
 }
 
 export function computeRetirement(input: RetirementInput): RetirementResult {
-  const yearsToRetirement = Math.max(
-    0,
-    Math.round((input.retirementAge || 0) - (input.currentAge || 0)),
-  );
+  const yearsToRetirement = Math.max(0, Math.round((input.retirementAge || 0) - (input.currentAge || 0)));
 
   const projection: ProjectionResult = project({
     initial: input.currentSavings,

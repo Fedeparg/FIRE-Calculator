@@ -38,9 +38,7 @@ const calcNamespaces = new Map<Locale, ReadonlySet<string>>(
 const liveSlugs = CALCULATORS.filter((c) => c.status === "live").map((c) => c.slug);
 const allSlugs = new Set(CALCULATORS.map((c) => c.slug));
 
-const pageDirs = readdirSync(PAGES_DIR).filter((entry) =>
-  statSync(path.join(PAGES_DIR, entry)).isDirectory(),
-);
+const pageDirs = readdirSync(PAGES_DIR).filter((entry) => statSync(path.join(PAGES_DIR, entry)).isDirectory());
 
 describe("registry: coherencia del catálogo", () => {
   it("no hay slugs duplicados", () => {
@@ -48,9 +46,7 @@ describe("registry: coherencia del catálogo", () => {
   });
 
   it("cada calculadora publicada tiene su página", () => {
-    const missing = liveSlugs.filter(
-      (slug) => !existsSync(path.join(PAGES_DIR, slug, "page.tsx")),
-    );
+    const missing = liveSlugs.filter((slug) => !existsSync(path.join(PAGES_DIR, slug, "page.tsx")));
     expect(missing).toEqual([]);
   });
 
@@ -61,9 +57,7 @@ describe("registry: coherencia del catálogo", () => {
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su explainer en %s", (locale) => {
-    const missing = liveSlugs.filter(
-      (slug) => !existsSync(path.join(EXPLAINERS_DIR, `${slug}.${locale}.md`)),
-    );
+    const missing = liveSlugs.filter((slug) => !existsSync(path.join(EXPLAINERS_DIR, `${slug}.${locale}.md`)));
     expect(missing).toEqual([]);
   });
 });

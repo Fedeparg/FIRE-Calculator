@@ -59,15 +59,7 @@ async function fetchLots(positionId: string): Promise<PositionLot[]> {
  * el histórico y reescribe la cantidad y el precio medio en la misma transacción; por eso aquí
  * no se toca nunca la posición a mano y tras cada mutación se pide al padre que resincronice.
  */
-export default function PositionDetail({
-  position,
-  price,
-  rates,
-  pricePending,
-  onMutated,
-  onEdit,
-  onDeleted,
-}: Props) {
+export default function PositionDetail({ position, price, rates, pricePending, onMutated, onEdit, onDeleted }: Props) {
   const t = useTranslations("portfolio.lots");
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
@@ -157,9 +149,7 @@ export default function PositionDetail({
   }
 
   async function handleDeleteLot(lotId: string) {
-    const ok = await mutate(() =>
-      fetch(`/api/positions/${positionId}/lots/${lotId}`, { method: "DELETE" }),
-    );
+    const ok = await mutate(() => fetch(`/api/positions/${positionId}/lots/${lotId}`, { method: "DELETE" }));
     setConfirmingLotId(null);
     if (ok && editingLot?.id === lotId) setEditingLot(null);
   }
@@ -193,9 +183,7 @@ export default function PositionDetail({
         <h2 id={POSITION_DETAIL_TITLE_ID} className="text-lg font-semibold text-foreground">
           {position.name ?? position.ticker}
         </h2>
-        <p className="text-xs text-muted">
-          {[position.ticker, position.broker].filter(Boolean).join(" · ")}
-        </p>
+        <p className="text-xs text-muted">{[position.ticker, position.broker].filter(Boolean).join(" · ")}</p>
       </div>
 
       {position.isDerivative ? (

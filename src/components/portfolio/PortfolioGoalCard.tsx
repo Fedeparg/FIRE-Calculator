@@ -22,10 +22,7 @@ type Props = {
 };
 
 /** Estado de la carga del objetivo guardado. */
-type Loaded =
-  | { kind: "loading" }
-  | { kind: "none" }
-  | { kind: "goal"; name: string; settings: GoalSettings };
+type Loaded = { kind: "loading" } | { kind: "none" } | { kind: "goal"; name: string; settings: GoalSettings };
 
 /**
  * Resumen del objetivo FIRE en la pestaña Resumen: el porcentaje conseguido y el tiempo que
@@ -62,8 +59,7 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
     };
   }, []);
 
-  const progress =
-    loaded.kind === "goal" ? goalProgress(loaded.settings, marketValue, display, rates) : null;
+  const progress = loaded.kind === "goal" ? goalProgress(loaded.settings, marketValue, display, rates) : null;
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
@@ -74,7 +70,9 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
         </Link>
       </div>
 
-      {loaded.kind === "goal" && <p className="-mt-2 truncate text-sm text-muted">{t("plan", { name: loaded.name })}</p>}
+      {loaded.kind === "goal" && (
+        <p className="-mt-2 truncate text-sm text-muted">{t("plan", { name: loaded.name })}</p>
+      )}
       {loaded.kind === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
       {loaded.kind === "none" && <p className="text-sm text-muted">{t("empty")}</p>}
       {loaded.kind === "goal" && progress === null && <p className="text-sm text-muted">{t("notConvertible")}</p>}
@@ -102,7 +100,9 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
                     year: new Date().getFullYear() + progress.deadlineYears,
                     onTrack: String(progress.onTrack),
                     required:
-                      progress.requiredContribution === null ? "—" : formatCurrency(progress.requiredContribution, display),
+                      progress.requiredContribution === null
+                        ? "—"
+                        : formatCurrency(progress.requiredContribution, display),
                   })
                 : t("summary", {
                     target: formatCurrency(progress.target, display),

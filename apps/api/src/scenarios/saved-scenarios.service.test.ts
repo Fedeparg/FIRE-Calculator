@@ -6,11 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
-import {
-  MAX_INPUTS_BYTES,
-  MAX_SCENARIOS_PER_USER,
-  SavedScenariosService,
-} from './saved-scenarios.service.js';
+import { MAX_INPUTS_BYTES, MAX_SCENARIOS_PER_USER, SavedScenariosService } from './saved-scenarios.service.js';
 
 function dto(partial: Partial<CreateSavedScenarioDto> = {}): CreateSavedScenarioDto {
   return {
@@ -137,9 +133,9 @@ describe('SavedScenariosService (integración con Postgres)', () => {
       const userB = await insertUser(db, 'b@example.com');
       const created = await service.create(userA, dto());
 
-      await expect(
-        service.update(userB, created.id, { name: 'Secuestrado' }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update(userB, created.id, { name: 'Secuestrado' })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       await expect(service.remove(userB, created.id)).rejects.toBeInstanceOf(ForbiddenException);
 
       // El escenario sigue intacto para su dueño.
@@ -149,9 +145,7 @@ describe('SavedScenariosService (integración con Postgres)', () => {
     it('un escenario inexistente da 404', async () => {
       const userId = await insertUser(db, 'a@example.com');
 
-      await expect(service.remove(userId, randomUUID())).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
+      await expect(service.remove(userId, randomUUID())).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });

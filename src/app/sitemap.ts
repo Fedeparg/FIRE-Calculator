@@ -2,11 +2,7 @@ import type { MetadataRoute } from "next";
 
 import { CALCULATORS } from "@/core/registry";
 import { LOCALES } from "@/core/types";
-import {
-  getArticleSlugs,
-  getContentUpdatedDates,
-  getLegalSlugs,
-} from "@/components/wiki/content";
+import { getArticleSlugs, getContentUpdatedDates, getLegalSlugs } from "@/components/wiki/content";
 import { getChangelogLastUpdated } from "@/components/changelog/content";
 import { absoluteUrl } from "@/lib/site";
 import { localizedPath } from "@/lib/seo";
@@ -29,16 +25,15 @@ import { localizedPath } from "@/lib/seo";
  * contenido lo genera el código, no un fichero con historial propio.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [esArticles, enArticles, esLegal, enLegal, articleDates, legalDates, changelogDate] =
-    await Promise.all([
-      getArticleSlugs("es"),
-      getArticleSlugs("en"),
-      getLegalSlugs("es"),
-      getLegalSlugs("en"),
-      getContentUpdatedDates("wiki"),
-      getContentUpdatedDates("legal"),
-      getChangelogLastUpdated(),
-    ]);
+  const [esArticles, enArticles, esLegal, enLegal, articleDates, legalDates, changelogDate] = await Promise.all([
+    getArticleSlugs("es"),
+    getArticleSlugs("en"),
+    getLegalSlugs("es"),
+    getLegalSlugs("en"),
+    getContentUpdatedDates("wiki"),
+    getContentUpdatedDates("legal"),
+    getChangelogLastUpdated(),
+  ]);
 
   const articleSlugs = [...new Set([...esArticles, ...enArticles])].sort();
   const legalSlugs = [...new Set([...esLegal, ...enLegal])].sort();
@@ -75,9 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/novedades", 0.5, "weekly", changelogDate),
     entry("/sobre-mi", 0.3, "yearly"),
     ...liveCalculators.map((c) => entry(`/calculadoras/${c.slug}`, 0.8, "monthly")),
-    ...articleSlugs.map((slug) =>
-      entry(`/aprende/${slug}`, 0.7, "monthly", articleDates.get(slug)),
-    ),
+    ...articleSlugs.map((slug) => entry(`/aprende/${slug}`, 0.7, "monthly", articleDates.get(slug))),
     ...legalSlugs.map((slug) => entry(`/legal/${slug}`, 0.2, "yearly", legalDates.get(slug))),
   ];
 }

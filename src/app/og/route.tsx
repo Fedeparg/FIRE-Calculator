@@ -46,72 +46,68 @@ export async function GET(request: Request) {
   ]);
 
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "80px",
-          background: "linear-gradient(135deg, #0b1120 0%, #1e1b4b 100%)",
-          color: "#f8fafc",
-          fontFamily: "Inter",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          {/* Marca de la brújula: arco simple en el color de marca. */}
-          <div
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "9999px",
-              border: "4px solid #818cf8",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#818cf8",
-              fontSize: "28px",
-              fontWeight: 700,
-            }}
-          >
-            S
-          </div>
-          <span style={{ fontSize: "34px", fontWeight: 700, letterSpacing: "-0.02em" }}>
-            {SITE_NAME}
-          </span>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "80px",
+        background: "linear-gradient(135deg, #0b1120 0%, #1e1b4b 100%)",
+        color: "#f8fafc",
+        fontFamily: "Inter",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+        {/* Marca de la brújula: arco simple en el color de marca. */}
+        <div
+          style={{
+            width: "56px",
+            height: "56px",
+            borderRadius: "9999px",
+            border: "4px solid #818cf8",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#818cf8",
+            fontSize: "28px",
+            fontWeight: 700,
+          }}
+        >
+          S
         </div>
+        <span style={{ fontSize: "34px", fontWeight: 700, letterSpacing: "-0.02em" }}>{SITE_NAME}</span>
+      </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {subtitle && (
-            <span
-              style={{
-                fontSize: "30px",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                color: "#a5b4fc",
-              }}
-            >
-              {subtitle}
-            </span>
-          )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+        {subtitle && (
           <span
             style={{
-              fontSize: title.length > 55 ? "64px" : "76px",
+              fontSize: "30px",
               fontWeight: 700,
-              lineHeight: 1.1,
-              letterSpacing: "-0.03em",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "#a5b4fc",
             }}
           >
-            {title}
+            {subtitle}
           </span>
-        </div>
-
-        <span style={{ fontSize: "26px", color: "#94a3b8" }}>{tagline}</span>
+        )}
+        <span
+          style={{
+            fontSize: title.length > 55 ? "64px" : "76px",
+            fontWeight: 700,
+            lineHeight: 1.1,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          {title}
+        </span>
       </div>
-    ),
+
+      <span style={{ fontSize: "26px", color: "#94a3b8" }}>{tagline}</span>
+    </div>,
     {
       ...SIZE,
       fonts: [

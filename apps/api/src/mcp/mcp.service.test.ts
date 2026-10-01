@@ -22,10 +22,50 @@ const positions = [
 ];
 
 const lots = [
-  { id: 'l1', positionId: 'p1', kind: 'buy', quantity: 10, price: 100, fees: 0, tradedAt: '2024-03-01', note: null, createdAt: '2024-03-01T10:00:00.000Z' },
-  { id: 'l2', positionId: 'p1', kind: 'sell', quantity: 5, price: 120, fees: 1, tradedAt: '2025-06-01', note: null, createdAt: '2025-06-01T10:00:00.000Z' },
-  { id: 'l3', positionId: 'p2', kind: 'buy', quantity: 2, price: 150, fees: 0, tradedAt: '2025-01-10', note: null, createdAt: '2025-01-10T10:00:00.000Z' },
-  { id: 'l4', positionId: 'p2', kind: 'sell', quantity: 2, price: 140, fees: 0, tradedAt: '2025-02-10', note: null, createdAt: '2025-02-10T10:00:00.000Z' },
+  {
+    id: 'l1',
+    positionId: 'p1',
+    kind: 'buy',
+    quantity: 10,
+    price: 100,
+    fees: 0,
+    tradedAt: '2024-03-01',
+    note: null,
+    createdAt: '2024-03-01T10:00:00.000Z',
+  },
+  {
+    id: 'l2',
+    positionId: 'p1',
+    kind: 'sell',
+    quantity: 5,
+    price: 120,
+    fees: 1,
+    tradedAt: '2025-06-01',
+    note: null,
+    createdAt: '2025-06-01T10:00:00.000Z',
+  },
+  {
+    id: 'l3',
+    positionId: 'p2',
+    kind: 'buy',
+    quantity: 2,
+    price: 150,
+    fees: 0,
+    tradedAt: '2025-01-10',
+    note: null,
+    createdAt: '2025-01-10T10:00:00.000Z',
+  },
+  {
+    id: 'l4',
+    positionId: 'p2',
+    kind: 'sell',
+    quantity: 2,
+    price: 140,
+    fees: 0,
+    tradedAt: '2025-02-10',
+    note: null,
+    createdAt: '2025-02-10T10:00:00.000Z',
+  },
 ];
 
 function makeService() {
@@ -37,11 +77,20 @@ function makeService() {
       fxAsOf: '2026-10-01',
       positions: [],
     }),
-    breakdown: vi.fn().mockResolvedValue({ slices: [], total: 0, included: 0, excluded: 0, display: 'EUR', fxAsOf: null }),
+    breakdown: vi
+      .fn()
+      .mockResolvedValue({ slices: [], total: 0, included: 0, excluded: 0, display: 'EUR', fxAsOf: null }),
   };
   const scenarios = {
     findAllByUser: vi.fn().mockResolvedValue([
-      { id: 's1', slug: 'independencia-financiera', name: 'Plan', inputs: { annualExpenses: 24_000 }, createdAt: '', updatedAt: '' },
+      {
+        id: 's1',
+        slug: 'independencia-financiera',
+        name: 'Plan',
+        inputs: { annualExpenses: 24_000 },
+        createdAt: '',
+        updatedAt: '',
+      },
     ]),
   };
   const service = new McpService(
@@ -106,7 +155,10 @@ describe('McpService', () => {
     client = await connect(service);
 
     const result = parse(
-      await client.callTool({ name: 'calculate_mortgage', arguments: { principal: 100_000, annualRate: 0, years: 10 } }),
+      await client.callTool({
+        name: 'calculate_mortgage',
+        arguments: { principal: 100_000, annualRate: 0, years: 10 },
+      }),
     );
 
     // Tipo 0: 100.000 € en 120 cuotas iguales.
@@ -215,7 +267,14 @@ describe('McpService', () => {
     for (const args of [
       { targetAmount: 1000, contribution: 0, annualReturn: 5 },
       { annualExpenses: 24_000, contribution: 0, annualReturn: 5 },
-      { annualExpenses: 24_000, withdrawalRate: 4, targetAmount: 1000, targetYears: 5, contribution: 0, annualReturn: 5 },
+      {
+        annualExpenses: 24_000,
+        withdrawalRate: 4,
+        targetAmount: 1000,
+        targetYears: 5,
+        contribution: 0,
+        annualReturn: 5,
+      },
     ]) {
       const result = (await client.callTool({ name: 'get_fire_goal_progress', arguments: args })) as CallToolResult;
       expect(result.isError).toBe(true);

@@ -35,7 +35,9 @@ describe("project — propiedades", () => {
         const base = project(i).finalValue;
         const moreContribution = project({ ...i, contribution: i.contribution + extra }).finalValue;
         const moreRate = project({ ...i, annualRate: i.annualRate + extra / 100 }).finalValue;
-        return (moreContribution >= base || close(moreContribution, base)) && (moreRate >= base || close(moreRate, base));
+        return (
+          (moreContribution >= base || close(moreContribution, base)) && (moreRate >= base || close(moreRate, base))
+        );
       }),
       PROPERTY_PARAMS,
     );
@@ -56,7 +58,8 @@ describe("project — propiedades", () => {
       fc.property(input, (i) => {
         const result = project(i);
         return result.series.every(
-          (p) => close(p.value, p.contributed + p.interest) && (p.value >= p.contributed || close(p.value, p.contributed)),
+          (p) =>
+            close(p.value, p.contributed + p.interest) && (p.value >= p.contributed || close(p.value, p.contributed)),
         );
       }),
       PROPERTY_PARAMS,

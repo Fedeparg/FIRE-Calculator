@@ -22,14 +22,7 @@
 import { LOCALES, type Locale, type Localized } from "./types";
 
 /** Categorías de cambio que la interfaz sabe etiquetar (color + icono + texto). */
-export const CHANGELOG_CATEGORIES = [
-  "feature",
-  "fix",
-  "security",
-  "performance",
-  "milestone",
-  "internal",
-] as const;
+export const CHANGELOG_CATEGORIES = ["feature", "fix", "security", "performance", "milestone", "internal"] as const;
 
 export type ChangelogCategory = (typeof CHANGELOG_CATEGORIES)[number];
 
@@ -153,9 +146,7 @@ function parseRelease(value: unknown): ChangelogRelease | null {
   if (!isValidIsoDate(value.date)) return null;
 
   const rawEntries = Array.isArray(value.entries) ? value.entries : [];
-  const entries = rawEntries
-    .map(parseEntry)
-    .filter((entry): entry is ChangelogEntry => entry !== null);
+  const entries = rawEntries.map(parseEntry).filter((entry): entry is ChangelogEntry => entry !== null);
 
   return {
     date: value.date,
@@ -189,9 +180,7 @@ export function parseChangelog(raw: unknown): Changelog {
 
 /** ¿La entrega tiene título o resumen redactado en algún idioma? */
 function hasAnyText(release: ChangelogRelease): boolean {
-  return LOCALES.some(
-    (locale) => release.title[locale] !== "" || release.summary[locale] !== "",
-  );
+  return LOCALES.some((locale) => release.title[locale] !== "" || release.summary[locale] !== "");
 }
 
 /**
@@ -219,10 +208,7 @@ function isInternal(entry: ChangelogEntry): boolean {
  * descartan (una viñeta vacía no informa de nada); el título y el resumen quedan
  * a `null` cuando no hay texto, y la interfaz cae a la fecha formateada.
  */
-export function localizeReleases(
-  releases: readonly ChangelogRelease[],
-  locale: Locale,
-): LocalizedChangelogRelease[] {
+export function localizeReleases(releases: readonly ChangelogRelease[], locale: Locale): LocalizedChangelogRelease[] {
   const localized: LocalizedChangelogRelease[] = [];
 
   for (const release of releases) {
@@ -292,9 +278,7 @@ export function filterReleases(
  * `CHANGELOG_CATEGORIES`. Alimenta los chips del filtro para no ofrecer opciones
  * que no devolverían nada.
  */
-export function availableCategories(
-  releases: readonly LocalizedChangelogRelease[],
-): ChangelogCategory[] {
+export function availableCategories(releases: readonly LocalizedChangelogRelease[]): ChangelogCategory[] {
   const present = new Set<ChangelogCategory>();
   for (const release of releases) {
     for (const entry of release.entries) present.add(entry.category);
@@ -307,9 +291,7 @@ export function availableCategories(
  * Se calcula sobre lo que se está mostrando (post-filtro), de modo que el bloque
  * de resumen hace también de contador de resultados del filtro.
  */
-export function summarizeReleases(
-  releases: readonly LocalizedChangelogRelease[],
-): ChangelogSummary {
+export function summarizeReleases(releases: readonly LocalizedChangelogRelease[]): ChangelogSummary {
   let changeCount = 0;
   let firstDate: string | null = null;
   let lastDate: string | null = null;

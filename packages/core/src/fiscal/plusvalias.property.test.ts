@@ -58,8 +58,14 @@ describe("walkLots — propiedades", () => {
         walkLots(lots).sales.every(
           (sale) =>
             close(sale.gain, sale.transferValue - sale.acquisitionValue) &&
-            close(sale.gain, sale.matched.reduce((s, m) => s + m.gain, 0)) &&
-            close(sale.quantity, sale.matched.reduce((s, m) => s + m.quantity, 0)),
+            close(
+              sale.gain,
+              sale.matched.reduce((s, m) => s + m.gain, 0),
+            ) &&
+            close(
+              sale.quantity,
+              sale.matched.reduce((s, m) => s + m.quantity, 0),
+            ),
         ),
       ),
       PROPERTY_PARAMS,

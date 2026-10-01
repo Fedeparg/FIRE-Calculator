@@ -26,11 +26,7 @@ import PositionPanel from "./PositionPanel";
 const PANEL_ID = "position-panel";
 
 /** Qué muestra el panel lateral. */
-type PanelState =
-  | { kind: "closed" }
-  | { kind: "detail"; id: string }
-  | { kind: "add" }
-  | { kind: "edit"; id: string };
+type PanelState = { kind: "closed" } | { kind: "detail"; id: string } | { kind: "add" } | { kind: "edit"; id: string };
 
 /**
  * Pestaña Posiciones: buscador y filtro pegados a la lista, y un panel para el detalle, el alta
@@ -39,8 +35,7 @@ type PanelState =
  */
 export default function PortfolioPositionsTab() {
   const t = useTranslations("portfolio");
-  const { positions, setPositions, refresh, prices, rates, display, agg, pendingIds } =
-    usePortfolioData();
+  const { positions, setPositions, refresh, prices, rates, display, agg, pendingIds } = usePortfolioData();
   const [filter, setFilter] = useState<PositionFilter>("open");
   const [query, setQuery] = useState("");
   const [panel, setPanel] = useState<PanelState>({ kind: "closed" });
@@ -72,9 +67,7 @@ export default function PortfolioPositionsTab() {
   // El panel guarda ids, no posiciones: así, cuando `refresh()` trae la cantidad y el precio
   // medio reagregados, o la posición desaparece porque la borró otro cliente (MCP), cuadra solo.
   const selected =
-    panel.kind === "detail" || panel.kind === "edit"
-      ? (positions.find((p) => p.id === panel.id) ?? null)
-      : null;
+    panel.kind === "detail" || panel.kind === "edit" ? (positions.find((p) => p.id === panel.id) ?? null) : null;
   const panelOpen = panel.kind === "add" || selected !== null;
 
   const closePanel = useCallback(() => setPanel({ kind: "closed" }), []);
@@ -111,7 +104,15 @@ export default function PortfolioPositionsTab() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <label className="relative block">
                   <span className="sr-only">{t("positions.searchLabel")}</span>
-                  <svg aria-hidden="true" viewBox="0 0 24 24" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  >
                     <circle cx="11" cy="11" r="7" />
                     <path d="m20 20-3.5-3.5" />
                   </svg>
@@ -155,7 +156,9 @@ export default function PortfolioPositionsTab() {
                 total={agg.marketValue}
                 selectedId={selected?.id ?? null}
                 onSelect={(id) =>
-                  setPanel((cur) => (cur.kind === "detail" && cur.id === id ? { kind: "closed" } : { kind: "detail", id }))
+                  setPanel((cur) =>
+                    cur.kind === "detail" && cur.id === id ? { kind: "closed" } : { kind: "detail", id },
+                  )
                 }
                 pendingIds={pendingIds}
                 panelId={PANEL_ID}

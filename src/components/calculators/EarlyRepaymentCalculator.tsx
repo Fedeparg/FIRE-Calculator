@@ -30,11 +30,45 @@ export default function EarlyRepaymentCalculator() {
       inputCount={5}
       inputs={
         <>
-          <NumberField label={t("pendingPrincipal")} value={pendingPrincipal} onChange={setPendingPrincipal} step={5000} help={t("help.pendingPrincipal")} />
-          <NumberField label={t("annualRate")} value={annualRate} onChange={setAnnualRate} step={0.1} max={100} help={t("help.annualRate")} />
-          <NumberField label={t("remainingYears")} value={remainingYears} onChange={setRemainingYears} step={1} min={1} max={40} help={t("help.remainingYears")} />
-          <NumberField label={t("extraPayment")} value={extraPayment} onChange={setExtraPayment} step={1000} help={t("help.extraPayment")} />
-          <NumberField label={t("compensationRate")} value={compensationRate} onChange={setCompensationRate} step={0.1} max={100} help={t("help.compensationRate")} />
+          <NumberField
+            label={t("pendingPrincipal")}
+            value={pendingPrincipal}
+            onChange={setPendingPrincipal}
+            step={5000}
+            help={t("help.pendingPrincipal")}
+          />
+          <NumberField
+            label={t("annualRate")}
+            value={annualRate}
+            onChange={setAnnualRate}
+            step={0.1}
+            max={100}
+            help={t("help.annualRate")}
+          />
+          <NumberField
+            label={t("remainingYears")}
+            value={remainingYears}
+            onChange={setRemainingYears}
+            step={1}
+            min={1}
+            max={40}
+            help={t("help.remainingYears")}
+          />
+          <NumberField
+            label={t("extraPayment")}
+            value={extraPayment}
+            onChange={setExtraPayment}
+            step={1000}
+            help={t("help.extraPayment")}
+          />
+          <NumberField
+            label={t("compensationRate")}
+            value={compensationRate}
+            onChange={setCompensationRate}
+            step={0.1}
+            max={100}
+            help={t("help.compensationRate")}
+          />
         </>
       }
       results={

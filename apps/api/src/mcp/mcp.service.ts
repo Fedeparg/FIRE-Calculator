@@ -3,11 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
 import { BREAKDOWN_GROUPS, type BreakdownGroupBy } from '@sextante/core/portfolio-breakdown';
-import {
-  computeAmountGoal,
-  computePortfolioGoal,
-  simulatePortfolioGoal,
-} from '@sextante/core/portfolio-goal';
+import { computeAmountGoal, computePortfolioGoal, simulatePortfolioGoal } from '@sextante/core/portfolio-goal';
 import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
 import { MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
@@ -29,10 +25,7 @@ import { CreatePositionLotDto } from '../positions/dto/create-position-lot.dto.j
 import { UpdatePositionDto } from '../positions/dto/update-position.dto.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
-import {
-  INSTRUMENT_SEARCH,
-  type InstrumentSearchProvider,
-} from '../prices/instrument-search.js';
+import { INSTRUMENT_SEARCH, type InstrumentSearchProvider } from '../prices/instrument-search.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
 import { CALCULATOR_TOOLS } from './calculator-tools.js';
 import { McpAuditService } from './mcp-audit.service.js';
@@ -140,10 +133,7 @@ export class McpService {
           '(`isDerivative`) se registran pero Sextante no sigue su precio: nunca entran en el ' +
           'total. Solo lectura.',
         inputSchema: {
-          display: z
-            .enum(CURRENCY_VALUES)
-            .optional()
-            .describe('Divisa del total agregado (por defecto EUR).'),
+          display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del total agregado (por defecto EUR).'),
         },
         annotations: { readOnlyHint: true },
       },
@@ -305,8 +295,7 @@ export class McpService {
               lots: lotsByPosition.get(p.id) ?? [],
             })),
           );
-          const years =
-            year === undefined ? report.years : report.years.filter((y) => y.year === year);
+          const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
           return jsonResult({ years });
         }),
     );
@@ -321,13 +310,8 @@ export class McpService {
           'posiciones sin precio o en divisa no convertible se excluyen y se cuentan; los ' +
           'derivados no entran. Solo lectura.',
         inputSchema: {
-          groupBy: z
-            .enum(BREAKDOWN_VALUES)
-            .describe('Criterio: asset (por valor), broker o currency.'),
-          display: z
-            .enum(CURRENCY_VALUES)
-            .optional()
-            .describe('Divisa del reparto (por defecto EUR).'),
+          groupBy: z.enum(BREAKDOWN_VALUES).describe('Criterio: asset (por valor), broker o currency.'),
+          display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del reparto (por defecto EUR).'),
         },
         annotations: { readOnlyHint: true },
       },
@@ -353,18 +337,8 @@ export class McpService {
           'en `list_saved_scenarios`), usa sus valores: `goalMode: "amount"` indica el modo ' +
           'cantidad. Los importes van en la divisa `display`. Solo lectura.',
         inputSchema: {
-          annualExpenses: z
-            .number()
-            .min(0)
-            .max(1e12)
-            .optional()
-            .describe('Modo FIRE: gasto anual deseado.'),
-          withdrawalRate: z
-            .number()
-            .min(0)
-            .max(100)
-            .optional()
-            .describe('Modo FIRE: tasa de retiro (habitual: 4).'),
+          annualExpenses: z.number().min(0).max(1e12).optional().describe('Modo FIRE: gasto anual deseado.'),
+          withdrawalRate: z.number().min(0).max(100).optional().describe('Modo FIRE: tasa de retiro (habitual: 4).'),
           targetAmount: z
             .number()
             .min(0)
@@ -379,15 +353,8 @@ export class McpService {
             .optional()
             .describe('Modo cantidad: plazo en años enteros.'),
           contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
-          frequency: z
-            .enum(FREQUENCY_VALUES)
-            .optional()
-            .describe('Frecuencia de la aportación (por defecto monthly).'),
-          annualReturn: z
-            .number()
-            .min(-99)
-            .max(100)
-            .describe('Rentabilidad anual REAL esperada, en base 100.'),
+          frequency: z.enum(FREQUENCY_VALUES).optional().describe('Frecuencia de la aportación (por defecto monthly).'),
+          annualReturn: z.number().min(-99).max(100).describe('Rentabilidad anual REAL esperada, en base 100.'),
           volatility: z
             .number()
             .min(0)
@@ -580,8 +547,7 @@ export class McpService {
       {
         title: 'Borrar una posición',
         description:
-          'Elimina una posición de la cartera (por id). Acción irreversible. Requiere permiso ' +
-          'de escritura.',
+          'Elimina una posición de la cartera (por id). Acción irreversible. Requiere permiso ' + 'de escritura.',
         inputSchema: {
           id: z.string().min(1).describe('Id de la posición a borrar.'),
         },
@@ -651,11 +617,7 @@ export class McpService {
    * Ejecuta el cuerpo de una tool de LECTURA con auditoría. Los errores de dominio se
    * traducen a resultado de error de tool (no a un 500): el host los muestra al usuario.
    */
-  private async run(
-    ctx: McpContext,
-    tool: string,
-    body: () => Promise<CallToolResult>,
-  ): Promise<CallToolResult> {
+  private async run(ctx: McpContext, tool: string, body: () => Promise<CallToolResult>): Promise<CallToolResult> {
     try {
       const result = await body();
       await this.audit.record(ctx.userId, ctx.clientId, tool, 'ok');
@@ -670,11 +632,7 @@ export class McpService {
    * Igual que `run` pero exige el scope de escritura ANTES de ejecutar (step-up por-tool). Un
    * token sin `portfolio:write` recibe un error claro y queda registrado como `denied_scope`.
    */
-  private async runWrite(
-    ctx: McpContext,
-    tool: string,
-    body: () => Promise<CallToolResult>,
-  ): Promise<CallToolResult> {
+  private async runWrite(ctx: McpContext, tool: string, body: () => Promise<CallToolResult>): Promise<CallToolResult> {
     if (!ctx.scopes.includes(SCOPE_PORTFOLIO_WRITE)) {
       await this.audit.record(ctx.userId, ctx.clientId, tool, 'denied_scope');
       return errorResult(
@@ -690,16 +648,11 @@ export class McpService {
    * API REST, de modo que el camino MCP no sea una vía de escritura más débil (divisa fuera de
    * la lista, cantidades negativas, etc.). Lanza con los mensajes de validación si falla.
    */
-  private async validateDto<T extends object>(
-    cls: new () => T,
-    input: unknown,
-  ): Promise<T> {
+  private async validateDto<T extends object>(cls: new () => T, input: unknown): Promise<T> {
     const dto = plainToInstance(cls, input);
     const errors = await validate(dto, { whitelist: true, forbidNonWhitelisted: true });
     if (errors.length > 0) {
-      const messages = errors
-        .flatMap((e) => Object.values(e.constraints ?? {}))
-        .join('; ');
+      const messages = errors.flatMap((e) => Object.values(e.constraints ?? {})).join('; ');
       throw new InvalidToolInputError(messages || 'Entrada no válida');
     }
     return dto;

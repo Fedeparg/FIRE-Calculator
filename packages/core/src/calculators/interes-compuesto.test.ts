@@ -17,8 +17,7 @@ describe("computeCompound", () => {
     const years = 25;
     const i = annualRate / 100 / 12;
     const n = years * 12;
-    const expected =
-      initial * Math.pow(1 + i, n) + contribution * ((Math.pow(1 + i, n) - 1) / i);
+    const expected = initial * Math.pow(1 + i, n) + contribution * ((Math.pow(1 + i, n) - 1) / i);
 
     const r = computeCompound({ initial, contribution, annualRate, years });
     expect(r.finalValue).toBeCloseTo(expected, 2);
@@ -68,7 +67,14 @@ describe("computeCompound", () => {
 
   it("el crecimiento de la aportación aumenta lo aportado", () => {
     const fija = computeCompound({ initial: 0, contribution: 100, frequency: "annual", annualRate: 0, years: 5 });
-    const creciente = computeCompound({ initial: 0, contribution: 100, frequency: "annual", annualRate: 0, years: 5, contributionGrowth: 10 });
+    const creciente = computeCompound({
+      initial: 0,
+      contribution: 100,
+      frequency: "annual",
+      annualRate: 0,
+      years: 5,
+      contributionGrowth: 10,
+    });
     expect(creciente.totalContributed).toBeGreaterThan(fija.totalContributed);
   });
 

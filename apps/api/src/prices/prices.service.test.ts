@@ -30,9 +30,7 @@ class StubProvider implements PriceProvider {
   getQuotes(symbols: string[]): Promise<Map<string, Quote>> {
     this.quoteCalls.push(symbols);
     const wanted = new Set(symbols);
-    return Promise.resolve(
-      new Map(this.quotes.filter((q) => wanted.has(q.symbol)).map((q) => [q.symbol, q])),
-    );
+    return Promise.resolve(new Map(this.quotes.filter((q) => wanted.has(q.symbol)).map((q) => [q.symbol, q])));
   }
 
   getHistory(symbol: string): Promise<PriceHistory> {
@@ -53,8 +51,7 @@ const quote = (symbol: string, date: string, close: number, currency = 'EUR'): Q
 });
 
 /** Fecha (YYYY-MM-DD) de hace `days` días, para probar cobertura/backfill sin fechas fijas. */
-const daysAgo = (days: number): string =>
-  new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const daysAgo = (days: number): string => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 describe('PricesService — caché de histórico (integración con Postgres)', () => {
   let db: Database;
@@ -170,10 +167,7 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
 
   it('con la posición en USD no pide un par USDUSD: solo el EUR, la base de los snapshots', async () => {
     makeService();
-    provider.history = [
-      quote('AAPL', '2026-03-13', 180, 'USD'),
-      quote('EURUSD=X', '2026-03-13', 1.1, 'USD'),
-    ];
+    provider.history = [quote('AAPL', '2026-03-13', 180, 'USD'), quote('EURUSD=X', '2026-03-13', 1.1, 'USD')];
 
     await service.primeSymbol('AAPL', 'USD');
 
@@ -275,7 +269,10 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
         ]),
       );
 
-      const { prices, fx } = await service.getSeriesSince(await service.resolveCachedTickers(['IWDA', 'DESCONOCIDO']), daysAgo(3));
+      const { prices, fx } = await service.getSeriesSince(
+        await service.resolveCachedTickers(['IWDA', 'DESCONOCIDO']),
+        daysAgo(3),
+      );
 
       expect(prices.IWDA.map((p) => p.close)).toEqual([90, 92]);
       expect(prices.IWDA[0]).toEqual({ date: daysAgo(3), close: 90, currency: 'EUR' });
@@ -482,10 +479,20 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     it('cada símbolo se evalúa con su propia fecha: solo se piden los que no llegan', async () => {
       makeService();
       provider.history = [quote('AAA', daysAgo(200), 1), quote('BBB', daysAgo(5), 1)];
-      await service.ensureHistory(new Map([['AAA', daysAgo(200)], ['BBB', daysAgo(5)]]));
+      await service.ensureHistory(
+        new Map([
+          ['AAA', daysAgo(200)],
+          ['BBB', daysAgo(5)],
+        ]),
+      );
       provider.historyCalls = [];
 
-      await service.ensureHistory(new Map([['AAA', daysAgo(190)], ['BBB', daysAgo(100)]]));
+      await service.ensureHistory(
+        new Map([
+          ['AAA', daysAgo(190)],
+          ['BBB', daysAgo(100)],
+        ]),
+      );
 
       expect(provider.historyCalls).toEqual(['BBB']);
     });
@@ -497,7 +504,12 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
       provider.getHistory = (symbol) =>
         symbol === 'AAA' ? Promise.reject(new Error('Yahoo caído')) : original(symbol);
 
-      await service.ensureHistory(new Map([['AAA', daysAgo(1)], ['BBB', daysAgo(1)]]));
+      await service.ensureHistory(
+        new Map([
+          ['AAA', daysAgo(1)],
+          ['BBB', daysAgo(1)],
+        ]),
+      );
 
       expect(await cachedRows('BBB')).toHaveLength(1);
     });

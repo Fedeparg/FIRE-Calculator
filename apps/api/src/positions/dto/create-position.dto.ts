@@ -1,33 +1,12 @@
 import { Transform, Type } from 'class-transformer';
-import {
-  IsIn,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
 
 /**
  * Divisas admitidas: las 10 más negociadas del mundo (turnover FX, BIS). EN PARIDAD con
  * el `PORTFOLIO_CURRENCIES` del frontend: si difieren, una divisa válida en la UI podría
  * dar 400 aquí (o viceversa).
  */
-export const SUPPORTED_CURRENCIES = [
-  'EUR',
-  'USD',
-  'GBP',
-  'JPY',
-  'CHF',
-  'CAD',
-  'AUD',
-  'CNY',
-  'HKD',
-  'SGD',
-] as const;
+export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP', 'JPY', 'CHF', 'CAD', 'AUD', 'CNY', 'HKD', 'SGD'] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 /**
@@ -40,8 +19,7 @@ export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 // (validación) en lugar de un overflow en la BD (500).
 export const NUMERIC_MAX = 999_999_999_999;
 
-const trim = ({ value }: { value: unknown }): unknown =>
-  typeof value === 'string' ? value.trim() : value;
+const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /** Cuerpo de POST /api/positions. El `userId` NO va aquí: se lee del JWT. */
 export class CreatePositionDto {
