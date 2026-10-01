@@ -1,19 +1,19 @@
 // Guardarraíl del catálogo: `registry.ts` alimenta el selector Y el sitemap, así
-// que una entrada sin página produce un 404 indexado, y una sin mensajes o sin
+// que una entrada sin componente produce un 404 indexado, y una sin mensajes o sin
 // explainer produce una página rota o a medias. Este test comprueba que cada
 // calculadora del catálogo tiene sus cuatro piezas, y que no queda material
 // huérfano de una calculadora retirada.
 
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { describe, expect, it } from "vitest";
 
+import { CALCULATOR_COMPONENTS } from "../components/calculators/CalculatorBody";
 import { CALCULATORS } from "./registry";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const PAGES_DIR = path.join(ROOT, "src", "app", "[locale]", "calculadoras");
 const EXPLAINERS_DIR = path.join(ROOT, "content", "wiki", "explainers");
 const LOCALES = ["es", "en"] as const;
 
@@ -32,15 +32,13 @@ const calcNamespaces = new Map<Locale, ReadonlySet<string>>(
 
 const allSlugs = new Set(CALCULATORS.map((c) => c.slug));
 
-const pageDirs = readdirSync(PAGES_DIR).filter((entry) => statSync(path.join(PAGES_DIR, entry)).isDirectory());
-
 describe("registry: coherencia del catálogo", () => {
   it("no hay slugs duplicados", () => {
     expect(allSlugs.size).toBe(CALCULATORS.length);
   });
 
-  it("cada calculadora publicada tiene su página", () => {
-    const missing = [...allSlugs].filter((slug) => !existsSync(path.join(PAGES_DIR, slug, "page.tsx")));
+  it("cada calculadora tiene su componente en la ruta única", () => {
+    const missing = [...allSlugs].filter((slug) => !(slug in CALCULATOR_COMPONENTS));
     expect(missing).toEqual([]);
   });
 
@@ -57,8 +55,8 @@ describe("registry: coherencia del catálogo", () => {
 });
 
 describe("registry: sin material huérfano", () => {
-  it("no hay páginas de calculadora fuera del registry", () => {
-    expect(pageDirs.filter((dir) => !allSlugs.has(dir))).toEqual([]);
+  it("no hay componentes de calculadora fuera del registry", () => {
+    expect(Object.keys(CALCULATOR_COMPONENTS).filter((slug) => !allSlugs.has(slug))).toEqual([]);
   });
 
   it.each(LOCALES)("no hay namespaces calc.* fuera del registry en %s", (locale) => {
