@@ -1483,6 +1483,7 @@
         "cash_movement": "Cash movements (deposits, withdrawals, card)",
         "migration_pair": "Custody migrations (they cancel each other out)",
         "migration_unbalanced": "Custody migrations without a pair",
+        "bonus_issue_cancelled": "Cancelled bonus issues (they cancel out their issue)",
         "crypto": "Cryptocurrencies (not supported yet)",
         "unsupported_currency": "Transactions in a currency other than the euro",
         "duplicate_row": "Repeated rows",

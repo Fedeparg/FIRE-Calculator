@@ -89,7 +89,9 @@ function skipReasonForType(type: string): ImportSkipReason {
     case "CUSTOMER_INBOUND":
       return "cash_movement";
     default:
-      return type.startsWith("CARD_") || type.startsWith("TRANSFER_")
+      // Ingresos y retiradas (`CUSTOMER_INBOUND`, `CUSTOMER_OUTBOUND_REQUEST`…), tarjeta y
+      // transferencias: todo es efectivo, sin efecto en las posiciones.
+      return type.startsWith("CARD_") || type.startsWith("TRANSFER_") || type.startsWith("CUSTOMER_")
         ? "cash_movement"
         : "unknown_type";
   }
@@ -198,6 +200,9 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
  * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
  * - Las `MIGRATION` (cambio de custodia) vienen en parejas salida/entrada con el mismo ISIN y
  *   cantidad, a pocos milisegundos entre sí, y efecto neto cero: se ignoran las parejas y se avisa de las sueltas.
+ * - Las `BONUS_ISSUE` (ampliación liberada: acciones nuevas gratis) entran como compra a precio
+ *   0; una `BONUS_ISSUE_CANCELLED` anula la emisión anterior del mismo ISIN y cantidad (TR a
+ *   veces cancela una y la vuelve a emitir). Ver `resolveBonusIssues`.
  * - El resto de tipos, los cripto y las divisas distintas de EUR se descartan con motivo; un
  *   tipo desconocido nunca hace fallar la importación.
  *
@@ -249,6 +254,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
 
   const parsed: { trade: ImportedTrade; line: number }[] = [];
   const migrations: Row[] = [];
+  const bonusIssues: Row[] = [];
   const seenIds = new Set<string>();
   let tradesWithTax = 0;
 
@@ -261,6 +267,10 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
 
     if (row.type === "MIGRATION") {
       migrations.push(row);
+      continue;
+    }
+    if (row.type === "BONUS_ISSUE" || row.type === "BONUS_ISSUE_CANCELLED") {
+      bonusIssues.push(row);
       continue;
     }
     if (row.type !== "BUY" && row.type !== "SELL") {
@@ -322,6 +332,8 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     parsed.push({ trade, line: row.line });
   }
 
+  for (const bonus of resolveBonusIssues(bonusIssues, skip, seenIds)) parsed.push(bonus);
+
   const warnings: ImportWarning[] = [];
   warnings.push(...resolveMigrations(migrations, skip));
   if (tradesWithTax > 0) {
@@ -338,6 +350,73 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
   skipped.sort((a, b) => a.line - b.line);
 
   return { trades, skipped, warnings };
+}
+
+/**
+ * Ampliaciones liberadas → compras a precio 0.
+ *
+ * Fiscalmente (art. 37.1.a LIRPF) las acciones liberadas no tienen coste: el de las antiguas
+ * se reparte entre todas. Una compra a precio 0 da exactamente ese coste medio, que es lo que
+ * usa la cartera. En el informe de plusvalías (FIFO) la venta TOTAL da la misma ganancia; una
+ * venta parcial la reparte algo distinto, porque Hacienda asigna a las nuevas la antigüedad de
+ * las antiguas y aquí llevan la fecha de la emisión.
+ *
+ * Cada `BONUS_ISSUE_CANCELLED` anula la emisión más reciente anterior a ella con el mismo ISIN
+ * y cantidad; las dos se descartan. Una cancelación sin emisión que anular no resta nada.
+ */
+function resolveBonusIssues(
+  rows: readonly Row[],
+  skip: (row: { line: number; type: string }, reason: ImportSkipReason) => void,
+  seenIds: Set<string>,
+): { trade: ImportedTrade; line: number }[] {
+  type Valid = { row: Row; shares: bigint; executedAt: string };
+  const valid: Valid[] = [];
+  for (const row of rows) {
+    const shares = parseUnits(row.shares, AMOUNT_SCALE);
+    const executedAt = normalizeDatetime(row.datetime);
+    const signMatches =
+      shares !== null && (row.type === "BONUS_ISSUE" ? shares > 0n : shares < 0n);
+    if (!ISIN.test(row.symbol) || !isValidDate(row.date) || executedAt === null || row.transactionId === "" || !signMatches) {
+      skip(row, "invalid_row");
+      continue;
+    }
+    if (seenIds.has(row.transactionId)) {
+      skip(row, "duplicate_row");
+      continue;
+    }
+    seenIds.add(row.transactionId);
+    valid.push({ row, shares, executedAt });
+  }
+  valid.sort((a, b) => (a.executedAt < b.executedAt ? -1 : a.executedAt > b.executedAt ? 1 : a.row.line - b.row.line));
+
+  const issued: Valid[] = [];
+  for (const entry of valid) {
+    if (entry.row.type === "BONUS_ISSUE") {
+      issued.push(entry);
+      continue;
+    }
+    const at = issued.findLastIndex(
+      (issue) => issue.row.symbol === entry.row.symbol && issue.shares === -entry.shares,
+    );
+    if (at !== -1) skip(issued.splice(at, 1)[0].row, "bonus_issue_cancelled");
+    skip(entry.row, "bonus_issue_cancelled");
+  }
+
+  return issued.map(({ row, shares, executedAt }) => ({
+    line: row.line,
+    trade: {
+      externalId: row.transactionId,
+      isin: row.symbol,
+      name: row.name,
+      assetClass: assetClassOf(row.assetClass),
+      kind: "buy",
+      quantity: formatUnits(shares, AMOUNT_SCALE),
+      price: "0",
+      fees: "0",
+      tradedAt: row.date,
+      executedAt,
+    },
+  }));
 }
 
 /**

@@ -270,6 +270,13 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(trades[0].assetClass).toBe("other");
   });
 
+  it("trata las retiradas de efectivo como movimiento de efectivo", () => {
+    const { skipped } = parseTradeRepublicCsv(
+      csv(row({ type: "CUSTOMER_OUTBOUND_REQUEST", category: "CASH", asset_class: "", symbol: "", shares: "", price: "" })),
+    );
+    expect(skipped.map((s) => s.reason)).toEqual(["cash_movement"]);
+  });
+
   it("descarta tipos desconocidos sin fallar", () => {
     const { trades, skipped } = parseTradeRepublicCsv(csv(row({ type: "SPIN_OFF" }), row({ transaction_id: "x" })));
     expect(trades).toHaveLength(1);
@@ -314,6 +321,78 @@ describe("parseTradeRepublicCsv — migraciones", () => {
       ),
     );
     expect(warnings).toHaveLength(3);
+  });
+});
+
+describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
+  const bonus = (type: string, shares: string, id: string, datetime: string): string =>
+    row({
+      type,
+      category: "CORPORATE_ACTION",
+      symbol: "ZZ00BONUS005",
+      shares,
+      price: "",
+      amount: "",
+      currency: "",
+      transaction_id: id,
+      datetime,
+      date: datetime.slice(0, 10),
+    });
+
+  it("importa la emisión como compra a precio 0, sin comisión", () => {
+    const { trades, skipped } = parseTradeRepublicCsv(
+      csv(bonus("BONUS_ISSUE", "2.5", "a", "2025-07-30T06:25:21.431Z")),
+    );
+    expect(trades).toEqual([
+      expect.objectContaining({ externalId: "a", isin: "ZZ00BONUS005", kind: "buy", quantity: "2.5", price: "0", fees: "0", tradedAt: "2025-07-30" }),
+    ]);
+    expect(skipped).toEqual([]);
+  });
+
+  it("anula la emisión cancelada y conserva la reemisión, como en un export real", () => {
+    const { trades, skipped } = parseTradeRepublicCsv(
+      csv(
+        bonus("BONUS_ISSUE", "2.76243", "a", "2025-07-30T06:25:21.431Z"),
+        bonus("BONUS_ISSUE", "4.143646", "b", "2025-07-30T06:25:35.095Z"),
+        bonus("BONUS_ISSUE_CANCELLED", "-2.76243", "c", "2025-08-13T05:09:14.774Z"),
+        bonus("BONUS_ISSUE", "2.76243", "d", "2025-08-13T05:22:45.443Z"),
+      ),
+    );
+    expect(trades.map((t) => [t.externalId, t.quantity])).toEqual([
+      ["b", "4.143646"],
+      ["d", "2.76243"],
+    ]);
+    expect(skipped.map((s) => [s.line, s.reason])).toEqual([
+      [2, "bonus_issue_cancelled"],
+      [4, "bonus_issue_cancelled"],
+    ]);
+  });
+
+  it("una cancelación sin emisión que anular no resta nada", () => {
+    const { trades, skipped } = parseTradeRepublicCsv(
+      csv(bonus("BONUS_ISSUE_CANCELLED", "-1", "a", "2025-08-13T05:09:14.774Z")),
+    );
+    expect(trades).toEqual([]);
+    expect(skipped.map((s) => s.reason)).toEqual(["bonus_issue_cancelled"]);
+  });
+
+  it("no anula una emisión de otra cantidad o posterior a la cancelación", () => {
+    const { trades } = parseTradeRepublicCsv(
+      csv(
+        bonus("BONUS_ISSUE", "3", "a", "2025-07-30T06:25:21.431Z"),
+        bonus("BONUS_ISSUE_CANCELLED", "-2", "b", "2025-08-13T05:09:14.774Z"),
+        bonus("BONUS_ISSUE", "2", "c", "2025-09-01T05:09:14.774Z"),
+      ),
+    );
+    expect(trades.map((t) => t.externalId)).toEqual(["a", "c"]);
+  });
+
+  it("descarta con `invalid_row` una emisión con signo incoherente", () => {
+    const { trades, skipped } = parseTradeRepublicCsv(
+      csv(bonus("BONUS_ISSUE", "-1", "a", "2025-07-30T06:25:21.431Z")),
+    );
+    expect(trades).toEqual([]);
+    expect(skipped.map((s) => s.reason)).toEqual(["invalid_row"]);
   });
 });
 
