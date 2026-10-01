@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
-import VerifyClient from "@/components/auth/VerifyClient";
+import VerifyClient from "@/features/auth/components/VerifyClient";
 
 type Props = { params: Promise<{ locale: string }> };
 
