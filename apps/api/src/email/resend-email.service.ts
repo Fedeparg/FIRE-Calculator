@@ -38,8 +38,8 @@ export class ResendEmailService implements EmailService {
     }
     this.resend = new Resend(apiKey);
 
-    // Sin remitente por defecto: este repo es genérico (AGPL) y cualquiera puede desplegarlo,
-    // así que un dominio cableado aquí sería el de OTRO. Además, Resend solo acepta dominios
+    // Sin remitente por defecto: el dominio de envío es propio de cada despliegue (también
+    // del de desarrollo), así que un dominio cableado aquí sería el de OTRO. Además, Resend solo acepta dominios
     // verificados en la cuenta del despliegue: un valor "de fábrica" fallaría en el envío, y
     // más vale enterarse al arrancar que cuando un usuario intenta entrar.
     const from = config.get<string>('EMAIL_FROM')?.trim();
