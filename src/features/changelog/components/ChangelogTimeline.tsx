@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { formatLongDate } from "@/core/format";
 import type { Locale } from "@/core/types";
 
-import type { ChangelogRelease } from "./content";
+import type { ChangelogRelease } from "../content";
 
 /**
  * Línea temporal de entregas. Componente de servidor: no hay filtros ni estado, así que no

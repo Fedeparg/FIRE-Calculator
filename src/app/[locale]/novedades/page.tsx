@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { asLocale } from "@/core/types";
-import { getChangelog } from "@/components/changelog/content";
-import ChangelogTimeline from "@/components/changelog/ChangelogTimeline";
+import { getChangelog } from "@/features/changelog/content";
+import ChangelogTimeline from "@/features/changelog/components/ChangelogTimeline";
 import { buildMetadata } from "@/lib/seo";
 
 // ISR: igual que la wiki, las entregas se leen de `content/changelog/*.md` en runtime,
