@@ -31,6 +31,8 @@ type Props = {
   /** Abre (o cierra, si ya lo estaba) el panel de lotes de una posición. */
   onToggleDetail: (id: string) => void;
   onDeleted: (id: string) => void;
+  /** Ids de las posiciones cuyo precio aún se está buscando (ver `isPricePending`). */
+  pendingIds: ReadonlySet<string>;
 };
 
 /** Cómo se muestra el P&L: porcentaje o importe en la divisa de la posición. */
@@ -47,6 +49,8 @@ type Row = {
   /** El precio de esta fila es anterior al del último refresco de la cartera. */
   stale: boolean;
   missingReason: string;
+  /** Sin precio todavía, pero el servidor lo está buscando: se muestra "Buscando precio…". */
+  pending: boolean;
   sortable: SortableRow;
 };
 
@@ -88,6 +92,7 @@ export default function PositionList({
   onEdit,
   onToggleDetail,
   onDeleted,
+  pendingIds,
 }: Props) {
   const t = useTranslations("portfolio.list");
   const { formatCurrency, formatPercent, formatQuantity } = useFormat();
@@ -199,10 +204,11 @@ export default function PositionList({
           pnlPct,
           stale,
           missingReason,
+          pending: pendingIds.has(position.id),
           sortable,
         };
       }),
-    [positions, prices, rates, pnlMode, latestDate, t],
+    [positions, prices, rates, pnlMode, latestDate, pendingIds, t],
   );
 
   const sortedRows = useMemo(
@@ -323,7 +329,7 @@ export default function PositionList({
           <tbody>
             {sortedRows.map((row) => {
               const p = row.position;
-              const { invested, price, marketValue, pnlAbs, pnlPct, stale, missingReason } = row;
+              const { invested, price, marketValue, pnlAbs, pnlPct, stale, missingReason, pending } = row;
 
               const isConfirming = confirmingId === p.id;
               const isDeleting = deletingId === p.id;
@@ -380,6 +386,8 @@ export default function PositionList({
                           {t("priceAsOf", { date: formatIsoDate(price!.date) })}
                         </span>
                       </div>
+                    ) : pending ? (
+                      <PendingPrice label={t("pricePending")} hint={t("pricePendingHint")} />
                     ) : (
                       <span className="text-muted" title={missingReason}>
                         —
@@ -488,6 +496,25 @@ function StaleBadge({ label }: { label: string }) {
       </svg>
       <span className="sr-only">{label}</span>
     </>
+  );
+}
+
+/**
+ * Estado "buscando precio": un punto que pulsa (solo si el usuario no pide menos movimiento)
+ * más texto visible. `role="status"` (aria-live polite) anuncia el cambio una vez, y la
+ * explicación larga va en `title` + `sr-only` porque un `title` solo no llega a teclado ni
+ * a lector de pantalla. Colores con tokens: válido en claro y oscuro.
+ */
+function PendingPrice({ label, hint }: { label: string; hint: string }) {
+  return (
+    <span role="status" className="inline-flex items-center gap-1.5 text-xs text-muted" title={hint}>
+      <span
+        aria-hidden="true"
+        className="h-2 w-2 shrink-0 rounded-full bg-brand motion-safe:animate-pulse"
+      />
+      {label}
+      <span className="sr-only">{hint}</span>
+    </span>
   );
 }
 
