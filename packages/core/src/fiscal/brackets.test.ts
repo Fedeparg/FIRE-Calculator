@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   IRPF_AHORRO,
+  IRPF_AUTONOMICA_SUPLETORIA,
+  IRPF_ESTATAL_GENERAL,
   IRPF_GENERAL,
+  ISD_ESTATAL,
+  PATRIMONIO_ESTATAL,
   applyProgressiveBrackets,
   effectiveRate,
   marginalRate,
@@ -52,5 +56,49 @@ describe("effectiveRate", () => {
 
   it("siempre menor o igual que el marginal", () => {
     expect(effectiveRate(250, SIMPLE)).toBeLessThan(marginalRate(250, SIMPLE));
+  });
+});
+
+describe.each([
+  ["IRPF_GENERAL", IRPF_GENERAL],
+  ["IRPF_ESTATAL_GENERAL", IRPF_ESTATAL_GENERAL],
+  ["IRPF_AUTONOMICA_SUPLETORIA", IRPF_AUTONOMICA_SUPLETORIA],
+  ["IRPF_AHORRO", IRPF_AHORRO],
+  ["PATRIMONIO_ESTATAL", PATRIMONIO_ESTATAL],
+  ["ISD_ESTATAL", ISD_ESTATAL],
+] as const)("límites de tramo de %s", (_name, scale) => {
+  const CENT = 0.01;
+  // Cuota acumulada esperada en cada límite superior, sumada tramo a tramo con los tipos de la escala.
+  let lower = 0;
+  let cumulative = 0;
+  const limits = scale.flatMap((bracket, i) => {
+    if (bracket.upTo === null) return [];
+    cumulative += ((bracket.upTo - lower) * bracket.rate) / 100;
+    lower = bracket.upTo;
+    return [{ upTo: bracket.upTo, rate: bracket.rate, nextRate: scale[i + 1].rate, tax: cumulative }];
+  });
+
+  it("la escala termina en un tramo abierto y sus límites son crecientes", () => {
+    expect(scale.at(-1)?.upTo).toBeNull();
+    limits.forEach((l, i) => i > 0 && expect(l.upTo).toBeGreaterThan(limits[i - 1].upTo));
+  });
+
+  it.each(limits)("en $upTo la cuota es la acumulada del tramo y el límite pertenece al tramo inferior", (l) => {
+    expect(applyProgressiveBrackets(l.upTo, scale)).toBeCloseTo(l.tax, 6);
+    expect(marginalRate(l.upTo, scale)).toBe(l.rate);
+  });
+
+  it.each(limits)("es continua en $upTo: ±0,01 € mueve la cuota solo 0,01 × tipo del tramo", (l) => {
+    const below = applyProgressiveBrackets(l.upTo - CENT, scale);
+    const above = applyProgressiveBrackets(l.upTo + CENT, scale);
+    expect(l.tax - below).toBeCloseTo((CENT * l.rate) / 100, 6);
+    expect(above - l.tax).toBeCloseTo((CENT * l.nextRate) / 100, 6);
+    expect(marginalRate(l.upTo + CENT, scale)).toBe(l.nextRate);
+  });
+
+  it("la cuota es monótona creciente cruzando todos los límites", () => {
+    const bases = limits.flatMap((l) => [l.upTo - CENT, l.upTo, l.upTo + CENT]);
+    const taxes = bases.map((b) => applyProgressiveBrackets(b, scale));
+    taxes.forEach((t, i) => i > 0 && expect(t).toBeGreaterThanOrEqual(taxes[i - 1]));
   });
 });
