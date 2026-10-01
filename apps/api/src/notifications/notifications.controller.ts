@@ -2,11 +2,17 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Query, UseGua
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 
+import type { NotificationSettingsResponse } from '@sextante/core/contracts';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import type { Env } from '../config/env.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto.js';
-import { NotificationSettingsService, type NotificationSettingsResponse } from './notification-settings.service.js';
+import {
+  updateNotificationSettingsSchema,
+  type UpdateNotificationSettingsDto,
+} from './dto/update-notification-settings.dto.js';
+import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
 /** Preferencias de notificación del usuario autenticado (`userId` siempre del JWT). */
@@ -23,7 +29,7 @@ export class NotificationSettingsController {
   @Patch()
   update(
     @CurrentUser() user: SessionUser,
-    @Body() dto: UpdateNotificationSettingsDto,
+    @Body(new ZodValidationPipe(updateNotificationSettingsSchema)) dto: UpdateNotificationSettingsDto,
   ): Promise<NotificationSettingsResponse> {
     return this.settings.update(user.id, dto);
   }
@@ -44,9 +50,9 @@ export class UnsubscribeController {
 
   constructor(
     private readonly settings: NotificationSettingsService,
-    config: ConfigService,
+    config: ConfigService<Env, true>,
   ) {
-    this.secret = config.getOrThrow<string>('JWT_SECRET');
+    this.secret = config.getOrThrow('JWT_SECRET', { infer: true });
   }
 
   @Post('unsubscribe')

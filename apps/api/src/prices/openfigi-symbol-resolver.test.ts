@@ -1,9 +1,9 @@
-import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { instruments } from '../db/schema.js';
+import { fakeConfig } from '../../test/config.js';
 import { createTestDb, resetDb } from '../../test/db.js';
 import type { InstrumentSearchResult } from './instrument-search.js';
 import {
@@ -157,7 +157,7 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
       ),
     } as unknown as PriceProvider;
     const search = { search: vi.fn().mockResolvedValue(searchResults) };
-    const resolver = new OpenFigiSymbolResolver(db, provider, search, new ConfigService({}));
+    const resolver = new OpenFigiSymbolResolver(db, provider, search, fakeConfig());
     return { resolver, search };
   }
 

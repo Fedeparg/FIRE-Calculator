@@ -1,8 +1,10 @@
 // Tipos del catálogo de calculadoras. Sin dependencias de framework (core puro).
 
+import type { CalculatorCategory } from "@sextante/core/calculators/categories";
+
 import type { Localized } from "@/i18n/types";
 
-export const CATEGORIES: Record<string, Localized> = {
+export const CATEGORIES: Record<CalculatorCategory, Localized> = {
   inversion: { es: "Inversión e interés compuesto", en: "Investing & compound interest" },
   fire: { es: "FIRE y planificación", en: "FIRE & planning" },
   hipoteca: { es: "Hipoteca y vivienda", en: "Mortgage & housing" },
@@ -12,7 +14,7 @@ export const CATEGORIES: Record<string, Localized> = {
   herramientas: { es: "Herramientas", en: "Tools" },
 } as const;
 
-export type CategoryId = keyof typeof CATEGORIES;
+export type CategoryId = CalculatorCategory;
 
 export interface CalculatorMeta {
   /** Identificador y, si está activa, ruta bajo /calculadoras/<slug>. */

@@ -1,11 +1,12 @@
 import { Injectable, Logger, type OnApplicationBootstrap, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { CronJob } from 'cron';
 
+import type { Env } from '../config/env.js';
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PricesService } from '../prices/prices.service.js';
+import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
@@ -13,7 +14,6 @@ export const DEFAULT_CRON = '0 30 22 * * *';
 export const DEFAULT_INTRADAY_CRON = '0 0 9-21 * * 1-5';
 /** Valor de `PRICE_INTRADAY_CRON` que desactiva el intradía. */
 export const INTRADAY_OFF = 'off';
-const TIME_ZONE = 'Europe/Madrid';
 
 /**
  * Trabajo nocturno (22:30 Madrid, `PRICE_REFRESH_CRON`; ya cerradas las bolsas europea y
@@ -42,26 +42,30 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     private readonly prices: PricesService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly fireAlerts: FireAlertsService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
     private readonly registry: SchedulerRegistry,
   ) {}
 
   onModuleInit(): void {
-    // `|| DEFAULT_CRON` (no `??`): la env vacía del compose llega como "" y debe caer al default.
-    const cronTime = this.config.get<string>('PRICE_REFRESH_CRON')?.trim() || DEFAULT_CRON;
-    const job = new CronJob(cronTime, () => void this.run(), null, false, TIME_ZONE);
-    this.registry.addCronJob('daily-portfolio-jobs', job);
-    job.start();
+    const cronTime = scheduleFromEnv(this.registry, {
+      name: 'daily-portfolio-jobs',
+      cronTime: this.config.get('PRICE_REFRESH_CRON', { infer: true }),
+      defaultCron: DEFAULT_CRON,
+      handler: () => void this.run(),
+    });
     this.logger.log(`Trabajo diario de cartera programado: "${cronTime}" (${TIME_ZONE})`);
 
-    const intradayTime = this.config.get<string>('PRICE_INTRADAY_CRON')?.trim() || DEFAULT_INTRADAY_CRON;
-    if (intradayTime.toLowerCase() === INTRADAY_OFF) {
+    const intradayTime = scheduleFromEnv(this.registry, {
+      name: 'intraday-price-refresh',
+      cronTime: this.config.get('PRICE_INTRADAY_CRON', { infer: true }),
+      defaultCron: DEFAULT_INTRADAY_CRON,
+      handler: () => void this.runIntraday(),
+      off: INTRADAY_OFF,
+    });
+    if (intradayTime === undefined) {
       this.logger.log('Refresco intradía de precios desactivado (PRICE_INTRADAY_CRON=off)');
       return;
     }
-    const intraday = new CronJob(intradayTime, () => void this.runIntraday(), null, false, TIME_ZONE);
-    this.registry.addCronJob('intraday-price-refresh', intraday);
-    intraday.start();
     this.logger.log(`Refresco intradía de precios programado: "${intradayTime}" (${TIME_ZONE})`);
   }
 

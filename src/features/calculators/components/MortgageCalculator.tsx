@@ -39,7 +39,7 @@ export default function MortgageCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={5}
+      layout="sidebar"
       inputs={
         <>
           <NumberField

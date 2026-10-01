@@ -1,3 +1,4 @@
+import type { NotificationLocale, NotificationSettingsResponse } from '@sextante/core/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
@@ -9,22 +10,6 @@ import { savedScenarios, userNotificationSettings } from '../db/schema.js';
  * cartera se guarda como escenario de esa calculadora; es el que vigilan las alertas.
  */
 export const FIRE_SCENARIO_SLUG = 'independencia-financiera';
-
-export const NOTIFICATION_LOCALES = ['es', 'en'] as const;
-export type NotificationLocale = (typeof NOTIFICATION_LOCALES)[number];
-
-/** Preferencias tal y como las consume la UI de la cuenta. */
-export interface NotificationSettingsResponse {
-  fireAlertsEnabled: boolean;
-  locale: NotificationLocale;
-  /** Último hito avisado (25/50/75/100), o null si aún no hay referencia. */
-  lastFireMilestone: number | null;
-  /**
-   * Objetivo que vigilan las alertas: el escenario FIRE actualizado más recientemente. `null`
-   * si el usuario no ha guardado ninguno (las alertas no pueden avisar de nada).
-   */
-  goal: { name: string; updatedAt: string } | null;
-}
 
 const asLocale = (value: string): NotificationLocale => (value === 'en' ? 'en' : 'es');
 

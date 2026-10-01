@@ -1,11 +1,15 @@
 import "server-only";
 
-import fs from "node:fs/promises";
 import path from "node:path";
 
-import matter from "gray-matter";
-
-import { renderMarkdown } from "./markdown";
+import {
+  listLocalizedFiles,
+  listLocalizedSlugs,
+  normalizeDate,
+  readLocalizedMarkdown,
+  readMarkdownFile,
+} from "@/shared/content/localized-markdown";
+import { renderMarkdown } from "@/shared/content/markdown";
 import { asLocale } from "@/i18n/types";
 
 /** Niveles de dificultad usados para agrupar los artículos en el índice. */
@@ -47,9 +51,6 @@ const WIKI_DIR = path.join(process.cwd(), "content", "wiki");
 const EXPLAINERS_DIR = path.join(WIKI_DIR, "explainers");
 const LEGAL_DIR = path.join(process.cwd(), "content", "legal");
 
-/** `<slug>.<locale>.md` → captura slug y locale; ignora subdirectorios. */
-const ARTICLE_FILE = /^(.+)\.(es|en)\.md$/;
-
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === "string");
@@ -63,51 +64,13 @@ function parseArticleMeta(slug: string, data: Record<string, unknown>): ArticleM
     description: typeof data.description === "string" ? data.description : "",
     level,
     keywords: toStringArray(data.keywords),
-    updated: parseContentDate(data.updated),
+    updated: normalizeDate(data.updated),
   };
 }
 
-/**
- * Normaliza una fecha de frontmatter a `YYYY-MM-DD`. `gray-matter` convierte a
- * `Date` los valores sin comillas (YAML los tipa como fecha) y deja `string` los
- * entrecomillados, así que hay que aceptar ambos. Cualquier otra cosa se descarta:
- * es preferible no publicar `lastmod` a publicar uno inventado.
- */
-function parseContentDate(value: unknown): string | undefined {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
-  }
-  if (typeof value === "string") {
-    const parsed = new Date(value);
-    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
-  }
-  return undefined;
-}
-
-async function readFileOrNull(filePath: string): Promise<string | null> {
-  try {
-    return await fs.readFile(filePath, "utf8");
-  } catch {
-    return null;
-  }
-}
-
 /** Lista los slugs de artículos disponibles para un idioma. */
-export async function getArticleSlugs(locale: string): Promise<string[]> {
-  let entries: import("node:fs").Dirent[];
-  try {
-    entries = await fs.readdir(WIKI_DIR, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-
-  const slugs: string[] = [];
-  for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    const match = ARTICLE_FILE.exec(entry.name);
-    if (match && match[2] === locale) slugs.push(match[1]);
-  }
-  return slugs.sort();
+export function getArticleSlugs(locale: string): Promise<string[]> {
+  return listLocalizedSlugs(WIKI_DIR, locale);
 }
 
 /** Todos los artículos (solo metadatos) de un idioma, para el índice. */
@@ -115,10 +78,8 @@ export async function getAllArticles(locale: string): Promise<ArticleMeta[]> {
   const slugs = await getArticleSlugs(locale);
   const articles = await Promise.all(
     slugs.map(async (slug) => {
-      const raw = await readFileOrNull(path.join(WIKI_DIR, `${slug}.${locale}.md`));
-      if (raw === null) return null;
-      const { data } = matter(raw);
-      return parseArticleMeta(slug, data);
+      const file = await readLocalizedMarkdown(WIKI_DIR, slug, locale);
+      return file && parseArticleMeta(slug, file.data);
     }),
   );
   return articles.filter((article): article is ArticleMeta => article !== null);
@@ -126,11 +87,10 @@ export async function getAllArticles(locale: string): Promise<ArticleMeta[]> {
 
 /** Un artículo completo (metadatos + HTML) o `null` si no existe. */
 export async function getArticle(slug: string, locale: string): Promise<Article | null> {
-  const raw = await readFileOrNull(path.join(WIKI_DIR, `${slug}.${locale}.md`));
-  if (raw === null) return null;
-  const { data, content } = matter(raw);
-  const meta = parseArticleMeta(slug, data);
-  const html = await renderMarkdown(content, asLocale(locale));
+  const file = await readLocalizedMarkdown(WIKI_DIR, slug, locale);
+  if (!file) return null;
+  const meta = parseArticleMeta(slug, file.data);
+  const html = await renderMarkdown(file.content, asLocale(locale));
   return { ...meta, html };
 }
 
@@ -142,29 +102,16 @@ export interface LegalDoc {
 }
 
 /** Slugs de documentos legales disponibles para un idioma. */
-export async function getLegalSlugs(locale: string): Promise<string[]> {
-  let entries: import("node:fs").Dirent[];
-  try {
-    entries = await fs.readdir(LEGAL_DIR, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-
-  const slugs: string[] = [];
-  for (const entry of entries) {
-    if (!entry.isFile()) continue;
-    const match = ARTICLE_FILE.exec(entry.name);
-    if (match && match[2] === locale) slugs.push(match[1]);
-  }
-  return slugs.sort();
+export function getLegalSlugs(locale: string): Promise<string[]> {
+  return listLocalizedSlugs(LEGAL_DIR, locale);
 }
 
 /** Un documento legal completo (título + HTML) o `null` si no existe. */
 export async function getLegalDoc(slug: string, locale: string): Promise<LegalDoc | null> {
-  const raw = await readFileOrNull(path.join(LEGAL_DIR, `${slug}.${locale}.md`));
-  if (raw === null) return null;
-  const { data, content } = matter(raw);
-  const html = await renderMarkdown(content, asLocale(locale));
+  const file = await readLocalizedMarkdown(LEGAL_DIR, slug, locale);
+  if (!file) return null;
+  const { data } = file;
+  const html = await renderMarkdown(file.content, asLocale(locale));
   return {
     title: typeof data.title === "string" ? data.title : slug,
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
@@ -184,26 +131,15 @@ export async function getContentUpdatedDates(kind: "wiki" | "legal"): Promise<Ma
   const dir = kind === "wiki" ? WIKI_DIR : LEGAL_DIR;
   const field = kind === "wiki" ? "updated" : "updatedAt";
 
-  let entries: import("node:fs").Dirent[];
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch {
-    return new Map();
-  }
-
   const dates = new Map<string, string>();
+  const files = await listLocalizedFiles(dir);
   await Promise.all(
-    entries.map(async (entry) => {
-      if (!entry.isFile()) return;
-      const match = ARTICLE_FILE.exec(entry.name);
-      if (!match) return;
-      const raw = await readFileOrNull(path.join(dir, entry.name));
-      if (raw === null) return;
-      const { data } = matter(raw);
-      const updated = parseContentDate((data as Record<string, unknown>)[field]);
+    files.map(async ({ slug, fileName }) => {
+      const file = await readMarkdownFile(path.join(dir, fileName));
+      const updated = normalizeDate(file?.data[field]);
       if (!updated) return;
-      const current = dates.get(match[1]);
-      if (!current || updated > current) dates.set(match[1], updated);
+      const current = dates.get(slug);
+      if (!current || updated > current) dates.set(slug, updated);
     }),
   );
   return dates;
@@ -211,10 +147,9 @@ export async function getContentUpdatedDates(kind: "wiki" | "legal"): Promise<Ma
 
 /** Explainer de una calculadora o `null` si todavía no existe (degradación). */
 export async function getExplainer(calcSlug: string, locale: string): Promise<Explainer | null> {
-  const raw = await readFileOrNull(path.join(EXPLAINERS_DIR, `${calcSlug}.${locale}.md`));
-  if (raw === null) return null;
-  const { data, content } = matter(raw);
-  const html = await renderMarkdown(content, asLocale(locale));
-  const title = typeof data.title === "string" ? data.title : undefined;
+  const file = await readLocalizedMarkdown(EXPLAINERS_DIR, calcSlug, locale);
+  if (!file) return null;
+  const html = await renderMarkdown(file.content, asLocale(locale));
+  const title = typeof file.data.title === "string" ? file.data.title : undefined;
   return { title, html };
 }

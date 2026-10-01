@@ -11,12 +11,12 @@ import {
   positions as positionsTable,
 } from '../db/schema.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
-import { PositionLotsService } from '../positions/position-lots.service.js';
-import { PositionsService } from '../positions/positions.service.js';
+import type { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
 import { PricesService } from '../prices/prices.service.js';
 import type { SymbolResolver } from '../prices/symbol-resolver.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { buildPositionsStack } from '../../test/positions-stack.js';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
@@ -48,8 +48,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   beforeAll(() => {
     ({ db, close } = createTestDb());
     const prices = new PricesService(db, silentProvider, identityResolver);
-    const lots = new PositionLotsService(db, new EventEmitter2());
-    positions = new PositionsService(db, prices, lots, new EventEmitter2());
+    positions = buildPositionsStack(db, { prices }).positions;
     snapshots = new PortfolioSnapshotsService(db, new PortfolioValuationService(positions, prices), prices, positions);
   });
 
@@ -427,7 +426,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
         const emitted: unknown[] = [];
         events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
         const prices = new PricesService(db, silentProvider, identityResolver);
-        const editor = new PositionsService(db, prices, new PositionLotsService(db, new EventEmitter2()), events);
+        const editor = buildPositionsStack(db, { prices, positionsEvents: events }).positions;
 
         // Mismos importes que ya tiene la posición, como hace `PositionForm`.
         await editor.update(userId, id, { name: 'Renamed', broker: 'Other', quantity: 10, avgPrice: 100 });

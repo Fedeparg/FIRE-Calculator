@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "../property-config.js";
+import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { estimateNetSalary, generalIncomeTax, generalMarginalRate, type NetSalaryInput } from "./irpf.js";
 import { REGION_CODES, type RegionCode } from "./regions.js";
 

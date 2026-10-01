@@ -26,7 +26,7 @@ export default function WealthTaxCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={4}
+      layout="sidebar"
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>

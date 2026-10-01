@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 
+import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instruments } from '../db/schema.js';
 import {
@@ -154,9 +155,9 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(PRICE_PROVIDER) private readonly provider: PriceProvider,
     @Inject(INSTRUMENT_SEARCH) private readonly search: InstrumentSearchProvider,
-    config: ConfigService,
+    config: ConfigService<Env, true>,
   ) {
-    this.apiKey = config.get<string>('OPENFIGI_API_KEY')?.trim() || undefined;
+    this.apiKey = config.get('OPENFIGI_API_KEY', { infer: true }) || undefined;
   }
 
   async resolveCached(tickerOrIsin: string): Promise<string | null> {

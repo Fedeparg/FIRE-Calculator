@@ -12,6 +12,7 @@ import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/s
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
+import { inputClass } from "@/shared/ui/field-classes";
 
 type Props = {
   position: Position;
@@ -25,9 +26,6 @@ type Props = {
 
 /** Divisa en la que está expresada la escala del ahorro del IRPF. */
 const TAX_CURRENCY = "EUR";
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
 /**
  * "¿Qué pasaría si vendo X participaciones a Y precio?": empareja la venta con los lotes por

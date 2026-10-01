@@ -83,19 +83,24 @@ export function workIncomeReduction(netWorkIncome: number): number {
   return 0;
 }
 
+/** Tope de personas a cargo por categoría: sin él, `children = Infinity` haría un bucle sin fin. */
+const MAX_DEPENDANTS = 50;
+
+const dependants = (n: number | undefined): number => Math.min(MAX_DEPENDANTS, Math.max(0, Math.floor(n ?? 0)));
+
 /** Aplica un cuadro de mínimos a unas circunstancias; sirve para el estatal y los autonómicos. */
 function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircumstances): number {
   const age = Math.max(0, c.age ?? 0);
   let min = age >= 75 ? schedule.taxpayer75 : age >= 65 ? schedule.taxpayer65 : schedule.taxpayer;
 
-  const children = Math.max(0, Math.floor(c.children ?? 0));
+  const children = dependants(c.children);
   for (let i = 0; i < children; i++) {
     min += schedule.descendants[Math.min(i, schedule.descendants.length - 1)];
   }
-  const under3 = Math.min(children, Math.max(0, Math.floor(c.childrenUnder3 ?? 0)));
+  const under3 = Math.min(children, dependants(c.childrenUnder3));
   min += schedule.descendantUnder3 * under3;
 
-  min += schedule.ascendant65 * Math.max(0, Math.floor(c.ascendants ?? 0));
+  min += schedule.ascendant65 * dependants(c.ascendants);
 
   if (c.disability === "g65") min += schedule.disability65;
   else if (c.disability === "g33") min += schedule.disability33;

@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { trackEvent } from "@/shared/analytics/track";
 import { apiJson } from "@/shared/api/client";
 import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "../config";
+import Button from "@/shared/ui/Button";
 
 type Status = "idle" | "loading" | "error";
 
@@ -79,14 +80,14 @@ export default function DonationWidget() {
         </label>
       </div>
 
-      <button
-        type="button"
+      <Button
+        size="cta"
         onClick={handleDonate}
         disabled={!valid || status === "loading"}
-        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-fg transition hover:opacity-90 disabled:opacity-50 sm:w-auto"
+        className="gap-2 inline-flex items-center justify-center mt-4 sm:w-auto w-full"
       >
         {status === "loading" ? t("widget.redirecting") : t("widget.cta", { amount })}
-      </button>
+      </Button>
 
       {status === "error" && <p className="mt-2 text-sm text-warning">{t("widget.error")}</p>}
 

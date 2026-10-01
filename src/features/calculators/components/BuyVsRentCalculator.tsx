@@ -69,7 +69,7 @@ export default function BuyVsRentCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={12}
+      layout="grid"
       notice={<Notice variant="info">{t("note")}</Notice>}
       inputs={
         <>

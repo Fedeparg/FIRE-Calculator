@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildBreakdown, type BreakdownInput } from "./portfolio-breakdown.js";
+import { buildBreakdown, type BreakdownInput } from "./breakdown.js";
 
 type Position = BreakdownInput["positions"][number];
 

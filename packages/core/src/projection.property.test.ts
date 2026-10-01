@@ -1,8 +1,8 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "./property-config.js";
-import { FREQUENCIES, project, type ProjectionInput } from "./projection.js";
+import { PROPERTY_PARAMS } from "./test-support/property-config.js";
+import { COMPOUNDING_FREQUENCIES, FREQUENCIES, project, type ProjectionInput } from "./projection.js";
 
 /** Entradas "normales": importes y tasas no negativos, horizonte razonable. */
 const input = fc.record({
@@ -39,6 +39,22 @@ describe("project — propiedades", () => {
           (moreContribution >= base || close(moreContribution, base)) && (moreRate >= base || close(moreRate, base))
         );
       }),
+      PROPERTY_PARAMS,
+    );
+  });
+
+  it("sin aportaciones, la frecuencia de aportación no cambia el resultado (solo la capitalización)", () => {
+    fc.assert(
+      fc.property(
+        input,
+        fc.constantFrom(...FREQUENCIES),
+        fc.constantFrom(...COMPOUNDING_FREQUENCIES),
+        fc.double({ min: -30, max: 30, noNaN: true }),
+        (i, other, compounding, annualRate) => {
+          const base = { ...i, contribution: 0, compounding, annualRate };
+          return close(project(base).finalValue, project({ ...base, frequency: other }).finalValue);
+        },
+      ),
       PROPERTY_PARAMS,
     );
   });

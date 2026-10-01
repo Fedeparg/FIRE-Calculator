@@ -3,7 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { PricesService, type PriceInfo } from '../prices/prices.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
-import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio-breakdown';
+import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio/breakdown';
 
 const UNKNOWN_BROKER_LABEL = 'Sin bróker';
 

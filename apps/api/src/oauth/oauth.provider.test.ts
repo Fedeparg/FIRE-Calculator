@@ -1,13 +1,13 @@
 import { createHash, randomBytes } from 'node:crypto';
 
 import { JwtService } from '@nestjs/jwt';
-import type { ConfigService } from '@nestjs/config';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { oauthTokens } from '../db/schema.js';
+import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
@@ -33,8 +33,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    const config = { getOrThrow: () => APP_URL } as unknown as ConfigService;
-    urls = new OAuthUrls(config);
+    urls = new OAuthUrls(fakeConfig({ APP_URL }));
     grants = new OAuthGrantsService(db);
     provider = new SextanteOAuthProvider(
       db,

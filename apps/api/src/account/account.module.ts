@@ -1,31 +1,24 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { SESSION_TTL_SECONDS } from '../auth/session.constants.js';
+import { SessionModule } from '../auth/session.module.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
+import { PortfolioModule } from '../portfolio/portfolio.module.js';
+import { PositionsModule } from '../positions/positions.module.js';
+import { ScenariosModule } from '../scenarios/scenarios.module.js';
+import { AccountExportController } from './account-export.controller.js';
+import { AccountExportService } from './account-export.service.js';
 import { ConnectionsController } from './connections.controller.js';
 
 /**
  * Gestión de cuenta del usuario más allá de auth: "Aplicaciones conectadas" (listar/revocar
- * accesos OAuth/MCP). Reutiliza los servicios del OauthModule (grants + clients) sin duplicar
- * acceso a datos. Registra JwtModule con el mismo secreto para que `JwtAuthGuard` valide la
- * cookie de sesión.
+ * accesos OAuth/MCP) y la exportación RGPD. La exportación debe incluir todo dato personal,
+ * por eso importa los módulos de datos (posiciones, cartera, escenarios, OAuth, avisos). Importa
+ * `SessionModule` para que `JwtAuthGuard` valide la cookie de sesión.
  */
 @Module({
-  imports: [
-    OauthModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: SESSION_TTL_SECONDS },
-      }),
-    }),
-  ],
-  controllers: [ConnectionsController],
-  providers: [JwtAuthGuard],
+  imports: [OauthModule, SessionModule, PositionsModule, PortfolioModule, ScenariosModule, NotificationsModule],
+  controllers: [ConnectionsController, AccountExportController],
+  providers: [AccountExportService],
 })
 export class AccountModule {}

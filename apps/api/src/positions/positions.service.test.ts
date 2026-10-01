@@ -1,19 +1,15 @@
 import { randomUUID } from 'node:crypto';
 
-import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import type { PricesService } from '../prices/prices.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { CreatePositionDto } from './dto/create-position.dto.js';
-import { PositionLotsService } from './position-lots.service.js';
+import { buildPositionsStack } from '../../test/positions-stack.js';
+import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
 import { PositionsService } from './positions.service.js';
-
-/** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
-const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
   return {
@@ -30,12 +26,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(
-      db,
-      pricesStub,
-      new PositionLotsService(db, new EventEmitter2()),
-      new EventEmitter2(),
-    );
+    service = buildPositionsStack(db).positions;
   });
 
   afterEach(async () => {
@@ -63,23 +54,23 @@ describe('PositionsService (integración con Postgres)', () => {
       expect(bPositions[0].ticker).toBe('VWCE');
     });
 
-    it('un usuario no puede borrar la posición de otro (403)', async () => {
+    it('un usuario no puede borrar la posición de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(NotFoundException);
 
       // Sigue existiendo para su dueño: el borrado ajeno no surtió efecto.
       expect(await service.findAllByUser(userA)).toHaveLength(1);
     });
 
-    it('un usuario no puede actualizar la posición de otro (403)', async () => {
+    it('un usuario no puede actualizar la posición de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('borrar/actualizar una posición inexistente da 404', async () => {
@@ -136,7 +127,7 @@ describe('PositionsService (integración con Postgres)', () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-    const svc = new PositionsService(db, pricesStub, new PositionLotsService(db, new EventEmitter2()), events);
+    const svc = buildPositionsStack(db, { positionsEvents: events }).positions;
     const userId = await insertUser(db, 'a@example.com');
     const position = await svc.create(userId, dto({ ticker: 'IWDA' }));
 

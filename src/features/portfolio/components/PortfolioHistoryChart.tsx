@@ -16,6 +16,7 @@ import {
 } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { useFormat } from "@/shared/format/use-format";
+import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
@@ -25,9 +26,6 @@ type Props = {
 };
 
 type Status = "loading" | "ready" | "error";
-
-// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
-const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Evolución diaria de la cartera.
@@ -161,7 +159,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
             // coste como línea de referencia punteada, que es justo lo que es.
             stack={[{ key: "marketValue", name: t("marketValue"), color: "var(--brand)" }]}
             lines={[{ key: "invested", name: t("invested"), color: "var(--accent)" }]}
-            labels={{ axisX: t("date") }}
+            xLabel={t("date")}
             currency={display}
             xFormat={(value) => formatIsoDate(String(value))}
             // El eje X es una fecha, no una magnitud continua: seleccionar un tramo por

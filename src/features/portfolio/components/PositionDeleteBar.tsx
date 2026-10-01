@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { deletePosition } from "@/features/portfolio/api";
+import Button from "@/shared/ui/Button";
 
 type Props = {
   positionId: string;
@@ -54,33 +55,24 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
             </p>
           )}
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => void handleDelete()}
-              disabled={deleting}
-              className="h-11 flex-1 rounded-lg bg-warning px-3 text-sm font-medium text-brand-fg disabled:opacity-50"
-            >
+            <Button variant="warning" onClick={() => void handleDelete()} disabled={deleting} className="flex-1 h-11">
               {deleting ? tList("deleting") : tList("confirm")}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
               onClick={() => setConfirming(false)}
               disabled={deleting}
-              className="h-11 flex-1 rounded-lg border border-border px-3 text-sm font-medium text-foreground disabled:opacity-50"
+              className="flex-1 h-11"
             >
               {tList("cancel")}
-            </button>
+            </Button>
           </div>
         </>
       ) : (
         <div className="flex justify-between">
-          <button
-            type="button"
-            onClick={onEdit}
-            className="h-11 rounded-lg px-3 text-sm font-medium text-foreground hover:bg-surface-2"
-          >
+          <Button variant="ghost" onClick={onEdit} className="h-11">
             {tDetail("editPosition")}
-          </button>
+          </Button>
           <button
             type="button"
             onClick={() => setConfirming(true)}

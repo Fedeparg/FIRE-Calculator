@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { MAX_YEARS } from "@sextante/core/calculators/fire";
+import { FIRE_SEARCH_MAX_YEARS } from "@sextante/core/calculators/fire";
 import { FREQUENCIES } from "@sextante/core/projection";
 import type { GoalAmounts, GoalParams, ShownAmounts } from "@/features/portfolio/model/goal-amounts";
 import NumberField from "@/shared/ui/NumberField";
@@ -61,7 +61,7 @@ export default function PortfolioGoalFields({ display, shown, params, onAmountsC
             onChange={(value) => onParamsChange({ targetYears: Math.round(value) })}
             step={1}
             min={0}
-            max={MAX_YEARS}
+            max={FIRE_SEARCH_MAX_YEARS}
             help={t("help.targetYears")}
           />
         </>

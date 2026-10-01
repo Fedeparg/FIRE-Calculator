@@ -1,4 +1,3 @@
-import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -8,12 +7,17 @@ import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
-import { AppModule } from '../app.module.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import type { Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
+
+/**
+ * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
+ * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ */
+const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
 const SECRET = 'test-secret-para-el-controller-de-imports';
 const HEADER = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(',');
@@ -66,9 +70,8 @@ describe('ImportsController (HTTP)', () => {
     ({ db, close: closeDb } = createTestDb());
     disableStartupBackfill();
 
-    app = await NestFactory.create(AppModule, { abortOnError: false, logger: false });
+    app = await NestFactory.create(await loadAppModule(), { abortOnError: false, logger: false });
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
     // Sin esto el primer TRUNCATE podía interbloquearse con la pasada de arranque en segundo plano.

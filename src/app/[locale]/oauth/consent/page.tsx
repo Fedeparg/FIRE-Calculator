@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { getSessionUser } from "@/shared/api/session";
 import ConsentClient from "@/features/oauth/components/ConsentClient";
+import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -68,15 +69,17 @@ export default async function ConsentPage({ params, searchParams }: Props) {
   const scopes = scope.split(" ").filter(Boolean);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-16">
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
-        <p className="text-sm text-muted">{clientName ? t("intro", { app: clientName }) : t("introGeneric")}</p>
+    <RouteMessages route="oauth/consent">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-16">
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-muted">{clientName ? t("intro", { app: clientName }) : t("introGeneric")}</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+          <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
+        </div>
       </div>
-      <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
-      </div>
-    </div>
+    </RouteMessages>
   );
 }
 

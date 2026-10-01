@@ -1,0 +1,1632 @@
+{
+  "interes-compuesto": {
+    "series": [
+      {
+        "year": 0,
+        "contributed": 10000,
+        "interest": 0,
+        "value": 10000,
+        "realValue": 10000
+      },
+      {
+        "year": 1,
+        "contributed": 13600,
+        "interest": 814.0891437,
+        "value": 14414.08914,
+        "realValue": 14414.08914
+      },
+      {
+        "year": 2,
+        "contributed": 17200,
+        "interest": 1937.164527,
+        "value": 19137.16453,
+        "realValue": 19137.16453
+      },
+      {
+        "year": 3,
+        "contributed": 20800,
+        "interest": 3390.855188,
+        "value": 24190.85519,
+        "realValue": 24190.85519
+      },
+      {
+        "year": 4,
+        "contributed": 24400,
+        "interest": 5198.304195,
+        "value": 29598.30419,
+        "realValue": 29598.30419
+      },
+      {
+        "year": 5,
+        "contributed": 28000,
+        "interest": 7384.274632,
+        "value": 35384.27463,
+        "realValue": 35384.27463
+      },
+      {
+        "year": 6,
+        "contributed": 31600,
+        "interest": 9975.263,
+        "value": 41575.263,
+        "realValue": 41575.263
+      },
+      {
+        "year": 7,
+        "contributed": 35200,
+        "interest": 12999.62055,
+        "value": 48199.62055,
+        "realValue": 48199.62055
+      },
+      {
+        "year": 8,
+        "contributed": 38800,
+        "interest": 16487.68314,
+        "value": 55287.68314,
+        "realValue": 55287.68314
+      },
+      {
+        "year": 9,
+        "contributed": 42400,
+        "interest": 20471.9101,
+        "value": 62871.9101,
+        "realValue": 62871.9101
+      },
+      {
+        "year": 10,
+        "contributed": 46000,
+        "interest": 24987.03295,
+        "value": 70987.03295,
+        "realValue": 70987.03295
+      },
+      {
+        "year": 11,
+        "contributed": 49600,
+        "interest": 30070.2144,
+        "value": 79670.2144,
+        "realValue": 79670.2144
+      },
+      {
+        "year": 12,
+        "contributed": 53200,
+        "interest": 35761.21855,
+        "value": 88961.21855,
+        "realValue": 88961.21855
+      },
+      {
+        "year": 13,
+        "contributed": 56800,
+        "interest": 42102.59299,
+        "value": 98902.59299,
+        "realValue": 98902.59299
+      },
+      {
+        "year": 14,
+        "contributed": 60400,
+        "interest": 49139.86365,
+        "value": 109539.8636,
+        "realValue": 109539.8636
+      },
+      {
+        "year": 15,
+        "contributed": 64000,
+        "interest": 56921.74325,
+        "value": 120921.7432,
+        "realValue": 120921.7432
+      },
+      {
+        "year": 16,
+        "contributed": 67600,
+        "interest": 65500.35442,
+        "value": 133100.3544,
+        "realValue": 133100.3544
+      },
+      {
+        "year": 17,
+        "contributed": 71200,
+        "interest": 74931.46837,
+        "value": 146131.4684,
+        "realValue": 146131.4684
+      },
+      {
+        "year": 18,
+        "contributed": 74800,
+        "interest": 85274.7603,
+        "value": 160074.7603,
+        "realValue": 160074.7603
+      },
+      {
+        "year": 19,
+        "contributed": 78400,
+        "interest": 96594.08266,
+        "value": 174994.0827,
+        "realValue": 174994.0827
+      },
+      {
+        "year": 20,
+        "contributed": 82000,
+        "interest": 108957.7576,
+        "value": 190957.7576,
+        "realValue": 190957.7576
+      }
+    ],
+    "finalValue": 190957.7576,
+    "totalContributed": 82000,
+    "totalInterest": 108957.7576,
+    "finalRealValue": 190957.7576
+  },
+  "interes-simple": {
+    "finalValue": 10600,
+    "totalInterest": 600,
+    "withheld": 114,
+    "netInterest": 486,
+    "netFinalValue": 10486,
+    "series": [
+      {
+        "year": 0,
+        "contributed": 10000,
+        "interest": 0,
+        "value": 10000,
+        "realValue": 10000
+      },
+      {
+        "year": 1,
+        "contributed": 10000,
+        "interest": 300,
+        "value": 10300,
+        "realValue": 10300
+      },
+      {
+        "year": 2,
+        "contributed": 10000,
+        "interest": 600,
+        "value": 10600,
+        "realValue": 10600
+      }
+    ]
+  },
+  "promediar-acciones": {
+    "totalShares": 15,
+    "grossCost": 1400,
+    "totalCommission": 2,
+    "totalCost": 1402,
+    "averagePrice": 93.33333333,
+    "breakEvenPrice": 93.46666667,
+    "marketValue": 1425,
+    "unrealizedGain": 23,
+    "returnPct": 1.640513552
+  },
+  "dividendos": {
+    "gross": 200,
+    "withheld": 38,
+    "net": 162,
+    "grossYield": 4,
+    "netYield": 3.24,
+    "cumulativeNet": 810,
+    "finalYearNet": 162,
+    "series": [
+      {
+        "year": 0,
+        "grossAnnual": 0,
+        "netAnnual": 0,
+        "cumulativeNet": 0
+      },
+      {
+        "year": 1,
+        "grossAnnual": 200,
+        "netAnnual": 162,
+        "cumulativeNet": 162
+      },
+      {
+        "year": 2,
+        "grossAnnual": 200,
+        "netAnnual": 162,
+        "cumulativeNet": 324
+      },
+      {
+        "year": 3,
+        "grossAnnual": 200,
+        "netAnnual": 162,
+        "cumulativeNet": 486
+      },
+      {
+        "year": 4,
+        "grossAnnual": 200,
+        "netAnnual": 162,
+        "cumulativeNet": 648
+      },
+      {
+        "year": 5,
+        "grossAnnual": 200,
+        "netAnnual": 162,
+        "cumulativeNet": 810
+      }
+    ]
+  },
+  "roi": {
+    "invested": 1000,
+    "gain": 500,
+    "roi": 50,
+    "annualized": 14.47142426,
+    "tax": 95,
+    "netGain": 405,
+    "netRoi": 40.5
+  },
+  "staking": {
+    "series": [
+      {
+        "year": 0,
+        "contributed": 5000,
+        "interest": 0,
+        "value": 5000,
+        "realValue": 5000
+      },
+      {
+        "year": 1,
+        "contributed": 5000,
+        "interest": 300,
+        "value": 5300,
+        "realValue": 5300
+      },
+      {
+        "year": 2,
+        "contributed": 5000,
+        "interest": 618,
+        "value": 5618,
+        "realValue": 5618
+      },
+      {
+        "year": 3,
+        "contributed": 5000,
+        "interest": 955.08,
+        "value": 5955.08,
+        "realValue": 5955.08
+      }
+    ],
+    "finalValue": 5955.08,
+    "totalContributed": 5000,
+    "totalInterest": 955.08,
+    "finalRealValue": 5955.08,
+    "rewards": 955.08,
+    "withheld": 181.4652,
+    "netRewards": 773.6148,
+    "netFinalValue": 5773.6148
+  },
+  "independencia-financiera": {
+    "fireNumber": 600000,
+    "yearsToFire": 15,
+    "series": [
+      {
+        "year": 0,
+        "contributed": 100000,
+        "interest": 0,
+        "value": 100000,
+        "realValue": 100000,
+        "target": 600000
+      },
+      {
+        "year": 1,
+        "contributed": 118000,
+        "interest": 5408.866294,
+        "value": 123408.8663,
+        "realValue": 123408.8663,
+        "target": 600000
+      },
+      {
+        "year": 2,
+        "contributed": 136000,
+        "interest": 11988.1759,
+        "value": 147988.1759,
+        "realValue": 147988.1759,
+        "target": 600000
+      },
+      {
+        "year": 3,
+        "contributed": 154000,
+        "interest": 19796.45099,
+        "value": 173796.451,
+        "realValue": 173796.451,
+        "target": 600000
+      },
+      {
+        "year": 4,
+        "contributed": 172000,
+        "interest": 28895.13984,
+        "value": 200895.1398,
+        "realValue": 200895.1398,
+        "target": 600000
+      },
+      {
+        "year": 5,
+        "contributed": 190000,
+        "interest": 39348.76312,
+        "value": 229348.7631,
+        "realValue": 229348.7631,
+        "target": 600000
+      },
+      {
+        "year": 6,
+        "contributed": 208000,
+        "interest": 51225.06757,
+        "value": 259225.0676,
+        "realValue": 259225.0676,
+        "target": 600000
+      },
+      {
+        "year": 7,
+        "contributed": 226000,
+        "interest": 64595.18725,
+        "value": 290595.1872,
+        "realValue": 290595.1872,
+        "target": 600000
+      },
+      {
+        "year": 8,
+        "contributed": 244000,
+        "interest": 79533.8129,
+        "value": 323533.8129,
+        "realValue": 323533.8129,
+        "target": 600000
+      },
+      {
+        "year": 9,
+        "contributed": 262000,
+        "interest": 96119.36984,
+        "value": 358119.3698,
+        "realValue": 358119.3698,
+        "target": 600000
+      },
+      {
+        "year": 10,
+        "contributed": 280000,
+        "interest": 114434.2046,
+        "value": 394434.2046,
+        "realValue": 394434.2046,
+        "target": 600000
+      },
+      {
+        "year": 11,
+        "contributed": 298000,
+        "interest": 134564.7812,
+        "value": 432564.7812,
+        "realValue": 432564.7812,
+        "target": 600000
+      },
+      {
+        "year": 12,
+        "contributed": 316000,
+        "interest": 156601.8865,
+        "value": 472601.8865,
+        "realValue": 472601.8865,
+        "target": 600000
+      },
+      {
+        "year": 13,
+        "contributed": 334000,
+        "interest": 180640.8471,
+        "value": 514640.8471,
+        "realValue": 514640.8471,
+        "target": 600000
+      },
+      {
+        "year": 14,
+        "contributed": 352000,
+        "interest": 206781.7558,
+        "value": 558781.7558,
+        "realValue": 558781.7558,
+        "target": 600000
+      },
+      {
+        "year": 15,
+        "contributed": 370000,
+        "interest": 235129.7099,
+        "value": 605129.7099,
+        "realValue": 605129.7099,
+        "target": 600000
+      },
+      {
+        "year": 16,
+        "contributed": 388000,
+        "interest": 265795.0616,
+        "value": 653795.0616,
+        "realValue": 653795.0616,
+        "target": 600000
+      },
+      {
+        "year": 17,
+        "contributed": 406000,
+        "interest": 298893.681,
+        "value": 704893.681,
+        "realValue": 704893.681,
+        "target": 600000
+      },
+      {
+        "year": 18,
+        "contributed": 424000,
+        "interest": 334547.2314,
+        "value": 758547.2314,
+        "realValue": 758547.2314,
+        "target": 600000
+      }
+    ]
+  },
+  "simulador-montecarlo": {
+    "fireNumber": 600000,
+    "successRate": 0.835,
+    "reachRate": 1,
+    "survivalRate": 0.835,
+    "yearsToFire": {
+      "p10": 11,
+      "p50": 16,
+      "p90": 22
+    },
+    "deterministicYearsToFire": 16,
+    "series": [
+      {
+        "year": 0,
+        "p10": 100000,
+        "p25": 100000,
+        "p50": 100000,
+        "p75": 100000,
+        "p90": 100000,
+        "deterministic": 100000,
+        "target": 600000
+      },
+      {
+        "year": 1,
+        "p10": 104894.1879,
+        "p25": 112951.4783,
+        "p50": 122284.4255,
+        "p75": 131908.7298,
+        "p90": 141773.8039,
+        "deterministic": 123000,
+        "target": 600000
+      },
+      {
+        "year": 2,
+        "p10": 118532.6417,
+        "p25": 134547.8919,
+        "p50": 144063.7196,
+        "p75": 158630.4971,
+        "p90": 175020.4387,
+        "deterministic": 147150,
+        "target": 600000
+      },
+      {
+        "year": 3,
+        "p10": 135559.2766,
+        "p25": 149400.8472,
+        "p50": 169533.6847,
+        "p75": 189463.6036,
+        "p90": 218887.3752,
+        "deterministic": 172507.5,
+        "target": 600000
+      },
+      {
+        "year": 4,
+        "p10": 144561.4853,
+        "p25": 169697.7454,
+        "p50": 196628.1625,
+        "p75": 221142.7311,
+        "p90": 247367.3014,
+        "deterministic": 199132.875,
+        "target": 600000
+      },
+      {
+        "year": 5,
+        "p10": 161565.0315,
+        "p25": 192229.8099,
+        "p50": 223296.0623,
+        "p75": 258135.6388,
+        "p90": 289949.5821,
+        "deterministic": 227089.5188,
+        "target": 600000
+      },
+      {
+        "year": 6,
+        "p10": 177349.2037,
+        "p25": 211387.3601,
+        "p50": 249075.4247,
+        "p75": 301294.0565,
+        "p90": 349268.4975,
+        "deterministic": 256443.9947,
+        "target": 600000
+      },
+      {
+        "year": 7,
+        "p10": 194893.3024,
+        "p25": 231220.8042,
+        "p50": 285874.6355,
+        "p75": 342552.3729,
+        "p90": 389129.9389,
+        "deterministic": 287266.1944,
+        "target": 600000
+      },
+      {
+        "year": 8,
+        "p10": 224370.0074,
+        "p25": 261187.6158,
+        "p50": 310999.4426,
+        "p75": 391359.737,
+        "p90": 433485.265,
+        "deterministic": 319629.5041,
+        "target": 600000
+      },
+      {
+        "year": 9,
+        "p10": 245364.4232,
+        "p25": 281569.7007,
+        "p50": 340640.3442,
+        "p75": 429102.5905,
+        "p90": 483294.7694,
+        "deterministic": 353610.9794,
+        "target": 600000
+      },
+      {
+        "year": 10,
+        "p10": 263835.9369,
+        "p25": 308288.3281,
+        "p50": 368553.3575,
+        "p75": 475583.043,
+        "p90": 554245.0158,
+        "deterministic": 389291.5283,
+        "target": 600000
+      },
+      {
+        "year": 11,
+        "p10": 282893.0321,
+        "p25": 327086.4618,
+        "p50": 402345.4845,
+        "p75": 513836.1251,
+        "p90": 634058.5177,
+        "deterministic": 426756.1047,
+        "target": 600000
+      },
+      {
+        "year": 12,
+        "p10": 299638.0325,
+        "p25": 353470.9942,
+        "p50": 438036.3833,
+        "p75": 558031.783,
+        "p90": 667798.6765,
+        "deterministic": 466093.91,
+        "target": 600000
+      },
+      {
+        "year": 13,
+        "p10": 314733.3962,
+        "p25": 384440.5272,
+        "p50": 479319.4221,
+        "p75": 575719.6477,
+        "p90": 676097.8837,
+        "deterministic": 507398.6055,
+        "target": 600000
+      },
+      {
+        "year": 14,
+        "p10": 326426.7641,
+        "p25": 404657.4672,
+        "p50": 492324.2513,
+        "p75": 605158.6951,
+        "p90": 692076.1751,
+        "deterministic": 550768.5357,
+        "target": 600000
+      },
+      {
+        "year": 15,
+        "p10": 351104.263,
+        "p25": 419798.2636,
+        "p50": 528198.364,
+        "p75": 639152.4542,
+        "p90": 756291.0592,
+        "deterministic": 596306.9625,
+        "target": 600000
+      },
+      {
+        "year": 16,
+        "p10": 375678.7738,
+        "p25": 453635.8053,
+        "p50": 558729.9903,
+        "p75": 683418.5884,
+        "p90": 843938.4556,
+        "deterministic": 644122.3107,
+        "target": 600000
+      },
+      {
+        "year": 17,
+        "p10": 401763.7605,
+        "p25": 469326.4676,
+        "p50": 593466.3285,
+        "p75": 713399.7541,
+        "p90": 877983.8021,
+        "deterministic": 651128.4262,
+        "target": 600000
+      },
+      {
+        "year": 18,
+        "p10": 413568.1111,
+        "p25": 489307.984,
+        "p50": 591952.1391,
+        "p75": 732548.7698,
+        "p90": 883776.5079,
+        "deterministic": 658484.8475,
+        "target": 600000
+      },
+      {
+        "year": 19,
+        "p10": 394620.5414,
+        "p25": 502608.2274,
+        "p50": 607919.363,
+        "p75": 735523.6812,
+        "p90": 927376.1333,
+        "deterministic": 666209.0899,
+        "target": 600000
+      },
+      {
+        "year": 20,
+        "p10": 401350.6095,
+        "p25": 485855.6538,
+        "p50": 604608.4041,
+        "p75": 775551.1974,
+        "p90": 1015575.364,
+        "deterministic": 674319.5444,
+        "target": 600000
+      },
+      {
+        "year": 21,
+        "p10": 392078.597,
+        "p25": 483598.2929,
+        "p50": 622488.3757,
+        "p75": 818984.3967,
+        "p90": 1128519.144,
+        "deterministic": 682835.5216,
+        "target": 600000
+      },
+      {
+        "year": 22,
+        "p10": 364787.6963,
+        "p25": 485812.0325,
+        "p50": 621725.8458,
+        "p75": 877068.6989,
+        "p90": 1146351.821,
+        "deterministic": 691777.2977,
+        "target": 600000
+      },
+      {
+        "year": 23,
+        "p10": 346661.2369,
+        "p25": 463992.4,
+        "p50": 639262.251,
+        "p75": 859783.088,
+        "p90": 1134795.712,
+        "deterministic": 701166.1625,
+        "target": 600000
+      },
+      {
+        "year": 24,
+        "p10": 343790.1095,
+        "p25": 459202.9426,
+        "p50": 652628.2678,
+        "p75": 842823.6112,
+        "p90": 1254542.888,
+        "deterministic": 711024.4707,
+        "target": 600000
+      },
+      {
+        "year": 25,
+        "p10": 345007.0889,
+        "p25": 440113.8329,
+        "p50": 623872.6397,
+        "p75": 920222.8348,
+        "p90": 1367646.487,
+        "deterministic": 721375.6942,
+        "target": 600000
+      },
+      {
+        "year": 26,
+        "p10": 320905.6831,
+        "p25": 445181.5875,
+        "p50": 610952.0881,
+        "p75": 914591.4647,
+        "p90": 1363886.7,
+        "deterministic": 732244.4789,
+        "target": 600000
+      },
+      {
+        "year": 27,
+        "p10": 295678.0023,
+        "p25": 431521.5533,
+        "p50": 628586.7123,
+        "p75": 947337.1307,
+        "p90": 1388747.951,
+        "deterministic": 743656.7029,
+        "target": 600000
+      },
+      {
+        "year": 28,
+        "p10": 277765.4073,
+        "p25": 417866.8984,
+        "p50": 608224.8989,
+        "p75": 948744.6705,
+        "p90": 1585110.971,
+        "deterministic": 755639.538,
+        "target": 600000
+      },
+      {
+        "year": 29,
+        "p10": 268230.4098,
+        "p25": 419928.19,
+        "p50": 635597.4455,
+        "p75": 1027970.293,
+        "p90": 1648065.883,
+        "deterministic": 768221.5149,
+        "target": 600000
+      },
+      {
+        "year": 30,
+        "p10": 239529.1878,
+        "p25": 397342.3471,
+        "p50": 643991.8705,
+        "p75": 1069129.914,
+        "p90": 1641103.36,
+        "deterministic": 781432.5907,
+        "target": 600000
+      },
+      {
+        "year": 31,
+        "p10": 193714.9095,
+        "p25": 390008.6451,
+        "p50": 639090.4863,
+        "p75": 1027180.75,
+        "p90": 1662496.939,
+        "deterministic": 795304.2202,
+        "target": 600000
+      },
+      {
+        "year": 32,
+        "p10": 169569.931,
+        "p25": 389369.0899,
+        "p50": 646821.2961,
+        "p75": 1017506.445,
+        "p90": 1810299.283,
+        "deterministic": 809869.4312,
+        "target": 600000
+      },
+      {
+        "year": 33,
+        "p10": 172593.3165,
+        "p25": 379364.0098,
+        "p50": 614601.6754,
+        "p75": 1116361.173,
+        "p90": 1749871.127,
+        "deterministic": 825162.9028,
+        "target": 600000
+      },
+      {
+        "year": 34,
+        "p10": 143639.7362,
+        "p25": 349690.658,
+        "p50": 606059.1747,
+        "p75": 1100685.726,
+        "p90": 2018539.958,
+        "deterministic": 841221.0479,
+        "target": 600000
+      },
+      {
+        "year": 35,
+        "p10": 134480.4622,
+        "p25": 302048.4823,
+        "p50": 636017.8495,
+        "p75": 1099586.195,
+        "p90": 1964361.746,
+        "deterministic": 858082.1003,
+        "target": 600000
+      },
+      {
+        "year": 36,
+        "p10": 103877.2728,
+        "p25": 290613.6303,
+        "p50": 639973.2901,
+        "p75": 1189690.762,
+        "p90": 1998692.886,
+        "deterministic": 875786.2053,
+        "target": 600000
+      },
+      {
+        "year": 37,
+        "p10": 79880.07864,
+        "p25": 284355.9622,
+        "p50": 654386.2294,
+        "p75": 1126578.72,
+        "p90": 2062708.568,
+        "deterministic": 894375.5156,
+        "target": 600000
+      },
+      {
+        "year": 38,
+        "p10": 58560.49371,
+        "p25": 246862.2571,
+        "p50": 659542.6387,
+        "p75": 1183302.564,
+        "p90": 2094619.422,
+        "deterministic": 913894.2913,
+        "target": 600000
+      },
+      {
+        "year": 39,
+        "p10": 34835.51265,
+        "p25": 240953.6031,
+        "p50": 632801.6561,
+        "p75": 1203599.199,
+        "p90": 2257600.488,
+        "deterministic": 934389.0059,
+        "target": 600000
+      },
+      {
+        "year": 40,
+        "p10": 9737.792529,
+        "p25": 214330.2249,
+        "p50": 653806.9011,
+        "p75": 1235895.765,
+        "p90": 2277501.073,
+        "deterministic": 955908.4562,
+        "target": 600000
+      },
+      {
+        "year": 41,
+        "p10": 0,
+        "p25": 201257.4323,
+        "p50": 628097.9495,
+        "p75": 1250149.583,
+        "p90": 2338473.391,
+        "deterministic": 978503.879,
+        "target": 600000
+      },
+      {
+        "year": 42,
+        "p10": 0,
+        "p25": 193751.9804,
+        "p50": 629932.9499,
+        "p75": 1329930.485,
+        "p90": 2399432.016,
+        "deterministic": 1002229.073,
+        "target": 600000
+      },
+      {
+        "year": 43,
+        "p10": 0,
+        "p25": 182142.2762,
+        "p50": 594970.6804,
+        "p75": 1352755.589,
+        "p90": 2487341.555,
+        "deterministic": 1027140.527,
+        "target": 600000
+      },
+      {
+        "year": 44,
+        "p10": 0,
+        "p25": 159342.2406,
+        "p50": 582826.6489,
+        "p75": 1387388.972,
+        "p90": 2409489.55,
+        "deterministic": 1053297.553,
+        "target": 600000
+      },
+      {
+        "year": 45,
+        "p10": 0,
+        "p25": 147381.9466,
+        "p50": 539719.6519,
+        "p75": 1415549.55,
+        "p90": 2421059.909,
+        "deterministic": 1080762.431,
+        "target": 600000
+      },
+      {
+        "year": 46,
+        "p10": 0,
+        "p25": 120024.8402,
+        "p50": 505118.3933,
+        "p75": 1449773.426,
+        "p90": 2590313.42,
+        "deterministic": 1109600.552,
+        "target": 600000
+      }
+    ]
+  },
+  "ahorro-jubilacion": {
+    "series": [
+      {
+        "year": 0,
+        "contributed": 20000,
+        "interest": 0,
+        "value": 20000,
+        "realValue": 20000
+      },
+      {
+        "year": 1,
+        "contributed": 24800,
+        "interest": 1330.611337,
+        "value": 26130.61134,
+        "realValue": 26130.61134
+      },
+      {
+        "year": 2,
+        "contributed": 29600,
+        "interest": 3029.059354,
+        "value": 32629.05935,
+        "realValue": 32629.05935
+      },
+      {
+        "year": 3,
+        "contributed": 34400,
+        "interest": 5117.414252,
+        "value": 39517.41425,
+        "realValue": 39517.41425
+      },
+      {
+        "year": 4,
+        "contributed": 39200,
+        "interest": 7619.070444,
+        "value": 46819.07044,
+        "realValue": 46819.07044
+      },
+      {
+        "year": 5,
+        "contributed": 44000,
+        "interest": 10558.82601,
+        "value": 54558.82601,
+        "realValue": 54558.82601
+      },
+      {
+        "year": 6,
+        "contributed": 48800,
+        "interest": 13962.9669,
+        "value": 62762.9669,
+        "realValue": 62762.9669
+      },
+      {
+        "year": 7,
+        "contributed": 53600,
+        "interest": 17859.35626,
+        "value": 71459.35626,
+        "realValue": 71459.35626
+      },
+      {
+        "year": 8,
+        "contributed": 58400,
+        "interest": 22277.52897,
+        "value": 80677.52897,
+        "realValue": 80677.52897
+      },
+      {
+        "year": 9,
+        "contributed": 63200,
+        "interest": 27248.79204,
+        "value": 90448.79204,
+        "realValue": 90448.79204
+      },
+      {
+        "year": 10,
+        "contributed": 68000,
+        "interest": 32806.3309,
+        "value": 100806.3309,
+        "realValue": 100806.3309
+      },
+      {
+        "year": 11,
+        "contributed": 72800,
+        "interest": 38985.32209,
+        "value": 111785.3221,
+        "realValue": 111785.3221
+      },
+      {
+        "year": 12,
+        "contributed": 77600,
+        "interest": 45823.05276,
+        "value": 123423.0528,
+        "realValue": 123423.0528
+      },
+      {
+        "year": 13,
+        "contributed": 82400,
+        "interest": 53359.04726,
+        "value": 135759.0473,
+        "realValue": 135759.0473
+      },
+      {
+        "year": 14,
+        "contributed": 87200,
+        "interest": 61635.20143,
+        "value": 148835.2014,
+        "realValue": 148835.2014
+      },
+      {
+        "year": 15,
+        "contributed": 92000,
+        "interest": 70695.92485,
+        "value": 162695.9249,
+        "realValue": 162695.9249
+      },
+      {
+        "year": 16,
+        "contributed": 96800,
+        "interest": 80588.29168,
+        "value": 177388.2917,
+        "realValue": 177388.2917
+      },
+      {
+        "year": 17,
+        "contributed": 101600,
+        "interest": 91362.20052,
+        "value": 192962.2005,
+        "realValue": 192962.2005
+      },
+      {
+        "year": 18,
+        "contributed": 106400,
+        "interest": 103070.5439,
+        "value": 209470.5439,
+        "realValue": 209470.5439
+      },
+      {
+        "year": 19,
+        "contributed": 111200,
+        "interest": 115769.3879,
+        "value": 226969.3879,
+        "realValue": 226969.3879
+      },
+      {
+        "year": 20,
+        "contributed": 116000,
+        "interest": 129518.1625,
+        "value": 245518.1625,
+        "realValue": 245518.1625
+      },
+      {
+        "year": 21,
+        "contributed": 120800,
+        "interest": 144379.8635,
+        "value": 265179.8635,
+        "realValue": 265179.8635
+      },
+      {
+        "year": 22,
+        "contributed": 125600,
+        "interest": 160421.2667,
+        "value": 286021.2667,
+        "realValue": 286021.2667
+      },
+      {
+        "year": 23,
+        "contributed": 130400,
+        "interest": 177713.154,
+        "value": 308113.154,
+        "realValue": 308113.154
+      },
+      {
+        "year": 24,
+        "contributed": 135200,
+        "interest": 196330.5546,
+        "value": 331530.5546,
+        "realValue": 331530.5546
+      },
+      {
+        "year": 25,
+        "contributed": 140000,
+        "interest": 216352.9992,
+        "value": 356352.9992,
+        "realValue": 356352.9992
+      },
+      {
+        "year": 26,
+        "contributed": 144800,
+        "interest": 237864.7905,
+        "value": 382664.7905,
+        "realValue": 382664.7905
+      },
+      {
+        "year": 27,
+        "contributed": 149600,
+        "interest": 260955.2893,
+        "value": 410555.2893,
+        "realValue": 410555.2893
+      },
+      {
+        "year": 28,
+        "contributed": 154400,
+        "interest": 285719.218,
+        "value": 440119.218,
+        "realValue": 440119.218
+      },
+      {
+        "year": 29,
+        "contributed": 159200,
+        "interest": 312256.9824,
+        "value": 471456.9824,
+        "realValue": 471456.9824
+      },
+      {
+        "year": 30,
+        "contributed": 164000,
+        "interest": 340675.0127,
+        "value": 504675.0127,
+        "realValue": 504675.0127
+      },
+      {
+        "year": 31,
+        "contributed": 168800,
+        "interest": 371086.1248,
+        "value": 539886.1248,
+        "realValue": 539886.1248
+      },
+      {
+        "year": 32,
+        "contributed": 173600,
+        "interest": 403609.9036,
+        "value": 577209.9036,
+        "realValue": 577209.9036
+      },
+      {
+        "year": 33,
+        "contributed": 178400,
+        "interest": 438373.1092,
+        "value": 616773.1092,
+        "realValue": 616773.1092
+      },
+      {
+        "year": 34,
+        "contributed": 183200,
+        "interest": 475510.107,
+        "value": 658710.107,
+        "realValue": 658710.107
+      },
+      {
+        "year": 35,
+        "contributed": 188000,
+        "interest": 515163.3248,
+        "value": 703163.3248,
+        "realValue": 703163.3248
+      }
+    ],
+    "finalValue": 703163.3248,
+    "totalContributed": 188000,
+    "totalInterest": 515163.3248,
+    "finalRealValue": 703163.3248,
+    "yearsToRetirement": 35,
+    "monthlyIncome": 2343.877749,
+    "monthlyIncomeNominal": 2343.877749
+  },
+  "presupuesto-mensual": {
+    "savings": 600,
+    "annualSavings": 7200,
+    "savingsRate": 24,
+    "needsRate": 48,
+    "wantsRate": 28,
+    "recommendedNeeds": 1250,
+    "recommendedWants": 750,
+    "recommendedSavings": 500
+  },
+  "hipoteca-fija": {
+    "monthlyPayment": 843.2080675,
+    "totalPaid": 303554.9043,
+    "totalInterest": 103554.9043,
+    "openingCost": 0,
+    "insuranceCost": 0,
+    "totalCostWithFees": 303554.9043,
+    "apr": 3.041595691,
+    "schedule": [
+      {
+        "year": 1,
+        "principalPaid": 4175.600717,
+        "interestPaid": 5942.896093,
+        "balance": 195824.3993
+      },
+      {
+        "year": 2,
+        "principalPaid": 4302.605608,
+        "interestPaid": 5815.891201,
+        "balance": 191521.7937
+      },
+      {
+        "year": 3,
+        "principalPaid": 4433.473475,
+        "interestPaid": 5685.023334,
+        "balance": 187088.3202
+      },
+      {
+        "year": 4,
+        "principalPaid": 4568.321813,
+        "interestPaid": 5550.174996,
+        "balance": 182519.9984
+      },
+      {
+        "year": 5,
+        "principalPaid": 4707.271693,
+        "interestPaid": 5411.225117,
+        "balance": 177812.7267
+      },
+      {
+        "year": 6,
+        "principalPaid": 4850.447866,
+        "interestPaid": 5268.048944,
+        "balance": 172962.2788
+      },
+      {
+        "year": 7,
+        "principalPaid": 4997.978879,
+        "interestPaid": 5120.51793,
+        "balance": 167964.2999
+      },
+      {
+        "year": 8,
+        "principalPaid": 5149.997189,
+        "interestPaid": 4968.49962,
+        "balance": 162814.3028
+      },
+      {
+        "year": 9,
+        "principalPaid": 5306.639282,
+        "interestPaid": 4811.857528,
+        "balance": 157507.6635
+      },
+      {
+        "year": 10,
+        "principalPaid": 5468.045794,
+        "interestPaid": 4650.451016,
+        "balance": 152039.6177
+      },
+      {
+        "year": 11,
+        "principalPaid": 5634.361639,
+        "interestPaid": 4484.135171,
+        "balance": 146405.256
+      },
+      {
+        "year": 12,
+        "principalPaid": 5805.73614,
+        "interestPaid": 4312.76067,
+        "balance": 140599.5199
+      },
+      {
+        "year": 13,
+        "principalPaid": 5982.32316,
+        "interestPaid": 4136.173649,
+        "balance": 134617.1967
+      },
+      {
+        "year": 14,
+        "principalPaid": 6164.281244,
+        "interestPaid": 3954.215566,
+        "balance": 128452.9155
+      },
+      {
+        "year": 15,
+        "principalPaid": 6351.773756,
+        "interestPaid": 3766.723053,
+        "balance": 122101.1417
+      },
+      {
+        "year": 16,
+        "principalPaid": 6544.969033,
+        "interestPaid": 3573.527776,
+        "balance": 115556.1727
+      },
+      {
+        "year": 17,
+        "principalPaid": 6744.040529,
+        "interestPaid": 3374.45628,
+        "balance": 108812.1322
+      },
+      {
+        "year": 18,
+        "principalPaid": 6949.166975,
+        "interestPaid": 3169.329834,
+        "balance": 101862.9652
+      },
+      {
+        "year": 19,
+        "principalPaid": 7160.532539,
+        "interestPaid": 2957.964271,
+        "balance": 94702.43267
+      },
+      {
+        "year": 20,
+        "principalPaid": 7378.326988,
+        "interestPaid": 2740.169822,
+        "balance": 87324.10568
+      },
+      {
+        "year": 21,
+        "principalPaid": 7602.745864,
+        "interestPaid": 2515.750946,
+        "balance": 79721.35982
+      },
+      {
+        "year": 22,
+        "principalPaid": 7833.990654,
+        "interestPaid": 2284.506155,
+        "balance": 71887.36916
+      },
+      {
+        "year": 23,
+        "principalPaid": 8072.268977,
+        "interestPaid": 2046.227833,
+        "balance": 63815.10019
+      },
+      {
+        "year": 24,
+        "principalPaid": 8317.794762,
+        "interestPaid": 1800.702048,
+        "balance": 55497.30542
+      },
+      {
+        "year": 25,
+        "principalPaid": 8570.788449,
+        "interestPaid": 1547.708361,
+        "balance": 46926.51697
+      },
+      {
+        "year": 26,
+        "principalPaid": 8831.477181,
+        "interestPaid": 1287.019628,
+        "balance": 38095.03979
+      },
+      {
+        "year": 27,
+        "principalPaid": 9100.095011,
+        "interestPaid": 1018.401799,
+        "balance": 28994.94478
+      },
+      {
+        "year": 28,
+        "principalPaid": 9376.883108,
+        "interestPaid": 741.6137012,
+        "balance": 19618.06167
+      },
+      {
+        "year": 29,
+        "principalPaid": 9662.089981,
+        "interestPaid": 456.4068285,
+        "balance": 9955.971694
+      },
+      {
+        "year": 30,
+        "principalPaid": 9955.971694,
+        "interestPaid": 162.525116,
+        "balance": 0
+      }
+    ]
+  },
+  "que-hipoteca-me-puedo-permitir": {
+    "maxMonthlyPayment": 1025,
+    "maxLoan": 150000,
+    "maxPrice": 187500,
+    "estimatedMonthlyPayment": 632.4060506,
+    "downPaymentNeeded": 37500,
+    "purchaseCostsAmount": 22500,
+    "binding": "savings"
+  },
+  "hipoteca-vs-alquiler": {
+    "buyNetCost": 51848.63145,
+    "rentNetCost": 205892.1498,
+    "buyEquityEnd": 340995.292,
+    "totalMortgagePaid": 242843.9234,
+    "totalRentPaid": 354688.9433,
+    "investmentGain": 148796.7935,
+    "difference": 154043.5183,
+    "cheaper": "buy"
+  },
+  "amortizacion-anticipada": {
+    "monthlyPaymentBefore": 831.8963968,
+    "totalInterestBefore": 49655.13523,
+    "prepaymentFee": 0,
+    "reducePayment": {
+      "newMonthlyPayment": 720.9768772,
+      "interestSaved": 6620.684697,
+      "netSaved": 6620.684697
+    },
+    "reduceTerm": {
+      "newMonths": 199,
+      "monthsSaved": 41,
+      "interestSaved": 14599.89528,
+      "netSaved": 14599.89528
+    }
+  },
+  "rentabilidad-alquiler": {
+    "annualRentIncome": 10800,
+    "effectiveRentIncome": 10260,
+    "totalAnnualExpenses": 0,
+    "netIncome": 10260,
+    "monthlyNetCashflow": 855,
+    "grossYield": 5.4,
+    "netYield": 4.663636364
+  },
+  "rentabilidad-alquiler-vacacional": {
+    "grossIncome": 21600,
+    "managementCost": 3240,
+    "stays": 60,
+    "cleaningCost": 0,
+    "netIncome": 14360,
+    "occupancyRate": 49.31506849,
+    "grossYield": 8.64,
+    "netYield": 5.221818182
+  },
+  "deposito-plazo-fijo": {
+    "finalGross": 10250,
+    "grossInterest": 250,
+    "withheld": 47.5,
+    "netInterest": 202.5,
+    "finalNet": 10202.5,
+    "realFinalNet": 10202.5
+  },
+  "cuenta-remunerada": {
+    "finalGross": 10250,
+    "grossInterest": 250,
+    "withheld": 47.5,
+    "netInterest": 202.5,
+    "finalNet": 10202.5,
+    "realFinalNet": 10202.5
+  },
+  "salario-bruto-neto": {
+    "grossAnnual": 35000,
+    "socialSecurity": 2275,
+    "netWorkIncome": 30725,
+    "personalMinimum": 5550,
+    "taxableBase": 30725,
+    "incomeTax": 5897.66868,
+    "netAnnual": 26827.33132,
+    "netPerPayment": 1916.237951,
+    "withholdingRate": 16.85048194,
+    "totalDeductionRate": 23.35048194
+  },
+  "irpf-nomina": {
+    "grossPerPayment": 2916.666667,
+    "withholdingPerPayment": 527.375,
+    "socialSecurityPerPayment": 189.5833333,
+    "netPerPayment": 2199.708333,
+    "withholdingRate": 18.08142857,
+    "annualWithholding": 6328.5
+  },
+  "irpf-autonomos": {
+    "grossNetIncome": 38400,
+    "difficultExpenses": 0,
+    "netIncome": 38400,
+    "personalMinimum": 5550,
+    "taxableBase": 38400,
+    "incomeTax": 8855,
+    "netAfterTax": 29545,
+    "effectiveRate": 23.05989583,
+    "marginalRate": 37
+  },
+  "desgravacion-plan-pensiones": {
+    "appliedContribution": 1500,
+    "excess": 0,
+    "employerApplied": 0,
+    "totalApplied": 1500,
+    "taxSaving": 562.5,
+    "netCost": 937.5,
+    "savingRate": 37.5
+  },
+  "impuesto-donaciones": {
+    "taxableBase": 100000,
+    "grossTax": 12415.35585,
+    "coefficient": 1,
+    "adjustedTax": 12415.35585,
+    "tax": 12415.35585,
+    "effectiveRate": 12.41535585
+  },
+  "impuesto-patrimonio": {
+    "residenceExemption": 300000,
+    "taxableBase": 1000000,
+    "grossTax": 5490.36579,
+    "tax": 5490.36579,
+    "effectiveRate": 0.2745182895
+  },
+  "intereses-tarjeta-credito": {
+    "monthsToPayoff": 26,
+    "totalInterest": 771.4335112,
+    "totalPaid": 3771.433511,
+    "firstPayment": 150,
+    "yearlySeries": [
+      {
+        "month": 0,
+        "balance": 3000,
+        "interestPaid": 0
+      },
+      {
+        "month": 12,
+        "balance": 1737.73,
+        "interestPaid": 537.73
+      },
+      {
+        "month": 24,
+        "balance": 167.97,
+        "interestPaid": 767.97
+      },
+      {
+        "month": 26,
+        "balance": 0,
+        "interestPaid": 771.43
+      }
+    ]
+  },
+  "inflacion": {
+    "nominalNeeded": 1343.916379,
+    "realValue": 744.0939149,
+    "realValueInvested": 744.0939149,
+    "lossPercent": 25.59060851,
+    "realReturn": -2.912621359,
+    "series": [
+      {
+        "year": 0,
+        "nominalNeeded": 1000,
+        "realValue": 1000,
+        "realValueInvested": 1000
+      },
+      {
+        "year": 1,
+        "nominalNeeded": 1030,
+        "realValue": 970.8737864,
+        "realValueInvested": 970.8737864
+      },
+      {
+        "year": 2,
+        "nominalNeeded": 1060.9,
+        "realValue": 942.5959091,
+        "realValueInvested": 942.5959091
+      },
+      {
+        "year": 3,
+        "nominalNeeded": 1092.727,
+        "realValue": 915.1416594,
+        "realValueInvested": 915.1416594
+      },
+      {
+        "year": 4,
+        "nominalNeeded": 1125.50881,
+        "realValue": 888.4870479,
+        "realValueInvested": 888.4870479
+      },
+      {
+        "year": 5,
+        "nominalNeeded": 1159.274074,
+        "realValue": 862.6087844,
+        "realValueInvested": 862.6087844
+      },
+      {
+        "year": 6,
+        "nominalNeeded": 1194.052297,
+        "realValue": 837.4842567,
+        "realValueInvested": 837.4842567
+      },
+      {
+        "year": 7,
+        "nominalNeeded": 1229.873865,
+        "realValue": 813.0915113,
+        "realValueInvested": 813.0915113
+      },
+      {
+        "year": 8,
+        "nominalNeeded": 1266.770081,
+        "realValue": 789.4092343,
+        "realValueInvested": 789.4092343
+      },
+      {
+        "year": 9,
+        "nominalNeeded": 1304.773184,
+        "realValue": 766.4167323,
+        "realValueInvested": 766.4167323
+      },
+      {
+        "year": 10,
+        "nominalNeeded": 1343.916379,
+        "realValue": 744.0939149,
+        "realValueInvested": 744.0939149
+      }
+    ]
+  },
+  "salud-financiera": {
+    "score": 52,
+    "category": "fragile"
+  }
+}

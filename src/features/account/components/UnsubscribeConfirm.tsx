@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { apiFetch } from "@/shared/api/client";
-
-type Status = "idle" | "submitting" | "done" | "error";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
+import Button from "@/shared/ui/Button";
 
 /**
  * Confirmación de baja de los avisos por email. La baja es un POST explícito tras pulsar el
@@ -16,22 +15,18 @@ type Status = "idle" | "submitting" | "done" | "error";
  */
 export default function UnsubscribeConfirm({ token }: { token: string | null }) {
   const t = useTranslations("unsubscribe");
-  const [status, setStatus] = useState<Status>("idle");
+  const unsubscribe = useApiMutation();
 
   async function confirm() {
     if (!token) return;
-    setStatus("submitting");
-    try {
-      await apiFetch(`/api/notifications/unsubscribe?token=${encodeURIComponent(token)}`, { method: "POST" });
-      setStatus("done");
-    } catch {
-      setStatus("error");
-    }
+    await unsubscribe.run(() =>
+      apiFetch(`/api/notifications/unsubscribe?token=${encodeURIComponent(token)}`, { method: "POST" }),
+    );
   }
 
   if (!token) return <p className="text-muted">{t("missingToken")}</p>;
 
-  if (status === "done") {
+  if (unsubscribe.status === "success") {
     return (
       <div className="flex flex-col items-center gap-4">
         <p role="status" className="text-foreground">
@@ -46,15 +41,15 @@ export default function UnsubscribeConfirm({ token }: { token: string | null }) 
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <button
-        type="button"
+      <Button
+        size="cta"
         onClick={() => void confirm()}
-        disabled={status === "submitting"}
-        className="inline-flex items-center justify-center rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-fg transition hover:opacity-90 disabled:opacity-50"
+        disabled={unsubscribe.status === "pending"}
+        className="inline-flex items-center justify-center"
       >
-        {status === "submitting" ? t("submitting") : t("confirm")}
-      </button>
-      {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
+        {unsubscribe.status === "pending" ? t("submitting") : t("confirm")}
+      </Button>
+      {unsubscribe.status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
     </div>
   );
 }

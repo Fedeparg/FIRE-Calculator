@@ -1,6 +1,7 @@
 // Comprar con hipoteca vs alquilar: coste neto en un horizonte. Core puro. Orientativo: depende mucho de la revalorización y la rentabilidad supuestas.
 
 import { computeMortgage } from "./hipoteca.js";
+import { clampYears } from "../inputs.js";
 
 export interface BuyVsRentInput {
   purchasePrice: number;
@@ -34,8 +35,8 @@ export function computeBuyVsRent(input: BuyVsRentInput): BuyVsRentResult {
   const price = Math.max(0, input.purchasePrice || 0);
   const purchaseCosts = Math.max(0, input.purchaseCosts || 0);
   const downPayment = Math.min(price, Math.max(0, input.downPayment || 0));
-  const term = Math.max(1, Math.round(input.mortgageTerm || 1));
-  const horizon = Math.max(1, Math.round(input.horizonYears || 1));
+  const term = clampYears(input.mortgageTerm, 1);
+  const horizon = clampYears(input.horizonYears, 1);
   const annualCostRate = Math.max(0, input.annualCostRate || 0);
   const appreciation = (input.appreciationRate || 0) / 100;
   const rentGrowth = (input.rentGrowthRate || 0) / 100;

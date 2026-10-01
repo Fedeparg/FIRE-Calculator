@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
+import { inputClass } from "@/shared/ui/field-classes";
+import Button from "@/shared/ui/Button";
 
 type Props = {
   /** Lote en edición, o `null` para dar de alta uno nuevo. */
@@ -15,9 +17,6 @@ type Props = {
   onSubmit: (payload: LotPayload) => void;
   onCancelEdit: () => void;
 };
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usa `traded_at` en la API. */
 function todayUtc(): string {
@@ -173,22 +172,13 @@ export default function PositionLotForm({ editing, currency, submitting, onSubmi
       </div>
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={submitting || !isValid}
-          className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
-        >
+        <Button type="submit" disabled={submitting || !isValid}>
           {submitting ? t("saving") : editing ? t("save") : t("add")}
-        </button>
+        </Button>
         {editing && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            disabled={submitting}
-            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface disabled:opacity-50"
-          >
+          <Button variant="secondary" onClick={onCancelEdit} disabled={submitting}>
             {t("cancel")}
-          </button>
+          </Button>
         )}
       </div>
     </form>

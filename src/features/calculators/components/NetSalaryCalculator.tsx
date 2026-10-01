@@ -22,6 +22,7 @@ import SelectField from "@/shared/ui/SelectField";
 import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function NetSalaryCalculator() {
   const t = useTranslations("calc.salario-bruto-neto");
@@ -177,7 +178,7 @@ export default function NetSalaryCalculator() {
         </section>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StatGrid>
         <Stat label={t("netPerPayment")} value={formatEURCents(result.netPerPayment)} highlight />
         <Stat label={t("netAnnual")} value={formatEUR(result.netAnnual)} />
         <Stat label={t("socialSecurity")} value={formatEUR(result.socialSecurity)} />
@@ -186,7 +187,7 @@ export default function NetSalaryCalculator() {
         <Stat label={t("totalDeductionRate")} value={formatPercent(result.totalDeductionRate)} />
         <Stat label={t("personalMinimum")} value={formatEUR(result.personalMinimum)} />
         <Stat label={t("taxableBase")} value={formatEUR(result.taxableBase)} />
-      </div>
+      </StatGrid>
     </div>
   );
 }

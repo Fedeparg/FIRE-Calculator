@@ -4,9 +4,9 @@
  * el progreso. Agnóstico de divisa: `annualExpenses`, `contribution` y `currentValue` van en la misma.
  */
 
-import { computeFire, MAX_YEARS } from "./calculators/fire.js";
-import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "./calculators/fire-montecarlo.js";
-import { PERIODS_PER_YEAR, project, type Frequency } from "./projection.js";
+import { computeFire, FIRE_SEARCH_MAX_YEARS } from "../calculators/fire.js";
+import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "../calculators/fire-montecarlo.js";
+import { PERIODS_PER_YEAR, periodRateFromEffective, project, type Frequency } from "../projection.js";
 
 /** Slug de la calculadora FIRE; los escenarios guardados lo comparten con el objetivo de la cartera. */
 export const FIRE_CALCULATOR_SLUG = "independencia-financiera";
@@ -118,7 +118,7 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
   const reached = current >= target;
 
   const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
-  const periodRate = (input.annualReturn || 0) / 100 / periodsPerYear;
+  const periodRate = periodRateFromEffective(input.annualReturn || 0, periodsPerYear);
   const periods = deadlineYears * periodsPerYear;
   const growth = (1 + periodRate) ** periods;
   const annuity = periodRate === 0 ? periods : (growth - 1) / periodRate;
@@ -128,10 +128,10 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
     contribution: input.contribution,
     frequency: input.frequency,
     annualRate: input.annualReturn,
-    years: Math.max(MAX_YEARS, deadlineYears),
+    years: Math.max(FIRE_SEARCH_MAX_YEARS, deadlineYears),
   });
   const projectedAtDeadline = projection.series[deadlineYears]?.value ?? current;
-  const firstYear = projection.series.find((p) => p.year <= MAX_YEARS && p.value >= target)?.year;
+  const firstYear = projection.series.find((p) => p.year <= FIRE_SEARCH_MAX_YEARS && p.value >= target)?.year;
 
   let requiredContribution: number | null;
   if (reached || current * growth >= target) requiredContribution = 0;
@@ -151,6 +151,66 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
     requiredContribution,
     onTrack: reached || projectedAtDeadline >= target,
   };
+}
+
+/** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
+export type GoalOutcome = ({ mode: "fire" } & PortfolioGoalResult) | ({ mode: "amount" } & AmountGoalResult);
+
+/** Qué se persigue: vivir de rentas (`fire`) o reunir una cantidad en un plazo (`amount`). */
+export type GoalTarget =
+  | { mode: "fire"; annualExpenses: number; withdrawalRate: number }
+  | { mode: "amount"; targetAmount: number; targetYears: number };
+
+/** Lo que comparten los dos modos: la cartera de partida y el ritmo de ahorro. */
+export type GoalProgressInput = Pick<
+  PortfolioGoalInput,
+  "currentValue" | "contribution" | "frequency" | "annualReturn"
+>;
+
+/**
+ * Progreso de la cartera hacia un objetivo en cualquiera de los dos modos: un único punto de
+ * entrada para la web y para el MCP, de modo que ambos decidan el modo y armen el resultado igual.
+ */
+export function computeGoalProgress(target: GoalTarget, input: GoalProgressInput): GoalOutcome {
+  return target.mode === "amount"
+    ? {
+        mode: "amount",
+        ...computeAmountGoal({ ...input, targetAmount: target.targetAmount, years: target.targetYears }),
+      }
+    : {
+        mode: "fire",
+        ...computePortfolioGoal({
+          ...input,
+          annualExpenses: target.annualExpenses,
+          withdrawalRate: target.withdrawalRate,
+        }),
+      };
+}
+
+/** Campos de objetivo tal y como llegan de un cliente: cualquiera puede faltar. */
+export interface RawGoalTarget {
+  annualExpenses?: number;
+  withdrawalRate?: number;
+  targetAmount?: number;
+  targetYears?: number;
+}
+
+export type GoalTargetError = "amountIncomplete" | "mixedModes" | "fireIncomplete";
+
+/**
+ * Deduce el modo de campos opcionales y exige que sean coherentes: cualquiera de los campos de
+ * cantidad fuerza el modo cantidad, que excluye a los de FIRE. Devuelve un código de error (no un
+ * texto) para que cada cliente lo exprese a su manera.
+ */
+export function resolveGoalTarget(raw: RawGoalTarget): { target: GoalTarget } | { error: GoalTargetError } {
+  const { annualExpenses, withdrawalRate, targetAmount, targetYears } = raw;
+  if (targetAmount !== undefined || targetYears !== undefined) {
+    if (targetAmount === undefined || targetYears === undefined) return { error: "amountIncomplete" };
+    if (annualExpenses !== undefined || withdrawalRate !== undefined) return { error: "mixedModes" };
+    return { target: { mode: "amount", targetAmount, targetYears } };
+  }
+  if (annualExpenses === undefined || withdrawalRate === undefined) return { error: "fireIncomplete" };
+  return { target: { mode: "fire", annualExpenses, withdrawalRate } };
 }
 
 export interface PortfolioGoalSimulationInput extends PortfolioGoalInput {

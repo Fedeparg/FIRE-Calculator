@@ -18,7 +18,7 @@ const LOT_ERROR_CODES: Record<string, LotErrorKey> = {
  */
 export function lotErrorKey(error: unknown): LotErrorKey {
   if (error instanceof ApiError) {
-    if (error.status === 403 || error.status === 404) return "errorNotFound";
+    if (error.status === 404) return "errorNotFound";
     if (error.status === 400 && error.code && LOT_ERROR_CODES[error.code]) return LOT_ERROR_CODES[error.code];
   }
   return apiErrorKey(error);

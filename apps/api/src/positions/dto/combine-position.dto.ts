@@ -1,24 +1,12 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsNumber, IsOptional, IsPositive, Max, Min } from 'class-validator';
+import { z } from 'zod';
 
-import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
-import { NUMERIC_MAX } from './create-position.dto.js';
+import { amountSchema, currencySchema, quantitySchema } from './create-position.dto.js';
 
 /** Cuerpo de POST /api/positions/:id/combine: la nueva compra a fusionar; la divisa debe coincidir con la de la posición (lo rechaza el servicio). */
-export class CombinePositionDto {
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @IsPositive()
-  @Max(NUMERIC_MAX)
-  quantity!: number;
+export const combinePositionSchema = z.strictObject({
+  quantity: quantitySchema.describe('Cantidad de la nueva compra.'),
+  avgPrice: amountSchema.describe('Precio de la nueva compra.'),
+  currency: currencySchema.optional(),
+});
 
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @Min(0)
-  @Max(NUMERIC_MAX)
-  avgPrice!: number;
-
-  @IsOptional()
-  @IsIn(SUPPORTED_CURRENCIES)
-  currency?: SupportedCurrency;
-}
+export type CombinePositionDto = z.infer<typeof combinePositionSchema>;

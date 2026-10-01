@@ -4,9 +4,9 @@
 // derivan a la divisa que se está viendo y se arma el resultado y el cuerpo del escenario.
 
 import { convertCurrency } from "@sextante/core/fx";
-import { computeAmountGoal, computePortfolioGoal, type GoalMode } from "@sextante/core/portfolio-goal";
+import { computeGoalProgress, type GoalMode, type GoalOutcome } from "@sextante/core/portfolio/goal";
 import type { Frequency } from "@sextante/core/projection";
-import type { GoalOutcome, GoalSettings } from "./goal-scenario";
+import type { GoalSettings } from "./goal-scenario";
 
 /** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
 export type GoalAmounts = { currency: string; annualExpenses: number; contribution: number; targetAmount: number };
@@ -80,7 +80,7 @@ export type GoalParams = {
   retirementYears: number;
 };
 
-/** Resultado del objetivo contra el valor actual de la cartera (`computePortfolioGoal` / `computeAmountGoal`). */
+/** Resultado del objetivo contra el valor actual de la cartera (`computeGoalProgress`). */
 export function computeGoal(shown: ShownAmounts, params: GoalParams, marketValue: number): GoalOutcome {
   const common = {
     currentValue: marketValue,
@@ -88,19 +88,12 @@ export function computeGoal(shown: ShownAmounts, params: GoalParams, marketValue
     frequency: params.frequency,
     annualReturn: params.annualReturn,
   };
-  return params.mode === "amount"
-    ? {
-        mode: "amount",
-        ...computeAmountGoal({ ...common, targetAmount: shown.targetAmount, years: params.targetYears }),
-      }
-    : {
-        mode: "fire",
-        ...computePortfolioGoal({
-          ...common,
-          annualExpenses: shown.annualExpenses,
-          withdrawalRate: params.withdrawalRate,
-        }),
-      };
+  return computeGoalProgress(
+    params.mode === "amount"
+      ? { mode: "amount", targetAmount: shown.targetAmount, targetYears: params.targetYears }
+      : { mode: "fire", annualExpenses: shown.annualExpenses, withdrawalRate: params.withdrawalRate },
+    common,
+  );
 }
 
 /**

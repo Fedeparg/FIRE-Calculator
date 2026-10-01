@@ -4,13 +4,8 @@ import { Resend } from 'resend';
 
 import type { EmailService } from './email.service.js';
 import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
-
-/**
- * Minutos de validez del enlace mágico que mostramos al usuario en el email.
- * Debe coincidir con `TOKEN_TTL_MS` de `auth.service.ts` (15 minutos). Si cambias
- * la TTL allí, actualiza este valor.
- */
-const LINK_TTL_MINUTES = 15;
+import type { Env } from '../config/env.js';
+import { LOGIN_LINK_TTL_MINUTES } from '../auth/session.constants.js';
 
 const SUBJECT = 'Tu enlace de acceso a Sextante';
 
@@ -18,8 +13,7 @@ const SUBJECT = 'Tu enlace de acceso a Sextante';
  * Transporte de email de producción vía Resend. Se activa con `EMAIL_TRANSPORT=resend`.
  * Requiere `RESEND_API_KEY`, `EMAIL_FROM` y `APP_URL`.
  *
- * Si falta cualquiera de las tres, el constructor lanza con un mensaje claro y aborta el
- * arranque de la API: preferimos un fallo ruidoso a enviar a un agujero negro.
+ * Si falta cualquiera de las tres, la validación de `config/env.ts` aborta el arranque de la API.
  */
 @Injectable()
 export class ResendEmailService implements EmailService {
@@ -28,33 +22,18 @@ export class ResendEmailService implements EmailService {
   private readonly from: string;
   private readonly appUrl: string;
 
-  constructor(config: ConfigService) {
-    const apiKey = config.get<string>('RESEND_API_KEY');
-    if (!apiKey) {
-      throw new Error(
-        'EMAIL_TRANSPORT=resend requiere RESEND_API_KEY. Define la clave en el entorno ' +
-          '(o usa EMAIL_TRANSPORT=dev en desarrollo).',
-      );
-    }
-    this.resend = new Resend(apiKey);
+  constructor(config: ConfigService<Env, true>) {
+    // `parseEnv` ya exige `RESEND_API_KEY` y `EMAIL_FROM` con `EMAIL_TRANSPORT=resend`
+    // (preferimos un fallo ruidoso al arrancar a enviar a un agujero negro); `getOrThrow` solo estrecha el tipo.
+    this.resend = new Resend(config.getOrThrow('RESEND_API_KEY', { infer: true }));
 
-    // Sin remitente por defecto: el dominio de envío es propio de cada despliegue (también
-    // del de desarrollo), así que un dominio cableado aquí sería el de OTRO. Además, Resend solo acepta dominios
-    // verificados en la cuenta del despliegue: un valor "de fábrica" fallaría en el envío, y
-    // más vale enterarse al arrancar que cuando un usuario intenta entrar.
-    const from = config.get<string>('EMAIL_FROM')?.trim();
-    if (!from) {
-      throw new Error(
-        'EMAIL_TRANSPORT=resend requiere EMAIL_FROM con un remitente de un dominio ' +
-          'verificado en Resend (p. ej. "Sextante <no-reply@send.tu-dominio>").',
-      );
-    }
-    this.from = from;
+    // Sin remitente por defecto: el dominio de envío es propio de cada despliegue y Resend solo
+    // acepta dominios verificados en la cuenta, así que un valor "de fábrica" fallaría en el envío.
+    this.from = config.getOrThrow('EMAIL_FROM', { infer: true });
 
     // Base absoluta para el logo del email (los clientes de correo no resuelven rutas
-    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`. `getOrThrow`
-    // porque `APP_URL` ya es obligatoria en el resto de la app (es la base del magic link).
-    this.appUrl = config.getOrThrow<string>('APP_URL');
+    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`.
+    this.appUrl = config.getOrThrow('APP_URL', { infer: true });
   }
 
   async sendMagicLink(to: string, link: string): Promise<void> {
@@ -103,7 +82,7 @@ export class ResendEmailService implements EmailService {
       '',
       link,
       '',
-      `El enlace caduca en ${LINK_TTL_MINUTES} minutos y solo puede usarse una vez.`,
+      `El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.`,
       '',
       'Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu',
       'cuenta sin abrir el enlace.',
@@ -155,7 +134,7 @@ export class ResendEmailService implements EmailService {
             <tr>
               <td style="padding:0 32px 32px 32px;border-top:1px solid #e5e7eb;">
                 <p style="margin:16px 0 0 0;font-size:13px;line-height:1.6;color:#64748b;">
-                  El enlace caduca en ${LINK_TTL_MINUTES} minutos y solo puede usarse una vez.
+                  El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.
                   Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu
                   cuenta sin abrir el enlace.
                 </p>

@@ -12,6 +12,7 @@ import { DatabaseModule } from './db/database.module.js';
 import { DonationsModule } from './donations/donations.module.js';
 import { EmailModule } from './email/email.module.js';
 import { DailyJobsModule } from './jobs/daily-jobs.module.js';
+import { parseEnv } from './config/env.js';
 import { HealthModule } from './health/health.module.js';
 import { ImportsModule } from './imports/imports.module.js';
 import { McpModule } from './mcp/mcp.module.js';
@@ -23,7 +24,8 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    // `validate` corre al importar el módulo: el entorno ya debe estar completo (ver `config/env.ts`).
+    ConfigModule.forRoot({ isGlobal: true, validate: parseEnv }),
     // Límite por defecto anti-abuso (los endpoints sensibles ajustan el suyo).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
     // Habilita el cron nocturno de cartera (DailyJobsScheduler).

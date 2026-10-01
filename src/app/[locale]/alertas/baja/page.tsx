@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import UnsubscribeConfirm from "@/features/account/components/UnsubscribeConfirm";
+import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -23,10 +24,12 @@ export default async function UnsubscribePage({ params, searchParams }: Props) {
   const { token } = await searchParams;
 
   return (
-    <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-20 text-center">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-      <p className="text-muted">{t("body")}</p>
-      <UnsubscribeConfirm token={typeof token === "string" && token ? token : null} />
-    </section>
+    <RouteMessages route="alertas/baja">
+      <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
+        <p className="text-muted">{t("body")}</p>
+        <UnsubscribeConfirm token={typeof token === "string" && token ? token : null} />
+      </section>
+    </RouteMessages>
   );
 }

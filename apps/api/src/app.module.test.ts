@@ -2,9 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, beforeAll, describe, expect, it, inject, vi } from 'vitest';
 
-import { AppModule } from './app.module.js';
 import { POSITION_CREATED_EVENT } from './positions/position-events.js';
 import { PortfolioSnapshotsService } from './portfolio/portfolio-snapshots.service.js';
+
+/**
+ * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
+ * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ */
+const loadAppModule = async () => (await import('./app.module.js')).AppModule;
 
 /**
  * Comprueba que la aplicación ARRANCA entera: que el grafo de inyección de dependencias se
@@ -60,7 +65,7 @@ describe('AppModule (arranque de la aplicación)', () => {
 
     // `abortOnError: false`: por defecto Nest hace `process.exit(1)` ante un fallo de
     // arranque, lo que mataría el worker de Vitest sin decir por qué. Así lanza y se ve.
-    const app = await NestFactory.createApplicationContext(AppModule, {
+    const app = await NestFactory.createApplicationContext(await loadAppModule(), {
       abortOnError: false,
       logger: false,
     });
@@ -80,7 +85,7 @@ describe('AppModule (arranque de la aplicación)', () => {
     // funciona si lo llamas a mano.
     global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
 
-    const app = await NestFactory.createApplicationContext(AppModule, {
+    const app = await NestFactory.createApplicationContext(await loadAppModule(), {
       abortOnError: false,
       logger: false,
     });

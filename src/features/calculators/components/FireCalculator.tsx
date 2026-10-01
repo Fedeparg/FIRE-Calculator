@@ -55,7 +55,7 @@ export default function FireCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={7}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -126,14 +126,6 @@ export default function FireCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           {firePoint && (

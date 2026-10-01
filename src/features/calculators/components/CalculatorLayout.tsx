@@ -1,24 +1,22 @@
 type Props = {
   inputs: React.ReactNode;
-  inputCount: number;
+  /**
+   * `sidebar`: pocos campos, barra lateral con los resultados al lado.
+   * `grid`: muchos campos, rejilla arriba y resultados debajo (evita una columna
+   * lateral kilométrica). Se elige a mano, no se deduce de un recuento de campos,
+   * que se desfasaba al añadir o quitar uno.
+   */
+  layout: "sidebar" | "grid";
   results: React.ReactNode;
   notice?: React.ReactNode;
-  /** Campos a partir de los cuales se pasa de barra lateral a rejilla horizontal. */
-  threshold?: number;
 };
 
-/**
- * Pocos campos: barra lateral + resultados al lado; muchos: rejilla arriba y resultados
- * debajo (evita una columna lateral kilométrica).
- */
-export default function CalculatorLayout({ inputs, inputCount, results, notice, threshold = 5 }: Props) {
-  const horizontal = inputCount > threshold;
-
+export default function CalculatorLayout({ inputs, layout, results, notice }: Props) {
   return (
     <div className="grid gap-6">
       {notice}
 
-      {horizontal ? (
+      {layout === "grid" ? (
         <>
           <div className="grid gap-4 rounded-xl border border-border bg-surface p-5 sm:grid-cols-2 lg:grid-cols-3">
             {inputs}

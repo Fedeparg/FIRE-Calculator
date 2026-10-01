@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
 
-import type { ConfigService } from '@nestjs/config';
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { eq } from 'drizzle-orm';
@@ -8,6 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
+import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { OAuthReaper } from './oauth-reaper.js';
 
@@ -44,8 +44,7 @@ describe('OAuthReaper (integración con Postgres)', () => {
    * `onModuleInit()` en los tests: registraría un CronJob real.
    */
   function reaper(env: Record<string, string> = {}): OAuthReaper {
-    const config = { get: (key: string) => env[key] } as unknown as ConfigService;
-    return new OAuthReaper(db, config, {} as SchedulerRegistry);
+    return new OAuthReaper(db, fakeConfig(env), {} as SchedulerRegistry);
   }
 
   async function insertClient(clientId: string, opts: { createdAt: Date; lastUsedAt?: Date }) {

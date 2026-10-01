@@ -5,16 +5,14 @@
 
 import { convertCurrency } from "@sextante/core/fx";
 import {
-  computeAmountGoal,
-  computePortfolioGoal,
+  computeGoalProgress,
   GOAL_MODES,
   goalModeFromInputs,
-  type AmountGoalResult,
   type GoalMode,
-  type PortfolioGoalResult,
-} from "@sextante/core/portfolio-goal";
+  type GoalOutcome,
+} from "@sextante/core/portfolio/goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
-import { decodeCalculatorInputs, type FieldSpecs } from "@/features/calculators/url-state";
+import { decodeCalculatorInputs, type FieldSpecs } from "@/shared/url-state/url-state";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 
 /**
@@ -60,9 +58,6 @@ export interface GoalSettings {
   /** Modo cantidad: plazo en años enteros. */
   targetYears: number;
 }
-
-/** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
-export type GoalOutcome = ({ mode: "fire" } & PortfolioGoalResult) | ({ mode: "amount" } & AmountGoalResult);
 
 function isFrequency(value: unknown): value is Frequency {
   return typeof value === "string" && (FREQUENCIES as readonly string[]).includes(value);
@@ -115,25 +110,9 @@ export function goalProgress(
   if (settings.mode === "amount") {
     const targetAmount = convert(settings.targetAmount);
     if (targetAmount === null) return null;
-    return { mode: "amount", ...computeAmountGoal({ ...common, targetAmount, years: settings.targetYears }) };
+    return computeGoalProgress({ mode: "amount", targetAmount, targetYears: settings.targetYears }, common);
   }
   const annualExpenses = convert(settings.annualExpenses);
   if (annualExpenses === null) return null;
-  return {
-    mode: "fire",
-    ...computePortfolioGoal({ ...common, annualExpenses, withdrawalRate: settings.withdrawalRate }),
-  };
-}
-
-/**
- * Plan activo entre los escenarios FIRE guardados: el actualizado más recientemente. Es la
- * misma regla que siguen los avisos de hitos de la API, así que Resumen, Objetivo y avisos
- * miran siempre el mismo plan. Elegir otro plan lo "toca" (PATCH sin cambios) para activarlo.
- */
-export function activeScenario<T extends { updatedAt: string }>(scenarios: readonly T[]): T | null {
-  let active: T | null = null;
-  for (const scenario of scenarios) {
-    if (active === null || Date.parse(scenario.updatedAt) > Date.parse(active.updatedAt)) active = scenario;
-  }
-  return active;
+  return computeGoalProgress({ mode: "fire", annualExpenses, withdrawalRate: settings.withdrawalRate }, common);
 }

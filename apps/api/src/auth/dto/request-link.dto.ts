@@ -1,8 +1,8 @@
-import { IsEmail, MaxLength } from 'class-validator';
+import { z } from 'zod';
 
 /** Cuerpo de POST /api/auth/request. */
-export class RequestLinkDto {
-  @IsEmail({}, { message: 'Email no válido' })
-  @MaxLength(254)
-  email!: string;
-}
+export const requestLinkSchema = z.strictObject({
+  email: z.email({ error: 'Email no válido' }).max(254),
+});
+
+export type RequestLinkDto = z.infer<typeof requestLinkSchema>;

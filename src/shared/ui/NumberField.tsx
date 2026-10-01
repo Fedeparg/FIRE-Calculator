@@ -11,6 +11,7 @@ import {
   stripLeadingZeros,
 } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
+import { fieldClass } from "./field-classes";
 import HelpTooltip from "./HelpTooltip";
 
 type Props = {
@@ -106,7 +107,7 @@ export default function NumberField({
         onChange={(e) => handleChange(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-foreground outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20"
+        className={fieldClass}
       />
     </div>
   );

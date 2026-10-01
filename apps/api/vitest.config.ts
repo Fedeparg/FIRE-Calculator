@@ -9,6 +9,8 @@ import { defineConfig } from 'vitest/config';
  * - `unplugin-swc` compila el TS con decoradores de NestJS (legacy + metadata),
  *   igual que `tsc`/`nest build`; esbuild (el transform por defecto de Vitest) no
  *   emite metadata de decoradores.
+ * - El alias `@sextante/core` apunta al código fuente del paquete, así los tests
+ *   no necesitan compilarlo a `dist/` antes.
  * - `globalSetup` levanta UN PostgreSQL efímero (Testcontainers) para toda la
  *   suite y aplica las migraciones; la URL se pasa a los tests vía `inject`.
  * - `fileParallelism: false`: los ficheros comparten esa única BD, así que se
@@ -24,6 +26,9 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: [{ find: '@sextante/core', replacement: resolve(import.meta.dirname, '../../packages/core/src') }],
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

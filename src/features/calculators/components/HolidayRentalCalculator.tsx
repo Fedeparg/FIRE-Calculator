@@ -8,6 +8,7 @@ import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function HolidayRentalCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler-vacacional");
@@ -47,7 +48,7 @@ export default function HolidayRentalCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -114,7 +115,7 @@ export default function HolidayRentalCalculator() {
         </>
       }
       results={
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatGrid columns={3}>
           <Stat label={t("netYield")} value={formatPercent(result.netYield)} highlight />
           <Stat label={t("grossYield")} value={formatPercent(result.grossYield)} />
           <Stat label={t("grossIncome")} value={formatEUR(result.grossIncome)} />
@@ -122,7 +123,7 @@ export default function HolidayRentalCalculator() {
           <Stat label={t("occupancyRate")} value={formatPercent(result.occupancyRate)} />
           <Stat label={t("managementCost")} value={formatEUR(result.managementCost)} />
           <Stat label={t("cleaningCost")} value={formatEUR(result.cleaningCost)} />
-        </div>
+        </StatGrid>
       }
     />
   );

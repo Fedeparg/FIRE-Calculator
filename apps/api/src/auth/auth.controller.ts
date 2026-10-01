@@ -1,25 +1,14 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Header,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 
-import { AuthService, type AccountExport, type SessionUser } from './auth.service.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import type { Env } from '../config/env.js';
+import { AuthService, type SessionUser } from './auth.service.js';
 import { CurrentUser } from './current-user.decorator.js';
-import { RequestLinkDto } from './dto/request-link.dto.js';
-import { VerifyDto } from './dto/verify.dto.js';
+import { requestLinkSchema, type RequestLinkDto } from './dto/request-link.dto.js';
+import { verifySchema, type VerifyDto } from './dto/verify.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
@@ -30,14 +19,17 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /** Solicita un magic link. Limitado para evitar abuso / bombardeo de emails. */
   @Post('request')
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async request(@Body() dto: RequestLinkDto, @Req() req: Request): Promise<{ ok: true }> {
+  async request(
+    @Body(new ZodValidationPipe(requestLinkSchema)) dto: RequestLinkDto,
+    @Req() req: Request,
+  ): Promise<{ ok: true }> {
     this.logDetectedIp(req);
     await this.auth.requestLink(dto.email);
     // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
@@ -47,7 +39,10 @@ export class AuthController {
   /** Canjea el token del enlace por una sesión (cookie HttpOnly con el JWT). */
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: Response): Promise<SessionUser> {
+  async verify(
+    @Body(new ZodValidationPipe(verifySchema)) dto: VerifyDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionUser> {
     const user = await this.auth.verify(dto.token);
     const jwt = await this.auth.signSession(user);
     res.cookie(SESSION_COOKIE, jwt, this.cookieOptions());
@@ -67,17 +62,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: SessionUser): SessionUser {
     return user;
-  }
-
-  /**
-   * RGPD — derecho de acceso/portabilidad: descarga un JSON con el email del usuario y
-   * todas sus posiciones. El `userId` se lee del JWT. La cabecera fuerza la descarga.
-   */
-  @Get('account/export')
-  @UseGuards(JwtAuthGuard)
-  @Header('Content-Disposition', 'attachment; filename="sextante-datos.json"')
-  exportAccount(@CurrentUser() user: SessionUser): Promise<AccountExport> {
-    return this.auth.exportData(user);
   }
 
   /**
@@ -113,7 +97,7 @@ export class AuthController {
       // Secure explícito (no atado a NODE_ENV): así la API dockerizada puede servir
       // a un frontend en http://localhost sin que el navegador rechace la cookie.
       // En producción (HTTPS) se pone COOKIE_SECURE=true.
-      secure: this.config.get<string>('COOKIE_SECURE') === 'true',
+      secure: this.config.get('COOKIE_SECURE', { infer: true }),
       sameSite: 'lax',
       path: '/',
       maxAge: SESSION_TTL_SECONDS * 1000,

@@ -1,20 +1,11 @@
 import { Controller, Delete, Get, HttpCode, HttpStatus, Param, UseGuards } from '@nestjs/common';
 
+import type { ConnectedApp } from '@sextante/core/contracts';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
-
-/** Una aplicación conectada (consentimiento OAuth) tal y como la consume la UI. */
-export interface ConnectedApp {
-  clientId: string;
-  clientName: string | null;
-  clientUri: string | null;
-  scopes: string[];
-  createdAt: string;
-  lastUsedAt: string | null;
-}
 
 /**
  * Gestión de "Aplicaciones conectadas" (RGPD): listar y revocar los clientes OAuth/MCP a los

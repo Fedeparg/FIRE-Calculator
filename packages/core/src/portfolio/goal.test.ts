@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   computeAmountGoal,
+  computeGoalProgress,
   computePortfolioGoal,
   goalModeFromInputs,
   monthlyContribution,
+  resolveGoalTarget,
   simulatePortfolioGoal,
   type PortfolioGoalInput,
-} from "./portfolio-goal.js";
+} from "./goal.js";
 
 /** Objetivo típico: 24.000 €/año al 4 % → 600.000 € de patrimonio objetivo. */
 const BASE: PortfolioGoalInput = {
@@ -257,5 +259,72 @@ describe("computeAmountGoal", () => {
   it("sin llegar en 60 años, yearsToTarget es null", () => {
     const result = computeAmountGoal({ ...AMOUNT, targetAmount: 1e12, contribution: 0, annualReturn: 0 });
     expect(result.yearsToTarget).toBeNull();
+  });
+});
+
+describe("computeGoalProgress", () => {
+  const COMMON = { currentValue: 150000, contribution: 1000, frequency: "monthly", annualReturn: 5 } as const;
+
+  it("modo FIRE: equivale a computePortfolioGoal con su modo", () => {
+    const outcome = computeGoalProgress({ mode: "fire", annualExpenses: 24000, withdrawalRate: 4 }, COMMON);
+    expect(outcome).toEqual({ mode: "fire", ...computePortfolioGoal(BASE) });
+  });
+
+  it("modo cantidad: equivale a computeAmountGoal con su modo", () => {
+    const outcome = computeGoalProgress({ mode: "amount", targetAmount: 300000, targetYears: 10 }, COMMON);
+    expect(outcome).toEqual({
+      mode: "amount",
+      ...computeAmountGoal({ ...COMMON, targetAmount: 300000, years: 10 }),
+    });
+  });
+
+  it("objetivo ya alcanzado: 0 años y nada que aportar", () => {
+    const fire = computeGoalProgress({ mode: "fire", annualExpenses: 4000, withdrawalRate: 4 }, COMMON);
+    expect(fire).toMatchObject({ mode: "fire", reached: true, yearsToTarget: 0, remaining: 0 });
+    const amount = computeGoalProgress({ mode: "amount", targetAmount: 100000, targetYears: 5 }, COMMON);
+    expect(amount).toMatchObject({ mode: "amount", reached: true, requiredContribution: 0, onTrack: true });
+  });
+
+  it("plazo 0 años: solo se llega si ya se tiene la cifra", () => {
+    const outcome = computeGoalProgress({ mode: "amount", targetAmount: 200000, targetYears: 0 }, COMMON);
+    expect(outcome).toMatchObject({ deadlineYears: 0, projectedAtDeadline: 150000, onTrack: false });
+  });
+
+  it("rentabilidad 0: la aportación necesaria es lineal", () => {
+    const outcome = computeGoalProgress(
+      { mode: "amount", targetAmount: 250000, targetYears: 10 },
+      { ...COMMON, annualReturn: 0 },
+    );
+    expect(outcome).toMatchObject({ mode: "amount", requiredContribution: 100000 / 120 });
+  });
+});
+
+describe("resolveGoalTarget", () => {
+  it("deduce el modo FIRE", () => {
+    expect(resolveGoalTarget({ annualExpenses: 24000, withdrawalRate: 4 })).toEqual({
+      target: { mode: "fire", annualExpenses: 24000, withdrawalRate: 4 },
+    });
+  });
+
+  it("deduce el modo cantidad", () => {
+    expect(resolveGoalTarget({ targetAmount: 1000, targetYears: 5 })).toEqual({
+      target: { mode: "amount", targetAmount: 1000, targetYears: 5 },
+    });
+  });
+
+  it("acepta ceros como valores presentes", () => {
+    expect(resolveGoalTarget({ targetAmount: 0, targetYears: 0 })).toEqual({
+      target: { mode: "amount", targetAmount: 0, targetYears: 0 },
+    });
+  });
+
+  it("rechaza entradas incompletas o mezcladas", () => {
+    expect(resolveGoalTarget({})).toEqual({ error: "fireIncomplete" });
+    expect(resolveGoalTarget({ annualExpenses: 1 })).toEqual({ error: "fireIncomplete" });
+    expect(resolveGoalTarget({ targetAmount: 1 })).toEqual({ error: "amountIncomplete" });
+    expect(resolveGoalTarget({ targetYears: 1, annualExpenses: 1 })).toEqual({ error: "amountIncomplete" });
+    expect(resolveGoalTarget({ targetAmount: 1, targetYears: 1, withdrawalRate: 4 })).toEqual({
+      error: "mixedModes",
+    });
   });
 });

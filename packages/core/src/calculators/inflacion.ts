@@ -1,6 +1,8 @@
 // Inflación (IPC): erosión del poder adquisitivo con una tasa media anual. Core puro. Compara el
 // dinero parado con el invertido a una rentabilidad nominal, para ver por qué hay que batir a la inflación.
 
+import { clampYears } from "../inputs.js";
+
 export interface InflationInput {
   amount: number;
   annualRate: number;
@@ -33,7 +35,7 @@ export function computeInflation(input: InflationInput): InflationResult {
   const amount = Math.max(0, input.amount || 0);
   const rate = (input.annualRate || 0) / 100;
   const ret = (input.nominalReturn || 0) / 100;
-  const years = Math.max(0, Math.round(input.years || 0));
+  const years = clampYears(input.years);
 
   const series: InflationPoint[] = [];
   for (let year = 0; year <= years; year++) {

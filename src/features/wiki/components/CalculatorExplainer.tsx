@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { getExplainer, getArticle } from "../content";
-import { getRelatedArticleSlugs } from "../relatedArticles";
+import { getRelatedArticleSlugs } from "../related-articles";
 
 type Props = {
   /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */
@@ -15,7 +15,7 @@ type Chip = { slug: string; title: string };
  * Bloque divulgativo bajo cada calculadora: una explicación con ejemplo
  * trabajado (leída de `content/wiki/explainers/<calc>.<locale>.md`) y, debajo,
  * chips que enlazan a los artículos relacionados de la wiki (mapeo central en
- * `relatedArticles.ts`).
+ * `related-articles.ts`).
  *
  * Degradación elegante: si la calculadora no tiene explainer NI artículos
  * relacionados, no se renderiza nada.

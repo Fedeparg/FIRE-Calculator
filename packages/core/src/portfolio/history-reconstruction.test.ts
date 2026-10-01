@@ -8,7 +8,7 @@ import {
   type HistoryLot,
   type HistoryPosition,
   type PricePoint,
-} from "./portfolio-history.js";
+} from "./history-reconstruction.js";
 
 const buy = (tradedAt: string, quantity: number, price: number): HistoryLot => ({
   kind: "buy",

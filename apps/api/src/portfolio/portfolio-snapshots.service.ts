@@ -19,8 +19,10 @@ import {
   reconstructHistory,
   type HistoryLot,
   type HistoryPosition,
-} from '@sextante/core/portfolio-history';
-import { staleSnapshotDates } from '@sextante/core/snapshot-staleness';
+} from '@sextante/core/portfolio/history-reconstruction';
+import type { HistoryPointDto, PortfolioHistoryDto } from '@sextante/core/portfolio/types';
+import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
+import { isoDate, todayUtc } from '../common/dates.js';
 
 /**
  * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
@@ -35,31 +37,6 @@ export { HISTORY_MAX_DAYS };
 
 /** Filas por sentencia al escribir el histórico reconstruido (evita una sentencia por día). */
 const UPSERT_CHUNK_SIZE = 200;
-
-/** Un punto de la serie, ya reexpresado a la divisa pedida. */
-export interface PortfolioHistoryPoint {
-  date: string;
-  /** Coste, en la divisa `display`; `null` si ese día no había tasa para convertirlo. */
-  invested: number | null;
-  /** Valor de mercado, en la divisa `display`; `null` si no era convertible. */
-  marketValue: number | null;
-  /** Ganancia/pérdida (valor − coste), en `display`; `null` si alguno no era convertible. */
-  pnlAbs: number | null;
-  /** Rentabilidad en %; `null` si el coste era 0 o el punto no es convertible. */
-  pnlPct: number | null;
-  valuedPositions: number;
-  totalPositions: number;
-  /** `true` si el punto es anterior al inicio de seguimiento del usuario: reconstrucción desde los lotes. Ver `backfillUser`. */
-  estimated: boolean;
-}
-
-export interface PortfolioHistory {
-  /** Divisa en la que se devuelven los importes. */
-  display: string;
-  /** Divisa en la que están almacenados (siempre EUR). */
-  base: string;
-  points: PortfolioHistoryPoint[];
-}
 
 /** Resumen de una ejecución de la captura diaria (para los logs del cron). */
 export interface SnapshotSummary {
@@ -81,9 +58,6 @@ function sameRates(a: Record<string, number>, b: Record<string, number>): boolea
 }
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
 function toNumeric(value: number): string | null {
@@ -180,7 +154,7 @@ export class PortfolioSnapshotsService {
   /**
    * Reconstruye el histórico de un usuario desde su primera operación (tope `HISTORY_MAX_DAYS`)
    * hasta ayer, valorando cada día la cantidad y el coste que había ese día (sin inventar
-   * historia). La lógica pura vive en `@sextante/core/portfolio-history`, que documenta también
+   * historia). La lógica pura vive en `@sextante/core/portfolio/history-reconstruction`, que documenta también
    * los splits y sus límites. Solo escribe lo que cambió (nada, en la pasada nocturna normal),
    * así que se lanza siempre: alta, importación, lote editado, arranque y cron.
    *
@@ -198,7 +172,7 @@ export class PortfolioSnapshotsService {
    *
    * Capturas reales obsoletas: una real solo se respeta mientras sea una foto fiel. Si después
    * se registró una operación con fecha <= la de la captura, esa captura mostraría un escalón
-   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/snapshot-staleness`).
+   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/portfolio/staleness`).
    * El borrado de un lote no deja marca, así que el llamante pasa `invalidateFrom`. Las reales
    * no obsoletas no se tocan nunca, y si un día obsoleto no sale de la reconstrucción se
    * conserva la real: mejor un dato desfasado que borrar uno que no podemos rehacer.
@@ -251,19 +225,19 @@ export class PortfolioSnapshotsService {
             kind: 'buy',
             quantity: Number(p.quantity),
             price: Number(p.avgPrice),
-            tradedAt: p.createdAt.toISOString().slice(0, 10),
+            tradedAt: isoDate(p.createdAt),
           },
         ],
       }));
 
       // Inicio del seguimiento en Sextante, no de las operaciones.
-      const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))).toISOString().slice(0, 10);
+      const trackingSince = isoDate(new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))));
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
-      const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
+      const floor = isoDate(new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS));
       const from = earliest > floor ? earliest : floor;
-      const to = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10); // ayer: hoy es del cron
+      const to = isoDate(new Date(Date.now() - DAY_MS)); // ayer: hoy es del cron
       if (from > to) return;
 
       const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
@@ -462,9 +436,9 @@ export class PortfolioSnapshotsService {
     userId: string,
     days: number = HISTORY_DEFAULT_DAYS,
     display: string = SNAPSHOT_BASE_CURRENCY,
-  ): Promise<PortfolioHistory> {
+  ): Promise<PortfolioHistoryDto> {
     const span = Math.min(Math.max(Math.trunc(days), 1), HISTORY_MAX_DAYS);
-    const from = new Date(Date.now() - span * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const from = isoDate(new Date(Date.now() - span * 24 * 60 * 60 * 1000));
 
     const rows = await this.db
       .select()
@@ -472,7 +446,7 @@ export class PortfolioSnapshotsService {
       .where(and(eq(portfolioSnapshots.userId, userId), gte(portfolioSnapshots.date, from)))
       .orderBy(asc(portfolioSnapshots.date));
 
-    const points = rows.map((row): PortfolioHistoryPoint => {
+    const points = rows.map((row): HistoryPointDto => {
       const invested = convertCurrency(Number(row.invested), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
       const marketValue = convertCurrency(Number(row.marketValue), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
       const pnlAbs = invested !== null && marketValue !== null ? marketValue - invested : null;

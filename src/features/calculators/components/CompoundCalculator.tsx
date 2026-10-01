@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeCompound } from "@sextante/core/calculators/interes-compuesto";
-import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
+import { COMPOUNDING_FREQUENCIES, FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
@@ -12,6 +12,7 @@ import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function CompoundCalculator() {
   const t = useTranslations("calc.interes-compuesto");
@@ -22,6 +23,8 @@ export default function CompoundCalculator() {
   const [initial, setInitial] = useNumberField("initial", 5000);
   const [contribution, setContribution] = useNumberField("contribution", 300);
   const [frequency, setFrequency] = useOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
+  // Por defecto anual: la tasa se lee como rentabilidad anual y no se capitaliza dentro del año
+  const [compounding, setCompounding] = useOptionField<Frequency>("compounding", "annual", COMPOUNDING_FREQUENCIES);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 7);
   const [years, setYears] = useNumberField("years", 25);
   // Extras (desactivados por defecto)
@@ -35,20 +38,22 @@ export default function CompoundCalculator() {
         initial,
         contribution,
         frequency,
+        compounding,
         annualRate,
         years,
         annualFee,
         contributionGrowth,
         inflationRate,
       }),
-    [initial, contribution, frequency, annualRate, years, annualFee, contributionGrowth, inflationRate],
+    [initial, contribution, frequency, compounding, annualRate, years, annualFee, contributionGrowth, inflationRate],
   );
 
   const frequencyOptions = FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
+  const compoundingOptions = COMPOUNDING_FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -71,6 +76,13 @@ export default function CompoundCalculator() {
             options={frequencyOptions}
             onChange={setFrequency}
             help={tf("help")}
+          />
+          <SelectField
+            label={t("compounding")}
+            value={compounding}
+            options={compoundingOptions}
+            onChange={setCompounding}
+            help={t("help.compounding")}
           />
           <NumberField
             label={t("annualRate")}
@@ -109,12 +121,12 @@ export default function CompoundCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} highlight />
             {inflationRate > 0 && <Stat label={t("finalRealValue")} value={formatEUR(result.finalRealValue)} />}
             <Stat label={t("totalContributed")} value={formatEUR(result.totalContributed)} />
             <Stat label={t("totalInterest")} value={formatEUR(result.totalInterest)} />
-          </div>
+          </StatGrid>
 
           <TimeSeriesChart
             title={t("chartTitle")}
@@ -127,14 +139,6 @@ export default function CompoundCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

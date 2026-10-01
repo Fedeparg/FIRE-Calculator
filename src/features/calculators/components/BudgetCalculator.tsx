@@ -27,7 +27,7 @@ export default function BudgetCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={3}
+      layout="sidebar"
       inputs={
         <>
           <NumberField label={t("income")} value={income} onChange={setIncome} step={100} help={t("help.income")} />

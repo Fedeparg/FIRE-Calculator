@@ -62,6 +62,9 @@ function isRawBody(body: unknown): body is Blob | string {
  */
 export type ApiJsonInit = Omit<RequestInit, "body"> & { body?: unknown };
 
+/** Opciones de `fetch` para lecturas que no deben servirse de caché (constante: estable entre renders). */
+export const NO_STORE = { cache: "no-store" } as const;
+
 /**
  * `fetch` same-origin que lanza `ApiError` si la respuesta no es 2xx o si hay fallo de red.
  * Si hay `body` JSON, lo serializa y añade `Content-Type: application/json`. Devuelve la `Response`

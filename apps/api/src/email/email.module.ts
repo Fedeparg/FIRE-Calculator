@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
+import type { Env } from '../config/env.js';
 import { DevEmailService } from './dev-email.service.js';
 import { EMAIL_SERVICE, type EmailService } from './email.service.js';
 import { ResendEmailService } from './resend-email.service.js';
@@ -16,8 +17,10 @@ import { ResendEmailService } from './resend-email.service.js';
     {
       provide: EMAIL_SERVICE,
       inject: [ConfigService],
-      useFactory: (config: ConfigService): EmailService =>
-        config.get<string>('EMAIL_TRANSPORT') === 'resend' ? new ResendEmailService(config) : new DevEmailService(),
+      useFactory: (config: ConfigService<Env, true>): EmailService =>
+        config.get('EMAIL_TRANSPORT', { infer: true }) === 'resend'
+          ? new ResendEmailService(config)
+          : new DevEmailService(),
     },
   ],
   exports: [EMAIL_SERVICE],

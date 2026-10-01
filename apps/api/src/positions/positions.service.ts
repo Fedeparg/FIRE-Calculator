@@ -5,17 +5,18 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 import { PricesService } from '../prices/prices.service.js';
-import { CombinePositionDto } from './dto/combine-position.dto.js';
-import { CreatePositionDto } from './dto/create-position.dto.js';
-import { UpdatePositionDto } from './dto/update-position.dto.js';
+import type { CombinePositionDto } from './dto/combine-position.dto.js';
+import type { CreatePositionDto } from './dto/create-position.dto.js';
+import type { UpdatePositionDto } from './dto/update-position.dto.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
-import { PositionLotsService, sameAmount, todayUtc } from './position-lots.service.js';
+import { PositionLotsService, sameAmount } from './position-lots.service.js';
 import {
   LOT_CHANGED_EVENT,
   POSITION_CREATED_EVENT,
   type LotChangedEvent,
   type PositionCreatedEvent,
 } from './position-events.js';
+import { isoDate, todayUtc } from '../common/dates.js';
 
 /** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
 export type PositionResponse = {
@@ -70,7 +71,7 @@ export class PositionsService {
           quantity: inserted.quantity,
           price: inserted.avgPrice,
           // Como el backfill: la fecha de alta (UTC) es lo más cercano a la compra real que se conoce.
-          tradedAt: inserted.createdAt.toISOString().slice(0, 10),
+          tradedAt: isoDate(inserted.createdAt),
         });
         return inserted;
       });
@@ -186,7 +187,7 @@ export class PositionsService {
     return this.toResponse(row);
   }
 
-  /** Borra una posición propia: 404 si no existe, 403 si es de otro usuario. */
+  /** Borra una posición propia: 404 si no existe o es de otro usuario. */
   async remove(userId: string, id: string): Promise<void> {
     await this.findOwned(userId, id);
     await this.db.delete(positions).where(eq(positions.id, id));

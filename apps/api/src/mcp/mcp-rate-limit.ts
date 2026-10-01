@@ -1,7 +1,6 @@
-import { createHash } from 'node:crypto';
-
 import type { Request, Response } from 'express';
 import { ipKeyGenerator, rateLimit, type RateLimitRequestHandler } from 'express-rate-limit';
+import { sha256Hex } from '../common/crypto.js';
 
 export const MCP_RATE_LIMIT_WINDOW_MS = 60_000;
 /** 120/min es holgado para un cliente LLM normal y acota el coste de uno abusivo (cada petición hace SELECT del token + INSERT de auditoría). */
@@ -19,7 +18,7 @@ const BEARER_RE = /^Bearer\s+(\S+)$/i;
 export function mcpRateLimitKey(req: Request): string {
   const match = BEARER_RE.exec(req.headers.authorization ?? '');
   if (match) {
-    return `token:${createHash('sha256').update(match[1]).digest('hex')}`;
+    return `token:${sha256Hex(match[1])}`;
   }
   return `ip:${ipKeyGenerator(req.ip ?? 'unknown')}`;
 }

@@ -1,19 +1,23 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest';
 
-import { AppModule } from '../app.module.js';
 import type { Database } from '../db/database.module.js';
 import { mcpAuditLog, oauthTokens, positions } from '../db/schema.js';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { mountMcp } from './mount-mcp.js';
+
+/**
+ * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
+ * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ */
+const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
 const APP_URL = 'https://sextante.example.test';
 /** Audiencia canónica de los tokens: `<issuer>/api/mcp`. */
@@ -106,9 +110,11 @@ describe('mountMcp (HTTP)', () => {
     disableStartupBackfill();
 
     // Mismo orden que `main.ts`: cookieParser antes de `mountMcp`, y este antes de escuchar.
-    app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: false, logger: false });
+    app = await NestFactory.create<NestExpressApplication>(await loadAppModule(), {
+      abortOnError: false,
+      logger: false,
+    });
     app.use(cookieParser());
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.setGlobalPrefix('api');
     mountMcp(app);
     await app.listen(0, '127.0.0.1');

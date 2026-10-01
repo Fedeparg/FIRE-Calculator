@@ -9,11 +9,11 @@ import Stat from "@/shared/ui/Stat";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function InflationCalculator() {
   const t = useTranslations("calc.inflacion");
   const { formatEUR, formatPercent } = useFormat();
-  const tc = useTranslations("chart");
 
   const [amount, setAmount] = useNumberField("amount", 10000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
@@ -27,7 +27,7 @@ export default function InflationCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={4}
+      layout="sidebar"
       inputs={
         <>
           <NumberField label={t("amount")} value={amount} onChange={setAmount} step={1000} help={t("help.amount")} />
@@ -54,13 +54,13 @@ export default function InflationCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("nominalNeeded")} value={formatEUR(result.nominalNeeded)} highlight />
             <Stat label={t("realValue")} value={formatEUR(result.realValue)} />
             <Stat label={t("realValueInvested")} value={formatEUR(result.realValueInvested)} />
             <Stat label={t("lossPercent")} value={formatPercent(result.lossPercent)} />
             <Stat label={t("realReturn")} value={formatPercent(result.realReturn)} />
-          </div>
+          </StatGrid>
 
           <TimeSeriesChart
             title={t("chartTitle")}
@@ -73,14 +73,6 @@ export default function InflationCalculator() {
               { key: "realValue", name: t("seriesReal"), color: "var(--brand)" },
             ]}
             valueKey="realValue"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
         </>
       }

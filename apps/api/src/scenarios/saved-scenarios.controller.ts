@@ -13,13 +13,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
-import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
-import { SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto.js';
-import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
-import { SavedScenariosService, type SavedScenarioResponse } from './saved-scenarios.service.js';
+import { createSavedScenarioSchema, type CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
+import { savedScenariosQuerySchema, type SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto.js';
+import { updateSavedScenarioSchema, type UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
+import type { SavedScenarioResponse } from '@sextante/core/contracts';
+import { SavedScenariosService } from './saved-scenarios.service.js';
 
 /**
  * Escenarios guardados de calculadora. todos los endpoints están autenticados y el `userId`
@@ -33,13 +35,19 @@ export class SavedScenariosController {
 
   /** `?slug=fire-basico` filtra por calculadora; sin filtro, todos los del usuario. */
   @Get()
-  findAll(@CurrentUser() user: SessionUser, @Query() query: SavedScenariosQueryDto): Promise<SavedScenarioResponse[]> {
+  findAll(
+    @CurrentUser() user: SessionUser,
+    @Query(new ZodValidationPipe(savedScenariosQuerySchema)) query: SavedScenariosQueryDto,
+  ): Promise<SavedScenarioResponse[]> {
     return this.scenarios.findAllByUser(user.id, query.slug);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@CurrentUser() user: SessionUser, @Body() dto: CreateSavedScenarioDto): Promise<SavedScenarioResponse> {
+  create(
+    @CurrentUser() user: SessionUser,
+    @Body(new ZodValidationPipe(createSavedScenarioSchema)) dto: CreateSavedScenarioDto,
+  ): Promise<SavedScenarioResponse> {
     return this.scenarios.create(user.id, dto);
   }
 
@@ -47,7 +55,7 @@ export class SavedScenariosController {
   update(
     @CurrentUser() user: SessionUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateSavedScenarioDto,
+    @Body(new ZodValidationPipe(updateSavedScenarioSchema)) dto: UpdateSavedScenarioDto,
   ): Promise<SavedScenarioResponse> {
     return this.scenarios.update(user.id, id, dto);
   }

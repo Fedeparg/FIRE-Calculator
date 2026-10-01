@@ -1,6 +1,6 @@
 // Simulador FIRE Monte Carlo. Cada vida sigue una secuencia aleatoria de rentabilidades anuales
 // y el resultado es una probabilidad, no una fecha única. Dos fases en términos reales y pasos anuales:
-//   1. Acumulación: W = W·(1+r) + ahorro, hasta el número FIRE (como mucho `MAX_YEARS`).
+//   1. Acumulación: W = W·(1+r) + ahorro, hasta el número FIRE (como mucho `FIRE_SEARCH_MAX_YEARS`).
 //   2. Retiro: se retira el gasto al principio de cada año, W = (W − gasto)·(1+r); si no llega
 //      dentro de `retirementYears`, la vida fracasa.
 //
@@ -11,7 +11,7 @@
 // (Shiller); los bloques conservan rachas (1929-1932, 1973-1974…) y con ellas el riesgo de secuencia.
 // La mezcla acciones/bonos se rebalancea cada año.
 
-import { computeFire, MAX_YEARS } from "./fire.js";
+import { computeFire, FIRE_SEARCH_MAX_YEARS } from "./fire.js";
 import { HISTORICAL_RETURNS } from "../data/shiller-returns.js";
 import { mulberry32, normalGenerator, percentileSorted, type Rng } from "../random.js";
 
@@ -95,7 +95,7 @@ function step(
 ): void {
   if (state.retiredAt === null) {
     state.wealth = state.wealth * (1 + r) + params.annualSavings;
-    if (year <= MAX_YEARS && state.wealth >= params.fireNumber) state.retiredAt = year;
+    if (year <= FIRE_SEARCH_MAX_YEARS && state.wealth >= params.fireNumber) state.retiredAt = year;
     return;
   }
   if (state.depletedAt !== null) return;
@@ -136,9 +136,9 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
   const fireNumber = fire.fireNumber;
   const params = { annualSavings, annualExpenses, fireNumber };
 
-  const horizon = MAX_YEARS + retirementYears;
+  const horizon = FIRE_SEARCH_MAX_YEARS + retirementYears;
   // cada vida consume siempre el mismo número de rentabilidades: cambiar los años de retiro no baraja el azar y los escenarios son comparables
-  const drawsPerPath = MAX_YEARS + MAX_RETIREMENT_YEARS;
+  const drawsPerPath = FIRE_SEARCH_MAX_YEARS + MAX_RETIREMENT_YEARS;
   const returns = new Float64Array(drawsPerPath);
   const drawPath = historical
     ? historicalSampler(historical.returns, mulberry32(seed))
@@ -191,7 +191,7 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
   const yearsPercentiles: YearsPercentiles = { p10: yearsAt(10), p50: yearsAt(50), p90: yearsAt(90) };
 
   // la gráfica cubre la vida mediana: hasta que llega más los años de retiro
-  const chartEnd = Math.min(horizon, (yearsPercentiles.p50 ?? MAX_YEARS) + retirementYears);
+  const chartEnd = Math.min(horizon, (yearsPercentiles.p50 ?? FIRE_SEARCH_MAX_YEARS) + retirementYears);
   const series: MonteCarloPoint[] = [];
   for (let year = 0; year <= chartEnd; year++) {
     const sorted = wealthByYear[year].sort();

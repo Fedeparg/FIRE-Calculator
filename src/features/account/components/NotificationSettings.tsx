@@ -1,23 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import type { NotificationSettingsResponse } from "@sextante/core/contracts";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import { apiJson } from "@/shared/api/client";
+import { NO_STORE, apiJson } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
-
-/** Preferencias tal y como las devuelve `GET /api/account/notifications`. */
-type Settings = {
-  fireAlertsEnabled: boolean;
-  locale: "es" | "en";
-  lastFireMilestone: number | null;
-  goal: { name: string; updatedAt: string } | null;
-};
 
 const NOTIFICATIONS_PATH = "/api/account/notifications";
 // Constante de módulo: `useApiQuery` exige opciones estables entre renders.
-const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Avisos por email de los hitos del objetivo FIRE (25/50/75/100 %). Opt-in: la casilla arranca
@@ -29,27 +22,22 @@ const NO_STORE = { cache: "no-store" } as const;
 export default function NotificationSettings() {
   const t = useTranslations("account.notifications");
   const locale = useLocale() === "en" ? "en" : "es";
-  const query = useApiQuery<Settings>(NOTIFICATIONS_PATH, { init: NO_STORE });
+  const query = useApiQuery<NotificationSettingsResponse>(NOTIFICATIONS_PATH, { init: NO_STORE });
   // Lo guardado (respuesta del PATCH) manda sobre la carga inicial.
-  const [saved, setSaved] = useState<Settings | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
+  const [saved, setSaved] = useState<NotificationSettingsResponse | null>(null);
+  const save = useApiMutation();
 
   const settings = saved ?? (query.status === "ready" ? query.data : null);
   const state = settings ? "loaded" : query.status;
 
   async function toggle(enabled: boolean) {
-    setSaving(true);
-    setSaveError(false);
-    try {
-      setSaved(
-        await apiJson<Settings>(NOTIFICATIONS_PATH, { method: "PATCH", body: { fireAlertsEnabled: enabled, locale } }),
-      );
-    } catch {
-      setSaveError(true);
-    } finally {
-      setSaving(false);
-    }
+    const result = await save.run(() =>
+      apiJson<NotificationSettingsResponse>(NOTIFICATIONS_PATH, {
+        method: "PATCH",
+        body: { fireAlertsEnabled: enabled, locale },
+      }),
+    );
+    if (result.ok) setSaved(result.data);
   }
 
   return (
@@ -67,7 +55,7 @@ export default function NotificationSettings() {
               id="fire-alerts"
               type="checkbox"
               checked={settings.fireAlertsEnabled}
-              disabled={saving}
+              disabled={save.status === "pending"}
               onChange={(e) => void toggle(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
             />
@@ -90,7 +78,7 @@ export default function NotificationSettings() {
           {settings.fireAlertsEnabled && (
             <p className="text-xs text-muted">{t("language", { language: t(`languages.${settings.locale}`) })}</p>
           )}
-          {saveError && <p className="text-sm text-warning">{t("saveError")}</p>}
+          {save.status === "error" && <p className="text-sm text-warning">{t("saveError")}</p>}
           <p className="text-xs text-muted">{t("disclaimer")}</p>
         </>
       )}

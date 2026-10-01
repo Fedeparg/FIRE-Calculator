@@ -5,7 +5,7 @@ import {
   type FxPoint,
   type PricePoint,
   type SplitPoint,
-} from '@sextante/core/portfolio-history';
+} from '@sextante/core/portfolio/history-reconstruction';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
@@ -13,6 +13,7 @@ import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots
 import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
 import { PRICE_PROVIDER, type PriceHistory, type PriceProvider, type Quote } from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
+import { isoDate } from '../common/dates.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
 const FX_QUOTE = 'USD';
@@ -31,7 +32,7 @@ const SPLITS_REFRESH_DAYS = 7;
 const SPLITS_REFRESH_MAX_PER_RUN = 40;
 /** `YYYY-MM-DD` (UTC) de hace `days` días. */
 function daysAgo(days: number): string {
-  return new Date(Date.now() - days * MS_PER_DAY).toISOString().slice(0, 10);
+  return isoDate(new Date(Date.now() - days * MS_PER_DAY));
 }
 /** Pausa entre históricos seguidos: Yahoo rate-limita por IP (429). */
 const HISTORY_REQUEST_DELAY_MS = 500;

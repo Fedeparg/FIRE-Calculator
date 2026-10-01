@@ -1,14 +1,13 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsString } from 'class-validator';
+import { z } from 'zod';
 
 import { SCOPES_SUPPORTED } from '../oauth.constants.js';
 
 /** Cuerpo de la aprobación de consentimiento: a qué cliente y con qué scopes. */
-export class ConsentDto {
-  @IsString()
-  clientId!: string;
+export const consentSchema = z.strictObject({
+  clientId: z.string(),
+  scopes: z
+    .array(z.string().refine((scope) => SCOPES_SUPPORTED.includes(scope), { error: 'scope no soportado' }))
+    .min(1),
+});
 
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsIn(SCOPES_SUPPORTED, { each: true })
-  scopes!: string[];
-}
+export type ConsentDto = z.infer<typeof consentSchema>;

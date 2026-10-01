@@ -2,8 +2,8 @@
 #
 # PostgreSQL (volumen persistente) + servicio one-shot de migración + API NestJS.
 # El frontend Next se ejecuta de momento con `pnpm dev` (HMR) y proxea /api a la
-# API vía rewrites. La dockerización del web + Caddy/TLS llegará en el paso de
-# despliegue de producción.
+# API vía rewrites. El web dockerizado y el despliegue de producción (con un proxy
+# inverso externo que termina el TLS) viven en docker-compose.prod.yml.
 #
 # Uso:
 #   docker compose up -d --build   # migra y levanta postgres + api

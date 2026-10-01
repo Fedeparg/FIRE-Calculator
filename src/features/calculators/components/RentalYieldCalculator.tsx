@@ -8,6 +8,7 @@ import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function RentalYieldCalculator() {
   const t = useTranslations("calc.rentabilidad-alquiler");
@@ -47,7 +48,7 @@ export default function RentalYieldCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -110,14 +111,14 @@ export default function RentalYieldCalculator() {
         </>
       }
       results={
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatGrid columns={3}>
           <Stat label={t("netYield")} value={formatPercent(result.netYield)} highlight />
           <Stat label={t("grossYield")} value={formatPercent(result.grossYield)} />
           <Stat label={t("monthlyNetCashflow")} value={formatEUR(result.monthlyNetCashflow)} />
           <Stat label={t("effectiveRentIncome")} value={formatEUR(result.effectiveRentIncome)} />
           <Stat label={t("totalAnnualExpenses")} value={formatEUR(result.totalAnnualExpenses)} />
           <Stat label={t("netIncome")} value={formatEUR(result.netIncome)} />
-        </div>
+        </StatGrid>
       }
     />
   );

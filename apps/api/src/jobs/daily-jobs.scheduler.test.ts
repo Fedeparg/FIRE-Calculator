@@ -1,8 +1,8 @@
-import type { ConfigService } from '@nestjs/config';
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { fakeConfig } from '../../test/config.js';
 import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import type { PricesService, RefreshSummary } from '../prices/prices.service.js';
@@ -22,7 +22,6 @@ function setup(env: Record<string, string> = {}) {
   const registry = {
     addCronJob: (name: string, job: CronJob) => jobs.set(name, job),
   } as unknown as SchedulerRegistry;
-  const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
     refreshStaleSplits: vi.fn(() => Promise.resolve()),
@@ -39,7 +38,7 @@ function setup(env: Record<string, string> = {}) {
     prices as unknown as PricesService,
     snapshots as unknown as PortfolioSnapshotsService,
     fireAlerts as unknown as FireAlertsService,
-    config,
+    fakeConfig(env),
     registry,
   );
   created.push(jobs);
