@@ -207,7 +207,9 @@ export class McpService {
           'importes se guardan en EUR y se reexpresan a la divisa `display` con las tasas de ' +
           'CADA día. La serie se reconstruye desde la primera operación de la cartera (hasta 5 ' +
           'años, con la cantidad que se tenía cada día) y los días posteriores son capturas ' +
-          'reales diarias; los puntos reconstruidos llevan `estimated: true`. Una cuenta ' +
+          'reales diarias; los puntos reconstruidos llevan `estimated: true`. Pueden aparecer ' +
+          'tramos estimados intercalados entre capturas reales: ocurre al registrar operaciones ' +
+          'antiguas, que rehacen las capturas posteriores a su fecha. Una cuenta ' +
           'recién creada tiene pocos puntos. Solo lectura.',
         inputSchema: {
           days: z

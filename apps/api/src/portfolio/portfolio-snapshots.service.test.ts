@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import type { Database } from '../db/database.module.js';
 import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots } from '../db/schema.js';
+import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
@@ -420,6 +421,27 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
         const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(3));
         expect(row).toMatchObject({ estimated: false, invested: '999.00000000' });
+      });
+
+      it('editar solo el nombre o el bróker (el formulario reenvía importes) no invalida las reales', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '999.00000000');
+        const events = new EventEmitter2();
+        const emitted: unknown[] = [];
+        events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
+        const prices = new PricesService(db, silentProvider, identityResolver);
+        const editor = new PositionsService(db, prices, new PositionLotsService(db, new EventEmitter2()), events);
+
+        // Mismos importes que ya tiene la posición, como hace `PositionForm`.
+        await editor.update(userId, id, { name: 'Renamed', broker: 'Other', quantity: 10, avgPrice: 100 });
+        await snapshots.backfillUser(userId);
+
+        expect(emitted).toEqual([]);
+        for (const row of (await rowsOf(userId)).filter((r) => r.date >= daysAgo(5))) {
+          expect(row, row.date).toMatchObject({ estimated: false, invested: '999.00000000' });
+        }
       });
 
       it('un lote editado tras la captura la invalida (p. ej. cantidad corregida)', async () => {

@@ -221,8 +221,8 @@ export class PortfolioSnapshotsService {
    *
    * Las filas se guardan con `estimated: true`: son una reconstrucción con los cierres de la
    * caché, no una captura de ese día (p. ej. el instrumento pudo cotizar a otra hora). El
-   * frontend lo señala. Una captura REAL (`estimated: false`) nunca se pisa (el upsert solo
-   * actualiza filas estimadas), y las estimadas que ya no salen de la reconstrucción se retiran
+   * frontend lo señala. Una captura REAL (`estimated: false`) solo se pisa si ha quedado
+   * obsoleta (ver más abajo; el upsert solo actualiza filas estimadas o esas reales), y las estimadas que ya no salen de la reconstrucción se retiran
    * (incluidas las que un backfill antiguo, con la cantidad de hoy, escribió antes de la compra).
    * Si la reconstrucción sale vacía (aún sin precios porque `primeSymbol` sigue trayendo
    * histórico en segundo plano) no se toca nada: una pasada posterior la completa.

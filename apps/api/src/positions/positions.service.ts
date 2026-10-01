@@ -15,7 +15,7 @@ import { CombinePositionDto } from './dto/combine-position.dto.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
 import { UpdatePositionDto } from './dto/update-position.dto.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
-import { PositionLotsService, todayUtc } from './position-lots.service.js';
+import { PositionLotsService, sameAmount, todayUtc } from './position-lots.service.js';
 import {
   LOT_CHANGED_EVENT,
   POSITION_CREATED_EVENT,
@@ -190,7 +190,11 @@ export class PositionsService {
       await this.assertCanUseTickerBroker(userId, ticker, broker, id);
     }
 
-    const declaresAmounts = dto.quantity !== undefined || dto.avgPrice !== undefined;
+    // El formulario envía siempre cantidad y precio medio: solo cuenta como declaración si algún
+    // importe difiere del actual (cambiar el nombre o el bróker no debe tocar los lotes).
+    const declaresAmounts =
+      (dto.quantity !== undefined && !sameAmount(dto.quantity.toString(), current.quantity)) ||
+      (dto.avgPrice !== undefined && !sameAmount(dto.avgPrice.toString(), current.avgPrice));
 
     const row = await this.db.transaction(async (tx) => {
       const [updated] = await tx

@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { positionLots, positions } from '../db/schema.js';
+import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import type { PricesService } from '../prices/prices.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
@@ -145,6 +146,26 @@ describe('ImportsService (integración con Postgres)', () => {
     const all = await positionsOf(userId);
     expect(all).toHaveLength(1);
     expect(all[0]).toMatchObject({ id: existing.id, quantity: '2.000000', avgPrice: '100.000000' });
+  });
+
+  it('importar sobre una posición existente emite LOT_CHANGED_EVENT (y sobre una nueva, no)', async () => {
+    const events = new EventEmitter2();
+    const emitted: unknown[] = [];
+    events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
+    const svc = new ImportsService(db, new PositionLotsService(db, new EventEmitter2()), pricesStub, events);
+    const userId = await insertUser(db, 'a@example.com');
+
+    await svc.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1)));
+    expect(emitted).toEqual([]);
+
+    const second = trade('BUY', ETF, '2', '100', 2);
+    await svc.confirm(userId, csv(second));
+    const [position] = await positionsOf(userId);
+    expect(emitted).toEqual([{ userId, positionId: position.id }]);
+
+    // Reimportar sin lotes nuevos no emite.
+    await svc.confirm(userId, csv(second));
+    expect(emitted).toHaveLength(1);
   });
 
   it('una venta parcial deja el precio medio y la cantidad restante correctos', async () => {
