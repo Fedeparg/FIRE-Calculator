@@ -1,0 +1,123 @@
+/**
+ * Tipos y constantes de la cartera, compartidos por el server component y el island de
+ * cliente. NO debe importar `server-only` ni `next/headers`: tiene que poder cargarse
+ * en el bundle del cliente. El fetch server-side vive en `src/features/portfolio/api.server.ts`.
+ */
+
+/** Precio de un instrumento tal y como lo sirve `GET /api/prices` (lectura de nuestra DB). */
+export type PriceInfo = {
+  symbol: string;
+  close: number;
+  currency: string;
+  date: string;
+  /** Instante ISO en que se leyó de la fuente (con el refresco intradía, cambia en el día). */
+  fetchedAt: string;
+  /** Cierre de la sesión anterior, o null si es el primer dato del símbolo. */
+  previousClose: number | null;
+};
+
+/** Tasas FX que sirve `GET /api/fx`: USD por unidad de cada divisa (USD = 1). */
+export type FxRates = {
+  rates: Record<string, number>;
+  asOf: string | null;
+};
+
+/** Tipo de instrumento normalizado que sirve `GET /api/instruments/search`. */
+export type InstrumentType = "equity" | "etf" | "fund" | "crypto" | "index" | "currency" | "other";
+
+/** Un resultado del buscador de instrumentos: símbolo exacto a guardar + cómo distinguirlo. */
+export type InstrumentSearchResult = {
+  symbol: string;
+  name: string;
+  type: InstrumentType;
+  exchange: string | null;
+};
+
+/** Una posición tal y como la devuelve la API (números ya parseados, fecha ISO). */
+export type Position = {
+  id: string;
+  ticker: string;
+  name: string | null;
+  quantity: number;
+  avgPrice: number;
+  broker: string | null;
+  currency: string;
+  /** Derivado: se registra pero no se valora ni entra en los totales de la cartera. */
+  isDerivative: boolean;
+  createdAt: string;
+};
+
+/** Tipo de operación de un lote: compra o venta. */
+export type PositionLotKind = "buy" | "sell";
+
+/**
+ * Una operación concreta del histórico de una posición, tal y como la devuelve
+ * `GET /api/positions/:positionId/lots`.
+ *
+ * IMPORTANTE: un lote NO lleva divisa propia. Sus importes están siempre en la divisa de la
+ * posición a la que pertenece (`Position.currency`), que es lo que permite sumarlos entre sí
+ * sin convertir nada.
+ */
+export type PositionLot = {
+  id: string;
+  positionId: string;
+  kind: PositionLotKind;
+  quantity: number;
+  price: number;
+  /** Comisiones y gastos de la operación. No entran en el precio medio; sí en la fiscalidad. */
+  fees: number;
+  /** Fecha de la operación (`YYYY-MM-DD`). */
+  tradedAt: string;
+  note: string | null;
+  createdAt: string;
+};
+
+/** Cuerpo que espera la API de lotes (`POST`/`PATCH .../lots`). */
+export type LotPayload = {
+  kind: PositionLotKind;
+  quantity: number;
+  price: number;
+  fees: number;
+  tradedAt: string;
+  note?: string;
+};
+
+/** Cuerpo de alta/edición de una posición (`POST /api/positions`, `PATCH /api/positions/:id`). */
+export type PositionPayload = {
+  ticker: string;
+  name?: string;
+  quantity: number;
+  avgPrice: number;
+  broker?: string;
+  currency: string;
+};
+
+/** Un punto de la serie tal y como lo sirve la API (importes ya en la divisa pedida). */
+export interface HistoryPointDto {
+  /** Fecha del snapshot (`YYYY-MM-DD`). */
+  date: string;
+  /** Coste de las posiciones valoradas; `null` si ese día no era convertible. */
+  invested: number | null;
+  /** Valor de mercado; `null` si ese día no era convertible. */
+  marketValue: number | null;
+  pnlAbs: number | null;
+  pnlPct: number | null;
+  valuedPositions: number;
+  totalPositions: number;
+  /**
+   * `true` si este punto es ANTERIOR a que el usuario empezara a registrar su cartera en
+   * Sextante: una reconstrucción a partir de las operaciones (cantidad y coste de aquel día
+   * según los lotes, con los cierres de la caché). Ver
+   * `apps/api/src/portfolio/portfolio-snapshots.service.ts`.
+   */
+  estimated: boolean;
+}
+
+/** Respuesta completa de `GET /api/portfolio/history`. */
+export interface PortfolioHistoryDto {
+  /** Divisa en la que vienen los importes. */
+  display: string;
+  /** Divisa en la que están almacenados (siempre EUR). */
+  base: string;
+  points: HistoryPointDto[];
+}

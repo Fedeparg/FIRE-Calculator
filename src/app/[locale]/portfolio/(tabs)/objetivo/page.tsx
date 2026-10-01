@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import PortfolioGoalTab from "@/components/portfolio/PortfolioGoalTab";
+import PortfolioGoalTab from "@/features/portfolio/components/PortfolioGoalTab";
 
 type Props = { params: Promise<{ locale: string }> };
 

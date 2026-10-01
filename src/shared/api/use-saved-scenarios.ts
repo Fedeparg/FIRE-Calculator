@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { activeScenario } from "@/core/portfolio-goal-scenario";
+import { activeScenario } from "@/features/portfolio/model/goal-scenario";
 import { useApiQuery } from "./use-api-query";
 import {
   SCENARIOS_QUERY_INIT,
