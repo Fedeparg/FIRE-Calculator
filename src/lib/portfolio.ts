@@ -66,6 +66,8 @@ export type Position = {
   avgPrice: number;
   broker: string | null;
   currency: string;
+  /** Derivado: se registra pero no se valora ni entra en los totales de la cartera. */
+  isDerivative: boolean;
   createdAt: string;
 };
 

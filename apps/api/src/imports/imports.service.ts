@@ -151,7 +151,8 @@ export class ImportsService {
     }
 
     if (created.length > 0) {
-      void this.primeInBackground(userId, created);
+      // Los derivados no se valoran: no se piden sus precios.
+      void this.primeInBackground(userId, created.filter((p) => !p.isDerivative));
     }
 
     return {
