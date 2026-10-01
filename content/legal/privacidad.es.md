@@ -48,6 +48,10 @@ cartera en tu nombre. Esta conexión usa el estándar **OAuth 2.1**:
 - Al usar una aplicación conectada, **compartes tus datos de cartera con el
   proveedor de esa aplicación**, que tú eliges; ese tratamiento se rige por la
   política de privacidad de dicho proveedor.
+- La aplicación también puede usar las **calculadoras** de Sextante (hipotecas,
+  IRPF, FIRE…). Los valores que les envía se usan solo para devolver el resultado
+  y **no se guardan**; como en el resto de herramientas, solo registramos qué
+  herramienta se usó, cuándo y desde qué aplicación.
 - Puedes ver y **revocar** el acceso de cualquier aplicación en cualquier momento
   desde *Mi cuenta → Aplicaciones conectadas*.
 - **Base legal:** tu **consentimiento**, retirable en cualquier momento.

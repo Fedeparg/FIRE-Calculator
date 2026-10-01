@@ -80,7 +80,8 @@ In **My account** (also in the header) you will find:
   25, 50, 75 and 100% of your goal. One notice per milestone, never repeated, with
   one-click unsubscribe from any email.
 - **Connected applications**: connect an MCP-compatible AI assistant (Claude,
-  ChatGPT…) so it can read or change your portfolio for you, and revoke access
+  ChatGPT…) so it can read or change your portfolio for you, prepare the year's
+  realised gains for your tax return or run any of the calculators, and revoke access
   whenever you like.
 - **Export my data** and **Delete my account**.
 

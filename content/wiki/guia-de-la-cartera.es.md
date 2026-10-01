@@ -80,8 +80,9 @@ En **Mi cuenta** (también en la cabecera) tienes:
   50, 75 y 100 % de tu objetivo. Un aviso por hito, sin repetir, y baja en un clic
   desde cualquier correo.
 - **Aplicaciones conectadas**: conecta un asistente de IA compatible con MCP (Claude,
-  ChatGPT…) para que lea o modifique tu cartera por ti, y revoca el acceso cuando
-  quieras.
+  ChatGPT…) para que lea o modifique tu cartera por ti, prepare tus plusvalías del
+  ejercicio para la Renta o haga cuentas con cualquiera de las calculadoras, y revoca
+  el acceso cuando quieras.
 - **Exportar mis datos** y **Borrar mi cuenta**.
 
 ## ¿Y lo nuevo?
