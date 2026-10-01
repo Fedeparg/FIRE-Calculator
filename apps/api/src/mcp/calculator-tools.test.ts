@@ -4,13 +4,9 @@ import { computeMortgage } from '@sextante/core/calculators/hipoteca';
 import { simulateFire, type MonteCarloInput } from '@sextante/core/calculators/fire-montecarlo';
 import { estimateNetSalary } from '@sextante/core/fiscal/irpf';
 
-import {
-  CALCULATORS,
-  hasCalculator,
-  listCalculators,
-  runCalculator,
-  UnknownCalculatorError,
-} from './calculator-tools.js';
+import { CALCULATORS } from '@sextante/core/calculators/schemas';
+
+import { hasCalculator, listCalculators, runCalculator, UnknownCalculatorError } from './calculator-tools.js';
 import { SAMPLES } from './calculator-samples.js';
 
 const slugs = Object.keys(CALCULATORS);

@@ -3,8 +3,9 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { CALCULATORS } from '@sextante/core/calculators/schemas';
+
 import { SCOPE_PORTFOLIO_READ } from '../oauth/oauth.constants.js';
-import { CALCULATORS } from './calculator-tools.js';
 import { McpService } from './mcp.service.js';
 
 /**

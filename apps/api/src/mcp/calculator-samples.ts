@@ -90,4 +90,3 @@ export const SAMPLES: Record<string, Record<string, unknown>> = {
   inflacion: { amount: 1000, annualRate: 3, years: 10 },
   'salud-financiera': { emergencyFund: 3, savingsRate: 2, debt: 3 },
 };
-

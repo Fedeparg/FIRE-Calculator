@@ -34,8 +34,17 @@ const NEXT_LINK = {
   message: "Usa `Link` de `@/i18n/navigation` para conservar el prefijo de idioma.",
 };
 
+// zod solo lo usa el servidor (MCP): los esquemas de core viven en `*.schema.ts` y en el registro
+// `calculators/schemas` precisamente para que el frontend no los arrastre al bundle del cliente.
+const CORE_SERVER_ONLY = {
+  group: ["@sextante/core/**/*.schema", "@sextante/core/**/schema-helpers", "@sextante/core/calculators/schemas"],
+  message:
+    "Los esquemas zod de core son solo del servidor (MCP): importarlos mete zod en el bundle del cliente. " +
+    "El frontend usa los tipos y las funciones `compute*` de la calculadora.",
+};
+
 const restrictImports = (groups) => ({
-  "no-restricted-imports": ["error", { paths: [NEXT_LINK], patterns: groups }],
+  "no-restricted-imports": ["error", { paths: [NEXT_LINK], patterns: [...groups, CORE_SERVER_ONLY] }],
 });
 
 const featureBoundaries = FEATURES.map((feature) => {
@@ -60,6 +69,12 @@ const featureBoundaries = FEATURES.map((feature) => {
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  // Va antes que las demás reglas de imports de `src/`: cada una de ellas ya incluye este patrón
+  // (ESLint no fusiona las opciones de una misma regla, gana la última que aplica).
+  {
+    files: ["src/**/*.{ts,tsx}"],
+    rules: { "no-restricted-imports": ["error", { patterns: [CORE_SERVER_ONLY] }] },
+  },
   ...featureBoundaries,
   {
     files: ["src/shared/**/*.{ts,tsx}"],
