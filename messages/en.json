@@ -1193,6 +1193,12 @@
       "asset": "Asset",
       "weight": "Weight",
       "gain": "Gain",
+      "gainToday": "Today's gain",
+      "gainModeLabel": "Gain shown",
+      "gainMode": {
+        "today": "Today",
+        "total": "Total"
+      },
       "sortLabel": "Sort by",
       "sort": {
         "invested": "Amount invested",
@@ -1525,6 +1531,7 @@
     },
     "detail": {
       "priceOn": "Price ({date})",
+      "todayGain": "Today",
       "viewLabel": "What to show for this position",
       "viewLots": "Transactions",
       "viewSale": "Simulate a sale",

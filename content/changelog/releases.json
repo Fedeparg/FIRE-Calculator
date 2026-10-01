@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "f5f1c360",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el plan FIRE activo",
+            "en": "describe the active FIRE plan"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "e880bd31",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "en Posiciones puedes ver la ganancia de hoy además de la total, también en el detalle de cada posición",
+            "en": "Positions can show today's gain as well as the total gain, also in each position's details"
+          },
+          "hidden": false
+        },
+        {
           "hash": "803445e6",
           "type": "feat",
           "scope": "portfolio",

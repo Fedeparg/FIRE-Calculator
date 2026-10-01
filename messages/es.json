@@ -1193,6 +1193,12 @@
       "asset": "Activo",
       "weight": "Peso",
       "gain": "Ganancia",
+      "gainToday": "Ganancia de hoy",
+      "gainModeLabel": "Ganancia mostrada",
+      "gainMode": {
+        "today": "Hoy",
+        "total": "Total"
+      },
       "sortLabel": "Ordenar por",
       "sort": {
         "invested": "Lo invertido",
@@ -1525,6 +1531,7 @@
     },
     "detail": {
       "priceOn": "Precio ({date})",
+      "todayGain": "Hoy",
       "viewLabel": "Qué ver de esta posición",
       "viewLots": "Operaciones",
       "viewSale": "Simular venta",

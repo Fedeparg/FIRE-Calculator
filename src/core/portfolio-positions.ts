@@ -134,3 +134,34 @@ export function dailyMovers(
   }
   return moves.sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, limit);
 }
+
+/** Ganancia del día de una posición: importe en SU divisa y variación del precio en %. */
+export interface DailyGain {
+  abs: number;
+  pct: number;
+}
+
+/**
+ * Ganancia de hoy de una posición: cantidad × (cierre − cierre anterior), convertida a la
+ * divisa de la posición (el precio puede cotizar en otra). El % es el del PRECIO, el mismo que
+ * usa `dailyMovers`. Devuelve `null` si no hay dato que contar: sin precio, sin cierre
+ * anterior (primer dato), con un cierre anterior no positivo, sin cantidad abierta o sin tasa
+ * para convertir. Una posición cerrada no gana nada hoy porque no tiene nada en cartera.
+ */
+export function dailyGain(
+  position: ValuablePosition,
+  price: (DailyPrice & ClosePrice) | undefined,
+  rates: Record<string, number>,
+): DailyGain | null {
+  if (!price || price.previousClose === null || !(price.previousClose > 0)) return null;
+  if (!(position.quantity > 0)) return null;
+  const abs = convertCurrency(
+    position.quantity * (price.close - price.previousClose),
+    price.currency,
+    position.currency,
+    rates,
+  );
+  const pct = (price.close / price.previousClose - 1) * 100;
+  if (abs === null || !Number.isFinite(abs) || !Number.isFinite(pct)) return null;
+  return { abs, pct };
+}
