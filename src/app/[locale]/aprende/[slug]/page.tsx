@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { routing } from "@/i18n/routing";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { SITE_NAME } from "@/shared/seo/site";
 import { articleSchema } from "@/shared/seo/json-ld";
 import { getArticle, getArticleSlugs } from "@/features/wiki/content";

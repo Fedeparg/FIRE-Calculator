@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { getChangelog } from "@/features/changelog/content";
 import ChangelogTimeline from "@/features/changelog/components/ChangelogTimeline";
 import { buildMetadata } from "@/shared/seo/seo";

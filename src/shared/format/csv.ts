@@ -20,7 +20,7 @@
  */
 
 import { formatDecimalInput } from "./number-input";
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/i18n/types";
 
 /** Marca de orden de bytes UTF-8. Se antepone al contenido al construir el fichero. */
 export const UTF8_BOM = "\uFEFF";

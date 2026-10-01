@@ -1,7 +1,7 @@
 import { useLocale } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { breadcrumbSchema, type BreadcrumbItem } from "@/shared/seo/json-ld";
 import JsonLd from "./JsonLd";
 

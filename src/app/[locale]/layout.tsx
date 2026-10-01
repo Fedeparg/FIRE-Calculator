@@ -4,7 +4,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { SITE_NAME, SITE_URL } from "@/shared/seo/site";
 import { organizationSchema, websiteSchema } from "@/shared/seo/json-ld";
 import JsonLd from "@/shared/seo/JsonLd";

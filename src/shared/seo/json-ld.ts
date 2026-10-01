@@ -1,4 +1,4 @@
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/i18n/types";
 import { absoluteUrl, SITE_NAME } from "./site";
 import { localizedPath } from "./seo";
 

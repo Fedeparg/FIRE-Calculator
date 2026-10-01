@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
 import { CALCULATORS } from "@/features/calculators/registry";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { getRelatedCalculatorSlugs } from "../relatedArticles";
 
 type Props = {

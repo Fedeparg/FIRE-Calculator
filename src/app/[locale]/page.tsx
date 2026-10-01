@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { CALCULATORS } from "@/features/calculators/registry";
-import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
+import { CATEGORIES, type CategoryId, type Locale } from "@/i18n/types";
 import { buildMetadata } from "@/shared/seo/seo";
 import Hero from "@/features/landing/components/Hero";
 import Pillars from "@/features/landing/components/Pillars";

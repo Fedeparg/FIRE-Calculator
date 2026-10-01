@@ -1,7 +1,7 @@
 import { useLocale } from "next-intl";
 
 import { getFormatters, type Formatters } from "@/shared/format/format";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 
 /**
  * Devuelve el juego de formateadores (`formatCurrency`, `formatPercent`, `currencyLabel`…)

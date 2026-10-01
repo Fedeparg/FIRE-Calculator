@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 
 import { formatLongDate } from "@/shared/format/format";
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/i18n/types";
 
 import type { ChangelogRelease } from "../content";
 

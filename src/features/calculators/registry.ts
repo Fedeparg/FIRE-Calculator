@@ -1,4 +1,4 @@
-import type { CalculatorMeta } from "@/core/types";
+import type { CalculatorMeta } from "@/i18n/types";
 
 // Catálogo completo de calculadoras del producto.
 // Cada entrada es una calculadora implementada y navegable en /calculadoras/<slug>.

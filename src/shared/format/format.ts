@@ -8,7 +8,7 @@
 // `getFormatters(locale)` memoiza un juego por idioma: `Intl.NumberFormat` es caro de crear,
 // así que se construye una sola vez por locale y se reutiliza en todos los renders.
 
-import { type Locale } from "@/core/types";
+import { type Locale } from "@/i18n/types";
 
 /** Idioma de la UI → locale de `Intl`. `en-GB` y `en-US` son idénticos para números/moneda. */
 const INTL_LOCALE: Record<Locale, string> = { es: "es-ES", en: "en-GB" };

@@ -6,7 +6,7 @@ import path from "node:path";
 import matter from "gray-matter";
 
 import { renderMarkdown } from "@/features/wiki/markdown";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 
 /**
  * Novedades escritas a mano: una entrega por día, `content/changelog/<YYYY-MM-DD>.<locale>.md`.

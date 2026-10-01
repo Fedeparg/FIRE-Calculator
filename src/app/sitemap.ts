@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { CALCULATORS } from "@/features/calculators/registry";
-import { LOCALES } from "@/core/types";
+import { LOCALES } from "@/i18n/types";
 import { getArticleSlugs, getContentUpdatedDates, getLegalSlugs } from "@/features/wiki/content";
 import { getChangelogLastUpdated } from "@/features/changelog/content";
 import { absoluteUrl } from "@/shared/seo/site";

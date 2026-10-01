@@ -13,7 +13,7 @@ import {
   type RealisedGainsCurrencyGroup,
 } from "@sextante/core/fiscal/realised-gains";
 import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import type { Position, PositionLot } from "@sextante/core/portfolio/types";

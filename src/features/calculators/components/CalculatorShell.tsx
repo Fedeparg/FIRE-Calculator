@@ -1,6 +1,6 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 import { SITE_NAME } from "@/shared/seo/site";
 import { calculatorSchema } from "@/shared/seo/json-ld";
 import CalculatorStateProvider from "./CalculatorState";

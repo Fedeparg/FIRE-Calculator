@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { asLocale, CATEGORIES, LOCALES, type Locale } from "@/core/types";
+import { asLocale, CATEGORIES, LOCALES, type Locale } from "@/i18n/types";
 import { CALCULATORS } from "@/features/calculators/registry";
 import { SITE_NAME } from "./site";
 

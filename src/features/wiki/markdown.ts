@@ -7,7 +7,7 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 
 import { localizeHref } from "@/i18n/localize-href";
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/i18n/types";
 
 /** Nodo mínimo del árbol HTML (hast) que recorre `rehypeLocalizeLinks`. */
 type HastNode = {

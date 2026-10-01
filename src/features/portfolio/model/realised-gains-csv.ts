@@ -5,7 +5,7 @@
  */
 
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
-import type { Locale } from "@/core/types";
+import type { Locale } from "@/i18n/types";
 import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
 
 /** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */

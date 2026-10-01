@@ -6,7 +6,7 @@ import path from "node:path";
 import matter from "gray-matter";
 
 import { renderMarkdown } from "./markdown";
-import { asLocale } from "@/core/types";
+import { asLocale } from "@/i18n/types";
 
 /** Niveles de dificultad usados para agrupar los artículos en el índice. */
 export const WIKI_LEVELS = ["basico", "intermedio", "avanzado"] as const;
