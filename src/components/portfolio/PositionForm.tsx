@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { trackEvent } from "@/components/analytics/track";
 import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
@@ -146,6 +147,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
         } else {
           onCreated(saved);
           resetForm();
+          trackEvent({ name: "position-added" });
         }
         return;
       }

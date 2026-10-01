@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
+import { trackEvent } from "@/components/analytics/track";
 import {
   DONATION_MAX_EUR,
   DONATION_MIN_EUR,
@@ -35,6 +36,7 @@ export default function DonationWidget() {
       });
       if (!res.ok) throw new Error("checkout failed");
       const { url } = (await res.json()) as { url: string };
+      trackEvent({ name: "donation-checkout-started" });
       window.location.href = url;
     } catch {
       setStatus("error");

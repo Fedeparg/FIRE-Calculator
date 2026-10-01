@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { trackEvent } from "@/components/analytics/track";
 import { useCalculatorState } from "./CalculatorState";
 import ScenarioPanel from "./ScenarioPanel";
 
@@ -43,6 +44,7 @@ export default function CalculatorActions() {
     try {
       await navigator.clipboard.writeText(href);
       setCopyStatus("copied");
+      trackEvent({ name: "share-link-copied", data: { calculator: state.slug } });
     } catch {
       // El portapapeles puede estar bloqueado (permiso denegado, contexto no seguro).
       setCopyStatus("error");

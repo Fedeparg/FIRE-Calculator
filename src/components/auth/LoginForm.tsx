@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { trackEvent } from "@/components/analytics/track";
+
 type Status = "idle" | "sending" | "sent" | "error";
 
 /** Formulario de login por magic link: pide el email y solicita el enlace. */
@@ -30,6 +32,7 @@ export default function LoginForm() {
         body: JSON.stringify({ email }),
       });
       setStatus(res.ok ? "sent" : "error");
+      if (res.ok) trackEvent({ name: "login-link-requested" });
     } catch {
       setStatus("error");
     }

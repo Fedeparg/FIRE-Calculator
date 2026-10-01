@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { trackEvent } from "@/components/analytics/track";
 import { Link } from "@/i18n/navigation";
 import {
   MAX_SCENARIOS_PER_USER,
@@ -114,6 +115,7 @@ export default function ScenarioPanel() {
         // Más recientes primero, igual que el orden del backend.
         setScenarios((prev) => [created, ...prev]);
         setName("");
+        trackEvent({ name: "scenario-saved", data: { calculator: slug } });
       } else {
         setErrorKey(await scenarioErrorKeyForResponse(res));
       }
