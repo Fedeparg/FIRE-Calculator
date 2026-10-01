@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -23,6 +23,17 @@ export default function UserMenu() {
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLUListElement>(null);
+  // Por defecto el panel crece hacia la izquierda desde el botón. Si el botón cae al principio
+  // de una línea (pantallas estrechas), eso lo sacaría de la pantalla: entonces crece hacia la
+  // derecha.
+  const [alignLeft, setAlignLeft] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!open || !buttonRef.current || !panelRef.current) return;
+    const button = buttonRef.current.getBoundingClientRect();
+    setAlignLeft(button.right - panelRef.current.offsetWidth < 8);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +79,8 @@ export default function UserMenu() {
       {open && (
         <ul
           id={panelId}
-          className="absolute right-0 z-20 mt-2 flex w-48 flex-col rounded-xl border border-border bg-surface p-1 shadow-lg"
+          ref={panelRef}
+          className={`absolute ${alignLeft ? "left-0" : "right-0"} z-20 mt-2 flex w-48 flex-col rounded-xl border border-border bg-surface p-1 shadow-lg`}
         >
           <li>
             <Link
