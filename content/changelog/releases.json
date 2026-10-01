@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "69061cff",
+          "type": "test",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "desactiva el cron intradía en los tests HTTP",
+            "en": "turn off the intraday cron in HTTP tests"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "6a9fee34",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el histórico rehecho tras importar operaciones antiguas",
+            "en": "describe the rebuilt history after importing past trades"
+          },
+          "hidden": true
+        },
+        {
           "hash": "67d8f245",
           "type": null,
           "scope": null,
