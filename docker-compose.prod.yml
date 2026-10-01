@@ -181,7 +181,7 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      DATABASE_URL: postgresql://umami:${ANALYTICS_DB_PASSWORD}@analytics-db:5432/umami
+      DATABASE_URL: postgresql://umami:${ANALYTICS_DB_PASSWORD:?define ANALYTICS_DB_PASSWORD en el .env}@analytics-db:5432/umami
       APP_SECRET: ${ANALYTICS_APP_SECRET:?define ANALYTICS_APP_SECRET en el .env (openssl rand -base64 48)}
       # No avisar de versiones nuevas ni mandar telemetría a umami.is.
       DISABLE_UPDATES: '1'
