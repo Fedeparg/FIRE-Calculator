@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, LOCALES, type Locale } from "./types";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "../core/types";
 
 /**
  * Enlace interno del contenido (wiki, legal) adaptado al idioma de la página. Los Markdown
