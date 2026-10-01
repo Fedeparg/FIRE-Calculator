@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "649d0d9e",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la gráfica de evolución llega hasta hoy con el valor actual de tu cartera, sin esperar a la captura de la noche",
+            "en": "the history chart now reaches today with your portfolio’s current value, without waiting for the nightly snapshot"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "f62cb1f9",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura el arreglo del test",
+            "en": "curate the test fix"
+          },
+          "hidden": true
+        },
+        {
           "hash": "69061cff",
           "type": "test",
           "scope": "api",
