@@ -20,7 +20,10 @@ describe("runApiQuery", () => {
     await runApiQuery("/api/x", { cache: "no-store" }, controller.signal, sink);
 
     expect(states).toEqual([{ status: "ready", data: { n: 1 } }]);
-    expect(fetchMock).toHaveBeenCalledWith("/api/x", expect.objectContaining({ cache: "no-store", signal: controller.signal }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/x",
+      expect.objectContaining({ cache: "no-store", signal: controller.signal }),
+    );
   });
 
   it("emits error with an ApiError on HTTP failure", async () => {

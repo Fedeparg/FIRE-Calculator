@@ -40,7 +40,10 @@ export async function runApiQuery<T>(
  * anterior y vuelve a `loading`. Por diseño no hay caché ni dedupe: para este volumen de
  * llamadas no compensa una dependencia (SWR / TanStack Query).
  */
-export function useApiQuery<T>(path: string | null, options?: ApiQueryOptions): ApiQueryState<T> & { refetch: () => void } {
+export function useApiQuery<T>(
+  path: string | null,
+  options?: ApiQueryOptions,
+): ApiQueryState<T> & { refetch: () => void } {
   const init = options?.init;
   // `state` se asocia a la clave de la petición que lo produjo: al cambiar `path` o hacer
   // `refetch` la clave cambia y el estado derivado vuelve a "loading" sin fijar estado de

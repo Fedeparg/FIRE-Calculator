@@ -46,14 +46,25 @@ async function readErrorCode(res: Response): Promise<string | undefined> {
   return undefined;
 }
 
+/** Opciones de las llamadas: como `RequestInit`, pero `body` es un valor JSON (se serializa aquí). */
+export type ApiJsonInit = Omit<RequestInit, "body"> & { body?: unknown };
+
 /**
  * `fetch` same-origin que lanza `ApiError` si la respuesta no es 2xx o si hay fallo de red.
- * Devuelve la `Response` para los casos que no son JSON (descargas en blob).
+ * Si hay `body`, lo serializa y añade `Content-Type: application/json`. Devuelve la `Response`
+ * para los casos en que no interesa el cuerpo (acciones que solo confirman) o no es JSON
+ * (descargas en blob).
  */
-export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+export async function apiFetch(path: string, init?: ApiJsonInit): Promise<Response> {
+  const { body, headers, ...rest } = init ?? {};
+  const hasJsonBody = body !== undefined;
   let res: Response;
   try {
-    res = await fetch(path, init);
+    res = await fetch(path, {
+      ...rest,
+      headers: hasJsonBody ? { "Content-Type": "application/json", ...headers } : headers,
+      body: hasJsonBody ? JSON.stringify(body) : undefined,
+    });
   } catch (error) {
     if (isAbortError(error)) throw error;
     // La promesa de fetch solo rechaza por fallo de red/conexión.
@@ -63,22 +74,12 @@ export async function apiFetch(path: string, init?: RequestInit): Promise<Respon
   return res;
 }
 
-/** Opciones de `apiJson`: como `RequestInit`, pero `body` es un valor JSON (se serializa aquí). */
-export type ApiJsonInit = Omit<RequestInit, "body"> & { body?: unknown };
-
 /**
- * Llama a la API y parsea el JSON. Si hay `body`, lo serializa y añade
- * `Content-Type: application/json`. Una respuesta sin contenido (204) devuelve `undefined`:
+ * Llama a la API y parsea el JSON. Una respuesta sin contenido (204) devuelve `undefined`:
  * usa `apiJson<void>` en esos casos.
  */
 export async function apiJson<T>(path: string, init?: ApiJsonInit): Promise<T> {
-  const { body, headers, ...rest } = init ?? {};
-  const hasJsonBody = body !== undefined;
-  const res = await apiFetch(path, {
-    ...rest,
-    headers: hasJsonBody ? { "Content-Type": "application/json", ...headers } : headers,
-    body: hasJsonBody ? JSON.stringify(body) : undefined,
-  });
+  const res = await apiFetch(path, init);
   if (res.status === 204) return undefined as T;
   try {
     return (await res.json()) as T;

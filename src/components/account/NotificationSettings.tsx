@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
+import { apiJson } from "@/shared/api/client";
+import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Preferencias tal y como las devuelve `GET /api/account/notifications`. */
 type Settings = {
@@ -13,7 +15,9 @@ type Settings = {
   goal: { name: string; updatedAt: string } | null;
 };
 
-type LoadState = "loading" | "loaded" | "error";
+const NOTIFICATIONS_PATH = "/api/account/notifications";
+// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
+const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Avisos por email de los hitos del objetivo FIRE (25/50/75/100 %). Opt-in: la casilla arranca
@@ -25,44 +29,22 @@ type LoadState = "loading" | "loaded" | "error";
 export default function NotificationSettings() {
   const t = useTranslations("account.notifications");
   const locale = useLocale() === "en" ? "en" : "es";
-  const [state, setState] = useState<LoadState>("loading");
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const query = useApiQuery<Settings>(NOTIFICATIONS_PATH, { init: NO_STORE });
+  // Lo guardado (respuesta del PATCH) manda sobre la carga inicial.
+  const [saved, setSaved] = useState<Settings | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  // El estado arranca en "loading": solo se fija tras el await, igual que `ConnectedApps`.
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/account/notifications", { cache: "no-store" });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as Settings;
-        if (!cancelled) {
-          setSettings(data);
-          setState("loaded");
-        }
-      } catch {
-        if (!cancelled) setState("error");
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const settings = saved ?? (query.status === "ready" ? query.data : null);
+  const state = settings ? "loaded" : query.status;
 
   async function toggle(enabled: boolean) {
     setSaving(true);
     setSaveError(false);
     try {
-      const res = await fetch("/api/account/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fireAlertsEnabled: enabled, locale }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      setSettings((await res.json()) as Settings);
+      setSaved(
+        await apiJson<Settings>(NOTIFICATIONS_PATH, { method: "PATCH", body: { fireAlertsEnabled: enabled, locale } }),
+      );
     } catch {
       setSaveError(true);
     } finally {

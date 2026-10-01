@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { apiFetch } from "@/shared/api/client";
+
 type Props = {
   clientId: string;
   scopes: string[];
@@ -29,16 +31,7 @@ export default function ConsentClient({ clientId, scopes, authorizeParams }: Pro
     setWorking(true);
     setError(false);
     try {
-      const res = await fetch("/api/oauth/consent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId, scopes }),
-      });
-      if (!res.ok) {
-        setError(true);
-        setWorking(false);
-        return;
-      }
+      await apiFetch("/api/oauth/consent", { method: "POST", body: { clientId, scopes } });
       // Reanuda en NUESTRO origen (no es redirect abierto): el AS emitirá el código.
       window.location.assign(`/authorize?${authorizeParams}`);
     } catch {

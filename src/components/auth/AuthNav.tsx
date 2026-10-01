@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { useApiQuery } from "@/shared/api/use-api-query";
 import { IconNavProfile } from "../illustrations";
 import UserMenu from "./UserMenu";
 
@@ -14,23 +14,10 @@ import UserMenu from "./UserMenu";
  */
 export default function AuthNav() {
   const t = useTranslations("auth.nav");
-  const [authed, setAuthed] = useState<boolean | null>(null);
+  const me = useApiQuery<unknown>("/api/auth/me");
 
-  useEffect(() => {
-    let active = true;
-    fetch("/api/auth/me")
-      .then((r) => {
-        if (active) setAuthed(r.ok);
-      })
-      .catch(() => {
-        if (active) setAuthed(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  if (authed === null) return null;
+  if (me.status === "loading") return null;
+  const authed = me.status === "ready";
 
   const link = (
     <Link

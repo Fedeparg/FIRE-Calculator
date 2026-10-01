@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import TimeSeriesChart, { type DataRow } from "@/components/charts/TimeSeriesChart";
@@ -16,6 +16,7 @@ import {
   type PortfolioHistoryDto,
 } from "@/core/portfolio-history";
 import { useFormat } from "@/lib/format";
+import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Props = {
@@ -25,8 +26,8 @@ type Props = {
 
 type Status = "loading" | "ready" | "error";
 
-/** Resultado de una petición concreta, etiquetado con la clave que la originó. */
-type Result = { key: string; history: PortfolioHistoryDto | null };
+// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
+const NO_STORE = { cache: "no-store" } as const;
 
 /**
  * Evolución diaria de la cartera.
@@ -45,36 +46,14 @@ export default function PortfolioHistoryChart({ display }: Props) {
   const t = useTranslations("portfolio.history");
   const { formatCurrency, formatPercent } = useFormat();
   const [range, setRange] = useState<HistoryRangeKey>(DEFAULT_HISTORY_RANGE);
-  const [result, setResult] = useState<Result | null>(null);
 
   const days = HISTORY_RANGES.find((r) => r.key === range)?.days ?? 365;
-  // Identifica la petición vigente. "Cargando" se DERIVA de comparar esta clave con la del
-  // último resultado, en vez de guardarse en un estado que habría que resetear desde el
-  // efecto (lo que provocaría un render en cascada).
-  const requestKey = `${days}|${display}`;
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as PortfolioHistoryDto;
-        if (!cancelled) setResult({ key: requestKey, history: data });
-      } catch {
-        if (!cancelled) setResult({ key: requestKey, history: null });
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [days, display, requestKey]);
-
-  const history = result?.key === requestKey ? result.history : null;
-  const status: Status = result?.key !== requestKey ? "loading" : history === null ? "error" : "ready";
+  const query = useApiQuery<PortfolioHistoryDto>(
+    `/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`,
+    { init: NO_STORE },
+  );
+  const history = query.status === "ready" ? query.data : null;
+  const status: Status = query.status;
 
   // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
   // la serie en el día de hoy para que la gráfica no se quede en ayer.

@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
+import { apiFetch } from "@/shared/api/client";
 
 /**
  * Menú de la cuenta en la cabecera: Mi cuenta y Cerrar sesión. Antes eran dos botones más en
@@ -54,7 +55,8 @@ export default function UserMenu() {
   }, [open]);
 
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    // Si el logout falla (sesión ya caducada, red) igualmente salimos a /entrar.
+    await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setOpen(false);
     router.replace("/entrar");
     router.refresh();
