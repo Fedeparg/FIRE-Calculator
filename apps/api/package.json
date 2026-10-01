@@ -50,7 +50,7 @@
     "@testcontainers/postgresql": "^12.1.0",
     "@types/cookie-parser": "^1.4.8",
     "@types/express": "^5.0.0",
-    "@types/node": "^24.13.6",
+    "@types/node": "^25.9.8",
     "drizzle-kit": "^0.31.0",
     "eslint": "^9.0.0",
     "globals": "^17.12.0",
