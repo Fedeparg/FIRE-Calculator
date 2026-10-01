@@ -3,9 +3,9 @@ import { redirect } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/lib/session";
 import { Link } from "@/i18n/navigation";
-import AccountDangerZone from "@/components/account/AccountDangerZone";
-import ConnectedApps from "@/components/account/ConnectedApps";
-import NotificationSettings from "@/components/account/NotificationSettings";
+import AccountDangerZone from "@/features/account/components/AccountDangerZone";
+import ConnectedApps from "@/features/account/components/ConnectedApps";
+import NotificationSettings from "@/features/account/components/NotificationSettings";
 
 type Props = { params: Promise<{ locale: string }> };
 
