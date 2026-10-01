@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/core/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
 import { buildMetadata } from "@/lib/seo";
-import Selector, { type SelectorItem } from "@/components/Selector";
+import Selector, { type SelectorItem } from "@/features/calculators/components/Selector";
 
 type Props = { params: Promise<{ locale: string }> };
 

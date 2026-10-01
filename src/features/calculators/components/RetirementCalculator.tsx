@@ -9,7 +9,7 @@ import Stat from "@/components/ui/Stat";
 import Notice from "@/components/ui/Notice";
 import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
 import BreakdownDonut from "@/components/charts/BreakdownDonut";
-import CalculatorLayout from "@/components/CalculatorLayout";
+import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function RetirementCalculator() {

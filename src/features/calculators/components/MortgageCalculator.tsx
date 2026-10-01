@@ -10,7 +10,7 @@ import Stat from "@/components/ui/Stat";
 import ChartDataTable, { type ChartTableColumn } from "@/components/charts/ChartDataTable";
 import ChartTooltip from "@/components/charts/ChartTooltip";
 import BreakdownDonut from "@/components/charts/BreakdownDonut";
-import CalculatorLayout from "@/components/CalculatorLayout";
+import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function MortgageCalculator() {

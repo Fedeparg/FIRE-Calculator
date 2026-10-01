@@ -3,10 +3,10 @@ import { Link } from "@/i18n/navigation";
 import { asLocale } from "@/core/types";
 import { SITE_NAME } from "@/lib/site";
 import { calculatorSchema } from "@/lib/jsonld";
-import CalculatorStateProvider from "../features/calculators/components/CalculatorState";
-import Breadcrumbs from "./seo/Breadcrumbs";
-import JsonLd from "./seo/JsonLd";
-import CalculatorExplainer from "./wiki/CalculatorExplainer";
+import CalculatorStateProvider from "./CalculatorState";
+import Breadcrumbs from "@/components/seo/Breadcrumbs";
+import JsonLd from "@/components/seo/JsonLd";
+import CalculatorExplainer from "@/components/wiki/CalculatorExplainer";
 
 type Props = {
   title: string;

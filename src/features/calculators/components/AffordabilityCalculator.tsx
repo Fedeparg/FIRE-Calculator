@@ -6,7 +6,7 @@ import { computeAffordability } from "@sextante/core/calculators/hipoteca-asequi
 import { useFormat } from "@/lib/format";
 import NumberField from "@/components/ui/NumberField";
 import Stat from "@/components/ui/Stat";
-import CalculatorLayout from "@/components/CalculatorLayout";
+import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function AffordabilityCalculator() {

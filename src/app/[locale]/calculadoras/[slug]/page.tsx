@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/core/registry";
 import { calculatorMetadata } from "@/lib/seo";
-import CalculatorShell from "@/components/CalculatorShell";
+import CalculatorShell from "@/features/calculators/components/CalculatorShell";
 import CalculatorBody from "@/features/calculators/components/CalculatorBody";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };

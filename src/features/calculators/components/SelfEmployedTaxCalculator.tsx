@@ -17,7 +17,7 @@ import NumberField from "@/components/ui/NumberField";
 import SelectField from "@/components/ui/SelectField";
 import Stat from "@/components/ui/Stat";
 import Notice from "@/components/ui/Notice";
-import CalculatorLayout from "@/components/CalculatorLayout";
+import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 
 /** Régimen de estimación de gastos que ofrece el desplegable. */

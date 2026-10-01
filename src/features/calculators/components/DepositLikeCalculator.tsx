@@ -7,7 +7,7 @@ import { useFormat } from "@/lib/format";
 import NumberField from "@/components/ui/NumberField";
 import Stat from "@/components/ui/Stat";
 import BreakdownDonut from "@/components/charts/BreakdownDonut";
-import CalculatorLayout from "@/components/CalculatorLayout";
+import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 type Props = {
