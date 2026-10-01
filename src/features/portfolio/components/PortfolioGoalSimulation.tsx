@@ -4,7 +4,7 @@ import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from "@sextante/core/calculators/fire-montecarlo";
-import { encodeFieldValue } from "@/features/calculators/url-state";
+import { encodeFieldValue } from "@/shared/url-state/url-state";
 import { monthlyContribution, simulatePortfolioGoal } from "@sextante/core/portfolio-goal";
 import type { Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";

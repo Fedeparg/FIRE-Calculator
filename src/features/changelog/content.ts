@@ -5,7 +5,7 @@ import path from "node:path";
 
 import matter from "gray-matter";
 
-import { renderMarkdown } from "@/features/wiki/markdown";
+import { renderMarkdown } from "@/shared/content/markdown";
 import { asLocale } from "@/i18n/types";
 
 /**

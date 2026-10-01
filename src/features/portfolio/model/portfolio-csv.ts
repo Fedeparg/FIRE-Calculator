@@ -8,8 +8,6 @@ import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import { convertCurrency } from "@sextante/core/fx";
 import type { Locale } from "@/i18n/types";
 
-export { UTF8_BOM } from "@/shared/format/csv";
-
 /** Columnas del fichero, en orden. Es también el orden de `PortfolioCsvHeaders`. */
 export const CSV_COLUMNS = [
   "ticker",

@@ -21,17 +21,10 @@ const FEATURES = [
 // Todo lo demás falla en lint. Si necesitas añadir una, primero valora mover el
 // código común a `src/shared`.
 const FEATURE_EXCEPTIONS = {
-  // La página de una calculadora incrusta su explainer y el panel de escenarios.
-  calculators: ["wiki", "scenarios"],
-  // Los artículos enlazan a las calculadoras relacionadas (registry).
-  wiki: ["calculators"],
-  // El objetivo de la cartera se codifica como estado de URL de una calculadora
-  // y reutiliza los escenarios guardados.
-  portfolio: ["calculators", "scenarios"],
-  // El escenario activo se resuelve con el modelo del objetivo de la cartera.
-  scenarios: ["portfolio"],
-  // El changelog renderiza su Markdown con el renderer de la wiki.
-  changelog: ["wiki"],
+  // La página de una calculadora incrusta el panel de escenarios guardados.
+  calculators: ["scenarios"],
+  // El objetivo de la cartera reutiliza los escenarios guardados.
+  portfolio: ["scenarios"],
   // La landing compone el widget de donaciones.
   landing: ["donations"],
 };

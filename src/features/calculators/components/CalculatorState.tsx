@@ -10,7 +10,7 @@ import {
   type FieldSpec,
   type FieldValue,
   type FieldValues,
-} from "@/features/calculators/url-state";
+} from "@/shared/url-state/url-state";
 import CalculatorActions from "./CalculatorActions";
 
 /**
