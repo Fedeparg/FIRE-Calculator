@@ -9,8 +9,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { positionLots, positions } from '../db/schema.js';
-import type { PricesService } from '../prices/prices.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { buildPositionsStack } from '../../test/positions-stack.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
 import { aggregateLots } from './lot-aggregate.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
@@ -18,7 +18,6 @@ import { PositionLotsService } from './position-lots.service.js';
 import { PositionsService } from './positions.service.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
-const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
   return { quantity: 1, avgPrice: 100, ...partial };
@@ -57,8 +56,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    lots = new PositionLotsService(db, new EventEmitter2());
-    service = new PositionsService(db, pricesStub, lots, new EventEmitter2());
+    ({ lots, positions: service } = buildPositionsStack(db));
   });
 
   afterEach(async () => {
@@ -408,7 +406,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const events = new EventEmitter2();
       const emitted: { invalidateFrom?: string }[] = [];
       events.on(LOT_CHANGED_EVENT, (payload: { invalidateFrom?: string }) => emitted.push(payload));
-      return { svc: new PositionLotsService(db, events), emitted };
+      return { svc: buildPositionsStack(db, { lotsEvents: events }).lots, emitted };
     }
 
     it('borrar un lote lleva su fecha de operación (no deja marca de tiempo)', async () => {
