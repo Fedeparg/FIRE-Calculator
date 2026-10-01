@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { useTranslations } from "next-intl";
 import { useFormat } from "@/lib/format";
+import { useMediaQuery } from "@/lib/use-media-query";
 import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
 
@@ -118,6 +119,11 @@ type Props = {
   hideTitle?: boolean;
   /** Dibuja la leyenda de Recharts. Se apaga cuando quien llama pinta una propia, más explicada. */
   showLegend?: boolean;
+  /**
+   * `fromSm`: sin eje Y por debajo de `sm`. En un móvil el eje se come ~70 px de ancho; quien
+   * lo pide enseña las cifras clave encima de la gráfica, y el tooltip da el valor exacto.
+   */
+  yAxis?: "always" | "fromSm";
 };
 
 /** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
@@ -151,7 +157,10 @@ export default function TimeSeriesChart({
   yDomain = "zero",
   hideTitle = false,
   showLegend = true,
+  yAxis = "always",
 }: Props) {
+  const isSmUp = useMediaQuery("(min-width: 640px)", true);
+  const showYAxis = yAxis === "always" || isSmUp;
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } =
     useFormat();
   // Sin `currency` el formato es EXACTAMENTE el de antes; con divisa se delega en `Intl`.
@@ -264,7 +273,8 @@ export default function TimeSeriesChart({
         <ResponsiveContainer>
           <AreaChart
             data={data}
-            margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+            // Sin eje Y, las fechas de los extremos del eje X (centradas en su marca) necesitan aire.
+            margin={{ top: 8, right: showYAxis ? 8 : 40, bottom: 0, left: showYAxis ? 8 : 40 }}
             onMouseDown={(s: RechartsState) => {
               if (!selectable || s?.activeLabel === undefined) return;
               const x = toNum(s.activeLabel);
@@ -297,6 +307,7 @@ export default function TimeSeriesChart({
               interval={xInterval}
             />
             <YAxis
+              hide={!showYAxis}
               tick={{ fontSize: 12, fill: "var(--muted)" }}
               tickFormatter={formatAxisValue}
               width={70}
