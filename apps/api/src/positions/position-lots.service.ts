@@ -76,8 +76,12 @@ export class PositionLotsService {
   ) {}
 
   /** Avisa de que los lotes de una posición cambiaron (ver `LOT_CHANGED_EVENT`). */
-  private emitLotChanged(userId: string, positionId: string): void {
-    this.events.emit(LOT_CHANGED_EVENT, { userId, positionId } satisfies LotChangedEvent);
+  private emitLotChanged(userId: string, positionId: string, invalidateFrom?: string): void {
+    this.events.emit(LOT_CHANGED_EVENT, {
+      userId,
+      positionId,
+      invalidateFrom,
+    } satisfies LotChangedEvent);
   }
 
   /** Lotes de una posición del usuario, en orden cronológico (el mismo de la agregación). */
@@ -144,9 +148,13 @@ export class PositionLotsService {
     lotId: string,
     dto: UpdatePositionLotDto,
   ): Promise<PositionLotResponse> {
+    let previousDate: string | undefined;
     const updated = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const current = await this.findLot(tx, positionId, lotId);
+      // Mover un lote a una fecha posterior vacía el tramo [antigua, nueva): su `updatedAt` solo
+      // alcanza a las capturas desde la fecha NUEVA, así que se avisa también de la antigua.
+      if (dto.tradedAt !== undefined && dto.tradedAt !== current.tradedAt) previousDate = current.tradedAt;
 
       const [row] = await tx
         .update(positionLots)
@@ -165,19 +173,21 @@ export class PositionLotsService {
       await this.recompute(tx, positionId);
       return toResponse(row);
     });
-    this.emitLotChanged(userId, positionId);
+    this.emitLotChanged(userId, positionId, previousDate);
     return updated;
   }
 
   /** Borra un lote de una posición del usuario y reagrega (misma transacción). */
   async remove(userId: string, positionId: string, lotId: string): Promise<void> {
-    await this.db.transaction(async (tx) => {
+    // Un lote borrado no deja marca de tiempo: se avisa de su fecha de operación.
+    const removedDate = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
-      await this.findLot(tx, positionId, lotId);
+      const lot = await this.findLot(tx, positionId, lotId);
       await tx.delete(positionLots).where(eq(positionLots.id, lotId));
       await this.recompute(tx, positionId);
+      return lot.tradedAt;
     });
-    this.emitLotChanged(userId, positionId);
+    this.emitLotChanged(userId, positionId, removedDate);
   }
 
   /**

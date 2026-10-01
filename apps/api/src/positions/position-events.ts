@@ -26,4 +26,12 @@ export const LOT_CHANGED_EVENT = 'position.lot-changed';
 export interface LotChangedEvent {
   userId: string;
   positionId: string;
+  /**
+   * Fecha (YYYY-MM-DD) de una operación que ha DEJADO de existir donde estaba: la de un lote
+   * borrado o la anterior de uno movido de fecha. Esos cambios no dejan marca de tiempo en
+   * `position_lots`, así que el evento la lleva para que las capturas reales desde esa fecha se
+   * den por obsoletas (ver `staleSnapshotDates`). Ausente si el cambio sí deja marca (alta,
+   * edición, `declareState`).
+   */
+  invalidateFrom?: string;
 }

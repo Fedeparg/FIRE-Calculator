@@ -18,6 +18,7 @@ import type { PricesService } from '../prices/prices.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
 import { aggregateLots } from './lot-aggregate.js';
+import { LOT_CHANGED_EVENT } from './position-events.js';
 import { PositionLotsService } from './position-lots.service.js';
 import { PositionsService } from './positions.service.js';
 
@@ -417,6 +418,52 @@ describe('PositionLotsService (integración con Postgres)', () => {
       await expect(lots.listByPosition(userId, randomUUID())).rejects.toBeInstanceOf(
         NotFoundException,
       );
+    });
+  });
+
+  describe('LOT_CHANGED_EVENT: fecha a invalidar', () => {
+    /** Servicio con su propio emisor, para capturar lo que emite. */
+    function withEvents() {
+      const events = new EventEmitter2();
+      const emitted: { invalidateFrom?: string }[] = [];
+      events.on(LOT_CHANGED_EVENT, (payload: { invalidateFrom?: string }) => emitted.push(payload));
+      return { svc: new PositionLotsService(db, events), emitted };
+    }
+
+    it('borrar un lote lleva su fecha de operación (no deja marca de tiempo)', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const position = await createBackdated(userId, { ticker: 'IWDA' });
+      const { svc, emitted } = withEvents();
+      const added = await svc.create(userId, position.id, {
+        kind: 'buy',
+        quantity: 1,
+        price: 100,
+        tradedAt: '2026-03-01',
+      });
+      emitted.length = 0;
+
+      await svc.remove(userId, position.id, added.id);
+
+      expect(emitted).toEqual([expect.objectContaining({ invalidateFrom: '2026-03-01' })]);
+    });
+
+    it('mover un lote de fecha lleva la ANTERIOR; editar otra cosa o crear no lleva ninguna', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const position = await createBackdated(userId, { ticker: 'IWDA' });
+      const { svc, emitted } = withEvents();
+      const added = await svc.create(userId, position.id, {
+        kind: 'buy',
+        quantity: 1,
+        price: 100,
+        tradedAt: '2026-03-01',
+      });
+      expect(emitted[0].invalidateFrom).toBeUndefined();
+
+      await svc.update(userId, position.id, added.id, { tradedAt: '2026-04-01' });
+      await svc.update(userId, position.id, added.id, { price: 110 });
+
+      expect(emitted[1].invalidateFrom).toBe('2026-03-01');
+      expect(emitted[2].invalidateFrom).toBeUndefined();
     });
   });
 });

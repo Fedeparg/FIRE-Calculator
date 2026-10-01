@@ -231,7 +231,9 @@ export const portfolioSnapshots = pgTable(
      * que se tenían ese día según las operaciones, valorados con los cierres de la caché), no una
      * captura real del cron de esa fecha. Una captura real (`PortfolioSnapshotsService.captureUser`)
      * SIEMPRE la sustituye, pase lo que pase; una reconstrucción posterior solo vuelve a escribir
-     * las filas estimadas (borra y regenera) y nunca pisa una real (ver `backfillUser`). El
+     * las filas estimadas (borra y regenera) y no pisa una real salvo que haya quedado OBSOLETA
+     * (se registró después una operación con fecha anterior a la captura: entonces se sustituye por
+     * la reconstrucción y pasa a `true`; ver `backfillUser` y `@sextante/core/snapshot-staleness`). El
      * frontend la usa para no presentar una aproximación con la misma certeza que un dato real.
      */
     estimated: boolean('estimated').notNull().default(false),

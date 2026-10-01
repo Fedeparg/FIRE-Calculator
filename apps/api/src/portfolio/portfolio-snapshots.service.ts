@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { and, asc, eq, gte, inArray, min, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, lte, min, or, sql, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots, positionLots, positions } from '../db/schema.js';
@@ -20,6 +20,7 @@ import {
   type HistoryLot,
   type HistoryPosition,
 } from '@sextante/core/portfolio-history';
+import { staleSnapshotDates } from '@sextante/core/snapshot-staleness';
 
 /**
  * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan
@@ -112,8 +113,11 @@ function toNumeric(value: number): string | null {
 @Injectable()
 export class PortfolioSnapshotsService {
   private readonly logger = new Logger(PortfolioSnapshotsService.name);
-  /** Usuarios con una reconstrucción por lote en curso → posiciones anotadas para repetirla (ver `onLotChanged`). */
-  private readonly rebuilding = new Map<string, Set<string>>();
+  /**
+   * Usuarios con una reconstrucción por lote en curso → posiciones anotadas para repetirla y la
+   * fecha más antigua de lote borrado/movido anotada (ver `onLotChanged`).
+   */
+  private readonly rebuilding = new Map<string, { positions: Set<string>; invalidateFrom: string | null }>();
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -223,15 +227,24 @@ export class PortfolioSnapshotsService {
    * Si la reconstrucción sale vacía (aún sin precios porque `primeSymbol` sigue trayendo
    * histórico en segundo plano) no se toca nada: una pasada posterior la completa.
    *
-   * LIMITACIÓN conocida: si se importan operaciones ANTERIORES a una captura real ya existente,
-   * esa captura (hecha con las cantidades de entonces) puede quedar desalineada respecto a la
-   * reconstrucción de los días vecinos y verse un salto. Se prefiere no reescribir datos reales;
-   * la gráfica sombrea por separado cada tramo estimado, así que se ve qué es qué.
+   * CAPTURAS REALES OBSOLETAS: una captura real solo se respeta mientras sea una foto fiel. Si
+   * después se registró (importó, editó) una operación con fecha anterior o igual a la de la
+   * captura, esa captura no la incluye y mostraría un escalón falso; entonces se sustituye por
+   * la reconstrucción de ese día y pasa a `estimated: true` (regla en
+   * `@sextante/core/snapshot-staleness`: lote con `tradedAt <= fecha` cambiado DESPUÉS de que se
+   * escribiera la captura). El borrado de un lote no deja marca, así que el llamante pasa
+   * `invalidateFrom` (su fecha). Las reales no obsoletas no se tocan nunca. Si un día obsoleto no
+   * sale de la reconstrucción (sin precio, o sin posiciones ya) se conserva la real: preferimos
+   * un dato desfasado a borrar uno que no podemos rehacer. Esto también REPARA los datos ya
+   * guardados: la primera pasada tras desplegar (arranque o nocturna) lo detecta sola.
    *
    * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar ese día
    * (`valuedPositions < totalPositions`), igual que la captura diaria.
    */
-  async backfillUser(userId: string): Promise<void> {
+  async backfillUser(
+    userId: string,
+    options: { invalidateFrom?: string | null } = {},
+  ): Promise<void> {
     // La resolución ticker → símbolo (otra lectura) se hace ANTES de abrir la transacción: dentro,
     // pediría una segunda conexión mientras esta mantiene una, y con el pool agotado se bloquearía.
     const tickers = (await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))).map((p) => p.ticker);
@@ -320,17 +333,30 @@ export class PortfolioSnapshotsService {
 
       // Solo se escribe la DIFERENCIA con lo guardado: reconstruir cada noche 5 años de filas
       // idénticas sería escribir ~1.800 filas por usuario sin cambiar nada.
+      // Instante previo a la lectura: una real reescrita por la captura nocturna DESPUÉS de leerla
+      // es fresca y no debe pisarse (ver `setWhere`).
+      const readAt = new Date();
       const existing = await tx
         .select()
         .from(portfolioSnapshots)
         .where(eq(portfolioSnapshots.userId, userId));
+      const staleReal = staleSnapshotDates({
+        snapshots: existing
+          .filter((row) => !row.estimated)
+          .map((row) => ({ date: row.date, writtenAt: row.updatedAt.getTime() })),
+        lots: lotRows.map((lot) => ({
+          tradedAt: lot.tradedAt,
+          changedAt: Math.max(lot.createdAt.getTime(), lot.updatedAt.getTime()),
+        })),
+        invalidateFrom: options.invalidateFrom ?? null,
+      });
       const existingByDate = new Map(existing.map((row) => [row.date, row]));
       const newDates = new Set(rows.map((row) => row.date));
 
       const changed = rows.filter((row) => {
         const current = existingByDate.get(row.date);
         if (!current) return true;
-        if (!current.estimated) return false; // captura real: no se toca
+        if (!current.estimated) return staleReal.has(row.date); // real: solo si está obsoleta
         return !(
           current.invested === row.invested &&
           current.marketValue === row.marketValue &&
@@ -344,9 +370,22 @@ export class PortfolioSnapshotsService {
       const stale = existing.filter((row) => row.estimated && !newDates.has(row.date)).map((row) => row.date);
 
       for (let i = 0; i < changed.length; i += UPSERT_CHUNK_SIZE) {
+        const chunk = changed.slice(i, i + UPSERT_CHUNK_SIZE);
+        // Reales obsoletas de este bloque (las únicas reales que se pueden sustituir).
+        const staleInChunk = chunk.filter((row) => staleReal.has(row.date)).map((row) => row.date);
+        // Una real nunca se pisa salvo que la regla la marque obsoleta Y no haya cambiado desde
+        // la lectura (carrera con la captura nocturna).
+        const overwritable: SQL | undefined =
+          staleInChunk.length > 0
+            ? and(
+                eq(portfolioSnapshots.estimated, false),
+                inArray(portfolioSnapshots.date, staleInChunk),
+                lte(portfolioSnapshots.updatedAt, readAt),
+              )
+            : undefined;
         await tx
           .insert(portfolioSnapshots)
-          .values(changed.slice(i, i + UPSERT_CHUNK_SIZE))
+          .values(chunk)
           .onConflictDoUpdate({
             target: [portfolioSnapshots.userId, portfolioSnapshots.date],
             set: {
@@ -355,11 +394,15 @@ export class PortfolioSnapshotsService {
               valuedPositions: sql`excluded.valued_positions`,
               totalPositions: sql`excluded.total_positions`,
               fxRates: sql`excluded.fx_rates`,
+              // Una real obsoleta sustituida ya no es una foto fiel: pasa a estimada.
+              estimated: true,
               updatedAt: new Date(),
             },
-            // Una captura real (estimated = false) nunca se pisa, ni siquiera ante una carrera
-            // con la captura nocturna entre la lectura y la escritura.
-            setWhere: eq(portfolioSnapshots.estimated, true),
+            // Una captura real (estimated = false) no se pisa, ni siquiera ante una carrera con
+            // la captura nocturna entre la lectura y la escritura, salvo que sea obsoleta.
+            setWhere: overwritable
+              ? or(eq(portfolioSnapshots.estimated, true), overwritable)
+              : eq(portfolioSnapshots.estimated, true),
           });
       }
       for (let i = 0; i < stale.length; i += UPSERT_CHUNK_SIZE) {
@@ -420,25 +463,30 @@ export class PortfolioSnapshotsService {
    * llega) y reconstruye la evolución. Tolerante a fallos, como `onPositionCreated`.
    */
   @OnEvent(LOT_CHANGED_EVENT)
-  async onLotChanged({ userId, positionId }: LotChangedEvent): Promise<void> {
+  async onLotChanged({ userId, positionId, invalidateFrom }: LotChangedEvent): Promise<void> {
     // COALESCE por usuario: una ráfaga de ediciones (importar a mano, corregir fechas) dispararía
     // una reconstrucción por evento, cada una con su conexión esperando el cerrojo del usuario, y
     // más de ~10 agotarían el pool. Si ya hay una en curso, solo se anota la posición: la pasada
     // en curso hace UNA repetición al terminar que cubre todas las anotadas.
+    const earliest = (a: string | null, b: string | undefined): string | null =>
+      b !== undefined && (a === null || b < a) ? b : a;
     const running = this.rebuilding.get(userId);
     if (running) {
-      running.add(positionId);
+      running.positions.add(positionId);
+      running.invalidateFrom = earliest(running.invalidateFrom, invalidateFrom);
       return;
     }
-    const pending = new Set([positionId]);
+    const pending = { positions: new Set([positionId]), invalidateFrom: earliest(null, invalidateFrom) };
     this.rebuilding.set(userId, pending);
     try {
-      while (pending.size > 0) {
-        const batch = [...pending];
-        pending.clear();
+      while (pending.positions.size > 0) {
+        const batch = [...pending.positions];
+        const from = pending.invalidateFrom;
+        pending.positions.clear();
+        pending.invalidateFrom = null;
         try {
           for (const id of batch) await this.ensureLotHistory(id);
-          await this.backfillUser(userId);
+          await this.backfillUser(userId, { invalidateFrom: from });
         } catch (error) {
           this.logger.warn(
             `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
