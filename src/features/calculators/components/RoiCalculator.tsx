@@ -9,6 +9,7 @@ import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function RoiCalculator() {
   const t = useTranslations("calc.roi");
@@ -47,7 +48,7 @@ export default function RoiCalculator() {
         </>
       }
       results={
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatGrid columns={3}>
           <Stat label={t("roi")} value={formatPercent(result.roi)} highlight />
           <Stat label={t("gain")} value={formatEUR(result.gain)} />
           <Stat
@@ -57,7 +58,7 @@ export default function RoiCalculator() {
           <Stat label={t("netRoi")} value={formatPercent(result.netRoi)} />
           <Stat label={t("netGain")} value={formatEUR(result.netGain)} />
           <Stat label={t("tax")} value={formatEUR(result.tax)} />
-        </div>
+        </StatGrid>
       }
     />
   );

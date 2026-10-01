@@ -7,6 +7,7 @@ import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import Button from "@/shared/ui/Button";
+import StatGrid from "@/shared/ui/StatGrid";
 
 type Row = { id: number; price: number; shares: number; commission: number };
 
@@ -95,7 +96,7 @@ export default function AveragePriceCalculator() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatGrid columns={3}>
         <Stat label={t("averagePrice")} value={formatEURCents(result.averagePrice)} highlight />
         <Stat label={t("breakEvenPrice")} value={formatEURCents(result.breakEvenPrice)} />
         <Stat label={t("totalShares")} value={formatNumber(result.totalShares)} />
@@ -107,7 +108,7 @@ export default function AveragePriceCalculator() {
           value={result.unrealizedGain === null ? "—" : formatEUR(result.unrealizedGain)}
         />
         <Stat label={t("returnPct")} value={result.returnPct === null ? "—" : formatPercent(result.returnPct)} />
-      </div>
+      </StatGrid>
     </div>
   );
 }

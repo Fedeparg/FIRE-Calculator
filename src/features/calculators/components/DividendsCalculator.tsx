@@ -10,6 +10,7 @@ import Notice from "@/shared/ui/Notice";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function DividendsCalculator() {
   const t = useTranslations("calc.dividendos");
@@ -69,14 +70,14 @@ export default function DividendsCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatGrid columns={3}>
             <Stat label={t("net")} value={formatEUR(result.net)} highlight />
             <Stat label={t("gross")} value={formatEUR(result.gross)} />
             <Stat label={t("withheld")} value={formatEUR(result.withheld)} />
             <Stat label={t("netYield")} value={result.netYield === null ? "—" : formatPercent(result.netYield)} />
             {years > 0 && <Stat label={t("cumulativeNet")} value={formatEUR(result.cumulativeNet)} />}
             {years > 0 && <Stat label={t("finalYearNet")} value={formatEUR(result.finalYearNet)} />}
-          </div>
+          </StatGrid>
 
           {years > 0 && (
             <TimeSeriesChart

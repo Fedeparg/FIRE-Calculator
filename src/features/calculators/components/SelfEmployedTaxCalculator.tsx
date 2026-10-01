@@ -19,6 +19,7 @@ import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 /** Régimen de estimación de gastos que ofrece el desplegable. */
 const EXPENSE_REGIMES = ["simplificada", "normal"] as const;
@@ -170,7 +171,7 @@ export default function SelfEmployedTaxCalculator() {
         </>
       }
       results={
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatGrid columns={3}>
           <Stat label={t("incomeTax")} value={formatEUR(result.incomeTax)} highlight />
           <Stat label={t("grossNetIncome")} value={formatEUR(result.grossNetIncome)} />
           {result.difficultExpenses > 0 && (
@@ -182,7 +183,7 @@ export default function SelfEmployedTaxCalculator() {
           <Stat label={t("marginalRate")} value={formatPercent(result.marginalRate)} />
           <Stat label={t("personalMinimum")} value={formatEUR(result.personalMinimum)} />
           <Stat label={t("taxableBase")} value={formatEUR(result.taxableBase)} />
-        </div>
+        </StatGrid>
       }
     />
   );

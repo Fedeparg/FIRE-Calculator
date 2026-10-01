@@ -11,6 +11,7 @@ import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function RetirementCalculator() {
   const t = useTranslations("calc.ahorro-jubilacion");
@@ -125,13 +126,13 @@ export default function RetirementCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("finalRealValue")} value={formatEUR(result.finalRealValue)} highlight />
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} />
             <Stat label={t("monthlyIncome")} value={formatEURCents(result.monthlyIncome)} />
             <Stat label={t("monthlyIncomeNominal")} value={formatEURCents(result.monthlyIncomeNominal)} />
             <Stat label={t("yearsToRetirement")} value={formatNumber(result.yearsToRetirement)} />
-          </div>
+          </StatGrid>
 
           <TimeSeriesChart
             title={t("chartTitle")}

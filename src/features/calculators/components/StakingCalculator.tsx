@@ -11,6 +11,7 @@ import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function StakingCalculator() {
   const t = useTranslations("calc.staking");
@@ -53,12 +54,12 @@ export default function StakingCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("netFinalValue")} value={formatEUR(result.netFinalValue)} highlight />
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} />
             <Stat label={t("rewards")} value={formatEUR(result.rewards)} />
             <Stat label={t("netRewards")} value={formatEUR(result.netRewards)} />
-          </div>
+          </StatGrid>
 
           <TimeSeriesChart
             title={t("chartTitle")}

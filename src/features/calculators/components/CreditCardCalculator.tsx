@@ -10,6 +10,7 @@ import Stat from "@/shared/ui/Stat";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function CreditCardCalculator() {
   const t = useTranslations("calc.intereses-tarjeta-credito");
@@ -90,7 +91,7 @@ export default function CreditCardCalculator() {
           {neverPaysOff && (
             <p className="rounded-xl border border-border bg-surface p-4 text-sm text-foreground">{t("never")}</p>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat
               label={t("monthsToPayoff")}
               value={neverPaysOff ? "∞" : formatNumber(result.monthsToPayoff ?? 0)}
@@ -101,7 +102,7 @@ export default function CreditCardCalculator() {
             {isPercent && (
               <Stat label={t("firstPayment")} value={neverPaysOff ? "—" : formatEURCents(result.firstPayment)} />
             )}
-          </div>
+          </StatGrid>
 
           {!neverPaysOff && result.series.length > 1 && (
             <TimeSeriesChart
