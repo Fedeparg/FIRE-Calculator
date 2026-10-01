@@ -233,6 +233,65 @@ describe("reconstructHistory", () => {
   });
 });
 
+describe("reconstructHistory con splits", () => {
+  it("un split 10:1 no produce salto: la cantidad cruda se expresa en acciones de hoy", () => {
+    // 10 acciones compradas a 1000 € antes del split del día 5. La fuente da los cierres ya
+    // ajustados (100 € todos los días): sin corrección, valdría 1.000 € antes y 10.000 € después.
+    const days = reconstructHistory(
+      input({
+        positions: [position("A", [buy("2026-01-01", 10, 1000)])],
+        prices: { A: daily("2026-01-01", Array<number>(10).fill(100)) },
+        splits: { A: [{ date: "2026-01-05", ratio: 10 }] },
+      }),
+    );
+    expect(days.map((d) => d.aggregate.marketValue)).toEqual(Array<number>(10).fill(10_000));
+    // El coste no cambia (10 · 1000).
+    expect(days.every((d) => d.aggregate.invested === 10_000)).toBe(true);
+  });
+
+  it("solo cuentan los splits posteriores al lote; los lotes posteriores al split no se tocan", () => {
+    const days = reconstructHistory(
+      input({
+        positions: [position("A", [buy("2026-01-01", 10, 1000), buy("2026-01-06", 5, 100)])],
+        prices: { A: daily("2026-01-01", Array<number>(10).fill(100)) },
+        splits: { A: [{ date: "2026-01-05", ratio: 10 }] },
+      }),
+    );
+    expect(days[0].aggregate.marketValue).toBe(10_000);
+    expect(days[5].aggregate.marketValue).toBe(10_000 + 500);
+    // Coste medio móvil coherente: 10·1000 + 5·100.
+    expect(days[5].aggregate.invested).toBe(10_500);
+  });
+
+  it("encadena varios splits y un split inverso", () => {
+    const days = reconstructHistory(
+      input({
+        positions: [position("A", [buy("2026-01-01", 100, 10)])],
+        prices: { A: daily("2026-01-01", Array<number>(10).fill(10)) },
+        splits: {
+          A: [
+            { date: "2026-01-03", ratio: 2 },
+            { date: "2026-01-04", ratio: 0.5 },
+            { date: "2026-01-06", ratio: 3 },
+          ],
+        },
+      }),
+    );
+    expect(days[0].aggregate.marketValue).toBe(100 * 3 * 10);
+  });
+
+  it("un split del mismo día de la compra no afecta a ese lote", () => {
+    const days = reconstructHistory(
+      input({
+        positions: [position("A", [buy("2026-01-05", 10, 100)])],
+        prices: { A: daily("2026-01-01", Array<number>(10).fill(100)) },
+        splits: { A: [{ date: "2026-01-05", ratio: 10 }] },
+      }),
+    );
+    expect(days[0].aggregate.marketValue).toBe(1000);
+  });
+});
+
 describe("firstTradeDate", () => {
   it("devuelve la operación más antigua entre todas las posiciones", () => {
     expect(

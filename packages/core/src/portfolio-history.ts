@@ -8,6 +8,18 @@
  * entera tampoco. La valoración en sí NO se reimplementa: cada día pasa por `aggregatePortfolio`
  * (`core/fx.ts`), la misma fórmula que ve la cartera.
  *
+ * SPLITS: los cierres de la fuente vienen AJUSTADOS por splits (todos están expresados en
+ * acciones de hoy), pero las cantidades de los lotes son las crudas de cada operación. Sin
+ * corregirlo, antes de un split 10:1 la serie valdría 10 veces menos y daría un salto artificial
+ * en la fecha del split. Por eso la cantidad de cada lote se multiplica por el ratio acumulado de
+ * los splits POSTERIORES a su fecha (y su precio se divide, para que el coste `cantidad · precio`
+ * no cambie). Supone que los lotes llevan la cantidad cruda de la operación, no ya reajustada.
+ *
+ * LIMITACIÓN: los bonus/regalos de bróker (p. ej. acciones gratis de Trade Republic) llegan como
+ * una compra a precio 0; entran con coste 0 y bajan el precio medio, tal cual, sin tratamiento
+ * especial. Ni las acciones corporativas distintas de splits (fusiones, spin-offs) ni los
+ * dividendos están modelados.
+ *
  * Aritmética: `number` (doble precisión), igual que `aggregatePortfolio`. La fuente exacta
  * (decimal de coma fija) de `quantity`/`avgPrice` sigue siendo la agregación de lotes de la API;
  * esta serie es una estimación para la gráfica, no un dato contable.
@@ -65,12 +77,21 @@ export interface FxPoint {
   rate: number;
 }
 
+/** Split de un instrumento: `ratio` = nuevas por cada antigua (10 para un 10:1, 0,5 para un 1:2 inverso). */
+export interface SplitPoint {
+  /** Primer día cotizando ya con el split (YYYY-MM-DD). */
+  date: string;
+  ratio: number;
+}
+
 export interface HistoryInput {
   positions: readonly HistoryPosition[];
   /** Serie de cierres por ticker, ordenada por fecha ascendente. */
   prices: Readonly<Record<string, readonly PricePoint[]>>;
   /** Serie de tasas por divisa (USD por unidad), ordenada por fecha ascendente. USD no hace falta. */
   fx: Readonly<Record<string, readonly FxPoint[]>>;
+  /** Splits por ticker (opcional). Ver la cabecera: corrigen la cantidad cruda de los lotes. */
+  splits?: Readonly<Record<string, readonly SplitPoint[]>>;
   /** Primer y último día a reconstruir, ambos inclusive (YYYY-MM-DD). */
   from: string;
   to: string;
@@ -137,6 +158,21 @@ function applyLot(holding: Holding, lot: HistoryLot): void {
 }
 
 /**
+ * Expresa los lotes en acciones de hoy: cantidad × ratio de los splits posteriores a la fecha del
+ * lote, precio ÷ ese ratio (el coste no cambia). Un split del mismo día de la operación no cuenta:
+ * la operación ya se hizo a precio post-split.
+ */
+function adjustForSplits(lots: readonly HistoryLot[], splits: readonly SplitPoint[]): HistoryLot[] {
+  return lots.map((lot) => {
+    let factor = 1;
+    for (const split of splits) {
+      if (split.date > lot.tradedAt && Number.isFinite(split.ratio) && split.ratio > 0) factor *= split.ratio;
+    }
+    return factor === 1 ? lot : { ...lot, quantity: lot.quantity * factor, price: lot.price / factor };
+  });
+}
+
+/**
  * Primera fecha en que el usuario tuvo algo: la operación más antigua de todas las posiciones,
  * o `null` si no hay ninguna. Sirve para acotar desde dónde reconstruir.
  */
@@ -160,13 +196,15 @@ export function firstTradeDate(positions: readonly HistoryPosition[]): string | 
  * cursor, así que el coste es O(días + lotes + puntos de precio), no O(días × lotes).
  */
 export function reconstructHistory(input: HistoryInput): HistoryDay[] {
-  const { positions, prices, fx, from, to, display } = input;
+  const { positions, prices, fx, splits = {}, from, to, display } = input;
   if (from > to) return [];
 
   const state = positions.map((position) => ({
     position,
     // Orden estable por fecha: los lotes del mismo día conservan el orden recibido.
-    lots: [...position.lots].sort((a, b) => (a.tradedAt < b.tradedAt ? -1 : a.tradedAt > b.tradedAt ? 1 : 0)),
+    lots: adjustForSplits(position.lots, splits[position.ticker] ?? []).sort((a, b) =>
+      a.tradedAt < b.tradedAt ? -1 : a.tradedAt > b.tradedAt ? 1 : 0,
+    ),
     next: 0,
     holding: { quantity: 0, cost: 0 } as Holding,
     price: new SeriesCursor(prices[position.ticker] ?? []),
