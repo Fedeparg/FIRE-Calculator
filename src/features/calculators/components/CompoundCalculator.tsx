@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeCompound } from "@sextante/core/calculators/interes-compuesto";
-import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
+import { COMPOUNDING_FREQUENCIES, FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
@@ -23,6 +23,8 @@ export default function CompoundCalculator() {
   const [initial, setInitial] = useNumberField("initial", 5000);
   const [contribution, setContribution] = useNumberField("contribution", 300);
   const [frequency, setFrequency] = useOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
+  // Por defecto anual: la tasa se lee como rentabilidad anual y no se capitaliza dentro del año
+  const [compounding, setCompounding] = useOptionField<Frequency>("compounding", "annual", COMPOUNDING_FREQUENCIES);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 7);
   const [years, setYears] = useNumberField("years", 25);
   // Extras (desactivados por defecto)
@@ -36,16 +38,18 @@ export default function CompoundCalculator() {
         initial,
         contribution,
         frequency,
+        compounding,
         annualRate,
         years,
         annualFee,
         contributionGrowth,
         inflationRate,
       }),
-    [initial, contribution, frequency, annualRate, years, annualFee, contributionGrowth, inflationRate],
+    [initial, contribution, frequency, compounding, annualRate, years, annualFee, contributionGrowth, inflationRate],
   );
 
   const frequencyOptions = FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
+  const compoundingOptions = COMPOUNDING_FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
 
   return (
     <CalculatorLayout
@@ -72,6 +76,13 @@ export default function CompoundCalculator() {
             options={frequencyOptions}
             onChange={setFrequency}
             help={tf("help")}
+          />
+          <SelectField
+            label={t("compounding")}
+            value={compounding}
+            options={compoundingOptions}
+            onChange={setCompounding}
+            help={t("help.compounding")}
           />
           <NumberField
             label={t("annualRate")}

@@ -5,7 +5,10 @@ import { project, type Frequency, type ProjectionResult } from "../projection.js
 export interface CompoundInput {
   initial: number;
   contribution: number;
+  /** Frecuencia de aportación (cuándo se añade dinero). */
   frequency?: Frequency;
+  /** Capitalización de intereses (cuándo se abonan y empiezan a rendir); independiente de `frequency`. Por defecto anual. */
+  compounding?: Frequency;
   annualRate: number;
   years: number;
   annualFee?: number;
@@ -20,6 +23,7 @@ export function computeCompound(input: CompoundInput): CompoundResult {
     initial: input.initial,
     contribution: input.contribution,
     frequency: input.frequency ?? "monthly",
+    compounding: input.compounding,
     annualRate: input.annualRate,
     years: input.years,
     annualFee: input.annualFee,

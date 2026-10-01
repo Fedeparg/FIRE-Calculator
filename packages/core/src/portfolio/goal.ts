@@ -6,7 +6,7 @@
 
 import { computeFire, FIRE_SEARCH_MAX_YEARS } from "../calculators/fire.js";
 import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "../calculators/fire-montecarlo.js";
-import { PERIODS_PER_YEAR, project, type Frequency } from "../projection.js";
+import { PERIODS_PER_YEAR, periodRateFromEffective, project, type Frequency } from "../projection.js";
 
 /** Slug de la calculadora FIRE; los escenarios guardados lo comparten con el objetivo de la cartera. */
 export const FIRE_CALCULATOR_SLUG = "independencia-financiera";
@@ -118,7 +118,7 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
   const reached = current >= target;
 
   const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
-  const periodRate = (input.annualReturn || 0) / 100 / periodsPerYear;
+  const periodRate = periodRateFromEffective(input.annualReturn || 0, periodsPerYear);
   const periods = deadlineYears * periodsPerYear;
   const growth = (1 + periodRate) ** periods;
   const annuity = periodRate === 0 ? periods : (growth - 1) / periodRate;
