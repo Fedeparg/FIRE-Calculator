@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { aggregatePortfolio } from "@sextante/core/fx";
 import { latestFetchedAt } from "@/core/portfolio-prices";
 import { useFormat } from "@/lib/format";
+import { useStoredBoolean } from "@/lib/use-stored-boolean";
 import { PORTFOLIO_CURRENCIES, type FxRates, type PriceInfo, type Position } from "@/lib/portfolio";
+import DerivativesSection from "./DerivativesSection";
 import PortfolioBreakdown from "./PortfolioBreakdown";
 import PortfolioExport from "./PortfolioExport";
 import PortfolioGoal from "./PortfolioGoal";
@@ -57,11 +59,15 @@ export default function PortfolioClient({ initialPositions }: Props) {
   const [display, setDisplay] = useState<string>("EUR");
   // Posición cuyo detalle (lotes + simulación de venta) está abierto.
   const [detailId, setDetailId] = useState<string | null>(null);
+  // Preferencia por visor: las posiciones vendidas del todo (cantidad 0) se ocultan por defecto.
+  const [showClosed, setShowClosed] = useStoredBoolean("sextante.portfolio.showClosed");
 
   // Clave estable de los tickers distintos: solo re-pedimos precios si el CONJUNTO cambia
   // (no al editar cantidad/precio medio). Es justo el `?symbols=` que espera la API.
   const tickersKey = useMemo(
-    () => [...new Set(positions.map((p) => p.ticker))].sort().join(","),
+    // Los derivados no se valoran: no se piden sus precios.
+    () =>
+      [...new Set(positions.filter((p) => !p.isDerivative).map((p) => p.ticker))].sort().join(","),
     [positions],
   );
 
@@ -176,6 +182,15 @@ export default function PortfolioClient({ initialPositions }: Props) {
 
   // El detalle se deriva del id, no se guarda la posición: así, cuando `refresh()` trae la
   // cantidad y el precio medio reagregados tras tocar un lote, el panel los ve al instante.
+  // Lo valorable (todo menos derivados) y los derivados, por separado. Las cerradas siguen en
+  // `positions` con sus lotes —el informe de plusvalías las necesita—: solo se ocultan aquí.
+  const tracked = useMemo(() => positions.filter((p) => !p.isDerivative), [positions]);
+  const derivatives = useMemo(() => positions.filter((p) => p.isDerivative), [positions]);
+  const visible = (list: Position[]) => (showClosed ? list : list.filter((p) => p.quantity > 0));
+  const listed = visible(tracked);
+  const listedDerivatives = visible(derivatives);
+  const closedCount = positions.filter((p) => p.quantity === 0).length;
+
   const detail = positions.find((p) => p.id === detailId) ?? null;
 
   return (
@@ -199,6 +214,17 @@ export default function PortfolioClient({ initialPositions }: Props) {
             ))}
           </select>
         </label>
+        {closedCount > 0 && (
+          <label className="flex items-center gap-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              checked={showClosed}
+              onChange={(e) => setShowClosed(e.target.checked)}
+              className="h-4 w-4 accent-[var(--brand)]"
+            />
+            {t("closed.toggle", { count: closedCount })}
+          </label>
+        )}
         {positions.length > 0 && (
           <PortfolioExport
             positions={positions}
@@ -225,21 +251,37 @@ export default function PortfolioClient({ initialPositions }: Props) {
           />
           <PortfolioHistoryChart display={display} />
           <PortfolioBreakdown
-            positions={positions}
+            positions={tracked.filter((p) => p.quantity > 0)}
             prices={prices}
             rates={rates}
             display={display}
           />
-          <PositionList
-            positions={positions}
-            prices={prices}
-            rates={rates}
-            editingId={editing?.id ?? null}
-            detailId={detailId}
-            onEdit={setEditing}
-            onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
-            onDeleted={handleDeleted}
-          />
+          {listed.length > 0 && (
+            <PositionList
+              positions={listed}
+              prices={prices}
+              rates={rates}
+              editingId={editing?.id ?? null}
+              detailId={detailId}
+              onEdit={setEditing}
+              onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
+              onDeleted={handleDeleted}
+            />
+          )}
+          {listedDerivatives.length > 0 && (
+            <DerivativesSection count={listedDerivatives.length}>
+              <PositionList
+                positions={listedDerivatives}
+                prices={prices}
+                rates={rates}
+                editingId={editing?.id ?? null}
+                detailId={detailId}
+                onEdit={setEditing}
+                onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
+                onDeleted={handleDeleted}
+              />
+            </DerivativesSection>
+          )}
           {detail && (
             <PositionDetail
               // Al cambiar de posición se remonta: el histórico y la simulación parten de cero.

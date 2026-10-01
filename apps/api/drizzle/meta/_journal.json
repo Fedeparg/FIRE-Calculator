@@ -113,6 +113,13 @@
       "when": 1790863601927,
       "tag": "0015_magenta_black_crow",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790865404221,
+      "tag": "0016_talented_hex",
+      "breakpoints": true
     }
   ]
 }

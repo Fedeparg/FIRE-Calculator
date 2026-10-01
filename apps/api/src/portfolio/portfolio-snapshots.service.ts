@@ -215,6 +215,7 @@ export class PortfolioSnapshotsService {
           quantity: p.quantity,
           avgPrice: p.avgPrice,
           currency: p.currency,
+          isDerivative: p.isDerivative,
         })),
         prices: pricesRecord,
         rates: fx.rates,

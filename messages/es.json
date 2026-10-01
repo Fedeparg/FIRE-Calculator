@@ -1424,7 +1424,8 @@
         "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro. La comisión de cada operación se guarda como coste de la operación.",
         "notYet": "Todavía no se importan los dividendos, los intereses ni los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta). Tampoco las criptomonedas.",
         "migrations": "Los cambios de custodia internos de Trade Republic se ignoran: no cambian lo que tienes.",
-        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste."
+        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste.",
+        "derivatives": "Los derivados (knock-outs, warrants y similares) se importan con sus operaciones, pero Sextante no sigue su precio: van a una sección aparte y no suman a los totales."
       },
       "privacy": "El fichero se procesa solo para esta importación y no se guarda. Los datos de terceros que incluye (contrapartes, IBAN, referencias de pago) se descartan al leerlo.",
       "file": {
@@ -1467,10 +1468,10 @@
           "OVERFLOW": "La cantidad resultante es demasiado grande. Esta posición no se importará.",
           "UNEXPECTED": "No se puede importar esta posición."
         },
-        "priceMayBeUnavailable": "Puede que no haya cotización para este instrumento.",
         "confirm": "Importar {count, plural, one {# operación} other {# operaciones}}",
         "confirming": "Importando…",
-        "alreadyImported": "Todas las operaciones de este fichero ya están importadas, o no se pueden importar. No hay nada nuevo que añadir."
+        "alreadyImported": "Todas las operaciones de este fichero ya están importadas, o no se pueden importar. No hay nada nuevo que añadir.",
+        "derivativeTag": "Derivado: sin seguimiento de precio"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# operación trae un impuesto en su fila, que no se suma al coste.} other {# operaciones traen un impuesto en su fila, que no se suma al coste.}}",
@@ -1513,6 +1514,14 @@
         "viewPortfolio": "Ver mi cartera"
       },
       "disclaimer": "Información orientativa, no es asesoramiento financiero ni fiscal. Revisa los datos importados contra tu extracto de Trade Republic."
+    },
+    "closed": {
+      "toggle": "Mostrar posiciones cerradas ({count})"
+    },
+    "derivatives": {
+      "title": "Derivados ({count})",
+      "notice": "Sextante no sigue el precio de los derivados (futuros, opciones, warrants, knock-outs…). Se guardan con sus operaciones y cuentan en el informe de plusvalías, pero no se valoran ni entran en los totales de la cartera.",
+      "learnMore": "Qué son los derivados"
     },
     "guideLink": "¿Qué puedes hacer aquí? Guía de la cartera"
   },

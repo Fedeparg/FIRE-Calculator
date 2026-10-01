@@ -1424,7 +1424,8 @@
         "included": "Buys and sells of stocks, ETFs, funds and derivatives are imported, including savings plan executions. The fee of each trade is stored as a trade cost.",
         "notYet": "Dividends, interest and cash movements (deposits, withdrawals, card payments) are not imported yet. Neither are cryptocurrencies.",
         "migrations": "Trade Republic's internal custody migrations are ignored: they do not change what you hold.",
-        "tax": "The taxes shown on some trades are not added to the cost."
+        "tax": "The taxes shown on some trades are not added to the cost.",
+        "derivatives": "Derivatives (knock-outs, warrants and the like) are imported with their transactions, but Sextante does not track their price: they go to a separate section and do not count in the totals."
       },
       "privacy": "The file is processed only for this import and is not stored. Third-party data it contains (counterparties, IBANs, payment references) is discarded as it is read.",
       "file": {
@@ -1467,10 +1468,10 @@
           "OVERFLOW": "The resulting quantity is too large. This position will not be imported.",
           "UNEXPECTED": "This position cannot be imported."
         },
-        "priceMayBeUnavailable": "A price quote may not be available for this instrument.",
         "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
         "confirming": "Importing…",
-        "alreadyImported": "Every transaction in this file is already imported, or cannot be imported. There is nothing new to add."
+        "alreadyImported": "Every transaction in this file is already imported, or cannot be imported. There is nothing new to add.",
+        "derivativeTag": "Derivative: price not tracked"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# transaction carries a tax on its row, which is not added to the cost.} other {# transactions carry a tax on their rows, which is not added to the cost.}}",
@@ -1513,6 +1514,14 @@
         "viewPortfolio": "View my portfolio"
       },
       "disclaimer": "Indicative information, not financial or tax advice. Check the imported data against your Trade Republic statement."
+    },
+    "closed": {
+      "toggle": "Show closed positions ({count})"
+    },
+    "derivatives": {
+      "title": "Derivatives ({count})",
+      "notice": "Sextante does not track the price of derivatives (futures, options, warrants, knock-outs…). They are stored with their transactions and count in the capital gains report, but they are not valued and do not enter the portfolio totals.",
+      "learnMore": "What derivatives are"
     },
     "guideLink": "What can you do here? Portfolio guide"
   },

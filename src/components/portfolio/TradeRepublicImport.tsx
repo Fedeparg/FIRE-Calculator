@@ -8,6 +8,7 @@ import { MAX_IMPORT_BYTES } from "@sextante/core/imports/limits";
 import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import { trackEvent } from "@/components/analytics/track";
 import Notice from "@/components/ui/Notice";
+import DerivativesNotice from "./DerivativesNotice";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 
@@ -175,6 +176,7 @@ export default function TradeRepublicImport() {
         <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-foreground">
           <li>{t("scope.included")}</li>
           <li>{t("scope.notYet")}</li>
+          <li>{t("scope.derivatives")}</li>
           <li>{t("scope.migrations")}</li>
           <li>{t("scope.tax")}</li>
         </ul>
@@ -323,8 +325,8 @@ function PlanView({
                       {p.blockedBy && (
                         <span className="mt-1 block text-xs text-warning">{t(`blocked.${p.blockedBy}`)}</span>
                       )}
-                      {p.priceMayBeUnavailable && (
-                        <span className="mt-1 block text-xs text-muted">{t("priceMayBeUnavailable")}</span>
+                      {p.isDerivative && (
+                        <span className="mt-1 block text-xs text-muted">{t("derivativeTag")}</span>
                       )}
                     </th>
                     <td className="px-3 py-2 text-foreground">{t(`action.${p.action}`)}</td>
@@ -346,6 +348,7 @@ function PlanView({
         </>
       )}
 
+      {plan.positions.some((p) => p.isDerivative) && <DerivativesNotice />}
       <WarningsList plan={plan} />
       <SkippedList plan={plan} />
 

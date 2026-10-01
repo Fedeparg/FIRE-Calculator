@@ -51,6 +51,13 @@ Se importan las **compras y ventas** (también las de los planes de ahorro), con
 comisión. **Todavía no** se importan los dividendos, los intereses ni los movimientos
 de efectivo. El fichero no se guarda y los datos de terceros que trae se descartan.
 
+Los **derivados** (knock-outs, warrants y similares) se importan con sus
+operaciones y cuentan en el informe de plusvalías, pero Sextante **no sigue su
+precio**: van a una sección aparte, plegada, y no suman a los totales. Aquí
+explicamos [qué son los derivados](/aprende/derivados) y por qué. Las posiciones
+vendidas del todo se ocultan de la lista; se muestran con la casilla *Mostrar
+posiciones cerradas*.
+
 ## 2. El resumen y los precios
 
 **Total de la cartera** muestra lo invertido, el valor de mercado y la

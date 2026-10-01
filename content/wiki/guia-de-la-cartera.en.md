@@ -52,6 +52,12 @@ export and Sextante creates your positions with all their buys and sells.
 Dividends, interest and cash movements are **not imported yet**. The file is not
 stored, and the third-party data it carries is discarded.
 
+**Derivatives** (knock-outs, warrants and the like) are imported with their
+transactions and count in the capital gains report, but Sextante **does not track
+their price**: they go to a separate, collapsed section and do not add to the
+totals. Here is [what derivatives are](/aprende/derivados) and why. Positions sold
+in full are hidden from the list; tick *Show closed positions* to see them.
+
 ## 2. The summary and prices
 
 **Portfolio total** shows the amount invested, the market value and the gain or

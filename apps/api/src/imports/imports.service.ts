@@ -93,7 +93,7 @@ export class ImportsService {
         currentQuantity: current ? Number(current.quantity) : 0,
         resultingQuantity: simulation.ok ? Number(simulation.quantity) : null,
         blockedBy: simulation.ok ? null : simulation.failure,
-        priceMayBeUnavailable: group.assetClass !== 'fund' && group.assetClass !== 'stock',
+        isDerivative: group.assetClass === 'derivative',
       });
     }
 
@@ -151,7 +151,8 @@ export class ImportsService {
     }
 
     if (created.length > 0) {
-      void this.primeInBackground(userId, created);
+      // Los derivados no se valoran: no se piden sus precios.
+      void this.primeInBackground(userId, created.filter((p) => !p.isDerivative));
     }
 
     return {
@@ -191,6 +192,7 @@ export class ImportsService {
           avgPrice: '0',
           broker: TRADE_REPUBLIC_BROKER,
           currency: 'EUR',
+          isDerivative: group.assetClass === 'derivative',
         })
         .returning();
     }

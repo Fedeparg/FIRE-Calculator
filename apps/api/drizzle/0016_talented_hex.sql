@@ -1,0 +1,1 @@
+ALTER TABLE "positions" ADD COLUMN "is_derivative" boolean DEFAULT false NOT NULL;
