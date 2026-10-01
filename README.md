@@ -4,8 +4,6 @@
 
 **Personal-finance and FIRE calculators built around the Spanish tax system — plus an aggregated portfolio your own AI assistant can read and write over MCP.**
 
-[![CI](https://github.com/Fedeparg/sextante/actions/workflows/ci.yml/badge.svg)](https://github.com/Fedeparg/sextante/actions/workflows/ci.yml)
-[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs)](https://nextjs.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -498,22 +496,17 @@ maths down, including boundary values at every tax bracket; CI gates typecheck,
 lint, tests and build on both packages; and where the tax model approximates, it
 says so in the code *and* on the page.
 
-If you find a number that's wrong, that's on me, not the tooling. Please
-[open an issue](https://github.com/Fedeparg/sextante/issues).
+If you find a number that's wrong, that's on me, not the tooling. Please write to
+sextante_support.reunite445@passmail.net.
 
 ---
 
 ## License
 
-[**GNU AGPL-3.0**](LICENSE).
+**Proprietary, all rights reserved.** See [`LICENSE`](LICENSE). Versions published
+before 2026-10-01 under the GNU AGPL-3.0 keep that licence.
 
-You're free to use, study, modify and redistribute this. If you run a modified
-version as a network service, section 13 requires you to offer its source to your
-users. That's deliberate: the whole point of publishing a tool that computes
-people's taxes is that anyone can check the maths.
-
-Security issues: please see [`SECURITY.md`](SECURITY.md) rather than opening a
-public issue.
+Security issues: please see [`SECURITY.md`](SECURITY.md).
 
 ---
 
