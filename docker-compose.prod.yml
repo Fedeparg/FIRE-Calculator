@@ -21,7 +21,7 @@ name: sextante
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sextante}
@@ -159,7 +159,7 @@ services:
   # Sextante: así ni el export/borrado RGPD ni los backups de la app la mezclan con
   # datos de usuarios, y perderla no compromete nada (son métricas agregadas).
   analytics-db:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: umami
