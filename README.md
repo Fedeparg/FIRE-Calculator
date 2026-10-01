@@ -165,8 +165,8 @@ explaining, including the ones with real trade-offs.
 ### The calculation engine is pure, framework-free TypeScript
 
 `src/core/` has no React import anywhere. It's plain functions over plain data:
-`projection.ts` is a generic investment-projection engine, `fiscal/` is the tax
-engine, `calculators/*.ts` are thin wrappers, `format.ts` handles locale-aware
+`projection.ts` is a generic investment-projection engine, the tax engine lives in
+the shared `packages/core` (so the API runs the same code as the browser), `calculators/*.ts` are thin wrappers, `format.ts` handles locale-aware
 formatting.
 
 **Why:** it makes the maths trivially testable — 248 unit tests run in under a
@@ -321,7 +321,7 @@ so it was cut on purpose.
 
 ## The Spanish tax engine
 
-`src/core/fiscal/` is the part that's hardest to get right and easiest to get
+`packages/core/src/fiscal/` is the part that's hardest to get right and easiest to get
 subtly wrong, so it's isolated, pure and heavily tested.
 
 - **IRPF** by the AEAT **dual-scale method** — tax on the base minus tax on the
@@ -399,7 +399,7 @@ docker compose up   # postgres + one-shot migrate + api
 | `pnpm typecheck` · `pnpm lint` | `pnpm --filter @sextante/api typecheck` · `lint` |
 | | `pnpm --filter @sextante/api db:generate` · `db:migrate` · `db:studio` |
 
-Run a single test file with `pnpm test src/core/fiscal/irpf.test.ts`, or filter by
+Run a single test file with `pnpm test packages/core/src/fiscal/irpf.test.ts`, or filter by
 name with `pnpm test -t "IRPF"`.
 
 `apps/` is excluded from the root tooling (`tsconfig` `exclude`, eslint ignore) —
@@ -437,7 +437,6 @@ src/                        Frontend (Next.js)
   app/og/                   Dynamic Open Graph image generation
   core/                     Pure logic. No React. Fully tested.
     projection.ts             Generic investment-projection engine
-    fiscal/                   Spanish tax engine (IRPF, brackets, Social Security)
     calculators/              One module per calculator — thin wrappers over core
     registry.ts               Calculator catalogue (feeds the searchable index)
     format.ts                 Locale-aware number and currency formatting
@@ -448,6 +447,10 @@ src/                        Frontend (Next.js)
   lib/                      Server helpers: session, SEO, JSON-LD, site config
   i18n/                     next-intl configuration
 
+packages/core/              Shared pure logic, used by the web and the API
+  src/fiscal/               Spanish tax engine (IRPF, brackets, capital gains)
+  src/fx.ts                 Currency conversion and portfolio aggregation
+
 apps/api/                   Backend (NestJS)
   src/db/                   Drizzle schema (source of truth) + migration runner
   src/auth/                 Magic link, JWT, session
@@ -455,7 +458,7 @@ apps/api/                   Backend (NestJS)
   src/mcp/                  Remote MCP server + audit log
   src/positions/            Portfolio CRUD
   src/prices/               Quote feed, FX rates, ISIN/ticker resolution
-  src/portfolio/            Valuation and P&L
+  src/portfolio/            Valuation and P&L (formulas from packages/core)
   src/account/              GDPR: export, deletion, connected apps
   drizzle/                  Versioned SQL migrations
 
