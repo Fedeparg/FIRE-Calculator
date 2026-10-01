@@ -8,9 +8,9 @@ import { asLocale } from "@/core/types";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { organizationSchema, websiteSchema } from "@/lib/jsonld";
 import JsonLd from "@/components/seo/JsonLd";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ThemeScript from "@/components/ThemeScript";
+import Header from "@/shared/layout/Header";
+import Footer from "@/shared/layout/Footer";
+import ThemeScript from "@/shared/layout/ThemeScript";
 import AnalyticsScript from "@/features/analytics/components/AnalyticsScript";
 import "../globals.css";
 
