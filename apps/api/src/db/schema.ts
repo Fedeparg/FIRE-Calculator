@@ -227,14 +227,17 @@ export const portfolioSnapshots = pgTable(
     /** Tasas FX del día: USD por unidad de cada divisa (USD = 1). */
     fxRates: jsonb('fx_rates').$type<Record<string, number>>().notNull(),
     /**
-     * `true` si esta fila es una RECONSTRUCCIÓN a partir de los lotes (la cantidad y el coste
-     * que se tenían ese día según las operaciones, valorados con los cierres de la caché), no una
-     * captura real del cron de esa fecha. Una captura real (`PortfolioSnapshotsService.captureUser`)
-     * SIEMPRE la sustituye, pase lo que pase; una reconstrucción posterior solo vuelve a escribir
-     * las filas estimadas (borra y regenera) y no pisa una real salvo que haya quedado OBSOLETA
-     * (se registró después una operación con fecha anterior a la captura: entonces se sustituye por
-     * la reconstrucción y pasa a `true`; ver `backfillUser` y `@sextante/core/snapshot-staleness`). El
-     * frontend la usa para no presentar una aproximación con la misma certeza que un dato real.
+     * `true` si esta fecha es ANTERIOR a que el usuario empezara a registrar su cartera en
+     * Sextante (`trackingSince` = fecha UTC del `created_at` más antiguo de sus posiciones): la fila
+     * es entonces una RECONSTRUCCIÓN a partir de los lotes (cantidad y coste de ese día según las
+     * operaciones, valorados con los cierres de la caché). Desde `trackingSince` es `false` aunque
+     * la fila la haya (re)escrito el backfill (obsoleta sustituida, hueco rellenado). La captura
+     * real (`PortfolioSnapshotsService.captureUser`) SIEMPRE sustituye la fila y la deja en `false`;
+     * una reconstrucción posterior solo reescribe filas estimadas y no pisa una real salvo que haya
+     * quedado OBSOLETA (se registró después una operación con fecha anterior a la captura). Cada
+     * `backfillUser` además corrige las filas cuyo valor no coincide con la regla; ver ese método y
+     * `@sextante/core/snapshot-staleness`. El frontend la usa para no presentar una aproximación
+     * con la misma certeza que un dato real.
      */
     estimated: boolean('estimated').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

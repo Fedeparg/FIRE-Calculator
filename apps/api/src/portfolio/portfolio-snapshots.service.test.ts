@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots } from '../db/schema.js';
+import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots, positions as positionsTable } from '../db/schema.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
@@ -489,6 +489,112 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
         const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(5));
         expect(row).toMatchObject({ estimated: false, invested: '1000.00000000' });
+      });
+
+      describe('estimado = anterior al inicio del seguimiento en Sextante', () => {
+        /** Fija el día en que el usuario empezó a registrar su cartera (`created_at` de sus posiciones). */
+        async function trackedSince(userId: string, date: string): Promise<void> {
+          await db
+            .update(positionsTable)
+            .set({ createdAt: new Date(`${date}T10:00:00Z`) })
+            .where(eq(positionsTable.userId, userId));
+        }
+
+        /** Estado de producción: usuario desde `daysAgo(20)` que HOY importa un lote de hace 30 días. */
+        async function seedImportedToday(userId: string): Promise<void> {
+          await createBoughtOn(userId, 'IWDA', 10, 100, daysAgo(30));
+          await trackedSince(userId, daysAgo(20));
+          await cacheFlatPrices(31);
+        }
+
+        it('la reconstrucción anterior al inicio del seguimiento es estimada y la posterior no', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          await seedImportedToday(userId);
+
+          await snapshots.backfillUser(userId);
+
+          const rows = await rowsOf(userId);
+          expect(rows[0].date).toBe(daysAgo(30));
+          for (const row of rows) expect(row.estimated, row.date).toBe(row.date < daysAgo(20));
+        });
+
+        it('repara el estado de producción: las filas posteriores al inicio, marcadas estimadas por el #77, pasan a reales con los mismos valores', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          await seedImportedToday(userId);
+          await snapshots.backfillUser(userId);
+          const expected = await rowsOf(userId);
+          // Lo que dejó el #77: TODA la serie reconstruida marcada como estimada.
+          await db.update(portfolioSnapshots).set({ estimated: true }).where(eq(portfolioSnapshots.userId, userId));
+
+          await snapshots.backfillUser(userId);
+
+          const rows = await rowsOf(userId);
+          expect(rows.filter((r) => r.date >= daysAgo(20)).length).toBeGreaterThan(0);
+          for (const row of rows) expect(row.estimated, row.date).toBe(row.date < daysAgo(20));
+          const values = (list: typeof rows) =>
+            list.map((r) => [r.date, r.invested, r.marketValue, r.valuedPositions, r.totalPositions]);
+          expect(values(rows)).toEqual(values(expected));
+        });
+
+        it('una real obsoleta sustituida queda como real (estimated = false) si es posterior al inicio', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          const id = await createWithOldLot(userId, daysAgo(30));
+          await trackedSince(userId, daysAgo(20));
+          await cacheFlatPrices(31);
+          await snapshots.backfillUser(userId);
+          for (let days = 10; days >= 1; days--) {
+            await db.delete(portfolioSnapshots).where(eq(portfolioSnapshots.date, daysAgo(days)));
+            await insertReal(userId, daysAgo(days), '1000.00000000');
+          }
+          await addLot(userId, id, 'buy', '5', '100', daysAgo(8));
+
+          await snapshots.backfillUser(userId);
+
+          const rows = await rowsOf(userId);
+          for (const row of rows.filter((r) => r.date >= daysAgo(8))) {
+            expect(row.invested, row.date).toBe('1500.00000000');
+          }
+          for (const row of rows) expect(row.estimated, row.date).toBe(row.date < daysAgo(20));
+        });
+
+        it('una real anterior al inicio del seguimiento se deja como está', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          await seedImportedToday(userId);
+          // Lote registrado antes de la captura: no es obsoleta.
+          const old = capturedAt(daysAgo(40));
+          await db.update(positionLots).set({ createdAt: old, updatedAt: old }).where(eq(positionLots.userId, userId));
+          await insertReal(userId, daysAgo(25), '777.00000000');
+
+          await snapshots.backfillUser(userId);
+
+          const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(25));
+          expect(row).toMatchObject({ estimated: false, invested: '777.00000000' });
+        });
+
+        it('rellena un hueco posterior al inicio como real (estimated = false)', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          await seedImportedToday(userId);
+          await snapshots.backfillUser(userId);
+          await db.delete(portfolioSnapshots).where(eq(portfolioSnapshots.date, daysAgo(5)));
+
+          await snapshots.backfillUser(userId);
+
+          const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(5));
+          expect(row?.estimated).toBe(false);
+        });
+
+        it('es idempotente: una segunda pasada no reescribe nada', async () => {
+          const userId = await insertUser(db, 'a@example.com');
+          await seedImportedToday(userId);
+          await snapshots.backfillUser(userId);
+          await db.update(portfolioSnapshots).set({ estimated: true }).where(eq(portfolioSnapshots.userId, userId));
+          await snapshots.backfillUser(userId);
+          const first = await rowsOf(userId);
+
+          await snapshots.backfillUser(userId);
+
+          expect(await rowsOf(userId)).toEqual(first);
+        });
       });
     });
 
