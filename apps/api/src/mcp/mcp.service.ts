@@ -27,7 +27,7 @@ import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider } from '../prices/instrument-search.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
-import { CALCULATOR_TOOLS } from './calculator-tools.js';
+import { CALCULATOR_CATEGORIES, hasCalculator, listCalculators, runCalculator } from './calculator-tools.js';
 import { McpAuditService } from './mcp-audit.service.js';
 import { errorResult, jsonResult } from './mcp-results.js';
 
@@ -76,11 +76,13 @@ export class McpService {
         instructions:
           'Sextante es una suite de finanzas personales e independencia financiera (FIRE) ' +
           'centrada en la fiscalidad española, con un agregador de cartera. Tiene dos tipos ' +
-          'de herramientas. (1) Calculadoras (`calculate_*`, `compare_buy_vs_rent`, ' +
-          '`simulate_fire_monte_carlo`, `score_financial_health`): cálculo puro sobre lo que ' +
-          'envíes, con el mismo motor que la web (IRPF por comunidad, hipotecas, FIRE, Monte ' +
-          'Carlo, impuestos de patrimonio y donaciones…); no leen datos del usuario. Sus ' +
-          'porcentajes van en base 100. (2) Cartera: leer, analizar y (con permiso de ' +
+          'de herramientas. (1) Calculadoras: cálculo puro sobre lo que envíes, con el mismo ' +
+          'motor que la web (IRPF por comunidad, hipotecas, FIRE, Monte Carlo, impuestos de ' +
+          'patrimonio y donaciones…); no leen datos del usuario. Flujo: llama a ' +
+          '`list_calculators` (opcionalmente filtrando por `category` o `slug`) para ver los ' +
+          'slugs y el esquema de entrada de cada una, y luego a `calculate` con ' +
+          '`{ calculator: <slug>, inputs: {...} }`. Los porcentajes van en base 100. ' +
+          '(2) Cartera: leer, analizar y (con permiso de ' +
           'escritura) modificar las posiciones del usuario autenticado, incluidas las ' +
           'plusvalías realizadas por ejercicio para la declaración de la Renta, el reparto por ' +
           'activo/bróker/divisa y el progreso hacia su objetivo FIRE. Los escenarios que el ' +
@@ -97,10 +99,59 @@ export class McpService {
     this.registerReadTools(server, ctx);
     this.registerAnalysisTools(server, ctx);
     this.registerWriteTools(server, ctx);
-    for (const tool of CALCULATOR_TOOLS) {
-      tool.register(server, (name, body) => this.run(ctx, name, body));
-    }
+    this.registerCalculatorTools(server, ctx);
     return server;
+  }
+
+  /**
+   * Calculadoras: dos tools genéricas sobre el registro de `calculator-tools.ts`. Son puras (sin
+   * datos del usuario) y de solo lectura. Cada ejecución se audita como `calculate:<slug>`
+   * (solo si el slug existe: la columna es de longitud fija y el slug lo escribe el cliente).
+   */
+  private registerCalculatorTools(server: McpServer, ctx: McpContext): void {
+    server.registerTool(
+      'list_calculators',
+      {
+        title: 'Calculadoras disponibles',
+        description:
+          'Lista las calculadoras de Sextante con su slug, categoría, descripción y el esquema ' +
+          'de entrada (JSON Schema con unidades, mínimos y máximos de cada campo). Úsala antes ' +
+          'de `calculate` para saber qué calculadora usar y qué `inputs` enviarle. Filtra por ' +
+          '`category` o `slug`: sin filtro devuelve todas (unos 40 KB). Solo lectura.',
+        inputSchema: {
+          category: z.enum(CALCULATOR_CATEGORIES).optional().describe('Solo las de esta categoría.'),
+          slug: z.string().max(64).optional().describe('Solo la de este slug.'),
+        },
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      ({ category, slug }) =>
+        this.run(ctx, 'list_calculators', () =>
+          Promise.resolve(jsonResult(listCalculators({ category, slug }), { compact: true })),
+        ),
+    );
+
+    server.registerTool(
+      'calculate',
+      {
+        title: 'Ejecutar una calculadora',
+        description:
+          'Ejecuta una calculadora de Sextante con el mismo motor que la web. `calculator` es el ' +
+          'slug (ver `list_calculators`) e `inputs` un objeto que cumple el esquema de esa ' +
+          'calculadora: un campo fuera de rango, de otro tipo o desconocido devuelve un error ' +
+          'sin calcular. Los importes van en la divisa del usuario (las fiscales, en euros) y ' +
+          'los porcentajes en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es ' +
+          'una estimación orientativa, no asesoramiento. Solo lectura.',
+        inputSchema: {
+          calculator: z.string().max(64).describe('Slug de la calculadora (p. ej. hipoteca-fija).'),
+          inputs: z.record(z.string(), z.unknown()).describe('Entradas de la calculadora, según su esquema.'),
+        },
+        annotations: { readOnlyHint: true, openWorldHint: false },
+      },
+      ({ calculator, inputs }) =>
+        this.run(ctx, hasCalculator(calculator) ? `calculate:${calculator}` : 'calculate', () =>
+          Promise.resolve(jsonResult(runCalculator(calculator, inputs))),
+        ),
+    );
   }
 
   /** Tools de solo lectura (scope `portfolio:read`). */
@@ -440,8 +491,8 @@ export class McpService {
         title: 'Escenarios guardados de las calculadoras',
         description:
           'Devuelve los escenarios que el usuario guardó en las calculadoras de la web (nombre, ' +
-          'calculadora por su slug y valores introducidos), para reutilizarlos con las tools ' +
-          'de calculadora o con `get_fire_goal_progress`. Solo lectura.',
+          'calculadora por su slug y valores introducidos), para reutilizarlos con `calculate` ' +
+          'o con `get_fire_goal_progress`. Solo lectura.',
         inputSchema: {
           slug: z
             .string()

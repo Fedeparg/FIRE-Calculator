@@ -4,7 +4,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { SCOPE_PORTFOLIO_READ } from '../oauth/oauth.constants.js';
-import { CALCULATOR_TOOLS } from './calculator-tools.js';
+import { CALCULATORS } from './calculator-tools.js';
 import { McpService } from './mcp.service.js';
 
 /**
@@ -128,7 +128,7 @@ afterEach(async () => {
 });
 
 describe('McpService', () => {
-  it('anuncia las tools de cartera, de análisis y todas las calculadoras', async () => {
+  it('anuncia las tools de cartera, de análisis y las dos genéricas de calculadoras', async () => {
     client = await connect(makeService().service);
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
@@ -140,48 +140,105 @@ describe('McpService', () => {
         'get_portfolio_breakdown',
         'get_fire_goal_progress',
         'list_saved_scenarios',
-        ...CALCULATOR_TOOLS.map((t) => t.name),
+        'list_calculators',
+        'calculate',
       ]),
     );
+    expect(names.filter((n) => n.startsWith('calculate_'))).toEqual([]);
     expect(new Set(names).size).toBe(names.length);
     // Las calculadoras son de solo lectura y no tocan el mundo exterior.
-    const mortgage = tools.find((t) => t.name === 'calculate_mortgage');
-    expect(mortgage?.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: false });
-    expect(mortgage?.inputSchema.required).toEqual(['principal', 'annualRate', 'years']);
+    for (const name of ['list_calculators', 'calculate']) {
+      expect(tools.find((t) => t.name === name)?.annotations).toMatchObject({
+        readOnlyHint: true,
+        openWorldHint: false,
+      });
+    }
+    expect(tools.find((t) => t.name === 'calculate')?.inputSchema.required).toEqual(['calculator', 'inputs']);
   });
 
-  it('ejecuta una calculadora y deja la llamada auditada', async () => {
+  it('lista todas las calculadoras con su esquema de entrada', async () => {
+    const { service, audit } = makeService();
+    client = await connect(service);
+
+    const all = parse(await client.callTool({ name: 'list_calculators', arguments: {} })) as {
+      slug: string;
+      inputSchema: { properties: object };
+    }[];
+    expect(all.map((c) => c.slug).sort()).toEqual(Object.keys(CALCULATORS).sort());
+    expect(all.every((c) => Object.keys(c.inputSchema.properties).length > 0)).toBe(true);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'list_calculators', 'ok');
+
+    const mortgage = parse(
+      await client.callTool({ name: 'list_calculators', arguments: { slug: 'hipoteca-fija' } }),
+    ) as { slug: string }[];
+    expect(mortgage.map((c) => c.slug)).toEqual(['hipoteca-fija']);
+
+    const tax = parse(await client.callTool({ name: 'list_calculators', arguments: { category: 'fiscalidad' } }));
+    expect((tax as unknown[]).length).toBeGreaterThan(1);
+  });
+
+  it('ejecuta una calculadora y deja la llamada auditada con su slug', async () => {
     const { service, audit } = makeService();
     client = await connect(service);
 
     const result = parse(
       await client.callTool({
-        name: 'calculate_mortgage',
-        arguments: { principal: 100_000, annualRate: 0, years: 10 },
+        name: 'calculate',
+        arguments: { calculator: 'hipoteca-fija', inputs: { principal: 100_000, annualRate: 0, years: 10 } },
       }),
     );
 
     // Tipo 0: 100.000 € en 120 cuotas iguales.
     expect((result as { monthlyPayment: number }).monthlyPayment).toBeCloseTo(833.33, 2);
-    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate_mortgage', 'ok');
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate:hipoteca-fija', 'ok');
+
+    const roi = parse(
+      await client.callTool({
+        name: 'calculate',
+        arguments: { calculator: 'roi', inputs: { initial: 1000, final: 1500 } },
+      }),
+    );
+    expect(roi).toMatchObject({ gain: 500 });
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate:roi', 'ok');
   });
 
-  it('rechaza una entrada fuera de rango como error de tool, sin calcular', async () => {
-    client = await connect(makeService().service);
+  it('un slug desconocido es error de tool y se audita sin el slug del cliente', async () => {
+    const { service, audit } = makeService();
+    client = await connect(service);
     const result = (await client.callTool({
-      name: 'simulate_fire_monte_carlo',
-      arguments: {
-        annualExpenses: 1,
-        currentSavings: 1,
-        monthlySavings: 1,
-        annualReturn: 5,
-        volatility: 15,
-        withdrawalRate: 4,
-        retirementYears: 30,
-        paths: 10_000_000,
-      },
+      name: 'calculate',
+      arguments: { calculator: 'no-existe', inputs: {} },
     })) as CallToolResult;
+
     expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain('list_calculators');
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate', 'error');
+  });
+
+  it('rechaza una entrada fuera de rango, de otro tipo o desconocida como error de tool, sin calcular', async () => {
+    const { service, audit } = makeService();
+    client = await connect(service);
+    const call = async (calculator: string, inputs: Record<string, unknown>) =>
+      (await client!.callTool({ name: 'calculate', arguments: { calculator, inputs } })) as CallToolResult;
+
+    const montecarlo = {
+      annualExpenses: 1,
+      currentSavings: 1,
+      monthlySavings: 1,
+      annualReturn: 5,
+      volatility: 15,
+      withdrawalRate: 4,
+      retirementYears: 30,
+    };
+    const tooMany = await call('simulador-montecarlo', { ...montecarlo, paths: 10_000_000 });
+    expect(tooMany.isError).toBe(true);
+    expect(JSON.stringify(tooMany.content)).toContain('paths');
+
+    expect((await call('simulador-montecarlo', { ...montecarlo, extra: 1 })).isError).toBe(true);
+    expect((await call('hipoteca-fija', { principal: 'mucho', annualRate: 3, years: 10 })).isError).toBe(true);
+    expect((await call('hipoteca-fija', { principal: 1000 })).isError).toBe(true);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate:simulador-montecarlo', 'error');
+    expect(audit.record).not.toHaveBeenCalledWith(USER, 'client-1', expect.any(String), 'ok');
   });
 
   it('calcula las plusvalías por ejercicio con FIFO a partir de los lotes del usuario', async () => {

@@ -21,7 +21,7 @@ aggregated portfolio that your own AI assistant can read and write over MCP.
 - **Aggregated portfolio** (needs sign-in): positions and lots across brokers,
   prices and FX, P&L, history, realised-gains report and progress towards a FIRE goal.
 - **Remote MCP server** (`/api/mcp`, OAuth 2.1): the portfolio and every calculator
-  as tools for any MCP client.
+  (via `list_calculators` + `calculate`) for any MCP client.
 - **Wiki** and legal pages in Markdown, bilingual (es/en) via `next-intl`.
 
 ## Architecture
