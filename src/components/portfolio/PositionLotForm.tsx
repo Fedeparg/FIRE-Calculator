@@ -4,17 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
-import type { PositionLot, PositionLotKind } from "@/lib/portfolio";
-
-/** Cuerpo que espera la API de lotes (`POST`/`PATCH .../lots`). */
-export type LotPayload = {
-  kind: PositionLotKind;
-  quantity: number;
-  price: number;
-  fees: number;
-  tradedAt: string;
-  note?: string;
-};
+import type { LotPayload, PositionLot, PositionLotKind } from "@/lib/portfolio";
 
 type Props = {
   /** Lote en edición, o `null` para dar de alta uno nuevo. */
