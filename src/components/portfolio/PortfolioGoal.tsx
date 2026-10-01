@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
+import { activeScenario, goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
 import { convertCurrency } from "@sextante/core/fx";
 import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
@@ -68,7 +68,7 @@ function toCents(value: number): number {
  *
  * **Persistencia.** Se reutiliza el CRUD de escenarios guardados (`/api/scenarios`) con el slug
  * de la calculadora FIRE: no hace falta almacenamiento nuevo y el objetivo aparece también en
- * la calculadora. Sin sesión válida el bloque sigue calculando en local, simplemente no ofrece
+ * la calculadora. Al abrir se carga el plan activo (`activeScenario`, el que enseña el Resumen). Sin sesión válida el bloque sigue calculando en local, simplemente no ofrece
  * guardar.
  */
 export default function PortfolioGoal({ marketValue, valued, total, display, rates }: Props) {
@@ -104,6 +104,9 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
 
   // Escenarios guardados de la calculadora FIRE (los mismos que se ven en su página).
   const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
+  // `true` cuando la lista ya se ha pedido (con o sin éxito): hasta entonces no se avisa de
+  // que no hay planes, para no enseñar el aviso un instante antes de cargar el activo.
+  const [listLoaded, setListLoaded] = useState(false);
   const [canSave, setCanSave] = useState(false);
   const [selectedId, setSelectedId] = useState("");
   /**
@@ -118,7 +121,32 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   // Último mensaje de estado (guardado/actualizado/cargado) para la región viva.
   const [status, setStatus] = useState("");
 
-  // Carga inicial de escenarios. Un 401 (sesión caducada mientras se navegaba) deja el bloque
+  /**
+   * Aplica un escenario guardado. Los importes se guardan en SU divisa (`goalCurrency`, o EUR
+   * si viene de la calculadora, que solo trabaja en euros): la conversión a lo que se está
+   * viendo la hace `shown`. Solo usa setters de estado, que son estables: de ahí las deps vacías.
+   */
+  const applyScenario = useCallback((scenario: SavedScenario) => {
+    const settings = goalSettingsFromInputs(scenario.inputs);
+    setAmounts({
+      currency: settings.currency,
+      annualExpenses: settings.annualExpenses,
+      contribution: settings.contribution,
+    });
+    setWithdrawalRate(settings.withdrawalRate);
+    setAnnualReturn(settings.annualReturn);
+    setFrequency(settings.frequency);
+    setVolatility(settings.volatility);
+    setRetirementYears(settings.retirementYears);
+
+    setSelectedId(scenario.id);
+    setLoadedInputs(scenario.inputs);
+    setName(scenario.name);
+    setVersion((current) => current + 1);
+  }, []);
+
+  // Carga inicial: la lista de planes y, si hay alguno, el activo (el mismo que enseña la
+  // tarjeta del Resumen). Un 401 (sesión caducada mientras se navegaba) deja el bloque
   // calculando en local: la autorización la decide la API, aquí solo se refleja su respuesta.
   useEffect(() => {
     let cancelled = false;
@@ -133,17 +161,23 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
           setErrorKey(scenarioErrorKeyForStatus(res.status));
           return;
         }
-        setScenarios((await res.json()) as SavedScenario[]);
+        const list = (await res.json()) as SavedScenario[];
+        if (cancelled) return;
+        setScenarios(list);
         setCanSave(true);
+        const active = activeScenario(list);
+        if (active) applyScenario(active);
       } catch {
         // Sin respuesta, el objetivo se sigue calculando; simplemente no se ofrece guardar.
+      } finally {
+        if (!cancelled) setListLoaded(true);
       }
     };
     void load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [applyScenario]);
 
   /**
    * Importes en la divisa que se está viendo. Es una DERIVACIÓN, no estado sincronizado con un
@@ -198,31 +232,31 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   );
 
   /**
-   * Aplica un escenario guardado. Los importes se guardan en SU divisa (`goalCurrency`, o EUR
-   * si viene de la calculadora, que solo trabaja en euros): la conversión a lo que se está
-   * viendo la hace `shown`.
+   * Elegir un plan lo convierte en el activo: se aplica ya y se "toca" en la API (PATCH sin
+   * cambios, que renueva `updatedAt`) para que el Resumen y los avisos lo sigan. Si ese PATCH
+   * falla, el plan se queda cargado aquí pero se avisa de que no se ha podido activar.
    */
-  function handleLoad(id: string) {
-    setSelectedId(id);
+  async function handleSelect(id: string) {
     const scenario = scenarios.find((s) => s.id === id);
     if (!scenario) return;
-
-    const settings = goalSettingsFromInputs(scenario.inputs);
-    setAmounts({
-      currency: settings.currency,
-      annualExpenses: settings.annualExpenses,
-      contribution: settings.contribution,
-    });
-    setWithdrawalRate(settings.withdrawalRate);
-    setAnnualReturn(settings.annualReturn);
-    setFrequency(settings.frequency);
-    setVolatility(settings.volatility);
-    setRetirementYears(settings.retirementYears);
-
-    setLoadedInputs(scenario.inputs);
-    setName(scenario.name);
-    setStatus(t("loaded", { name: scenario.name }));
-    setVersion((current) => current + 1);
+    applyScenario(scenario);
+    setErrorKey(null);
+    try {
+      const res = await fetch(`/api/scenarios/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        setErrorKey(await scenarioErrorKeyForResponse(res));
+        return;
+      }
+      const activated = (await res.json()) as SavedScenario;
+      setScenarios((prev) => [activated, ...prev.filter((s) => s.id !== activated.id)]);
+      setStatus(t("activated", { name: activated.name }));
+    } catch {
+      setErrorKey("errorNetwork");
+    }
   }
 
   /**
@@ -273,9 +307,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         return;
       }
       const saved = (await res.json()) as SavedScenario;
-      setScenarios((prev) =>
-        updating ? prev.map((s) => (s.id === saved.id ? saved : s)) : [saved, ...prev],
-      );
+      // Guardar renueva `updatedAt`: el plan guardado pasa a ser el activo.
+      setScenarios((prev) => [saved, ...prev.filter((s) => s.id !== saved.id)]);
       setSelectedId(saved.id);
       setLoadedInputs(saved.inputs);
       setStatus(t(updating ? "updated" : "saved", { name: saved.name }));
@@ -303,6 +336,17 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
         <p className="text-sm text-muted">{t("intro")}</p>
       </div>
+
+      {scenarios.length > 0 && (
+        <SelectField
+          label={t("planLabel")}
+          value={selectedId}
+          onChange={(id) => void handleSelect(id)}
+          options={scenarios.map((s) => ({ value: s.id, label: s.name }))}
+          help={t("planHint")}
+        />
+      )}
+      {listLoaded && scenarios.length === 0 && <Notice variant="info">{t("noPlan")}</Notice>}
 
       {/* La `key` remonta los campos al cargar un escenario o al cambiar de divisa. */}
       <Fragment key={`${version}-${display}`}>
@@ -427,18 +471,6 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
             <h3 className="text-sm font-semibold text-foreground">{t("scenarioTitle")}</h3>
             <p className="text-xs text-muted">{t("scenarioHint")}</p>
           </div>
-
-          {scenarios.length > 0 && (
-            <SelectField
-              label={t("loadLabel")}
-              value={selectedId}
-              onChange={handleLoad}
-              options={[
-                { value: "", label: t("loadPlaceholder") },
-                ...scenarios.map((s) => ({ value: s.id, label: s.name })),
-              ]}
-            />
-          )}
 
           <form onSubmit={handleSave} className="flex flex-wrap items-end gap-2">
             <div className="min-w-48 flex-1">

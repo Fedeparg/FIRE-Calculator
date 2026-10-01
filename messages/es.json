@@ -1132,14 +1132,15 @@
       "currencyConverted": "Los importes del objetivo se han convertido de {from} a {to} con los tipos de cambio de hoy.",
       "currencyNotConvertible": "No hay tipo de cambio {from}→{to}: los importes se muestran tal cual, revísalos antes de fiarte del resultado.",
       "assumptions": "La estimación supone una rentabilidad constante y aportaciones sin fallar, y no tiene en cuenta impuestos ni inflación. Es un orden de magnitud, no una previsión.",
+      "planLabel": "Plan activo",
+      "planHint": "Es el plan que ves en el Resumen y el que vigilan los avisos por email. Elegir otro lo convierte en el activo.",
+      "noPlan": "Aún no tienes ningún plan guardado: estos son valores de ejemplo. Guárdalo abajo para verlo en el Resumen.",
       "scenarioTitle": "Guarda tu objetivo",
       "scenarioHint": "Se guarda como escenario de la calculadora de independencia financiera: lo verás también allí.",
-      "loadLabel": "Cargar un objetivo guardado",
-      "loadPlaceholder": "Elige un escenario…",
       "update": "Actualizar",
       "saved": "Objetivo guardado como «{name}».",
       "updated": "Objetivo «{name}» actualizado.",
-      "loaded": "Objetivo «{name}» cargado.",
+      "activated": "Plan «{name}» activado.",
       "montecarlo": {
         "title": "¿Y si el mercado no acompaña?",
         "intro": "Simula miles de secuencias de rentabilidades aleatorias a partir del valor real de tu cartera y cuenta en cuántas llegas al objetivo y el patrimonio aguanta después.",
@@ -1192,6 +1193,12 @@
       "asset": "Activo",
       "weight": "Peso",
       "gain": "Ganancia",
+      "gainToday": "Ganancia de hoy",
+      "gainModeLabel": "Ganancia mostrada",
+      "gainMode": {
+        "today": "Hoy",
+        "total": "Total"
+      },
       "sortLabel": "Ordenar por",
       "sort": {
         "invested": "Lo invertido",
@@ -1287,7 +1294,9 @@
       "noBroker": "Sin bróker",
       "noData": "Todavía no se puede repartir la cartera: ninguna posición tiene precio convertible a la divisa elegida.",
       "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible).",
-      "more": "{count, plural, one {# más} other {# más}}"
+      "more": "{count, plural, one {# más} other {# más}}",
+      "showAll": "Ver los {count, plural, one {# restante} other {# restantes}}",
+      "showLess": "Ver menos"
     },
     "lots": {
       "loading": "Cargando las operaciones…",
@@ -1526,6 +1535,7 @@
     },
     "detail": {
       "priceOn": "Precio ({date})",
+      "todayGain": "Hoy",
       "viewLabel": "Qué ver de esta posición",
       "viewLots": "Operaciones",
       "viewSale": "Simular venta",
@@ -1553,6 +1563,7 @@
       "title": "Objetivo FIRE",
       "details": "Ver detalle",
       "define": "Definirlo",
+      "plan": "Plan: {name}",
       "loading": "Cargando tu objetivo…",
       "empty": "Aún no has guardado un objetivo. Defínelo para ver cuánto te falta.",
       "notConvertible": "Tu objetivo está en otra divisa y no hay tipo de cambio para compararlo con la cartera.",

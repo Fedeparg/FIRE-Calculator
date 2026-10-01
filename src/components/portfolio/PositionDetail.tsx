@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
 import { lotErrorKey, type LotErrorKey } from "@/core/portfolio-lots";
-import { valuePosition } from "@/core/portfolio-positions";
+import { dailyGain, valuePosition } from "@/core/portfolio-positions";
 import { useFormat } from "@/lib/format";
 import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";
 import DerivativesNotice from "./DerivativesNotice";
@@ -86,6 +86,7 @@ export default function PositionDetail({
 
   const positionId = position.id;
   const valuation = valuePosition(position, price, rates);
+  const today = dailyGain(position, price, rates);
   // Borrar una posición con ventas las quita del informe de plusvalías: merece un aviso más
   // fuerte que el "¿seguro?" normal. Los lotes ya están cargados, no hace falta otra consulta.
   const hasSales = lots.some((lot) => lot.kind === "sell");
@@ -184,6 +185,8 @@ export default function PositionDetail({
         ? "text-success"
         : "text-danger";
 
+  const todayClass = today === null || today.abs === 0 ? "text-muted" : today.abs > 0 ? "text-success" : "text-danger";
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-1 pr-14 lg:pr-12">
@@ -213,6 +216,16 @@ export default function PositionDetail({
               </>
             )}
           </span>
+          {/* La ganancia de hoy, aparte de la total: sin cierre anterior no se enseña. */}
+          {today !== null && (
+            <span className={`text-xs tabular-nums ${todayClass}`}>
+              {tDetail("todayGain")}: {today.abs > 0 ? "+" : ""}
+              {formatCurrency(today.abs, position.currency)}
+              {" · "}
+              {today.pct > 0 ? "+" : ""}
+              {formatPercent(today.pct, { minDecimals: 2 })}
+            </span>
+          )}
         </div>
       ) : (
         <p className="text-sm text-muted">{pricePending ? tList("pricePendingHint") : tList("noPrice")}</p>

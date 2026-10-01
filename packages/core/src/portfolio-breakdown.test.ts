@@ -74,6 +74,21 @@ describe("buildBreakdown", () => {
     expect(result.slices[0].positions).toBe(2);
   });
 
+  it("excluye, como aggregatePortfolio, una posición cuya divisa no se puede convertir", () => {
+    // Precio en EUR (convertible) pero posición en GBP (sin tasa): el total del Resumen la deja
+    // fuera, así que el reparto también, o los pesos no cuadrarían.
+    const result = buildBreakdown({
+      ...BASE,
+      groupBy: "asset",
+      positions: [position({ ticker: "A", currency: "GBP" }), position({ ticker: "B" })],
+      prices: { A: { close: 100, currency: "EUR" }, B: { close: 100, currency: "EUR" } },
+    });
+
+    expect(result.total).toBe(100);
+    expect(result.excluded).toBe(1);
+    expect(result.slices.map((s) => s.key)).toEqual(["B"]);
+  });
+
   it("agrupa por bróker y etiqueta las posiciones sin bróker", () => {
     const result = buildBreakdown({
       ...BASE,

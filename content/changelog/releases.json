@@ -14,6 +14,83 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "0235220a",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe la ganancia de hoy en Posiciones",
+            "en": "describe today's gain in Positions"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "f5f1c360",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el plan FIRE activo",
+            "en": "describe the active FIRE plan"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "241df735",
+          "type": "style",
+          "scope": "portfolio",
+          "category": "internal",
+          "text": {
+            "es": "tono atenuado para el botón de la composición",
+            "en": "use the muted tone for the breakdown toggle"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "556c7ff6",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la composición del Resumen se despliega para ver todos los grupos, con los mismos pesos que la lista de Posiciones",
+            "en": "the Summary composition expands to show every group, with the same weights as the Positions list"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "e880bd31",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "en Posiciones puedes ver la ganancia de hoy además de la total, también en el detalle de cada posición",
+            "en": "Positions can show today's gain as well as the total gain, also in each position's details"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "803445e6",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el objetivo FIRE tiene un plan activo: la pestaña Objetivo lo carga al abrirla, elegir otro lo activa y el Resumen dice qué plan muestra",
+            "en": "the FIRE goal has an active plan: the Goal tab loads it when you open it, choosing another makes it active and the Summary says which plan it shows"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "63aa6040",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "añade el rediseño de la cartera a la entrega de hoy",
+            "en": "add the portfolio redesign to today's release"
+          },
+          "hidden": true
+        },
+        {
           "hash": "e6ccd0f6",
           "type": "feat",
           "scope": "portfolio",
