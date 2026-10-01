@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import type { CurrencyNote } from "@/features/portfolio/model/goal-amounts";
-import type { GoalOutcome } from "@/features/portfolio/model/goal-scenario";
+import type { GoalOutcome } from "@sextante/core/portfolio/goal";
 import { useFormat } from "@/shared/format/use-format";
 import Stat from "@/shared/ui/Stat";
 import StatGrid from "@/shared/ui/StatGrid";

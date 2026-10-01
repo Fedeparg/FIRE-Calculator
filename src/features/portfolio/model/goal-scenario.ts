@@ -5,13 +5,11 @@
 
 import { convertCurrency } from "@sextante/core/fx";
 import {
-  computeAmountGoal,
-  computePortfolioGoal,
+  computeGoalProgress,
   GOAL_MODES,
   goalModeFromInputs,
-  type AmountGoalResult,
   type GoalMode,
-  type PortfolioGoalResult,
+  type GoalOutcome,
 } from "@sextante/core/portfolio/goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { decodeCalculatorInputs, type FieldSpecs } from "@/shared/url-state/url-state";
@@ -60,9 +58,6 @@ export interface GoalSettings {
   /** Modo cantidad: plazo en años enteros. */
   targetYears: number;
 }
-
-/** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
-export type GoalOutcome = ({ mode: "fire" } & PortfolioGoalResult) | ({ mode: "amount" } & AmountGoalResult);
 
 function isFrequency(value: unknown): value is Frequency {
   return typeof value === "string" && (FREQUENCIES as readonly string[]).includes(value);
@@ -115,12 +110,9 @@ export function goalProgress(
   if (settings.mode === "amount") {
     const targetAmount = convert(settings.targetAmount);
     if (targetAmount === null) return null;
-    return { mode: "amount", ...computeAmountGoal({ ...common, targetAmount, years: settings.targetYears }) };
+    return computeGoalProgress({ mode: "amount", targetAmount, targetYears: settings.targetYears }, common);
   }
   const annualExpenses = convert(settings.annualExpenses);
   if (annualExpenses === null) return null;
-  return {
-    mode: "fire",
-    ...computePortfolioGoal({ ...common, annualExpenses, withdrawalRate: settings.withdrawalRate }),
-  };
+  return computeGoalProgress({ mode: "fire", annualExpenses, withdrawalRate: settings.withdrawalRate }, common);
 }
