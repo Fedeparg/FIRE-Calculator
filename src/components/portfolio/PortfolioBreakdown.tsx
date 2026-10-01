@@ -9,7 +9,7 @@ import {
   BREAKDOWN_GROUPS,
   buildBreakdown,
   type BreakdownGroupBy,
-} from "@/core/portfolio-breakdown";
+} from "@sextante/core/portfolio-breakdown";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 
 type Props = {

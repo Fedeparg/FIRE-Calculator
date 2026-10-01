@@ -3,10 +3,10 @@
 import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
 
-import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from "@/core/calculators/fire-montecarlo";
+import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from "@sextante/core/calculators/fire-montecarlo";
 import { encodeFieldValue } from "@/core/calculator-url-state";
-import { monthlyContribution, simulatePortfolioGoal } from "@/core/portfolio-goal";
-import type { Frequency } from "@/core/projection";
+import { monthlyContribution, simulatePortfolioGoal } from "@sextante/core/portfolio-goal";
+import type { Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";

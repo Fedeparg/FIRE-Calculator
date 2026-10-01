@@ -162,10 +162,12 @@ explaining, including the ones with real trade-offs.
 
 ### The calculation engine is pure, framework-free TypeScript
 
-`src/core/` has no React import anywhere. It's plain functions over plain data:
-`projection.ts` is a generic investment-projection engine, the tax engine lives in
-the shared `packages/core` (so the API runs the same code as the browser), `calculators/*.ts` are thin wrappers, `format.ts` handles locale-aware
-formatting.
+The calculation engine has no React import anywhere. It's plain functions over
+plain data, and it lives in the shared `packages/core` so the API runs the same code
+as the browser: `projection.ts` is a generic investment-projection engine,
+`calculators/*.ts` are thin wrappers over it and the tax engine, and `fiscal/` is the
+tax engine. The frontend's `src/core/` keeps only what is about the UI: the
+calculator catalogue, locale-aware formatting (`format.ts`) and URL state.
 
 **Why:** it makes the maths trivially testable — 248 unit tests run in under a
 second with no DOM and no renderer — and it stops ~25 calculator modules from each
@@ -433,9 +435,7 @@ Full instructions in **[`docs/DEPLOY.md`](docs/DEPLOY.md)**.
 src/                        Frontend (Next.js)
   app/[locale]/             Routes — i18n prefix `as-needed` (es bare, en under /en)
   app/og/                   Dynamic Open Graph image generation
-  core/                     Pure logic. No React. Fully tested.
-    projection.ts             Generic investment-projection engine
-    calculators/              One module per calculator — thin wrappers over core
+  core/                     UI-side pure logic. No React. Fully tested.
     registry.ts               Calculator catalogue (feeds the searchable index)
     format.ts                 Locale-aware number and currency formatting
   components/
@@ -446,8 +446,11 @@ src/                        Frontend (Next.js)
   i18n/                     next-intl configuration
 
 packages/core/              Shared pure logic, used by the web and the API
+  src/projection.ts         Generic investment-projection engine
+  src/calculators/          One module per calculator — thin wrappers over the engines
   src/fiscal/               Spanish tax engine (IRPF, brackets, capital gains)
   src/fx.ts                 Currency conversion and portfolio aggregation
+  src/portfolio-*.ts        Portfolio breakdown and FIRE goal tracking
 
 apps/api/                   Backend (NestJS)
   src/db/                   Drizzle schema (source of truth) + migration runner

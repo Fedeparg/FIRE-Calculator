@@ -6,7 +6,7 @@ import {
   PAYMENT_MODES,
   computeCreditCard,
   type PaymentMode,
-} from "@/core/calculators/tarjeta-credito";
+} from "@sextante/core/calculators/tarjeta-credito";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";

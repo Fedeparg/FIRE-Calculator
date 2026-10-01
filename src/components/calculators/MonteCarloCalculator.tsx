@@ -8,8 +8,8 @@ import {
   simulateFire,
   withdrawalSensitivity,
   type ReturnModel,
-} from "@/core/calculators/fire-montecarlo";
-import { HISTORICAL_RETURNS } from "@/core/data/shiller-returns";
+} from "@sextante/core/calculators/fire-montecarlo";
+import { HISTORICAL_RETURNS } from "@sextante/core/data/shiller-returns";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Notice from "../ui/Notice";

@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeBuyVsRent } from "@/core/calculators/hipoteca-vs-alquiler";
+import { computeBuyVsRent } from "@sextante/core/calculators/hipoteca-vs-alquiler";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

@@ -6,7 +6,7 @@ import {
   FINANCIAL_HEALTH_QUESTIONS,
   computeFinancialHealth,
   type HealthCategory,
-} from "@/core/calculators/salud-financiera";
+} from "@sextante/core/calculators/salud-financiera";
 import SelectField from "../ui/SelectField";
 
 /** Puntuación 0..1 asociada a cada opción (de peor a mejor). */
