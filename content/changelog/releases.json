@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "67d8f245",
+          "type": null,
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "no reescribe el histórico por ediciones sin cambios y lo rehace al importar sobre posiciones existentes",
+            "en": "skip no-op lot edits and rebuild history when importing into existing positions"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "86477bc4",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe la gráfica a todo el ancho",
+            "en": "describe the full-width history chart"
+          },
+          "hidden": true
+        },
+        {
           "hash": "800cdb75",
           "type": "fix",
           "scope": "charts",
@@ -36,6 +58,17 @@
           "hidden": true
         },
         {
+          "hash": "fe1a0fde",
+          "type": null,
+          "scope": null,
+          "category": "fix",
+          "text": {
+            "es": "si registras o importas operaciones antiguas, la evolución se rehace también en los días ya capturados, y lo invertido deja de bajar sin motivo",
+            "en": "when you record or import past trades, history is rebuilt for days already captured too, so the invested line no longer drops for no reason"
+          },
+          "hidden": false
+        },
+        {
           "hash": "8af4327d",
           "type": "fix",
           "scope": "header",
@@ -45,6 +78,17 @@
             "en": "the account menu no longer opens off screen on narrow phones"
           },
           "hidden": false
+        },
+        {
+          "hash": "c86f9779",
+          "type": null,
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "detección de capturas desfasadas",
+            "en": "stale snapshot detection"
+          },
+          "hidden": true
         },
         {
           "hash": "7efd9f7c",
