@@ -5,6 +5,7 @@ import { CATEGORIES, type CategoryId } from "@/features/calculators/types";
 import type { Locale } from "@/i18n/types";
 import { buildMetadata } from "@/shared/seo/seo";
 import Selector, { type SelectorItem } from "@/features/calculators/components/Selector";
+import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -40,7 +41,9 @@ export default async function CalculatorsIndex({ params }: Props) {
     <section className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("heading")}</h1>
       <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
-      <Selector items={items} categories={categories} />
+      <RouteMessages route="calculadoras">
+        <Selector items={items} categories={categories} />
+      </RouteMessages>
     </section>
   );
 }

@@ -18,7 +18,6 @@ import { apiFetch } from "@/shared/api/client";
 export default function UserMenu() {
   const t = useTranslations("auth.nav");
   const tPortfolio = useTranslations("auth.portfolio");
-  const tAccount = useTranslations("account");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -98,7 +97,7 @@ export default function UserMenu() {
               onClick={() => setOpen(false)}
               className="block rounded-lg px-3 py-2.5 text-sm text-foreground hover:bg-surface-2"
             >
-              {tAccount("link")}
+              {t("account")}
             </Link>
           </li>
           <li>

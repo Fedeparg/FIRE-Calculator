@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
 import { getSessionUser } from "@/shared/api/session";
 import ConsentClient from "@/features/oauth/components/ConsentClient";
+import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -74,7 +75,9 @@ export default async function ConsentPage({ params, searchParams }: Props) {
         <p className="text-sm text-muted">{clientName ? t("intro", { app: clientName }) : t("introGeneric")}</p>
       </div>
       <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-        <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
+        <RouteMessages route="oauth/consent">
+          <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
+        </RouteMessages>
       </div>
     </div>
   );
