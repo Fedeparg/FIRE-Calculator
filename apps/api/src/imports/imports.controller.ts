@@ -1,15 +1,14 @@
 import { Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { MAX_IMPORT_BYTES } from '@sextante/core/imports/limits';
+import type { ImportPlan, ImportResult } from '@sextante/core/imports/types';
 import type { Request } from 'express';
 
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
-import { ImportsService, type ImportPlan, type ImportResult } from './imports.service.js';
+import { ImportsService } from './imports.service.js';
 import { readCsvBody } from './read-text-body.js';
-
-/** Tamaño máximo del CSV. Un export real de años de actividad ronda los 400 kB. */
-export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 
 /**
  * Importación de operaciones desde un bróker. Autenticada como el resto de la cartera (el

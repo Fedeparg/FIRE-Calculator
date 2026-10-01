@@ -7,6 +7,7 @@
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
 import { CsvSyntaxError, parseCsv, type CsvRecord } from "./csv.js";
+import { MAX_IMPORT_ROWS } from "./limits.js";
 import type {
   ImportedAssetClass,
   ImportedTrade,
@@ -42,9 +43,6 @@ export const TRADE_REPUBLIC_HEADER = [
   "payment_reference",
   "mcc_code",
 ] as const;
-
-/** Tope de filas de datos que acepta el parser (protege a quien lo llame de ficheros absurdos). */
-export const MAX_IMPORT_ROWS = 20_000;
 
 export type TradeRepublicParseErrorCode =
   /** Vacío o sin ninguna fila de datos. */

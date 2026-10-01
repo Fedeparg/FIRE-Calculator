@@ -66,3 +66,60 @@ export type ImportParseResult = {
   skipped: ImportSkippedRow[];
   warnings: ImportWarning[];
 };
+
+// --- Contrato de la API de importación (lo producen la API y lo consume la UI) ---
+
+/** Motivo por el que una posición NO se pudo importar. */
+export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "UNEXPECTED";
+
+/** Cuántas filas se descartaron por cada motivo. Solo recuentos: nunca datos de las filas. */
+export type SkippedSummary = { reason: ImportSkipReason; count: number };
+
+export type ImportPlanPosition = {
+  isin: string;
+  name: string;
+  assetClass: ImportedAssetClass;
+  /** `create`: no existe aún en Trade Republic. `extend`: se añaden lotes a la existente. */
+  action: "create" | "extend";
+  /** Compras y ventas que se crearían (sin las ya importadas). */
+  newBuys: number;
+  newSells: number;
+  /** Operaciones del fichero que ya están importadas (por `external_id`). */
+  duplicates: number;
+  /** Cantidad actual de la posición (0 si no existe). */
+  currentQuantity: number;
+  /** Cantidad tras importar. `null` si la secuencia sería inválida (ver `blockedBy`). */
+  resultingQuantity: number | null;
+  /** Presente si esta posición NO se podrá importar. */
+  blockedBy: ImportFailureCode | null;
+  /** Derivados y similares: el proveedor de precios puede no cotizarlos. No bloquea. */
+  priceMayBeUnavailable: boolean;
+};
+
+export type ImportPlan = {
+  broker: string;
+  positions: ImportPlanPosition[];
+  totals: { newLots: number; duplicates: number };
+  skipped: SkippedSummary[];
+  warnings: ImportWarning[];
+};
+
+export type ImportResultPosition = {
+  isin: string;
+  name: string;
+  status: "created" | "extended" | "unchanged" | "failed";
+  lotsCreated: number;
+  duplicates: number;
+  /** Cantidad final de la posición; `null` si falló. */
+  quantity: number | null;
+  failure: ImportFailureCode | null;
+};
+
+export type ImportResult = {
+  broker: string;
+  positions: ImportResultPosition[];
+  totals: { lotsCreated: number; duplicates: number; failedPositions: number };
+  skipped: SkippedSummary[];
+  warnings: ImportWarning[];
+};
+

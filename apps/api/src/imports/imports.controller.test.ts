@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { MAX_IMPORT_BYTES } from '@sextante/core/imports/limits';
 import { TRADE_REPUBLIC_HEADER } from '@sextante/core/imports/trade-republic';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
@@ -12,7 +13,6 @@ import { SESSION_COOKIE } from '../auth/session.constants.js';
 import type { Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { MAX_IMPORT_BYTES } from './imports.controller.js';
 
 const SECRET = 'test-secret-para-el-controller-de-imports';
 const HEADER = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(',');
