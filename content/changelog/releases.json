@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "800cdb75",
+          "type": "fix",
+          "scope": "charts",
+          "category": "fix",
+          "text": {
+            "es": "en el móvil, la gráfica de evolución ocupa todo el ancho",
+            "en": "on phones, the history chart uses the full width"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "b201ad72",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el arreglo del menú de cuenta",
+            "en": "describe the account menu fix"
+          },
+          "hidden": true
+        },
+        {
           "hash": "8af4327d",
           "type": "fix",
           "scope": "header",
