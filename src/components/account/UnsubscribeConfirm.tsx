@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
+import { apiFetch } from "@/shared/api/client";
 
 type Status = "idle" | "submitting" | "done" | "error";
 
@@ -21,10 +22,8 @@ export default function UnsubscribeConfirm({ token }: { token: string | null }) 
     if (!token) return;
     setStatus("submitting");
     try {
-      const res = await fetch(`/api/notifications/unsubscribe?token=${encodeURIComponent(token)}`, {
-        method: "POST",
-      });
-      setStatus(res.ok ? "done" : "error");
+      await apiFetch(`/api/notifications/unsubscribe?token=${encodeURIComponent(token)}`, { method: "POST" });
+      setStatus("done");
     } catch {
       setStatus("error");
     }

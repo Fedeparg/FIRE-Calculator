@@ -76,29 +76,9 @@
   },
   "changelog": {
     "heading": "What's new",
-    "subheading": "Everything that has been built in Sextante, release by release. Generated from the project's real history.",
+    "subheading": "Everything that has been built in Sextante, release by release.",
     "empty": "No news published yet.",
-    "noResults": "No changes match this filter.",
-    "highlight": "Featured release",
-    "summary": {
-      "label": "Summary of the news shown",
-      "releases": "Releases",
-      "changes": "Changes",
-      "since": "Since"
-    },
-    "filters": {
-      "legend": "Filter by change type",
-      "all": "All",
-      "showInternal": "Also show internal changes (docs, CI, refactors)"
-    },
-    "category": {
-      "feature": "Feature",
-      "fix": "Fix",
-      "security": "Security",
-      "performance": "Performance",
-      "milestone": "Milestone",
-      "internal": "Internal"
-    }
+    "highlight": "Featured release"
   },
   "selector": {
     "heading": "Financial calculators",

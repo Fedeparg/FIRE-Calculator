@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { trackEvent } from "@/components/analytics/track";
+import { apiFetch } from "@/shared/api/client";
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -26,13 +27,9 @@ export default function LoginForm() {
     event.preventDefault();
     setStatus("sending");
     try {
-      const res = await fetch("/api/auth/request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      setStatus(res.ok ? "sent" : "error");
-      if (res.ok) trackEvent({ name: "login-link-requested" });
+      await apiFetch("/api/auth/request", { method: "POST", body: { email } });
+      setStatus("sent");
+      trackEvent({ name: "login-link-requested" });
     } catch {
       setStatus("error");
     }

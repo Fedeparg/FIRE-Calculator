@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
+import { apiFetch } from "@/shared/api/client";
 
 /** Canjea el token del magic link y redirige a la cartera, o muestra el error. */
 export default function VerifyClient() {
@@ -21,25 +22,17 @@ export default function VerifyClient() {
 
     void (async () => {
       try {
-        const res = await fetch("/api/auth/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
-        });
-        if (res.ok) {
-          // Si veníamos de un flujo OAuth, retoma ahí (ruta relativa validada);
-          // si no, a la cartera. `window.location` para salir a /authorize (no es
-          // ruta localizada de next-intl).
-          const returnTo = window.localStorage.getItem("sextante_return_to");
-          window.localStorage.removeItem("sextante_return_to");
-          if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
-            window.location.assign(returnTo);
-          } else {
-            router.replace("/portfolio");
-            router.refresh();
-          }
+        await apiFetch("/api/auth/verify", { method: "POST", body: { token } });
+        // Si veníamos de un flujo OAuth, retoma ahí (ruta relativa validada);
+        // si no, a la cartera. `window.location` para salir a /authorize (no es
+        // ruta localizada de next-intl).
+        const returnTo = window.localStorage.getItem("sextante_return_to");
+        window.localStorage.removeItem("sextante_return_to");
+        if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+          window.location.assign(returnTo);
         } else {
-          setFetchError(true);
+          router.replace("/portfolio");
+          router.refresh();
         }
       } catch {
         setFetchError(true);
