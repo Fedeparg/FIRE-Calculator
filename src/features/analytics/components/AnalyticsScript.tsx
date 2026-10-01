@@ -1,6 +1,6 @@
 import Script from "next/script";
 
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/shared/seo/site";
 import { ANALYTICS_SCRIPT_SRC, ANALYTICS_WEBSITE_ID } from "../config";
 
 /** Hostname canónico: el tracker solo mide en él, nunca en localhost ni en previews. */

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { ImageResponse } from "next/og";
 
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME } from "@/shared/seo/site";
 
 /**
  * Generador de imágenes Open Graph (1200×630) para tarjetas sociales. Vive fuera

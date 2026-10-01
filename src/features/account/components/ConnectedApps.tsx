@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/shared/seo/site";
 import { apiFetch } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
@@ -29,7 +29,7 @@ const SCOPE_LABELS: Record<string, string> = {
 
 /**
  * URL pública del servidor MCP: el origen canónico del sitio + el endpoint MCP.
- * Sale de `NEXT_PUBLIC_SITE_URL` (vía `src/lib/site.ts`), no de una constante
+ * Sale de `NEXT_PUBLIC_SITE_URL` (vía `src/shared/seo/site.ts`), no de una constante
  * escrita a mano, para que un despliegue en otro dominio muestre SU url.
  */
 const MCP_URL = absoluteUrl("/api/mcp");

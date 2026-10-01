@@ -1,6 +1,6 @@
 /**
  * Inserta datos estructurados JSON-LD en la página. Acepta uno o varios objetos
- * de schema.org (ver `src/lib/jsonld.ts`). Escapa `<` para evitar que el
+ * de schema.org (ver `src/shared/seo/json-ld.ts`). Escapa `<` para evitar que el
  * contenido cierre el `<script>` o inyecte marcado.
  */
 export default function JsonLd({ data }: { data: object | object[] }) {

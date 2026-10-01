@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { CALCULATORS } from "@/features/calculators/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata } from "@/shared/seo/seo";
 import Hero from "@/features/landing/components/Hero";
 import Pillars from "@/features/landing/components/Pillars";
 import Categories, { type LandingCategory } from "@/features/landing/components/Categories";

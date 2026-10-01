@@ -1,11 +1,11 @@
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { asLocale } from "@/core/types";
-import { SITE_NAME } from "@/lib/site";
-import { calculatorSchema } from "@/lib/jsonld";
+import { SITE_NAME } from "@/shared/seo/site";
+import { calculatorSchema } from "@/shared/seo/json-ld";
 import CalculatorStateProvider from "./CalculatorState";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
-import JsonLd from "@/components/seo/JsonLd";
+import Breadcrumbs from "@/shared/seo/Breadcrumbs";
+import JsonLd from "@/shared/seo/JsonLd";
 import CalculatorExplainer from "@/features/wiki/components/CalculatorExplainer";
 
 type Props = {

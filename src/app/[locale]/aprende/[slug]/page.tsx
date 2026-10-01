@@ -4,13 +4,13 @@ import { notFound } from "next/navigation";
 
 import { routing } from "@/i18n/routing";
 import { asLocale } from "@/core/types";
-import { SITE_NAME } from "@/lib/site";
-import { articleSchema } from "@/lib/jsonld";
+import { SITE_NAME } from "@/shared/seo/site";
+import { articleSchema } from "@/shared/seo/json-ld";
 import { getArticle, getArticleSlugs } from "@/features/wiki/content";
 import ArticleRelatedCalculators from "@/features/wiki/components/ArticleRelatedCalculators";
-import { buildMetadata } from "@/lib/seo";
-import Breadcrumbs from "@/components/seo/Breadcrumbs";
-import JsonLd from "@/components/seo/JsonLd";
+import { buildMetadata } from "@/shared/seo/seo";
+import Breadcrumbs from "@/shared/seo/Breadcrumbs";
+import JsonLd from "@/shared/seo/JsonLd";
 
 // ISR + dynamicParams: las rutas conocidas se prerenderizan; slugs nuevos
 // (artículos añadidos sin redeploy) se generan bajo demanda y se cachean.

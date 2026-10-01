@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/features/calculators/registry";
-import { calculatorMetadata } from "@/lib/seo";
+import { calculatorMetadata } from "@/shared/seo/seo";
 import CalculatorShell from "@/features/calculators/components/CalculatorShell";
 import CalculatorBody from "@/features/calculators/components/CalculatorBody";
 

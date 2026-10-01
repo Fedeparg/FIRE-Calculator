@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import DonationWidget from "@/features/donations/components/DonationWidget";
 import { DONATIONS_ENABLED } from "@/features/donations/config";
-import { buildMetadata } from "@/lib/seo";
+import { buildMetadata } from "@/shared/seo/seo";
 
 type Props = { params: Promise<{ locale: string }> };
 
