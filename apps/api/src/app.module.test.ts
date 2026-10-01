@@ -38,6 +38,9 @@ describe('AppModule (arranque de la aplicación)', () => {
     // Un cron que no llega a dispararse durante el test (29 de febrero de un año no bisiesto
     // no existe; basta con una fecha lejana): solo interesa que se REGISTRE sin error.
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
+    // El intradía salta a cada media hora: coincidiendo con un test, su lectura se interbloqueaba
+    // con el TRUNCATE de `resetDb` (fallo que dependía de la hora a la que corría la suite).
+    process.env.PRICE_INTRADAY_CRON = 'off';
   });
 
   afterAll(() => {
