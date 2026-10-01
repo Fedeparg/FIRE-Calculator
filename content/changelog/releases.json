@@ -47,6 +47,61 @@
           "hidden": true
         },
         {
+          "hash": "9e13d3e6",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se corrigen dos entradas internas intercambiadas",
+            "en": "two swapped internal entries are fixed"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "002c21f0",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se describen los arreglos de importación y precios",
+            "en": "the import and price fixes are described"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "df4de965",
+          "type": "fix",
+          "scope": "import",
+          "category": "fix",
+          "text": {
+            "es": "las ampliaciones liberadas de Trade Republic se importan como acciones sin coste, y las retiradas de efectivo ya no salen como operaciones desconocidas",
+            "en": "Trade Republic bonus issues are imported as zero-cost shares, and cash withdrawals no longer show up as unknown transactions"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "312ac3fd",
+          "type": "fix",
+          "scope": "prices",
+          "category": "fix",
+          "text": {
+            "es": "más ETFs y acciones de fuera de Europa (como Hong Kong) encuentran su cotización a partir del ISIN, así que ya suman al valor de la cartera",
+            "en": "more ETFs and non-European stocks (such as Hong Kong ones) now find their quote from the ISIN, so they count towards the portfolio value"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "0fcffabc",
+          "type": "chore",
+          "scope": "deps-dev",
+          "category": "internal",
+          "text": {
+            "es": "librerías al día",
+            "en": "libraries up to date"
+          },
+          "hidden": true
+        },
+        {
           "hash": "85f4e00b",
           "type": "docs",
           "scope": "changelog",
