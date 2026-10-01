@@ -8,7 +8,7 @@ import {
   encodeCalculatorState,
   encodeFieldValue,
   type FieldSpecs,
-} from "./calculator-url-state";
+} from "./url-state";
 
 /** Un juego de campos representativo: números y una lista cerrada de opciones. */
 const SPECS: FieldSpecs = {

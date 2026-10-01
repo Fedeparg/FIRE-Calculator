@@ -14,7 +14,7 @@ import {
   type PortfolioGoalResult,
 } from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
-import { decodeCalculatorInputs, type FieldSpecs } from "./calculator-url-state";
+import { decodeCalculatorInputs, type FieldSpecs } from "@/features/calculators/url-state";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 
 /**
