@@ -24,8 +24,8 @@ import { PositionsService, type PositionResponse } from './positions.service.js'
 /**
  * Cartera del usuario. Todos los endpoints exigen sesión y el `userId` sale del JWT
  * (`CurrentUser`), nunca del body ni de un query param; el servicio fuerza el scoping.
- * Aislamiento: PATCH/DELETE de una posición ajena → 403, id no-uuid → 400, uuid inexistente
- * → 404, `(símbolo, bróker)` duplicado → 409 con la existente en el body.
+ * Aislamiento: PATCH/DELETE de una posición ajena o uuid inexistente → 404 (no se
+ * distingue, para no revelar ids), id no-uuid → 400, `(símbolo, bróker)` duplicado → 409 con la existente en el body.
  */
 @Controller('positions')
 @UseGuards(JwtAuthGuard)

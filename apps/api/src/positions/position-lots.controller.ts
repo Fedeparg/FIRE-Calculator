@@ -21,7 +21,7 @@ import { PositionLotsService, type PositionLotResponse } from './position-lots.s
 
 /**
  * Lotes de una posición, anidados a propósito: el aislamiento se resuelve una vez comprobando
- * que la posición es del usuario del JWT (404/403) y el lote se busca dentro de ella, así que
+ * que la posición es del usuario del JWT (404) y el lote se busca dentro de ella, así que
  * un id de lote ajeno da 404. Cada mutación reescribe `positions.quantity/avgPrice` en la misma transacción.
  */
 @Controller('positions/:positionId/lots')

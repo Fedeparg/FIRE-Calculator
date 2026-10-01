@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
@@ -129,15 +129,15 @@ describe('SavedScenariosService (integración con Postgres)', () => {
       expect(await service.findAllByUser(userB)).toHaveLength(0);
     });
 
-    it('un usuario no puede editar ni borrar el escenario de otro (403)', async () => {
+    it('un usuario no puede editar ni borrar el escenario de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const created = await service.create(userA, dto());
 
       await expect(service.update(userB, created.id, { name: 'Secuestrado' })).rejects.toBeInstanceOf(
-        ForbiddenException,
+        NotFoundException,
       );
-      await expect(service.remove(userB, created.id)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(userB, created.id)).rejects.toBeInstanceOf(NotFoundException);
 
       // El escenario sigue intacto para su dueño.
       expect((await service.findAllByUser(userA))[0].name).toBe('Mi plan');

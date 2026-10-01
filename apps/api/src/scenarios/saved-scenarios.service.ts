@@ -1,5 +1,5 @@
 import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -26,8 +26,8 @@ export type SavedScenarioResponse = {
 
 /**
  * Escenarios guardados de calculadora. Mismo patrón de aislamiento que `positions`: el
- * `userId` viene siempre del JWT y toda consulta filtra por él; por id, 404 si no existe y
- * 403 si es de otro usuario.
+ * `userId` viene siempre del JWT y toda consulta filtra por él; por id, 404 tanto si no existe como
+ * si es de otro usuario.
  */
 @Injectable()
 export class SavedScenariosService {
@@ -78,7 +78,7 @@ export class SavedScenariosService {
     return toResponse(row);
   }
 
-  /** Borra un escenario del usuario (404 si no existe, 403 si es de otro). */
+  /** Borra un escenario del usuario (404 si no existe o es de otro). */
   async remove(userId: string, id: string): Promise<void> {
     await this.findOwned(userId, id);
     await this.db.delete(savedScenarios).where(eq(savedScenarios.id, id));
@@ -86,12 +86,12 @@ export class SavedScenariosService {
 
   /** Localiza un escenario verificando propiedad. Centraliza el scoping por usuario. */
   private async findOwned(userId: string, id: string): Promise<SavedScenario> {
-    const [row] = await this.db.select().from(savedScenarios).where(eq(savedScenarios.id, id));
+    const [row] = await this.db
+      .select()
+      .from(savedScenarios)
+      .where(and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)));
     if (!row) {
       throw new NotFoundException('Escenario no encontrado');
-    }
-    if (row.userId !== userId) {
-      throw new ForbiddenException('No puedes acceder a un escenario que no es tuyo');
     }
     return row;
   }
