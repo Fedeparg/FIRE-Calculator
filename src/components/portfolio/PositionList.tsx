@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { convertCurrency } from "@sextante/core/fx";
 import { formatIsoDate } from "@/core/format";
 import { isStalePrice, latestPriceDate } from "@/core/portfolio-prices";
-import { valuePosition, type PositionValuation } from "@/core/portfolio-positions";
+import { dailyGain, valuePosition, type PositionValuation } from "@/core/portfolio-positions";
 import {
   DEFAULT_SORT_DIR,
   DEFAULT_SORT_KEY,
@@ -37,6 +37,12 @@ type Props = {
   panelId: string;
 };
 
+/** Qué ganancia enseña la columna: la de hoy (cierre anterior) o la total (frente a lo invertido). */
+type GainMode = "today" | "total";
+
+/** Las dos opciones del conmutador, en el orden en que se ofrecen. */
+const GAIN_MODES: readonly GainMode[] = ["today", "total"];
+
 /** Fila enriquecida: lo que se pinta y lo que se compara para ordenar. */
 type Row = PositionValuation & {
   position: Position;
@@ -45,6 +51,8 @@ type Row = PositionValuation & {
   weight: number | null;
   stale: boolean;
   pending: boolean;
+  /** Ganancia según el modo activo (importe en la divisa de la posición y %), o null sin dato. */
+  gain: { abs: number; pct: number | null } | null;
   sortable: SortableRow;
 };
 
@@ -102,6 +110,7 @@ export default function PositionList({
   const { formatCurrency, formatPercent } = useFormat();
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
+  const [gainMode, setGainMode] = useState<GainMode>("total");
 
   // Primer clic en una columna: de mayor a menor. Clics siguientes: alterna el sentido.
   function handleSort(key: SortKey) {
@@ -125,8 +134,16 @@ export default function PositionList({
           valuation.marketValue === null
             ? null
             : convertCurrency(valuation.marketValue, position.currency, display, rates);
+        // Ordenar por la columna de ganancia usa SIEMPRE lo que se ve: el importe del modo activo.
+        const gain =
+          gainMode === "today"
+            ? dailyGain(position, price, rates)
+            : valuation.pnlAbs === null
+              ? null
+              : { abs: valuation.pnlAbs, pct: valuation.pnlPct };
         return {
           ...valuation,
+          gain,
           position,
           price,
           weight: inDisplay !== null && total > 0 ? (inDisplay / total) * 100 : null,
@@ -140,11 +157,11 @@ export default function PositionList({
             avgPrice: toBase(position.avgPrice, position.currency, rates),
             invested: toBase(valuation.invested, position.currency, rates),
             marketValue: toBase(valuation.marketValue, position.currency, rates),
-            pnl: toBase(valuation.pnlAbs, position.currency, rates),
+            pnl: toBase(gain?.abs ?? null, position.currency, rates),
           },
         };
       }),
-    [positions, prices, rates, display, total, latestDate, pendingIds],
+    [positions, prices, rates, display, total, latestDate, pendingIds, gainMode],
   );
 
   const sortedRows = useMemo(() => sortPositions(rows, sortKey, sortDir), [rows, sortKey, sortDir]);
@@ -152,34 +169,55 @@ export default function PositionList({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface">
-      {/* Móvil: no hay cabeceras de columna, así que se ordena con un selector. */}
-      <div className="flex items-center justify-end gap-2 border-b border-border px-4 py-2 md:hidden">
-        <label htmlFor="positions-sort" className="text-xs text-muted">
-          {t("sortLabel")}
-        </label>
-        <select
-          id="positions-sort"
-          value={sortKey}
-          onChange={(e) => {
-            const key = e.target.value as SortKey;
-            setSortKey(key);
-            setSortDir(key === "name" ? "asc" : "desc");
-          }}
-          className="rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
-        >
-          {SORT_OPTIONS.map((key) => (
-            <option key={key} value={key}>
-              {t(`sort.${key}`)}
-            </option>
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2 md:px-5">
+        {/* Dos botones de alternancia (`aria-pressed`) y no un `tablist`: no hay paneles que
+            cambiar, solo la cifra de una columna. */}
+        <div role="group" aria-label={t("gainModeLabel")} className="flex rounded-lg bg-surface-2 p-0.5">
+          {GAIN_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setGainMode(mode)}
+              aria-pressed={gainMode === mode}
+              className={`h-8 rounded-md px-3 text-xs transition ${
+                gainMode === mode
+                  ? "bg-surface font-semibold text-foreground shadow-sm"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {t(`gainMode.${mode}`)}
+            </button>
           ))}
-        </select>
+        </div>
+        {/* Móvil: no hay cabeceras de columna, así que se ordena con un selector. */}
+        <div className="flex items-center gap-2 md:hidden">
+          <label htmlFor="positions-sort" className="text-xs text-muted">
+            {t("sortLabel")}
+          </label>
+          <select
+            id="positions-sort"
+            value={sortKey}
+            onChange={(e) => {
+              const key = e.target.value as SortKey;
+              setSortKey(key);
+              setSortDir(key === "name" ? "asc" : "desc");
+            }}
+            className="rounded-lg border border-border bg-surface px-2 py-1.5 text-sm text-foreground"
+          >
+            {SORT_OPTIONS.map((key) => (
+              <option key={key} value={key}>
+                {t(`sort.${key}`)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className={`hidden gap-3 border-b border-border bg-surface-2 px-5 py-2.5 text-xs font-semibold text-muted md:grid ${COLUMNS}`}>
         <SortHeader column="name" label={t("asset")} align="left" {...headerProps} />
         <span>{t("weight")}</span>
         <SortHeader column="marketValue" label={t("marketValue")} align="right" {...headerProps} />
-        <SortHeader column="pnl" label={t("gain")} align="right" {...headerProps} />
+        <SortHeader column="pnl" label={t(gainMode === "today" ? "gainToday" : "gain")} align="right" {...headerProps} />
       </div>
 
       <ul>
@@ -224,7 +262,7 @@ export default function PositionList({
                   )}
                 </span>
 
-                {row.marketValue !== null && row.pnlAbs !== null ? (
+                {row.marketValue !== null ? (
                   <>
                     <span className="hidden items-center justify-end gap-1 text-sm tabular-nums text-foreground md:flex">
                       {formatCurrency(row.marketValue, p.currency)}
@@ -242,15 +280,21 @@ export default function PositionList({
                       <span className="text-sm text-foreground md:hidden">
                         {formatCurrency(row.marketValue, p.currency)}
                       </span>
-                      <span className={`hidden text-sm md:inline ${pnlClass(row.pnlAbs)}`}>
-                        {row.pnlAbs > 0 ? "+" : ""}
-                        {formatCurrency(row.pnlAbs, p.currency)}
-                      </span>
-                      {row.pnlPct !== null && (
-                        <span className={`text-xs ${pnlClass(row.pnlPct)}`}>
-                          {row.pnlPct > 0 ? "+" : ""}
-                          {formatPercent(Math.round(row.pnlPct * 10) / 10)}
-                        </span>
+                      {row.gain !== null ? (
+                        <>
+                          <span className={`hidden text-sm md:inline ${pnlClass(row.gain.abs)}`}>
+                            {row.gain.abs > 0 ? "+" : ""}
+                            {formatCurrency(row.gain.abs, p.currency)}
+                          </span>
+                          {row.gain.pct !== null && (
+                            <span className={`text-xs ${pnlClass(row.gain.pct)}`}>
+                              {row.gain.pct > 0 ? "+" : ""}
+                              {formatPercent(Math.round(row.gain.pct * 10) / 10)}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-xs text-muted">—</span>
                       )}
                     </span>
                   </>
