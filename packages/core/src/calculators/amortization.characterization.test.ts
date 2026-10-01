@@ -1,8 +1,8 @@
 // Red de seguridad de la refactorización de amortization.ts: congela las salidas de las cuatro
 // calculadoras que comparten la matemática de préstamos sobre una rejilla de entradas, incluidos
-// los bordes (tipo 0, plazos mínimos, tipos enormes). La huella serializa los números con toda
-// su precisión (en forma de huella SHA-256 para que el fichero ocupe poco), así que cualquier
-// reordenación de operaciones en coma flotante lo rompe.
+// los bordes (tipo 0, plazos mínimos, tipos enormes). La huella (SHA-256, para que el fichero
+// ocupe poco) redondea a 10 cifras significativas: `Math.pow` puede diferir en el último bit
+// entre plataformas (macOS ARM frente al Linux x64 de CI), y eso no es un cambio de cálculo.
 
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
@@ -15,10 +15,10 @@ const RATES = [0, 0.01, 1.5, 3, 7.25, 25, 500, 1e6, -2];
 const YEARS = [0, 0.4, 1, 2, 10, 30, 40];
 const PRINCIPALS = [0, 1, 1000, 180000, 5e7];
 
-/** Huella de la serialización completa; los no finitos se escriben como texto porque JSON los volvería `null`. */
+/** Huella de la serialización; los no finitos se escriben como texto porque JSON los volvería `null`. */
 function fingerprint(value: unknown): string {
   const json = JSON.stringify(value, (_key, v: unknown) =>
-    typeof v === "number" && !Number.isFinite(v) ? String(v) : v,
+    typeof v !== "number" ? v : Number.isFinite(v) ? Number(v.toPrecision(10)) : String(v),
   );
   return `${(JSON.parse(json) as unknown[]).length} casos, sha256 ${createHash("sha256").update(json).digest("hex")}`;
 }
