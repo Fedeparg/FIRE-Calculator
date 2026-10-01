@@ -20,20 +20,15 @@ import { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
 import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
 
 /**
- * Lotes (compras y ventas) de una posición. Rutas ANIDADAS bajo la posición a propósito:
- * el aislamiento se resuelve una sola vez comprobando que la posición es del usuario del JWT
- * (404 si no existe, 403 si es de otro), y el lote se busca SIEMPRE dentro de esa posición,
- * así que un id de lote ajeno no puede colarse por la ruta (sería 404).
- *
- * Igual que en `PositionsController`, el `userId` sale del JWT, nunca del body ni de la URL.
- * Cada mutación reescribe `positions.quantity`/`avgPrice` en la misma transacción.
+ * Lotes de una posición, anidados a propósito: el aislamiento se resuelve una vez comprobando
+ * que la posición es del usuario del JWT (404/403) y el lote se busca dentro de ella, así que
+ * un id de lote ajeno da 404. Cada mutación reescribe `positions.quantity/avgPrice` en la misma transacción.
  */
 @Controller('positions/:positionId/lots')
 @UseGuards(JwtAuthGuard)
 export class PositionLotsController {
   constructor(private readonly lots: PositionLotsService) {}
 
-  /** Histórico de operaciones de la posición, en orden cronológico. */
   @Get()
   findAll(
     @CurrentUser() user: SessionUser,

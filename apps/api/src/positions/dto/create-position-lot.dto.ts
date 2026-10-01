@@ -15,7 +15,6 @@ import {
 import type { PositionLotKind } from '../../db/schema.js';
 import { NUMERIC_MAX } from './create-position.dto.js';
 
-/** Tipos de operación admitidos en un lote. */
 export const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionLotKind[];
 
 /** Fecha en formato `YYYY-MM-DD` (la columna `traded_at` es un `date`, sin hora). */
@@ -24,13 +23,9 @@ export const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
- * Cuerpo de POST /api/positions/:positionId/lots — una compra o venta concreta.
- *
- * `positionId` y `userId` NO van aquí: el primero viene de la ruta y el segundo del JWT.
- *
- * La validación de fecha es doble a propósito: `@Matches` exige EXACTAMENTE `YYYY-MM-DD`
- * (`@IsDateString` por sí solo aceptaría un datetime completo) y `@IsDateString` con
- * `strict` comprueba que la fecha EXISTE (rechaza "2026-02-30", que el regex dejaría pasar).
+ * Cuerpo de POST /api/positions/:positionId/lots (`positionId` y `userId` vienen de la ruta y
+ * el JWT). La fecha se valida dos veces: `@Matches` exige `YYYY-MM-DD` (`@IsDateString` solo
+ * aceptaría un datetime) y `@IsDateString` strict comprueba que existe (rechaza "2026-02-30").
  */
 export class CreatePositionLotDto {
   @IsIn(POSITION_LOT_KINDS)

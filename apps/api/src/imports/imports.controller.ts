@@ -11,10 +11,8 @@ import { ImportsService } from './imports.service.js';
 import { readCsvBody } from './read-text-body.js';
 
 /**
- * Importación de operaciones desde un bróker. Autenticada como el resto de la cartera (el
- * `userId` sale SIEMPRE del JWT) y con un límite de peticiones propio, más estricto que el
- * global: cada petición reparsea hasta 2 MB y consulta la BD. El CSV viaja como cuerpo
- * `text/csv` (ver `readCsvBody` para la justificación).
+ * Importación de operaciones desde un bróker, con un límite de peticiones más estricto que el
+ * global: cada una reparsea hasta 2 MB y consulta la BD. El CSV viaja como `text/csv` (ver `readCsvBody`).
  */
 @Controller('imports/trade-republic')
 @UseGuards(JwtAuthGuard)
@@ -22,14 +20,14 @@ import { readCsvBody } from './read-text-body.js';
 export class ImportsController {
   constructor(private readonly imports: ImportsService) {}
 
-  /** Plan de importación: qué se crearía y qué no. NO escribe nada. */
+  /** Plan de importación; no escribe nada. */
   @Post('preview')
   @HttpCode(HttpStatus.OK)
   async preview(@CurrentUser() user: SessionUser, @Req() request: Request): Promise<ImportPlan> {
     return this.imports.preview(user.id, await readCsvBody(request, MAX_IMPORT_BYTES));
   }
 
-  /** Escribe la importación (mismo CSV que la vista previa; sin estado entre ambas). */
+  /** Escribe la importación (el mismo CSV que la vista previa; sin estado entre ambas). */
   @Post('confirm')
   @HttpCode(HttpStatus.OK)
   async confirm(@CurrentUser() user: SessionUser, @Req() request: Request): Promise<ImportResult> {

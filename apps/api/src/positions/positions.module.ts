@@ -11,11 +11,9 @@ import { PositionsController } from './positions.controller.js';
 import { PositionsService } from './positions.service.js';
 
 /**
- * Módulo de cartera: posiciones (la FOTO que lee toda la app) y sus lotes (la PELÍCULA de
- * compras y ventas de la que se recalcula esa foto). Registra JwtModule con el mismo secreto
- * que el de auth para que `JwtAuthGuard` verifique la cookie de sesión en estos endpoints. Importa
- * `PricesModule` para refrescar en caliente el precio de una posición recién dada de alta
- * o editada (sin esperar al cron diario).
+ * Posiciones (la foto que lee toda la app) y sus lotes (de los que se recalcula). Registra
+ * `JwtModule` con el secreto de auth para `JwtAuthGuard`; importa `PricesModule` para el
+ * precio en caliente de una posición nueva o editada.
  */
 @Module({
   imports: [
@@ -31,9 +29,7 @@ import { PositionsService } from './positions.service.js';
   ],
   controllers: [PositionsController, PositionLotsController],
   providers: [PositionsService, PositionLotsService, JwtAuthGuard],
-  // Exportados para que el módulo de auth pueda reutilizarlos en la exportación RGPD
-  // de datos del usuario (GET /auth/account/export) y para que las tools MCP de lotes
-  // reutilicen el mismo servicio, sin duplicar el acceso a datos.
+  // Reutilizados por la exportación RGPD (GET /auth/account/export) y las tools MCP de lotes.
   exports: [PositionsService, PositionLotsService],
 })
 export class PositionsModule {}

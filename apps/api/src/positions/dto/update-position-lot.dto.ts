@@ -18,12 +18,7 @@ import { ISO_DATE_PATTERN, POSITION_LOT_KINDS } from './create-position-lot.dto.
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
-/**
- * Cuerpo de PATCH /api/positions/:positionId/lots/:lotId. Todos los campos son opcionales
- * (se actualiza solo lo enviado) y se validan igual que en el alta. Tras aplicarlo, el
- * servicio REAGREGA los lotes: si el cambio dejase la posición en negativo, se rechaza y no
- * se guarda nada.
- */
+/** Cuerpo de PATCH de un lote: campos opcionales, validados como en el alta. Si al reagregar la posición quedara en negativo, no se guarda nada. */
 export class UpdatePositionLotDto {
   @IsOptional()
   @IsIn(POSITION_LOT_KINDS)
