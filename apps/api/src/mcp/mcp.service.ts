@@ -4,10 +4,12 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
 import { BREAKDOWN_GROUPS, type BreakdownGroupBy } from '@sextante/core/portfolio-breakdown';
 import {
+  computeAmountGoal,
   computePortfolioGoal,
   simulatePortfolioGoal,
 } from '@sextante/core/portfolio-goal';
 import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
+import { MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -335,17 +337,42 @@ export class McpService {
       {
         title: 'Progreso de la cartera hacia el objetivo FIRE',
         description:
-          'Mide la cartera REAL del usuario (su valor de mercado actual) contra un objetivo ' +
-          'de independencia financiera: patrimonio objetivo (gasto anual / tasa de retiro), ' +
-          '% conseguido, lo que falta y años estimados para llegar con la aportación y la ' +
-          'rentabilidad real indicadas. Con `volatility` y `retirementYears` añade la ' +
-          'probabilidad Monte Carlo de alcanzarlo y de que el dinero dure. Si el usuario ' +
-          'guardó un escenario de la calculadora FIRE (slug independencia-financiera en ' +
-          '`list_saved_scenarios`), usa sus valores. Los importes van en la divisa `display`. ' +
-          'Solo lectura.',
+          'Mide la cartera REAL del usuario (su valor de mercado actual) contra un objetivo, ' +
+          'en uno de dos modos. FIRE (`annualExpenses` + `withdrawalRate`): patrimonio ' +
+          'objetivo = gasto anual / tasa de retiro; con `volatility` y `retirementYears` añade ' +
+          'la probabilidad Monte Carlo de alcanzarlo y de que el dinero dure. Cantidad ' +
+          '(`targetAmount` + `targetYears`): reunir una cifra en un plazo, con la aportación ' +
+          'necesaria por periodo y si se llega al ritmo actual. Ambos devuelven % conseguido, ' +
+          'lo que falta y años estimados con la aportación y la rentabilidad indicadas. Si el ' +
+          'usuario guardó un escenario de la calculadora FIRE (slug independencia-financiera ' +
+          'en `list_saved_scenarios`), usa sus valores: `goalMode: "amount"` indica el modo ' +
+          'cantidad. Los importes van en la divisa `display`. Solo lectura.',
         inputSchema: {
-          annualExpenses: z.number().min(0).max(1e12).describe('Gasto anual deseado.'),
-          withdrawalRate: z.number().min(0).max(100).describe('Tasa de retiro (habitual: 4).'),
+          annualExpenses: z
+            .number()
+            .min(0)
+            .max(1e12)
+            .optional()
+            .describe('Modo FIRE: gasto anual deseado.'),
+          withdrawalRate: z
+            .number()
+            .min(0)
+            .max(100)
+            .optional()
+            .describe('Modo FIRE: tasa de retiro (habitual: 4).'),
+          targetAmount: z
+            .number()
+            .min(0)
+            .max(1e12)
+            .optional()
+            .describe('Modo cantidad: cifra a reunir. Excluye annualExpenses/withdrawalRate.'),
+          targetYears: z
+            .number()
+            .int()
+            .min(0)
+            .max(MAX_YEARS)
+            .optional()
+            .describe('Modo cantidad: plazo en años enteros.'),
           contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
           frequency: z
             .enum(FREQUENCY_VALUES)
@@ -375,20 +402,60 @@ export class McpService {
         },
         annotations: { readOnlyHint: true },
       },
-      ({ volatility, retirementYears, display, frequency, ...goal }) =>
+      ({
+        volatility,
+        retirementYears,
+        display,
+        frequency,
+        annualExpenses,
+        withdrawalRate,
+        targetAmount,
+        targetYears,
+        contribution,
+        annualReturn,
+      }) =>
         this.run(ctx, 'get_fire_goal_progress', async () => {
+          const amountMode = targetAmount !== undefined || targetYears !== undefined;
+          if (amountMode && (targetAmount === undefined || targetYears === undefined)) {
+            throw new InvalidToolInputError('el modo cantidad necesita targetAmount y targetYears');
+          }
+          if (amountMode && (annualExpenses !== undefined || withdrawalRate !== undefined)) {
+            throw new InvalidToolInputError(
+              'usa annualExpenses/withdrawalRate (modo FIRE) o targetAmount/targetYears (modo cantidad), no ambos',
+            );
+          }
+          if (!amountMode && (annualExpenses === undefined || withdrawalRate === undefined)) {
+            throw new InvalidToolInputError('el modo FIRE necesita annualExpenses y withdrawalRate');
+          }
           const currency = display ?? 'EUR';
           const { aggregate } = await this.valuation.valuate(ctx.userId, currency);
-          const input = { ...goal, frequency: frequency ?? 'monthly', currentValue: aggregate.marketValue };
+          const common = {
+            contribution,
+            annualReturn,
+            frequency: frequency ?? 'monthly',
+            currentValue: aggregate.marketValue,
+          } as const;
+          const header = {
+            display: currency,
+            // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
+            valuedPositions: aggregate.valued,
+            totalPositions: aggregate.total,
+          };
+          if (amountMode) {
+            return jsonResult({
+              mode: 'amount',
+              ...header,
+              ...computeAmountGoal({ ...common, targetAmount: targetAmount ?? 0, years: targetYears ?? 0 }),
+            });
+          }
+          const input = { ...common, annualExpenses: annualExpenses ?? 0, withdrawalRate: withdrawalRate ?? 0 };
           const simulation =
             volatility !== undefined && retirementYears !== undefined
               ? simulatePortfolioGoal({ ...input, volatility, retirementYears })
               : undefined;
           return jsonResult({
-            display: currency,
-            // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
-            valuedPositions: aggregate.valued,
-            totalPositions: aggregate.total,
+            mode: 'fire',
+            ...header,
             ...computePortfolioGoal(input),
             ...(simulation ? { simulation } : {}),
           });

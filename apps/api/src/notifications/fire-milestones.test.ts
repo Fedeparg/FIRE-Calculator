@@ -3,6 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { fireTargetFromInputs, newMilestone, reachedMilestone } from './fire-milestones.js';
 
 describe('fireTargetFromInputs', () => {
+  it('en modo cantidad el objetivo es la cifra guardada, con su divisa', () => {
+    expect(
+      fireTargetFromInputs({ goalMode: 'amount', targetAmount: 150_000, annualExpenses: 24000, goalCurrency: 'USD' }),
+    ).toEqual({ target: 150_000, currency: 'USD' });
+    expect(fireTargetFromInputs({ goalMode: 'amount', targetAmount: 0 })).toBeNull();
+    expect(fireTargetFromInputs({ goalMode: 'amount' })).toBeNull();
+  });
+
   it('objetivo = gasto / tasa de retiro, como la calculadora FIRE', () => {
     expect(fireTargetFromInputs({ annualExpenses: 24000, withdrawalRate: 4 })).toEqual({ target: 600000, currency: 'EUR' });
     expect(fireTargetFromInputs({ annualExpenses: 30000, withdrawalRate: 3, goalCurrency: 'USD' })).toEqual({

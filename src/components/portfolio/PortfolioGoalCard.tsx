@@ -96,10 +96,18 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
           <p className="text-sm text-muted">
             {progress.reached
               ? tGoal("reached")
-              : t("summary", {
-                  target: formatCurrency(progress.target, display),
-                  years: progress.yearsToTarget ?? -1,
-                })}
+              : progress.mode === "amount"
+                ? t("summaryAmount", {
+                    target: formatCurrency(progress.target, display),
+                    year: new Date().getFullYear() + progress.deadlineYears,
+                    onTrack: String(progress.onTrack),
+                    required:
+                      progress.requiredContribution === null ? "—" : formatCurrency(progress.requiredContribution, display),
+                  })
+                : t("summary", {
+                    target: formatCurrency(progress.target, display),
+                    years: progress.yearsToTarget ?? -1,
+                  })}
           </p>
         </>
       )}

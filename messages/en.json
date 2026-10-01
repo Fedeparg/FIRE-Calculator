@@ -1114,7 +1114,9 @@
         "annualExpenses": "What you want to be able to spend every year living off your portfolio, in the currency selected above.",
         "withdrawalRate": "Share of your net worth you withdraw each year. The 4 % rule means saving 25 times your annual spending.",
         "contribution": "What you add to the portfolio each period. It is only used to estimate how long is left.",
-        "annualReturn": "Average annual return you expect. If you enter it net of inflation, the result is in today's money."
+        "annualReturn": "Average annual return you expect. If you enter it net of inflation, the result is in today's money.",
+        "targetAmount": "The amount you want to build up, in the portfolio currency.",
+        "targetYears": "How many years from today you want to have it."
       },
       "target": "Target net worth",
       "current": "Current net worth",
@@ -1158,7 +1160,17 @@
         "range": "In the middle 80% of simulations you get there in between {fast} and {slow}.",
         "assumptions": "Uses the expected return above as the mean, in today's money, before tax. It is an estimate, not a forecast or investment advice.",
         "openSimulator": "Open in the Monte Carlo simulator"
-      }
+      },
+      "modeLabel": "Goal type",
+      "mode": {
+        "fire": "Live off returns",
+        "amount": "An amount by a deadline"
+      },
+      "targetAmount": "Target amount ({currency})",
+      "targetYears": "Deadline (years)",
+      "requiredContribution": "Required contribution per period",
+      "amountOnTrack": "At the current pace you get there: about {projected} by {year}.",
+      "amountOffTrack": "At the current pace you fall short: about {projected} by {year}."
     },
     "export": {
       "button": "Download CSV",
@@ -1567,7 +1579,8 @@
       "loading": "Loading your goal…",
       "empty": "You haven't saved a goal yet. Set one to see how far you have to go.",
       "notConvertible": "Your goal is in another currency and there is no exchange rate to compare it with the portfolio.",
-      "summary": "of {target} · {years, plural, =-1 {not reached within 60 years at this pace} one {# year to go at the current pace} other {# years to go at the current pace}}"
+      "summary": "of {target} · {years, plural, =-1 {not reached within 60 years at this pace} one {# year to go at the current pace} other {# years to go at the current pace}}",
+      "summaryAmount": "of {target} by {year} · {onTrack, select, true {on track} other {you need {required} per period}}"
     },
     "movers": {
       "title": "Biggest moves in the last session:",

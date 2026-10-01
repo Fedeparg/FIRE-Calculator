@@ -1114,7 +1114,9 @@
         "annualExpenses": "Lo que quieres poder gastar cada año viviendo de tu patrimonio, en la divisa elegida arriba.",
         "withdrawalRate": "Porcentaje del patrimonio que retiras cada año. La regla del 4 % equivale a acumular 25 veces tu gasto anual.",
         "contribution": "Lo que aportas a la cartera en cada periodo. Solo se usa para estimar cuánto falta.",
-        "annualReturn": "Rentabilidad media anual que esperas. Si la pones ya descontada la inflación, el resultado está en dinero de hoy."
+        "annualReturn": "Rentabilidad media anual que esperas. Si la pones ya descontada la inflación, el resultado está en dinero de hoy.",
+        "targetAmount": "La cifra que quieres reunir, en la divisa de la cartera.",
+        "targetYears": "En cuántos años quieres tenerla, contando desde hoy."
       },
       "target": "Patrimonio objetivo",
       "current": "Patrimonio actual",
@@ -1158,7 +1160,17 @@
         "range": "En el 80 % central de las simulaciones llegas entre {fast} y {slow}.",
         "assumptions": "Usa la rentabilidad esperada de arriba como media, en euros de hoy, sin impuestos. Es una estimación, no una previsión ni un consejo de inversión.",
         "openSimulator": "Abrir en el simulador Monte Carlo"
-      }
+      },
+      "modeLabel": "Tipo de objetivo",
+      "mode": {
+        "fire": "Vivir de las rentas",
+        "amount": "Una cantidad en un plazo"
+      },
+      "targetAmount": "Cantidad objetivo ({currency})",
+      "targetYears": "Plazo (años)",
+      "requiredContribution": "Aportación necesaria por periodo",
+      "amountOnTrack": "Al ritmo actual llegas: tendrías unos {projected} en {year}.",
+      "amountOffTrack": "Al ritmo actual no llegas: tendrías unos {projected} en {year}."
     },
     "export": {
       "button": "Descargar CSV",
@@ -1567,7 +1579,8 @@
       "loading": "Cargando tu objetivo…",
       "empty": "Aún no has guardado un objetivo. Defínelo para ver cuánto te falta.",
       "notConvertible": "Tu objetivo está en otra divisa y no hay tipo de cambio para compararlo con la cartera.",
-      "summary": "de {target} · {years, plural, =-1 {con esta aportación no se alcanza en 60 años} one {falta # año al ritmo actual} other {faltan # años al ritmo actual}}"
+      "summary": "de {target} · {years, plural, =-1 {con esta aportación no se alcanza en 60 años} one {falta # año al ritmo actual} other {faltan # años al ritmo actual}}",
+      "summaryAmount": "de {target} en {year} · {onTrack, select, true {vas a buen ritmo} other {necesitas {required} por periodo}}"
     },
     "movers": {
       "title": "Mayores movimientos de la última sesión:",
