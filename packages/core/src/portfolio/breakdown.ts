@@ -2,7 +2,7 @@
 // Mismo criterio que `aggregatePortfolio`; las posiciones excluidas se cuentan para poder decirlo en
 // la UI en vez de repartir un total incompleto como si fuera el bueno.
 
-import { convertCurrency } from "./fx.js";
+import { convertCurrency } from "../fx.js";
 
 export type BreakdownGroupBy = "asset" | "broker" | "currency";
 

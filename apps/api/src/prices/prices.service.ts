@@ -5,7 +5,7 @@ import {
   type FxPoint,
   type PricePoint,
   type SplitPoint,
-} from '@sextante/core/portfolio-history';
+} from '@sextante/core/portfolio/history-reconstruction';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';

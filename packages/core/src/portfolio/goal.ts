@@ -4,9 +4,9 @@
  * el progreso. Agnóstico de divisa: `annualExpenses`, `contribution` y `currentValue` van en la misma.
  */
 
-import { computeFire, MAX_YEARS } from "./calculators/fire.js";
-import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "./calculators/fire-montecarlo.js";
-import { PERIODS_PER_YEAR, project, type Frequency } from "./projection.js";
+import { computeFire, FIRE_SEARCH_MAX_YEARS } from "../calculators/fire.js";
+import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "../calculators/fire-montecarlo.js";
+import { PERIODS_PER_YEAR, project, type Frequency } from "../projection.js";
 
 /** Slug de la calculadora FIRE; los escenarios guardados lo comparten con el objetivo de la cartera. */
 export const FIRE_CALCULATOR_SLUG = "independencia-financiera";
@@ -128,10 +128,10 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
     contribution: input.contribution,
     frequency: input.frequency,
     annualRate: input.annualReturn,
-    years: Math.max(MAX_YEARS, deadlineYears),
+    years: Math.max(FIRE_SEARCH_MAX_YEARS, deadlineYears),
   });
   const projectedAtDeadline = projection.series[deadlineYears]?.value ?? current;
-  const firstYear = projection.series.find((p) => p.year <= MAX_YEARS && p.value >= target)?.year;
+  const firstYear = projection.series.find((p) => p.year <= FIRE_SEARCH_MAX_YEARS && p.value >= target)?.year;
 
   let requiredContribution: number | null;
   if (reached || current * growth >= target) requiredContribution = 0;

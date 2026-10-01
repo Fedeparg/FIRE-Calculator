@@ -4,7 +4,7 @@
 // derivan a la divisa que se está viendo y se arma el resultado y el cuerpo del escenario.
 
 import { convertCurrency } from "@sextante/core/fx";
-import { computeAmountGoal, computePortfolioGoal, type GoalMode } from "@sextante/core/portfolio-goal";
+import { computeAmountGoal, computePortfolioGoal, type GoalMode } from "@sextante/core/portfolio/goal";
 import type { Frequency } from "@sextante/core/projection";
 import type { GoalOutcome, GoalSettings } from "./goal-scenario";
 

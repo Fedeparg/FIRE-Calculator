@@ -13,7 +13,7 @@
  * estimación para la gráfica, no un dato contable.
  */
 
-import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "./fx.js";
+import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "../fx.js";
 
 /**
  * Días máximos que se arrastra el último cierre/tasa cuando un día no tiene dato propio. Pasado el

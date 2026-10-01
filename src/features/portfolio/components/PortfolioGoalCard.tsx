@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
+import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio/goal";
 import { goalProgress, goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/shared/format/use-format";

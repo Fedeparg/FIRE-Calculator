@@ -3,7 +3,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { FIRE_CALCULATOR_SLUG, GOAL_MODES, type GoalMode } from "@sextante/core/portfolio-goal";
+import { FIRE_CALCULATOR_SLUG, GOAL_MODES, type GoalMode } from "@sextante/core/portfolio/goal";
 import { MAX_SCENARIOS_PER_USER } from "@sextante/core/contracts";
 import {
   DEFAULT_TARGET_AMOUNT,
