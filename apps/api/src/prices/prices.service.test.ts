@@ -217,6 +217,23 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     expect(prices.get('IWDA')).toMatchObject({ close: 97.3, date: '2026-03-15' });
   });
 
+  it('getPrices incluye el cierre anterior para la variación del día', async () => {
+    makeService();
+    provider.history = [quote('IWDA', '2026-03-13', 95.1), quote('IWDA', '2026-03-16', 97.3)];
+    await service.primeSymbol('IWDA');
+
+    // El anterior es la sesión previa en la serie, aunque haya un fin de semana entre medias.
+    expect((await service.getPrices(['IWDA'])).get('IWDA')).toMatchObject({ close: 97.3, previousClose: 95.1 });
+  });
+
+  it('getPrices deja el cierre anterior a null si solo hay un dato', async () => {
+    makeService();
+    provider.history = [quote('IWDA', '2026-03-16', 97.3)];
+    await service.primeSymbol('IWDA');
+
+    expect((await service.getPrices(['IWDA'])).get('IWDA')?.previousClose).toBeNull();
+  });
+
   it('getPrices expone cuándo se leyó el precio (fetchedAt), para el "actualizado hace…"', async () => {
     makeService();
     provider.history = [quote('IWDA', '2026-03-15', 97.3)];

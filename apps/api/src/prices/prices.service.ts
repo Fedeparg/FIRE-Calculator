@@ -49,6 +49,11 @@ export interface PriceInfo {
    * leyó, que es lo que la cartera enseña como "actualizado hace…".
    */
   fetchedAt: string;
+  /**
+   * Cierre de la sesión anterior a `date` (la fila previa de la serie), o `null` si es el primer
+   * dato del símbolo. Con él la cartera calcula la variación del día sin otra consulta.
+   */
+  previousClose: number | null;
 }
 
 /** Resumen de una ejecución del refresco (para logs y el trigger manual de dev). */
@@ -134,15 +139,21 @@ export class PricesService {
       .where(and(...conditions))
       .orderBy(instrumentPrices.symbol, desc(instrumentPrices.date));
 
+    // Las filas llegan por símbolo y de la más reciente a la más antigua: la primera de cada
+    // símbolo es el precio vigente y la segunda, el cierre anterior.
     for (const row of rows) {
-      if (!out.has(row.symbol)) {
+      const current = out.get(row.symbol);
+      if (!current) {
         out.set(row.symbol, {
           symbol: row.symbol,
           close: Number(row.close),
           currency: row.currency,
           date: row.date,
           fetchedAt: row.fetchedAt.toISOString(),
+          previousClose: null,
         });
+      } else if (current.previousClose === null && row.date < current.date) {
+        current.previousClose = Number(row.close);
       }
     }
     return out;

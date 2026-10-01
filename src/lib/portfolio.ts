@@ -31,6 +31,8 @@ export type PriceInfo = {
   date: string;
   /** Instante ISO en que se leyó de la fuente (con el refresco intradía, cambia en el día). */
   fetchedAt: string;
+  /** Cierre de la sesión anterior, o null si es el primer dato del símbolo. */
+  previousClose: number | null;
 };
 
 /** Tasas FX que sirve `GET /api/fx`: USD por unidad de cada divisa (USD = 1). */
