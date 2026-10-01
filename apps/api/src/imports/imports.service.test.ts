@@ -131,7 +131,13 @@ describe('ImportsService (integración con Postgres)', () => {
     await db.update(positions).set({ quantity: '1', avgPrice: '90' }).where(eq(positions.id, existing.id));
 
     const plan = await service.preview(userId, csv(trade('BUY', ETF, '1', '110', 3)));
-    expect(plan.positions[0]).toMatchObject({ action: 'extend', currentQuantity: 1, resultingQuantity: 2 });
+    // Coste medio con los precios de ejecución: (90 + 110) / 2.
+    expect(plan.positions[0]).toMatchObject({
+      action: 'extend',
+      currentQuantity: 1,
+      resultingQuantity: 2,
+      resultingAvgPrice: 100,
+    });
 
     const result = await service.confirm(userId, csv(trade('BUY', ETF, '1', '110', 3)));
     expect(result.positions[0].status).toBe('extended');
@@ -213,7 +219,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
     const plan = await service.preview(userId, file);
     const blocked = plan.positions.find((p) => p.isin === STOCK);
-    expect(blocked).toMatchObject({ blockedBy: 'NEGATIVE_QUANTITY', resultingQuantity: null });
+    expect(blocked).toMatchObject({ blockedBy: 'NEGATIVE_QUANTITY', resultingQuantity: null, resultingAvgPrice: null });
 
     const result = await service.confirm(userId, file);
     expect(result.totals.failedPositions).toBe(1);
