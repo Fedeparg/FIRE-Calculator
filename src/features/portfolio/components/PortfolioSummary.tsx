@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 
 import type { PortfolioAggregate } from "@sextante/core/fx";
 import { formatIsoDate, formatRelativeTime } from "@/core/format";
-import { gainSince, type PortfolioHistoryDto } from "@sextante/core/portfolio/history-series";
+import { gainSince } from "@sextante/core/portfolio/history-series";
+import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { asLocale } from "@/core/types";
 import { useFormat } from "@/lib/format";
 import { NO_STORE, historyPath } from "@/features/portfolio/api";

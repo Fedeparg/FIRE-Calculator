@@ -13,8 +13,8 @@ import {
   DEFAULT_HISTORY_RANGE,
   HISTORY_RANGES,
   type HistoryRangeKey,
-  type PortfolioHistoryDto,
 } from "@sextante/core/portfolio/history-series";
+import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { useFormat } from "@/lib/format";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";

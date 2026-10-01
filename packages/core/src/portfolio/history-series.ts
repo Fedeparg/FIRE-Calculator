@@ -6,35 +6,7 @@
 // recorta el rango, se descartan los puntos que el backend no pudo convertir y se resume el
 // periodo.
 
-/** Un punto de la serie tal y como lo sirve la API (importes ya en la divisa pedida). */
-export interface HistoryPointDto {
-  /** Fecha del snapshot (`YYYY-MM-DD`). */
-  date: string;
-  /** Coste de las posiciones valoradas; `null` si ese día no era convertible. */
-  invested: number | null;
-  /** Valor de mercado; `null` si ese día no era convertible. */
-  marketValue: number | null;
-  pnlAbs: number | null;
-  pnlPct: number | null;
-  valuedPositions: number;
-  totalPositions: number;
-  /**
-   * `true` si este punto es ANTERIOR a que el usuario empezara a registrar su cartera en
-   * Sextante: una reconstrucción a partir de las operaciones (cantidad y coste de aquel día
-   * según los lotes, con los cierres de la caché). Ver
-   * `apps/api/src/portfolio/portfolio-snapshots.service.ts`.
-   */
-  estimated: boolean;
-}
-
-/** Respuesta completa de `GET /api/portfolio/history`. */
-export interface PortfolioHistoryDto {
-  /** Divisa en la que vienen los importes. */
-  display: string;
-  /** Divisa en la que están almacenados (siempre EUR). */
-  base: string;
-  points: HistoryPointDto[];
-}
+import type { HistoryPointDto } from "./types.js";
 
 /**
  * Un punto ya listo para pintar: sin nulos y con las claves que consume la gráfica. Es un
