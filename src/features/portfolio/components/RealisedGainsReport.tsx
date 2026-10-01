@@ -12,7 +12,7 @@ import {
   TAX_CURRENCY,
   type RealisedGainsCurrencyGroup,
 } from "@sextante/core/fiscal/realised-gains";
-import { buildRealisedGainsCsv } from "@/core/fiscal/realised-gains-csv";
+import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
 import { asLocale } from "@/core/types";
 import { downloadBlob } from "@/lib/download";
 import { useFormat } from "@/lib/format";

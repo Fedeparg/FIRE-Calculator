@@ -6,7 +6,7 @@
 import { convertCurrency } from "@sextante/core/fx";
 import { computeAmountGoal, computePortfolioGoal, type GoalMode } from "@sextante/core/portfolio-goal";
 import type { Frequency } from "@sextante/core/projection";
-import type { GoalOutcome, GoalSettings } from "./portfolio-goal-scenario";
+import type { GoalOutcome, GoalSettings } from "./goal-scenario";
 
 /** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
 export type GoalAmounts = { currency: string; annualExpenses: number; contribution: number; targetAmount: number };

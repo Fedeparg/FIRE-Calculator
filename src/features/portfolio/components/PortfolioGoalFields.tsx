@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { MAX_YEARS } from "@sextante/core/calculators/fire";
 import { FREQUENCIES } from "@sextante/core/projection";
-import type { GoalAmounts, GoalParams, ShownAmounts } from "@/core/portfolio-goal-amounts";
+import type { GoalAmounts, GoalParams, ShownAmounts } from "@/features/portfolio/model/goal-amounts";
 import NumberField from "@/components/ui/NumberField";
 import SelectField from "@/components/ui/SelectField";
 

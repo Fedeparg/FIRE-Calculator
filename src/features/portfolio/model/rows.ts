@@ -3,9 +3,9 @@
 
 import { convertCurrency } from "@sextante/core/fx";
 import type { Position, PriceInfo } from "@/lib/portfolio";
-import { isStalePrice } from "./portfolio-prices";
-import { dailyGain, valuePosition, type PositionValuation } from "./portfolio-positions";
-import type { SortableRow } from "./portfolio-sort";
+import { isStalePrice } from "@/core/portfolio-prices";
+import { dailyGain, valuePosition, type PositionValuation } from "@/core/portfolio-positions";
+import type { SortableRow } from "./sort";
 
 /** Qué ganancia enseña la columna: la de hoy (cierre anterior) o la total (frente a lo invertido). */
 export type GainMode = "today" | "total";

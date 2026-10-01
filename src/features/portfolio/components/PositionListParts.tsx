@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import type { SortDir, SortKey } from "@/core/portfolio-sort";
+import type { SortDir, SortKey } from "@/features/portfolio/model/sort";
 
 /**
  * Marca de precio rezagado: la fila se valora con un precio anterior al del último refresco

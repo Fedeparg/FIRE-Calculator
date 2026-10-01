@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activeScenario, goalProgress, goalSettingsFromInputs } from "./portfolio-goal-scenario";
+import { activeScenario, goalProgress, goalSettingsFromInputs } from "./goal-scenario";
 
 // USD por unidad: 1 EUR = 1,10 USD.
 const RATES = { USD: 1, EUR: 1.1 };

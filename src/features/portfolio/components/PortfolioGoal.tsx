@@ -14,8 +14,8 @@ import {
   showAmounts,
   type GoalAmounts,
   type GoalParams,
-} from "@/core/portfolio-goal-amounts";
-import { goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
+} from "@/features/portfolio/model/goal-amounts";
+import { goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 import type { SavedScenario } from "@/shared/api/saved-scenarios";
 import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
 import Notice from "@/components/ui/Notice";

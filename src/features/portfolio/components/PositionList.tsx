@@ -5,8 +5,14 @@ import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
 import { latestPriceDate } from "@/core/portfolio-prices";
-import { buildPositionRows, type GainMode } from "@/core/portfolio-rows";
-import { DEFAULT_SORT_DIR, DEFAULT_SORT_KEY, sortPositions, type SortDir, type SortKey } from "@/core/portfolio-sort";
+import { buildPositionRows, type GainMode } from "@/features/portfolio/model/rows";
+import {
+  DEFAULT_SORT_DIR,
+  DEFAULT_SORT_KEY,
+  sortPositions,
+  type SortDir,
+  type SortKey,
+} from "@/features/portfolio/model/sort";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
 import ToggleGroup from "@/components/ui/ToggleGroup";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { buildPortfolioCsv, UTF8_BOM } from "@/core/portfolio-csv";
+import { buildPortfolioCsv, UTF8_BOM } from "@/features/portfolio/model/csv";
 import { asLocale } from "@/core/types";
 import { downloadBlob } from "@/lib/download";
 import type { PriceInfo, Position } from "@/lib/portfolio";

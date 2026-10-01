@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { lotErrorKey, type LotErrorKey } from "@/core/portfolio-lots";
+import { lotErrorKey, type LotErrorKey } from "@/features/portfolio/model/lots";
 import type { LotPayload, PositionLot } from "@/lib/portfolio";
 import { NO_STORE, deleteLot, lotsPath, saveLot } from "@/shared/api/portfolio-api";
 import { useApiQuery } from "@/shared/api/use-api-query";

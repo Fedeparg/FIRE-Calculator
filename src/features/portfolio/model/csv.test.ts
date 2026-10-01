@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildPortfolioCsv,
-  CSV_COLUMNS,
-  UTF8_BOM,
-  type PortfolioCsvHeaders,
-  type PortfolioCsvInput,
-} from "./portfolio-csv";
+import { buildPortfolioCsv, CSV_COLUMNS, UTF8_BOM, type PortfolioCsvHeaders, type PortfolioCsvInput } from "./csv";
 
 type CsvPosition = PortfolioCsvInput["positions"][number];
 

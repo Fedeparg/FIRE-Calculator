@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Position, PriceInfo } from "@/lib/portfolio";
-import { buildPositionRows, toBase, type BuildRowsInput } from "./portfolio-rows";
+import { buildPositionRows, toBase, type BuildRowsInput } from "./rows";
 
 const position = (over: Partial<Position> & { id: string; ticker: string }): Position => ({
   name: null,

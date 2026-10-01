@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/shared/api/client";
-import { lotErrorKey } from "./portfolio-lots";
+import { lotErrorKey } from "./lots";
 
 describe("lotErrorKey", () => {
   it("traduce los códigos de dominio de la agregación", () => {

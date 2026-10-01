@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { DEFAULT_SORT_DIR, DEFAULT_SORT_KEY, sortPositions, type SortableRow } from "./portfolio-sort";
+import { DEFAULT_SORT_DIR, DEFAULT_SORT_KEY, sortPositions, type SortableRow } from "./sort";
 
 /** Crea una fila con valores por defecto neutros; se sobreescribe lo relevante por test. */
 function row(ticker: string, sortable: Partial<SortableRow> = {}) {

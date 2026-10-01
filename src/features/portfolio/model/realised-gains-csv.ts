@@ -4,8 +4,8 @@
  * adquisición). Dialecto, escapado y BOM: `core/csv.ts`.
  */
 
-import { buildCsv, type CsvCell } from "../csv";
-import type { Locale } from "../types";
+import { buildCsv, type CsvCell } from "@/core/csv";
+import type { Locale } from "@/core/types";
 import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
 
 /** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */

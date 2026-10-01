@@ -8,7 +8,7 @@ import {
   type GoalAmounts,
   type GoalParams,
   type ShownAmounts,
-} from "./portfolio-goal-amounts";
+} from "./goal-amounts";
 
 const amounts: GoalAmounts = { currency: "EUR", annualExpenses: 24000, contribution: 800, targetAmount: 100000 };
 const params: GoalParams = {
