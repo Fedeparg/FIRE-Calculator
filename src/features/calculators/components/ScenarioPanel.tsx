@@ -9,9 +9,9 @@ import { Link } from "@/i18n/navigation";
 import { type SavedScenario } from "@/features/scenarios/saved-scenarios";
 import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 import { useCalculatorState } from "./CalculatorState";
+import { inputClass } from "@/shared/ui/field-classes";
 
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
+const inputClassSm = `${inputClass} text-sm`;
 
 /**
  * Escenarios guardados de la calculadora abierta: guardar el estado actual con un nombre,
@@ -112,7 +112,7 @@ export default function ScenarioPanel() {
             maxLength={SCENARIO_NAME_MAX_LENGTH}
             placeholder={t("namePlaceholder")}
             autoComplete="off"
-            className={`mt-1 ${inputClass}`}
+            className={`mt-1 ${inputClassSm}`}
           />
         </div>
         <button
@@ -149,7 +149,7 @@ export default function ScenarioPanel() {
                       maxLength={SCENARIO_NAME_MAX_LENGTH}
                       aria-label={t("renameLabel", { name: scenario.name })}
                       autoComplete="off"
-                      className={`min-w-40 flex-1 ${inputClass}`}
+                      className={`min-w-40 flex-1 ${inputClassSm}`}
                     />
                     <button
                       type="button"

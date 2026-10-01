@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
+import { inputClass } from "@/shared/ui/field-classes";
 
 type Props = {
   /** Lote en edición, o `null` para dar de alta uno nuevo. */
@@ -15,9 +16,6 @@ type Props = {
   onSubmit: (payload: LotPayload) => void;
   onCancelEdit: () => void;
 };
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usa `traded_at` en la API. */
 function todayUtc(): string {
