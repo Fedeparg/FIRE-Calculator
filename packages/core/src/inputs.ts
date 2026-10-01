@@ -21,6 +21,6 @@ export const MAX_HORIZON_YEARS = 100;
  * Plazo en años como entero de `min` a `MAX_HORIZON_YEARS`. NaN cuenta como 0 (como el resto de
  * entradas: `x || 0`); ±Infinity se acota al extremo correspondiente.
  */
-export function clampYears(years: number, min = 0): number {
+export function clampYears(years: number | undefined, min = 0): number {
   return Math.min(MAX_HORIZON_YEARS, Math.max(min, Math.round(years || 0)));
 }

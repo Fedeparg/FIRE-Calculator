@@ -56,7 +56,13 @@ const CASES: readonly Case[] = [
   {
     name: "amortizacion-anticipada",
     run: computeEarlyRepayment,
-    baseline: { pendingPrincipal: 150000, annualRate: 3, remainingYears: 20, extraPayment: 20000, compensationRate: 0.5 },
+    baseline: {
+      pendingPrincipal: 150000,
+      annualRate: 3,
+      remainingYears: 20,
+      extraPayment: 20000,
+      compensationRate: 0.5,
+    },
   },
   {
     name: "deposito",

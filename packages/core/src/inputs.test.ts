@@ -35,7 +35,12 @@ describe("plazos infinitos no cuelgan las calculadoras", () => {
 
 describe("personas a cargo infinitas no cuelgan el mínimo personal", () => {
   it("children = Infinity termina y da un neto finito", () => {
-    const r = estimateNetSalary({ grossAnnual: 40000, children: Infinity, childrenUnder3: Infinity, ascendants: Infinity });
+    const r = estimateNetSalary({
+      grossAnnual: 40000,
+      children: Infinity,
+      childrenUnder3: Infinity,
+      ascendants: Infinity,
+    });
     expect(Number.isFinite(r.netPerPayment)).toBe(true);
   });
 });

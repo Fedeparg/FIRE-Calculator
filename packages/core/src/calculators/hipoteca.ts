@@ -71,7 +71,12 @@ export function computeMortgage(input: MortgageInput): MortgageResult {
   let yearPrincipal = 0;
   let yearInterest = 0;
 
-  for (const { month, interest, principalPart, balanceAfter } of amortizationSchedule(principal, i, monthlyPayment, n)) {
+  for (const { month, interest, principalPart, balanceAfter } of amortizationSchedule(
+    principal,
+    i,
+    monthlyPayment,
+    n,
+  )) {
     yearPrincipal += principalPart;
     yearInterest += interest;
 

@@ -17,7 +17,9 @@ const PRINCIPALS = [0, 1, 1000, 180000, 5e7];
 
 /** Huella de la serialización completa; los no finitos se escriben como texto porque JSON los volvería `null`. */
 function fingerprint(value: unknown): string {
-  const json = JSON.stringify(value, (_key, v: unknown) => (typeof v === "number" && !Number.isFinite(v) ? String(v) : v));
+  const json = JSON.stringify(value, (_key, v: unknown) =>
+    typeof v === "number" && !Number.isFinite(v) ? String(v) : v,
+  );
   return `${(JSON.parse(json) as unknown[]).length} casos, sha256 ${createHash("sha256").update(json).digest("hex")}`;
 }
 
@@ -38,7 +40,13 @@ describe("characterization: matemática de préstamos", () => {
         for (const pendingPrincipal of PRINCIPALS)
           for (const extraPayment of [0, 500, 20000, 1e9])
             out.push(
-              computeEarlyRepayment({ pendingPrincipal, annualRate, remainingYears, extraPayment, compensationRate: 2 }),
+              computeEarlyRepayment({
+                pendingPrincipal,
+                annualRate,
+                remainingYears,
+                extraPayment,
+                compensationRate: 2,
+              }),
             );
     expect(fingerprint(out)).toMatchSnapshot();
   });
@@ -60,7 +68,14 @@ describe("characterization: matemática de préstamos", () => {
         for (const monthlyPayment of [0, 50, 200, 1e7]) {
           out.push(computeCreditCard({ balance, annualRate, monthlyPayment }));
           out.push(
-            computeCreditCard({ balance, annualRate, monthlyPayment, paymentMode: "percent", minPercent: 3, minFloor: 25 }),
+            computeCreditCard({
+              balance,
+              annualRate,
+              monthlyPayment,
+              paymentMode: "percent",
+              minPercent: 3,
+              minFloor: 25,
+            }),
           );
         }
     expect(fingerprint(out)).toMatchSnapshot();

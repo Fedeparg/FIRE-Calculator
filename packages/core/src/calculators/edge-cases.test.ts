@@ -165,7 +165,9 @@ describe("computeWealthTax: bordes", () => {
     expect(full.grossTax).toBeGreaterThan(0);
     expect(full.tax).toBe(0);
     expect(computeWealthTax({ totalWealth: 3000000, primaryResidenceValue: 0, regionalRebate: 250 }).tax).toBe(0);
-    expect(computeWealthTax({ totalWealth: 3000000, primaryResidenceValue: 0, regionalRebate: -50 }).tax).toBe(full.grossTax);
+    expect(computeWealthTax({ totalWealth: 3000000, primaryResidenceValue: 0, regionalRebate: -50 }).tax).toBe(
+      full.grossTax,
+    );
   });
 
   it("valores negativos se tratan como 0", () => {
@@ -237,7 +239,13 @@ describe("computeRetirement: bordes", () => {
   });
 
   it("sin ahorro ni aportaciones la renta es 0", () => {
-    const r = computeRetirement({ currentSavings: 0, monthlySavings: 0, annualReturn: 6, currentAge: 30, retirementAge: 65 });
+    const r = computeRetirement({
+      currentSavings: 0,
+      monthlySavings: 0,
+      annualReturn: 6,
+      currentAge: 30,
+      retirementAge: 65,
+    });
     expect(r.monthlyIncome).toBe(0);
     expect(r.monthlyIncomeNominal).toBe(0);
   });
