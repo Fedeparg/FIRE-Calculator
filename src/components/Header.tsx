@@ -21,8 +21,8 @@ export default function Header() {
           </span>
           <span className="text-foreground">{t("title")}</span>
         </Link>
-        {/* Móvil: marca e idioma/tema en la primera fila y la navegación debajo, a todo el ancho.
-            Desde `sm` todo va en una fila, con los controles al final. */}
+        {/* Móvil: marca e idioma/tema en la primera fila y la navegación debajo, a todo el ancho
+            y sin iconos para que quepa con el menú de usuario. Desde `sm`, una sola fila. */}
         <div className="order-2 flex items-center gap-2 sm:order-3">
           <span aria-hidden className="mr-1 hidden h-5 w-px bg-border sm:block" />
           <LanguageSwitcher />
@@ -36,14 +36,14 @@ export default function Header() {
             href="/calculadoras"
             className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium sm:min-h-0 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
           >
-            <IconNavCalculator className="h-4 w-4" />
+            <IconNavCalculator className="hidden h-4 w-4 sm:block" />
             {tNav("home")}
           </Link>
           <Link
             href="/aprende"
             className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium sm:min-h-0 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
           >
-            <IconNavLearn className="h-4 w-4" />
+            <IconNavLearn className="hidden h-4 w-4 sm:block" />
             {tNav("learn")}
           </Link>
           <AuthNav />

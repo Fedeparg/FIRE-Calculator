@@ -92,7 +92,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground">{t("title")}</h2>
         <div className="inline-flex shrink-0 rounded-lg border border-border p-0.5" role="group" aria-label={t("rangeLabel")}>
           {HISTORY_RANGES.map(({ key }) => (

@@ -40,11 +40,14 @@ export default function PortfolioSummaryTab() {
         pricesCheckedAt={pricesCheckedAt}
         display={display}
       />
-      <div className="grid items-start gap-6 lg:grid-cols-3">
+      {/* `grid-cols-1` (minmax(0, 1fr)) y no la columna implícita `auto`: esa crece hasta el
+          ancho intrínseco de la gráfica, y en WebKit (todo navegador de iOS) la caja se salía
+          de la pantalla. */}
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="min-w-0 lg:col-span-2">
           <PortfolioHistoryChart display={display} />
         </div>
-        <div className="flex flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-6">
           <PortfolioGoalCard marketValue={agg.marketValue} display={display} rates={rates} />
           <PortfolioBreakdown
             positions={positions.filter((p) => !p.isDerivative && p.quantity > 0)}

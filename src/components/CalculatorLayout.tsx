@@ -46,7 +46,7 @@ export default function CalculatorLayout({
           <div className="grid gap-6">{results}</div>
         </>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
           <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 content-start">
             {inputs}
           </div>

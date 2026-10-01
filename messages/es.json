@@ -1106,6 +1106,8 @@
     "goal": {
       "title": "Tu objetivo de independencia financiera",
       "intro": "Define cuánto quieres gastar al año y compara el patrimonio que necesitas con el que ya tienes invertido.",
+      "titleAmount": "Tu objetivo de ahorro",
+      "introAmount": "Elige cuánto quieres reunir y en cuántos años, y compara lo que necesitas aportar con lo que ya tienes invertido.",
       "annualExpenses": "Gasto anual estimado ({currency})",
       "withdrawalRate": "Tasa de retiro segura (%)",
       "contribution": "Aportación periódica ({currency})",
