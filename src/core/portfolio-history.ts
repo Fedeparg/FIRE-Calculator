@@ -187,3 +187,27 @@ export function gainSince(points: readonly HistoryPointDto[], from: string): Per
   const last = usable[usable.length - 1];
   return { gain: last.pnlAbs! - first.pnlAbs!, since: first.date, estimated: first.estimated };
 }
+
+/** Valoración en vivo de la cartera, para cerrar la serie en el día de hoy. */
+export interface LiveValuation {
+  /** Fecha de hoy (`YYYY-MM-DD`, UTC, como los snapshots). */
+  date: string;
+  marketValue: number;
+  invested: number;
+  pnlAbs: number;
+  pnlPct: number | null;
+  valuedPositions: number;
+  totalPositions: number;
+}
+
+/**
+ * Añade la valoración en vivo como último punto: el snapshot del día se escribe de noche, así
+ * que sin esto la gráfica acaba ayer aunque el Resumen ya enseñe el valor de hoy. Solo si es
+ * posterior al último punto y hay algo valorado; si ya hay punto de hoy, manda el snapshot.
+ */
+export function withLivePoint(points: readonly HistoryPointDto[], live: LiveValuation | null): HistoryPointDto[] {
+  if (!live || live.valuedPositions === 0 || !Number.isFinite(live.marketValue)) return [...points];
+  const last = points.reduce<string | null>((max, p) => (max === null || p.date > max ? p.date : max), null);
+  if (last !== null && last >= live.date) return [...points];
+  return [...points, { ...live, estimated: false }];
+}

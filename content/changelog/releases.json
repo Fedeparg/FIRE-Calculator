@@ -14,6 +14,50 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "649d0d9e",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la gráfica de evolución llega hasta hoy con el valor actual de tu cartera, sin esperar a la captura de la noche",
+            "en": "the history chart now reaches today with your portfolio’s current value, without waiting for the nightly snapshot"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "f62cb1f9",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura el arreglo del test",
+            "en": "curate the test fix"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "69061cff",
+          "type": "test",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "desactiva el cron intradía en los tests HTTP",
+            "en": "turn off the intraday cron in HTTP tests"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "6a9fee34",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el histórico rehecho tras importar operaciones antiguas",
+            "en": "describe the rebuilt history after importing past trades"
+          },
+          "hidden": true
+        },
+        {
           "hash": "67d8f245",
           "type": null,
           "scope": null,

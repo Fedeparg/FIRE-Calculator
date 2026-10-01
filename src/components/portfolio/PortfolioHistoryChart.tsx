@@ -9,12 +9,14 @@ import Notice from "@/components/ui/Notice";
 import { formatIsoDate } from "@/core/format";
 import {
   buildHistorySeries,
+  withLivePoint,
   DEFAULT_HISTORY_RANGE,
   HISTORY_RANGES,
   type HistoryRangeKey,
   type PortfolioHistoryDto,
 } from "@/core/portfolio-history";
 import { useFormat } from "@/lib/format";
+import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Props = {
   /** Divisa elegida en el resumen: la serie se pide ya reexpresada a ella. */
@@ -76,7 +78,24 @@ export default function PortfolioHistoryChart({ display }: Props) {
   const status: Status =
     result?.key !== requestKey ? "loading" : history === null ? "error" : "ready";
 
-  const series = useMemo(() => buildHistorySeries(history?.points ?? []), [history]);
+  // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
+  // la serie en el día de hoy para que la gráfica no se quede en ayer.
+  const { agg } = usePortfolioData();
+  const series = useMemo(() => {
+    const live =
+      agg.display === display
+        ? {
+            date: new Date().toISOString().slice(0, 10),
+            marketValue: agg.marketValue,
+            invested: agg.invested,
+            pnlAbs: agg.pnlAbs,
+            pnlPct: agg.pnlPct,
+            valuedPositions: agg.valued,
+            totalPositions: agg.total,
+          }
+        : null;
+    return buildHistorySeries(withLivePoint(history?.points ?? [], live));
+  }, [history, agg, display]);
 
   const estimatedColumn: ChartTableColumn<DataRow> = {
     label: t("estimatedColumn"),
