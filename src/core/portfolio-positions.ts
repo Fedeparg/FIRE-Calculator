@@ -92,3 +92,45 @@ export function matchesQuery(position: FilterablePosition, query: string): boole
     (field) => field !== null && normalize(field).includes(needle),
   );
 }
+
+/** Lo mínimo de una posición para su variación del día. */
+export interface MoverPosition extends FilterablePosition {
+  id: string;
+}
+
+/** Último precio y cierre anterior, en la divisa nativa del instrumento. */
+export interface DailyPrice {
+  close: number;
+  previousClose: number | null;
+}
+
+/** Variación del día de una posición. */
+export interface DailyMove {
+  id: string;
+  name: string;
+  /** Variación del precio respecto al cierre anterior, en %. */
+  changePct: number;
+}
+
+/**
+ * Las posiciones abiertas que más se han movido hoy (en valor absoluto), de mayor a menor. Es
+ * la variación del PRECIO, la misma para cualquier tenedor: no depende de la divisa ni de la
+ * cantidad. Sin cierre anterior (primer dato) o con un cierre anterior no positivo, la posición
+ * no entra: no hay variación que contar.
+ */
+export function dailyMovers(
+  positions: readonly MoverPosition[],
+  prices: Record<string, DailyPrice | undefined>,
+  limit: number,
+): DailyMove[] {
+  const moves: DailyMove[] = [];
+  for (const position of positions) {
+    if (positionFilterOf(position) !== "open") continue;
+    const price = prices[position.ticker];
+    if (!price || price.previousClose === null || !(price.previousClose > 0)) continue;
+    const changePct = (price.close / price.previousClose - 1) * 100;
+    if (!Number.isFinite(changePct)) continue;
+    moves.push({ id: position.id, name: position.name ?? position.ticker, changePct });
+  }
+  return moves.sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct)).slice(0, limit);
+}

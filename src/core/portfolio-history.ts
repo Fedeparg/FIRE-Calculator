@@ -157,3 +157,31 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
     estimatedRange,
   };
 }
+
+/** Ganancia de la cartera en un periodo. */
+export interface PeriodGain {
+  /** Variación de la ganancia acumulada (valor − invertido) en el periodo. */
+  gain: number;
+  /** Fecha del punto de partida (el primero disponible desde `from`). */
+  since: string;
+  /** El punto de partida es una estimación (backfill), no una captura real. */
+  estimated: boolean;
+}
+
+/**
+ * Cuánto ha ganado la cartera desde `from` (p. ej. el 1 de enero): la variación de su ganancia
+ * acumulada, NO la del valor de mercado. Así una aportación a mitad de año no cuenta como
+ * rentabilidad: sube a la vez lo invertido y el valor, y la ganancia no cambia.
+ *
+ * Parte del primer punto con fecha `>= from` (si la serie empieza más tarde, desde ahí: la
+ * interfaz lo dice) y acaba en el último. `null` si no hay al menos dos puntos utilizables.
+ */
+export function gainSince(points: readonly HistoryPointDto[], from: string): PeriodGain | null {
+  const usable = points
+    .filter((p) => p.date >= from && p.pnlAbs !== null && Number.isFinite(p.pnlAbs))
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  if (usable.length < MIN_HISTORY_POINTS) return null;
+  const first = usable[0];
+  const last = usable[usable.length - 1];
+  return { gain: last.pnlAbs! - first.pnlAbs!, since: first.date, estimated: first.estimated };
+}
