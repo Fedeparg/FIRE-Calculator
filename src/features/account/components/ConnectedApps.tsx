@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { formatIsoDate } from "@/shared/format/format";
 import { absoluteUrl } from "@/shared/seo/site";
 import { NO_STORE, apiFetch } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import Button from "@/shared/ui/Button";
 
@@ -46,8 +47,9 @@ export default function ConnectedApps() {
   const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
   const state = query.status === "ready" ? "loaded" : query.status;
   const items = query.status === "ready" ? query.data.filter((c) => !revoked.has(c.clientId)) : [];
+  const revocation = useApiMutation();
+  // Qué conexión se está revocando, para deshabilitar y rotular solo su botón.
   const [revoking, setRevoking] = useState<string | null>(null);
-  const [revokeError, setRevokeError] = useState(false);
   const [copied, setCopied] = useState(false);
 
   async function copyUrl() {
@@ -62,15 +64,11 @@ export default function ConnectedApps() {
 
   async function revoke(clientId: string) {
     setRevoking(clientId);
-    setRevokeError(false);
-    try {
-      await apiFetch(`/api/account/connections/${encodeURIComponent(clientId)}`, { method: "DELETE" });
-      setRevoked((prev) => new Set(prev).add(clientId));
-    } catch {
-      setRevokeError(true);
-    } finally {
-      setRevoking(null);
-    }
+    const result = await revocation.run(() =>
+      apiFetch(`/api/account/connections/${encodeURIComponent(clientId)}`, { method: "DELETE" }),
+    );
+    if (result.ok) setRevoked((prev) => new Set(prev).add(clientId));
+    setRevoking(null);
   }
 
   return (
@@ -117,7 +115,7 @@ export default function ConnectedApps() {
         </ul>
       )}
 
-      {revokeError && <p className="text-sm text-warning">{t("revokeError")}</p>}
+      {revocation.status === "error" && <p className="text-sm text-warning">{t("revokeError")}</p>}
 
       {/* Cómo conectar un asistente de IA al servidor MCP de Sextante. */}
       <details className="mt-1 rounded-xl border border-border bg-background p-4">

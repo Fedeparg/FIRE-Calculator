@@ -8,6 +8,7 @@ import Button from "@/shared/ui/Button";
 import Notice from "@/shared/ui/Notice";
 import { downloadBlob } from "@/shared/format/download";
 import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 
 /** Claves de error que define el namespace `account` (no tiene `errorInvalid`). */
 type ErrorKey = Exclude<ApiErrorKey, "errorInvalid">;
@@ -23,8 +24,6 @@ type Props = {
   email: string;
 };
 
-type DeleteStatus = "idle" | "deleting" | "done";
-
 /**
  * Zona de cuenta con los dos derechos RGPD: exportar mis datos (descarga un JSON) y
  * borrar mi cuenta. El borrado exige escribir el propio correo para confirmar; la
@@ -35,13 +34,13 @@ export default function AccountDangerZone({ email }: Props) {
   const router = useRouter();
 
   // Exportación.
-  const [exporting, setExporting] = useState(false);
-  const [exportError, setExportError] = useState(false);
+  const exportData = useApiMutation();
+  const exporting = exportData.status === "pending";
 
   // Borrado.
   const [confirmEmail, setConfirmEmail] = useState("");
-  const [deleteStatus, setDeleteStatus] = useState<DeleteStatus>("idle");
-  const [deleteError, setDeleteError] = useState<ErrorKey | null>(null);
+  const deletion = useApiMutation();
+  const deleteError = deletion.error === null ? null : errorKeyFor(deletion.error);
 
   // Limpia el temporizador de redirección si el componente se desmonta antes.
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,35 +56,22 @@ export default function AccountDangerZone({ email }: Props) {
 
   /** Descarga el JSON de datos vía blob para poder gestionar errores (401, red…). */
   async function handleExport() {
-    setExporting(true);
-    setExportError(false);
-    try {
+    await exportData.run(async () => {
       const res = await apiFetch("/api/auth/account/export");
       downloadBlob(await res.blob(), "sextante-datos.json");
-    } catch {
-      setExportError(true);
-    } finally {
-      setExporting(false);
-    }
+    });
   }
 
   /** Borra la cuenta tras confirmar el correo; al terminar, redirige al inicio. */
   async function handleDelete() {
-    if (!emailMatches || deleteStatus !== "idle") return;
-    setDeleteStatus("deleting");
-    setDeleteError(null);
-    try {
-      await apiFetch("/api/auth/account", { method: "DELETE" });
-      setDeleteStatus("done");
-      // Breve pausa para que el usuario vea el aviso antes de salir.
-      redirectTimer.current = setTimeout(() => {
-        router.replace("/");
-        router.refresh();
-      }, 1500);
-    } catch (error) {
-      setDeleteError(errorKeyFor(error));
-      setDeleteStatus("idle");
-    }
+    if (!emailMatches || deletion.status === "pending" || deletion.status === "success") return;
+    const result = await deletion.run(() => apiFetch("/api/auth/account", { method: "DELETE" }));
+    if (!result.ok) return;
+    // Breve pausa para que el usuario vea el aviso antes de salir.
+    redirectTimer.current = setTimeout(() => {
+      router.replace("/");
+      router.refresh();
+    }, 1500);
   }
 
   return (
@@ -97,7 +83,7 @@ export default function AccountDangerZone({ email }: Props) {
         <Button variant="secondary" size="lg" onClick={handleExport} disabled={exporting} className="self-start">
           {exporting ? t("export.exporting") : t("export.button")}
         </Button>
-        {exportError && <p className="text-sm text-warning">{t("export.error")}</p>}
+        {exportData.status === "error" && <p className="text-sm text-warning">{t("export.error")}</p>}
       </section>
 
       {/* Zona de peligro: borrar mi cuenta */}
@@ -117,7 +103,7 @@ export default function AccountDangerZone({ email }: Props) {
             value={confirmEmail}
             onChange={(e) => setConfirmEmail(e.target.value)}
             placeholder={t("delete.placeholder")}
-            disabled={deleteStatus === "done"}
+            disabled={deletion.status === "success"}
             className="w-full max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-danger focus:ring-2 focus:ring-danger/30"
           />
         </div>
@@ -126,13 +112,13 @@ export default function AccountDangerZone({ email }: Props) {
           variant="danger"
           size="lg"
           onClick={handleDelete}
-          disabled={!emailMatches || deleteStatus !== "idle"}
+          disabled={!emailMatches || deletion.status === "pending" || deletion.status === "success"}
           className="self-start"
         >
-          {deleteStatus === "deleting" ? t("delete.deleting") : t("delete.button")}
+          {deletion.status === "pending" ? t("delete.deleting") : t("delete.button")}
         </Button>
 
-        {deleteStatus === "done" && <Notice variant="info">{t("delete.success")}</Notice>}
+        {deletion.status === "success" && <Notice variant="info">{t("delete.success")}</Notice>}
 
         {deleteError && (
           <p className="text-sm text-warning">

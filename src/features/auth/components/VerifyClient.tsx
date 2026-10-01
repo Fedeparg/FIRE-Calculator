@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { apiFetch } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 
 /** Canjea el token del magic link y redirige a la cartera, o muestra el error. */
 export default function VerifyClient() {
@@ -12,7 +13,8 @@ export default function VerifyClient() {
   const params = useSearchParams();
   const router = useRouter();
   const token = params.get("token");
-  const [fetchError, setFetchError] = useState(false);
+  const verify = useApiMutation();
+  const runVerify = verify.run;
   // Evita doble ejecución (StrictMode en dev) que consumiría el token dos veces.
   const ran = useRef(false);
 
@@ -21,8 +23,8 @@ export default function VerifyClient() {
     ran.current = true;
 
     void (async () => {
-      try {
-        await apiFetch("/api/auth/verify", { method: "POST", body: { token } });
+      const result = await runVerify(() => apiFetch("/api/auth/verify", { method: "POST", body: { token } }));
+      if (result.ok) {
         // Si veníamos de un flujo OAuth, retoma ahí (ruta relativa validada);
         // si no, a la cartera. `window.location` para salir a /authorize (no es
         // ruta localizada de next-intl).
@@ -34,14 +36,12 @@ export default function VerifyClient() {
           router.replace("/portfolio");
           router.refresh();
         }
-      } catch {
-        setFetchError(true);
       }
     })();
-  }, [token, router]);
+  }, [token, router, runVerify]);
 
   // El caso "sin token" es un error conocido en render (no necesita estado).
-  if (!token || fetchError) {
+  if (!token || verify.status === "error") {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-sm text-warning">{t("error")}</p>

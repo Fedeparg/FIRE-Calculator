@@ -5,15 +5,14 @@ import { useTranslations } from "next-intl";
 
 import { trackEvent } from "@/shared/analytics/track";
 import { apiFetch } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
-
-type Status = "idle" | "sending" | "sent" | "error";
 
 /** Formulario de login por magic link: pide el email y solicita el enlace. */
 export default function LoginForm() {
   const t = useTranslations("auth.login");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<Status>("idle");
+  const request = useApiMutation();
 
   // Si se llega aquí desde un flujo OAuth (?returnTo=/authorize…), recuérdalo para
   // volver tras canjear el magic link. Solo rutas relativas (anti open-redirect).
@@ -26,17 +25,11 @@ export default function LoginForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setStatus("sending");
-    try {
-      await apiFetch("/api/auth/request", { method: "POST", body: { email } });
-      setStatus("sent");
-      trackEvent({ name: "login-link-requested" });
-    } catch {
-      setStatus("error");
-    }
+    const result = await request.run(() => apiFetch("/api/auth/request", { method: "POST", body: { email } }));
+    if (result.ok) trackEvent({ name: "login-link-requested" });
   }
 
-  if (status === "sent") {
+  if (request.status === "success") {
     return <p className="rounded-lg bg-accent-soft px-4 py-3 text-sm text-foreground">{t("sent")}</p>;
   }
 
@@ -58,10 +51,10 @@ export default function LoginForm() {
         />
       </div>
 
-      {status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
+      {request.status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
 
-      <Button size="lg" type="submit" disabled={status === "sending"} className="w-full">
-        {status === "sending" ? t("sending") : t("submit")}
+      <Button size="lg" type="submit" disabled={request.status === "pending"} className="w-full">
+        {request.status === "pending" ? t("sending") : t("submit")}
       </Button>
     </form>
   );

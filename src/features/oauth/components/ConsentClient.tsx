@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { apiFetch } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
 
 type Props = {
@@ -25,20 +25,16 @@ const SCOPE_LABELS: Record<string, string> = {
  */
 export default function ConsentClient({ clientId, scopes, authorizeParams }: Props) {
   const t = useTranslations("oauth.consent");
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState(false);
+  const consent = useApiMutation();
+  // `success` cuenta como trabajando: el botón sigue deshabilitado hasta que la navegación termine.
+  const working = consent.status === "pending" || consent.status === "success";
 
   async function allow() {
-    setWorking(true);
-    setError(false);
-    try {
-      await apiFetch("/api/oauth/consent", { method: "POST", body: { clientId, scopes } });
-      // Reanuda en NUESTRO origen (no es redirect abierto): el AS emitirá el código.
-      window.location.assign(`/authorize?${authorizeParams}`);
-    } catch {
-      setError(true);
-      setWorking(false);
-    }
+    const result = await consent.run(() =>
+      apiFetch("/api/oauth/consent", { method: "POST", body: { clientId, scopes } }),
+    );
+    // Reanuda en NUESTRO origen (no es redirect abierto): el AS emitirá el código.
+    if (result.ok) window.location.assign(`/authorize?${authorizeParams}`);
   }
 
   function deny() {
@@ -81,7 +77,7 @@ export default function ConsentClient({ clientId, scopes, authorizeParams }: Pro
 
       <p className="text-xs text-muted">{t("warning")}</p>
 
-      {error && <p className="text-sm text-warning">{t("error")}</p>}
+      {consent.status === "error" && <p className="text-sm text-warning">{t("error")}</p>}
 
       <div className="flex flex-col gap-2 sm:flex-row-reverse">
         <Button size="lg" onClick={allow} disabled={working} className="w-full">
