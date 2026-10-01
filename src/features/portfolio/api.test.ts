@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Position } from "@/lib/portfolio";
-import { ApiError } from "./client";
+import { ApiError } from "@/shared/api/client";
 import {
   combinePosition,
   deleteLot,
@@ -14,7 +14,7 @@ import {
   saveLot,
   savePosition,
   searchInstruments,
-} from "./portfolio-api";
+} from "./api";
 
 afterEach(() => vi.unstubAllGlobals());
 

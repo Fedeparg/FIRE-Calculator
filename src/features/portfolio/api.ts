@@ -12,7 +12,7 @@ import type {
   PositionPayload,
   PriceInfo,
 } from "@/lib/portfolio";
-import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "./client";
+import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
 
 /** Opciones de `fetch` para lecturas que no deben servirse de caché (constante: estable entre renders). */
 export const NO_STORE = { cache: "no-store" } as const;

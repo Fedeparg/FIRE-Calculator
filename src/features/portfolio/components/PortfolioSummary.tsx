@@ -7,7 +7,7 @@ import { formatIsoDate, formatRelativeTime } from "@/core/format";
 import { gainSince, type PortfolioHistoryDto } from "@/core/portfolio-history";
 import { asLocale } from "@/core/types";
 import { useFormat } from "@/lib/format";
-import { NO_STORE, historyPath } from "@/shared/api/portfolio-api";
+import { NO_STORE, historyPath } from "@/features/portfolio/api";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 type Props = {

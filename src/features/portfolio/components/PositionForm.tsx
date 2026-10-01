@@ -14,7 +14,7 @@ import {
   positionErrorKey,
   savePosition,
   type PositionErrorKey,
-} from "@/shared/api/portfolio-api";
+} from "@/features/portfolio/api";
 import PositionFormFields, { type PositionFormValues } from "./PositionFormFields";
 
 /** Id del título: da nombre al panel que contiene el formulario. */

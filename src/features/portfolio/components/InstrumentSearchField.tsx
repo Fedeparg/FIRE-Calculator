@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { MIN_INSTRUMENT_QUERY_LENGTH } from "@sextante/core/contracts";
 import type { InstrumentSearchResult, InstrumentType } from "@/lib/portfolio";
 import { isAbortError } from "@/shared/api/client";
-import { searchInstruments } from "@/shared/api/portfolio-api";
+import { searchInstruments } from "@/features/portfolio/api";
 
 /** Espera tras la última tecla antes de buscar: evita una petición por carácter. */
 const DEBOUNCE_MS = 300;

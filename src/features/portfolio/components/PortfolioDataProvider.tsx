@@ -15,7 +15,7 @@ import {
 import { aggregatePortfolio, type PortfolioAggregate } from "@sextante/core/fx";
 import { isPricePending, latestFetchedAt } from "@/core/portfolio-prices";
 import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
-import { FX_PATH, listPositions, pricesPath, type PricesBySymbol } from "@/shared/api/portfolio-api";
+import { FX_PATH, listPositions, pricesPath, type PricesBySymbol } from "@/features/portfolio/api";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Cada cuánto se re-piden los precios mientras alguna posición sigue "buscando precio". */

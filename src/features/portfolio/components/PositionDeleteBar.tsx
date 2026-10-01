@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { deletePosition } from "@/shared/api/portfolio-api";
+import { deletePosition } from "@/features/portfolio/api";
 
 type Props = {
   positionId: string;
