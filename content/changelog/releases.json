@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "9109f61e",
+          "type": "fix",
+          "scope": "ui",
+          "category": "fix",
+          "text": {
+            "es": "en el móvil la cabecera ocupa menos, los botones de ayuda y los enlaces son más fáciles de tocar y las cifras del eje de las gráficas ya no se parten",
+            "en": "on phones the header takes less room, help buttons and links are easier to tap and chart axis figures no longer wrap"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "7042e855",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el precio medio en la vista previa de importación",
+            "en": "describe the average price in the import preview"
+          },
+          "hidden": true
+        },
+        {
           "hash": "0589d606",
           "type": "feat",
           "scope": "import",

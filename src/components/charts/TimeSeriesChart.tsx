@@ -156,9 +156,10 @@ export default function TimeSeriesChart({
     useFormat();
   // Sin `currency` el formato es EXACTAMENTE el de antes; con divisa se delega en `Intl`.
   const formatValue = currency ? (n: number) => formatCurrency(n, currency) : formatEUR;
-  const formatAxisValue = currency
-    ? (n: number) => formatCompactCurrency(n, currency)
-    : formatCompactEUR;
+  // Espacios duros: Recharts parte las etiquetas de eje por los espacios normales cuando no
+  // caben, y en móvil "600 mil €" acababa en dos líneas.
+  const formatAxisValue = (n: number) =>
+    (currency ? formatCompactCurrency(n, currency) : formatCompactEUR(n)).replace(/ /g, "\u00a0");
   const formatX = xFormat ?? ((value: string | number) => formatNumber(Number(value)));
   // Las cadenas de accesibilidad son genéricas de cualquier gráfica, así que se
   // leen del namespace compartido `chart` en lugar de propagarlas por `labels`
