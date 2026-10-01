@@ -56,6 +56,9 @@ describe('ImportsController (HTTP)', () => {
     process.env.EMAIL_FROM = 'Sextante <no-reply@example.test>';
     process.env.APP_URL = 'https://sextante.example.test';
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
+    // El intradía salta a cada media hora: coincidiendo con un test, su lectura se interbloqueaba
+    // con el TRUNCATE de `resetDb` (fallo que dependía de la hora a la que corría la suite).
+    process.env.PRICE_INTRADAY_CRON = 'off';
     // Sin red: el arranque y el refresco de precios tras importar llamarían a Yahoo.
     global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
 
