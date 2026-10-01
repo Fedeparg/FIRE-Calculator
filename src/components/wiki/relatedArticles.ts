@@ -7,7 +7,7 @@
  *
  *   "slug-de-la-calculadora": ["slug-articulo-1", "slug-articulo-2"],
  *
- * - La clave es el `slug` de la calculadora (ver `src/core/registry.ts`).
+ * - La clave es el `slug` de la calculadora (ver `src/features/calculators/registry.ts`).
  * - El valor es la lista de slugs de artículos (ficheros
  *   `content/wiki/<slug>.<locale>.md`), en el orden en que se mostrarán
  *   (el primero es el más relevante).

@@ -5,7 +5,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { savedScenarios, userNotificationSettings } from '../db/schema.js';
 
 /**
- * Slug de la calculadora FIRE en el frontend (`src/core/registry.ts`). El objetivo de la
+ * Slug de la calculadora FIRE en el frontend (`src/features/calculators/registry.ts`). El objetivo de la
  * cartera se guarda como escenario de esa calculadora; es el que vigilan las alertas.
  */
 export const FIRE_SCENARIO_SLUG = 'independencia-financiera';
