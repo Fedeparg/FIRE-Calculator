@@ -134,7 +134,9 @@ export class McpService {
           'Calcula el valor actual y la ganancia/pérdida (P&L) de la cartera con el último ' +
           'precio conocido de cada posición. Devuelve el agregado convertido a la divisa ' +
           '`display` (las posiciones sin precio o en divisa no convertible se excluyen del ' +
-          'total y se señalan) y el desglose por posición en su divisa nativa. Solo lectura.',
+          'total y se señalan) y el desglose por posición en su divisa nativa. Los derivados ' +
+          '(`isDerivative`) se registran pero Sextante no sigue su precio: nunca entran en el ' +
+          'total. Solo lectura.',
         inputSchema: {
           display: z
             .enum(CURRENCY_VALUES)
@@ -309,8 +311,8 @@ export class McpService {
         description:
           'Reparte el valor de mercado actual de la cartera por activo, bróker o divisa y ' +
           'devuelve el peso de cada grupo en %, convertido a la divisa `display`. Las ' +
-          'posiciones sin precio o en divisa no convertible se excluyen y se cuentan. Solo ' +
-          'lectura.',
+          'posiciones sin precio o en divisa no convertible se excluyen y se cuentan; los ' +
+          'derivados no entran. Solo lectura.',
         inputSchema: {
           groupBy: z
             .enum(BREAKDOWN_VALUES)

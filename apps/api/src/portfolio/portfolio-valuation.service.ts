@@ -25,6 +25,8 @@ export interface PositionValuation {
   avgPrice: number;
   broker: string | null;
   currency: string;
+  /** Derivado: Sextante no sigue su precio y queda fuera del agregado. */
+  isDerivative: boolean;
   /** Coste (cantidad · precio medio), en la divisa de la posición. */
   invested: number;
   /** Último precio de mercado en la divisa de la posición, o null si no es valorable. */
@@ -103,7 +105,8 @@ export class PortfolioValuationService {
   ): Promise<BreakdownResult & { display: string; fxAsOf: string | null }> {
     const { owned, pricesRecord, fx } = await this.loadMarketData(userId);
     const result = buildBreakdown({
-      positions: owned,
+      // Igual que la web: los derivados no tienen precio fiable y no entran en el reparto.
+      positions: owned.filter((p) => !p.isDerivative),
       prices: pricesRecord,
       rates: fx.rates,
       display,
@@ -167,6 +170,7 @@ export class PortfolioValuationService {
       avgPrice: p.avgPrice,
       broker: p.broker,
       currency: p.currency,
+      isDerivative: p.isDerivative,
       invested,
       currentPrice,
       priceCurrency: price?.currency ?? null,
