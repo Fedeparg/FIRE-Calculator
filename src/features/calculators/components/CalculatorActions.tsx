@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { trackEvent } from "@/components/analytics/track";
+import { trackEvent } from "@/features/analytics/track";
 import { useCalculatorState } from "./CalculatorState";
 import ScenarioPanel from "./ScenarioPanel";
 

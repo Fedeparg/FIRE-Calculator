@@ -4,12 +4,12 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeMortgage, type MortgageYearPoint } from "@sextante/core/calculators/hipoteca";
-import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import Stat from "@/components/ui/Stat";
-import ChartDataTable, { type ChartTableColumn } from "@/components/charts/ChartDataTable";
-import ChartTooltip from "@/components/charts/ChartTooltip";
-import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import { useFormat } from "@/shared/format/use-format";
+import NumberField from "@/shared/ui/NumberField";
+import Stat from "@/shared/ui/Stat";
+import ChartDataTable, { type ChartTableColumn } from "@/shared/charts/ChartDataTable";
+import ChartTooltip from "@/shared/charts/ChartTooltip";
+import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 

@@ -14,7 +14,7 @@
  * Módulo puro (sin React ni DOM): recibe y devuelve cadenas de query string.
  */
 
-import { formatDecimalInput } from "@/core/number-input";
+import { formatDecimalInput } from "@/shared/format/number-input";
 
 /** Valor de un campo de calculadora: un escalar que cabe en una query string. */
 export type FieldValue = number | string;

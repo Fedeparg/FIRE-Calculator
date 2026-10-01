@@ -10,12 +10,12 @@ import {
   type ReturnModel,
 } from "@sextante/core/calculators/fire-montecarlo";
 import { HISTORICAL_RETURNS } from "@sextante/core/data/shiller-returns";
-import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import Notice from "@/components/ui/Notice";
-import SelectField from "@/components/ui/SelectField";
-import Stat from "@/components/ui/Stat";
-import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import { useFormat } from "@/shared/format/use-format";
+import NumberField from "@/shared/ui/NumberField";
+import Notice from "@/shared/ui/Notice";
+import SelectField from "@/shared/ui/SelectField";
+import Stat from "@/shared/ui/Stat";
+import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 

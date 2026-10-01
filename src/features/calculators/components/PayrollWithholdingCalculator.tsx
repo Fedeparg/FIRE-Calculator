@@ -15,12 +15,12 @@ import {
   type PaymentCount,
 } from "@sextante/core/fiscal/irpf";
 import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import RegionSelectField from "./RegionSelectField";
-import NumberField from "@/components/ui/NumberField";
-import SelectField from "@/components/ui/SelectField";
-import Stat from "@/components/ui/Stat";
-import Notice from "@/components/ui/Notice";
+import NumberField from "@/shared/ui/NumberField";
+import SelectField from "@/shared/ui/SelectField";
+import Stat from "@/shared/ui/Stat";
+import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 

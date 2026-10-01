@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import UnsubscribeConfirm from "@/components/account/UnsubscribeConfirm";
+import UnsubscribeConfirm from "@/features/account/components/UnsubscribeConfirm";
 
 type Props = {
   params: Promise<{ locale: string }>;

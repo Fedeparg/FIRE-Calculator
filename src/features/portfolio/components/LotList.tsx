@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl";
 
-import { formatIsoDate } from "@/core/format";
-import { useFormat } from "@/lib/format";
+import { formatIsoDate } from "@/shared/format/format";
+import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot } from "@sextante/core/portfolio/types";
 
 type Props = {

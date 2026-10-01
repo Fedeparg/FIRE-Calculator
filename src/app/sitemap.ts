@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 
 import { CALCULATORS } from "@/features/calculators/registry";
-import { LOCALES } from "@/core/types";
-import { getArticleSlugs, getContentUpdatedDates, getLegalSlugs } from "@/components/wiki/content";
-import { getChangelogLastUpdated } from "@/components/changelog/content";
-import { absoluteUrl } from "@/lib/site";
-import { localizedPath } from "@/lib/seo";
+import { LOCALES } from "@/i18n/types";
+import { getArticleSlugs, getContentUpdatedDates, getLegalSlugs } from "@/features/wiki/content";
+import { getChangelogLastUpdated } from "@/features/changelog/content";
+import { absoluteUrl } from "@/shared/seo/site";
+import { localizedPath } from "@/shared/seo/seo";
 
 /**
  * Sitemap dinámico. Genera UNA entrada por página con sus variantes de idioma en

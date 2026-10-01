@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/shared/seo/site";
 
 /**
  * robots.txt. Bloquea el rastreo de zonas privadas o tras autenticación

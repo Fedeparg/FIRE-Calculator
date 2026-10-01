@@ -5,12 +5,12 @@ import { useTranslations } from "next-intl";
 import { computeFire } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
-import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import SelectField from "@/components/ui/SelectField";
-import Stat from "@/components/ui/Stat";
-import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
-import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import { useFormat } from "@/shared/format/use-format";
+import NumberField from "@/shared/ui/NumberField";
+import SelectField from "@/shared/ui/SelectField";
+import Stat from "@/shared/ui/Stat";
+import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
+import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 

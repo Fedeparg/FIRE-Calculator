@@ -4,11 +4,11 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { KINSHIP_GROUPS, computeGiftTax, type KinshipGroup } from "@sextante/core/calculators/impuesto-donaciones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
-import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import SelectField from "@/components/ui/SelectField";
-import Stat from "@/components/ui/Stat";
-import Notice from "@/components/ui/Notice";
+import { useFormat } from "@/shared/format/use-format";
+import NumberField from "@/shared/ui/NumberField";
+import SelectField from "@/shared/ui/SelectField";
+import Stat from "@/shared/ui/Stat";
+import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 

@@ -2,8 +2,8 @@ import { SESSION_COOKIE } from "@sextante/core/contracts";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
-import { getSessionUser } from "@/lib/session";
-import ConsentClient from "@/components/oauth/ConsentClient";
+import { getSessionUser } from "@/shared/api/session";
+import ConsentClient from "@/features/oauth/components/ConsentClient";
 
 type Props = {
   params: Promise<{ locale: string }>;

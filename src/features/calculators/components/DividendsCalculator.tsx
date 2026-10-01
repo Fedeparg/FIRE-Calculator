@@ -3,11 +3,11 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeDividends } from "@sextante/core/calculators/dividendos";
-import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import Stat from "@/components/ui/Stat";
-import Notice from "@/components/ui/Notice";
-import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import { useFormat } from "@/shared/format/use-format";
+import NumberField from "@/shared/ui/NumberField";
+import Stat from "@/shared/ui/Stat";
+import Notice from "@/shared/ui/Notice";
+import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 

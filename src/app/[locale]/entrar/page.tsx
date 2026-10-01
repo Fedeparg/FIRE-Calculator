@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import LoginForm from "@/components/auth/LoginForm";
+import LoginForm from "@/features/auth/components/LoginForm";
 
 type Props = { params: Promise<{ locale: string }> };
 

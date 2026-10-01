@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { formatIsoDate } from "@/core/format";
+import { formatIsoDate } from "@/shared/format/format";
 import { latestPriceDate } from "@sextante/core/portfolio/prices";
 import { buildPositionRows, type GainMode } from "@/features/portfolio/model/rows";
 import {
@@ -13,9 +13,9 @@ import {
   type SortDir,
   type SortKey,
 } from "@/features/portfolio/model/sort";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
-import ToggleGroup from "@/components/ui/ToggleGroup";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import { PendingPrice, SortHeader, StaleBadge } from "./PositionListParts";
 
 type Props = {

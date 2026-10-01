@@ -8,7 +8,7 @@ import {
   scoreFinancialHealthOptions,
   type HealthCategory,
 } from "@sextante/core/calculators/salud-financiera";
-import SelectField from "@/components/ui/SelectField";
+import SelectField from "@/shared/ui/SelectField";
 
 /** Estilos del banner según categoría. */
 const CATEGORY_STYLES: Record<HealthCategory, string> = {

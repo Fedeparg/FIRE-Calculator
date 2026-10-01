@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { getAllArticles, WIKI_LEVELS, type ArticleMeta } from "@/components/wiki/content";
-import { buildMetadata } from "@/lib/seo";
+import { getAllArticles, WIKI_LEVELS, type ArticleMeta } from "@/features/wiki/content";
+import { buildMetadata } from "@/shared/seo/seo";
 
 // ISR: el contenido se lee de ficheros Markdown en runtime; se revalida cada
 // hora y bajo demanda vía /api/revalidate, de modo que editar la wiki en el

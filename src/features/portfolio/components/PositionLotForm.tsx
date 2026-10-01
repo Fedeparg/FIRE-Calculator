@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
+import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
 
 type Props = {

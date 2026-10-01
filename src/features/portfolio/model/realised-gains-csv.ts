@@ -1,11 +1,11 @@
 /**
  * CSV del informe de ganancias realizadas: una fila por VENTA del ejercicio, que es el nivel
  * de detalle que pide la declaración (cada transmisión con su valor de transmisión y de
- * adquisición). Dialecto, escapado y BOM: `core/csv.ts`.
+ * adquisición). Dialecto, escapado y BOM: `src/shared/format/csv.ts`.
  */
 
-import { buildCsv, type CsvCell } from "@/core/csv";
-import type { Locale } from "@/core/types";
+import { buildCsv, type CsvCell } from "@/shared/format/csv";
+import type { Locale } from "@/i18n/types";
 import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
 
 /** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */

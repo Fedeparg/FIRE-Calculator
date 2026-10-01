@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/features/calculators/registry";
-import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
-import { buildMetadata } from "@/lib/seo";
+import { CATEGORIES, type CategoryId } from "@/features/calculators/types";
+import type { Locale } from "@/i18n/types";
+import { buildMetadata } from "@/shared/seo/seo";
 import Selector, { type SelectorItem } from "@/features/calculators/components/Selector";
 
 type Props = { params: Promise<{ locale: string }> };

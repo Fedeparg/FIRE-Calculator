@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
-import { trackEvent } from "@/components/analytics/track";
+import { trackEvent } from "@/features/analytics/track";
 import { Link } from "@/i18n/navigation";
-import { type SavedScenario } from "@/shared/api/saved-scenarios";
-import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
+import { type SavedScenario } from "@/features/scenarios/saved-scenarios";
+import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 import { useCalculatorState } from "./CalculatorState";
 
 const inputClass =

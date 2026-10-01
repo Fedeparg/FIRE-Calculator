@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { fetchPositionsWithLots } from "@/features/portfolio/api.server";
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
 import RealisedGainsReport from "@/features/portfolio/components/RealisedGainsReport";
 

@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
 
 /**
