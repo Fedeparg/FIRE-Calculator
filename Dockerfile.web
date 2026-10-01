@@ -15,10 +15,13 @@ WORKDIR /app
 # ---- Build ----
 FROM base AS build
 # Manifiestos primero (cachea la instalación). Se copian también los del
-# workspace (apps/api) para que `--frozen-lockfile` valide el lockfile completo.
+# workspace (apps/api, packages/core) para que `--frozen-lockfile` valide el lockfile
+# completo. El filtro `sextante...` instala la raíz (el frontend) y sus dependencias
+# del workspace (@sextante/core), no la API.
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
-RUN pnpm install --frozen-lockfile --filter freedom-calculator...
+COPY packages/core/package.json ./packages/core/package.json
+RUN pnpm install --frozen-lockfile --filter "sextante..."
 
 # URL de la API. CRÍTICO: el rewrite /api/* de next.config se evalúa en BUILD
 # TIME y se congela en el manifiesto (el server standalone NO lo recalcula en
@@ -51,8 +54,9 @@ ENV ANALYTICS_URL=$ANALYTICS_URL
 ARG NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=""
 ENV NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=$NEXT_PUBLIC_ANALYTICS_WEBSITE_ID
 
-# Código del front y compilación. `output: "standalone"` genera
-# .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
+# Código del front y compilación. `pnpm build` compila antes @sextante/core (su
+# `dist/` no viaja en el contexto: lo excluye .dockerignore). `output: "standalone"`
+# genera .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
 COPY . .
 RUN pnpm build
 
