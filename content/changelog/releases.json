@@ -14,37 +14,37 @@
       "highlight": true,
       "entries": [
         {
-          "hash": "002c21f0",
+          "hash": "8dc30c7f",
           "type": "docs",
           "scope": "changelog",
           "category": "internal",
           "text": {
-            "es": "se describen los arreglos de importación y precios",
-            "en": "the import and price fixes are described"
+            "es": "se redactan las novedades del aviso de «buscando precio»",
+            "en": "the release notes for the price lookup notice are written"
           },
           "hidden": true
         },
         {
-          "hash": "df4de965",
-          "type": "fix",
-          "scope": "import",
-          "category": "fix",
+          "hash": "108061f1",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
           "text": {
-            "es": "las ampliaciones liberadas de Trade Republic se importan como acciones sin coste, y las retiradas de efectivo ya no salen como operaciones desconocidas",
-            "en": "Trade Republic bonus issues are imported as zero-cost shares, and cash withdrawals no longer show up as unknown transactions"
+            "es": "las posiciones recién importadas muestran «Buscando precio…» y la cartera se actualiza sola hasta que llega la cotización",
+            "en": "newly imported positions show \"Looking up price…\" and the portfolio refreshes by itself until the quote arrives"
           },
           "hidden": false
         },
         {
-          "hash": "312ac3fd",
-          "type": "fix",
-          "scope": "prices",
-          "category": "fix",
+          "hash": "50a2f48f",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
           "text": {
-            "es": "más ETFs y acciones de fuera de Europa (como Hong Kong) encuentran su cotización a partir del ISIN, así que ya suman al valor de la cartera",
-            "en": "more ETFs and non-European stocks (such as Hong Kong ones) now find their quote from the ISIN, so they count towards the portfolio value"
+            "es": "lógica y textos del estado de precio pendiente",
+            "en": "logic and copy for the pending price state"
           },
-          "hidden": false
+          "hidden": true
         },
         {
           "hash": "85f4e00b",

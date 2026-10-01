@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { isStalePrice, latestFetchedAt, latestPriceDate } from "./portfolio-prices";
+import {
+  isPricePending,
+  isStalePrice,
+  latestFetchedAt,
+  latestPriceDate,
+  PENDING_PRICE_WINDOW_MS,
+} from "./portfolio-prices";
 
 const prices = (dates: Record<string, string>) =>
   Object.fromEntries(Object.entries(dates).map(([ticker, date]) => [ticker, { date }]));
@@ -94,5 +100,41 @@ describe("latestFetchedAt", () => {
 
   it("sin precios no hay instante", () => {
     expect(latestFetchedAt({})).toBeNull();
+  });
+});
+
+describe("isPricePending", () => {
+  const created = "2026-10-01T10:00:00.000Z";
+  const createdMs = Date.parse(created);
+  const position = { isDerivative: false, createdAt: created };
+
+  it("es pendiente justo después del alta si no hay precio", () => {
+    expect(isPricePending(position, undefined, createdMs)).toBe(true);
+  });
+
+  it("deja de serlo exactamente al cumplirse la ventana", () => {
+    const edge = createdMs + PENDING_PRICE_WINDOW_MS;
+    expect(isPricePending(position, undefined, edge - 1)).toBe(true);
+    expect(isPricePending(position, undefined, edge)).toBe(false);
+  });
+
+  it("no es pendiente si ya tiene precio", () => {
+    expect(isPricePending(position, { close: 1 }, createdMs)).toBe(false);
+  });
+
+  it("los derivados nunca están pendientes", () => {
+    expect(isPricePending({ ...position, isDerivative: true }, undefined, createdMs)).toBe(false);
+  });
+
+  it("una fecha ilegible no es pendiente", () => {
+    expect(isPricePending({ ...position, createdAt: "nope" }, undefined, createdMs)).toBe(false);
+  });
+
+  it("una edad negativa (reloj desajustado) cuenta como recién creada", () => {
+    expect(isPricePending(position, undefined, createdMs - 5_000)).toBe(true);
+  });
+
+  it("admite una ventana personalizada", () => {
+    expect(isPricePending(position, undefined, createdMs + 5_000, 1_000)).toBe(false);
   });
 });

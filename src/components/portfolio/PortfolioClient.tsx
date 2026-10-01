@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { aggregatePortfolio } from "@sextante/core/fx";
-import { latestFetchedAt } from "@/core/portfolio-prices";
+import { isPricePending, latestFetchedAt } from "@/core/portfolio-prices";
 import { useFormat } from "@/lib/format";
 import { useStoredBoolean } from "@/lib/use-stored-boolean";
 import { PORTFOLIO_CURRENCIES, type FxRates, type PriceInfo, type Position } from "@/lib/portfolio";
@@ -17,6 +17,9 @@ import PositionDetail from "./PositionDetail";
 import PositionForm from "./PositionForm";
 import PositionList from "./PositionList";
 import PortfolioSummary from "./PortfolioSummary";
+
+/** Cada cuánto se re-piden los precios mientras alguna posición sigue "buscando precio". */
+const PENDING_POLL_MS = 12_000;
 
 type Props = {
   initialPositions: Position[];
@@ -53,6 +56,12 @@ export default function PortfolioClient({ initialPositions }: Props) {
    * durante el render lo haría impuro. Como el auto-refresco vuelve a pedirlos, no envejece.
    */
   const [pricesCheckedAt, setPricesCheckedAt] = useState<number | null>(null);
+  /**
+   * "Ahora" (ms) para decidir qué posiciones siguen buscando precio. Se fija al llegar cada
+   * respuesta de precios (no al pintar: leer el reloj en el render lo haría impuro), así que
+   * avanza con el sondeo y la ventana de "buscando" acaba caducando sola.
+   */
+  const [now, setNow] = useState(() => Date.now());
   // Tasas FX para el total agregado (global, no dependen de las posiciones).
   const [fxRates, setFxRates] = useState<FxRates | null>(null);
   // Divisa en la que se expresan el total, el histórico y la composición.
@@ -84,10 +93,14 @@ export default function PortfolioClient({ initialPositions }: Props) {
         if (!cancelled) {
           setPrices(data);
           setPricesCheckedAt(Date.now());
+          setNow(Date.now());
         }
       } catch {
         // Los precios son enriquecimiento: si fallan, la cartera sigue usable (P&L "—").
-        if (!cancelled) setPrices({});
+        if (!cancelled) {
+          setPrices({});
+          setNow(Date.now());
+        }
       }
     };
     void load();
@@ -95,6 +108,31 @@ export default function PortfolioClient({ initialPositions }: Props) {
       cancelled = true;
     };
   }, [tickersKey, priceTick]);
+
+  /**
+   * Posiciones sin precio que el servidor aún está buscando (alta reciente, p. ej. tras
+   * importar: resolver un ISIN tarda de segundos a un par de minutos). Se distinguen de las
+   * que de verdad no tienen precio por su antigüedad: ver `isPricePending`.
+   */
+  const pendingIds = useMemo(
+    () =>
+      new Set(
+        positions.filter((p) => isPricePending(p, prices[p.ticker], now)).map((p) => p.id),
+      ),
+    [positions, prices, now],
+  );
+  const hasPending = pendingIds.size > 0;
+
+  // Sondeo corto SOLO mientras haya algo pendiente: reutiliza la misma carga de precios
+  // (sube `priceTick`) y se detiene solo cuando llega el precio o caduca la ventana. En
+  // segundo plano no consume nada; al volver a la pestaña, el auto-refresco de abajo repone.
+  useEffect(() => {
+    if (!hasPending) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") setPriceTick((tick) => tick + 1);
+    }, PENDING_POLL_MS);
+    return () => clearInterval(interval);
+  }, [hasPending]);
 
   // Tasas FX: una sola carga (son globales y cambian poco; el total las usa para convertir).
   useEffect(() => {
@@ -266,6 +304,7 @@ export default function PortfolioClient({ initialPositions }: Props) {
               onEdit={setEditing}
               onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
               onDeleted={handleDeleted}
+              pendingIds={pendingIds}
             />
           )}
           {listedDerivatives.length > 0 && (
@@ -279,6 +318,7 @@ export default function PortfolioClient({ initialPositions }: Props) {
                 onEdit={setEditing}
                 onToggleDetail={(id) => setDetailId((cur) => (cur === id ? null : id))}
                 onDeleted={handleDeleted}
+                pendingIds={pendingIds}
               />
             </DerivativesSection>
           )}
