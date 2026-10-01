@@ -14,7 +14,7 @@ import type { Database } from '../db/database.module.js';
 import { loginTokens, users } from '../db/schema.js';
 import { DevEmailService } from '../email/dev-email.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { waitForStartupJobs } from '../../test/startup-jobs.js';
+import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 const SECRET = 'test-secret-para-el-controller-de-auth';
@@ -91,6 +91,7 @@ describe('AuthController (HTTP)', () => {
     delete process.env.COOKIE_SECURE;
 
     ({ db, close: closeDb } = createTestDb());
+    disableStartupBackfill();
     ({ app, baseUrl } = await bootApp());
     await waitForStartupJobs(app);
   });

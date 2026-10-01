@@ -1,16 +1,29 @@
 import type { INestApplication } from '@nestjs/common';
+import { vi } from 'vitest';
 
 import { DailyJobsScheduler } from '../src/jobs/daily-jobs.scheduler.js';
+import { PortfolioSnapshotsService } from '../src/portfolio/portfolio-snapshots.service.js';
+import { PricesService } from '../src/prices/prices.service.js';
 
 /**
- * Espera a que termine la pasada de arranque de `DailyJobsScheduler` (backfill de precios y
- * snapshots, lanzada con `void` en `onApplicationBootstrap`). Corre en segundo plano contra la
- * BD justo tras `listen()`: si el primer `resetDb` (TRUNCATE) coincide con ella, Postgres
- * detecta un interbloqueo y el test falla de forma intermitente. Llamarlo tras arrancar la app
- * deja la BD quieta antes de empezar.
+ * Anula la pasada de arranque de `DailyJobsScheduler` (backfill de precios y snapshots).
+ * Llamarlo ANTES de `NestFactory.create` en los tests que arrancan la app completa.
+ *
+ * Esa pasada se lanza con `void` en `onApplicationBootstrap` y corre en segundo plano justo tras
+ * `listen()`: pide históricos y FX a Yahoo (red real, o reintentos con backoff si `fetch` está
+ * stubbeado) y lee la BD. Si el primer `resetDb` (TRUNCATE) coincide con ella, Postgres detecta
+ * un interbloqueo y el test falla de forma intermitente. Estos tests no dependen de ella.
+ *
+ * Los spies se deshacen con `vi.restoreAllMocks()`.
  */
+export function disableStartupBackfill(): void {
+  vi.spyOn(PricesService.prototype, 'ensureHistoryForActivePositions').mockResolvedValue();
+  vi.spyOn(PortfolioSnapshotsService.prototype, 'backfillAll').mockResolvedValue();
+}
+
+/** Espera a que el cerrojo del scheduler se libere (la pasada de arranque, ya anulada, termina). */
 export async function waitForStartupJobs(app: INestApplication, timeoutMs = 10_000): Promise<void> {
-  // `running` es privado: es el cerrojo del trabajo de arranque y no hay otra señal pública.
+  // `running` es privado: es el cerrojo de los trabajos de precios y no hay otra señal pública.
   const scheduler = app.get<{ running: boolean }>(DailyJobsScheduler);
   const deadline = Date.now() + timeoutMs;
   while (scheduler.running) {

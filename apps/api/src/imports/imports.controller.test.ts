@@ -13,7 +13,7 @@ import { SESSION_COOKIE } from '@sextante/core/contracts';
 import type { Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { waitForStartupJobs } from '../../test/startup-jobs.js';
+import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 
 const SECRET = 'test-secret-para-el-controller-de-imports';
 const HEADER = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(',');
@@ -64,14 +64,14 @@ describe('ImportsController (HTTP)', () => {
     global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
 
     ({ db, close: closeDb } = createTestDb());
+    disableStartupBackfill();
 
     app = await NestFactory.create(AppModule, { abortOnError: false, logger: false });
     app.use(cookieParser());
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
-    // La pasada de arranque (backfill) corre en segundo plano: sin esperarla, el primer TRUNCATE
-    // puede interbloquearse con ella.
+    // Sin esto el primer TRUNCATE podía interbloquearse con la pasada de arranque en segundo plano.
     await waitForStartupJobs(app);
     baseUrl = `${await app.getUrl()}/api/imports/trade-republic`;
     // Se llama a la API por `127.0.0.1` con el `fetch` real, no con el stub de arriba.
