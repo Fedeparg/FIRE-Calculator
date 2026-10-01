@@ -4,33 +4,39 @@ import { computeMortgage } from '@sextante/core/calculators/hipoteca';
 import { simulateFire, type MonteCarloInput } from '@sextante/core/calculators/fire-montecarlo';
 import { estimateNetSalary } from '@sextante/core/fiscal/irpf';
 
-import { CALCULATOR_TOOLS } from './calculator-tools.js';
+import {
+  CALCULATORS,
+  hasCalculator,
+  listCalculators,
+  runCalculator,
+  UnknownCalculatorError,
+} from './calculator-tools.js';
 
 /**
- * Una entrada realista por tool. El test exige que cada tool tenga la suya: una tool nueva sin
+ * Una entrada realista por calculadora. El test exige que cada una tenga la suya: una nueva sin
  * muestra falla aquí en vez de llegar a producción sin haberse ejecutado nunca.
  */
 const SAMPLES: Record<string, Record<string, unknown>> = {
-  calculate_compound_interest: { initial: 10_000, contribution: 300, annualRate: 7, years: 20 },
-  calculate_simple_interest: { principal: 10_000, annualRate: 3, years: 2 },
-  calculate_average_price: {
+  'interes-compuesto': { initial: 10_000, contribution: 300, annualRate: 7, years: 20 },
+  'interes-simple': { principal: 10_000, annualRate: 3, years: 2 },
+  'promediar-acciones': {
     purchases: [
       { price: 100, shares: 10, commission: 2 },
       { price: 80, shares: 5 },
     ],
     currentPrice: 95,
   },
-  calculate_dividends: { shares: 100, dividendPerShare: 2, sharePrice: 50, years: 5 },
-  calculate_roi: { initial: 1000, final: 1500, years: 3 },
-  calculate_staking: { principal: 5000, apy: 6, years: 3 },
-  calculate_fire: {
+  dividendos: { shares: 100, dividendPerShare: 2, sharePrice: 50, years: 5 },
+  roi: { initial: 1000, final: 1500, years: 3 },
+  staking: { principal: 5000, apy: 6, years: 3 },
+  'independencia-financiera': {
     annualExpenses: 24_000,
     currentSavings: 100_000,
     savings: 1500,
     annualReturn: 5,
     withdrawalRate: 4,
   },
-  simulate_fire_monte_carlo: {
+  'simulador-montecarlo': {
     annualExpenses: 24_000,
     currentSavings: 100_000,
     monthlySavings: 1500,
@@ -40,23 +46,23 @@ const SAMPLES: Record<string, Record<string, unknown>> = {
     retirementYears: 30,
     paths: 200,
   },
-  calculate_retirement_savings: {
+  'ahorro-jubilacion': {
     currentAge: 30,
     retirementAge: 65,
     currentSavings: 20_000,
     monthlySavings: 400,
     annualReturn: 6,
   },
-  calculate_budget: { income: 2500, needs: 1200, wants: 700 },
-  calculate_mortgage: { principal: 200_000, annualRate: 3, years: 30 },
-  calculate_mortgage_affordability: {
+  'presupuesto-mensual': { income: 2500, needs: 1200, wants: 700 },
+  'hipoteca-fija': { principal: 200_000, annualRate: 3, years: 30 },
+  'que-hipoteca-me-puedo-permitir': {
     netMonthlyIncome: 3500,
     monthlyDebts: 200,
     downPayment: 60_000,
     annualRate: 3,
     termYears: 30,
   },
-  compare_buy_vs_rent: {
+  'hipoteca-vs-alquiler': {
     purchasePrice: 300_000,
     purchaseCosts: 30_000,
     downPayment: 60_000,
@@ -69,14 +75,14 @@ const SAMPLES: Record<string, Record<string, unknown>> = {
     investmentReturn: 5,
     horizonYears: 20,
   },
-  calculate_early_repayment: {
+  'amortizacion-anticipada': {
     pendingPrincipal: 150_000,
     annualRate: 3,
     remainingYears: 20,
     extraPayment: 20_000,
   },
-  calculate_rental_yield: { purchasePrice: 200_000, purchaseCosts: 20_000, monthlyRent: 900 },
-  calculate_holiday_rental_yield: {
+  'rentabilidad-alquiler': { purchasePrice: 200_000, purchaseCosts: 20_000, monthlyRent: 900 },
+  'rentabilidad-alquiler-vacacional': {
     purchasePrice: 250_000,
     purchaseCosts: 25_000,
     nightlyRate: 120,
@@ -84,53 +90,45 @@ const SAMPLES: Record<string, Record<string, unknown>> = {
     managementRate: 15,
     annualExpenses: 4000,
   },
-  calculate_deposit: { principal: 10_000, apr: 2.5, years: 1 },
-  calculate_net_salary: { grossAnnual: 35_000, region: 'madrid' },
-  calculate_payroll_withholding: { grossAnnual: 35_000, payments: 12 },
-  calculate_self_employed_tax: { income: 50_000, expenses: 8000, socialSecurity: 3600 },
-  calculate_pension_plan_relief: { grossAnnual: 50_000, contribution: 1500, region: 'cataluna' },
-  calculate_gift_tax: { amount: 100_000, kinship: 'grupoI_II' },
-  calculate_wealth_tax: { totalWealth: 2_000_000, primaryResidenceValue: 400_000 },
-  calculate_credit_card_payoff: { balance: 3000, annualRate: 22, monthlyPayment: 150 },
-  calculate_inflation: { amount: 1000, annualRate: 3, years: 10 },
-  score_financial_health: { emergencyFund: 3, savingsRate: 2, debt: 3 },
+  'deposito-plazo-fijo': { principal: 10_000, apr: 2.5, years: 1 },
+  'cuenta-remunerada': { principal: 10_000, apr: 2.5, years: 1 },
+  'salario-bruto-neto': { grossAnnual: 35_000, region: 'madrid' },
+  'irpf-nomina': { grossAnnual: 35_000, payments: 12 },
+  'irpf-autonomos': { income: 50_000, expenses: 8000, socialSecurity: 3600 },
+  'desgravacion-plan-pensiones': { grossAnnual: 50_000, contribution: 1500, region: 'cataluna' },
+  'impuesto-donaciones': { amount: 100_000, kinship: 'grupoI_II' },
+  'impuesto-patrimonio': { totalWealth: 2_000_000, primaryResidenceValue: 400_000 },
+  'intereses-tarjeta-credito': { balance: 3000, annualRate: 22, monthlyPayment: 150 },
+  inflacion: { amount: 1000, annualRate: 3, years: 10 },
+  'salud-financiera': { emergencyFund: 3, savingsRate: 2, debt: 3 },
 };
 
-const toolByName = (name: string) => {
-  const tool = CALCULATOR_TOOLS.find((t) => t.name === name);
-  if (!tool) throw new Error(`No existe la tool ${name}`);
-  return tool;
-};
+const slugs = Object.keys(CALCULATORS);
 
-describe('CALCULATOR_TOOLS', () => {
-  it('no repite nombres (el SDK rechaza registrar dos veces el mismo)', () => {
-    const names = CALCULATOR_TOOLS.map((t) => t.name);
-    expect(new Set(names).size).toBe(names.length);
+describe('CALCULATORS', () => {
+  it('tiene una entrada de muestra para cada calculadora, y ninguna sobrante', () => {
+    expect([...slugs].sort()).toEqual(Object.keys(SAMPLES).sort());
   });
 
-  it('tiene una entrada de muestra para cada tool, y ninguna sobrante', () => {
-    expect(CALCULATOR_TOOLS.map((t) => t.name).sort()).toEqual(Object.keys(SAMPLES).sort());
+  it.each(slugs)('%s calcula con una entrada realista y el resultado se serializa', (slug) => {
+    const result = runCalculator(slug, SAMPLES[slug]);
+    expect(result).toBeTypeOf('object');
+    expect(() => JSON.stringify(result)).not.toThrow();
   });
 
-  it.each(CALCULATOR_TOOLS.map((t) => [t.name, t] as const))(
-    '%s calcula con una entrada realista y el resultado se serializa',
-    (name, tool) => {
-      const result = tool.execute(SAMPLES[name]);
-      expect(result).toBeTypeOf('object');
-      expect(() => JSON.stringify(result)).not.toThrow();
-    },
-  );
+  it.each(slugs)('%s rechaza una clave desconocida en vez de ignorarla', (slug) => {
+    expect(() => runCalculator(slug, { ...SAMPLES[slug], notAField: 1 })).toThrow(/notAField/);
+  });
 
   it('da exactamente lo mismo que la calculadora de la web', () => {
     const input = { principal: 200_000, annualRate: 3, years: 30 };
-    expect(toolByName('calculate_mortgage').execute(input)).toEqual(computeMortgage(input));
+    expect(runCalculator('hipoteca-fija', input)).toEqual(computeMortgage(input));
 
     const salary = { grossAnnual: 35_000, region: 'madrid' as const };
-    expect(toolByName('calculate_net_salary').execute(salary)).toEqual(estimateNetSalary(salary));
+    expect(runCalculator('salario-bruto-neto', salary)).toEqual(estimateNetSalary(salary));
   });
 
   it('el Monte Carlo es el de la web: misma semilla, mismo resultado', () => {
-    const tool = toolByName('simulate_fire_monte_carlo');
     const input: MonteCarloInput = {
       annualExpenses: 24_000,
       currentSavings: 100_000,
@@ -142,38 +140,47 @@ describe('CALCULATOR_TOOLS', () => {
     };
     const options = { paths: 200, seed: 7 };
 
-    expect(tool.execute({ ...input, ...options })).toEqual(
+    expect(runCalculator('simulador-montecarlo', { ...input, ...options })).toEqual(
       simulateFire({ ...input, returnModel: { kind: 'lognormal' } }, options),
     );
     // El % en bolsa del modelo histórico va en base 100, igual que en la web.
-    expect(tool.execute({ ...input, ...options, historicalStockShare: 60 })).toEqual(
+    expect(runCalculator('simulador-montecarlo', { ...input, ...options, historicalStockShare: 60 })).toEqual(
       simulateFire({ ...input, returnModel: { kind: 'historical', stockShare: 60 } }, options),
     );
   });
 
   it('añade la tabla de sensibilidad solo si se pide', () => {
-    const tool = toolByName('simulate_fire_monte_carlo');
-    expect(tool.execute(SAMPLES.simulate_fire_monte_carlo)).not.toHaveProperty('sensitivity');
-    expect(tool.execute({ ...SAMPLES.simulate_fire_monte_carlo, includeSensitivity: true })).toHaveProperty(
+    const sample = SAMPLES['simulador-montecarlo'];
+    expect(runCalculator('simulador-montecarlo', sample)).not.toHaveProperty('sensitivity');
+    expect(runCalculator('simulador-montecarlo', { ...sample, includeSensitivity: true })).toHaveProperty(
       'sensitivity',
     );
   });
 
   it('rechaza entradas fuera de rango antes de calcular', () => {
-    const monteCarlo = toolByName('simulate_fire_monte_carlo');
-    expect(() => monteCarlo.execute({ ...SAMPLES.simulate_fire_monte_carlo, paths: 1_000_000 })).toThrow();
-    expect(() => monteCarlo.execute({ ...SAMPLES.simulate_fire_monte_carlo, retirementYears: 500 })).toThrow();
+    const monteCarlo = SAMPLES['simulador-montecarlo'];
+    expect(() => runCalculator('simulador-montecarlo', { ...monteCarlo, paths: 1_000_000 })).toThrow(/paths/);
+    expect(() => runCalculator('simulador-montecarlo', { ...monteCarlo, retirementYears: 500 })).toThrow();
 
-    const compound = toolByName('calculate_compound_interest');
-    expect(() => compound.execute({ ...SAMPLES.calculate_compound_interest, years: 10_000 })).toThrow();
-    expect(() => compound.execute({ ...SAMPLES.calculate_compound_interest, initial: -1 })).toThrow();
-    expect(() => compound.execute({ ...SAMPLES.calculate_compound_interest, initial: 'mil' })).toThrow();
+    const compound = SAMPLES['interes-compuesto'];
+    expect(() => runCalculator('interes-compuesto', { ...compound, years: 10_000 })).toThrow();
+    expect(() => runCalculator('interes-compuesto', { ...compound, initial: -1 })).toThrow();
+    expect(() => runCalculator('interes-compuesto', { ...compound, initial: 'mil' })).toThrow();
+    expect(() => runCalculator('interes-compuesto', { initial: 1 })).toThrow(/contribution/);
 
-    expect(() => toolByName('calculate_net_salary').execute({ grossAnnual: 30_000, region: 'navarra' })).toThrow();
+    expect(() => runCalculator('salario-bruto-neto', { grossAnnual: 30_000, region: 'navarra' })).toThrow();
+  });
+
+  it('un slug desconocido (o heredado de Object) es un error claro', () => {
+    expect(() => runCalculator('no-existe', {})).toThrow(UnknownCalculatorError);
+    expect(() => runCalculator('constructor', {})).toThrow(UnknownCalculatorError);
+    expect(() => runCalculator('__proto__', {})).toThrow(UnknownCalculatorError);
+    expect(hasCalculator('hipoteca-fija')).toBe(true);
+    expect(hasCalculator('toString')).toBe(false);
   });
 
   it('la tarjeta resume la serie mensual en el saldo de cada año y el último mes', () => {
-    const result = toolByName('calculate_credit_card_payoff').execute(SAMPLES.calculate_credit_card_payoff) as {
+    const result = runCalculator('intereses-tarjeta-credito', SAMPLES['intereses-tarjeta-credito']) as {
       monthsToPayoff: number;
       yearlySeries: { month: number }[];
     };
@@ -184,7 +191,7 @@ describe('CALCULATOR_TOOLS', () => {
   });
 
   it('una deuda que no se salda devuelve monthsToPayoff null', () => {
-    const result = toolByName('calculate_credit_card_payoff').execute({
+    const result = runCalculator('intereses-tarjeta-credito', {
       balance: 10_000,
       annualRate: 30,
       monthlyPayment: 10,
@@ -193,14 +200,49 @@ describe('CALCULATOR_TOOLS', () => {
   });
 
   it('el test de salud financiera puntúa por índice de opción', () => {
-    const tool = toolByName('score_financial_health');
     const best = Object.fromEntries(
       ['emergencyFund', 'savingsRate', 'debt', 'housingCost', 'investing', 'retirement', 'protection', 'tracking'].map(
         (id) => [id, 3],
       ),
     );
-    expect(tool.execute(best)).toEqual({ score: 100, category: 'strong' });
-    expect(tool.execute({})).toEqual({ score: 0, category: 'critical' });
-    expect(() => tool.execute({ debt: 4 })).toThrow();
+    expect(runCalculator('salud-financiera', best)).toEqual({ score: 100, category: 'strong' });
+    expect(runCalculator('salud-financiera', {})).toEqual({ score: 0, category: 'critical' });
+    expect(() => runCalculator('salud-financiera', { debt: 4 })).toThrow();
+  });
+});
+
+describe('listCalculators', () => {
+  it('lista todas con su esquema JSON (tipos, topes y unidades)', () => {
+    expect(
+      listCalculators()
+        .map((c) => c.slug)
+        .sort(),
+    ).toEqual([...slugs].sort());
+
+    const mortgage = listCalculators({ slug: 'hipoteca-fija' })[0];
+    expect(mortgage).toMatchObject({ slug: 'hipoteca-fija', category: 'hipoteca' });
+    expect(JSON.stringify(mortgage)).not.toContain('$schema');
+    const schema = mortgage?.inputSchema as {
+      required: string[];
+      additionalProperties: boolean;
+      properties: Record<string, { minimum?: number; maximum?: number; description?: string }>;
+    };
+    expect(schema.required).toEqual(['principal', 'annualRate', 'years']);
+    expect(schema.additionalProperties).toBe(false);
+    expect(schema.properties.annualRate).toMatchObject({ minimum: 0, maximum: 50 });
+    expect(schema.properties.annualRate?.description).toContain('TIN');
+  });
+
+  it('filtra por categoría y por slug', () => {
+    const tax = listCalculators({ category: 'fiscalidad' });
+    expect(tax.length).toBeGreaterThan(1);
+    expect(tax.every((c) => c.category === 'fiscalidad')).toBe(true);
+    expect(listCalculators({ slug: 'no-existe' })).toEqual([]);
+  });
+
+  it('depósito y cuenta remunerada comparten esquema', () => {
+    const [deposit] = listCalculators({ slug: 'deposito-plazo-fijo' });
+    const [account] = listCalculators({ slug: 'cuenta-remunerada' });
+    expect(account?.inputSchema).toEqual(deposit?.inputSchema);
   });
 });
