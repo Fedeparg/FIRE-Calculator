@@ -14,6 +14,94 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "b2d3032a",
+          "type": "docs",
+          "scope": "api",
+          "category": "internal",
+          "text": {
+            "es": "la nota de Resend apunta a la guía de despliegue",
+            "en": "point the Resend note to the deploy guide"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "0299cb3b",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el objetivo de una cantidad en un plazo",
+            "en": "describe the amount-by-deadline goal"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "a70a5f7a",
+          "type": "fix",
+          "scope": "portfolio",
+          "category": "fix",
+          "text": {
+            "es": "propone una cifra de ejemplo al pasar un plan FIRE al modo cantidad",
+            "en": "suggest a sample target when switching a FIRE plan to amount mode"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "8a6bf85c",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el objetivo admite un segundo modo, «quiero X € en N años»: muestra cuánto falta, la aportación necesaria para llegar a tiempo y si llegas al ritmo actual",
+            "en": "the goal has a second mode, “I want X in N years”: it shows what is left, the contribution needed to get there on time and whether you get there at your current pace"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "a91318d1",
+          "type": "feat",
+          "scope": "mcp",
+          "category": "feature",
+          "text": {
+            "es": "tu asistente de IA y los avisos por email entienden también el objetivo de una cantidad en un plazo",
+            "en": "your AI assistant and the email alerts also understand an amount-by-deadline goal"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "700e6b63",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "lógica del objetivo de una cantidad en un plazo",
+            "en": "amount-by-deadline goal logic"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "d5740302",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "poda el README y mueve la configuración de Resend a DEPLOY.md",
+            "en": "prune README and move Resend setup into DEPLOY.md"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "fa5406b6",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el bloque de evolución simplificado",
+            "en": "describe the tidier history block"
+          },
+          "hidden": true
+        },
+        {
           "hash": "e9ddcbc5",
           "type": "docs",
           "scope": "changelog",

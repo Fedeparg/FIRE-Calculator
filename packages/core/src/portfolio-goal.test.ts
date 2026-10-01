@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  computeAmountGoal,
   computePortfolioGoal,
+  goalModeFromInputs,
   monthlyContribution,
   simulatePortfolioGoal,
   type PortfolioGoalInput,
@@ -164,5 +166,99 @@ describe("simulatePortfolioGoal", () => {
     const monthly = simulatePortfolioGoal({ ...SIM, frequency: "monthly", contribution: 1000 }, { paths: 300 });
 
     expect(monthly.successRate).toBe(annual.successRate);
+  });
+});
+
+describe("goalModeFromInputs", () => {
+  it("lee el modo cantidad y trata el resto (o su ausencia) como FIRE", () => {
+    expect(goalModeFromInputs({ goalMode: "amount" })).toBe("amount");
+    expect(goalModeFromInputs({ goalMode: "fire" })).toBe("fire");
+    expect(goalModeFromInputs({ goalMode: "otro" })).toBe("fire");
+    expect(goalModeFromInputs({})).toBe("fire");
+    expect(goalModeFromInputs(null)).toBe("fire");
+  });
+});
+
+describe("computeAmountGoal", () => {
+  const AMOUNT = {
+    targetAmount: 100000,
+    years: 10,
+    currentValue: 20000,
+    contribution: 500,
+    frequency: "monthly" as const,
+    annualReturn: 5,
+  };
+
+  it("la aportación necesaria lleva justo al objetivo en el plazo", () => {
+    const result = computeAmountGoal(AMOUNT);
+    expect(result.requiredContribution).not.toBeNull();
+    const again = computeAmountGoal({ ...AMOUNT, contribution: result.requiredContribution ?? 0 });
+    expect(again.projectedAtDeadline).toBeCloseTo(100000, 4);
+    expect(again.onTrack).toBe(true);
+  });
+
+  it("al ritmo actual llega si la proyección al final del plazo supera el objetivo", () => {
+    const result = computeAmountGoal(AMOUNT);
+    // 20.000 € + 500 €/mes al 5 % durante 10 años ≈ 110.600 €.
+    expect(result.projectedAtDeadline).toBeGreaterThan(100000);
+    expect(result.onTrack).toBe(true);
+    expect(result.requiredContribution).toBeLessThan(500);
+    expect(result.yearsToTarget).toBeLessThanOrEqual(10);
+    expect(result.progress).toBeCloseTo(20, 10);
+  });
+
+  it("no llega con una aportación insuficiente", () => {
+    const result = computeAmountGoal({ ...AMOUNT, contribution: 100 });
+    expect(result.onTrack).toBe(false);
+    expect(result.requiredContribution).toBeGreaterThan(100);
+  });
+
+  it("con rentabilidad 0 reparte lo que falta entre los periodos", () => {
+    const result = computeAmountGoal({ ...AMOUNT, annualReturn: 0 });
+    expect(result.requiredContribution).toBeCloseTo(80000 / 120, 10);
+    expect(result.projectedAtDeadline).toBeCloseTo(20000 + 500 * 120, 6);
+  });
+
+  it("plazo 0 sin haber llegado: no hay aportación posible", () => {
+    const result = computeAmountGoal({ ...AMOUNT, years: 0 });
+    expect(result.deadlineYears).toBe(0);
+    expect(result.requiredContribution).toBeNull();
+    expect(result.projectedAtDeadline).toBe(20000);
+    expect(result.onTrack).toBe(false);
+  });
+
+  it("ya alcanzado: nada que aportar, aunque el plazo sea 0", () => {
+    const result = computeAmountGoal({ ...AMOUNT, currentValue: 150000, years: 0 });
+    expect(result.reached).toBe(true);
+    expect(result.requiredContribution).toBe(0);
+    expect(result.yearsToTarget).toBe(0);
+    expect(result.progress).toBe(100);
+    expect(result.onTrack).toBe(true);
+  });
+
+  it("si el crecimiento del capital basta, la aportación necesaria es 0", () => {
+    const result = computeAmountGoal({ ...AMOUNT, currentValue: 70000, contribution: 0 });
+    expect(result.requiredContribution).toBe(0);
+    expect(result.onTrack).toBe(true);
+  });
+
+  it("con rentabilidad negativa la aportación necesaria sube", () => {
+    const flat = computeAmountGoal({ ...AMOUNT, annualReturn: 0 });
+    const negative = computeAmountGoal({ ...AMOUNT, annualReturn: -3 });
+    expect(negative.requiredContribution).toBeGreaterThan(flat.requiredContribution ?? 0);
+  });
+
+  it("redondea el plazo a años enteros y trata entradas no válidas como 0", () => {
+    expect(computeAmountGoal({ ...AMOUNT, years: 9.6 }).deadlineYears).toBe(10);
+    expect(computeAmountGoal({ ...AMOUNT, years: Number.NaN }).deadlineYears).toBe(0);
+    const empty = computeAmountGoal({ ...AMOUNT, targetAmount: -5 });
+    expect(empty.target).toBe(0);
+    expect(empty.reached).toBe(true);
+    expect(empty.progress).toBeNull();
+  });
+
+  it("sin llegar en 60 años, yearsToTarget es null", () => {
+    const result = computeAmountGoal({ ...AMOUNT, targetAmount: 1e12, contribution: 0, annualReturn: 0 });
+    expect(result.yearsToTarget).toBeNull();
   });
 });
