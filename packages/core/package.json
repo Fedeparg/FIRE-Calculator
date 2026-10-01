@@ -21,6 +21,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/node": "^24.13.6",
     "fast-check": "^4.10.2",
     "typescript": "^5",
     "vitest": "^4.1.11"
