@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { PricesService, type PriceInfo } from '../prices/prices.service.js';
-import { aggregatePortfolio, type PortfolioAggregate } from './valuation.js';
+import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
 
 /**
  * Valoración de UNA posición, con su P&L en divisa NATIVA. Misma regla que la tabla de la
@@ -49,7 +49,7 @@ export interface PortfolioValuation {
 /**
  * Compone valor de mercado y P&L de la cartera reutilizando `PositionsService` (scoping por
  * usuario, aislamiento ya probado) y `PricesService` (precios + FX cacheados). NO duplica la
- * lógica de cálculo: usa `aggregatePortfolio` (espejo de `src/core/fx.ts`). Sirve a las tools
+ * lógica de cálculo: usa `aggregatePortfolio` de `@sextante/core/fx`, el mismo que la UI. Sirve a las tools
  * MCP de lectura. Ver `_local/mcp-integracion.md`.
  */
 @Injectable()
