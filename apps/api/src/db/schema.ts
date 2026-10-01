@@ -44,7 +44,6 @@ export const loginTokens = pgTable('login_tokens', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-
 /**
  * Posiciones tecleadas por el usuario (sin conexión a bancos). `userId` con cascada (RGPD);
  * `quantity`/`avgPrice` son `numeric(18,6)` (string en Drizzle).
@@ -176,7 +175,6 @@ export const portfolioSnapshots = pgTable(
   (table) => [primaryKey({ columns: [table.userId, table.date] })],
 );
 
-
 /**
  * Configuraciones guardadas de una calculadora. `inputs` es `jsonb` porque el esquema de cada
  * calculadora vive en el frontend; el servicio acota tamaño, nº por usuario y `slug`
@@ -226,7 +224,6 @@ export const instrumentPrices = pgTable(
   },
   (table) => [primaryKey({ columns: [table.symbol, table.date] })],
 );
-
 
 /**
  * Splits: los cierres vienen ajustados y las cantidades de los lotes son crudas, así que el
@@ -284,7 +281,6 @@ export const oauthClients = pgTable('oauth_clients', {
   lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
 });
 
-
 /** Consentimientos (base jurídica RGPD; se revocan en "Aplicaciones conectadas"). Único por `(userId, clientId)`: los scopes se actualizan en sitio. */
 export const oauthGrants = pgTable(
   'oauth_grants',
@@ -303,7 +299,6 @@ export const oauthGrants = pgTable(
     index('oauth_grants_user_id_idx').on(table.userId),
   ],
 );
-
 
 /**
  * Códigos de autorización (PKCE): efímeros, de un solo uso y solo hasheados. Ligados a
@@ -326,7 +321,6 @@ export const oauthAuthCodes = pgTable('oauth_auth_codes', {
   consumedAt: timestamp('consumed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
-
 
 /**
  * Access y refresh tokens, solo hasheados. `verifyAccessToken` resuelve el Bearer a `userId` y
@@ -358,7 +352,6 @@ export const oauthTokens = pgTable(
   ],
 );
 
-
 /** Auditoría de invocaciones MCP (usuario, cliente, tool, resultado): solo metadatos, no datos de la cartera. */
 export const mcpAuditLog = pgTable(
   'mcp_audit_log',
@@ -380,7 +373,6 @@ export const mcpAuditLog = pgTable(
     index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
   ],
 );
-
 
 /**
  * Preferencias de email (sin fila, todo desactivado: opt-in). `lastFireMilestone` es el último
@@ -405,4 +397,3 @@ export const userNotificationSettings = pgTable('user_notification_settings', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
-
