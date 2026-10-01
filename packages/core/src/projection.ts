@@ -1,5 +1,7 @@
 // Motor de proyección de inversiones genérico, compartido por varias calculadoras. Core puro.
 
+import { clampYears } from "./inputs.js";
+
 export type Frequency = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
 
 export const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "semiannual", "annual"];
@@ -51,7 +53,7 @@ export interface ProjectionResult {
  */
 export function project(input: ProjectionInput): ProjectionResult {
   const initial = Math.max(0, input.initial || 0);
-  const years = Math.max(0, Math.round(input.years || 0));
+  const years = clampYears(input.years);
   const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
   const netAnnualRate = (input.annualRate || 0) - Math.max(0, input.annualFee || 0);
   const periodRate = netAnnualRate / 100 / periodsPerYear;

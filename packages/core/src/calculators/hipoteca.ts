@@ -2,6 +2,7 @@
 // comisión de apertura y seguros vinculados, la cifra honesta para comparar ofertas. Core puro.
 
 import { amortizationSchedule, levelPayment, monthlyRate } from "./amortization.js";
+import { clampYears } from "../inputs.js";
 
 export interface MortgageInput {
   principal: number;
@@ -58,7 +59,7 @@ function solveMonthlyIrr(netReceived: number, monthlyOutflow: number, n: number)
 
 export function computeMortgage(input: MortgageInput): MortgageResult {
   const principal = Math.max(0, input.principal || 0);
-  const years = Math.max(1, Math.round(input.years || 1));
+  const years = clampYears(input.years, 1);
   const n = years * 12;
   const i = monthlyRate(input.annualRate);
   const openingFeeRate = Math.max(0, input.openingFeeRate || 0);

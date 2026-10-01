@@ -2,6 +2,7 @@
 
 import { amortizationSchedule, monthlyRate } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
+import { clampYears } from "../inputs.js";
 
 export interface EarlyRepaymentInput {
   pendingPrincipal: number;
@@ -24,7 +25,7 @@ export interface EarlyRepaymentResult {
 
 export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymentResult {
   const pending = Math.max(0, input.pendingPrincipal || 0);
-  const remainingYears = Math.max(1, Math.round(input.remainingYears || 1));
+  const remainingYears = clampYears(input.remainingYears, 1);
   const i = monthlyRate(input.annualRate);
   const totalMonths = remainingYears * 12;
   const extra = Math.min(pending, Math.max(0, input.extraPayment || 0));

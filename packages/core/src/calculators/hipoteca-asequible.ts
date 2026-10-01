@@ -3,6 +3,7 @@
 
 import { monthlyRate, presentValueOfPayments } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
+import { clampYears } from "../inputs.js";
 
 export interface AffordabilityInput {
   netMonthlyIncome: number;
@@ -39,7 +40,7 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
   const ltv = Math.min(100, Math.max(0, input.maxLtv ?? 80)) / 100;
   const costsRate = Math.max(0, input.purchaseCostsRate ?? 12) / 100;
   const i = monthlyRate(input.annualRate);
-  const term = Math.max(1, Math.round(input.termYears || 1));
+  const term = clampYears(input.termYears, 1);
   const n = term * 12;
 
   // 1) Préstamo máximo por capacidad de pago (regla del esfuerzo).

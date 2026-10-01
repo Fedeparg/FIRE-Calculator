@@ -1,6 +1,7 @@
 // Interés simple (sobre el capital inicial, sin reinvertir), como un depósito español con retención. Core puro.
 
 import type { ProjectionPoint } from "../projection.js";
+import { clampYears } from "../inputs.js";
 
 export interface SimpleInterestInput {
   principal: number;
@@ -25,7 +26,7 @@ export interface SimpleInterestResult {
 export function computeSimpleInterest(input: SimpleInterestInput): SimpleInterestResult {
   const principal = Math.max(0, input.principal || 0);
   const rate = (input.annualRate || 0) / 100;
-  const years = Math.max(0, Math.round(input.years || 0));
+  const years = clampYears(input.years);
   const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
 
   const series: SimpleInterestPoint[] = [];
