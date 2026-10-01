@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
+import type { SessionUser } from '@sextante/core/contracts';
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, users, type User } from '../db/schema.js';
@@ -13,7 +14,8 @@ import { LOGIN_LINK_TTL_MINUTES } from './session.constants.js';
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = LOGIN_LINK_TTL_MINUTES * 60 * 1000;
 
-export type SessionUser = { id: string; email: string };
+/** Los controladores lo importan de aquí; la definición (contrato con el frontend) vive en core. */
+export type { SessionUser };
 
 @Injectable()
 export class AuthService {

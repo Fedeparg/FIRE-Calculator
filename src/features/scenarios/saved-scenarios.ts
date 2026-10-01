@@ -5,18 +5,12 @@
  * (`apps/api/src/scenarios/`), que autoriza y hace el scoping por usuario.
  */
 
+import type { SavedScenarioResponse } from "@sextante/core/contracts";
 import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
 import type { ApiQueryState } from "@/shared/api/use-api-query";
 
 /** Un escenario tal y como lo devuelve `GET /api/scenarios` (fechas como ISO string). */
-export type SavedScenario = {
-  id: string;
-  slug: string;
-  name: string;
-  inputs: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
+export type SavedScenario = SavedScenarioResponse;
 
 /**
  * Error mostrado al guardar/cargar escenarios. Coincide con las claves

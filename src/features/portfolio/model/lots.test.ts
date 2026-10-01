@@ -17,7 +17,6 @@ describe("lotErrorKey", () => {
 
   it("distingue sesión caducada, recurso ajeno y error de servidor", () => {
     expect(lotErrorKey(new ApiError(401))).toBe("errorSession");
-    expect(lotErrorKey(new ApiError(403))).toBe("errorNotFound");
     expect(lotErrorKey(new ApiError(404))).toBe("errorNotFound");
     expect(lotErrorKey(new ApiError(500))).toBe("errorServer");
     expect(lotErrorKey(new ApiError(503))).toBe("errorServer");

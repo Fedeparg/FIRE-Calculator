@@ -2,12 +2,13 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Query, UseGua
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 
+import type { NotificationSettingsResponse } from '@sextante/core/contracts';
 import type { Env } from '../config/env.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { UpdateNotificationSettingsDto } from './dto/update-notification-settings.dto.js';
-import { NotificationSettingsService, type NotificationSettingsResponse } from './notification-settings.service.js';
+import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
 /** Preferencias de notificación del usuario autenticado (`userId` siempre del JWT). */

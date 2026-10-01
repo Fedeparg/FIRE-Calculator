@@ -20,6 +20,7 @@ import {
   type HistoryLot,
   type HistoryPosition,
 } from '@sextante/core/portfolio/history-reconstruction';
+import type { HistoryPointDto, PortfolioHistoryDto } from '@sextante/core/portfolio/types';
 import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
 import { isoDate, todayUtc } from '../common/dates.js';
 
@@ -36,31 +37,6 @@ export { HISTORY_MAX_DAYS };
 
 /** Filas por sentencia al escribir el histórico reconstruido (evita una sentencia por día). */
 const UPSERT_CHUNK_SIZE = 200;
-
-/** Un punto de la serie, ya reexpresado a la divisa pedida. */
-export interface PortfolioHistoryPoint {
-  date: string;
-  /** Coste, en la divisa `display`; `null` si ese día no había tasa para convertirlo. */
-  invested: number | null;
-  /** Valor de mercado, en la divisa `display`; `null` si no era convertible. */
-  marketValue: number | null;
-  /** Ganancia/pérdida (valor − coste), en `display`; `null` si alguno no era convertible. */
-  pnlAbs: number | null;
-  /** Rentabilidad en %; `null` si el coste era 0 o el punto no es convertible. */
-  pnlPct: number | null;
-  valuedPositions: number;
-  totalPositions: number;
-  /** `true` si el punto es anterior al inicio de seguimiento del usuario: reconstrucción desde los lotes. Ver `backfillUser`. */
-  estimated: boolean;
-}
-
-export interface PortfolioHistory {
-  /** Divisa en la que se devuelven los importes. */
-  display: string;
-  /** Divisa en la que están almacenados (siempre EUR). */
-  base: string;
-  points: PortfolioHistoryPoint[];
-}
 
 /** Resumen de una ejecución de la captura diaria (para los logs del cron). */
 export interface SnapshotSummary {
@@ -460,7 +436,7 @@ export class PortfolioSnapshotsService {
     userId: string,
     days: number = HISTORY_DEFAULT_DAYS,
     display: string = SNAPSHOT_BASE_CURRENCY,
-  ): Promise<PortfolioHistory> {
+  ): Promise<PortfolioHistoryDto> {
     const span = Math.min(Math.max(Math.trunc(days), 1), HISTORY_MAX_DAYS);
     const from = isoDate(new Date(Date.now() - span * 24 * 60 * 60 * 1000));
 
@@ -470,7 +446,7 @@ export class PortfolioSnapshotsService {
       .where(and(eq(portfolioSnapshots.userId, userId), gte(portfolioSnapshots.date, from)))
       .orderBy(asc(portfolioSnapshots.date));
 
-    const points = rows.map((row): PortfolioHistoryPoint => {
+    const points = rows.map((row): HistoryPointDto => {
       const invested = convertCurrency(Number(row.invested), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
       const marketValue = convertCurrency(Number(row.marketValue), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);
       const pnlAbs = invested !== null && marketValue !== null ? marketValue - invested : null;
