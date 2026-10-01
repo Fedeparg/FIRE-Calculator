@@ -1,23 +1,12 @@
 /**
- * Qué capturas REALES del histórico de la cartera han quedado obsoletas. Core puro (sin BD),
- * testeable.
+ * Capturas reales del histórico de la cartera que han quedado obsoletas. Core puro.
  *
- * Una captura real (la del cron) valora la cartera tal como estaba REGISTRADA en el momento de
- * hacerla. Si después se registra una operación con fecha anterior a esa captura (importar el
- * historial de un bróker, corregir una fecha), la captura no incluye esa operación y la serie
- * muestra un escalón falso justo donde acaba la parte reconstruida.
- *
- * REGLA: una captura de fecha `D` escrita en el instante `W` está obsoleta si existe algún lote
- * con `tradedAt <= D` cuyo último cambio (`max(createdAt, updatedAt)`) es POSTERIOR a `W`. Un
- * lote nuevo con fecha de hoy no invalida nada (su `tradedAt` es posterior a toda captura
- * anterior), y las capturas anteriores al lote cambiado tampoco (su `D` es menor que `tradedAt`).
- *
- * Los lotes BORRADOS no dejan marca de tiempo: el llamante pasa `invalidateFrom` (la fecha de
- * operación del lote borrado, o la anterior de uno movido) y se tratan como obsoletas todas las
- * capturas con fecha `>= invalidateFrom`.
+ * Una captura de fecha `D` escrita en `W` está obsoleta si existe un lote con `tradedAt <= D` cuyo
+ * último cambio es posterior a `W` (p. ej. se importó una operación con fecha anterior): si no, la
+ * serie mostraría un escalón falso. Los lotes borrados no dejan marca: el llamante pasa
+ * `invalidateFrom` y se invalidan las capturas con fecha `>= invalidateFrom`.
  */
 
-/** Lote reducido a lo que importa para la regla. */
 export interface StalenessLot {
   /** Fecha de la operación, YYYY-MM-DD. */
   tradedAt: string;
@@ -42,11 +31,7 @@ export interface StalenessInput {
 
 const byDate = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
 
-/**
- * Fechas (YYYY-MM-DD) de las capturas obsoletas. Una pasada ordenada: se recorren los lotes por
- * fecha de operación acumulando el cambio más reciente, así que cuesta O(n log n) aunque haya
- * miles de capturas y de lotes.
- */
+/** Fechas (YYYY-MM-DD) de las capturas obsoletas, en O(n log n). */
 export function staleSnapshotDates(input: StalenessInput): Set<string> {
   const { snapshots, lots, invalidateFrom = null } = input;
   const stale = new Set<string>();

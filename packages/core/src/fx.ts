@@ -1,13 +1,9 @@
-// Conversión de divisas y agregación de cartera. Core puro (sin React), testeable.
-//
-// La usan el frontend (la cartera) y la API (la valoración diaria y la tool MCP
-// `get_portfolio_valuation`), así que los dos muestran siempre el mismo número.
+// Conversión de divisas y agregación de cartera. Core puro. Compartido por el frontend y la API
+// (valoración diaria, tool MCP `get_portfolio_valuation`) para que den el mismo número.
 
 /**
- * Convierte `amount` de la divisa `from` a `to`. `rates[CCY]` = USD por unidad de esa
- * divisa (USD = 1), así que A→B es `amount * rates[A] / rates[B]`. Devuelve `null` si
- * falta la tasa de origen o de destino: preferimos excluir esa posición del total a
- * inventarse un número.
+ * Convierte `amount` de `from` a `to`. `rates[CCY]` = USD por unidad (USD = 1). Devuelve `null` si
+ * falta una tasa: es preferible excluir la posición del total a inventar un número.
  */
 export function convertCurrency(
   amount: number,
@@ -24,49 +20,38 @@ export function convertCurrency(
   return (amount * fromRate) / toRate;
 }
 
-/** Entrada mínima para agregar (independiente de los tipos de la app, para poder testear). */
+/** Entrada mínima para agregar, independiente de los tipos de la app. */
 export interface AggregateInput {
   positions: {
     ticker: string;
     quantity: number;
     avgPrice: number;
     currency: string;
-    /** Los derivados no se valoran: quedan FUERA del total (y de `total`). Obligatorio a propósito: un llamante que lo olvidara los mezclaría en el P&L. */
+    /** Los derivados no se valoran y quedan fuera del total; es obligatorio para que no se mezclen en el P&L. */
     isDerivative: boolean;
   }[];
-  /** Último precio por ticker; cada uno con su divisa nativa. */
   prices: Record<string, { close: number; currency: string }>;
-  /** USD por unidad de cada divisa (USD = 1). */
   rates: Record<string, number>;
-  /** Divisa en la que el usuario quiere ver el total. */
   display: string;
 }
 
-/** Total agregado de la cartera, ya convertido a la divisa elegida. */
 export interface PortfolioAggregate {
-  /** Invertido (coste) de las posiciones VALORADAS, en `display`. */
+  /** Coste de las posiciones valoradas, en `display`. */
   invested: number;
-  /** Valor actual de las posiciones valoradas, en `display`. */
   marketValue: number;
-  /** Ganancia/pérdida absoluta (valor − invertido), en `display`. */
   pnlAbs: number;
-  /** Rentabilidad en %, o null si el invertido es 0. */
   pnlPct: number | null;
-  /** Nº de posiciones incluidas en el total. */
   valued: number;
-  /** Nº de posiciones valorables (valued + excluidas por falta de precio/divisa). No cuenta los derivados. */
+  /** Nº de posiciones valorables (valoradas + excluidas por falta de precio/divisa); sin derivados. */
   total: number;
   display: string;
 }
 
 /**
- * Agrega la cartera a una divisa elegida, CONVIRTIENDO cada importe con las tasas FX
- * diarias. Una posición cuenta si: (1) hay precio y (2) tanto su divisa de coste como la
- * divisa del precio son convertibles a `display`. **El coste se convierte desde la divisa de
- * la posición (`p.currency`, en la que está `avgPrice`) y el valor desde la divisa del precio
- * (`price.currency`, la nativa del instrumento)**: pueden diferir (p. ej. compraste en EUR un
- * activo que cotiza en USD) y el FX las unifica. Invertido, valor y P&L se calculan sobre el
- * MISMO subconjunto para que P&L = valor − invertido cuadre siempre.
+ * Agrega la cartera a `display`. Cuenta una posición con precio y ambas divisas convertibles. El
+ * coste se convierte desde `p.currency` (la de `avgPrice`) y el valor desde `price.currency` (la
+ * nativa del instrumento); pueden diferir. Invertido, valor y P&L usan el mismo subconjunto para
+ * que P&L = valor − invertido cuadre.
  */
 export function aggregatePortfolio({ positions, prices, rates, display }: AggregateInput): PortfolioAggregate {
   let invested = 0;

@@ -3,15 +3,11 @@
 
 import { PATRIMONIO_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets.js";
 
-/** Mínimo exento estatal por defecto. */
 export const DEFAULT_EXEMPT_MINIMUM = 700000;
-/** Exención máxima de la vivienda habitual. */
 export const PRIMARY_RESIDENCE_EXEMPTION = 300000;
 
 export interface WealthTaxInput {
-  /** Patrimonio neto total (bienes y derechos − deudas). */
   totalWealth: number;
-  /** Valor de la vivienda habitual (exenta hasta 300.000 €). */
   primaryResidenceValue: number;
   /** Mínimo exento (varía por CCAA). Por defecto 700.000 €. */
   exemptMinimum?: number;
@@ -20,15 +16,10 @@ export interface WealthTaxInput {
 }
 
 export interface WealthTaxResult {
-  /** Exención aplicada a la vivienda habitual. */
   residenceExemption: number;
-  /** Base liquidable (tras vivienda y mínimo exento). */
   taxableBase: number;
-  /** Cuota antes de bonificación autonómica. */
   grossTax: number;
-  /** Cuota final tras bonificación. */
   tax: number;
-  /** Tipo efectivo sobre el patrimonio total (%). */
   effectiveRate: number;
 }
 

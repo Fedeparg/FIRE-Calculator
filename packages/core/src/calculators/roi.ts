@@ -1,36 +1,22 @@
-// ROI (retorno de la inversión). Core puro. Tiene en cuenta los costes de la
-// operación y las rentas cobradas (dividendos, cupones, alquileres), el ROI
-// anualizado (CAGR) y el ROI neto tras impuestos sobre la ganancia.
+// ROI con costes, rentas cobradas, ROI anualizado (CAGR) y neto tras impuestos. Core puro.
 
 export interface RoiInput {
-  /** Inversión inicial. */
   initial: number;
-  /** Valor final / importe recuperado. */
   final: number;
-  /** Horizonte en años (opcional, para anualizar). */
   years?: number;
-  /** Costes de la operación (comisiones de compra/venta, gastos). Opcional. */
   costs?: number;
-  /** Rentas cobradas durante la inversión (dividendos, cupones, alquiler). Opcional. */
   income?: number;
   /** Impuesto sobre la ganancia, en base 100. Por defecto 19 % (base del ahorro). */
   taxRate?: number;
 }
 
 export interface RoiResult {
-  /** Capital total comprometido (inicial + costes). */
   invested: number;
-  /** Ganancia/pérdida absoluta (incluye rentas y costes). */
   gain: number;
-  /** ROI total, en base 100 (%). */
   roi: number;
-  /** ROI anualizado (CAGR) en base 100, o null si no aplica. */
   annualized: number | null;
-  /** Impuesto estimado sobre la ganancia (0 si hay pérdida). */
   tax: number;
-  /** Ganancia neta tras impuestos. */
   netGain: number;
-  /** ROI neto tras impuestos, en base 100 (%). */
   netRoi: number;
 }
 

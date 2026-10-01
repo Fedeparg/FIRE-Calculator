@@ -1,40 +1,6 @@
-// Escalas autonómicas del IRPF y mínimos personales y familiares autonómicos de
-// las 15 comunidades autónomas de RÉGIMEN COMÚN. Core puro (sin React).
-//
-// CÓMO SE COMBINAN LAS ESCALAS (crítico):
-//
-//   cuotaIntegraGeneral = escalaEstatal(BLG) + escalaAutonomica(BLG)
-//
-// NO se aplica ningún factor 0,5: la escala estatal del art. 63.1.1º LIRPF ya
-// está dividida por dos en el propio texto legal (tipos 9,50…24,50). Multiplicarla
-// por 0,5 dividiría por dos una escala ya dividida. Se aplica VERBATIM.
-//
-// El método es el de doble escala, con la particularidad de que el mínimo puede
-// diferir entre la parte estatal y la autonómica:
-//
-//   cuotaEstatal    = escalaEstatal(BLG)    − escalaEstatal(minimoEstatal)
-//   cuotaAutonomica = escalaAutonomica(BLG) − escalaAutonomica(minimoAutonomico)
-//
-// Cada cuota se acota a cero por separado (son dos cuotas independientes).
-//
-// NO existe hoy una rama de "la comunidad no legisló": desde 2011 se exceptúa la
-// aplicación supletoria de la normativa estatal en materia de tarifa autonómica y
-// las 15 comunidades tienen escala propia. La escala supletoria del art. 65 LIRPF
-// (ver `IRPF_AUTONOMICA_SUPLETORIA` en `brackets.ts`) sobrevive solo para Ceuta y
-// Melilla (DA 32ª LIRPF) y para residentes en el extranjero.
-//
-// La base liquidable del AHORRO no es competencia autonómica (arts. 66.1 y 76
-// LIRPF son idénticas y las fija la ley estatal): no se parametriza por comunidad.
-//
-// Fuente de todas las escalas: AEAT, Manual práctico de Renta 2025 (páginas
-// actualizadas en marzo de 2026), capítulo 15, "Gravamen autonómico". Contrastadas
-// con el Ministerio de Hacienda, *Tributación Autonómica. Medidas 2026*
-// (29/04/2026), que confirma literalmente que «ninguna C.A. ha introducido
-// modificaciones en la escala de 2026 respecto de la regulada para 2025»: las
-// escalas de abajo valen para los ejercicios 2025 y 2026.
-//
-// Cifras ORIENTATIVAS. No se modelan las deducciones autonómicas del IRPF
-// (≈358 vigentes), que afectan mucho al resultado real.
+// Escalas autonómicas del IRPF y mínimos personales y familiares autonómicos de las 15
+// comunidades de régimen común. Core puro.
+// Alcance y supuestos: ver ./README.md. Cifras orientativas, sin deducciones autonómicas.
 
 import {
   MINIMO_ASCENDIENTES,
@@ -105,15 +71,9 @@ const IRPF_AUT_BALEARES: readonly Bracket[] = [
 
 /**
  * Canarias — art. 18 bis TR Decreto Legislativo 1/2009, de 21 de abril, tras la
- * deflactación del 2,1 % de la DF 11ª de la Ley 9/2025, de 23 de diciembre, de
- * Presupuestos de Canarias para 2026 (BOC 29-12-2025), con efectos desde el
- * 1 de enero de 2025.
- *
- * OJO con el último tramo: el Anexo I de Hacienda dice «26 % para BL > 121.200 €»,
- * pero ese texto es idéntico byte a byte en los PDF de Medidas 2025 y 2026, es
- * decir, boilerplate desactualizado anterior a la deflactación
- * (121.200 × 1,021 = 123.745,2). El valor correcto para 2025 y 2026 es 123.745 €,
- * que es el que da la AEAT. No "corregir" a 121.200.
+ * deflactación del 2,1 % de la DF 11ª de la Ley 9/2025 (BOC 29-12-2025), con
+ * efectos desde el 1-1-2025. El último tramo es 123.745 €, no los 121.200 € del
+ * Anexo I de Hacienda (texto anterior a la deflactación; ver README).
  */
 const IRPF_AUT_CANARIAS: readonly Bracket[] = [
   { upTo: 13748, rate: 9 },
@@ -136,10 +96,8 @@ const IRPF_AUT_CANTABRIA: readonly Bracket[] = [
 ];
 
 /**
- * Castilla-La Mancha — art. 13 bis Ley 8/2013, de 21 de noviembre, de Medidas
- * Tributarias. Es la única escala autonómica idéntica a la supletoria del
- * art. 65 LIRPF: sumada a la estatal reproduce exactamente la escala "de
- * titulares" 19 / 24 / 30 / 37 / 45 / 47.
+ * Castilla-La Mancha — art. 13 bis Ley 8/2013, de 21 de noviembre. Única escala
+ * idéntica a la supletoria del art. 65 LIRPF (suma 19 / 24 / 30 / 37 / 45 / 47).
  */
 const IRPF_AUT_CASTILLA_LA_MANCHA: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
@@ -195,11 +153,7 @@ const IRPF_AUT_GALICIA: readonly Bracket[] = [
   { upTo: null, rate: 22.5 },
 ];
 
-/**
- * Comunidad de Madrid — art. 1 TR Decreto Legislativo 1/2010, de 21 de octubre.
- * Es la escala autonómica más baja de España en el tramo alto (marginal máximo
- * 20,50 %).
- */
+/** Comunidad de Madrid — art. 1 TR Decreto Legislativo 1/2010, de 21 de octubre. */
 const IRPF_AUT_MADRID: readonly Bracket[] = [
   { upTo: 13362.22, rate: 8.5 },
   { upTo: 19004.63, rate: 10.7 },
@@ -217,10 +171,7 @@ const IRPF_AUT_MURCIA: readonly Bracket[] = [
   { upTo: null, rate: 22.5 },
 ];
 
-/**
- * La Rioja — art. 31 Ley 10/2017, de 27 de octubre. Marginal autonómico máximo
- * más alto de España (27 %).
- */
+/** La Rioja — art. 31 Ley 10/2017, de 27 de octubre. */
 const IRPF_AUT_LA_RIOJA: readonly Bracket[] = [
   { upTo: 12450, rate: 8 },
   { upTo: 20200, rate: 10.6 },
@@ -232,11 +183,7 @@ const IRPF_AUT_LA_RIOJA: readonly Bracket[] = [
   { upTo: null, rate: 27 },
 ];
 
-/**
- * Comunitat Valenciana — art. 2 Ley 13/1997, de 23 de diciembre. Es la escala con
- * más tramos (11) y el marginal nominal más alto (29,50 %), pero solo a partir de
- * 200.000 €.
- */
+/** Comunitat Valenciana — art. 2 Ley 13/1997, de 23 de diciembre. */
 const IRPF_AUT_VALENCIANA: readonly Bracket[] = [
   { upTo: 12000, rate: 9 },
   { upTo: 22000, rate: 12 },
@@ -256,11 +203,8 @@ const IRPF_AUT_VALENCIANA: readonly Bracket[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Importes del mínimo personal y familiar que este motor modela (arts. 57-60
- * LIRPF). Los importes por tramo de edad son TOTALES acumulados, no incrementos.
- *
- * No se modelan el incremento por ascendiente mayor de 75 años ni el de gastos de
- * asistencia de terceras personas: quedan fuera del alcance de las calculadoras.
+ * Importes del mínimo personal y familiar que modela el motor (arts. 57-60 LIRPF).
+ * Los importes por tramo de edad son totales acumulados, no incrementos.
  */
 export interface PersonalMinimumSchedule {
   /** Mínimo del contribuyente menor de 65 años. */
@@ -282,9 +226,8 @@ export interface PersonalMinimumSchedule {
 }
 
 /**
- * Mínimo estatal (arts. 57-60 LIRPF). Se aplica SIEMPRE a la cuota estatal, aunque
- * la comunidad haya aprobado importes propios: el mínimo autonómico solo alimenta
- * la cuota autonómica (art. 46.1.a Ley 22/2009).
+ * Mínimo estatal (arts. 57-60 LIRPF). Siempre alimenta la cuota estatal; el
+ * autonómico solo la autonómica (art. 46.1.a Ley 22/2009).
  */
 export const STATE_PERSONAL_MINIMUM: PersonalMinimumSchedule = {
   taxpayer: MINIMO_PERSONAL,
@@ -297,13 +240,8 @@ export const STATE_PERSONAL_MINIMUM: PersonalMinimumSchedule = {
   disability65: MINIMO_DISCAPACIDAD_65,
 };
 
-// Los importes autonómicos de abajo son los del EJERCICIO 2025 (AEAT, Manual de
-// Renta 2025, "Cuadro comparativo de los importes de los mínimos personales y
-// familiares, estatal y autonómicos para 2025", actualizado 17/03/2026).
-// Hacienda (*Medidas 2026*, §1.2) confirma que en 2026 son las mismas comunidades
-// las que ejercen la competencia y en los mismos términos, pero NO publica los
-// importes de 2026 y el manual de Renta 2026 aún no existe: es razonable esperar
-// continuidad, pero no está verificado. HUECO DECLARADO.
+// Importes del ejercicio 2025 (AEAT, Manual de Renta 2025, cuadro comparativo de
+// mínimos). Los de 2026 aún no están publicados: continuidad no verificada.
 
 /** Andalucía — mínimos propios. */
 const MINIMUM_ANDALUCIA: PersonalMinimumSchedule = {
@@ -415,14 +353,7 @@ export const REGIONS: Record<RegionCode, RegionDefinition> = {
   andalucia: { scale: IRPF_AUT_ANDALUCIA, minimum: MINIMUM_ANDALUCIA },
   aragon: { scale: IRPF_AUT_ARAGON },
   asturias: { scale: IRPF_AUT_ASTURIAS, minimum: MINIMUM_ASTURIAS },
-  // Illes Balears: escala propia verificada, pero SIN mínimo autonómico a
-  // propósito. El cuadro oficial de la AEAT dice literalmente «5.550 euros
-  // anuales, en general. 6.105 euros anuales si tiene más de 65 años + 1.265
-  // euros anuales, mayor de 65 años + 1.540 adicionales, mayor de 75» y es
-  // ambiguo sobre si el 6.105 sustituye al 5.550 o se acumula con el +1.265.
-  // Antes de codificarlo hay que leer el art. 1 del TR balear (Decreto
-  // Legislativo 1/2014). Mientras tanto, la cuota autonómica balear usa el
-  // mínimo ESTATAL: preferimos un hueco declarado a un número inventado.
+  // Baleares sin mínimo propio a propósito: el cuadro de la AEAT es ambiguo (ver README).
   baleares: { scale: IRPF_AUT_BALEARES },
   canarias: { scale: IRPF_AUT_CANARIAS, minimum: MINIMUM_CANARIAS },
   cantabria: { scale: IRPF_AUT_CANTABRIA },
@@ -433,11 +364,7 @@ export const REGIONS: Record<RegionCode, RegionDefinition> = {
   galicia: { scale: IRPF_AUT_GALICIA, minimum: MINIMUM_GALICIA },
   madrid: { scale: IRPF_AUT_MADRID, minimum: MINIMUM_MADRID },
   murcia: { scale: IRPF_AUT_MURCIA },
-  // La Rioja: sin mínimo autonómico en este motor. Lo único que modifica respecto
-  // del estatal es el mínimo por DISCAPACIDAD DE DESCENDIENTES (3.300 / 9.900),
-  // un concepto que las calculadoras no modelan (solo contemplan la discapacidad
-  // del contribuyente, donde La Rioja mantiene los importes estatales). En todo
-  // lo demás sus importes son los estatales.
+  // La Rioja solo difiere en la discapacidad de descendientes, que no se modela.
   "la-rioja": { scale: IRPF_AUT_LA_RIOJA },
   valencia: { scale: IRPF_AUT_VALENCIANA, minimum: MINIMUM_VALENCIANA },
 };
@@ -461,10 +388,10 @@ export const REGION_CODES: readonly RegionCode[] = [
   "valencia",
 ];
 
-/** Territorios que aparecen en el selector pero NO se pueden calcular. */
+/** Territorios que aparecen en el selector pero no se pueden calcular. */
 export type UnsupportedRegionCode = "alava" | "bizkaia" | "gipuzkoa" | "navarra" | "ceuta-melilla";
 
-/** Por qué un territorio no está soportado (alimenta el texto del selector). */
+/** Por qué un territorio no está soportado (alimenta el selector). */
 export type UnsupportedRegionReason = "foral" | "ceutaMelilla";
 
 export interface UnsupportedRegion {
@@ -473,20 +400,8 @@ export interface UnsupportedRegion {
 }
 
 /**
- * Territorios que se ofrecen en el selector deshabilitados, con el motivo. Se
- * muestran a propósito en lugar de omitirlos: quien no se ve en la lista asume
- * que el resultado genérico le vale, y no es el caso.
- *
- * - Régimen foral (Álava, Bizkaia, Gipuzkoa y Navarra): tributan por el Concierto
- *   Económico y el Convenio Económico, con ley propia del IRPF. Su escala es el
- *   impuesto TOTAL, no una mitad que se sume a la estatal, así que el modelo
- *   `estatal + autonómica` es estructuralmente inaplicable. Además el País Vasco
- *   no tiene una escala sino tres, una por territorio histórico. No hay ni una
- *   cifra foral en este módulo, a propósito.
- * - Ceuta y Melilla: su escala SÍ es conocida (la supletoria del art. 65 LIRPF,
- *   que es justamente la que aplica el motor cuando no se indica comunidad), pero
- *   no modelamos la deducción por rentas obtenidas en Ceuta y Melilla (art. 68.4
- *   LIRPF, 60 %), que domina el resultado. Dar la cuota sin ella engañaría.
+ * Territorios que se muestran deshabilitados en el selector, con el motivo: omitirlos
+ * haría creer que el resultado genérico les vale (foral y Ceuta/Melilla: ver README).
  */
 export const UNSUPPORTED_REGIONS: readonly UnsupportedRegion[] = [
   { code: "alava", reason: "foral" },
@@ -503,18 +418,12 @@ export const UNSUPPORTED_REGIONS: readonly UnsupportedRegion[] = [
 export type RegionSelection = RegionCode | UnsupportedRegionCode | "";
 
 /**
- * Traduce el valor del selector al código que entiende el motor: `undefined`
- * cuando no hay comunidad o cuando la elegida no está soportada (en cuyo caso se
- * usa la escala supletoria, el comportamiento por defecto).
- */
-/**
- * Selecciones que el desplegable deja elegir DE VERDAD: sin comunidad ("") y las
- * comunidades soportadas. Deja fuera los territorios forales y Ceuta/Melilla, que se
- * muestran deshabilitados: así una URL con uno de ellos cae a "" en vez de dejar la
- * calculadora en un estado que no se puede alcanzar desde la interfaz.
+ * Selecciones realmente elegibles: sin comunidad ("") y las soportadas. Así una URL con
+ * un territorio deshabilitado cae a "" en vez de dejar un estado inalcanzable desde la UI.
  */
 export const SELECTABLE_REGIONS: readonly RegionSelection[] = ["", ...REGION_CODES];
 
+/** Código del motor para una selección, o `undefined` si no hay comunidad o no está soportada. */
 export function toSupportedRegion(selection: RegionSelection): RegionCode | undefined {
   return REGION_CODES.find((code) => code === selection);
 }
@@ -524,10 +433,7 @@ export function regionalScale(region: RegionCode): readonly Bracket[] {
   return REGIONS[region].scale;
 }
 
-/**
- * Mínimo personal y familiar aplicable a la CUOTA AUTONÓMICA de una comunidad:
- * el suyo si lo ha aprobado, el estatal en caso contrario.
- */
+/** Mínimo aplicable a la cuota autonómica: el propio de la comunidad o, si no, el estatal. */
 export function regionalMinimumSchedule(region: RegionCode): PersonalMinimumSchedule {
   return REGIONS[region].minimum ?? STATE_PERSONAL_MINIMUM;
 }

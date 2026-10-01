@@ -1,19 +1,15 @@
-// Tipos compartidos de la importación de operaciones desde un bróker. Son GENÉRICOS a
-// propósito: el parser de cada bróker produce `ImportedTrade` y todo lo que va después
-// (plan de importación en la API, vista previa en la UI) no sabe de qué bróker viene.
+// Tipos compartidos de la importación de operaciones. Genéricos a propósito: cada parser de bróker
+// produce `ImportedTrade` y el resto (plan en la API, vista previa en la UI) no sabe de qué bróker viene.
 
-/** Clase de activo, normalizada. `other` cubre lo vacío o lo que el bróker no clasifica. */
+/** Clase de activo normalizada; `other` cubre lo vacío o lo no clasificado. */
 export type ImportedAssetClass = "fund" | "stock" | "derivative" | "other";
 
 /**
- * Una compra o venta ya normalizada.
- *
- * Los importes viajan como `string` decimal (no `number`) para que ningún paso del camino
- * hasta `numeric(18,6)` pase por coma flotante; ya vienen redondeados a 6 decimales, la
- * escala de la columna. `fees` es siempre positivo (coste de la operación).
+ * Compra o venta normalizada. Los importes van como `string` decimal para no pasar por coma flotante
+ * hasta `numeric(18,6)`, ya redondeados a 6 decimales. `fees` es siempre positivo.
  */
 export type ImportedTrade = {
-  /** Id único de la operación en el bróker: es la clave de deduplicación al reimportar. */
+  /** Id de la operación en el bróker; clave de deduplicación al reimportar. */
   externalId: string;
   isin: string;
   name: string;
@@ -21,16 +17,13 @@ export type ImportedTrade = {
   kind: "buy" | "sell";
   /** Siempre positivo; el sentido lo da `kind`. */
   quantity: string;
-  /** Precio unitario bruto, en la divisa de la operación. */
   price: string;
   fees: string;
-  /** Fecha de la operación (YYYY-MM-DD) tal y como la declara el bróker. */
   tradedAt: string;
-  /** Instante UTC, siempre con 6 decimales de segundo para que ordenar como texto sea fiable. */
+  /** Instante UTC con 6 decimales de segundo, para que ordenar como texto sea fiable. */
   executedAt: string;
 };
 
-/** Por qué se descartó una fila. Cada código tiene su texto traducido en la UI. */
 export type ImportSkipReason =
   | "dividend"
   | "interest"
@@ -46,59 +39,49 @@ export type ImportSkipReason =
   | "invalid_row"
   | "unknown_type";
 
-/** Fila descartada. Solo lleva el tipo del bróker y la línea: nunca datos de la fila. */
+/** Fila descartada: solo lleva el tipo del bróker y la línea, nunca datos de la fila. */
 export type ImportSkippedRow = {
-  /** Línea (1-based) del fichero donde empieza el registro. */
   line: number;
   type: string;
   reason: ImportSkipReason;
 };
 
-/** Avisos que no bloquean la importación. */
 export type ImportWarning =
-  /** Operaciones con impuesto en su fila: NO se suma al coste (ver el parser de cada bróker). */
+  /** Operaciones con impuesto en su fila: no se suma al coste. */
   | { code: "trade_tax_ignored"; count: number }
-  /** Migración de custodia sin su pareja (entrada o salida): puede faltar historial. */
+  /** Migración de custodia sin pareja: puede faltar historial. */
   | { code: "unbalanced_migration"; isin: string; line: number };
 
 export type ImportParseResult = {
-  /** Ordenadas por `executedAt` (y por línea ante empate). */
+  /** Ordenadas por `executedAt` y por línea ante empate. */
   trades: ImportedTrade[];
   skipped: ImportSkippedRow[];
   warnings: ImportWarning[];
 };
 
-// --- Contrato de la API de importación (lo producen la API y lo consume la UI) ---
-
-/** Motivo por el que una posición NO se pudo importar. */
 export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "UNEXPECTED";
 
-/** Cuántas filas se descartaron por cada motivo. Solo recuentos: nunca datos de las filas. */
+/** Filas descartadas por motivo; solo recuentos. */
 export type SkippedSummary = { reason: ImportSkipReason; count: number };
 
 export type ImportPlanPosition = {
   isin: string;
   name: string;
   assetClass: ImportedAssetClass;
-  /** `create`: no existe aún en Trade Republic. `extend`: se añaden lotes a la existente. */
+  /** `create`: no existe aún; `extend`: se añaden lotes a la existente. */
   action: "create" | "extend";
-  /** Compras y ventas que se crearían (sin las ya importadas). */
   newBuys: number;
   newSells: number;
-  /** Operaciones del fichero que ya están importadas (por `external_id`). */
+  /** Operaciones del fichero ya importadas (por `external_id`). */
   duplicates: number;
-  /** Cantidad actual de la posición (0 si no existe). */
   currentQuantity: number;
-  /** Cantidad tras importar. `null` si la secuencia sería inválida (ver `blockedBy`). */
+  /** Cantidad tras importar; `null` si la secuencia sería inválida. */
   resultingQuantity: number | null;
-  /**
-   * Precio medio de coste tras importar, calculado con los precios de ejecución del fichero
-   * (nunca con cierres de mercado). `null` si la posición queda cerrada o la secuencia es inválida.
-   */
+  /** Precio medio de coste tras importar, con precios de ejecución del fichero; `null` si queda cerrada o es inválida. */
   resultingAvgPrice: number | null;
-  /** Presente si esta posición NO se podrá importar. */
+  /** Presente si la posición no se podrá importar. */
   blockedBy: ImportFailureCode | null;
-  /** Derivado: se registra pero Sextante no sigue su precio ni lo suma a los totales. No bloquea. */
+  /** Derivado: se registra pero no se sigue su precio ni suma a los totales. No bloquea. */
   isDerivative: boolean;
 };
 
@@ -116,7 +99,6 @@ export type ImportResultPosition = {
   status: "created" | "extended" | "unchanged" | "failed";
   lotsCreated: number;
   duplicates: number;
-  /** Cantidad final de la posición; `null` si falló. */
   quantity: number | null;
   failure: ImportFailureCode | null;
 };

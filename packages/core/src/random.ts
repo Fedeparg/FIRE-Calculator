@@ -1,17 +1,9 @@
-// Generación de números aleatorios reproducible, para simulaciones (Monte Carlo).
-//
-// Se usa un PRNG propio con semilla en lugar de `Math.random` porque el resultado de una
-// simulación tiene que ser determinista: la misma URL debe dar el mismo número en cualquier
-// navegador, el render del servidor y el del cliente deben coincidir, y los tests necesitan
-// fijar un valor de referencia. No es criptográfico ni pretende serlo.
+// PRNG con semilla para simulaciones (Monte Carlo): `Math.random` no sirve porque la misma URL debe
+// dar el mismo resultado en servidor y cliente, y los tests necesitan valores fijos. No es criptográfico.
 
-/** Generador de uniformes en [0, 1). */
 export type Rng = () => number;
 
-/**
- * mulberry32: PRNG de 32 bits, rápido y con buena distribución para simulación.
- * La misma semilla produce siempre la misma secuencia.
- */
+/** mulberry32: PRNG de 32 bits; la misma semilla da la misma secuencia. */
 export function mulberry32(seed: number): Rng {
   let state = seed >>> 0;
   return () => {
@@ -23,10 +15,7 @@ export function mulberry32(seed: number): Rng {
   };
 }
 
-/**
- * Generador de normales estándar N(0, 1) mediante Box-Muller. Cada par de uniformes da dos
- * normales independientes; la segunda se guarda para la siguiente llamada.
- */
+/** Normales N(0, 1) por Box-Muller; la segunda del par se guarda para la siguiente llamada. */
 export function normalGenerator(rng: Rng): () => number {
   let spare: number | null = null;
   return () => {
@@ -45,11 +34,7 @@ export function normalGenerator(rng: Rng): () => number {
   };
 }
 
-/**
- * Percentil `p` (0–100) de una muestra YA ORDENADA de forma ascendente, con interpolación
- * lineal entre rangos (el mismo criterio que el `PERCENTILE.INC` de una hoja de cálculo).
- * Devuelve NaN si la muestra está vacía.
- */
+/** Percentil `p` (0–100) de una muestra ya ordenada, con interpolación lineal (como `PERCENTILE.INC`); NaN si está vacía. */
 export function percentileSorted(sorted: ArrayLike<number>, p: number): number {
   const n = sorted.length;
   if (n === 0) return NaN;

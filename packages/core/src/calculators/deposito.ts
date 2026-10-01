@@ -1,33 +1,20 @@
-// Depósito a plazo fijo / cuenta remunerada. Capitaliza a la TAE y aplica la
-// retención fiscal española sobre los intereses (rendimientos del capital
-// mobiliario). Core puro. Reutilizable por ambas calculadoras.
+// Depósito a plazo fijo: capitaliza a la TAE y aplica la retención española sobre los intereses. Core puro.
 
 export interface DepositInput {
-  /** Capital depositado. */
   principal: number;
-  /** TAE (tasa anual equivalente), en base 100 (3 = 3 %). */
   apr: number;
-  /** Plazo en años (admite decimales: 0,5 = 6 meses). */
   years: number;
   /** Retención sobre los intereses, en base 100. Por defecto 19 % (España). */
   withholdingRate?: number;
-  /**
-   * Inflación anual estimada, en base 100. Si se indica, se calcula el valor
-   * final en poder adquisitivo de hoy. Opcional (por defecto 0).
-   */
+  /** Inflación anual, en base 100; si se indica, se calcula el valor final en poder adquisitivo de hoy. */
   inflationRate?: number;
 }
 
 export interface DepositResult {
-  /** Valor final antes de impuestos. */
   finalGross: number;
-  /** Intereses brutos generados. */
   grossInterest: number;
-  /** Importe retenido (impuestos). */
   withheld: number;
-  /** Intereses netos (tras retención). */
   netInterest: number;
-  /** Valor final neto (capital + intereses netos). */
   finalNet: number;
   /** Valor final neto en poder adquisitivo de hoy (descontada la inflación). */
   realFinalNet: number;

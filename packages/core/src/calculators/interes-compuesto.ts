@@ -1,24 +1,15 @@
-// Interés compuesto con aportaciones periódicas. Delega en el motor genérico
-// `project` (ver core/projection.ts) para no duplicar la lógica de cálculo.
+// Interés compuesto con aportaciones periódicas; delega en `project`.
 
 import { project, type Frequency, type ProjectionResult } from "../projection.js";
 
 export interface CompoundInput {
-  /** Capital inicial. */
   initial: number;
-  /** Importe de cada aportación. */
   contribution: number;
-  /** Frecuencia de las aportaciones (por defecto mensual). */
   frequency?: Frequency;
-  /** Rentabilidad anual esperada, en base 100 (7 = 7 %). */
   annualRate: number;
-  /** Horizonte en años. */
   years: number;
-  /** Comisión anual del producto (TER), en base 100. Opcional. */
   annualFee?: number;
-  /** Crecimiento anual de la aportación, en base 100. Opcional. */
   contributionGrowth?: number;
-  /** Inflación anual estimada, en base 100 (para el valor real). Opcional. */
   inflationRate?: number;
 }
 

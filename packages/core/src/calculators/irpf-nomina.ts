@@ -1,20 +1,14 @@
-// Retención de IRPF en nómina. Reutiliza el motor de salario bruto→neto y
-// expone la retención mensual estimada. Core puro. Orientativo.
+// Retención de IRPF en nómina sobre el motor bruto→neto. Core puro, orientativo.
 
 import { estimateNetSalary, type NetSalaryInput } from "../fiscal/irpf.js";
 
 export interface PayrollWithholdingResult {
-  /** Bruto mensual (por paga). */
+  /** Importes por paga (12 o 14 pagas). */
   grossPerPayment: number;
-  /** Retención de IRPF mensual (por paga). */
   withholdingPerPayment: number;
-  /** Cotización del trabajador a la SS mensual (por paga). */
   socialSecurityPerPayment: number;
-  /** Neto mensual (por paga). */
   netPerPayment: number;
-  /** Tipo de retención de IRPF sobre el bruto (%). */
   withholdingRate: number;
-  /** Retención de IRPF anual. */
   annualWithholding: number;
 }
 

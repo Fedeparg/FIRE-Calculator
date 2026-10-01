@@ -1,8 +1,8 @@
-// Parser de la "Exportación de transacciones" (CSV) de Trade Republic. Lógica PURA: recibe el
+// Parser de la "Exportación de transacciones" (CSV) de Trade Republic. Lógica pura: recibe el
 // texto y devuelve operaciones normalizadas, filas descartadas con su motivo y avisos.
 //
-// PRIVACIDAD: el export trae columnas con datos de terceros (contraparte, IBAN, referencia de
-// pago, MCC) y un texto libre por fila (`description`). Aquí NO se leen: se accede a las
+// Privacidad: el export trae columnas con datos de terceros (contraparte, IBAN, referencia de
+// pago, MCC) y un texto libre por fila (`description`). Aquí no se leen: se accede a las
 // columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
@@ -193,7 +193,7 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
  * Reglas (verificadas contra un export real):
  * - Se importan `BUY` y `SELL`. El importe bruto es `cantidad × precio`; la columna `amount`
  *   no se usa (hay una compra antigua con `amount` y `fee` vacíos que sigue siendo válida).
- * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` NO se suma al coste
+ * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` no se suma al coste
  *   (se cree que son retenciones de dividendos que TR liquida en la fila de la compra): solo
  *   se avisa de cuántas operaciones la traen.
  * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
@@ -352,7 +352,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
  *
  * Fiscalmente (art. 37.1.a LIRPF) las acciones liberadas no tienen coste: el de las antiguas
  * se reparte entre todas. Una compra a precio 0 da exactamente ese coste medio, que es lo que
- * usa la cartera. En el informe de plusvalías (FIFO) la venta TOTAL da la misma ganancia; una
+ * usa la cartera. En el informe de plusvalías (FIFO) la venta total da la misma ganancia; una
  * venta parcial la reparte algo distinto, porque Hacienda asigna a las nuevas la antigüedad de
  * las antiguas y aquí llevan la fecha de la emisión.
  *
