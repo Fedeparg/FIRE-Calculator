@@ -4,15 +4,59 @@
     {
       "date": "2026-10-01",
       "title": {
-        "es": "Hito: tu asistente de IA ya usa todo Sextante, e importación desde Trade Republic",
-        "en": "Milestone: your AI assistant can now use all of Sextante, plus Trade Republic import"
+        "es": "Hito: tu asistente de IA ya usa todo Sextante, una cartera rediseñada e importación desde Trade Republic",
+        "en": "Milestone: your AI assistant can now use all of Sextante, a redesigned portfolio and Trade Republic import"
       },
       "summary": {
-        "es": "Hasta hoy, un asistente conectado por MCP (Claude, ChatGPT…) solo veía y editaba tu cartera. Ahora puede usar todo Sextante: las 27 calculadoras (hipotecas, salario neto e IRPF por comunidad, FIRE y Monte Carlo, impuestos de patrimonio y donaciones…), tus plusvalías realizadas de cada ejercicio para preparar la Renta, el reparto de tu cartera y su progreso hacia tu objetivo FIRE, y los escenarios que guardaste. Lo hace con exactamente el mismo código que la web: hemos movido las calculadoras y el motor fiscal a un núcleo compartido, así que el asistente y la página no pueden dar cifras distintas. Además, ya puedes traer tus compras y ventas de Trade Republic desde su fichero de exportación, con vista previa y sin duplicar nada al reimportar; las posiciones vendidas del todo se ocultan (con una casilla para verlas) y los derivados van a una sección aparte que no suma a los totales, con un nuevo artículo en Aprende. Y empezamos a medir qué páginas se usan con Umami en nuestro propio servidor: sin cookies, sin terceros y sin recoger los valores de las calculadoras.",
-        "en": "Until today, an assistant connected over MCP (Claude, ChatGPT…) could only see and edit your portfolio. Now it can use all of Sextante: the 27 calculators (mortgages, net salary and income tax by region, FIRE and Monte Carlo, wealth and gift tax…), your realised gains for each tax year to prepare your return, your portfolio breakdown and its progress towards your FIRE goal, and the scenarios you saved. It runs exactly the same code as the website: we moved the calculators and the tax engine into a shared core, so the assistant and the page can never give different numbers. You can also bring your Trade Republic buys and sells from its export file, with a preview and no duplicates when you import again; positions sold in full are hidden (with a checkbox to show them) and derivatives go to a separate section that does not add to the totals, with a new Learn article. And we started measuring which pages are used with Umami on our own server: no cookies, no third parties and none of the values you type into the calculators."
+        "es": "Hasta hoy, un asistente conectado por MCP (Claude, ChatGPT…) solo veía y editaba tu cartera. Ahora puede usar todo Sextante: las 27 calculadoras (hipotecas, salario neto e IRPF por comunidad, FIRE y Monte Carlo, impuestos de patrimonio y donaciones…), tus plusvalías realizadas de cada ejercicio para preparar la Renta, el reparto de tu cartera y su progreso hacia tu objetivo FIRE, y los escenarios que guardaste. Lo hace con exactamente el mismo código que la web: hemos movido las calculadoras y el motor fiscal a un núcleo compartido, así que el asistente y la página no pueden dar cifras distintas. Además, la cartera estrena diseño: en vez de apilarlo todo en una sola página, se reparte en pestañas (Resumen, Posiciones, Plusvalías y Objetivo FIRE). El Resumen responde de un vistazo a cómo vas; en Posiciones buscas y filtras, y el detalle de cada una se abre en un panel junto a la fila, o desde abajo en el móvil. También puedes traer tus compras y ventas de Trade Republic desde su fichero de exportación, con vista previa y sin duplicar nada al reimportar; las posiciones vendidas del todo y los derivados tienen su propio filtro, y los derivados no suman a los totales (hay un nuevo artículo en Aprende que explica por qué). Y empezamos a medir qué páginas se usan con Umami en nuestro propio servidor: sin cookies, sin terceros y sin recoger los valores de las calculadoras.",
+        "en": "Until today, an assistant connected over MCP (Claude, ChatGPT…) could only see and edit your portfolio. Now it can use all of Sextante: the 27 calculators (mortgages, net salary and income tax by region, FIRE and Monte Carlo, wealth and gift tax…), your realised gains for each tax year to prepare your return, your portfolio breakdown and its progress towards your FIRE goal, and the scenarios you saved. It runs exactly the same code as the website: we moved the calculators and the tax engine into a shared core, so the assistant and the page can never give different numbers. The portfolio also has a new design: instead of stacking everything on one page, it is split into tabs (Summary, Positions, Capital gains and FIRE goal). The Summary tells you at a glance how you are doing; in Positions you search and filter, and each position's detail opens in a panel next to its row, or from the bottom on mobile. You can now bring your Trade Republic buys and sells from its export file, with a preview and no duplicates when you import again; positions sold in full and derivatives each have their own filter, and derivatives do not add to the totals (a new Learn article explains why). And we started measuring which pages are used with Umami on our own server: no cookies, no third parties and none of the values you type into the calculators."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "e6ccd0f6",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el Resumen de la cartera se rediseña: valor actual destacado, ganancia del año, el objetivo FIRE de un vistazo, la composición en una barra y las posiciones que más se han movido en la última sesión",
+            "en": "the portfolio Summary is redesigned: the current value up front, this year's gain, the FIRE goal at a glance, the composition as a bar and the positions that moved the most in the last session"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "73f9ccbb",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "lógica de movimientos del día, ganancia del año y lectura del objetivo",
+            "en": "daily moves, yearly gain and goal reading logic"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "cbbf933d",
+          "type": "feat",
+          "scope": "prices",
+          "category": "feature",
+          "text": {
+            "es": "los precios incluyen el cierre anterior",
+            "en": "prices include the previous close"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "389a9173",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se redactan las novedades de Posiciones",
+            "en": "the release notes for Positions are written"
+          },
+          "hidden": true
+        },
         {
           "hash": "b985fd5c",
           "type": "feat",

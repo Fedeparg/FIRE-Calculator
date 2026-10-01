@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildHistorySeries,
   DEFAULT_HISTORY_RANGE,
+  gainSince,
   HISTORY_RANGES,
   MIN_HISTORY_POINTS,
   type HistoryPointDto,
@@ -166,5 +167,37 @@ describe("buildHistorySeries", () => {
     // El tope coincide con el `HISTORY_MAX_DAYS` del backend: pedir más daría 400.
     expect(Math.max(...days)).toBe(1825);
     expect(MIN_HISTORY_POINTS).toBe(2);
+  });
+});
+
+describe("gainSince", () => {
+  const point = (date: string, invested: number, marketValue: number, estimated = false): HistoryPointDto => ({
+    date,
+    invested,
+    marketValue,
+    pnlAbs: marketValue - invested,
+    pnlPct: null,
+    valuedPositions: 1,
+    totalPositions: 1,
+    estimated,
+  });
+
+  it("no cuenta una aportación como ganancia", () => {
+    // Del 2 de enero al 30 de junio el valor sube 1.500, pero 1.000 son aportación.
+    const result = gainSince([point("2026-01-02", 10_000, 11_000), point("2026-06-30", 11_000, 12_500)], "2026-01-01");
+    expect(result).toEqual({ gain: 500, since: "2026-01-02", estimated: false });
+  });
+
+  it("ignora lo anterior a la fecha y avisa si el punto de partida es estimado", () => {
+    const result = gainSince(
+      [point("2025-12-31", 0, 0), point("2026-03-01", 100, 120, true), point("2026-04-01", 100, 90)],
+      "2026-01-01",
+    );
+    expect(result).toEqual({ gain: -30, since: "2026-03-01", estimated: true });
+  });
+
+  it("devuelve null con menos de dos puntos utilizables", () => {
+    expect(gainSince([point("2026-02-01", 1, 1)], "2026-01-01")).toBeNull();
+    expect(gainSince([], "2026-01-01")).toBeNull();
   });
 });

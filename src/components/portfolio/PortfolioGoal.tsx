@@ -3,16 +3,11 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import {
-  decodeCalculatorInputs,
-  type FieldSpecs,
-  type FieldValues,
-} from "@/core/calculator-url-state";
+import { goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
 import { convertCurrency } from "@sextante/core/fx";
 import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/lib/format";
-import { PORTFOLIO_CURRENCIES } from "@/lib/portfolio";
 import {
   MAX_SCENARIOS_PER_USER,
   SCENARIO_NAME_MAX_LENGTH,
@@ -44,30 +39,6 @@ type Props = {
   rates: Record<string, number>;
 };
 
-/**
- * Campos del objetivo, con las MISMAS claves que la calculadora de independencia financiera
- * (`FireCalculator`), para que un escenario guardado en cualquiera de los dos sitios se cargue
- * en el otro. `currentSavings` no se declara a propósito: aquí el patrimonio actual no se
- * teclea, lo pone la cartera.
- *
- * `goalCurrency` es una clave PROPIA de este bloque: la calculadora no la registra, así que
- * `decodeCalculatorInputs` la ignora allí y `completeValues` no la reescribe. Sirve para saber
- * en qué divisa se guardaron los importes; si falta (escenario creado en la calculadora, que
- * es solo en euros) se asume EUR.
- */
-const GOAL_FIELD_SPECS: FieldSpecs = {
-  annualExpenses: { kind: "number", defaultValue: 24000 },
-  savings: { kind: "number", defaultValue: 800 },
-  frequency: { kind: "option", defaultValue: "monthly", allowed: FREQUENCIES },
-  annualReturn: { kind: "number", defaultValue: 5 },
-  withdrawalRate: { kind: "number", defaultValue: 4 },
-  // Mismas claves que el simulador Monte Carlo: la calculadora FIRE no las registra, así que
-  // allí se ignoran y `handleSave` las conserva al actualizar.
-  volatility: { kind: "number", defaultValue: 15 },
-  retirementYears: { kind: "number", defaultValue: 40 },
-  goalCurrency: { kind: "option", defaultValue: "EUR", allowed: PORTFOLIO_CURRENCIES },
-};
-
 /** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
 type GoalAmounts = { currency: string; annualExpenses: number; contribution: number };
 
@@ -76,11 +47,6 @@ type CurrencyNote = { kind: "converted" | "notConvertible"; from: string; to: st
 
 /** Importes ya expresados en la divisa que se está viendo, con el aviso que toque. */
 type ShownAmounts = { annualExpenses: number; contribution: number; note: CurrencyNote };
-
-/** Estrecha el valor decodificado de un escenario al tipo `Frequency`, sin casts. */
-function isFrequency(value: unknown): value is Frequency {
-  return typeof value === "string" && (FREQUENCIES as readonly string[]).includes(value);
-}
 
 /** Redondeo a céntimos: los importes convertidos no deben arrastrar decimales binarios. */
 function toCents(value: number): number {
@@ -241,17 +207,17 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     const scenario = scenarios.find((s) => s.id === id);
     if (!scenario) return;
 
-    const values: FieldValues = decodeCalculatorInputs(scenario.inputs, GOAL_FIELD_SPECS);
+    const settings = goalSettingsFromInputs(scenario.inputs);
     setAmounts({
-      currency: typeof values.goalCurrency === "string" ? values.goalCurrency : "EUR",
-      annualExpenses: typeof values.annualExpenses === "number" ? values.annualExpenses : 0,
-      contribution: typeof values.savings === "number" ? values.savings : 0,
+      currency: settings.currency,
+      annualExpenses: settings.annualExpenses,
+      contribution: settings.contribution,
     });
-    if (typeof values.withdrawalRate === "number") setWithdrawalRate(values.withdrawalRate);
-    if (typeof values.annualReturn === "number") setAnnualReturn(values.annualReturn);
-    if (isFrequency(values.frequency)) setFrequency(values.frequency);
-    if (typeof values.volatility === "number") setVolatility(values.volatility);
-    if (typeof values.retirementYears === "number") setRetirementYears(values.retirementYears);
+    setWithdrawalRate(settings.withdrawalRate);
+    setAnnualReturn(settings.annualReturn);
+    setFrequency(settings.frequency);
+    setVolatility(settings.volatility);
+    setRetirementYears(settings.retirementYears);
 
     setLoadedInputs(scenario.inputs);
     setName(scenario.name);

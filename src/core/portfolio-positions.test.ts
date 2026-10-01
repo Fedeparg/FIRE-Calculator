@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countByFilter,
+  dailyMovers,
   matchesQuery,
   positionFilterOf,
   valuePosition,
@@ -78,5 +79,38 @@ describe("matchesQuery", () => {
   it("una búsqueda vacía o de espacios casa con todo, y los campos nulos no rompen", () => {
     expect(matchesQuery(position({ name: null, broker: null }), "   ")).toBe(true);
     expect(matchesQuery(position({ name: null, broker: null }), "trade")).toBe(false);
+  });
+});
+
+describe("dailyMovers", () => {
+  const mover = (id: string, ticker: string, overrides: Partial<FilterablePosition> = {}) => ({
+    ...position({ ticker, name: id, ...overrides }),
+    id,
+  });
+
+  it("ordena por variación absoluta y respeta el límite", () => {
+    const moves = dailyMovers(
+      [mover("A", "A"), mover("B", "B"), mover("C", "C")],
+      { A: { close: 101, previousClose: 100 }, B: { close: 95, previousClose: 100 }, C: { close: 102, previousClose: 100 } },
+      2,
+    );
+    expect(moves.map((m) => [m.id, Math.round(m.changePct)])).toEqual([
+      ["B", -5],
+      ["C", 2],
+    ]);
+  });
+
+  it("deja fuera cerradas, derivados y precios sin cierre anterior válido", () => {
+    const moves = dailyMovers(
+      [mover("closed", "X", { quantity: 0 }), mover("der", "Y", { isDerivative: true }), mover("first", "Z"), mover("zero", "W")],
+      {
+        X: { close: 2, previousClose: 1 },
+        Y: { close: 2, previousClose: 1 },
+        Z: { close: 2, previousClose: null },
+        W: { close: 2, previousClose: 0 },
+      },
+      5,
+    );
+    expect(moves).toEqual([]);
   });
 });
