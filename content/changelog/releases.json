@@ -14,6 +14,28 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "803445e6",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el objetivo FIRE tiene un plan activo: la pestaña Objetivo lo carga al abrirla, elegir otro lo activa y el Resumen dice qué plan muestra",
+            "en": "the FIRE goal has an active plan: the Goal tab loads it when you open it, choosing another makes it active and the Summary says which plan it shows"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "63aa6040",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "añade el rediseño de la cartera a la entrega de hoy",
+            "en": "add the portfolio redesign to today's release"
+          },
+          "hidden": true
+        },
+        {
           "hash": "e6ccd0f6",
           "type": "feat",
           "scope": "portfolio",
