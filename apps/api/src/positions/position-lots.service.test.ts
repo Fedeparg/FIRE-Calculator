@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -371,12 +371,12 @@ describe('PositionLotsService (integración con Postgres)', () => {
   });
 
   describe('aislamiento entre usuarios', () => {
-    it('un usuario no puede listar ni crear lotes en la posición de otro (403)', async () => {
+    it('un usuario no puede listar ni crear lotes en la posición de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const position = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(lots.listByPosition(userB, position.id)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(lots.listByPosition(userB, position.id)).rejects.toBeInstanceOf(NotFoundException);
       await expect(
         lots.create(userB, position.id, {
           kind: 'buy',
@@ -384,7 +384,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
           price: 1,
           tradedAt: '2026-06-01',
         }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('un lote de OTRA posición del propio usuario no se alcanza por la ruta (404)', async () => {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ForbiddenException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -63,23 +63,23 @@ describe('PositionsService (integración con Postgres)', () => {
       expect(bPositions[0].ticker).toBe('VWCE');
     });
 
-    it('un usuario no puede borrar la posición de otro (403)', async () => {
+    it('un usuario no puede borrar la posición de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(NotFoundException);
 
       // Sigue existiendo para su dueño: el borrado ajeno no surtió efecto.
       expect(await service.findAllByUser(userA)).toHaveLength(1);
     });
 
-    it('un usuario no puede actualizar la posición de otro (403)', async () => {
+    it('un usuario no puede actualizar la posición de otro (404)', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
-      await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(NotFoundException);
     });
 
     it('borrar/actualizar una posición inexistente da 404', async () => {

@@ -187,7 +187,7 @@ export class PositionsService {
     return this.toResponse(row);
   }
 
-  /** Borra una posición propia: 404 si no existe, 403 si es de otro usuario. */
+  /** Borra una posición propia: 404 si no existe o es de otro usuario. */
   async remove(userId: string, id: string): Promise<void> {
     await this.findOwned(userId, id);
     await this.db.delete(positions).where(eq(positions.id, id));
