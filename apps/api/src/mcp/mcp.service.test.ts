@@ -1,0 +1,202 @@
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { SCOPE_PORTFOLIO_READ } from '../oauth/oauth.constants.js';
+import { CALCULATOR_TOOLS } from './calculator-tools.js';
+import { McpService } from './mcp.service.js';
+
+/**
+ * El servidor MCP de verdad, conectado a un cliente MCP de verdad por un transporte en memoria.
+ * Los servicios de datos son dobles: aquí se prueba el cableado de las tools (registro,
+ * esquemas, auditoría y el cálculo sobre los datos del usuario), no la BD, que ya tiene sus
+ * propios tests.
+ */
+
+const USER = 'user-1';
+
+const positions = [
+  { id: 'p1', ticker: 'IWDA.AS', name: 'iShares World', currency: 'EUR', quantity: 5, avgPrice: 100, broker: 'TR' },
+  { id: 'p2', ticker: 'AAPL', name: 'Apple', currency: 'USD', quantity: 0, avgPrice: 0, broker: null },
+];
+
+const lots = [
+  { id: 'l1', positionId: 'p1', kind: 'buy', quantity: 10, price: 100, fees: 0, tradedAt: '2024-03-01', note: null, createdAt: '2024-03-01T10:00:00.000Z' },
+  { id: 'l2', positionId: 'p1', kind: 'sell', quantity: 5, price: 120, fees: 1, tradedAt: '2025-06-01', note: null, createdAt: '2025-06-01T10:00:00.000Z' },
+  { id: 'l3', positionId: 'p2', kind: 'buy', quantity: 2, price: 150, fees: 0, tradedAt: '2025-01-10', note: null, createdAt: '2025-01-10T10:00:00.000Z' },
+  { id: 'l4', positionId: 'p2', kind: 'sell', quantity: 2, price: 140, fees: 0, tradedAt: '2025-02-10', note: null, createdAt: '2025-02-10T10:00:00.000Z' },
+];
+
+function makeService() {
+  const audit = { record: vi.fn().mockResolvedValue(undefined) };
+  const valuation = {
+    valuate: vi.fn().mockResolvedValue({
+      display: 'EUR',
+      aggregate: { invested: 500, marketValue: 600_000, pnlAbs: 0, pnlPct: 0, valued: 1, total: 2 },
+      fxAsOf: '2026-10-01',
+      positions: [],
+    }),
+    breakdown: vi.fn().mockResolvedValue({ slices: [], total: 0, included: 0, excluded: 0, display: 'EUR', fxAsOf: null }),
+  };
+  const scenarios = {
+    findAllByUser: vi.fn().mockResolvedValue([
+      { id: 's1', slug: 'independencia-financiera', name: 'Plan', inputs: { annualExpenses: 24_000 }, createdAt: '', updatedAt: '' },
+    ]),
+  };
+  const service = new McpService(
+    { findAllByUser: vi.fn().mockResolvedValue(positions) } as never,
+    { findAllByUser: vi.fn().mockResolvedValue(lots) } as never,
+    valuation as never,
+    {} as never,
+    scenarios as never,
+    {} as never,
+    audit as never,
+  );
+  return { service, audit, valuation, scenarios };
+}
+
+async function connect(service: McpService): Promise<Client> {
+  const server = service.createServer({ userId: USER, clientId: 'client-1', scopes: [SCOPE_PORTFOLIO_READ] });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  const client = new Client({ name: 'test', version: '1.0.0' });
+  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+  return client;
+}
+
+function parse(result: unknown): unknown {
+  const { content, isError } = result as CallToolResult;
+  expect(isError).toBeFalsy();
+  const [first] = content;
+  if (first?.type !== 'text') throw new Error('Se esperaba un resultado de texto');
+  return JSON.parse(first.text);
+}
+
+let client: Client | undefined;
+afterEach(async () => {
+  await client?.close();
+  client = undefined;
+});
+
+describe('McpService', () => {
+  it('anuncia las tools de cartera, de análisis y todas las calculadoras', async () => {
+    client = await connect(makeService().service);
+    const { tools } = await client.listTools();
+    const names = tools.map((t) => t.name);
+
+    expect(names).toEqual(
+      expect.arrayContaining([
+        'list_positions',
+        'get_realised_gains',
+        'get_portfolio_breakdown',
+        'get_fire_goal_progress',
+        'list_saved_scenarios',
+        ...CALCULATOR_TOOLS.map((t) => t.name),
+      ]),
+    );
+    expect(new Set(names).size).toBe(names.length);
+    // Las calculadoras son de solo lectura y no tocan el mundo exterior.
+    const mortgage = tools.find((t) => t.name === 'calculate_mortgage');
+    expect(mortgage?.annotations).toMatchObject({ readOnlyHint: true, openWorldHint: false });
+    expect(mortgage?.inputSchema.required).toEqual(['principal', 'annualRate', 'years']);
+  });
+
+  it('ejecuta una calculadora y deja la llamada auditada', async () => {
+    const { service, audit } = makeService();
+    client = await connect(service);
+
+    const result = parse(
+      await client.callTool({ name: 'calculate_mortgage', arguments: { principal: 100_000, annualRate: 0, years: 10 } }),
+    );
+
+    // Tipo 0: 100.000 € en 120 cuotas iguales.
+    expect((result as { monthlyPayment: number }).monthlyPayment).toBeCloseTo(833.33, 2);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate_mortgage', 'ok');
+  });
+
+  it('rechaza una entrada fuera de rango como error de tool, sin calcular', async () => {
+    client = await connect(makeService().service);
+    const result = (await client.callTool({
+      name: 'simulate_fire_monte_carlo',
+      arguments: {
+        annualExpenses: 1,
+        currentSavings: 1,
+        monthlySavings: 1,
+        annualReturn: 5,
+        volatility: 15,
+        withdrawalRate: 4,
+        retirementYears: 30,
+        paths: 10_000_000,
+      },
+    })) as CallToolResult;
+    expect(result.isError).toBe(true);
+  });
+
+  it('calcula las plusvalías por ejercicio con FIFO a partir de los lotes del usuario', async () => {
+    client = await connect(makeService().service);
+
+    const all = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
+      years: { year: number; groups: { currency: string; net: number }[] }[];
+    };
+    expect(all.years.map((y) => y.year)).toEqual([2025]);
+    const groups = all.years[0]?.groups ?? [];
+    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20, sin convertir.
+    expect(groups.find((g) => g.currency === 'EUR')?.net).toBeCloseTo(99, 6);
+    expect(groups.find((g) => g.currency === 'USD')?.net).toBeCloseTo(-20, 6);
+
+    const none = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2024 } }));
+    expect(none).toEqual({ years: [] });
+  });
+
+  it('mide el objetivo FIRE con el valor de mercado real de la cartera', async () => {
+    const { service, valuation } = makeService();
+    client = await connect(service);
+
+    const result = parse(
+      await client.callTool({
+        name: 'get_fire_goal_progress',
+        arguments: { annualExpenses: 24_000, withdrawalRate: 4, contribution: 1000, annualReturn: 5, display: 'USD' },
+      }),
+    );
+
+    expect(valuation.valuate).toHaveBeenCalledWith(USER, 'USD');
+    expect(result).toMatchObject({
+      display: 'USD',
+      target: 600_000,
+      current: 600_000,
+      reached: true,
+      valuedPositions: 1,
+      totalPositions: 2,
+    });
+    expect(result).not.toHaveProperty('simulation');
+
+    const simulated = parse(
+      await client.callTool({
+        name: 'get_fire_goal_progress',
+        arguments: {
+          annualExpenses: 24_000,
+          withdrawalRate: 4,
+          contribution: 1000,
+          annualReturn: 5,
+          volatility: 15,
+          retirementYears: 30,
+        },
+      }),
+    );
+    expect(simulated).toHaveProperty('simulation.successRate');
+  });
+
+  it('delega el reparto y los escenarios en sus servicios, con el usuario del token', async () => {
+    const { service, valuation, scenarios } = makeService();
+    client = await connect(service);
+
+    await client.callTool({ name: 'get_portfolio_breakdown', arguments: { groupBy: 'broker' } });
+    expect(valuation.breakdown).toHaveBeenCalledWith(USER, 'EUR', 'broker');
+
+    const listed = parse(
+      await client.callTool({ name: 'list_saved_scenarios', arguments: { slug: 'independencia-financiera' } }),
+    );
+    expect(scenarios.findAllByUser).toHaveBeenCalledWith(USER, 'independencia-financiera');
+    expect(listed).toMatchObject({ scenarios: [{ id: 's1' }] });
+  });
+});

@@ -3,6 +3,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { PricesService, type PriceInfo } from '../prices/prices.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
+import {
+  buildBreakdown,
+  type BreakdownGroupBy,
+  type BreakdownResult,
+} from '@sextante/core/portfolio-breakdown';
+
+/** Etiqueta del grupo de posiciones sin bróker en el reparto (la API habla castellano). */
+const UNKNOWN_BROKER_LABEL = 'Sin bróker';
 
 /**
  * Valoración de UNA posición, con su P&L en divisa NATIVA. Misma regla que la tabla de la
@@ -17,6 +25,8 @@ export interface PositionValuation {
   avgPrice: number;
   broker: string | null;
   currency: string;
+  /** Derivado: Sextante no sigue su precio y queda fuera del agregado. */
+  isDerivative: boolean;
   /** Coste (cantidad · precio medio), en la divisa de la posición. */
   invested: number;
   /** Último precio de mercado en la divisa de la posición, o null si no es valorable. */
@@ -61,15 +71,7 @@ export class PortfolioValuationService {
 
   /** Valora toda la cartera del usuario, con el agregado convertido a `display`. */
   async valuate(userId: string, display: string): Promise<PortfolioValuation> {
-    const owned = await this.positions.findAllByUser(userId);
-    const tickers = [...new Set(owned.map((p) => p.ticker))];
-    const priceMap = await this.prices.getPrices(tickers);
-    const fx = await this.prices.getFxRates();
-
-    const pricesRecord: Record<string, { close: number; currency: string }> = {};
-    for (const [ticker, info] of priceMap) {
-      pricesRecord[ticker] = { close: info.close, currency: info.currency };
-    }
+    const { owned, priceMap, pricesRecord, fx } = await this.loadMarketData(userId);
 
     const aggregate = aggregatePortfolio({
       positions: owned.map((p) => ({
@@ -90,6 +92,42 @@ export class PortfolioValuationService {
       fxAsOf: fx.asOf,
       positions: owned.map((p) => this.valuateRow(p, priceMap.get(p.ticker))),
     };
+  }
+
+  /**
+   * Reparto del valor de mercado de la cartera por activo, bróker o divisa, convertido a
+   * `display`. Es `buildBreakdown` de `@sextante/core`, el mismo que dibuja el donut de la UI.
+   */
+  async breakdown(
+    userId: string,
+    display: string,
+    groupBy: BreakdownGroupBy,
+  ): Promise<BreakdownResult & { display: string; fxAsOf: string | null }> {
+    const { owned, pricesRecord, fx } = await this.loadMarketData(userId);
+    const result = buildBreakdown({
+      // Igual que la web: los derivados no tienen precio fiable y no entran en el reparto.
+      positions: owned.filter((p) => !p.isDerivative),
+      prices: pricesRecord,
+      rates: fx.rates,
+      display,
+      groupBy,
+      unknownBrokerLabel: UNKNOWN_BROKER_LABEL,
+    });
+    return { ...result, display, fxAsOf: fx.asOf };
+  }
+
+  /** Posiciones del usuario con su último precio y las tasas FX cacheadas. */
+  private async loadMarketData(userId: string) {
+    const owned = await this.positions.findAllByUser(userId);
+    const tickers = [...new Set(owned.map((p) => p.ticker))];
+    const priceMap = await this.prices.getPrices(tickers);
+    const fx = await this.prices.getFxRates();
+
+    const pricesRecord: Record<string, { close: number; currency: string }> = {};
+    for (const [ticker, info] of priceMap) {
+      pricesRecord[ticker] = { close: info.close, currency: info.currency };
+    }
+    return { owned, priceMap, pricesRecord, fx };
   }
 
   /**
@@ -132,6 +170,7 @@ export class PortfolioValuationService {
       avgPrice: p.avgPrice,
       broker: p.broker,
       currency: p.currency,
+      isDerivative: p.isDerivative,
       invested,
       currentPrice,
       priceCurrency: price?.currency ?? null,

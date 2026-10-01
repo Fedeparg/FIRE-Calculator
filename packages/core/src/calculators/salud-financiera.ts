@@ -56,3 +56,20 @@ export function computeFinancialHealth(answers: readonly number[]): FinancialHea
   const score = Math.round(weighted * 100);
   return { score, category: categoryForScore(score) };
 }
+
+/**
+ * Puntuación (0..1) de cada opción de respuesta, por índice: la opción 0 es la peor y la
+ * última, la mejor. La comparten la web y el MCP para que las dos puntúen igual.
+ */
+export const FINANCIAL_HEALTH_OPTION_SCORES: readonly number[] = [0, 0.34, 0.67, 1];
+
+/** Número de opciones de respuesta de cada pregunta. */
+export const FINANCIAL_HEALTH_OPTIONS = FINANCIAL_HEALTH_OPTION_SCORES.length;
+
+/**
+ * Calcula la salud financiera a partir del ÍNDICE de la opción elegida en cada pregunta (en el
+ * orden de `FINANCIAL_HEALTH_QUESTIONS`). Un índice fuera de rango puntúa 0.
+ */
+export function scoreFinancialHealthOptions(options: readonly number[]): FinancialHealthResult {
+  return computeFinancialHealth(options.map((i) => FINANCIAL_HEALTH_OPTION_SCORES[i] ?? 0));
+}

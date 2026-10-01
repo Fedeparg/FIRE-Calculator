@@ -125,8 +125,9 @@ reexpresar el histórico en cualquier divisa soportada sin recalcularlo.
 
 ## Tools MCP
 
-12 tools, cada una con su scope. Las de escritura exigen `portfolio:write` en tiempo
-de ejecución (step-up por tool, no un 403 HTTP) y todas quedan en `mcp_audit_log`.
+42 tools: 16 de cartera, cada una con su scope, y 26 calculadoras. Las de escritura
+exigen `portfolio:write` en tiempo de ejecución (step-up por tool, no un 403 HTTP) y
+todas quedan en `mcp_audit_log` (nombre de la tool y resultado, nunca los argumentos).
 
 | Tool | Scope | Qué hace |
 |---|---|---|
@@ -136,12 +137,24 @@ de ejecución (step-up por tool, no un 403 HTTP) y todas quedan en `mcp_audit_lo
 | `search_instruments` | `portfolio:read` | Busca el símbolo exacto de un instrumento (mismo buscador que el alta en la UI), para que el LLM no invente tickers. |
 | `get_portfolio_history` | `portfolio:read` | Serie diaria de valoración (snapshots), reexpresada a la divisa pedida. |
 | `list_position_lots` | `portfolio:read` | Compras y ventas de una posición, en orden cronológico. |
+| `get_realised_gains` | `portfolio:read` | Plusvalías realizadas por ejercicio (FIFO, `@sextante/core/fiscal/realised-gains`), el informe de la Renta de la web. |
+| `get_portfolio_breakdown` | `portfolio:read` | Peso de cada activo, bróker o divisa (`@sextante/core/portfolio-breakdown`). |
+| `get_fire_goal_progress` | `portfolio:read` | Progreso del valor de mercado real hacia un objetivo FIRE, con Monte Carlo opcional (`@sextante/core/portfolio-goal`). |
+| `list_saved_scenarios` | `portfolio:read` | Escenarios guardados de las calculadoras. |
 | `add_position` | `portfolio:write` | Crea una posición. |
 | `update_position` | `portfolio:write` | Edita una posición. |
 | `combine_position` | `portfolio:write` | Suma una compra a una posición existente. |
 | `delete_position` | `portfolio:write` | Borra una posición. |
 | `add_position_lot` | `portfolio:write` | Registra una compra o venta con fecha y recalcula la posición. |
 | `delete_position_lot` | `portfolio:write` | Borra una operación registrada y recalcula la posición. |
+
+Las **calculadoras** (`calculate_*`, `compare_buy_vs_rent`, `simulate_fire_monte_carlo`,
+`score_financial_health`) se definen en `src/mcp/calculator-tools.ts`: una por
+calculadora de la web (el depósito y la cuenta remunerada comparten una), ejecutando
+el mismo módulo de `@sextante/core/calculators`. No leen datos del usuario, así que
+basta cualquier token válido. Cada esquema acota importes, tasas, años y vidas
+simuladas: el Monte Carlo corre en el servidor. Al añadir una calculadora, añade su
+tool y su entrada de muestra en `calculator-tools.test.ts` (el test lo exige).
 
 ## Estructura
 
@@ -159,7 +172,7 @@ de ejecución (step-up por tool, no un 403 HTTP) y todas quedan en `mcp_audit_lo
 | `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |
 | `src/jobs/` | Cron nocturno: refresco de precios → captura de snapshots, en ese orden. |
 | `src/oauth/` | Authorization Server OAuth 2.1 del MCP: clientes, grants, códigos, tokens y reaper. |
-| `src/mcp/` | Servidor MCP remoto (Streamable HTTP), sus 12 tools y el log de auditoría. |
+| `src/mcp/` | Servidor MCP remoto (Streamable HTTP), sus 42 tools y el log de auditoría. |
 | `src/account/` | Cuenta del usuario: apps conectadas, export y borrado (RGPD). |
 | `src/donations/` | Sesión de Stripe Checkout para las donaciones. |
 | `src/health/` | `/api/health` (comprueba la conexión a Postgres). |

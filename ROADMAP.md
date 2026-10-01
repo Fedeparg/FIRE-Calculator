@@ -24,7 +24,7 @@ Where Sextante is today, what's next, and what it deliberately won't do.
 | **FIRE goal on your real money** — the portfolio tracks progress towards your independence target and its Monte Carlo probability of success, sharing scenarios with the calculator; CSV export included | ✅ Live |
 | **FIRE milestone emails** — opt-in notice at 25/50/75/100 % of your goal, at most once per milestone, re-baselined when the goal changes, one-click unsubscribe (RFC 8058) with a signed, non-expiring link | ✅ Live |
 | **Changelog** — a public What's new page built from the project's own commit history, kept honest by a generator | ✅ Live |
-| **Remote MCP server** — 12 tools over Streamable HTTP, OAuth 2.1, per-tool scope step-up, per-token rate limit | ✅ Live |
+| **Remote MCP server** — 42 tools over Streamable HTTP: the portfolio, its realised gains by tax year, breakdown and FIRE goal progress, saved scenarios and **every calculator**, running the same `@sextante/core` code as the web. OAuth 2.1, per-tool scope step-up, per-token rate limit | ✅ Live |
 | **GDPR tooling** — data export, account deletion with cascade, connected-app revocation | ✅ Live |
 | **SEO** — canonical URLs, hreflang, sitemap, JSON-LD, dynamic OG images | ✅ Live |
 | **Ops** — CI-gated deploy, Dockerized rootless containers, encrypted off-site Postgres backups verified as restorable before upload | ✅ Live |
@@ -61,11 +61,6 @@ Where Sextante is today, what's next, and what it deliberately won't do.
 
 ## Explicitly out of scope
 
-- **Exposing the calculators over MCP.** The calculation engine lives in the
-  frontend `core/` and runs in the user's browser, where anyone can audit it. The
-  API can't import it, so exposing calculators over MCP would mean duplicating
-  27 calculators plus the tax engine in the backend and letting the two drift.
-  The cost is real and the gain isn't.
 - **Bank account aggregation (PSD2 / open banking).** Licensing and cost put it
   out of reach for a free, self-hosted, single-maintainer project. Positions are
   entered manually or by an AI assistant over MCP.

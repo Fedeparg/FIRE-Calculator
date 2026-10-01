@@ -1,6 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
+import { BREAKDOWN_GROUPS, type BreakdownGroupBy } from '@sextante/core/portfolio-breakdown';
+import {
+  computePortfolioGoal,
+  simulatePortfolioGoal,
+} from '@sextante/core/portfolio-goal';
+import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
+import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { z } from 'zod';
@@ -23,7 +31,10 @@ import {
   INSTRUMENT_SEARCH,
   type InstrumentSearchProvider,
 } from '../prices/instrument-search.js';
+import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
+import { CALCULATOR_TOOLS } from './calculator-tools.js';
 import { McpAuditService } from './mcp-audit.service.js';
+import { errorResult, jsonResult } from './mcp-results.js';
 
 /**
  * Contexto de seguridad de una petición MCP, derivado del access token verificado. El
@@ -39,15 +50,11 @@ export type McpContext = {
 /** Lista de divisas como tupla mutable para `z.enum` (SUPPORTED_CURRENCIES es `as const`). */
 const CURRENCY_VALUES = [...SUPPORTED_CURRENCIES] as [string, ...string[]];
 
-/** Empaqueta un objeto como resultado de tool MCP (texto JSON legible). */
-function jsonResult(value: unknown): CallToolResult {
-  return { content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] };
-}
+/** Criterios de reparto como tupla para `z.enum`. */
+const BREAKDOWN_VALUES = [...BREAKDOWN_GROUPS] as [BreakdownGroupBy, ...BreakdownGroupBy[]];
 
-/** Resultado de tool marcado como error (el host lo muestra al usuario sin romper la sesión). */
-function errorResult(message: string): CallToolResult {
-  return { content: [{ type: 'text', text: message }], isError: true };
-}
+/** Frecuencias de aportación como tupla para `z.enum`. */
+const FREQUENCY_VALUES = [...FREQUENCIES] as [Frequency, ...Frequency[]];
 
 /**
  * Construye, por petición, el servidor MCP con las tools de Sextante. Se crea fresco con el
@@ -62,6 +69,7 @@ export class McpService {
     private readonly lots: PositionLotsService,
     private readonly valuation: PortfolioValuationService,
     private readonly snapshots: PortfolioSnapshotsService,
+    private readonly scenarios: SavedScenariosService,
     @Inject(INSTRUMENT_SEARCH) private readonly instruments: InstrumentSearchProvider,
     private readonly audit: McpAuditService,
   ) {}
@@ -71,9 +79,18 @@ export class McpService {
       { name: 'sextante', version: '0.1.0' },
       {
         instructions:
-          'Sextante es un agregador de cartera enfocado al mercado español. Usa estas ' +
-          'herramientas para leer, analizar y (con permiso de escritura) modificar las ' +
-          'posiciones del usuario autenticado. Los importes de cada posición están en su ' +
+          'Sextante es una suite de finanzas personales e independencia financiera (FIRE) ' +
+          'centrada en la fiscalidad española, con un agregador de cartera. Tiene dos tipos ' +
+          'de herramientas. (1) Calculadoras (`calculate_*`, `compare_buy_vs_rent`, ' +
+          '`simulate_fire_monte_carlo`, `score_financial_health`): cálculo puro sobre lo que ' +
+          'envíes, con el mismo motor que la web (IRPF por comunidad, hipotecas, FIRE, Monte ' +
+          'Carlo, impuestos de patrimonio y donaciones…); no leen datos del usuario. Sus ' +
+          'porcentajes van en base 100. (2) Cartera: leer, analizar y (con permiso de ' +
+          'escritura) modificar las posiciones del usuario autenticado, incluidas las ' +
+          'plusvalías realizadas por ejercicio para la declaración de la Renta, el reparto por ' +
+          'activo/bróker/divisa y el progreso hacia su objetivo FIRE. Los escenarios que el ' +
+          'usuario guardó en las calculadoras están en `list_saved_scenarios`. Todo es ' +
+          'orientativo y no constituye asesoramiento. Los importes de cada posición están en su ' +
           'divisa nativa; el agregado de `get_portfolio_valuation` se convierte a la divisa ' +
           '`display` elegida. Cada posición tiene además sus LOTES (compras y ventas con ' +
           'fecha), de los que se derivan su cantidad y su precio medio, y la cartera tiene un ' +
@@ -83,7 +100,11 @@ export class McpService {
     );
 
     this.registerReadTools(server, ctx);
+    this.registerAnalysisTools(server, ctx);
     this.registerWriteTools(server, ctx);
+    for (const tool of CALCULATOR_TOOLS) {
+      tool.register(server, (name, body) => this.run(ctx, name, body));
+    }
     return server;
   }
 
@@ -113,7 +134,9 @@ export class McpService {
           'Calcula el valor actual y la ganancia/pérdida (P&L) de la cartera con el último ' +
           'precio conocido de cada posición. Devuelve el agregado convertido a la divisa ' +
           '`display` (las posiciones sin precio o en divisa no convertible se excluyen del ' +
-          'total y se señalan) y el desglose por posición en su divisa nativa. Solo lectura.',
+          'total y se señalan) y el desglose por posición en su divisa nativa. Los derivados ' +
+          '(`isDerivative`) se registran pero Sextante no sigue su precio: nunca entran en el ' +
+          'total. Solo lectura.',
         inputSchema: {
           display: z
             .enum(CURRENCY_VALUES)
@@ -222,6 +245,177 @@ export class McpService {
         this.run(ctx, 'list_position_lots', async () => {
           const lots = await this.lots.listByPosition(ctx.userId, positionId);
           return jsonResult({ lots });
+        }),
+    );
+  }
+
+  /**
+   * Tools de análisis de la cartera (scope `portfolio:read`): lo que la web calcula sobre los
+   * datos del usuario, con las mismas funciones de `@sextante/core`.
+   */
+  private registerAnalysisTools(server: McpServer, ctx: McpContext): void {
+    server.registerTool(
+      'get_realised_gains',
+      {
+        title: 'Plusvalías realizadas por ejercicio (para la Renta)',
+        description:
+          'Ganancias y pérdidas patrimoniales de las ventas registradas, calculadas por FIFO ' +
+          'como exige la normativa española y agrupadas por ejercicio fiscal y divisa: valor ' +
+          'de transmisión, valor de adquisición (con comisiones) y resultado de cada venta, ' +
+          'más una estimación de la cuota de la base del ahorro sobre lo vendido en euros. ' +
+          'Las ventas en otra divisa se dan en esa divisa sin convertir (en la declaración se ' +
+          'convierten al tipo de cambio de cada operación). Sirve para preparar las casillas ' +
+          'de ganancias patrimoniales. Compensa las ventas del mismo ejercicio, pero NO ' +
+          'aplica los saldos negativos de los cuatro ejercicios anteriores, la compensación ' +
+          'del 25 % con dividendos e intereses ni la regla de los dos meses. Solo lectura.',
+        inputSchema: {
+          year: z
+            .number()
+            .int()
+            .min(1900)
+            .max(2100)
+            .optional()
+            .describe('Ejercicio fiscal. Sin valor, devuelve todos los ejercicios con ventas.'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ year }) =>
+        this.run(ctx, 'get_realised_gains', async () => {
+          const [positions, lots] = await Promise.all([
+            this.positions.findAllByUser(ctx.userId),
+            this.lots.findAllByUser(ctx.userId),
+          ]);
+          const lotsByPosition = new Map<string, typeof lots>();
+          for (const lot of lots) {
+            lotsByPosition.set(lot.positionId, [...(lotsByPosition.get(lot.positionId) ?? []), lot]);
+          }
+          const report = buildRealisedGainsReport(
+            positions.map((p) => ({
+              id: p.id,
+              ticker: p.ticker,
+              name: p.name,
+              currency: p.currency,
+              lots: lotsByPosition.get(p.id) ?? [],
+            })),
+          );
+          const years =
+            year === undefined ? report.years : report.years.filter((y) => y.year === year);
+          return jsonResult({ years });
+        }),
+    );
+
+    server.registerTool(
+      'get_portfolio_breakdown',
+      {
+        title: 'Reparto de la cartera',
+        description:
+          'Reparte el valor de mercado actual de la cartera por activo, bróker o divisa y ' +
+          'devuelve el peso de cada grupo en %, convertido a la divisa `display`. Las ' +
+          'posiciones sin precio o en divisa no convertible se excluyen y se cuentan; los ' +
+          'derivados no entran. Solo lectura.',
+        inputSchema: {
+          groupBy: z
+            .enum(BREAKDOWN_VALUES)
+            .describe('Criterio: asset (por valor), broker o currency.'),
+          display: z
+            .enum(CURRENCY_VALUES)
+            .optional()
+            .describe('Divisa del reparto (por defecto EUR).'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ groupBy, display }) =>
+        this.run(ctx, 'get_portfolio_breakdown', async () =>
+          jsonResult(await this.valuation.breakdown(ctx.userId, display ?? 'EUR', groupBy)),
+        ),
+    );
+
+    server.registerTool(
+      'get_fire_goal_progress',
+      {
+        title: 'Progreso de la cartera hacia el objetivo FIRE',
+        description:
+          'Mide la cartera REAL del usuario (su valor de mercado actual) contra un objetivo ' +
+          'de independencia financiera: patrimonio objetivo (gasto anual / tasa de retiro), ' +
+          '% conseguido, lo que falta y años estimados para llegar con la aportación y la ' +
+          'rentabilidad real indicadas. Con `volatility` y `retirementYears` añade la ' +
+          'probabilidad Monte Carlo de alcanzarlo y de que el dinero dure. Si el usuario ' +
+          'guardó un escenario de la calculadora FIRE (slug independencia-financiera en ' +
+          '`list_saved_scenarios`), usa sus valores. Los importes van en la divisa `display`. ' +
+          'Solo lectura.',
+        inputSchema: {
+          annualExpenses: z.number().min(0).max(1e12).describe('Gasto anual deseado.'),
+          withdrawalRate: z.number().min(0).max(100).describe('Tasa de retiro (habitual: 4).'),
+          contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
+          frequency: z
+            .enum(FREQUENCY_VALUES)
+            .optional()
+            .describe('Frecuencia de la aportación (por defecto monthly).'),
+          annualReturn: z
+            .number()
+            .min(-99)
+            .max(100)
+            .describe('Rentabilidad anual REAL esperada, en base 100.'),
+          volatility: z
+            .number()
+            .min(0)
+            .max(MAX_VOLATILITY)
+            .optional()
+            .describe('Volatilidad anual en base 100, para la simulación Monte Carlo.'),
+          retirementYears: z
+            .number()
+            .min(0)
+            .max(MAX_RETIREMENT_YEARS)
+            .optional()
+            .describe('Años que debe durar el dinero, para la simulación Monte Carlo.'),
+          display: z
+            .enum(CURRENCY_VALUES)
+            .optional()
+            .describe('Divisa del objetivo y de la cartera (por defecto EUR).'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ volatility, retirementYears, display, frequency, ...goal }) =>
+        this.run(ctx, 'get_fire_goal_progress', async () => {
+          const currency = display ?? 'EUR';
+          const { aggregate } = await this.valuation.valuate(ctx.userId, currency);
+          const input = { ...goal, frequency: frequency ?? 'monthly', currentValue: aggregate.marketValue };
+          const simulation =
+            volatility !== undefined && retirementYears !== undefined
+              ? simulatePortfolioGoal({ ...input, volatility, retirementYears })
+              : undefined;
+          return jsonResult({
+            display: currency,
+            // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
+            valuedPositions: aggregate.valued,
+            totalPositions: aggregate.total,
+            ...computePortfolioGoal(input),
+            ...(simulation ? { simulation } : {}),
+          });
+        }),
+    );
+
+    server.registerTool(
+      'list_saved_scenarios',
+      {
+        title: 'Escenarios guardados de las calculadoras',
+        description:
+          'Devuelve los escenarios que el usuario guardó en las calculadoras de la web (nombre, ' +
+          'calculadora por su slug y valores introducidos), para reutilizarlos con las tools ' +
+          'de calculadora o con `get_fire_goal_progress`. Solo lectura.',
+        inputSchema: {
+          slug: z
+            .string()
+            .max(64)
+            .optional()
+            .describe('Solo los de una calculadora (p. ej. independencia-financiera).'),
+        },
+        annotations: { readOnlyHint: true },
+      },
+      ({ slug }) =>
+        this.run(ctx, 'list_saved_scenarios', async () => {
+          const scenarios = await this.scenarios.findAllByUser(ctx.userId, slug);
+          return jsonResult({ scenarios });
         }),
     );
   }

@@ -4,15 +4,103 @@
     {
       "date": "2026-10-01",
       "title": {
-        "es": "Importa tu cartera desde Trade Republic y estadísticas de uso sin cookies",
-        "en": "Import your portfolio from Trade Republic, and cookieless usage statistics"
+        "es": "Hito: tu asistente de IA ya usa todo Sextante, e importación desde Trade Republic",
+        "en": "Milestone: your AI assistant can now use all of Sextante, plus Trade Republic import"
       },
       "summary": {
-        "es": "Ya puedes traer tus compras y ventas de Trade Republic: subes el fichero de exportación de transacciones, ves una vista previa de lo que se creará y, al confirmar, Sextante registra cada operación con su fecha y su comisión. Reimportar el mismo fichero no duplica nada. Además, las posiciones vendidas del todo se ocultan de la lista (con una casilla para verlas) y los derivados van a una sección aparte, plegada, sin sumar a los totales; hay un nuevo artículo en Aprende que explica qué son. Y Sextante empieza a medir qué páginas y herramientas se usan, con Umami alojado en nuestro propio servidor: sin cookies, sin terceros, sin guardar tu IP y sin recoger los valores de las calculadoras. La política de privacidad explica exactamente qué se registra.",
-        "en": "You can now bring your Trade Republic buys and sells: upload the transaction export file, see a preview of what will be created and, once you confirm, Sextante records every transaction with its date and fee. Importing the same file again does not duplicate anything. In addition, positions sold in full are hidden from the list (with a checkbox to show them) and derivatives go to a separate, collapsed section that does not add to the totals; a new Learn article explains what they are. And Sextante now measures which pages and tools are used, with Umami hosted on our own server: no cookies, no third parties, no stored IP address, and none of the values you type into the calculators. The privacy policy explains exactly what is recorded."
+        "es": "Hasta hoy, un asistente conectado por MCP (Claude, ChatGPT…) solo veía y editaba tu cartera. Ahora puede usar todo Sextante: las 27 calculadoras (hipotecas, salario neto e IRPF por comunidad, FIRE y Monte Carlo, impuestos de patrimonio y donaciones…), tus plusvalías realizadas de cada ejercicio para preparar la Renta, el reparto de tu cartera y su progreso hacia tu objetivo FIRE, y los escenarios que guardaste. Lo hace con exactamente el mismo código que la web: hemos movido las calculadoras y el motor fiscal a un núcleo compartido, así que el asistente y la página no pueden dar cifras distintas. Además, ya puedes traer tus compras y ventas de Trade Republic desde su fichero de exportación, con vista previa y sin duplicar nada al reimportar; las posiciones vendidas del todo se ocultan (con una casilla para verlas) y los derivados van a una sección aparte que no suma a los totales, con un nuevo artículo en Aprende. Y empezamos a medir qué páginas se usan con Umami en nuestro propio servidor: sin cookies, sin terceros y sin recoger los valores de las calculadoras.",
+        "en": "Until today, an assistant connected over MCP (Claude, ChatGPT…) could only see and edit your portfolio. Now it can use all of Sextante: the 27 calculators (mortgages, net salary and income tax by region, FIRE and Monte Carlo, wealth and gift tax…), your realised gains for each tax year to prepare your return, your portfolio breakdown and its progress towards your FIRE goal, and the scenarios you saved. It runs exactly the same code as the website: we moved the calculators and the tax engine into a shared core, so the assistant and the page can never give different numbers. You can also bring your Trade Republic buys and sells from its export file, with a preview and no duplicates when you import again; positions sold in full are hidden (with a checkbox to show them) and derivatives go to a separate section that does not add to the totals, with a new Learn article. And we started measuring which pages are used with Umami on our own server: no cookies, no third parties and none of the values you type into the calculators."
       },
       "highlight": true,
       "entries": [
+        {
+          "hash": "66755712",
+          "type": "fix",
+          "scope": "mcp",
+          "category": "fix",
+          "text": {
+            "es": "los derivados no entran en el reparto que ve el asistente",
+            "en": "derivatives stay out of the breakdown the assistant sees"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "74103444",
+          "type": "docs",
+          "scope": "wiki",
+          "category": "internal",
+          "text": {
+            "es": "el artículo de derivados cita solo la consulta de Tributos que les aplica",
+            "en": "the derivatives article cites only the tax ruling that covers them"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "24f445d0",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "la política de privacidad aclara que los valores que el asistente envía a las calculadoras no se guardan",
+            "en": "the privacy policy makes clear that the values the assistant sends to the calculators are not stored"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "1d18bad7",
+          "type": "refactor",
+          "scope": "landing",
+          "category": "internal",
+          "text": {
+            "es": "la portada deja de anunciar el MCP como novedad",
+            "en": "the home page stops announcing MCP as new"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "f90e1835",
+          "type": "feat",
+          "scope": "mcp",
+          "category": "milestone",
+          "text": {
+            "es": "tu asistente de IA puede usar todas las calculadoras y analizar tu cartera: plusvalías por ejercicio para la Renta, reparto, progreso hacia tu objetivo FIRE y escenarios guardados",
+            "en": "your AI assistant can use every calculator and analyse your portfolio: realised gains by tax year, breakdown, progress towards your FIRE goal and saved scenarios"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "9eb35607",
+          "type": "refactor",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "la puntuación del test de salud financiera se comparte entre la web y el asistente",
+            "en": "the financial health score is shared between the website and the assistant"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "3e94af6f",
+          "type": "chore",
+          "scope": "deps-dev",
+          "category": "internal",
+          "text": {
+            "es": "librerías al día",
+            "en": "libraries up to date"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "5eabae02",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se redacta la entrega de la importación",
+            "en": "the import release is written up"
+          },
+          "hidden": true
+        },
         {
           "hash": "62ab9d06",
           "type": "docs",
@@ -36,6 +124,17 @@
           "hidden": false
         },
         {
+          "hash": "c03a2970",
+          "type": "chore",
+          "scope": "deps-dev",
+          "category": "internal",
+          "text": {
+            "es": "librerías al día",
+            "en": "libraries up to date"
+          },
+          "hidden": true
+        },
+        {
           "hash": "d17d52e6",
           "type": "feat",
           "scope": "api",
@@ -45,6 +144,28 @@
             "en": "derivatives stay out of the valuation and sale rounding no longer leaves a position negative"
           },
           "hidden": true
+        },
+        {
+          "hash": "83c17d70",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "la documentación apunta al nuevo núcleo compartido",
+            "en": "the docs point to the new shared core"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "91d60056",
+          "type": "refactor",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "las calculadoras y el motor de proyección pasan a un núcleo compartido por la web y la API: las mismas cuentas en los dos sitios",
+            "en": "the calculators and the projection engine move to a core shared by the website and the API: the same maths in both places"
+          },
+          "hidden": false
         },
         {
           "hash": "821dc5c5",
