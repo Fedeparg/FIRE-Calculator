@@ -186,6 +186,42 @@ describe('McpService', () => {
     expect(simulated).toHaveProperty('simulation.successRate');
   });
 
+  it('mide también un objetivo de cantidad en un plazo', async () => {
+    const { service } = makeService();
+    client = await connect(service);
+
+    const result = parse(
+      await client.callTool({
+        name: 'get_fire_goal_progress',
+        arguments: { targetAmount: 1_200_000, targetYears: 10, contribution: 0, annualReturn: 0, display: 'USD' },
+      }),
+    );
+    // 600.000 de cartera sin aportar ni rentabilidad: no llega, y necesita 5.000 al mes.
+    expect(result).toMatchObject({
+      mode: 'amount',
+      target: 1_200_000,
+      current: 600_000,
+      progress: 50,
+      deadlineYears: 10,
+      onTrack: false,
+    });
+    expect((result as { requiredContribution: number }).requiredContribution).toBeCloseTo(5000, 6);
+  });
+
+  it('rechaza mezclar los dos modos o dejar uno a medias', async () => {
+    const { service } = makeService();
+    client = await connect(service);
+
+    for (const args of [
+      { targetAmount: 1000, contribution: 0, annualReturn: 5 },
+      { annualExpenses: 24_000, contribution: 0, annualReturn: 5 },
+      { annualExpenses: 24_000, withdrawalRate: 4, targetAmount: 1000, targetYears: 5, contribution: 0, annualReturn: 5 },
+    ]) {
+      const result = (await client.callTool({ name: 'get_fire_goal_progress', arguments: args })) as CallToolResult;
+      expect(result.isError).toBe(true);
+    }
+  });
+
   it('delega el reparto y los escenarios en sus servicios, con el usuario del token', async () => {
     const { service, valuation, scenarios } = makeService();
     client = await connect(service);
