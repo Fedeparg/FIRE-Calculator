@@ -86,7 +86,9 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
 
   const getInputs = useCallback(() => completeValues(values, specsRef.current), [values]);
 
-  const flushUrl = useCallback(() => {
+  // Única vía de escritura a la URL: la comparten el efecto con retardo y `flushUrl`.
+  // Solo llama a `replaceState` si algo cambió, y devuelve el enlace completo.
+  const writeUrl = useCallback(() => {
     const search = encodeCalculatorState(window.location.search, values, specsRef.current);
     const { origin, pathname, hash } = window.location;
     if (search !== window.location.search) {
@@ -105,18 +107,13 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
 
   useEffect(() => {
     if (!hydrated) return;
-    const timer = setTimeout(() => {
-      const search = encodeCalculatorState(window.location.search, values, specsRef.current);
-      if (search === window.location.search) return;
-      const { pathname, hash } = window.location;
-      window.history.replaceState(null, "", `${pathname}${search}${hash}`);
-    }, URL_SYNC_DELAY_MS);
+    const timer = setTimeout(writeUrl, URL_SYNC_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [values, hydrated]);
+  }, [writeUrl, hydrated]);
 
   const context = useMemo<CalculatorStateContextValue>(
-    () => ({ slug, values, hasFields, registerField, setValue, applyInputs, getInputs, flushUrl }),
-    [slug, values, hasFields, registerField, setValue, applyInputs, getInputs, flushUrl],
+    () => ({ slug, values, hasFields, registerField, setValue, applyInputs, getInputs, flushUrl: writeUrl }),
+    [slug, values, hasFields, registerField, setValue, applyInputs, getInputs, writeUrl],
   );
 
   return (
