@@ -1,24 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
 import { trackEvent } from "@/components/analytics/track";
 import { Link } from "@/i18n/navigation";
-import {
-  scenarioErrorKeyForResponse,
-  scenarioErrorKeyForStatus,
-  type SavedScenario,
-  type ScenarioErrorKey,
-} from "@/lib/scenarios";
+import { type SavedScenario } from "@/shared/api/saved-scenarios";
+import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
 import { useCalculatorState } from "./CalculatorState";
-
-/**
- * Qué se sabe de la sesión. `unknown` es el estado inicial: no se pinta nada hasta que la
- * API contesta, para no enseñar un panel que luego desaparece.
- */
-type SessionState = "unknown" | "anonymous" | "authenticated";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
@@ -44,11 +34,11 @@ export default function ScenarioPanel() {
   const state = useCalculatorState();
   const slug = state?.slug;
 
-  const [session, setSession] = useState<SessionState>("unknown");
-  const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
+  // Sesión y lista: la propia respuesta dice si hay sesión (401); el estado `loading` es el
+  // `unknown` de antes y no pinta nada hasta que la API contesta.
+  const { status, scenarios, error: errorKey, create, update, remove } = useSavedScenarios(slug);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [errorKey, setErrorKey] = useState<ScenarioErrorKey | null>(null);
   // Escenario en proceso de renombrado y el texto que se está escribiendo.
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -58,114 +48,29 @@ export default function ScenarioPanel() {
   // Nombre del escenario recién cargado, para anunciarlo en la región viva.
   const [loadedName, setLoadedName] = useState<string | null>(null);
 
-  // Carga inicial: la propia respuesta dice si hay sesión (401) y, si la hay, trae la lista.
-  useEffect(() => {
-    if (!slug) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/scenarios?slug=${encodeURIComponent(slug)}`, {
-          cache: "no-store",
-        });
-        if (cancelled) return;
-        if (res.status === 401) {
-          setSession("anonymous");
-          return;
-        }
-        if (!res.ok) {
-          setSession("authenticated");
-          setErrorKey(scenarioErrorKeyForStatus(res.status));
-          return;
-        }
-        setScenarios((await res.json()) as SavedScenario[]);
-        setSession("authenticated");
-      } catch {
-        // Sin respuesta no se puede afirmar que haya sesión: se trata como anónimo y la
-        // calculadora sigue funcionando (los escenarios son un extra de la cuenta).
-        if (!cancelled) setSession("anonymous");
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [slug]);
-
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     if (!state || !slug) return;
-    const trimmed = name.trim();
-    if (!trimmed) {
-      setErrorKey("errorInvalid");
-      return;
-    }
     setSaving(true);
-    setErrorKey(null);
-    try {
-      const res = await fetch("/api/scenarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // `getInputs()` da el estado COMPLETO (con los valores por defecto), no solo lo
-        // que se ha tocado: así el escenario reproduce el cálculo entero al cargarlo.
-        body: JSON.stringify({ slug, name: trimmed, inputs: state.getInputs() }),
-      });
-      if (res.ok) {
-        const created = (await res.json()) as SavedScenario;
-        // Más recientes primero, igual que el orden del backend.
-        setScenarios((prev) => [created, ...prev]);
-        setName("");
-        trackEvent({ name: "scenario-saved", data: { calculator: slug } });
-      } else {
-        setErrorKey(await scenarioErrorKeyForResponse(res));
-      }
-    } catch {
-      setErrorKey("errorNetwork");
-    } finally {
-      setSaving(false);
+    // `getInputs()` da el estado COMPLETO (con los valores por defecto), no solo lo que se
+    // ha tocado: así el escenario reproduce el cálculo entero al cargarlo.
+    const created = await create(name, state.getInputs());
+    setSaving(false);
+    if (created) {
+      setName("");
+      trackEvent({ name: "scenario-saved", data: { calculator: slug } });
     }
   }
 
   async function handleRename(id: string) {
-    const trimmed = renameValue.trim();
-    if (!trimmed) {
-      setErrorKey("errorInvalid");
-      return;
-    }
-    setErrorKey(null);
-    try {
-      const res = await fetch(`/api/scenarios/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: trimmed }),
-      });
-      if (res.ok) {
-        const updated = (await res.json()) as SavedScenario;
-        setScenarios((prev) => prev.map((s) => (s.id === id ? updated : s)));
-        setRenamingId(null);
-      } else {
-        setErrorKey(await scenarioErrorKeyForResponse(res));
-      }
-    } catch {
-      setErrorKey("errorNetwork");
-    }
+    if (await update(id, { name: renameValue })) setRenamingId(null);
   }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    setErrorKey(null);
-    try {
-      const res = await fetch(`/api/scenarios/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setScenarios((prev) => prev.filter((s) => s.id !== id));
-      } else {
-        setErrorKey(scenarioErrorKeyForStatus(res.status));
-      }
-    } catch {
-      setErrorKey("errorNetwork");
-    } finally {
-      setDeletingId(null);
-      setConfirmingId(null);
-    }
+    await remove(id);
+    setDeletingId(null);
+    setConfirmingId(null);
   }
 
   function handleLoad(scenario: SavedScenario) {
@@ -175,9 +80,9 @@ export default function ScenarioPanel() {
 
   // Mientras no se sepa si hay sesión no se pinta nada (evita el parpadeo de un panel que
   // aparece y desaparece), igual que en la navegación de cabecera.
-  if (session === "unknown") return null;
+  if (status === "loading") return null;
 
-  if (session === "anonymous") {
+  if (status === "anonymous") {
     return (
       <p className="border-t border-border pt-3 text-sm text-muted">
         {t("signedOut")}{" "}
