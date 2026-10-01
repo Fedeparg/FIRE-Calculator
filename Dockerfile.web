@@ -8,7 +8,7 @@
 # raíz mantiene el contexto pequeño y fuera cualquier `.env`.
 
 # ---- Base común ----
-FROM node:24-slim AS base
+FROM node:25-slim AS base
 ENV CI=true
 RUN corepack enable
 # Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
@@ -66,7 +66,7 @@ COPY . .
 RUN pnpm build
 
 # ---- Runtime ----
-FROM node:24-slim AS runtime
+FROM node:25-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 # El servidor escucha en 0.0.0.0:3000 por defecto (Next standalone).
