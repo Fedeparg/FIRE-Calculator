@@ -1074,13 +1074,13 @@
       "errorCta": "Back to sign in"
     },
     "portfolio": {
-      "greeting": "Hi, {email}",
       "title": "Your portfolio",
       "logout": "Sign out"
     },
     "nav": {
       "login": "Sign in",
-      "portfolio": "My portfolio"
+      "portfolio": "My portfolio",
+      "accountMenu": "Your account"
     }
   },
   "portfolio": {
@@ -1360,8 +1360,6 @@
       "disclaimerFx": "On top of that, your position is in {currency}: the gain is converted to euros at today's exchange rate, not the one that would apply on the day of a real sale."
     },
     "realisedGains": {
-      "link": "Capital gains",
-      "back": "← Back to portfolio",
       "title": "Realised gains and losses",
       "subtitle": "The sales you have recorded, matched against their purchases FIFO and grouped by tax year, to help with your Spanish tax return.",
       "empty": "You have not recorded any sales yet. Once you add one to a position's transactions, it will show up here with its gain or loss.",
@@ -1520,7 +1518,19 @@
       "notice": "Sextante does not track the price of derivatives (futures, options, warrants, knock-outs…). They are stored with their transactions and count in the capital gains report, but they are not valued and do not enter the portfolio totals.",
       "learnMore": "What derivatives are"
     },
-    "guideLink": "What can you do here? Portfolio guide"
+    "guideLink": "What can you do here? Portfolio guide",
+    "tabs": {
+      "label": "Portfolio sections",
+      "summary": "Summary",
+      "positions": "Positions",
+      "gains": "Capital gains",
+      "goal": "FIRE goal",
+      "addPosition": "Add position",
+      "addFirst": "Add your first position",
+      "summaryTitle": "Your portfolio",
+      "positionsTitle": "Your portfolio positions",
+      "goalTitle": "Your FIRE goal"
+    }
   },
   "account": {
     "link": "My account",
