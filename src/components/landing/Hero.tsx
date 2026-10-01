@@ -8,7 +8,7 @@ export default function Hero() {
 
   return (
     <section className="mx-auto max-w-5xl px-4 pt-12 pb-8 sm:pt-16">
-      <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <span className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium uppercase tracking-wide text-muted">
             {t("eyebrow")}

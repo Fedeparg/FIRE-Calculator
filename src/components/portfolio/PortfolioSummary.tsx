@@ -84,7 +84,7 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
   const gain = yearGain?.display === display ? yearGain.gain : null;
 
   return (
-    <section className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-6 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
+    <section className="flex min-w-0 flex-col gap-5 rounded-2xl border border-border bg-surface p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex flex-col gap-1">
         <h2 className="text-sm text-muted">{t("marketValue")}</h2>
         <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums sm:text-5xl">
@@ -101,7 +101,7 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:gap-10">
-        <dl className="flex gap-8">
+        <dl className="flex flex-wrap gap-x-8 gap-y-4">
           <div className="flex flex-col gap-1">
             <dt className="text-sm text-muted">{t("invested")}</dt>
             <dd className="text-xl font-semibold tabular-nums text-foreground">

@@ -83,6 +83,10 @@ export default function PortfolioHistoryChart({ display }: Props) {
     value: (row) => (row.estimated ? t("estimatedYes") : t("estimatedNo")),
   };
 
+  // Último valor de la serie: en el móvil sustituye al eje Y como referencia de escala.
+  const lastPoint = series.points.at(-1);
+  const lastValue = typeof lastPoint?.marketValue === "number" ? lastPoint.marketValue : null;
+
   const changeColor =
     series.changeAbs === null || series.changeAbs === 0
       ? "text-foreground"
@@ -91,24 +95,27 @@ export default function PortfolioHistoryChart({ display }: Props) {
         : "text-danger";
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
+    // `min-w-0` + `overflow-hidden`: la caja no puede ser más ancha que su columna, pase lo que
+    // pase dentro (en un iPhone real la gráfica llegó a sacarla de la pantalla).
+    <section className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground">{t("title")}</h2>
-        <div className="inline-flex shrink-0 rounded-lg border border-border p-0.5" role="group" aria-label={t("rangeLabel")}>
+        {/* Desplegable nativo: ocupa poco, y en el móvil abre el selector del sistema. */}
+        <select
+          aria-label={t("rangeLabel")}
+          value={range}
+          onChange={(event) => {
+            const next = HISTORY_RANGES.find(({ key }) => key === event.target.value);
+            if (next) setRange(next.key);
+          }}
+          className="min-h-9 rounded-lg border border-border bg-surface px-2.5 py-1 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+        >
           {HISTORY_RANGES.map(({ key }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setRange(key)}
-              aria-pressed={range === key}
-              className={`rounded-md px-2.5 py-1 text-xs font-medium transition ${
-                range === key ? "bg-brand text-brand-fg" : "text-muted hover:text-foreground"
-              }`}
-            >
+            <option key={key} value={key}>
               {t(`range.${key}`)}
-            </button>
+            </option>
           ))}
-        </div>
+        </select>
       </div>
 
       {status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
@@ -125,8 +132,13 @@ export default function PortfolioHistoryChart({ display }: Props) {
         <>
           {/* La variación del periodo, en una sola línea: el importe manda y el rango de fechas
               acompaña. */}
+          {lastValue !== null && (
+            <p className="text-2xl font-semibold tabular-nums text-foreground">
+              {formatCurrency(lastValue, display)}
+            </p>
+          )}
           {series.changeAbs !== null && series.from && series.to && (
-            <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+            <p className="-mt-3 flex flex-wrap items-baseline gap-x-2 text-sm">
               <span className={`font-semibold tabular-nums ${changeColor}`}>
                 {series.changeAbs > 0 ? "+" : ""}
                 {formatCurrency(series.changeAbs, display)}
@@ -175,6 +187,8 @@ export default function PortfolioHistoryChart({ display }: Props) {
             // Un valor base alto con poca variación se aplana pegado al 0: se ajusta el eje
             // al rango real de la cartera en vez de forzar el suelo en cero.
             yDomain="fit"
+            // En el móvil, sin eje Y: el valor y la variación van encima, y el tooltip da cada día.
+            yAxis="fromSm"
           />
 
           {series.estimatedRanges.length > 0 && (

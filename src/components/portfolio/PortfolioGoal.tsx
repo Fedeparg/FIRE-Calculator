@@ -363,8 +363,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   return (
     <section className="flex flex-col gap-5 rounded-2xl border border-border bg-surface p-6">
       <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-semibold text-foreground">{t("title")}</h2>
-        <p className="text-sm text-muted">{t("intro")}</p>
+        <h2 className="text-lg font-semibold text-foreground">{t(mode === "amount" ? "titleAmount" : "title")}</h2>
+        <p className="text-sm text-muted">{t(mode === "amount" ? "introAmount" : "intro")}</p>
       </div>
 
       {scenarios.length > 0 && (

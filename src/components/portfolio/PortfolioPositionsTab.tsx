@@ -98,7 +98,7 @@ export default function PortfolioPositionsTab() {
   }
 
   return (
-    <div className={`grid items-start gap-6 ${panelOpen ? "lg:grid-cols-[minmax(0,1fr)_26rem]" : ""}`}>
+    <div className={`grid grid-cols-1 items-start gap-6 ${panelOpen ? "lg:grid-cols-[minmax(0,1fr)_26rem]" : ""}`}>
       <div className="flex min-w-0 flex-col gap-4">
         {positions.length === 0 ? (
           <div className="rounded-2xl border border-border bg-surface p-8 text-center">
