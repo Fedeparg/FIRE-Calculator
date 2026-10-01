@@ -2,6 +2,7 @@ import { Injectable, Logger, type OnApplicationBootstrap, type OnModuleInit } fr
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 
+import type { Env } from '../config/env.js';
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PricesService } from '../prices/prices.service.js';
@@ -41,14 +42,14 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     private readonly prices: PricesService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly fireAlerts: FireAlertsService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
     private readonly registry: SchedulerRegistry,
   ) {}
 
   onModuleInit(): void {
     const cronTime = scheduleFromEnv(this.registry, {
       name: 'daily-portfolio-jobs',
-      cronTime: this.config.get<string>('PRICE_REFRESH_CRON'),
+      cronTime: this.config.get('PRICE_REFRESH_CRON', { infer: true }),
       defaultCron: DEFAULT_CRON,
       handler: () => void this.run(),
     });
@@ -56,7 +57,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
 
     const intradayTime = scheduleFromEnv(this.registry, {
       name: 'intraday-price-refresh',
-      cronTime: this.config.get<string>('PRICE_INTRADAY_CRON'),
+      cronTime: this.config.get('PRICE_INTRADAY_CRON', { infer: true }),
       defaultCron: DEFAULT_INTRADAY_CRON,
       handler: () => void this.runIntraday(),
       off: INTRADAY_OFF,

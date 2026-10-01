@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
+import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 
@@ -15,8 +16,8 @@ import { SESSION_TTL_SECONDS } from './session.constants.js';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
+      useFactory: (config: ConfigService<Env, true>) => ({
+        secret: config.getOrThrow('JWT_SECRET', { infer: true }),
         signOptions: { expiresIn: SESSION_TTL_SECONDS },
       }),
     }),

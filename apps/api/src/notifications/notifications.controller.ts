@@ -2,6 +2,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post, Query, UseGua
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 
+import type { Env } from '../config/env.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
@@ -44,9 +45,9 @@ export class UnsubscribeController {
 
   constructor(
     private readonly settings: NotificationSettingsService,
-    config: ConfigService,
+    config: ConfigService<Env, true>,
   ) {
-    this.secret = config.getOrThrow<string>('JWT_SECRET');
+    this.secret = config.getOrThrow('JWT_SECRET', { infer: true });
   }
 
   @Post('unsubscribe')

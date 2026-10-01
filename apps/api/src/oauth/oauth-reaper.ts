@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 
+import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
@@ -11,7 +12,7 @@ import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 const DEFAULT_CRON = '0 15 * * * *';
 
 /**
- * Retenciones por defecto, en días. Criterios:
+ * Retenciones (defecto en `config/env.ts`), en días. Criterios:
  *  - `login_tokens`: un magic link vive 15 min; 30 días de cola es margen de sobra para
  *    poder investigar un incidente de acceso reciente sin guardar historial indefinido.
  *  - `mcp_audit_log`: 180 días, para poder reconstruir qué hizo un cliente LLM durante un
@@ -19,9 +20,7 @@ const DEFAULT_CRON = '0 15 * * * *';
  *  - `oauth_clients`: 30 días sin uso y sin consentimiento ni token vivo = registro DCR
  *    abandonado (un cliente que se registró y nunca completó el flujo).
  */
-const DEFAULT_LOGIN_TOKEN_RETENTION_DAYS = 30;
-const DEFAULT_MCP_AUDIT_RETENTION_DAYS = 180;
-const DEFAULT_OAUTH_CLIENT_RETENTION_DAYS = 30;
+type RetentionKey = 'LOGIN_TOKEN_RETENTION_DAYS' | 'MCP_AUDIT_RETENTION_DAYS' | 'OAUTH_CLIENT_RETENTION_DAYS';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -56,14 +55,14 @@ export class OAuthReaper implements OnModuleInit {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
     private readonly registry: SchedulerRegistry,
   ) {}
 
   onModuleInit(): void {
     const cronTime = scheduleFromEnv(this.registry, {
       name: 'oauth-reaper',
-      cronTime: this.config.get<string>('OAUTH_REAPER_CRON'),
+      cronTime: this.config.get('OAUTH_REAPER_CRON', { infer: true }),
       defaultCron: DEFAULT_CRON,
       handler: () => void this.runSafely(),
     });
@@ -128,7 +127,7 @@ export class OAuthReaper implements OnModuleInit {
    * fecha que fija de verdad cuánto tiempo llevamos guardando el dato.
    */
   private async reapLoginTokens(now: Date): Promise<number> {
-    const cutoff = this.cutoff(now, 'LOGIN_TOKEN_RETENTION_DAYS', DEFAULT_LOGIN_TOKEN_RETENTION_DAYS);
+    const cutoff = this.cutoff(now, 'LOGIN_TOKEN_RETENTION_DAYS');
     const rows = await this.db
       .delete(loginTokens)
       .where(
@@ -142,7 +141,7 @@ export class OAuthReaper implements OnModuleInit {
   }
 
   private async reapAuditLog(now: Date): Promise<number> {
-    const cutoff = this.cutoff(now, 'MCP_AUDIT_RETENTION_DAYS', DEFAULT_MCP_AUDIT_RETENTION_DAYS);
+    const cutoff = this.cutoff(now, 'MCP_AUDIT_RETENTION_DAYS');
     const rows = await this.db
       .delete(mcpAuditLog)
       .where(lt(mcpAuditLog.createdAt, cutoff))
@@ -161,7 +160,7 @@ export class OAuthReaper implements OnModuleInit {
    * criterio "sin grants ni tokens" las salva. Un cliente en uso real siempre tiene grant.
    */
   private async reapAbandonedClients(now: Date): Promise<number> {
-    const cutoff = this.cutoff(now, 'OAUTH_CLIENT_RETENTION_DAYS', DEFAULT_OAUTH_CLIENT_RETENTION_DAYS);
+    const cutoff = this.cutoff(now, 'OAUTH_CLIENT_RETENTION_DAYS');
     const rows = await this.db
       .delete(oauthClients)
       .where(
@@ -186,13 +185,9 @@ export class OAuthReaper implements OnModuleInit {
     return rows.length;
   }
 
-  /**
-   * Fecha de corte para una retención configurable. Un valor ausente, no numérico o ≤ 0 cae
-   * al defecto: un typo en el entorno no debe convertirse en un borrado agresivo.
-   */
-  private cutoff(now: Date, envKey: string, defaultDays: number): Date {
-    const parsed = Number.parseInt(this.config.get<string>(envKey)?.trim() ?? '', 10);
-    const days = Number.isInteger(parsed) && parsed > 0 ? parsed : defaultDays;
+  /** Fecha de corte para una retención configurable (ya validada, con su defecto, en `config/env.ts`). */
+  private cutoff(now: Date, key: RetentionKey): Date {
+    const days = this.config.get(key, { infer: true });
     return new Date(now.getTime() - days * MS_PER_DAY);
   }
 }

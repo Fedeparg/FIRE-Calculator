@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 
+import type { Env } from '../config/env.js';
 import { DonationsController } from './donations.controller.js';
 import { STRIPE_CLIENT } from './donations.constants.js';
 import { DonationsService } from './donations.service.js';
@@ -19,8 +20,8 @@ import { DonationsService } from './donations.service.js';
     {
       provide: STRIPE_CLIENT,
       inject: [ConfigService],
-      useFactory: (config: ConfigService): Stripe | null => {
-        const key = config.get<string>('STRIPE_SECRET_KEY');
+      useFactory: (config: ConfigService<Env, true>): Stripe | null => {
+        const key = config.get('STRIPE_SECRET_KEY', { infer: true });
         return key ? new Stripe(key) : null;
       },
     },

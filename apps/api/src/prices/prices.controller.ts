@@ -1,6 +1,7 @@
 import { Controller, ForbiddenException, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
 
@@ -10,7 +11,7 @@ import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from
 export class PricesController {
   constructor(
     private readonly prices: PricesService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /** `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original. */
@@ -34,7 +35,7 @@ export class PricesController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(): Promise<RefreshSummary> {
-    if (this.config.get<string>('NODE_ENV') === 'production') {
+    if (this.config.get('NODE_ENV', { infer: true }) === 'production') {
       throw new ForbiddenException('El refresco manual está deshabilitado en producción');
     }
     return this.prices.refreshAll();

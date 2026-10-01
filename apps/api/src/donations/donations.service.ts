@@ -2,6 +2,7 @@ import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config';
 import type Stripe from 'stripe';
 
+import type { Env } from '../config/env.js';
 import { STRIPE_CLIENT } from './donations.constants.js';
 
 /**
@@ -17,7 +18,7 @@ import { STRIPE_CLIENT } from './donations.constants.js';
 export class DonationsService {
   constructor(
     @Inject(STRIPE_CLIENT) private readonly stripe: Stripe | null,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /** True si Stripe está configurado (hay STRIPE_SECRET_KEY). */
@@ -34,7 +35,7 @@ export class DonationsService {
       throw new ServiceUnavailableException('Donaciones no configuradas');
     }
 
-    const appUrl = this.config.get<string>('APP_URL') ?? 'http://localhost:3000';
+    const appUrl = this.config.getOrThrow('APP_URL', { infer: true });
     // El locale por defecto (es) no lleva prefijo en la URL; en lleva /en.
     const base = locale === 'en' ? `${appUrl}/en` : appUrl;
 
