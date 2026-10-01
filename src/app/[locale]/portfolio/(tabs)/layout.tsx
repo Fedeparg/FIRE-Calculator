@@ -6,7 +6,7 @@ import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
 import { getSessionUser } from "@/lib/session";
 import { fetchPositions } from "@/lib/portfolio.server";
-import { ADD_POSITION_ANCHOR } from "@/components/portfolio/anchors";
+import { ADD_POSITION_HREF } from "@/components/portfolio/add-position";
 import PortfolioDataProvider from "@/components/portfolio/PortfolioDataProvider";
 import PortfolioTabs from "@/components/portfolio/PortfolioTabs";
 
@@ -53,7 +53,7 @@ export default async function PortfolioTabsLayout({ children, params }: Props) {
             {tPortfolio("import.link")}
           </Link>
           <Link
-            href={`/portfolio/posiciones#${ADD_POSITION_ANCHOR}`}
+            href={ADD_POSITION_HREF}
             className="inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-brand-fg transition hover:opacity-90"
           >
             {tPortfolio("tabs.addPosition")}

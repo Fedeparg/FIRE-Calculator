@@ -124,7 +124,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
         <p className="text-xs text-muted">{t("intro")}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 @md:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="sale-quantity" className="text-sm font-medium text-foreground">
             {t("quantity")}
@@ -192,7 +192,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
 
       {showResults && (
         <>
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-4 @lg:grid-cols-3">
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted">{t("transferValue")}</dt>
               <dd className="text-lg font-semibold tabular-nums text-foreground">
@@ -221,7 +221,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
               {t("taxNotConvertible", { from: currency, to: TAX_CURRENCY })}
             </p>
           ) : (
-            <dl className="grid grid-cols-1 gap-4 rounded-lg border border-border bg-surface-2 p-4 sm:grid-cols-3">
+            <dl className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-surface-2 p-4 @lg:grid-cols-3">
               <div className="flex flex-col gap-1">
                 <dt className="text-sm text-muted">{t("taxBase")}</dt>
                 <dd className="text-lg font-semibold tabular-nums text-foreground">

@@ -1158,7 +1158,6 @@
     },
     "export": {
       "button": "Download CSV",
-      "hint": "Download your positions as a CSV, ready to open in Excel or Google Sheets.",
       "error": "The file could not be generated. Please try again.",
       "headers": {
         "ticker": "Symbol",
@@ -1174,32 +1173,33 @@
       }
     },
     "list": {
-      "ticker": "Symbol / ISIN",
-      "name": "Name",
       "quantity": "Quantity",
       "avgPrice": "Avg. price",
-      "broker": "Broker",
       "invested": "Invested",
       "marketValue": "Current value",
-      "pnl": "P&L",
-      "pnlMode": "P&L in",
-      "pnlModePct": "%",
-      "pnlModeAbs": "Amount",
-      "priceAsOf": "Price as of {date}",
       "stalePrice": "Price as of {date}, older than the portfolio's last refresh ({latest}): this value is not up to date.",
       "sortBy": "Sort by {field}",
       "pricePending": "Looking up price…",
       "pricePendingHint": "We are locating this symbol's quote; it will update by itself in a moment.",
       "noPrice": "No market price yet for this symbol.",
-      "actions": "Actions",
-      "edit": "Edit",
-      "delete": "Delete",
       "confirm": "Yes, delete",
       "cancel": "Cancel",
       "deleting": "Deleting…",
-      "noFxRate": "No {price}→{position} exchange rate yet to convert the value.",
-      "lots": "Lots",
-      "confirmDeleteWithSales": "It has recorded sales: deleting it also removes them from your capital gains report."
+      "confirmDeleteWithSales": "It has recorded sales: deleting it also removes them from your capital gains report.",
+      "asset": "Asset",
+      "weight": "Weight",
+      "gain": "Gain",
+      "sortLabel": "Sort by",
+      "sort": {
+        "invested": "Amount invested",
+        "name": "Name",
+        "marketValue": "Current value",
+        "pnl": "Gain"
+      },
+      "sortedAsc": "{field}, ascending. Press to reverse",
+      "sortedDesc": "{field}, descending. Press to reverse",
+      "notTracked": "Price not tracked",
+      "noPriceShort": "No price"
     },
     "form": {
       "title": "Add position",
@@ -1290,10 +1290,6 @@
       "excluded": "{count} of {total} positions are left out of the split (no price, or currency not convertible)."
     },
     "lots": {
-      "title": "{ticker} trades",
-      "snapshot": "Right now: {quantity} units at an average price of {avgPrice}.",
-      "explainer": "The position is the snapshot (how much you hold and at what average price) and the lots are the film (every buy and every sell, with its date). When you add, edit or delete a lot, the server recalculates the position's quantity and average price on its own.",
-      "close": "Close",
       "loading": "Loading trades…",
       "loadError": "The trades could not be loaded. Please try again in a moment.",
       "empty": "This position has no trades recorded yet.",
@@ -1303,11 +1299,9 @@
       "kindBuy": "Buy",
       "kindSell": "Sell",
       "quantity": "Quantity",
-      "priceShort": "Price",
       "feesShort": "Fees",
       "note": "Note",
       "notePlaceholder": "e.g. monthly contribution",
-      "actions": "Actions",
       "edit": "Edit",
       "delete": "Delete",
       "confirmDelete": "Yes, delete",
@@ -1510,11 +1504,7 @@
       },
       "disclaimer": "Indicative information, not financial or tax advice. Check the imported data against your Trade Republic statement."
     },
-    "closed": {
-      "toggle": "Show closed positions ({count})"
-    },
     "derivatives": {
-      "title": "Derivatives ({count})",
       "notice": "Sextante does not track the price of derivatives (futures, options, warrants, knock-outs…). They are stored with their transactions and count in the capital gains report, but they are not valued and do not enter the portfolio totals.",
       "learnMore": "What derivatives are"
     },
@@ -1530,6 +1520,34 @@
       "summaryTitle": "Your portfolio",
       "positionsTitle": "Your portfolio positions",
       "goalTitle": "Your FIRE goal"
+    },
+    "panel": {
+      "close": "Close panel"
+    },
+    "detail": {
+      "priceOn": "Price ({date})",
+      "viewLabel": "What to show for this position",
+      "viewLots": "Transactions",
+      "viewSale": "Simulate a sale",
+      "editPosition": "Edit position",
+      "deletePosition": "Delete",
+      "deleteError": "The position could not be deleted. Please try again."
+    },
+    "positions": {
+      "searchLabel": "Search positions",
+      "searchPlaceholder": "Search by name, symbol or broker",
+      "filterLabel": "Which positions to show",
+      "filter": {
+        "open": "Open",
+        "closed": "Closed",
+        "derivatives": "Derivatives"
+      },
+      "noMatches": "No position matches your search.",
+      "empty": {
+        "open": "You have no open positions.",
+        "closed": "You have no closed positions: positions you have sold in full show up here.",
+        "derivatives": "You have no derivatives."
+      }
     }
   },
   "account": {
