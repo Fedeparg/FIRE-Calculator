@@ -14,6 +14,50 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "598525e7",
+          "type": "chore",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "ignora el commit de Prettier en git blame",
+            "en": "ignore the Prettier commit in git blame"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "a8f4d690",
+          "type": "style",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "formatea el código con Prettier",
+            "en": "format the codebase with Prettier"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "3547518a",
+          "type": "chore",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "añade Prettier y lo comprueba en lint",
+            "en": "add Prettier and check formatting in lint"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "9626b598",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe el cambio del sombreado estimado",
+            "en": "describe the estimated shading change"
+          },
+          "hidden": true
+        },
+        {
           "hash": "9a4bca03",
           "type": "fix",
           "scope": "api",
