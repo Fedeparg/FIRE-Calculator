@@ -14,6 +14,50 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "108061f1",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "las posiciones recién importadas muestran «Buscando precio…» y la cartera se actualiza sola hasta que llega la cotización",
+            "en": "newly imported positions show \"Looking up price…\" and the portfolio refreshes by itself until the quote arrives"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "50a2f48f",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "lógica y textos del estado de precio pendiente",
+            "en": "logic and copy for the pending price state"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "85f4e00b",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "el hito del MCP completo se anuncia en el registro de cambios",
+            "en": "the full MCP milestone is announced in the changelog"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "05a4e8fc",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "la documentación cuenta 26 herramientas de calculadoras, 42 en total",
+            "en": "the docs count 26 calculator tools, 42 in all"
+          },
+          "hidden": true
+        },
+        {
           "hash": "66755712",
           "type": "fix",
           "scope": "mcp",
