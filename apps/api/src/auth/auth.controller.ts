@@ -1,23 +1,10 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Header,
-  HttpCode,
-  HttpStatus,
-  Logger,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Logger, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 
 import type { Env } from '../config/env.js';
-import { AuthService, type AccountExport, type SessionUser } from './auth.service.js';
+import { AuthService, type SessionUser } from './auth.service.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { RequestLinkDto } from './dto/request-link.dto.js';
 import { VerifyDto } from './dto/verify.dto.js';
@@ -68,17 +55,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: SessionUser): SessionUser {
     return user;
-  }
-
-  /**
-   * RGPD — derecho de acceso/portabilidad: descarga un JSON con el email del usuario y
-   * todas sus posiciones. El `userId` se lee del JWT. La cabecera fuerza la descarga.
-   */
-  @Get('account/export')
-  @UseGuards(JwtAuthGuard)
-  @Header('Content-Disposition', 'attachment; filename="sextante-datos.json"')
-  exportAccount(@CurrentUser() user: SessionUser): Promise<AccountExport> {
-    return this.auth.exportData(user);
   }
 
   /**

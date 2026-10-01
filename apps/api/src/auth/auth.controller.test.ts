@@ -382,6 +382,32 @@ describe('AuthController (HTTP)', () => {
     });
   });
 
+  describe('GET /auth/account/export', () => {
+    // La lógica vive en `account/`, pero la ruta es contrato público (la consume el frontend).
+    it('exige sesión', async () => {
+      expect((await fetch(`${baseUrl}/account/export`)).status).toBe(401);
+    });
+
+    it('descarga los datos del usuario como adjunto JSON', async () => {
+      const id = await insertUser(db, 'a@example.com');
+      const jwt = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
+
+      const res = await fetch(`${baseUrl}/account/export`, { headers: { Cookie: `${SESSION_COOKIE}=${jwt}` } });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-disposition')).toBe('attachment; filename="sextante-datos.json"');
+      expect(await res.json()).toMatchObject({
+        email: 'a@example.com',
+        positions: [],
+        positionLots: [],
+        portfolioHistory: [],
+        savedScenarios: [],
+        connectedApps: [],
+        notificationSettings: { fireAlertsEnabled: false },
+      });
+    });
+  });
+
   describe('POST /auth/logout', () => {
     it('borra la cookie de sesión (caducada y vacía, con los mismos atributos)', async () => {
       const res = await postJson(`${baseUrl}/logout`, {});
