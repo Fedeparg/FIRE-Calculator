@@ -15,9 +15,14 @@ import {
 import { aggregatePortfolio, type PortfolioAggregate } from "@sextante/core/fx";
 import { isPricePending, latestFetchedAt } from "@/core/portfolio-prices";
 import type { FxRates, PriceInfo, Position } from "@/lib/portfolio";
+import { FX_PATH, listPositions, pricesPath, type PricesBySymbol } from "@/shared/api/portfolio-api";
+import { useApiQuery } from "@/shared/api/use-api-query";
 
 /** Cada cuánto se re-piden los precios mientras alguna posición sigue "buscando precio". */
 const PENDING_POLL_MS = 12_000;
+
+/** Mismo objeto siempre: una cartera sin precios no debe invalidar los `useMemo` que dependen de ellos. */
+const NO_PRICES: PricesBySymbol = {};
 
 /** Lo que comparten las pestañas de la cartera. */
 export type PortfolioData = {
@@ -69,14 +74,6 @@ type Props = {
  */
 export default function PortfolioDataProvider({ initialPositions, children }: Props) {
   const [positions, setPositions] = useState<Position[]>(initialPositions);
-  const [prices, setPrices] = useState<Record<string, PriceInfo>>({});
-  /**
-   * Contador que fuerza volver a pedir los precios sin que cambie el conjunto de tickers. Lo
-   * sube el auto-refresco: con el refresco intradía del servidor, un precio puede cambiar
-   * durante el día y la pestaña abierta tiene que enterarse. Es una lectura de NUESTRA base de
-   * datos, nunca de la fuente externa, así que repetirla es barato.
-   */
-  const [priceTick, setPriceTick] = useState(0);
   /**
    * Cuándo se recibieron los precios (ms). Es el "ahora" contra el que se calcula el
    * "actualizado hace…": se fija al llegar la respuesta, no al pintar, porque leer el reloj
@@ -88,7 +85,6 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
    * respuesta de precios, así que avanza con el sondeo y la ventana de "buscando" caduca sola.
    */
   const [now, setNow] = useState(() => Date.now());
-  const [fxRates, setFxRates] = useState<FxRates | null>(null);
   const [display, setDisplay] = useState<string>("EUR");
 
   // Clave estable de los tickers distintos: solo re-pedimos precios si el CONJUNTO cambia
@@ -99,34 +95,24 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
     [positions],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (!tickersKey) {
-        if (!cancelled) setPrices({});
-        return;
-      }
-      try {
-        const res = await fetch(`/api/prices?symbols=${encodeURIComponent(tickersKey)}`);
-        const data: Record<string, PriceInfo> = res.ok ? await res.json() : {};
-        if (!cancelled) {
-          setPrices(data);
-          setPricesCheckedAt(Date.now());
-          setNow(Date.now());
-        }
-      } catch {
-        // Los precios son enriquecimiento: si fallan, la cartera sigue usable (P&L "—").
-        if (!cancelled) {
-          setPrices({});
-          setNow(Date.now());
-        }
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [tickersKey, priceTick]);
+  // Precios de nuestra base de datos (nunca de la fuente externa), así que repetir la lectura
+  // es barato: `refetchPrices` la repite sin que cambie el conjunto de tickers, que es lo que
+  // hacen el auto-refresco y el sondeo (con el refresco intradía del servidor un precio puede
+  // cambiar durante el día y la pestaña abierta tiene que enterarse). `keepPrevious`: mientras
+  // se recarga se siguen enseñando los últimos precios en vez de vaciar la cartera.
+  const pricesQuery = useApiQuery<PricesBySymbol>(pricesPath(tickersKey), {
+    keepPrevious: true,
+    onSettled: (state) => {
+      // El reloj se lee al llegar la respuesta, no al pintar (leerlo en el render lo haría impuro).
+      const arrivedAt = Date.now();
+      setNow(arrivedAt);
+      if (state.status === "ready") setPricesCheckedAt(arrivedAt);
+    },
+  });
+  const refetchPrices = pricesQuery.refetch;
+  // Los precios son enriquecimiento: si fallan (o no hay nada que pedir), la cartera sigue
+  // usable con el P&L en "—".
+  const prices = tickersKey && pricesQuery.status === "ready" ? pricesQuery.data : NO_PRICES;
 
   const pendingIds = useMemo(
     () => new Set(positions.filter((p) => isPricePending(p, prices[p.ticker], now)).map((p) => p.id)),
@@ -135,42 +121,26 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
   const hasPending = pendingIds.size > 0;
 
   // Sondeo corto SOLO mientras haya algo pendiente: reutiliza la misma carga de precios
-  // (sube `priceTick`) y se detiene solo cuando llega el precio o caduca la ventana. En
+  // (`refetchPrices`) y se detiene solo cuando llega el precio o caduca la ventana. En
   // segundo plano no consume nada; al volver a la pestaña, el auto-refresco de abajo repone.
   useEffect(() => {
     if (!hasPending) return;
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible") setPriceTick((tick) => tick + 1);
+      if (document.visibilityState === "visible") refetchPrices();
     }, PENDING_POLL_MS);
     return () => clearInterval(interval);
-  }, [hasPending]);
+  }, [hasPending, refetchPrices]);
 
   // Tasas FX: una sola carga (son globales y cambian poco; el total las usa para convertir).
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/prices/fx");
-        const data: FxRates = res.ok ? await res.json() : { rates: {}, asOf: null };
-        if (!cancelled) setFxRates(data);
-      } catch {
-        if (!cancelled) setFxRates({ rates: {}, asOf: null });
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Sin tasas (fallo o aún cargando) no se convierte nada: `aggregatePortfolio` excluye lo que no puede.
+  const fxQuery = useApiQuery<FxRates>(FX_PATH);
+  const fxRates = fxQuery.status === "ready" ? fxQuery.data : null;
 
   // Re-sincroniza la lista con el servidor (fuente de verdad). Necesario cuando un cliente
   // externo cambia la cartera sin pasar por esta pestaña: típicamente Claude/ChatGPT vía MCP.
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch("/api/positions", { cache: "no-store" });
-      if (!res.ok) return;
-      const data: Position[] = await res.json();
-      setPositions(data);
+      setPositions(await listPositions());
     } catch {
       // Re-sincronización oportunista: si falla, la pestaña sigue con lo que tenía.
     }
@@ -183,7 +153,7 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
     const refreshIfVisible = () => {
       if (document.visibilityState !== "visible") return;
       void refresh();
-      setPriceTick((tick) => tick + 1);
+      refetchPrices();
     };
     document.addEventListener("visibilitychange", refreshIfVisible);
     window.addEventListener("focus", refreshIfVisible);
@@ -193,7 +163,7 @@ export default function PortfolioDataProvider({ initialPositions, children }: Pr
       window.removeEventListener("focus", refreshIfVisible);
       clearInterval(interval);
     };
-  }, [refresh]);
+  }, [refresh, refetchPrices]);
 
   const rates = useMemo(() => fxRates?.rates ?? {}, [fxRates]);
   const pricesFetchedAt = useMemo(() => latestFetchedAt(prices), [prices]);

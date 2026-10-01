@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PortfolioAggregate } from "@sextante/core/fx";
 import { formatIsoDate, formatRelativeTime } from "@/core/format";
-import { gainSince, type PeriodGain, type PortfolioHistoryDto } from "@/core/portfolio-history";
+import { gainSince, type PortfolioHistoryDto } from "@/core/portfolio-history";
 import { asLocale } from "@/core/types";
 import { useFormat } from "@/lib/format";
+import { NO_STORE, historyPath } from "@/shared/api/portfolio-api";
+import { useApiQuery } from "@/shared/api/use-api-query";
 
 type Props = {
   /** Total agregado (lo calcula el proveedor de datos, el mismo para todas las pestañas). */
@@ -42,30 +43,12 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
   const t = useTranslations("portfolio.summary");
   const locale = asLocale(useLocale());
   const { formatCurrency, formatPercent } = useFormat();
-  const [yearGain, setYearGain] = useState<{ display: string; gain: PeriodGain | null } | null>(null);
 
-  // La ganancia del año sale del histórico diario. Se pide solo lo que va de año.
-  useEffect(() => {
-    let cancelled = false;
-    const { from, days } = startOfYear(new Date());
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/portfolio/history?days=${days}&display=${encodeURIComponent(display)}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) throw new Error(String(res.status));
-        const data = (await res.json()) as PortfolioHistoryDto;
-        if (!cancelled) setYearGain({ display, gain: gainSince(data.points, from) });
-      } catch {
-        // Es un dato de apoyo: sin histórico, simplemente no se enseña.
-        if (!cancelled) setYearGain({ display, gain: null });
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [display]);
+  // La ganancia del año sale del histórico diario: se pide solo lo que va de año. Es un dato de
+  // apoyo: sin histórico (error o aún cargando) simplemente no se enseña.
+  const { from, days } = startOfYear(new Date());
+  const history = useApiQuery<PortfolioHistoryDto>(historyPath(days, display), { init: NO_STORE });
+  const gain = history.status === "ready" ? gainSince(history.data.points, from) : null;
 
   if (agg.valued === 0) {
     return (
@@ -79,8 +62,6 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
 
   const excluded = agg.total - agg.valued;
   const sign = agg.pnlAbs > 0 ? "+" : "";
-  // La del año solo se enseña si corresponde a la divisa que se está viendo.
-  const gain = yearGain?.display === display ? yearGain.gain : null;
 
   return (
     <section className="flex min-w-0 flex-col gap-5 rounded-2xl border border-border bg-surface p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
