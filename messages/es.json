@@ -76,29 +76,9 @@
   },
   "changelog": {
     "heading": "Novedades",
-    "subheading": "Todo lo que se ha construido en Sextante, entrega a entrega. Generado a partir del historial real del proyecto.",
+    "subheading": "Todo lo que se ha construido en Sextante, entrega a entrega.",
     "empty": "Todavía no hay novedades publicadas.",
-    "noResults": "No hay cambios que encajen con este filtro.",
-    "highlight": "Entrega destacada",
-    "summary": {
-      "label": "Resumen de las novedades mostradas",
-      "releases": "Entregas",
-      "changes": "Cambios",
-      "since": "Desde"
-    },
-    "filters": {
-      "legend": "Filtrar por tipo de cambio",
-      "all": "Todos",
-      "showInternal": "Mostrar también los cambios internos (documentación, CI, refactorizaciones)"
-    },
-    "category": {
-      "feature": "Novedad",
-      "fix": "Corrección",
-      "security": "Seguridad",
-      "performance": "Rendimiento",
-      "milestone": "Hito",
-      "internal": "Interno"
-    }
+    "highlight": "Entrega destacada"
   },
   "selector": {
     "heading": "Calculadoras financieras",
