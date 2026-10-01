@@ -1,0 +1,221 @@
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { FIRE_SEARCH_MAX_YEARS } from '@sextante/core/calculators/fire';
+import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
+import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
+import {
+  computeGoalProgress,
+  resolveGoalTarget,
+  simulatePortfolioGoal,
+  type GoalTargetError,
+} from '@sextante/core/portfolio/goal';
+import { z } from 'zod';
+
+import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
+import { PositionLotsService } from '../../positions/position-lots.service.js';
+import { PositionsService } from '../../positions/positions.service.js';
+import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
+import { jsonResult } from '../mcp-results.js';
+import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-schemas.js';
+import { InvalidToolInputError, type ToolRunner } from './tool-runner.js';
+
+export type AnalysisToolDeps = {
+  positions: PositionsService;
+  lots: PositionLotsService;
+  valuation: PortfolioValuationService;
+  scenarios: SavedScenariosService;
+};
+
+/** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
+const GOAL_TARGET_ERRORS: Record<GoalTargetError, string> = {
+  amountIncomplete: 'el modo cantidad necesita targetAmount y targetYears',
+  mixedModes: 'usa annualExpenses/withdrawalRate (modo FIRE) o targetAmount/targetYears (modo cantidad), no ambos',
+  fireIncomplete: 'el modo FIRE necesita annualExpenses y withdrawalRate',
+};
+
+/**
+ * Tools de análisis de la cartera (scope `portfolio:read`): lo que la web calcula sobre los
+ * datos del usuario, con las mismas funciones de `@sextante/core`.
+ */
+export function registerAnalysisTools(server: McpServer, runner: ToolRunner, deps: AnalysisToolDeps): void {
+  server.registerTool(
+    'get_realised_gains',
+    {
+      title: 'Plusvalías realizadas por ejercicio (para la Renta)',
+      description:
+        'Ganancias y pérdidas patrimoniales de las ventas registradas, calculadas por FIFO ' +
+        'como exige la normativa española y agrupadas por ejercicio fiscal y divisa: valor ' +
+        'de transmisión, valor de adquisición (con comisiones) y resultado de cada venta, ' +
+        'más una estimación de la cuota de la base del ahorro sobre lo vendido en euros. ' +
+        'Las ventas en otra divisa se dan en esa divisa sin convertir (en la declaración se ' +
+        'convierten al tipo de cambio de cada operación). Sirve para preparar las casillas ' +
+        'de ganancias patrimoniales. Compensa las ventas del mismo ejercicio, pero NO ' +
+        'aplica los saldos negativos de los cuatro ejercicios anteriores, la compensación ' +
+        'del 25 % con dividendos e intereses ni la regla de los dos meses. Solo lectura.',
+      inputSchema: {
+        year: z
+          .number()
+          .int()
+          .min(1900)
+          .max(2100)
+          .optional()
+          .describe('Ejercicio fiscal. Sin valor, devuelve todos los ejercicios con ventas.'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ year }) =>
+      runner.run('get_realised_gains', async () => {
+        const [positions, lots] = await Promise.all([
+          deps.positions.findAllByUser(runner.userId),
+          deps.lots.findAllByUser(runner.userId),
+        ]);
+        const lotsByPosition = new Map<string, typeof lots>();
+        for (const lot of lots) {
+          lotsByPosition.set(lot.positionId, [...(lotsByPosition.get(lot.positionId) ?? []), lot]);
+        }
+        const report = buildRealisedGainsReport(
+          positions.map((p) => ({
+            id: p.id,
+            ticker: p.ticker,
+            name: p.name,
+            currency: p.currency,
+            lots: lotsByPosition.get(p.id) ?? [],
+          })),
+        );
+        const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
+        return jsonResult({ years });
+      }),
+  );
+
+  server.registerTool(
+    'get_portfolio_breakdown',
+    {
+      title: 'Reparto de la cartera',
+      description:
+        'Reparte el valor de mercado actual de la cartera por activo, bróker o divisa y ' +
+        'devuelve el peso de cada grupo en %, convertido a la divisa `display`. Las ' +
+        'posiciones sin precio o en divisa no convertible se excluyen y se cuentan; los ' +
+        'derivados no entran. Solo lectura.',
+      inputSchema: {
+        groupBy: z.enum(BREAKDOWN_VALUES).describe('Criterio: asset (por valor), broker o currency.'),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del reparto (por defecto EUR).'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ groupBy, display }) =>
+      runner.run('get_portfolio_breakdown', async () =>
+        jsonResult(await deps.valuation.breakdown(runner.userId, display ?? 'EUR', groupBy)),
+      ),
+  );
+
+  server.registerTool(
+    'get_fire_goal_progress',
+    {
+      title: 'Progreso de la cartera hacia el objetivo FIRE',
+      description:
+        'Mide la cartera REAL del usuario (su valor de mercado actual) contra un objetivo, ' +
+        'en uno de dos modos. FIRE (`annualExpenses` + `withdrawalRate`): patrimonio ' +
+        'objetivo = gasto anual / tasa de retiro; con `volatility` y `retirementYears` añade ' +
+        'la probabilidad Monte Carlo de alcanzarlo y de que el dinero dure. Cantidad ' +
+        '(`targetAmount` + `targetYears`): reunir una cifra en un plazo, con la aportación ' +
+        'necesaria por periodo y si se llega al ritmo actual. Ambos devuelven % conseguido, ' +
+        'lo que falta y años estimados con la aportación y la rentabilidad indicadas. Si el ' +
+        'usuario guardó un escenario de la calculadora FIRE (slug independencia-financiera ' +
+        'en `list_saved_scenarios`), usa sus valores: `goalMode: "amount"` indica el modo ' +
+        'cantidad. Los importes van en la divisa `display`. Solo lectura.',
+      inputSchema: {
+        annualExpenses: z.number().min(0).max(1e12).optional().describe('Modo FIRE: gasto anual deseado.'),
+        withdrawalRate: z.number().min(0).max(100).optional().describe('Modo FIRE: tasa de retiro (habitual: 4).'),
+        targetAmount: z
+          .number()
+          .min(0)
+          .max(1e12)
+          .optional()
+          .describe('Modo cantidad: cifra a reunir. Excluye annualExpenses/withdrawalRate.'),
+        targetYears: z
+          .number()
+          .int()
+          .min(0)
+          .max(FIRE_SEARCH_MAX_YEARS)
+          .optional()
+          .describe('Modo cantidad: plazo en años enteros.'),
+        contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
+        frequency: z.enum(FREQUENCY_VALUES).optional().describe('Frecuencia de la aportación (por defecto monthly).'),
+        annualReturn: z.number().min(-99).max(100).describe('Rentabilidad anual REAL esperada, en base 100.'),
+        volatility: z
+          .number()
+          .min(0)
+          .max(MAX_VOLATILITY)
+          .optional()
+          .describe('Volatilidad anual en base 100, para la simulación Monte Carlo.'),
+        retirementYears: z
+          .number()
+          .min(0)
+          .max(MAX_RETIREMENT_YEARS)
+          .optional()
+          .describe('Años que debe durar el dinero, para la simulación Monte Carlo.'),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del objetivo y de la cartera (por defecto EUR).'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({
+      volatility,
+      retirementYears,
+      display,
+      frequency,
+      annualExpenses,
+      withdrawalRate,
+      targetAmount,
+      targetYears,
+      contribution,
+      annualReturn,
+    }) =>
+      runner.run('get_fire_goal_progress', async () => {
+        const resolved = resolveGoalTarget({ annualExpenses, withdrawalRate, targetAmount, targetYears });
+        if ('error' in resolved) {
+          throw new InvalidToolInputError(GOAL_TARGET_ERRORS[resolved.error]);
+        }
+        const currency = display ?? 'EUR';
+        const { aggregate } = await deps.valuation.valuate(runner.userId, currency);
+        const progress = {
+          contribution,
+          annualReturn,
+          frequency: frequency ?? 'monthly',
+          currentValue: aggregate.marketValue,
+        } as const;
+        const outcome = computeGoalProgress(resolved.target, progress);
+        const header = {
+          display: currency,
+          // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
+          valuedPositions: aggregate.valued,
+          totalPositions: aggregate.total,
+        };
+        const simulation =
+          resolved.target.mode === 'fire' && volatility !== undefined && retirementYears !== undefined
+            ? simulatePortfolioGoal({ ...progress, ...resolved.target, volatility, retirementYears })
+            : undefined;
+        // `mode` va primero a propósito: es el orden de claves que ve el cliente.
+        const { mode, ...result } = outcome;
+        return jsonResult({ mode, ...header, ...result, ...(simulation ? { simulation } : {}) });
+      }),
+  );
+
+  server.registerTool(
+    'list_saved_scenarios',
+    {
+      title: 'Escenarios guardados de las calculadoras',
+      description:
+        'Devuelve los escenarios que el usuario guardó en las calculadoras de la web (nombre, ' +
+        'calculadora por su slug y valores introducidos), para reutilizarlos con `calculate` ' +
+        'o con `get_fire_goal_progress`. Solo lectura.',
+      inputSchema: {
+        slug: z.string().max(64).optional().describe('Solo los de una calculadora (p. ej. independencia-financiera).'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ slug }) =>
+      runner.run('list_saved_scenarios', async () => {
+        const scenarios = await deps.scenarios.findAllByUser(runner.userId, slug);
+        return jsonResult({ scenarios });
+      }),
+  );
+}
