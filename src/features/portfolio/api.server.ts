@@ -1,6 +1,6 @@
 import "server-only";
 
-import { apiFetch } from "@/lib/api.server";
+import { apiFetch } from "@/shared/api/api.server";
 import type { Position, PositionLot } from "@sextante/core/portfolio/types";
 
 /**

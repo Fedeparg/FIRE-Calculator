@@ -1,7 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { routing } from "@/i18n/routing";
-import { getSessionUser } from "@/lib/session";
+import { getSessionUser } from "@/shared/api/session";
 import { Link } from "@/i18n/navigation";
 import AccountDangerZone from "@/features/account/components/AccountDangerZone";
 import ConnectedApps from "@/features/account/components/ConnectedApps";
