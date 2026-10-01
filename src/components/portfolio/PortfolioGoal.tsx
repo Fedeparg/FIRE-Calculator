@@ -56,6 +56,9 @@ type CurrencyNote = { kind: "converted" | "notConvertible"; from: string; to: st
 /** Importes ya expresados en la divisa que se está viendo, con el aviso que toque. */
 type ShownAmounts = Omit<GoalAmounts, "currency"> & { note: CurrencyNote };
 
+/** Cifra de ejemplo del modo cantidad (en la divisa que se está viendo). */
+const DEFAULT_TARGET_AMOUNT = 100000;
+
 /** Redondeo a céntimos: los importes convertidos no deben arrastrar decimales binarios. */
 function toCents(value: number): number {
   return Math.round(value * 100) / 100;
@@ -95,7 +98,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     currency: display,
     annualExpenses: 24000,
     contribution: 800,
-    targetAmount: 100000,
+    targetAmount: DEFAULT_TARGET_AMOUNT,
   });
   const [mode, setMode] = useState<GoalMode>("fire");
   const [targetYears, setTargetYears] = useState(10);
@@ -229,6 +232,18 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
       contribution: next.contribution ?? shown.contribution,
       targetAmount: next.targetAmount ?? shown.targetAmount,
     });
+  }
+
+  /**
+   * Un plan FIRE no trae cifra objetivo: al pasar a modo cantidad se propone la de ejemplo
+   * en vez de un objetivo de 0 que se daría por alcanzado.
+   */
+  function handleModeChange(next: GoalMode) {
+    setMode(next);
+    if (next === "amount" && shown.targetAmount <= 0) {
+      updateAmounts({ targetAmount: DEFAULT_TARGET_AMOUNT });
+      setVersion((current) => current + 1);
+    }
   }
 
   const goal = useMemo<GoalOutcome>(() => {
@@ -367,7 +382,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         label={t("modeLabel")}
         value={mode}
         options={GOAL_MODES.map((m) => ({ value: m, label: t(`mode.${m}`) }))}
-        onChange={setMode}
+        onChange={handleModeChange}
         size="md"
       />
 
