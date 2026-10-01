@@ -8,7 +8,7 @@ import {
   MIN_HISTORY_POINTS,
   type HistoryPointDto,
   withLivePoint,
-} from "./portfolio-history";
+} from "./history-series.js";
 
 /** Punto de serie con lo mínimo: el resto de campos no influye en la construcción. */
 function point(date: string, invested: number | null, marketValue: number | null, estimated = false): HistoryPointDto {

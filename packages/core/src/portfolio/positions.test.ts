@@ -8,7 +8,7 @@ import {
   positionFilterOf,
   valuePosition,
   type FilterablePosition,
-} from "./portfolio-positions";
+} from "./positions.js";
 
 // USD por unidad: 1 EUR = 1,10 USD.
 const RATES = { USD: 1, EUR: 1.1 };

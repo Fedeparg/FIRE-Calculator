@@ -14,7 +14,7 @@ import {
   HISTORY_RANGES,
   type HistoryRangeKey,
   type PortfolioHistoryDto,
-} from "@/core/portfolio-history";
+} from "@sextante/core/portfolio/history-series";
 import { useFormat } from "@/lib/format";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";

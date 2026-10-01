@@ -2,7 +2,7 @@
 // Sin React, testeable. La comparten la lista y el panel de detalle, para que los dos
 // enseñen siempre la misma cifra.
 
-import { convertCurrency } from "@sextante/core/fx";
+import { convertCurrency } from "../fx.js";
 
 /** Lo mínimo de una posición para valorarla. */
 export interface ValuablePosition {

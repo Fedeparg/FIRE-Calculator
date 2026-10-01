@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  isPricePending,
-  isStalePrice,
-  latestFetchedAt,
-  latestPriceDate,
-  PENDING_PRICE_WINDOW_MS,
-} from "./portfolio-prices";
+import { isPricePending, isStalePrice, latestFetchedAt, latestPriceDate, PENDING_PRICE_WINDOW_MS } from "./prices.js";
 
 const prices = (dates: Record<string, string>) =>
   Object.fromEntries(Object.entries(dates).map(([ticker, date]) => [ticker, { date }]));

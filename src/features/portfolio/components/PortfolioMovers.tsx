@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { dailyMovers } from "@/core/portfolio-positions";
+import { dailyMovers } from "@sextante/core/portfolio/positions";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";

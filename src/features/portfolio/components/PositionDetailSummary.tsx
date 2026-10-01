@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
-import { dailyGain, valuePosition } from "@/core/portfolio-positions";
+import { dailyGain, valuePosition } from "@sextante/core/portfolio/positions";
 import { useFormat } from "@/lib/format";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import DerivativesNotice from "./DerivativesNotice";

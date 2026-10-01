@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/core/format";
-import { latestPriceDate } from "@/core/portfolio-prices";
+import { latestPriceDate } from "@sextante/core/portfolio/prices";
 import { buildPositionRows, type GainMode } from "@/features/portfolio/model/rows";
 import {
   DEFAULT_SORT_DIR,
