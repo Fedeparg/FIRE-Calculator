@@ -24,3 +24,15 @@ updates:
     directory: /
     schedule:
       interval: monthly
+
+  # La imagen de la API vive en su propio directorio, que `/` no recorre.
+  - package-ecosystem: docker
+    directory: /apps/api
+    schedule:
+      interval: monthly
+
+  # Imágenes de los servicios (postgres, caddy…) en los ficheros de Compose.
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: monthly
