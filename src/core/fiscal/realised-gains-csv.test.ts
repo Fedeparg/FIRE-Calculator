@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { TradeLot } from "./plusvalias";
-import { buildRealisedGainsReport } from "./realised-gains";
+import type { TradeLot } from "@sextante/core/fiscal/plusvalias";
+import { buildRealisedGainsReport } from "@sextante/core/fiscal/realised-gains";
 import { buildRealisedGainsCsv, REALISED_GAINS_CSV_COLUMNS, type RealisedGainsCsvHeaders } from "./realised-gains-csv";
 
 const HEADERS = Object.fromEntries(REALISED_GAINS_CSV_COLUMNS.map((c) => [c, c])) as RealisedGainsCsvHeaders;

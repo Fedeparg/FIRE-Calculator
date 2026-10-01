@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import Notice from "@/components/ui/Notice";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
-import { estimateSavingsTax, simulateSale, type TradeLot } from "@/core/fiscal/plusvalias";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
+import { estimateSavingsTax, simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { formatIsoDate } from "@/core/format";
-import { convertCurrency } from "@/core/fx";
+import { convertCurrency } from "@sextante/core/fx";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { useFormat } from "@/lib/format";
 import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";

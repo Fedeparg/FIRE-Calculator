@@ -7,7 +7,7 @@ import {
   computeGiftTax,
   type KinshipGroup,
 } from "@/core/calculators/impuesto-donaciones";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";

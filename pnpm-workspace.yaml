@@ -1,5 +1,7 @@
 packages:
   - 'apps/*'
+  # Lógica pura compartida por el frontend y la API (ver packages/core).
+  - 'packages/*'
 
 # Forzamos versiones parcheadas de dependencias transitivas con avisos de
 # seguridad (ver `pnpm audit`). Todas son de baja alcanzabilidad real en este

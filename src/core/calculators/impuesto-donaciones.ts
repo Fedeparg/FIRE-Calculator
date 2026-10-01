@@ -5,7 +5,7 @@
 // bonificaciones (Madrid ~99 %, etc.) y reducciones propias. El resultado real
 // depende decisivamente de tu Comunidad Autónoma.
 
-import { ISD_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets";
+import { ISD_ESTATAL, applyProgressiveBrackets } from "@sextante/core/fiscal/brackets";
 
 /** Grupos de parentesco del ISD, en el orden en que se ofrecen en el desplegable. */
 export const KINSHIP_GROUPS = ["grupoI_II", "grupoIII", "grupoIV"] as const;

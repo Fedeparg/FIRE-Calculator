@@ -1,9 +1,9 @@
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "../property-config";
-import { estimateNetSalary, generalIncomeTax, generalMarginalRate, type NetSalaryInput } from "./irpf";
-import { REGION_CODES, type RegionCode } from "./regions";
+import { PROPERTY_PARAMS } from "../property-config.js";
+import { estimateNetSalary, generalIncomeTax, generalMarginalRate, type NetSalaryInput } from "./irpf.js";
+import { REGION_CODES, type RegionCode } from "./regions.js";
 
 /** Una comunidad de régimen común, o ninguna (escala supletoria). */
 const region: fc.Arbitrary<RegionCode | undefined> = fc.option(fc.constantFrom(...REGION_CODES), {

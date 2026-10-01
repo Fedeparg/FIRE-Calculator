@@ -1,7 +1,7 @@
 // Retención de IRPF en nómina. Reutiliza el motor de salario bruto→neto y
 // expone la retención mensual estimada. Core puro. Orientativo.
 
-import { estimateNetSalary, type NetSalaryInput } from "../fiscal/irpf";
+import { estimateNetSalary, type NetSalaryInput } from "@sextante/core/fiscal/irpf";
 
 export interface PayrollWithholdingResult {
   /** Bruto mensual (por paga). */

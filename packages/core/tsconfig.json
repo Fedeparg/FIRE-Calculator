@@ -1,0 +1,24 @@
+{
+  // `nodenext` porque lo consume la API (ESM en Node): obliga a escribir los imports
+  // relativos con `.js`, que el bundler de Next también entiende. Así un mismo
+  // código compila igual para los dos consumidores.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "./src",
+    "outDir": "./dist"
+  },
+  // `tsc --noEmit` (typecheck) cubre también los tests; el build los excluye.
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

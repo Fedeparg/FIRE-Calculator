@@ -1,9 +1,7 @@
-// Conversión de divisas y agregación de cartera. Lógica pura (sin Nest), testeable.
+// Conversión de divisas y agregación de cartera. Core puro (sin React), testeable.
 //
-// ⚠️ ESPEJO de `src/core/fx.ts` (frontend). Son paquetes distintos (la raíz NO es
-// dependencia de `@sextante/api`), así que no se puede compartir el módulo: si cambias
-// una fórmula aquí, cámbiala también allí (y viceversa). Verificado por contraste:
-// `get_portfolio_valuation` (MCP) devuelve el mismo número que muestra la UI.
+// La usan el frontend (la cartera) y la API (la valoración diaria y la tool MCP
+// `get_portfolio_valuation`), así que los dos muestran siempre el mismo número.
 
 /**
  * Convierte `amount` de la divisa `from` a `to`. `rates[CCY]` = USD por unidad de esa

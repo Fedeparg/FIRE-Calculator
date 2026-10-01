@@ -5,7 +5,7 @@ import {
   IRPF_GENERAL,
   applyProgressiveBrackets,
   marginalRate,
-} from "./brackets";
+} from "./brackets.js";
 import {
   REGIONS,
   REGION_CODES,
@@ -15,7 +15,7 @@ import {
   regionalScale,
   toSupportedRegion,
   type RegionCode,
-} from "./regions";
+} from "./regions.js";
 
 /** Bases de prueba: cero, tramos bajos, cada frontera relevante y rentas altas. */
 const SAMPLE_BASES = [

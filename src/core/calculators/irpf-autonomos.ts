@@ -13,14 +13,14 @@ import {
   REDUCCION_TRIBUTACION_CONJUNTA,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE,
-} from "../fiscal/brackets";
+} from "@sextante/core/fiscal/brackets";
 import {
   generalIncomeTax,
   generalMarginalRate,
   personalAndFamilyMinimum,
   regionalPersonalAndFamilyMinimum,
   type PersonalCircumstances,
-} from "../fiscal/irpf";
+} from "@sextante/core/fiscal/irpf";
 
 export interface SelfEmployedInput extends PersonalCircumstances {
   /** Ingresos anuales de la actividad. */

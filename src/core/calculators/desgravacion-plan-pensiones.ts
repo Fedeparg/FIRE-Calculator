@@ -9,14 +9,14 @@
 // eso aquí solo sirve para calcular el límite conjunto (10.000 €) y cuánto de tu
 // aportación individual cabe; su ventaja es construir patrimonio con diferimiento.
 
-import { PENSION_EMPLOYER_LIMIT, PENSION_INDIVIDUAL_LIMIT, PENSION_JOINT_LIMIT } from "../fiscal/brackets";
+import { PENSION_EMPLOYER_LIMIT, PENSION_INDIVIDUAL_LIMIT, PENSION_JOINT_LIMIT } from "@sextante/core/fiscal/brackets";
 import {
   estimateNetSalary,
   generalIncomeTax,
   personalAndFamilyMinimum,
   regionalPersonalAndFamilyMinimum,
-} from "../fiscal/irpf";
-import type { RegionCode } from "../fiscal/regions";
+} from "@sextante/core/fiscal/irpf";
+import type { RegionCode } from "@sextante/core/fiscal/regions";
 
 export interface PensionReliefInput {
   /** Salario bruto anual (para situar el tramo marginal). */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { estimateSavingsTax, type TradeLot } from "./plusvalias";
-import { buildRealisedGainsReport, type RealisedGainsPosition } from "./realised-gains";
+import { estimateSavingsTax, type TradeLot } from "./plusvalias.js";
+import { buildRealisedGainsReport, type RealisedGainsPosition } from "./realised-gains.js";
 
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
   return { kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-01", ...overrides };

@@ -15,15 +15,17 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "pnpm core:build && next dev",
+    "build": "pnpm core:build && next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "typecheck": "pnpm core:build && tsc --noEmit && pnpm --filter @sextante/core typecheck",
+    "test": "pnpm core:build && vitest run",
+    "test:watch": "pnpm core:build && vitest",
+    "core:build": "pnpm --filter @sextante/core build"
   },
   "dependencies": {
+    "@sextante/core": "workspace:*",
     "gray-matter": "^4.0.3",
     "next": "16.3.5",
     "next-intl": "^4.14.5",

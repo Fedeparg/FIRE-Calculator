@@ -6,7 +6,7 @@
 
 import { buildCsv, type CsvCell } from "../csv";
 import type { Locale } from "../types";
-import type { RealisedGainsYear } from "./realised-gains";
+import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
 
 /** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */
 export const REALISED_GAINS_CSV_COLUMNS = [

@@ -8,7 +8,7 @@ import {
   type FieldSpecs,
   type FieldValues,
 } from "@/core/calculator-url-state";
-import { convertCurrency } from "@/core/fx";
+import { convertCurrency } from "@sextante/core/fx";
 import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@/core/projection";
 import { useFormat } from "@/lib/format";

@@ -35,14 +35,14 @@ import {
   WORK_OTHER_EXPENSES,
   applyProgressiveBrackets,
   marginalRate,
-} from "./brackets";
+} from "./brackets.js";
 import {
   STATE_PERSONAL_MINIMUM,
   regionalMinimumSchedule,
   regionalScale,
   type PersonalMinimumSchedule,
   type RegionCode,
-} from "./regions";
+} from "./regions.js";
 
 /** Tipos de contrato, en el orden en que se ofrecen en el desplegable. */
 export const CONTRACT_TYPES = ["indefinido", "temporal"] as const;

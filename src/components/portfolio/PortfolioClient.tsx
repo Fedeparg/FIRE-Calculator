@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { aggregatePortfolio } from "@/core/fx";
+import { aggregatePortfolio } from "@sextante/core/fx";
 import { latestFetchedAt } from "@/core/portfolio-prices";
 import { useFormat } from "@/lib/format";
 import { PORTFOLIO_CURRENCIES, type FxRates, type PriceInfo, type Position } from "@/lib/portfolio";

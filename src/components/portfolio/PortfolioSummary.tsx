@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import type { PortfolioAggregate } from "@/core/fx";
+import type { PortfolioAggregate } from "@sextante/core/fx";
 import { formatIsoDate, formatRelativeTime } from "@/core/format";
 import { asLocale } from "@/core/types";
 import { useFormat } from "@/lib/format";

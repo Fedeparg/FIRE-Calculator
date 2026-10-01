@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { convertCurrency } from "@/core/fx";
+import { convertCurrency } from "@sextante/core/fx";
 import { formatIsoDate } from "@/core/format";
 import { useFormat } from "@/lib/format";
 import { isStalePrice, latestPriceDate } from "@/core/portfolio-prices";

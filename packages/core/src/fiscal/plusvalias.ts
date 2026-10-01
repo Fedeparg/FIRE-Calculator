@@ -26,7 +26,7 @@
 //   - Retenciones, coeficientes de abatimiento (D.T. 9.ª), fiscalidad no residente, traspasos
 //     de fondos con diferimiento (art. 94), ni las especialidades forales.
 
-import { applyProgressiveBrackets, effectiveRate, IRPF_AHORRO, marginalRate } from "./brackets";
+import { applyProgressiveBrackets, effectiveRate, IRPF_AHORRO, marginalRate } from "./brackets.js";
 
 /**
  * Una operación del histórico de una posición, tal y como la sirve la API

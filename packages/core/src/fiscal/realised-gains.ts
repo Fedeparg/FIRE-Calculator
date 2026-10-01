@@ -27,7 +27,7 @@
 //     falsa. Por eso los importes se agrupan por divisa y la cuota solo se estima sobre el
 //     grupo en euros.
 
-import { walkLots, estimateSavingsTax, type RealisedSale, type SavingsTaxEstimate, type TradeLot } from "./plusvalias";
+import { walkLots, estimateSavingsTax, type RealisedSale, type SavingsTaxEstimate, type TradeLot } from "./plusvalias.js";
 
 /** Divisa sobre la que se estima la cuota (la del IRPF). */
 export const TAX_CURRENCY = "EUR";

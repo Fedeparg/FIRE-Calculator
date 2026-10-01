@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "./property-config";
+import { PROPERTY_PARAMS } from "@sextante/core/property-config";
 import { FREQUENCIES, project, type ProjectionInput } from "./projection";
 
 /** Entradas "normales": importes y tasas no negativos, horizonte razonable. */

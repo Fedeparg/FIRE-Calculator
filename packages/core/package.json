@@ -1,0 +1,28 @@
+{
+  "name": "@sextante/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lógica pura de Sextante (motor fiscal español, divisas) compartida por el frontend y la API.",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "fast-check": "^4.10.2",
+    "typescript": "^5",
+    "vitest": "^4.1.11"
+  }
+}

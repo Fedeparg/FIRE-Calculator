@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { aggregatePortfolio, convertCurrency } from "./fx";
+import { aggregatePortfolio, convertCurrency } from "./fx.js";
 
 // USD por unidad: 1 EUR = 1,10 USD; 1 GBP = 1,25 USD; USD = 1.
 const RATES = { USD: 1, EUR: 1.1, GBP: 1.25 };
@@ -24,6 +24,11 @@ describe("convertCurrency", () => {
 
   it("trata una tasa 0 como no convertible (evita dividir por cero)", () => {
     expect(convertCurrency(100, "EUR", "GBP", { ...RATES, GBP: 0 })).toBeNull();
+  });
+
+  it("devuelve null ante una tasa no finita (no inventa números)", () => {
+    expect(convertCurrency(100, "EUR", "USD", { ...RATES, USD: Number.NaN })).toBeNull();
+    expect(convertCurrency(100, "EUR", "USD", { ...RATES, EUR: Number.POSITIVE_INFINITY })).toBeNull();
   });
 });
 
@@ -101,6 +106,18 @@ describe("aggregatePortfolio", () => {
     });
 
     expect(result.valued).toBe(0);
+    expect(result.invested).toBe(0);
+    expect(result.pnlPct).toBeNull();
+  });
+
+  it("deja pnlPct en null cuando lo invertido es 0", () => {
+    const result = aggregatePortfolio({
+      display,
+      rates: RATES,
+      positions: [{ ticker: "A", quantity: 0, avgPrice: 0, currency: "EUR" }],
+      prices: { A: { close: 100, currency: "EUR" } },
+    });
+
     expect(result.invested).toBe(0);
     expect(result.pnlPct).toBeNull();
   });

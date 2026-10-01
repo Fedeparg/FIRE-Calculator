@@ -1,7 +1,7 @@
 // Impuesto sobre el Patrimonio. Estimación con la escala estatal supletoria.
 // Core puro. Orientativo: muchas CCAA bonifican o modifican la escala.
 
-import { PATRIMONIO_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets";
+import { PATRIMONIO_ESTATAL, applyProgressiveBrackets } from "@sextante/core/fiscal/brackets";
 
 /** Mínimo exento estatal por defecto. */
 export const DEFAULT_EXEMPT_MINIMUM = 700000;

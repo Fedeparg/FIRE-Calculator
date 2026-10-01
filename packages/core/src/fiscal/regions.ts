@@ -46,7 +46,7 @@ import {
   MINIMO_PERSONAL_65,
   MINIMO_PERSONAL_75,
   type Bracket,
-} from "./brackets";
+} from "./brackets.js";
 
 // ---------------------------------------------------------------------------
 // Escalas autonómicas (ejercicios 2025 y 2026)

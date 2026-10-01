@@ -3,12 +3,12 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@/core/calculators/desgravacion-plan-pensiones";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   SELECTABLE_REGIONS,
   toSupportedRegion,
   type RegionSelection,
-} from "@/core/fiscal/regions";
+} from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";
