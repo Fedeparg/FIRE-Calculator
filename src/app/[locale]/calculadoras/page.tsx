@@ -38,12 +38,12 @@ export default async function CalculatorsIndex({ params }: Props) {
   const categories = usedCategories.map((id) => ({ id, label: CATEGORIES[id][l] }));
 
   return (
-    <section className="mx-auto max-w-5xl px-4 py-10">
-      <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("heading")}</h1>
-      <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
-      <RouteMessages route="calculadoras">
+    <RouteMessages route="calculadoras">
+      <section className="mx-auto max-w-5xl px-4 py-10">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{t("heading")}</h1>
+        <p className="mt-3 max-w-2xl text-muted">{t("subheading")}</p>
         <Selector items={items} categories={categories} />
-      </RouteMessages>
-    </section>
+      </section>
+    </RouteMessages>
   );
 }

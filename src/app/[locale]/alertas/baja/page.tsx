@@ -24,12 +24,12 @@ export default async function UnsubscribePage({ params, searchParams }: Props) {
   const { token } = await searchParams;
 
   return (
-    <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-20 text-center">
-      <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
-      <p className="text-muted">{t("body")}</p>
-      <RouteMessages route="alertas/baja">
+    <RouteMessages route="alertas/baja">
+      <section className="mx-auto flex max-w-xl flex-col items-center gap-4 px-4 py-20 text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("title")}</h1>
+        <p className="text-muted">{t("body")}</p>
         <UnsubscribeConfirm token={typeof token === "string" && token ? token : null} />
-      </RouteMessages>
-    </section>
+      </section>
+    </RouteMessages>
   );
 }

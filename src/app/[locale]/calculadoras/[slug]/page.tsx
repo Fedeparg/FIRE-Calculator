@@ -37,15 +37,15 @@ export default async function Page({ params }: Props) {
   const t = await getTranslations(`calc.${slug}`);
 
   return (
-    <CalculatorShell
-      title={t("title")}
-      intro={t("intro")}
-      slug={slug}
-      explainer={<CalculatorExplainer calcSlug={slug} />}
-    >
-      <RouteMessages route="calculadoras/[slug]" extra={[calculatorNamespace(slug)]}>
+    <RouteMessages route="calculadoras/[slug]" extra={[calculatorNamespace(slug)]}>
+      <CalculatorShell
+        title={t("title")}
+        intro={t("intro")}
+        slug={slug}
+        explainer={<CalculatorExplainer calcSlug={slug} />}
+      >
         <CalculatorBody slug={slug} />
-      </RouteMessages>
-    </CalculatorShell>
+      </CalculatorShell>
+    </RouteMessages>
   );
 }

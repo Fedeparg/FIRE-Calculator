@@ -15,12 +15,12 @@ export default async function VerifyPage({ params }: Props) {
   setRequestLocale(locale);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-24">
-      <RouteMessages route="auth/verify">
+    <RouteMessages route="auth/verify">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-24">
         <Suspense>
           <VerifyClient />
         </Suspense>
-      </RouteMessages>
-    </div>
+      </div>
+    </RouteMessages>
   );
 }

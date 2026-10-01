@@ -107,6 +107,8 @@ function routeOf(dir: string): RouteKey | null {
   return matches.sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
+const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const routeFiles = listSources(APP).filter((f) => /\/(page|layout)\.tsx$/.test(f));
 
 describe("mensajes por ruta", () => {
@@ -126,10 +128,13 @@ describe("mensajes por ruta", () => {
 
   it("cada ruta declarada monta su RouteMessages, y solo ahí", () => {
     for (const key of routeKeys) {
+      // Tiene que envolver TODO lo que devuelve la ruta: un componente de cliente fuera del
+      // provider (p. ej. el `CalculatorActions` del shell) vería los mensajes del layout raíz.
+      const outermost = new RegExp(`return\\s*\\(?\\s*<RouteMessages route="${escapeRegExp(key)}"`);
       const owners = ["page.tsx", "layout.tsx"]
         .map((name) => path.join(APP, key, name))
-        .filter((f) => existsSync(f) && readFileSync(f, "utf8").includes(`<RouteMessages route="${key}"`));
-      expect(owners, `${key} no monta <RouteMessages route="${key}">`).toHaveLength(1);
+        .filter((f) => existsSync(f) && outermost.test(readFileSync(f, "utf8")));
+      expect(owners, `${key} debe devolver <RouteMessages route="${key}"> como elemento más externo`).toHaveLength(1);
     }
     for (const file of routeFiles) {
       for (const [, route] of readFileSync(file, "utf8").matchAll(/<RouteMessages route="([^"]+)"/g)) {
