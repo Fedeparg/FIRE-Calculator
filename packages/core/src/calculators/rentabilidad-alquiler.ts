@@ -1,40 +1,24 @@
-// Rentabilidad de un alquiler de larga duración: bruta y neta. Detalla los
-// gastos recurrentes (IBI, comunidad, seguro, mantenimiento) y descuenta una
-// previsión de meses sin inquilino o impago (vacancy). Core puro.
+// Rentabilidad bruta y neta de un alquiler de larga duración, con gastos recurrentes y vacancy. Core puro.
 
 export interface RentalInput {
-  /** Precio de compra del inmueble. */
   purchasePrice: number;
-  /** Gastos e impuestos de compra (ITP/IVA, notaría, etc.). */
   purchaseCosts: number;
-  /** Alquiler mensual. */
   monthlyRent: number;
   /** Previsión de impago / meses vacíos, como % del año. Por defecto 5 %. */
   vacancyRate?: number;
-  /** IBI anual. */
   ibiAnnual?: number;
-  /** Cuota de comunidad mensual. */
   communityMonthly?: number;
-  /** Seguro (hogar + impago) anual. */
   insuranceAnnual?: number;
-  /** Mantenimiento y reparaciones anuales. */
   maintenanceAnnual?: number;
 }
 
 export interface RentalResult {
-  /** Ingresos anuales potenciales (alquiler × 12, sin descontar vacancy). */
   annualRentIncome: number;
-  /** Ingresos anuales efectivos (tras descontar la vacancy). */
   effectiveRentIncome: number;
-  /** Total de gastos anuales recurrentes. */
   totalAnnualExpenses: number;
-  /** Ingreso neto anual (efectivo − gastos). */
   netIncome: number;
-  /** Flujo de caja neto mensual medio. */
   monthlyNetCashflow: number;
-  /** Rentabilidad bruta (% del alquiler potencial sobre el precio de compra). */
   grossYield: number;
-  /** Rentabilidad neta (% sobre la inversión total: precio + gastos de compra). */
   netYield: number;
 }
 

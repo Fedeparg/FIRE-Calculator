@@ -3,20 +3,11 @@ import Script from "next/script";
 import { SITE_URL } from "@/shared/seo/site";
 import { ANALYTICS_SCRIPT_SRC, ANALYTICS_WEBSITE_ID } from "../config";
 
-/** Hostname canónico: el tracker solo mide en él, nunca en localhost ni en previews. */
 const SITE_HOSTNAME = new URL(SITE_URL).hostname;
 
-/**
- * Carga el tracker de Umami (sin cookies) desde nuestro propio origen. Sin ID de
- * sitio no renderiza nada.
- *
- * Por qué cada atributo:
- * - `data-exclude-search`: los cálculos compartibles guardan TODAS sus entradas
- *   (salario, patrimonio…) en la query string. Sin esto, la analítica las recogería.
- * - `data-exclude-hash`: el hash tampoco aporta nada a las métricas.
- * - `data-do-not-track`: si el navegador pide no ser rastreado, no se envía nada.
- * - `data-domains`: no se mide fuera del dominio canónico.
- */
+// `data-exclude-search`: los cálculos compartibles llevan todas sus entradas (salario,
+// patrimonio…) en la query string y no deben llegar a la analítica. `data-domains`: solo mide
+// en el dominio canónico, no en localhost ni previews.
 export default function AnalyticsScript() {
   if (!ANALYTICS_WEBSITE_ID) return null;
   return (

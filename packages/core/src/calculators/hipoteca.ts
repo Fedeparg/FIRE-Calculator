@@ -1,61 +1,35 @@
-// Hipoteca a tipo fijo. Sistema de amortización francés (cuota constante).
-// Además de la cuota y los intereses, estima la TAE incluyendo la comisión de
-// apertura y los seguros vinculados, que es la cifra honesta para comparar
-// ofertas entre bancos. Core puro.
+// Hipoteca a tipo fijo (amortización francesa). Además de cuota e intereses estima la TAE con
+// comisión de apertura y seguros vinculados, la cifra honesta para comparar ofertas. Core puro.
 
 export interface MortgageInput {
-  /** Capital prestado. */
   principal: number;
-  /** TIN anual, en base 100 (3 = 3 %). */
   annualRate: number;
-  /** Plazo en años. */
   years: number;
-  /** Comisión de apertura como % del capital. Opcional (por defecto 0). */
   openingFeeRate?: number;
-  /**
-   * Coste anual de los productos vinculados (seguro de hogar, vida…) exigidos
-   * para obtener el tipo. Se incluye en la TAE. Opcional (por defecto 0).
-   */
+  /** Coste anual de los productos vinculados exigidos para el tipo; entra en la TAE. */
   annualInsurance?: number;
 }
 
 export interface MortgageYearPoint {
   year: number;
-  /** Capital amortizado durante el año. */
   principalPaid: number;
-  /** Intereses pagados durante el año. */
   interestPaid: number;
-  /** Capital pendiente al final del año. */
   balance: number;
 }
 
 export interface MortgageResult {
-  /** Cuota mensual (solo capital + intereses). */
   monthlyPayment: number;
-  /** Total pagado en cuotas a lo largo de la vida del préstamo. */
   totalPaid: number;
-  /** Total de intereses pagados. */
   totalInterest: number;
-  /** Comisión de apertura (importe). */
   openingCost: number;
-  /** Coste total de los seguros vinculados durante toda la vida del préstamo. */
   insuranceCost: number;
-  /** Coste total real: cuotas + comisión de apertura + seguros. */
   totalCostWithFees: number;
-  /**
-   * TAE estimada, en base 100. Tiene en cuenta la comisión de apertura y los
-   * seguros vinculados. Con comisión y seguros a 0 equivale a la capitalización
-   * mensual del TIN: (1 + TIN/12)^12 − 1, ligeramente por encima del TIN.
-   */
+  /** TAE estimada, en base 100, con comisión y seguros. Sin ellos equivale a (1 + TIN/12)^12 − 1. */
   apr: number;
   schedule: MortgageYearPoint[];
 }
 
-/**
- * Resuelve el tipo mensual `r` que iguala el importe neto recibido con el valor
- * actual de los pagos mensuales (cuota + seguro). Bisección: la función es
- * monótona decreciente en `r`, así que converge con seguridad.
- */
+/** Tipo mensual `r` que iguala el neto recibido con el valor actual de los pagos (bisección sobre una función monótona decreciente). */
 function solveMonthlyIrr(netReceived: number, monthlyOutflow: number, n: number): number {
   if (netReceived <= 0 || monthlyOutflow <= 0 || n <= 0) return 0;
 
@@ -71,8 +45,7 @@ function solveMonthlyIrr(netReceived: number, monthlyOutflow: number, n: number)
   };
 
   let lo = 0;
-  let hi = 1; // 100 % mensual: cota superior holgadísima.
-  // npv(lo) ≥ 0 y npv(hi) < 0 → raíz en (lo, hi).
+  let hi = 1; // 100 % mensual: cota superior holgada
   for (let iter = 0; iter < 100; iter++) {
     const mid = (lo + hi) / 2;
     if (npv(mid) > 0) lo = mid;
@@ -120,8 +93,7 @@ export function computeMortgage(input: MortgageInput): MortgageResult {
   const monthlyInsurance = annualInsurance / 12;
   const insuranceCost = monthlyInsurance * n;
 
-  // TAE: el banco te entrega el capital menos la comisión de apertura, y tú
-  // devuelves cada mes la cuota más el seguro vinculado.
+  // TAE: el banco entrega el capital menos la comisión y tú devuelves cuota + seguro cada mes.
   const monthlyIrr = solveMonthlyIrr(principal - openingCost, monthlyPayment + monthlyInsurance, n);
   const apr = (Math.pow(1 + monthlyIrr, 12) - 1) * 100;
 

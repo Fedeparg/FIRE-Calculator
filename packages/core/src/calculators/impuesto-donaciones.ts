@@ -1,30 +1,18 @@
-// Impuesto sobre Donaciones (ISD). Estimación con la tarifa estatal supletoria
-// y el coeficiente multiplicador por grupo de parentesco. Core puro.
-//
-// MUY orientativo: el ISD está cedido a las CCAA, que aplican grandes
-// bonificaciones (Madrid ~99 %, etc.) y reducciones propias. El resultado real
-// depende decisivamente de tu Comunidad Autónoma.
+// Impuesto sobre Donaciones (ISD): tarifa estatal supletoria por coeficiente de parentesco. Core puro.
+// Muy orientativo: el ISD está cedido a las CCAA, que aplican bonificaciones (Madrid ~99 %) y
+// reducciones propias.
 
 import { ISD_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets.js";
 
-/** Grupos de parentesco del ISD, en el orden en que se ofrecen en el desplegable. */
 export const KINSHIP_GROUPS = ["grupoI_II", "grupoIII", "grupoIV"] as const;
 export type KinshipGroup = (typeof KINSHIP_GROUPS)[number];
 
-/**
- * Umbrales de patrimonio preexistente (€) que delimitan los cuatro tramos de la
- * tabla de coeficientes multiplicadores. Ley 29/1987, art. 22.2. El límite
- * superior se incluye en su tramo (p. ej. 402.678,11 € pertenece al primer tramo).
- */
+/** Umbrales de patrimonio preexistente (€) de los cuatro tramos (Ley 29/1987, art. 22.2); el límite superior entra en su tramo. */
 const WEALTH_TIERS = [402678.11, 2007380.43, 4020770.98] as const;
 
 /**
- * Coeficiente multiplicador por grupo de parentesco y tramo de patrimonio
- * preexistente del adquirente (Ley 29/1987, art. 22.2). Cuatro tramos (índices
- * 0-3 según `WEALTH_TIERS`) × tres grupos:
- * - Grupos I y II: cónyuge, descendientes, ascendientes.
- * - Grupo III: colaterales de 2.º y 3.º grado (hermanos, tíos, sobrinos), afines.
- * - Grupo IV: colaterales de 4.º grado o más, extraños.
+ * Coeficiente multiplicador por grupo y tramo de patrimonio (Ley 29/1987, art. 22.2). Grupos I y II:
+ * cónyuge, descendientes, ascendientes; III: colaterales de 2.º y 3.º grado y afines; IV: resto.
  */
 export const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, number, number]> = {
   grupoI_II: [1.0, 1.05, 1.1, 1.2],
@@ -32,10 +20,7 @@ export const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number
   grupoIV: [2.0, 2.1, 2.2, 2.4],
 };
 
-/**
- * Coeficiente multiplicador aplicable a un grupo de parentesco según el
- * patrimonio preexistente del adquirente. Art. 22.2 Ley 29/1987.
- */
+/** Coeficiente multiplicador según parentesco y patrimonio preexistente (art. 22.2 Ley 29/1987). */
 export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: number): number {
   const wealth = Math.max(0, Number.isFinite(preexistingWealth) ? preexistingWealth : 0);
   let tier = 0;
@@ -44,33 +29,20 @@ export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: num
 }
 
 export interface GiftTaxInput {
-  /** Valor de lo donado. */
   amount: number;
-  /** Reducciones aplicables (varían por CCAA). Por defecto 0. */
   reduction?: number;
-  /** Grupo de parentesco (coeficiente multiplicador). */
   kinship?: KinshipGroup;
-  /**
-   * Patrimonio preexistente del adquirente (€). Eleva el coeficiente
-   * multiplicador a partir de 402.678,11 €. Por defecto 0 (primer tramo).
-   */
+  /** Patrimonio preexistente (€); eleva el coeficiente desde 402.678,11 €. */
   preexistingWealth?: number;
-  /** Bonificación autonómica sobre la cuota (%). Por defecto 0. */
   regionalRebate?: number;
 }
 
 export interface GiftTaxResult {
-  /** Base liquidable (donado − reducciones). */
   taxableBase: number;
-  /** Cuota íntegra (tarifa estatal). */
   grossTax: number;
-  /** Coeficiente multiplicador aplicado (según parentesco y patrimonio preexistente). */
   coefficient: number;
-  /** Cuota tras coeficiente multiplicador, antes de bonificación. */
   adjustedTax: number;
-  /** Cuota final tras bonificación autonómica. */
   tax: number;
-  /** Tipo efectivo sobre lo donado (%). */
   effectiveRate: number;
 }
 

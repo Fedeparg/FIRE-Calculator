@@ -6,11 +6,7 @@ import { NUMERIC_MAX } from './create-position.dto.js';
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
-/**
- * Cuerpo de PATCH /api/positions/:id. Todos los campos son opcionales (se actualiza solo
- * lo enviado), pero si un campo viene, se valida igual que en el alta: `ticker` y `broker`
- * no pueden quedar vacíos. El `userId` NO va aquí: se lee del JWT.
- */
+/** Cuerpo de PATCH /api/positions/:id: campos opcionales, validados como en el alta (`ticker` y `broker` no pueden quedar vacíos). */
 export class UpdatePositionDto {
   @IsOptional()
   @IsString()

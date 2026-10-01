@@ -1,4 +1,4 @@
-// Rentabilidades REALES anuales (descontada la inflación de EE. UU.) del S&P Composite con
+// Rentabilidades reales anuales (descontada la inflación de EE. UU.) del S&P Composite con
 // dividendos reinvertidos y del bono del Tesoro de EE. UU. a 10 años, de enero a enero.
 //
 // Fuente: Robert J. Shiller, "Online Data" (U.S. Stock Markets 1871-Present and CAPE Ratio),

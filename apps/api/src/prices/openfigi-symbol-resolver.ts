@@ -19,16 +19,14 @@ const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
 /**
- * Sufijos de Yahoo a probar, en orden de preferencia para un usuario europeo (denominación
- * en EUR primero): Ámsterdam, Xetra, Milán, París, Madrid, Suiza y, por último, Londres
- * (en GBp). OpenFIGI da ticker + exchCode, pero los exchCode son códigos Bloomberg que no
- * mapean limpio a Yahoo (hay códigos "basura" tipo XH/XF); por eso NO confiamos en ellos:
- * generamos candidatos ticker×sufijo y dejamos que la fuente decida cuál cotiza de verdad.
+ * Sufijos de Yahoo a probar, en orden de preferencia para un europeo (EUR primero; Londres, en
+ * GBp, al final). Los exchCode de OpenFIGI son códigos Bloomberg que no mapean limpio a Yahoo
+ * (hay basura tipo XH/XF): se generan candidatos ticker×sufijo y la fuente decide cuál cotiza.
  */
 const YAHOO_SUFFIXES = ['.AS', '.DE', '.MI', '.PA', '.MC', '.SW', '.L'];
 /** Tope de candidatos a validar por consulta (acota el tráfico en un fallo de cobertura). */
 const MAX_CANDIDATES = 12;
-/** Pausa entre validaciones de candidatos: evita ráfagas que disparen el 429 de Yahoo. */
+/** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
 const VALIDATION_DELAY_MS = 400;
 
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -72,11 +70,10 @@ const SEARCH_TYPES = new Set<InstrumentType>(['equity', 'etf', 'fund']);
 const MAX_SEARCH_CANDIDATES = 5;
 
 /**
- * Candidatos para un ISIN a partir de la búsqueda de Yahoo, que acepta el ISIN como consulta
- * y devuelve las cotizaciones de ESE instrumento. Primero las de los mercados en euros, en el
- * orden de `YAHOO_SUFFIXES` (para un inversor español, la cotización en euros evita convertir
- * divisas); después el resto en el orden de Yahoo, que es lo que cubre los valores que no
- * cotizan en Europa (p. ej. Hong Kong, `.HK`). Función pura.
+ * Candidatos para un ISIN desde la búsqueda de Yahoo (acepta el ISIN y devuelve las
+ * cotizaciones de ese instrumento): primero los mercados en euros, en el orden de
+ * `YAHOO_SUFFIXES` (evita convertir divisas), luego el resto en el orden de Yahoo, que cubre
+ * valores no europeos (p. ej. `.HK`). Pura.
  */
 export function searchCandidates(results: readonly InstrumentSearchResult[]): string[] {
   const symbols = [
@@ -91,11 +88,10 @@ export function searchCandidates(results: readonly InstrumentSearchResult[]): st
 }
 
 /**
- * Símbolos de cripto que en Yahoo SON un par "<T>-USD", pero cuyo ticker suelto colisiona
- * con un valor bursátil real (p. ej. "BTC" cotiza como el ETF Grayscale Bitcoin Mini Trust a
- * ~26 US$, no como Bitcoin a ~60 000 US$). El flujo normal de alta usa el buscador y guarda
- * ya el símbolo exacto ("BTC-USD"), así que esto es una RED DE SEGURIDAD para tickers sueltos
- * que llegan por otra vía (datos antiguos, alta por API/MCP): fuerza el par y NO cae al bare.
+ * Cripto que en Yahoo es un par "<T>-USD" pero cuyo ticker suelto colisiona con un valor real
+ * (p. ej. "BTC" es el ETF Grayscale Bitcoin Mini Trust, ~26 US$, no Bitcoin). Red de seguridad
+ * para tickers sueltos que llegan sin pasar por el buscador (datos antiguos, API/MCP): fuerza
+ * el par y no cae al bare.
  */
 export const CRYPTO_TICKERS = new Set([
   'BTC',
@@ -132,27 +128,22 @@ export const CRYPTO_TICKERS = new Set([
 
 /** Candidatos para un ticker suelto: bare primero (US/símbolo ya completo), luego sufijos. */
 export function tickerCandidates(query: string): string[] {
-  // Si ya parece un símbolo de Yahoo (EUNL.DE, BTC-USD), no inventamos sufijos.
+  // Si ya parece un símbolo de Yahoo (EUNL.DE, BTC-USD), no se inventan sufijos.
   if (query.includes('.') || query.includes('-')) return [query];
-  // Cripto conocida: NO probamos el bare (colisiona con un valor real). Solo el par "-USD";
-  // si no cotizara, preferimos no resolver antes que cachear el instrumento equivocado.
+  // Cripto conocida: solo el par "-USD"; mejor no resolver que cachear el instrumento equivocado.
   if (CRYPTO_TICKERS.has(query)) return [`${query}-USD`];
   const out = [query, ...YAHOO_SUFFIXES.map((s) => query + s)];
   return out.slice(0, MAX_CANDIDATES);
 }
 
 /**
- * Resolver real: ISIN/ticker → símbolo de Yahoo. Para un ISIN prueba primero la búsqueda de
- * Yahoo por ISIN y, si no da nada que cotice, OpenFIGI; en los dos casos el candidato gana
- * solo si COTIZA de verdad en la fuente de precios.
- *
- * Por qué la búsqueda va primero: OpenFIGI devuelve TODOS los listados del instrumento
- * (decenas o cientos, con tickers como "VAPUUSD" o "1810EUR" que Yahoo no conoce) y solo
- * probamos sufijos europeos, así que ETFs con ticker propio por mercado y valores asiáticos
- * se quedaban sin precio. La búsqueda de Yahoo devuelve directamente sus símbolos. Cachea
- * permanentemente en `instruments`: las resoluciones positivas y los "no encontrado" reales
- * (OpenFIGI sin coincidencias); los fallos transitorios NO se cachean para no bloquear un
- * símbolo válido por un rate-limit puntual. Ver `_local/datos-inversiones-api.md`.
+ * Resolver ISIN/ticker → símbolo de Yahoo. Para un ISIN prueba primero la búsqueda de Yahoo y
+ * luego OpenFIGI; un candidato gana solo si cotiza de verdad. La búsqueda va primero porque
+ * OpenFIGI devuelve todos los listados (con tickers que Yahoo no conoce, como "VAPUUSD") y solo
+ * se probaban sufijos europeos, dejando sin precio a ETFs con ticker por mercado y a valores
+ * asiáticos. Cachea en `instruments` las resoluciones y los "no encontrado" reales; los fallos
+ * transitorios no, para no bloquear un símbolo válido por un rate-limit. Ver
+ * `_local/datos-inversiones-api.md`.
  */
 @Injectable()
 export class OpenFigiSymbolResolver implements SymbolResolver {
@@ -168,7 +159,6 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     this.apiKey = config.get<string>('OPENFIGI_API_KEY')?.trim() || undefined;
   }
 
-  /** Solo caché (ruta de lectura del usuario): nunca llama a OpenFIGI ni a la fuente. */
   async resolveCached(tickerOrIsin: string): Promise<string | null> {
     const query = normalizeQuery(tickerOrIsin);
     if (!query) return null;
@@ -176,7 +166,6 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     return cached ?? null;
   }
 
-  /** Resolución completa: cache-first; en miss consulta OpenFIGI, valida contra la fuente y cachea. */
   async resolve(tickerOrIsin: string): Promise<string | null> {
     const query = normalizeQuery(tickerOrIsin);
     if (!query) return null;
@@ -203,22 +192,21 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
         await this.cache(query, symbol, 'openfigi');
         return symbol;
       }
-      // Hubo coincidencias pero ninguna cotizó ahora: posible hueco de cobertura o 429.
-      // No cacheamos (transient-safe): se reintenta en el próximo refresco.
+      // Coincidencias sin cotización: hueco de cobertura o 429. No se cachea; se reintenta.
       this.logger.warn(`OpenFIGI ${query}: ${outcome.tickers.length} tickers, ninguno cotiza`);
       return null;
     }
 
-    // Ticker suelto: lo más común es que ya sea un símbolo de Yahoo (AAPL, EUNL.DE, BTC-USD).
+    // Ticker suelto: lo normal es que ya sea un símbolo de Yahoo.
     const symbol = await this.firstThatPrices(tickerCandidates(query));
     if (symbol) {
       await this.cache(query, symbol, 'identity');
       return symbol;
     }
-    return null; // sin cotización: no cacheamos (puede ser typo o transitorio).
+    return null; // sin cotización: no se cachea (typo o transitorio).
   }
 
-  /** Devuelve el primer candidato que COTIZA en la fuente (orden = prioridad), o null. */
+  /** Primer candidato que cotiza en la fuente (el orden es la prioridad), o null. */
   private async firstThatPrices(candidates: string[]): Promise<string | null> {
     for (let i = 0; i < candidates.length; i++) {
       if (i > 0) await delay(VALIDATION_DELAY_MS);

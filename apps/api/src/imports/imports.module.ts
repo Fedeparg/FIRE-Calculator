@@ -9,11 +9,7 @@ import { PricesModule } from '../prices/prices.module.js';
 import { ImportsController } from './imports.controller.js';
 import { ImportsService } from './imports.service.js';
 
-/**
- * Importación de operaciones desde brókers (hoy, Trade Republic). Reutiliza los lotes de
- * `PositionsModule` y el refresco de precios de `PricesModule`. Registra `JwtModule` con el
- * mismo secreto que auth para que `JwtAuthGuard` valide la cookie de sesión.
- */
+/** Importación de operaciones desde brókers (hoy Trade Republic), sobre los lotes y precios de `PositionsModule`/`PricesModule`. */
 @Module({
   imports: [
     PositionsModule,

@@ -4,28 +4,24 @@ import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-pro
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
-/** Pausa entre peticiones: Yahoo rate-limita por IP (429) si se le dispara en ráfaga. */
+/** Pausa entre peticiones: Yahoo rate-limita por IP (429) en ráfaga. */
 const REQUEST_DELAY_MS = 500;
 /** Reintentos ante 429 / 5xx, con backoff. */
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1_000;
-/** Timeout por petición. */
 const REQUEST_TIMEOUT_MS = 12_000;
 
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 /**
- * User-Agent MÍNIMO a propósito: comprobado empíricamente que Yahoo rate-limita (429) los
- * UA que imitan un navegador completo (Chrome) o `curl` desde IPs de datacenter, pero deja
- * pasar (200) uno mínimo como este. Contraintuitivo, pero es lo que funciona de forma estable.
+ * User-Agent mínimo a propósito: se comprobó empíricamente que Yahoo rate-limita (429) los UA
+ * que imitan un navegador o `curl` desde IPs de datacenter, pero deja pasar uno mínimo.
  */
 const USER_AGENT = 'Mozilla/5.0';
 
 /**
- * Rango del histórico que se pide al dar de alta un símbolo. Cinco años de cierres diarios
- * (~1.280 barras, ~135 kB de JSON, comprobado en vivo con IWDA.AS) caben en UNA llamada al mismo
- * endpoint con otro `range`/`interval`: el coste en peticiones frente a la fuente es idéntico al
- * de pedir un solo cierre. 5 años es también el tope de la serie que reconstruye la cartera
- * (`HISTORY_MAX_DAYS` en `prices.service.ts`).
+ * Cinco años de cierres diarios (~1.280 barras, ~135 kB) caben en una llamada al mismo
+ * endpoint con otro `range`/`interval`, al mismo coste en peticiones que un solo cierre. Es el
+ * tope de la reconstrucción de la cartera (`HISTORY_MAX_DAYS` en `prices.service.ts`).
  */
 const HISTORY_RANGE = '5y';
 const HISTORY_INTERVAL = '1d';
@@ -54,10 +50,7 @@ export function epochToUtcDate(epochSeconds: number): string {
   return new Date(epochSeconds * 1000).toISOString().slice(0, 10);
 }
 
-/**
- * Extrae una `Quote` de la respuesta de Yahoo, o `null` si falta algún dato esencial.
- * Función pura: todo el parseo frágil vive aquí, aislado de la E/S.
- */
+/** Extrae una `Quote` de la respuesta de Yahoo, o `null` si falta algún dato esencial. Pura: el parseo frágil vive aquí, aislado de la E/S. */
 export function parseYahooChart(symbol: string, body: unknown): Quote | null {
   const meta = (body as YahooChartResponse)?.chart?.result?.[0]?.meta;
   if (!meta) return null;
@@ -71,16 +64,10 @@ export function parseYahooChart(symbol: string, body: unknown): Quote | null {
 }
 
 /**
- * Extrae la SERIE de cierres diarios de una respuesta `chart` con `range`/`interval`.
- * Función pura, como `parseYahooChart`.
- *
- * Yahoo devuelve dos arrays alineados por índice: `timestamp[]` e `indicators.quote[0].close[]`.
- * En esos arrays hay HUECOS: los días sin negociación (festivos de ese mercado, subastas
- * suspendidas) vienen con `close: null`. Se SALTAN, no se coercionan: un `null` convertido a 0
- * metería un cierre falso en la caché y arruinaría cualquier gráfica de evolución.
- *
- * La divisa (`meta.currency`) es la misma para toda la serie. Si dos barras cayesen en el
- * mismo día UTC, gana la última (es la más cercana al cierre real).
+ * Extrae la serie de cierres diarios de una respuesta `chart` (pura). Yahoo devuelve
+ * `timestamp[]` e `indicators.quote[0].close[]` alineados por índice, con `close: null` en los
+ * días sin negociación: se saltan, no se coercionan (un 0 falso arruinaría la evolución). Si dos
+ * barras caen el mismo día UTC gana la última (la más cercana al cierre real).
  */
 export function parseYahooChartHistory(symbol: string, body: unknown): Quote[] {
   const result = (body as YahooChartResponse)?.chart?.result?.[0];
@@ -104,11 +91,7 @@ export function parseYahooChartHistory(symbol: string, body: unknown): Quote[] {
   return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
-/**
- * Extrae los splits de una respuesta `chart` pedida con `events=split`. Función pura. Se descartan
- * los eventos con numerador/denominador no numéricos o no positivos: un ratio inválido
- * corrompería la cantidad histórica de la cartera.
- */
+/** Extrae los splits de una respuesta con `events=split` (pura); un ratio inválido corrompería la cantidad histórica, así que se descartan. */
 export function parseYahooSplits(symbol: string, body: unknown): SplitEvent[] {
   const splits = (body as YahooChartResponse)?.chart?.result?.[0]?.events?.splits;
   if (!splits || typeof splits !== 'object') return [];
@@ -131,11 +114,7 @@ export function parseYahooSplits(symbol: string, body: unknown): SplitEvent[] {
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
-/**
- * Proveedor de precios sobre la API no oficial de Yahoo Finance. Cobertura amplia
- * (acciones, ETFs europeos con sufijo de mercado, cripto) y gratis, a cambio de ser no
- * oficial: por eso vive tras `PriceProvider` y se puede sustituir por una fuente de pago.
- */
+/** Precios sobre la API no oficial de Yahoo: amplia y gratis, por eso vive tras `PriceProvider`. */
 @Injectable()
 export class YahooPriceProvider implements PriceProvider {
   readonly name = 'yahoo';
@@ -145,7 +124,7 @@ export class YahooPriceProvider implements PriceProvider {
     const unique = [...new Set(symbols.map((s) => s.trim()).filter(Boolean))];
     const result = new Map<string, Quote>();
 
-    // Secuencial con pausa entre símbolos: el volumen diario es bajo y así evitamos el 429.
+    // Secuencial con pausa: el volumen es bajo y así se evita el 429.
     for (let i = 0; i < unique.length; i++) {
       if (i > 0) await delay(REQUEST_DELAY_MS);
       const quote = await this.fetchOne(unique[i]);
@@ -154,16 +133,12 @@ export class YahooPriceProvider implements PriceProvider {
     return result;
   }
 
-  /**
-   * Cinco años de cierres diarios en UNA sola petición al mismo endpoint (`range`/`interval`),
-   * reutilizando el mismo camino de reintentos, backoff y timeout que el refresco: el trato
-   * con los límites de Yahoo es idéntico. Devuelve una serie vacía ante cualquier fallo.
-   */
+  /** Una petición con los mismos reintentos y timeout que el refresco; serie vacía ante cualquier fallo. */
   async getHistory(symbol: string): Promise<PriceHistory> {
     const clean = symbol.trim();
     if (!clean) return { quotes: [], splits: [] };
 
-    // `events=split` viaja en la MISMA llamada: no cuesta una petición más.
+    // `events=split` viaja en la misma llamada.
     const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'split');
     if (body === null) return { quotes: [], splits: [] };
 
@@ -187,10 +162,8 @@ export class YahooPriceProvider implements PriceProvider {
   }
 
   /**
-   * Pide el `chart` de un símbolo con reintentos (backoff) ante 429/5xx. Devuelve `null` ante
-   * cualquier fallo definitivo: un símbolo malo no debe romper el refresco del resto del lote.
-   * El cuerpo se devuelve SIN parsear (`unknown`): el parseo frágil vive en las funciones
-   * puras `parseYahooChart` / `parseYahooChartHistory`.
+   * Pide el `chart` con reintentos (backoff) ante 429/5xx; `null` ante un fallo definitivo para
+   * que un símbolo malo no rompa el lote. Devuelve el cuerpo sin parsear (`unknown`).
    */
   private async fetchChart(symbol: string, range: string, interval: string, events?: string): Promise<unknown> {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -206,7 +179,6 @@ export class YahooPriceProvider implements PriceProvider {
           signal: controller.signal,
         });
 
-        // 429 (rate-limit) o 5xx: reintentamos con backoff antes de rendirnos.
         if (res.status === 429 || res.status >= 500) {
           if (attempt < MAX_RETRIES) {
             await delay(RETRY_BASE_MS * attempt);

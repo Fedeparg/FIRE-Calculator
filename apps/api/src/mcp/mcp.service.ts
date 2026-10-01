@@ -33,7 +33,7 @@ import { errorResult, jsonResult } from './mcp-results.js';
 
 /**
  * Contexto de seguridad de una petición MCP, derivado del access token verificado. El
- * `userId` es lo que hace que toda tool devuelva SOLO los datos de su dueño (mismo principio
+ * `userId` es lo que hace que toda tool devuelva solo los datos de su dueño (mismo principio
  * de aislamiento que `positions` con el JWT). Ver `_local/mcp-integracion.md`.
  */
 export type McpContext = {
@@ -511,7 +511,7 @@ export class McpService {
   }
 
   /**
-   * Tools de escritura (scope `portfolio:write`). Se registran SIEMPRE (para que el host las
+   * Tools de escritura (scope `portfolio:write`). Se registran siempre (para que el host las
    * descubra), pero cada una verifica el scope en tiempo de ejecución: un token solo-lectura
    * recibe un error de tool pidiendo reconectar con permiso de escritura (step-up). No es un
    * 403 HTTP: todas las tools comparten el mismo endpoint, así que el control es por-tool.
@@ -680,7 +680,7 @@ export class McpService {
   }
 
   /**
-   * Igual que `run` pero exige el scope de escritura ANTES de ejecutar (step-up por-tool). Un
+   * Igual que `run` pero exige el scope de escritura antes de ejecutar (step-up por-tool). Un
    * token sin `portfolio:write` recibe un error claro y queda registrado como `denied_scope`.
    */
   private async runWrite(ctx: McpContext, tool: string, body: () => Promise<CallToolResult>): Promise<CallToolResult> {
@@ -695,7 +695,7 @@ export class McpService {
   }
 
   /**
-   * Valida la entrada de una tool de escritura con el MISMO DTO (class-validator) que usa la
+   * Valida la entrada de una tool de escritura con el mismo DTO (class-validator) que usa la
    * API REST, de modo que el camino MCP no sea una vía de escritura más débil (divisa fuera de
    * la lista, cantidades negativas, etc.). Lanza con los mensajes de validación si falla.
    */

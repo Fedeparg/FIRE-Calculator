@@ -22,8 +22,8 @@ import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
 import { SavedScenariosService, type SavedScenarioResponse } from './saved-scenarios.service.js';
 
 /**
- * Escenarios guardados de calculadora. TODOS los endpoints están autenticados y el `userId`
- * sale SIEMPRE del JWT, nunca del body ni de un query param: un usuario no puede ver, editar
+ * Escenarios guardados de calculadora. todos los endpoints están autenticados y el `userId`
+ * sale siempre del JWT, nunca del body ni de un query param: un usuario no puede ver, editar
  * ni borrar los escenarios de otro (scoping forzado en el servicio).
  */
 @Controller('scenarios')

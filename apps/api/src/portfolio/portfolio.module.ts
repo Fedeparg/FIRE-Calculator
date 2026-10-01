@@ -11,14 +11,9 @@ import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
 /**
- * Compone valor de mercado y P&L de la cartera reutilizando `PositionsService` y
- * `PricesService` (sin duplicar acceso a datos ni cálculo). Lo consumen las tools MCP de
- * lectura (`get_portfolio_valuation`, `get_position`).
- *
- * Aquí vive también el HISTÓRICO (`PortfolioSnapshotsService`): la serie diaria se calcula
- * con esa misma valoración, así que el punto de hoy en la gráfica y el total de la cartera
- * no pueden divergir. Registra `JwtModule` con el mismo secreto que auth para que
- * `JwtAuthGuard` valide la cookie de sesión en `GET /api/portfolio/history`.
+ * Valoración de cartera (tools MCP `get_portfolio_valuation`, `get_position`) y su histórico
+ * (`PortfolioSnapshotsService`, que usa la misma valoración). Registra `JwtModule` con el
+ * secreto de auth para que `JwtAuthGuard` valide la cookie en `GET /api/portfolio/history`.
  */
 @Module({
   imports: [
@@ -35,8 +30,7 @@ import { PortfolioValuationService } from './portfolio-valuation.service.js';
   ],
   controllers: [PortfolioController],
   providers: [PortfolioValuationService, PortfolioSnapshotsService, JwtAuthGuard],
-  // `PortfolioSnapshotsService` se exporta para el job diario (`DailyJobsModule`) y para las
-  // tools MCP de histórico.
+  // Los snapshots se exportan al job diario y a las tools MCP de histórico.
   exports: [PortfolioValuationService, PortfolioSnapshotsService],
 })
 export class PortfolioModule {}

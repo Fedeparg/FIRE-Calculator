@@ -1,10 +1,6 @@
 /**
- * Eventos de producto que se miden, además de las visitas. La lista es cerrada a
- * propósito: un evento nuevo se añade aquí y en la política de privacidad.
- *
- * Regla de privacidad: los datos de un evento NUNCA llevan cifras ni datos
- * personales (importes, emails, tickers). Como mucho, el slug público de la
- * calculadora.
+ * Lista cerrada: un evento nuevo se añade aquí y en la política de privacidad. Sus datos
+ * no llevan cifras ni datos personales (importes, emails, tickers), como mucho el slug.
  */
 export type AnalyticsEvent =
   | { name: "share-link-copied"; data: { calculator: string } }
@@ -16,7 +12,6 @@ export type AnalyticsEvent =
 
 type EventData = Record<string, string>;
 
-/** API global que expone el tracker de Umami una vez cargado. */
 type UmamiTracker = { track: (name: string, data?: EventData) => unknown };
 
 function tracker(): UmamiTracker | null {
@@ -25,11 +20,7 @@ function tracker(): UmamiTracker | null {
   return typeof umami?.track === "function" ? umami : null;
 }
 
-/**
- * Registra un evento. No hace nada si la analítica está apagada, el script aún no ha
- * cargado o lo bloquea el navegador (Do Not Track, bloqueadores): medir nunca puede
- * romper ni retrasar la acción del usuario.
- */
+/** No-op si la analítica está apagada o bloqueada: medir nunca debe romper la acción. */
 export function trackEvent(event: AnalyticsEvent): void {
   const umami = tracker();
   if (!umami) return;

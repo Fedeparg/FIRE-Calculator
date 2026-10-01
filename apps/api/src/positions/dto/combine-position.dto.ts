@@ -4,12 +4,7 @@ import { IsIn, IsNumber, IsOptional, IsPositive, Max, Min } from 'class-validato
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
 import { NUMERIC_MAX } from './create-position.dto.js';
 
-/**
- * Cuerpo de POST /api/positions/:id/combine. La cantidad y el precio de la NUEVA compra
- * que se fusiona (media ponderada) con la posición existente. La divisa debe coincidir
- * con la de la posición existente; si no, el servicio lo rechaza (no se puede promediar
- * un precio en EUR con otro en USD).
- */
+/** Cuerpo de POST /api/positions/:id/combine: la nueva compra a fusionar; la divisa debe coincidir con la de la posición (lo rechaza el servicio). */
 export class CombinePositionDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 6 })

@@ -12,7 +12,7 @@ import { OAuthGrantsService } from './oauth-grants.service.js';
  * `/oauth/consent`). El provider redirige el navegador a esa página; al aprobar, la página
  * registra el consentimiento aquí (sesión obligatoria) y reanuda el flujo de `/authorize`.
  *
- * Todo exige sesión iniciada (JwtAuthGuard) y el `userId` se lee SIEMPRE del JWT: un usuario
+ * Todo exige sesión iniciada (JwtAuthGuard) y el `userId` se lee siempre del JWT: un usuario
  * no puede conceder consentimiento en nombre de otro.
  */
 @Controller('oauth/consent')

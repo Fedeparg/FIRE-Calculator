@@ -7,18 +7,12 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instrumentPrices } from '../db/schema.js';
 
-/**
- * Horas tras las que se considera rancio el último refresco de precios. El cron corre a
- * diario (22:30), así que 36 h dan margen a una ejecución fallida + reintento del día
- * siguiente sin marcar falsos positivos por findes ni por un arranque tardío.
- */
+/** El cron es diario: 36 h dan margen a un fallo + reintento sin falsos positivos por findes o arranque tardío. */
 const STALE_PRICES_AFTER_HOURS = 36;
 
 /**
- * Versión del paquete, leída UNA vez al cargar el módulo. Se lee del `package.json` en vez
- * de importarlo porque `tsconfig.build.json` fija `rootDir: ./src` y un import fuera de ahí
- * no compila. La ruta relativa funciona igual en `dist/health/` (→ `/app/package.json`) que
- * en `src/health/` bajo Vitest. Si algo falla, la salud NO debe romperse por esto.
+ * Versión leída del `package.json` (no importada: `rootDir: ./src` lo impide). La ruta relativa
+ * sirve en `dist/health/` y en `src/health/` bajo Vitest. Un fallo no debe romper la salud.
  */
 const VERSION: string = readVersion();
 
@@ -34,15 +28,10 @@ function readVersion(): string {
   }
 }
 
-/** Estado del último refresco de precios (null en todos los campos si aún no hay datos). */
 interface PricesHealth {
-  /** Fecha (YYYY-MM-DD) del cierre más reciente en caché. */
   lastDate: string | null;
-  /** Cuándo se obtuvo el dato más reciente (ISO 8601). */
   lastFetchedAt: string | null;
-  /** Horas transcurridas desde esa obtención, con un decimal. */
   ageHours: number | null;
-  /** true si supera `STALE_PRICES_AFTER_HOURS`. */
   stale: boolean;
 }
 
@@ -51,23 +40,16 @@ interface HealthResponse {
   status: 'ok' | 'degraded';
   database: 'up';
   version: string;
-  /** Segundos desde el arranque del proceso (entero). */
   uptimeSeconds: number;
   prices: PricesHealth;
   timestamp: string;
 }
 
 /**
- * Endpoint de salud. Comprueba de verdad la conectividad con Postgres (SELECT 1), de modo
- * que sirve como *readiness check* para Docker / el reverse proxy, y añade señales de
- * operación: versión desplegada, uptime y frescura de los precios.
- *
- * El código HTTP sigue siendo 200 aunque el estado sea `degraded`: el healthcheck de
- * Compose sale 0/1 según `res.ok`, y unos precios rancios NO justifican reiniciar el
- * contenedor ni sacarlo de balanceo. Solo la BD caída da 503.
- *
- * No expone nada sensible: ni configuración, ni cadenas de conexión, ni datos de usuarios;
- * solo agregados de una tabla de cotizaciones que es caché pública.
+ * Readiness check (consulta real a Postgres) con versión, uptime y frescura de precios.
+ * Devuelve 200 aunque esté `degraded`: el healthcheck de Compose usa `res.ok` y unos precios
+ * rancios no justifican reiniciar el contenedor; solo la BD caída da 503.
+ * No expone configuración ni datos de usuario, solo agregados de la caché pública de cotizaciones.
  */
 @Controller('health')
 export class HealthController {
@@ -92,14 +74,7 @@ export class HealthController {
     };
   }
 
-  /**
-   * Una sola consulta agregada que sirve además de prueba de vida de la BD (sustituye al
-   * `SELECT 1`: si falla, la conexión está caída igual).
-   *
-   * Es un seq scan sobre `instrument_prices`, y está bien: la tabla guarda una fila por
-   * símbolo y día para los pocos símbolos en uso, así que es diminuta. No se le añade
-   * índice a propósito, para no meter cambios de esquema que no hacen falta.
-   */
+  /** Consulta agregada que además prueba la BD. Seq scan sin índice a propósito: la tabla es diminuta. */
   private async pricesHealth(): Promise<PricesHealth> {
     const [row] = await this.db
       .select({
@@ -110,8 +85,7 @@ export class HealthController {
 
     const fetchedAt = row?.lastFetchedAt ? new Date(row.lastFetchedAt) : null;
     if (!fetchedAt || Number.isNaN(fetchedAt.getTime())) {
-      // Sin cotizaciones todavía (despliegue recién estrenado, o ninguna posición dada de
-      // alta): no hay nada que esté rancio, así que no se degrada el estado.
+      // Sin cotizaciones aún no hay nada rancio.
       return { lastDate: row?.lastDate ?? null, lastFetchedAt: null, ageHours: null, stale: false };
     }
 

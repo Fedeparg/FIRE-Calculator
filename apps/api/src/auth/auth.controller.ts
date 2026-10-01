@@ -71,7 +71,7 @@ export class AuthController {
 
   /**
    * RGPD — derecho de acceso/portabilidad: descarga un JSON con el email del usuario y
-   * TODAS sus posiciones. El `userId` se lee del JWT. La cabecera fuerza la descarga.
+   * todas sus posiciones. El `userId` se lee del JWT. La cabecera fuerza la descarga.
    */
   @Get('account/export')
   @UseGuards(JwtAuthGuard)

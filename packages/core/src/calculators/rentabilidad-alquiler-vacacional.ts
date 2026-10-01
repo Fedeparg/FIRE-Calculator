@@ -1,42 +1,24 @@
-// Rentabilidad de un alquiler vacacional (turístico). A diferencia del alquiler
-// tradicional, se calcula por noches ocupadas y descuenta la comisión de
-// gestión y la limpieza por estancia, que pesan mucho en este modelo. Core puro.
+// Rentabilidad de un alquiler vacacional: por noches ocupadas, con comisión de gestión y limpieza por estancia. Core puro.
 
 export interface HolidayRentalInput {
-  /** Precio de compra del inmueble. */
   purchasePrice: number;
-  /** Gastos e impuestos de compra. */
   purchaseCosts: number;
-  /** Precio medio por noche. */
   nightlyRate: number;
-  /** Noches ocupadas al año. */
   occupiedNights: number;
-  /** Comisión de plataforma/gestión sobre los ingresos (%). */
   managementRate: number;
-  /** Coste de limpieza por estancia. Opcional (por defecto 0). */
   cleaningFee?: number;
-  /** Estancia media en noches (para estimar el nº de limpiezas). Por defecto 3. */
   avgStayNights?: number;
-  /** Gastos fijos anuales (IBI, comunidad, seguro, suministros…). */
   annualExpenses: number;
 }
 
 export interface HolidayRentalResult {
-  /** Ingresos brutos anuales (noches × precio). */
   grossIncome: number;
-  /** Comisión de gestión anual. */
   managementCost: number;
-  /** Número estimado de estancias al año. */
   stays: number;
-  /** Coste anual de limpieza. */
   cleaningCost: number;
-  /** Ingreso neto anual (tras gestión, limpieza y gastos fijos). */
   netIncome: number;
-  /** Ocupación media (% sobre 365 noches). */
   occupancyRate: number;
-  /** Rentabilidad bruta (% sobre el precio de compra). */
   grossYield: number;
-  /** Rentabilidad neta (% sobre la inversión total). */
   netYield: number;
 }
 

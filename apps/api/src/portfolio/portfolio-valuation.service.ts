@@ -5,13 +5,12 @@ import { PricesService, type PriceInfo } from '../prices/prices.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
 import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio-breakdown';
 
-/** Etiqueta del grupo de posiciones sin bróker en el reparto (la API habla castellano). */
 const UNKNOWN_BROKER_LABEL = 'Sin bróker';
 
 /**
- * Valoración de UNA posición, con su P&L en divisa NATIVA. Misma regla que la tabla de la
- * UI (`PositionList`): el P&L solo se calcula si hay precio Y viene en la misma divisa que
- * la posición (no mezclamos divisas en la fila; la conversión vive en el agregado).
+ * Valoración de una posición con su P&L en divisa nativa. Como la tabla de la UI
+ * (`PositionList`): solo se calcula con precio en la misma divisa que la posición; la
+ * conversión vive en el agregado.
  */
 export interface PositionValuation {
   id: string;
@@ -53,10 +52,9 @@ export interface PortfolioValuation {
 }
 
 /**
- * Compone valor de mercado y P&L de la cartera reutilizando `PositionsService` (scoping por
- * usuario, aislamiento ya probado) y `PricesService` (precios + FX cacheados). NO duplica la
- * lógica de cálculo: usa `aggregatePortfolio` de `@sextante/core/fx`, el mismo que la UI. Sirve a las tools
- * MCP de lectura. Ver `_local/mcp-integracion.md`.
+ * Valor de mercado y P&L de la cartera sobre `PositionsService` (scoping por usuario) y
+ * `PricesService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
+ * a las tools MCP de lectura (`_local/mcp-integracion.md`).
  */
 @Injectable()
 export class PortfolioValuationService {
@@ -65,7 +63,6 @@ export class PortfolioValuationService {
     private readonly prices: PricesService,
   ) {}
 
-  /** Valora toda la cartera del usuario, con el agregado convertido a `display`. */
   async valuate(userId: string, display: string): Promise<PortfolioValuation> {
     const { owned, priceMap, pricesRecord, fx } = await this.loadMarketData(userId);
 
@@ -90,10 +87,7 @@ export class PortfolioValuationService {
     };
   }
 
-  /**
-   * Reparto del valor de mercado de la cartera por activo, bróker o divisa, convertido a
-   * `display`. Es `buildBreakdown` de `@sextante/core`, el mismo que dibuja el donut de la UI.
-   */
+  /** Reparto del valor por activo, bróker o divisa en `display` (el `buildBreakdown` del donut de la UI). */
   async breakdown(
     userId: string,
     display: string,
@@ -101,7 +95,7 @@ export class PortfolioValuationService {
   ): Promise<BreakdownResult & { display: string; fxAsOf: string | null }> {
     const { owned, pricesRecord, fx } = await this.loadMarketData(userId);
     const result = buildBreakdown({
-      // Igual que la web: los derivados no tienen precio fiable y no entran en el reparto.
+      // Como la web: los derivados no tienen precio fiable y no entran en el reparto.
       positions: owned.filter((p) => !p.isDerivative),
       prices: pricesRecord,
       rates: fx.rates,
@@ -112,7 +106,6 @@ export class PortfolioValuationService {
     return { ...result, display, fxAsOf: fx.asOf };
   }
 
-  /** Posiciones del usuario con su último precio y las tasas FX cacheadas. */
   private async loadMarketData(userId: string) {
     const owned = await this.positions.findAllByUser(userId);
     const tickers = [...new Set(owned.map((p) => p.ticker))];
@@ -126,11 +119,7 @@ export class PortfolioValuationService {
     return { owned, priceMap, pricesRecord, fx };
   }
 
-  /**
-   * Valora UNA posición del usuario por id. Reutiliza `findAllByUser` (que ya scopea por
-   * `userId`), de modo que un id de OTRO usuario simplemente no aparece → 404. Así se
-   * mantiene el aislamiento sin código nuevo.
-   */
+  /** Valora una posición por id; `findAllByUser` ya scopea por usuario, así que un id ajeno da 404. */
   async valuateOne(userId: string, id: string): Promise<PositionValuation> {
     const owned = await this.positions.findAllByUser(userId);
     const position = owned.find((p) => p.id === id);
@@ -141,10 +130,9 @@ export class PortfolioValuationService {
     return this.valuateRow(position, priceMap.get(position.ticker));
   }
 
-  /** P&L por fila en divisa nativa (misma regla de divisa que la UI). */
   private valuateRow(p: PositionResponse, price?: PriceInfo): PositionValuation {
     const invested = p.quantity * p.avgPrice;
-    // El P&L exige precio Y en la misma divisa que la posición (no mezclamos divisas).
+    // El P&L exige precio en la misma divisa que la posición.
     const priced = price !== undefined && price.currency === p.currency;
 
     let currentPrice: number | null = null;

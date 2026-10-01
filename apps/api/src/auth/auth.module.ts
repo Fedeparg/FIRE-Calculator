@@ -17,7 +17,7 @@ import { SESSION_TTL_SECONDS } from './session.constants.js';
   imports: [
     EmailModule,
     PositionsModule,
-    // La exportación RGPD debe incluir TODO dato personal: lotes e histórico (PortfolioModule)
+    // La exportación RGPD debe incluir todo dato personal: lotes e histórico (PortfolioModule)
     // y escenarios guardados (ScenariosModule) además de las posiciones.
     PortfolioModule,
     ScenariosModule,

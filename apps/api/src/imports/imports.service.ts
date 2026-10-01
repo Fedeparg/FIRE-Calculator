@@ -37,10 +37,7 @@ export const TRADE_REPUBLIC_BROKER = 'Trade Republic';
 const EXTERNAL_ID_PREFIX = 'trade-republic:';
 /** `positions.name` es `varchar(100)`. */
 const NAME_MAX_LENGTH = 100;
-/**
- * Máximo de ISINs distintos por consulta. Un export real tiene decenas; el tope solo evita
- * que un fichero malicioso construya un `IN (...)` descomunal.
- */
+/** Tope de ISINs distintos: un export real tiene decenas; evita un `IN (...)` descomunal desde un fichero malicioso. */
 const MAX_INSTRUMENTS = 2_000;
 
 /** Operaciones de un ISIN, separadas entre las que faltan por importar y las ya importadas. */
@@ -53,14 +50,10 @@ type InstrumentGroup = {
 };
 
 /**
- * Importación de operaciones desde Trade Republic. SIN ESTADO: la vista previa y la
- * confirmación reciben el mismo CSV y lo reparsean, así que no hay nada que guardar entre una
- * y otra (ni sesiones, ni ficheros subidos) y la privacidad del export se limita a la
- * duración de la petición.
- *
- * Reutiliza la lógica de lotes de `positions/`: los lotes se insertan con
- * `PositionLotsService.appendImported` y la foto de la posición se recalcula con el mismo
- * `recompute` que las altas manuales.
+ * Importación desde Trade Republic, sin estado: vista previa y confirmación reciben el mismo
+ * CSV y lo reparsean, así que no se guarda nada entre ellas y el export solo vive lo que dura
+ * la petición. Los lotes entran con `PositionLotsService.appendImported` y la posición se
+ * recalcula con el mismo `recompute` que las altas manuales.
  */
 @Injectable()
 export class ImportsService {
@@ -116,9 +109,8 @@ export class ImportsService {
   }
 
   /**
-   * Escribe la importación. UNA transacción por posición: si los lotes de una dejan la cantidad
-   * en negativo (`NEGATIVE_QUANTITY`), solo esa se revierte y se informa; las demás se
-   * confirman. Es idempotente: reimportar el mismo fichero no crea nada (`external_id`).
+   * Escribe la importación en una transacción por posición: si una queda en negativo solo esa
+   * se revierte y se informa. Idempotente por `external_id`.
    */
   async confirm(userId: string, csv: string): Promise<ImportResult> {
     const parsed = parseOrThrow(csv);
@@ -188,10 +180,6 @@ export class ImportsService {
     };
   }
 
-  /**
-   * Una posición: la localiza (o la crea) y le añade los lotes nuevos. Todo en la transacción
-   * recibida, que el llamante revierte si algo lanza.
-   */
   private async importInstrument(
     tx: DatabaseOrTransaction,
     userId: string,
@@ -234,10 +222,8 @@ export class ImportsService {
   }
 
   /**
-   * Refresca precios de las posiciones nuevas y dispara el backfill del histórico, SIN hacer
-   * esperar la respuesta (son llamadas de red, una por ISIN). Secuencial para no ráfagas
-   * contra Yahoo. Tolerante a fallos: `primeSymbol` ya lo es, y el refresco diario repara
-   * lo que falte.
+   * Precios de las posiciones nuevas y backfill, sin hacer esperar la respuesta (red, una
+   * llamada por ISIN); secuencial para no ráfagear Yahoo. El refresco diario repara lo que falle.
    */
   private async primeInBackground(userId: string, created: readonly Position[]): Promise<void> {
     try {
@@ -332,7 +318,6 @@ export class ImportsService {
     return row;
   }
 
-  /** Lotes de las posiciones dadas (en el orden canónico del agregado), agrupados por posición. */
   private async selectLotsByPosition(existing: readonly Position[]): Promise<Map<string, PositionLot[]>> {
     const byPosition = new Map<string, PositionLot[]>();
     if (existing.length === 0) return byPosition;
@@ -370,11 +355,7 @@ function toLotInput(trade: ImportedTrade) {
   };
 }
 
-/**
- * Reproduce en memoria lo que haría la confirmación para una posición: los lotes actuales más
- * los nuevos, con el MISMO agregado exacto que el recálculo real, de modo que la vista previa
- * y el resultado no pueden discrepar.
- */
+/** Simula la confirmación con el mismo agregado que el recálculo real, para que vista previa y resultado no discrepen. */
 function simulate(
   currentLots: readonly PositionLot[],
   fresh: readonly ImportedTrade[],

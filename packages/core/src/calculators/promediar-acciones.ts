@@ -1,41 +1,26 @@
-// Promediar acciones (DCA): precio medio ponderado de varias compras, con
-// comisiones de compra y, opcionalmente, valoración a precio actual de mercado
-// (plusvalía/minusvalía latente y precio de equilibrio). Core puro.
+// Promediar acciones (DCA): precio medio ponderado con comisiones y valoración opcional a precio actual. Core puro.
 
 export interface SharePurchase {
-  /** Precio por acción de la compra. */
   price: number;
-  /** Número de acciones (admite decimales/fracciones). */
   shares: number;
-  /** Comisión de la compra (corretaje). Opcional. */
   commission?: number;
 }
 
 export interface AveragePriceInput {
-  /** Compras realizadas. */
   purchases: SharePurchase[];
-  /** Precio actual de mercado por acción (opcional, para valorar la posición). */
   currentPrice?: number;
 }
 
 export interface AveragePriceResult {
-  /** Total de acciones acumuladas. */
   totalShares: number;
-  /** Total invertido en acciones (sin comisiones). */
   grossCost: number;
-  /** Comisiones totales pagadas. */
   totalCommission: number;
-  /** Coste total (acciones + comisiones). */
   totalCost: number;
-  /** Precio medio ponderado por acción (sin comisiones). */
   averagePrice: number;
   /** Precio de equilibrio por acción (incluye comisiones): a partir de aquí ganas. */
   breakEvenPrice: number;
-  /** Valor de mercado de la posición al precio actual, o null sin precio. */
   marketValue: number | null;
-  /** Plusvalía/minusvalía latente (valor de mercado − coste total), o null. */
   unrealizedGain: number | null;
-  /** Rentabilidad latente sobre el coste total (%), o null. */
   returnPct: number | null;
 }
 

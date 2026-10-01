@@ -41,7 +41,7 @@ type SessionJwt = { sub: string; email: string };
  * tokens. Ver `_local/mcp-integracion.md`.
  *
  * Invariantes de seguridad que poseemos (no las cubre el SDK):
- *  - Códigos y tokens SOLO se guardan hasheados (SHA-256), nunca en claro.
+ *  - Códigos y tokens solo se guardan hasheados (SHA-256), nunca en claro.
  *  - Códigos de un solo uso atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
  *  - Audience binding (RFC 8707): el token se emite y se VERIFICA contra el URI canónico
  *    `…/api/mcp`; un token para otro recurso se rechaza.
@@ -278,7 +278,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
 
   /**
    * Marca el cliente como usado (columna `lastUsedAt`, que el reaper usa para no purgar
-   * clientes vivos). Deliberadamente SIN `await`: es telemetría, no parte del contrato del
+   * clientes vivos). Deliberadamente sin `await`: es telemetría, no parte del contrato del
    * canje, así que no debe sumar latencia a `/token` ni hacer fallar la emisión si el UPDATE
    * falla. Un error solo se registra.
    */
@@ -332,7 +332,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /**
-   * Valida el `resource` (RFC 8707) y devuelve SIEMPRE la audiencia canónica. Si se indica
+   * Valida el `resource` (RFC 8707) y devuelve siempre la audiencia canónica. Si se indica
    * un recurso distinto del nuestro, lo rechaza (no emitimos tokens para otros servidores).
    */
   private validateResource(resource?: URL): string {

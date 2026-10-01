@@ -2,21 +2,14 @@ import { BadRequestException, PayloadTooLargeException, UnsupportedMediaTypeExce
 import type { Request } from 'express';
 
 /**
- * Lee el cuerpo de una petición `text/csv` como UTF-8, con un tope de bytes.
+ * Lee el cuerpo `text/csv` como UTF-8 con un tope de bytes, cortando en stream (413) en
+ * cuanto se supera.
  *
- * POR QUÉ NO multipart NI JSON:
- *  - Los parsers globales de Nest (JSON/urlencoded, 100 kB por defecto) ignoran `text/csv`, así
- *    que el cuerpo llega intacto al handler y el tope se aplica AQUÍ, solo en esta ruta: no hace
- *    falta tocar `main.ts` ni subir el límite global de todas las demás.
- *  - Multipart exigiría `multer` (hoy solo transitiva, sin rutas de subida) y su superficie de
- *    ataque (parseo de partes, ficheros temporales) para recibir un único fichero de texto.
- *  - Un JSON `{ "csv": "…" }` obligaría a escapar el CSV entero en el cliente y a cargar un
- *    `string` de hasta 2 MB dentro de un objeto antes de poder validarlo.
- *  - `text/csv` no es un tipo "simple" de CORS, así que un sitio ajeno no puede lanzar esta
- *    petición con la cookie de sesión sin pasar por un preflight que la API no autoriza.
- *
- * El corte es EN STREAM: en cuanto se supera el tope se deja de acumular y se responde 413,
- * sin esperar a que termine de subirse un fichero enorme.
+ * Por qué ni multipart ni JSON: los parsers globales de Nest ignoran `text/csv`, así que el
+ * tope se aplica solo en esta ruta sin tocar `main.ts`; multipart exigiría `multer` y su
+ * superficie de ataque para un único fichero de texto; un JSON obligaría a escapar y cargar
+ * hasta 2 MB en un objeto antes de validar. Además `text/csv` no es un tipo "simple" de CORS:
+ * un sitio ajeno no puede lanzar la petición con la cookie sin un preflight que la API no autoriza.
  */
 export async function readCsvBody(request: Request, maxBytes: number): Promise<string> {
   const contentType = request.headers['content-type'] ?? '';

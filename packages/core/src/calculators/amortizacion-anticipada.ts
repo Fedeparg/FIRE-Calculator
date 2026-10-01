@@ -1,31 +1,19 @@
-// Amortización anticipada de hipoteca: tras una aportación extra de capital,
-// compara las dos opciones — reducir cuota (mismo plazo) o reducir plazo (misma
-// cuota) — y cuántos intereses ahorras en cada caso. Tiene en cuenta la posible
-// comisión por amortización anticipada (compensación al banco). Core puro.
+// Amortización anticipada: compara reducir cuota (mismo plazo) o plazo (misma cuota), con la comisión por amortización anticipada. Core puro.
 
 import { computeMortgage } from "./hipoteca.js";
 
 export interface EarlyRepaymentInput {
-  /** Capital pendiente de la hipoteca. */
   pendingPrincipal: number;
-  /** Tipo de interés TIN anual, en base 100 (3 = 3 %). */
   annualRate: number;
-  /** Plazo restante en años. */
   remainingYears: number;
-  /** Aportación extra para amortizar. */
   extraPayment: number;
-  /**
-   * Comisión por amortización anticipada como % del capital amortizado. En
-   * España la ley la limita (p. ej. 2 % los 10 primeros años en tipo fijo).
-   * Se paga aparte y reduce el ahorro neto. Opcional (por defecto 0).
-   */
+  /** Comisión como % del capital amortizado (la ley la limita, p. ej. 2 % en tipo fijo los 10 primeros años); se paga aparte. Por defecto 0. */
   compensationRate?: number;
 }
 
 export interface EarlyRepaymentResult {
   monthlyPaymentBefore: number;
   totalInterestBefore: number;
-  /** Comisión por amortización anticipada (importe). */
   prepaymentFee: number;
   /** Opción A: misma duración, cuota más baja. */
   reducePayment: { newMonthlyPayment: number; interestSaved: number; netSaved: number };
@@ -41,7 +29,6 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
   const extra = Math.min(pending, Math.max(0, input.extraPayment || 0));
   const newPrincipal = pending - extra;
   const compensationRate = Math.max(0, input.compensationRate || 0);
-  // La comisión se paga aparte, sobre el capital que amortizas anticipadamente.
   const prepaymentFee = extra * (compensationRate / 100);
 
   const base = computeMortgage({
@@ -52,7 +39,7 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
   const monthlyPaymentBefore = base.monthlyPayment;
   const totalInterestBefore = base.totalInterest;
 
-  // Opción A — reducir cuota: mismo plazo, capital más bajo.
+  // Opción A: reducir cuota (mismo plazo)
   const afterPayment = computeMortgage({
     principal: newPrincipal,
     annualRate: input.annualRate,
@@ -65,9 +52,7 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
     netSaved: reducePaymentInterestSaved - prepaymentFee,
   };
 
-  // Opción B — reducir plazo: misma cuota, menos meses. Se simula el pago real
-  // mes a mes (el último pago es parcial), de modo que los meses (enteros) y los
-  // intereses ahorrados sean coherentes entre sí.
+  // Opción B: reducir plazo; se simula mes a mes (último pago parcial) para que meses e intereses sean coherentes
   let newMonths = 0;
   let interestAfterTerm = 0;
   let balance = newPrincipal;

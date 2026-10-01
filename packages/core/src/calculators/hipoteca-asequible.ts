@@ -1,20 +1,14 @@
-// ¿Qué hipoteca me puedo permitir? Estima el importe máximo de préstamo y precio
-// de vivienda combinando tres límites reales: la regla del esfuerzo (capacidad
-// de pago), el porcentaje máximo que financia el banco (LTV) y el ahorro
-// disponible, que debe cubrir la entrada Y los gastos de compra. Core puro.
+// ¿Qué hipoteca me puedo permitir? Combina la regla del esfuerzo, el LTV máximo del banco y el
+// ahorro, que debe cubrir entrada y gastos de compra. Core puro.
 
 import { computeMortgage } from "./hipoteca.js";
 
 export interface AffordabilityInput {
-  /** Ingresos mensuales netos del hogar. */
   netMonthlyIncome: number;
-  /** Otras cuotas mensuales de deuda (préstamos, etc.). */
   monthlyDebts: number;
-  /** Ahorro disponible para la entrada y los gastos. */
   downPayment: number;
   /** TIN anual de la hipoteca, en base 100 (3 = 3 %). */
   annualRate: number;
-  /** Plazo de la hipoteca en años. */
   termYears: number;
   /** Ratio de esfuerzo máximo, en base 100. Por defecto 35 % (criterio del BdE). */
   effortRatio?: number;
@@ -24,23 +18,15 @@ export interface AffordabilityInput {
   purchaseCostsRate?: number;
 }
 
-/** Qué límite marca el tope: la capacidad de pago o el ahorro/LTV. */
 export type AffordabilityBinding = "income" | "savings";
 
 export interface AffordabilityResult {
-  /** Cuota mensual máxima que permite la regla del esfuerzo. */
   maxMonthlyPayment: number;
-  /** Importe máximo de préstamo. */
   maxLoan: number;
-  /** Precio máximo de vivienda. */
   maxPrice: number;
-  /** Cuota mensual estimada del préstamo resultante. */
   estimatedMonthlyPayment: number;
-  /** Entrada necesaria (precio − préstamo). */
   downPaymentNeeded: number;
-  /** Gastos de compra del precio máximo (importe). */
   purchaseCostsAmount: number;
-  /** Límite que marca el tope: capacidad de pago ("income") o ahorro/LTV ("savings"). */
   binding: AffordabilityBinding;
 }
 
@@ -59,9 +45,8 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
   const maxMonthlyPayment = Math.max(0, income * effort - debts);
   const maxLoanByPayment = i === 0 ? maxMonthlyPayment * n : (maxMonthlyPayment * (1 - Math.pow(1 + i, -n))) / i;
 
-  // 2) Precio máximo: el mayor P tal que el efectivo necesario ≤ ahorro, donde
-  //    préstamo(P) = min(maxLoanByPayment, ltv·P) y
-  //    efectivo(P) = P·(1 + gastos) − préstamo(P). Es monótono creciente en P.
+  // 2) Precio máximo: mayor P con efectivo(P) = P·(1 + gastos) − préstamo(P) ≤ ahorro, siendo
+  //    préstamo(P) = min(maxLoanByPayment, ltv·P); efectivo es monótono creciente.
   const effLow = 1 + costsRate - ltv; // pendiente del efectivo mientras manda el LTV
   const breakpoint = ltv > 0 ? maxLoanByPayment / ltv : Number.POSITIVE_INFINITY;
   const cashAtBreakpoint = Number.isFinite(breakpoint) ? breakpoint * effLow : Number.POSITIVE_INFINITY;
@@ -69,11 +54,11 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
   let maxPrice: number;
   let binding: AffordabilityBinding;
   if (savings <= cashAtBreakpoint) {
-    // Manda el LTV + el ahorro: el préstamo va al tope del LTV.
+    // manda el LTV + ahorro
     maxPrice = effLow > 0 ? savings / effLow : breakpoint;
     binding = "savings";
   } else {
-    // Manda la capacidad de pago: el préstamo va al tope de la cuota.
+    // manda la capacidad de pago
     maxPrice = (savings + maxLoanByPayment) / (1 + costsRate);
     binding = "income";
   }

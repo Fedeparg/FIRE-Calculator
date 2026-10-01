@@ -17,11 +17,7 @@ import {
   type PositionCreatedEvent,
 } from './position-events.js';
 
-/**
- * Posición tal y como la consume el frontend. Drizzle devuelve `numeric` como `string`
- * (para no perder precisión); aquí lo exponemos como `number` porque la vista es solo
- * de lectura/visualización. Las fechas viajan como ISO string.
- */
+/** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
 export type PositionResponse = {
   id: string;
   ticker: string;
@@ -44,12 +40,7 @@ export class PositionsService {
     private readonly events: EventEmitter2,
   ) {}
 
-  /**
-   * Crea una posición para el usuario autenticado. Aplica la regla de duplicados antes de
-   * insertar (ver `assertCanUseTickerBroker`): el bróker solo es obligatorio si ya existe
-   * otra entrada del mismo símbolo; un `(ticker, broker)` exacto ya existente lanza 409 con
-   * la posición existente para ofrecer combinar.
-   */
+  /** Crea una posición aplicando antes la regla de duplicados (`assertCanUseTickerBroker`). */
   async create(userId: string, dto: CreatePositionDto): Promise<PositionResponse> {
     const ticker = this.normalizeTicker(dto.ticker);
     const broker = dto.broker?.trim() ?? '';
@@ -57,8 +48,7 @@ export class PositionsService {
     await this.assertCanUseTickerBroker(userId, ticker, broker);
 
     try {
-      // El alta y su lote inicial van en la MISMA transacción: una posición sin lotes sería
-      // una película sin fotograma inicial y el primer recálculo la pondría a cero.
+      // Alta y lote inicial en la misma transacción: sin lotes, el primer recálculo la pondría a cero.
       const row = await this.db.transaction(async (tx) => {
         const [inserted] = await tx
           .insert(positions)
@@ -66,10 +56,8 @@ export class PositionsService {
             userId,
             ticker,
             name: dto.name ?? null,
-            // `numeric` se almacena como string para conservar la precisión exacta.
             quantity: dto.quantity.toString(),
             avgPrice: dto.avgPrice.toString(),
-            // El bróker vacío se guarda como NULL (sin especificar).
             broker: broker || null,
             currency: dto.currency ?? 'EUR',
           })
@@ -81,26 +69,20 @@ export class PositionsService {
           kind: 'buy',
           quantity: inserted.quantity,
           price: inserted.avgPrice,
-          // Misma convención que el backfill: la fecha de alta (en UTC) es lo más cercano a
-          // la fecha real de compra que conocemos mientras el usuario no diga otra cosa.
+          // Como el backfill: la fecha de alta (UTC) es lo más cercano a la compra real que se conoce.
           tradedAt: inserted.createdAt.toISOString().slice(0, 10),
         });
         return inserted;
       });
 
-      // Refresca el precio en caliente para que la valoración aparezca al instante (sin
-      // esperar al cron diario). Fuera de la transacción: es una llamada de red.
-      // Es tolerante a fallos: nunca rompe el alta.
+      // Precio en caliente, fuera de la transacción (es red); tolerante a fallos.
       await this.prices.primeSymbol(row.ticker, row.currency);
-      // Backfillea el histórico reciente de la cartera del usuario (ver `position-events.ts`
-      // sobre por qué es un evento y no una llamada directa). No se espera: no debe alargar
-      // la respuesta del alta, y es tolerante a fallos en su propio listener.
+      // Evento sin esperar: no debe alargar la respuesta del alta (ver `position-events.ts`).
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
       return this.toResponse(row);
     } catch (error) {
-      // La única FK de `positions` es `userId → users.id`. Una violación aquí solo puede
-      // significar que el JWT es válido (firma correcta) pero el usuario ya no existe
-      // (p. ej. cuenta borrada, o BD reiniciada en dev): sesión muerta → 401, no 500.
+      // La única FK es `userId → users.id`: JWT válido pero usuario inexistente (cuenta
+      // borrada, BD reiniciada en dev) es sesión muerta → 401, no 500.
       if (isForeignKeyViolation(error)) {
         throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');
       }
@@ -108,7 +90,7 @@ export class PositionsService {
     }
   }
 
-  /** Devuelve SOLO las posiciones del usuario autenticado, más recientes primero. */
+  /** Solo las posiciones del usuario, más recientes primero. */
   async findAllByUser(userId: string): Promise<PositionResponse[]> {
     const rows = await this.db
       .select()
@@ -120,17 +102,9 @@ export class PositionsService {
   }
 
   /**
-   * Combina una nueva compra con una posición existente. Registra la compra como un LOTE y
-   * deja que el recálculo derive cantidad y precio medio (media ponderada / coste medio
-   * móvil, ver `lot-aggregate.ts`), en vez de hacer la media a mano.
-   *
-   * PRECISIÓN: la versión anterior calculaba `(q_old·p_old + q_new·p_new) / (q_old + q_new)`
-   * con `Number()`, es decir en coma flotante binaria: el precio medio se desplazaba unas
-   * milésimas en cada combinación y el error se acumulaba. Ahora la aritmética es decimal
-   * exacta sobre los `string` de `numeric`, y además queda histórico de la compra.
-   *
-   * La divisa de la compra debe coincidir con la de la posición (no tiene sentido
-   * promediar un precio en EUR con otro en USD) → 400 si difieren.
+   * Combina una compra con una posición existente: la registra como lote y deja que el
+   * recálculo derive cantidad y precio medio con aritmética decimal exacta (`lot-aggregate.ts`).
+   * 400 si la divisa difiere (no se promedia EUR con USD).
    */
   async combine(userId: string, id: string, dto: CombinePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
@@ -146,8 +120,7 @@ export class PositionsService {
         kind: 'buy',
         quantity: dto.quantity.toString(),
         price: dto.avgPrice.toString(),
-        // Sin fecha en el DTO (la API pública no la pedía): la compra es de hoy. Para fijar
-        // otra fecha existen los endpoints de lotes.
+        // El DTO no lleva fecha: la compra es de hoy (otra fecha, por los endpoints de lotes).
         tradedAt: todayUtc(),
       });
       return this.reread(tx, id);
@@ -156,10 +129,7 @@ export class PositionsService {
     return this.toResponse(row);
   }
 
-  /**
-   * Actualiza una posición del usuario (edición manual). Si el cambio de `ticker`/`broker`
-   * chocaría con OTRA posición del usuario (excluyendo la propia), lanza 409.
-   */
+  /** Edición manual; 409 si `ticker`/`broker` chocan con otra posición del usuario. */
   async update(userId: string, id: string, dto: UpdatePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
 
@@ -169,12 +139,11 @@ export class PositionsService {
     const tickerChanged = ticker !== current.ticker;
     const brokerChanged = broker.toLowerCase() !== (current.broker ?? '').toLowerCase();
     if (tickerChanged || brokerChanged) {
-      // Excluye la propia fila para que editar no choque consigo misma.
       await this.assertCanUseTickerBroker(userId, ticker, broker, id);
     }
 
-    // El formulario envía siempre cantidad y precio medio: solo cuenta como declaración si algún
-    // importe difiere del actual (cambiar el nombre o el bróker no debe tocar los lotes).
+    // El formulario envía siempre ambos importes: solo es una declaración si alguno difiere del
+    // actual (cambiar nombre o bróker no debe tocar los lotes).
     const declaresAmounts =
       (dto.quantity !== undefined && !sameAmount(dto.quantity.toString(), current.quantity)) ||
       (dto.avgPrice !== undefined && !sameAmount(dto.avgPrice.toString(), current.avgPrice));
@@ -196,8 +165,7 @@ export class PositionsService {
 
       if (!declaresAmounts) return updated;
 
-      // Editar cantidad/precio medio a mano es DECLARAR el estado actual: los lotes se
-      // realinean para que foto y película sigan diciendo lo mismo (ver `declareState`).
+      // Editar los importes declara el estado actual: los lotes se realinean (ver `declareState`).
       await this.lots.declareState(tx, {
         positionId: id,
         userId,
@@ -207,52 +175,39 @@ export class PositionsService {
       return this.reread(tx, id);
     });
 
-    // Si cambió el símbolo, su precio puede no estar cacheado: refréscalo en caliente.
+    // Símbolo nuevo: su precio puede no estar cacheado.
     if (row.ticker !== current.ticker) {
       await this.prices.primeSymbol(row.ticker, row.currency);
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
     } else if (declaresAmounts) {
-      // `declareState` realineó los lotes: la película reconstruida cambia aunque el símbolo no.
+      // Los lotes realineados cambian la reconstrucción aunque el símbolo no.
       this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: id } satisfies LotChangedEvent);
     }
     return this.toResponse(row);
   }
 
-  /**
-   * Borra una posición del usuario autenticado.
-   *
-   * Aislamiento entre usuarios (verificado): si no existe → 404; si pertenece a OTRO
-   * usuario → 403. Así un usuario A nunca puede borrar una posición del usuario B.
-   */
+  /** Borra una posición propia: 404 si no existe, 403 si es de otro usuario. */
   async remove(userId: string, id: string): Promise<void> {
     await this.findOwned(userId, id);
     await this.db.delete(positions).where(eq(positions.id, id));
   }
 
-  /**
-   * Localiza una posición por id verificando propiedad: 404 si no existe, 403 si es de
-   * otro usuario. Centraliza el scoping por usuario para todos los endpoints por id.
-   * Delega en el helper compartido para que el servicio de lotes aplique EXACTAMENTE la
-   * misma regla de seguridad (ver `position-access.ts`).
-   */
+  /** Delega en el helper compartido con el servicio de lotes (ver `position-access.ts`). */
   private findOwned(userId: string, id: string): Promise<Position> {
     return findOwnedPosition(this.db, userId, id);
   }
 
-  /** Relee la posición tras un recálculo de lotes, para devolver la foto ya sincronizada. */
+  /** Relee la posición tras un recálculo de lotes. */
   private async reread(tx: DatabaseOrTransaction, id: string): Promise<Position> {
     const [row] = await tx.select().from(positions).where(eq(positions.id, id));
     return row;
   }
 
   /**
-   * Aplica la regla de duplicados para un `(ticker, broker)` (con `broker` ya recortado;
-   * cadena vacía = sin bróker). Lanza:
-   *   - 409 `BROKER_REQUIRED` si el bróker está vacío PERO ya existe otra entrada del
-   *     mismo símbolo (hay que especificar bróker para distinguirla).
-   *   - 409 `DUPLICATE` (con la posición existente) si el `(ticker, broker)` exacto ya
-   *     existe (case-insensitive en el bróker), para ofrecer combinar.
-   * `excludeId` excluye la propia fila (ediciones).
+   * Regla de duplicados para `(ticker, broker)` (bróker recortado; vacío = sin bróker):
+   * 409 `BROKER_REQUIRED` si no hay bróker pero ya existe el símbolo, y 409 `DUPLICATE` (con la
+   * existente, para ofrecer combinar) si el par existe (bróker case-insensitive).
+   * `excludeId` excluye la propia fila en ediciones.
    */
   private async assertCanUseTickerBroker(
     userId: string,
@@ -292,7 +247,6 @@ export class PositionsService {
     }
   }
 
-  /** ¿El usuario ya tiene alguna posición de este símbolo (cualquier bróker)? */
   private async symbolExists(userId: string, ticker: string, excludeId?: string): Promise<boolean> {
     const conditions = [eq(positions.userId, userId), eq(positions.ticker, ticker)];
     if (excludeId) {
@@ -326,14 +280,10 @@ export class PositionsService {
   }
 }
 
-/** Código SQLSTATE de PostgreSQL para violación de clave foránea. */
+/** SQLSTATE de violación de clave foránea. */
 const PG_FOREIGN_KEY_VIOLATION = '23503';
 
-/**
- * Detecta una violación de FK de Postgres. Drizzle envuelve el error del driver en un
- * `DrizzleQueryError` y deja el `PostgresError` real (con el `code` SQLSTATE) en `cause`,
- * así que recorremos la cadena de `cause` hasta encontrarlo.
- */
+/** Drizzle envuelve el error del driver: el `code` SQLSTATE está en algún `cause` de la cadena. */
 function isForeignKeyViolation(error: unknown): boolean {
   let current: unknown = error;
   while (typeof current === 'object' && current !== null) {

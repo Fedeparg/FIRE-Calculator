@@ -1,52 +1,32 @@
-// Intereses de tarjeta de crédito (deuda revolving). Simula la amortización mes
-// a mes. Core puro.
-//
-// Soporta dos modos de pago:
-//  - "fixed": cuota mensual fija (lo que pagas cada mes no cambia).
-//  - "percent": cuota mínima como % del saldo, con un suelo en euros. Es el modo
-//    típico de las tarjetas revolving: al bajar el saldo baja la cuota, por lo
-//    que la deuda dura años. El suelo garantiza que la deuda termina por saldarse.
+// Tarjeta de crédito (deuda revolving): amortización mes a mes. Core puro. Modos de pago: "fixed"
+// (cuota fija) y "percent" (mínimo como % del saldo con suelo en euros; sin suelo la cuota tiende a 0
+// y la deuda no termina).
 
-/** Formas de pago mensual de la tarjeta: cuota fija o porcentaje del saldo. */
 export const PAYMENT_MODES = ["fixed", "percent"] as const;
 export type PaymentMode = (typeof PAYMENT_MODES)[number];
 
 export interface CreditCardInput {
-  /** Saldo pendiente (deuda). */
   balance: number;
-  /** Tipo de interés anual (TIN/TAE), en base 100 (20 = 20 %). */
   annualRate: number;
-  /** Modo de pago. Por defecto "fixed". */
   paymentMode?: PaymentMode;
-  /** Pago mensual fijo (modo "fixed"). */
   monthlyPayment: number;
-  /** Cuota mínima como % del saldo (modo "percent"), en base 100 (3 = 3 %). */
   minPercent?: number;
-  /** Suelo de la cuota mínima en euros (modo "percent"). Garantiza que termina. */
   minFloor?: number;
 }
 
 export interface CreditCardPoint {
-  // Firma de índice numérica para consumirlo como dato genérico de gráfica.
+  // firma de índice numérica: consumible como dato de gráfica
   [key: string]: number;
-  /** Mes (0 = inicio). */
   month: number;
-  /** Saldo pendiente al final del mes. */
   balance: number;
-  /** Intereses acumulados pagados hasta ese mes. */
   interestPaid: number;
 }
 
 export interface CreditCardResult {
-  /** Meses hasta saldar la deuda, o null si el pago no cubre ni los intereses. */
   monthsToPayoff: number | null;
-  /** Intereses totales pagados. */
   totalInterest: number;
-  /** Total pagado (principal + intereses). */
   totalPaid: number;
-  /** Primera cuota mensual (informativa, útil en modo "percent"). */
   firstPayment: number;
-  /** Evolución del saldo mes a mes (vacía si la deuda no se salda). */
   series: CreditCardPoint[];
 }
 
@@ -78,11 +58,9 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
     };
   }
 
-  // En modo "percent" sin suelo, la cuota tiende a 0 con el saldo y la deuda
-  // nunca termina; el suelo es imprescindible para que se salde.
+  // sin suelo, en modo "percent" la deuda nunca termina
   if (mode === "percent" && minFloor <= 0) return NEVER;
-  // En modo "fixed", si el pago no cubre ni los intereses del primer mes, la
-  // deuda nunca baja.
+  // en modo "fixed", si el pago no cubre los intereses del primer mes la deuda nunca baja
   if (mode === "fixed" && fixedPayment <= balance * monthlyRate) return NEVER;
 
   let remaining = balance;

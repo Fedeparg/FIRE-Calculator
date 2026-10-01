@@ -23,15 +23,13 @@ import {
 import { staleSnapshotDates } from '@sextante/core/snapshot-staleness';
 
 /**
- * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan
- * SIEMPRE en euros: Sextante está enfocado al inversor español, así que el euro es la unidad
- * natural de la serie y evita que el histórico dependa de la divisa que el usuario tuviese
- * seleccionada el día de la captura. Para verlo en otra divisa NO se recalcula nada: se
- * reexpresa con las tasas FX que cada snapshot guardó de SU día (ver `history`).
+ * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
+ * de la divisa seleccionada el día de la captura. Otra divisa se reexpresa con las tasas FX
+ * que cada snapshot guardó de su día (ver `history`).
  */
 export const SNAPSHOT_BASE_CURRENCY = 'EUR';
 
-/** Rango por defecto del histórico que se puede pedir, en días. El máximo (5 años) vive en `prices.service.ts`. */
+/** Rango por defecto del histórico, en días (el máximo vive en `prices.service.ts`). */
 export const HISTORY_DEFAULT_DAYS = 365;
 export { HISTORY_MAX_DAYS };
 
@@ -51,20 +49,14 @@ export interface PortfolioHistoryPoint {
   pnlPct: number | null;
   valuedPositions: number;
   totalPositions: number;
-  /**
-   * `true` si este punto es ANTERIOR a que el usuario empezara a registrar su cartera en
-   * Sextante: una reconstrucción a partir de las operaciones (cantidad y coste de aquel día según
-   * los lotes, valorados con los cierres de ese día). Desde ese inicio de seguimiento es `false`
-   * aunque la fila la haya rehecho la reconstrucción. Ver `backfillUser`.
-   */
+  /** `true` si el punto es anterior al inicio de seguimiento del usuario: reconstrucción desde los lotes. Ver `backfillUser`. */
   estimated: boolean;
 }
 
-/** Serie histórica de la cartera de un usuario. */
 export interface PortfolioHistory {
   /** Divisa en la que se devuelven los importes. */
   display: string;
-  /** Divisa en la que están ALMACENADOS (siempre EUR); útil para depurar y para la UI. */
+  /** Divisa en la que están almacenados (siempre EUR). */
   base: string;
   points: PortfolioHistoryPoint[];
 }
@@ -93,31 +85,20 @@ function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/**
- * Formatea un importe para una columna `numeric(20,8)`. Devuelve `null` si no es finito o no
- * cabe: preferimos NO guardar el snapshot de ese usuario a escribir un número inventado o a
- * reventar con un error del driver.
- */
+/** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
 function toNumeric(value: number): string | null {
   if (!Number.isFinite(value) || Math.abs(value) >= MAX_SNAPSHOT_AMOUNT) return null;
   return value.toFixed(8);
 }
 
 /**
- * Histórico de valoración de la cartera: una fila por usuario y día. Es lo que convierte el
- * portfolio de FOTO en PELÍCULA (gráfica de evolución, rentabilidad por periodo).
- *
- * No duplica la fórmula de valoración: llama a `PortfolioValuationService`, exactamente el
- * mismo cálculo que ven la UI y las tools MCP, de modo que el punto de hoy en la gráfica
- * coincide siempre con el total que muestra la cartera.
+ * Histórico de valoración: una fila por usuario y día. Reutiliza `PortfolioValuationService`,
+ * así que el punto de hoy coincide siempre con el total que muestra la cartera.
  */
 @Injectable()
 export class PortfolioSnapshotsService {
   private readonly logger = new Logger(PortfolioSnapshotsService.name);
-  /**
-   * Usuarios con una reconstrucción por lote en curso → posiciones anotadas para repetirla y la
-   * fecha más antigua de lote borrado/movido anotada (ver `onLotChanged`).
-   */
+  /** Usuarios con reconstrucción en curso → posiciones y fecha de lote borrado/movido anotadas (ver `onLotChanged`). */
   private readonly rebuilding = new Map<string, { positions: Set<string>; invalidateFrom: string | null }>();
 
   constructor(
@@ -128,13 +109,9 @@ export class PortfolioSnapshotsService {
   ) {}
 
   /**
-   * Captura el snapshot de HOY para todos los usuarios con posiciones. Lo ejecuta el job
-   * diario, después del refresco de precios.
-   *
-   * Aislamiento de fallos: cada usuario va en su propio `try`, así que uno con datos raros
-   * (un precio imposible, una divisa sin tasa) no impide capturar los del resto. Los usuarios
-   * SIN posiciones se omiten a propósito: una fila de ceros no aporta nada a la gráfica y
-   * ensuciaría la serie de quien aún no ha empezado.
+   * Captura el snapshot de hoy de todos los usuarios con posiciones (job diario, tras el
+   * refresco de precios). Cada usuario va en su `try`: uno con datos raros no impide el resto.
+   * Los usuarios sin posiciones se omiten: una fila de ceros ensuciaría su serie.
    */
   async captureAll(): Promise<SnapshotSummary> {
     const date = todayUtc();
@@ -160,11 +137,7 @@ export class PortfolioSnapshotsService {
     return summary;
   }
 
-  /**
-   * Captura (o actualiza) el snapshot de un usuario para una fecha. IDEMPOTENTE: la clave
-   * primaria es `(userId, date)` y se hace upsert, así que correr el job dos veces el mismo
-   * día ACTUALIZA la fila con la última valoración, no la duplica.
-   */
+  /** Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`. */
   async captureUser(userId: string, date: string = todayUtc()): Promise<void> {
     const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY);
     const { rates } = await this.prices.getFxRates();
@@ -183,8 +156,7 @@ export class PortfolioSnapshotsService {
       valuedPositions: valuation.aggregate.valued,
       totalPositions: valuation.aggregate.total,
       fxRates: rates,
-      // Captura REAL del cron: nunca es una estimación, y sustituye sin condiciones
-      // cualquier fila `estimated: true` que un backfill hubiera escrito para este día.
+      // Captura real: nunca es estimación y sustituye cualquier fila estimada de ese día.
       estimated: false,
     };
 
@@ -206,75 +178,56 @@ export class PortfolioSnapshotsService {
   }
 
   /**
-   * Reconstruye el histórico de UN usuario desde su PRIMERA operación (con tope de
-   * `HISTORY_MAX_DAYS`) hasta ayer, usando sus lotes: cada día se valora la cantidad y el coste
-   * medio que se tenían ESE día, no los actuales, así que no se inventa historia (antes de la
-   * primera compra no hay snapshot, y tras vender del todo tampoco). La lógica es pura y vive en
-   * `@sextante/core/portfolio-history`; aquí solo se cargan los datos y se escribe el resultado.
+   * Reconstruye el histórico de un usuario desde su primera operación (tope `HISTORY_MAX_DAYS`)
+   * hasta ayer, valorando cada día la cantidad y el coste que había ese día (sin inventar
+   * historia). La lógica pura vive en `@sextante/core/portfolio-history`, que documenta también
+   * los splits y sus límites. Solo escribe lo que cambió (nada, en la pasada nocturna normal),
+   * así que se lanza siempre: alta, importación, lote editado, arranque y cron.
    *
-   * Coste acotado: unas pocas lecturas (posiciones, lotes, series de precios/FX y splits, y las
-   * filas ya guardadas) y SOLO las escrituras de lo que cambió (nada, en el caso normal de la
-   * pasada nocturna). Por eso se puede lanzar siempre (alta, importación, lote editado, arranque
-   * y cron nocturno) sin preocuparse por la factura. Los splits corrigen la cantidad cruda de los
-   * lotes (ver `@sextante/core/portfolio-history`, que también documenta las limitaciones).
+   * "Estimado" = anterior a `trackingSince` (fecha UTC del `created_at` más antiguo de sus
+   * posiciones); cada fila lleva `estimated = (date < trackingSince)`. Desde esa fecha la serie
+   * se considera fiable aunque la rehaga la reconstrucción: el usuario ya usaba Sextante y el
+   * valor es en lo sustancial lo que habría capturado el cron. Por eso los huecos posteriores
+   * que rellena el backfill quedan `estimated = false` (trade-off aceptado: no distinguimos
+   * "cron caído" de "captura real"). Frontend y MCP lo señalan.
    *
-   * QUÉ ES "ESTIMADO": lo ANTERIOR a que el usuario empezara a registrar su cartera en Sextante.
-   * `trackingSince` = fecha UTC del `created_at` más antiguo de sus posiciones, y toda fila que
-   * escribe esta función lleva `estimated = (date < trackingSince)`. Desde esa fecha la serie se
-   * considera fiable aunque la haya rehecho la reconstrucción (p. ej. una captura real obsoleta
-   * sustituida tras importar operaciones antiguas): el usuario ya estaba usando Sextante y el
-   * valor de esos días es, en lo sustancial, lo que habría capturado el cron. Por la misma
-   * razón, los HUECOS (días >= `trackingSince` en los que el cron falló) que rellena el backfill
-   * quedan `estimated = false`: es un trade-off aceptado, no distinguimos "cron caído" de
-   * "captura real". Frontend y MCP lo señalan para no presentar una aproximación como dato real.
+   * Reparación automática: una fila estimada cuyo `estimated` no cumple la regla cuenta como
+   * cambiada y se corrige en la primera pasada; las estimadas que ya no salen de la
+   * reconstrucción se retiran. Si esta sale vacía (aún sin precios porque `primeSymbol` sigue
+   * trayendo histórico) no se toca nada.
    *
-   * REPARACIÓN AUTOMÁTICA: una fila estimada cuyo `estimated` no coincide con la regla (p. ej. las
-   * que el PR de capturas obsoletas marcó `true` posteriores a `trackingSince`) cuenta como
-   * cambiada en el diff y se corrige en la primera pasada (arranque o nocturna). Una captura
-   * REAL (`estimated: false`) solo se pisa si ha quedado obsoleta (ver más abajo; el upsert solo
-   * actualiza filas estimadas o esas reales); una real anterior a `trackingSince` no debería
-   * existir, y si existe se deja como está. Las estimadas que ya no salen de la reconstrucción se retiran
-   * (incluidas las que un backfill antiguo, con la cantidad de hoy, escribió antes de la compra).
-   * Si la reconstrucción sale vacía (aún sin precios porque `primeSymbol` sigue trayendo
-   * histórico en segundo plano) no se toca nada: una pasada posterior la completa.
+   * Capturas reales obsoletas: una real solo se respeta mientras sea una foto fiel. Si después
+   * se registró una operación con fecha <= la de la captura, esa captura mostraría un escalón
+   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/snapshot-staleness`).
+   * El borrado de un lote no deja marca, así que el llamante pasa `invalidateFrom`. Las reales
+   * no obsoletas no se tocan nunca, y si un día obsoleto no sale de la reconstrucción se
+   * conserva la real: mejor un dato desfasado que borrar uno que no podemos rehacer.
    *
-   * CAPTURAS REALES OBSOLETAS: una captura real solo se respeta mientras sea una foto fiel. Si
-   * después se registró (importó, editó) una operación con fecha anterior o igual a la de la
-   * captura, esa captura no la incluye y mostraría un escalón falso; entonces se sustituye por
-   * la reconstrucción de ese día, con `estimated` según la regla anterior (normalmente `false`; regla en
-   * `@sextante/core/snapshot-staleness`: lote con `tradedAt <= fecha` cambiado DESPUÉS de que se
-   * escribiera la captura). El borrado de un lote no deja marca, así que el llamante pasa
-   * `invalidateFrom` (su fecha). Las reales no obsoletas no se tocan nunca. Si un día obsoleto no
-   * sale de la reconstrucción (sin precio, o sin posiciones ya) se conserva la real: preferimos
-   * un dato desfasado a borrar uno que no podemos rehacer. Esto también REPARA los datos ya
-   * guardados: la primera pasada tras desplegar (arranque o nocturna) lo detecta sola.
-   *
-   * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar ese día
-   * (`valuedPositions < totalPositions`), igual que la captura diaria.
+   * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar (`valuedPositions <
+   * totalPositions`), como la captura diaria.
    */
   async backfillUser(userId: string, options: { invalidateFrom?: string | null } = {}): Promise<void> {
-    // La resolución ticker → símbolo (otra lectura) se hace ANTES de abrir la transacción: dentro,
-    // pediría una segunda conexión mientras esta mantiene una, y con el pool agotado se bloquearía.
+    // La resolución ticker → símbolo va antes de abrir la transacción: dentro pediría una
+    // segunda conexión y con el pool agotado se bloquearía.
     const tickers = (
       await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))
     ).map((p) => p.ticker);
     const tickerToSymbol = await this.prices.resolveCachedTickers([...new Set(tickers)]);
 
-    // Todo bajo un cerrojo consultivo por usuario: dos reconstrucciones concurrentes del mismo
-    // usuario (alta + importación, o el arranque + un alta) leerían lotes distintos y la última
-    // en escribir podría dejar la serie con el estado antiguo. El cerrojo se libera solo al
-    // terminar la transacción; los lotes se leen DENTRO para ver lo último confirmado.
+    // Cerrojo consultivo por usuario: dos reconstrucciones concurrentes leerían lotes distintos y
+    // la última en escribir podría dejar el estado antiguo. Se libera al terminar la
+    // transacción; los lotes se leen dentro para ver lo último confirmado.
     await this.db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
 
       const owned = await tx.select().from(positions).where(eq(positions.userId, userId));
-      if (owned.length === 0) return; // mismo criterio que `usersWithPositions`
+      if (owned.length === 0) return;
 
       const lotRows = await tx
         .select()
         .from(positionLots)
         .where(eq(positionLots.userId, userId))
-        // Orden canónico de la agregación de lotes (ver `compareLots`): el del mismo día importa.
+        // Orden canónico de `compareLots`: el desempate del mismo día importa.
         .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
       const lotsByPosition = new Map<string, HistoryLot[]>();
       for (const row of lotRows) {
@@ -292,8 +245,7 @@ export class PortfolioSnapshotsService {
         ticker: p.ticker,
         currency: p.currency,
         isDerivative: p.isDerivative,
-        // Una posición sin lotes (anterior al modelo de lotes) se trata como una única compra
-        // el día de alta: es lo más cercano a la verdad que se conoce.
+        // Sin lotes (anterior al modelo de lotes): una única compra el día de alta.
         lots: lotsByPosition.get(p.id) ?? [
           {
             kind: 'buy',
@@ -304,7 +256,7 @@ export class PortfolioSnapshotsService {
         ],
       }));
 
-      // Inicio del seguimiento en Sextante (no de las operaciones): ver "QUÉ ES ESTIMADO" arriba.
+      // Inicio del seguimiento en Sextante, no de las operaciones.
       const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))).toISOString().slice(0, 10);
 
       const earliest = firstTradeDate(historyPositions);
@@ -344,10 +296,9 @@ export class PortfolioSnapshotsService {
       });
       if (rows.length === 0) return;
 
-      // Solo se escribe la DIFERENCIA con lo guardado: reconstruir cada noche 5 años de filas
-      // idénticas sería escribir ~1.800 filas por usuario sin cambiar nada.
-      // Instante previo a la lectura: una real reescrita por la captura nocturna DESPUÉS de leerla
-      // es fresca y no debe pisarse (ver `setWhere`).
+      // Solo se escribe la diferencia con lo guardado (reescribir ~1.800 filas idénticas por
+      // usuario cada noche no aporta nada). `readAt` es previo a la lectura: una real reescrita
+      // por la captura nocturna después de leerla es fresca y no debe pisarse (ver `setWhere`).
       const readAt = new Date();
       const existing = await tx.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
       const staleReal = staleSnapshotDates({
@@ -367,7 +318,7 @@ export class PortfolioSnapshotsService {
         const current = existingByDate.get(row.date);
         if (!current) return true;
         if (!current.estimated) return staleReal.has(row.date); // real: solo si está obsoleta
-        // Un `estimated` incoherente con la regla también es un cambio (reparación automática).
+        // Un `estimated` incoherente con la regla también cuenta como cambio.
         return !(
           current.estimated === row.estimated &&
           current.invested === row.invested &&
@@ -377,16 +328,14 @@ export class PortfolioSnapshotsService {
           sameRates(current.fxRates, row.fxRates)
         );
       });
-      // Estimadas que ya no salen de la reconstrucción (p. ej. de un backfill antiguo anterior a
-      // la primera compra, o de una operación borrada): se retiran.
+      // Estimadas que ya no salen de la reconstrucción (operación borrada...): se retiran.
       const stale = existing.filter((row) => row.estimated && !newDates.has(row.date)).map((row) => row.date);
 
       for (let i = 0; i < changed.length; i += UPSERT_CHUNK_SIZE) {
         const chunk = changed.slice(i, i + UPSERT_CHUNK_SIZE);
-        // Reales obsoletas de este bloque (las únicas reales que se pueden sustituir).
         const staleInChunk = chunk.filter((row) => staleReal.has(row.date)).map((row) => row.date);
-        // Una real nunca se pisa salvo que la regla la marque obsoleta Y no haya cambiado desde
-        // la lectura (carrera con la captura nocturna).
+        // Una real solo se pisa si es obsoleta y no ha cambiado desde la lectura (carrera con la
+        // captura nocturna).
         const overwritable: SQL | undefined =
           staleInChunk.length > 0
             ? and(
@@ -406,12 +355,9 @@ export class PortfolioSnapshotsService {
               valuedPositions: sql`excluded.valued_positions`,
               totalPositions: sql`excluded.total_positions`,
               fxRates: sql`excluded.fx_rates`,
-              // La regla (`date < trackingSince`) decide también para una real obsoleta sustituida.
               estimated: sql`excluded.estimated`,
               updatedAt: new Date(),
             },
-            // Una captura real (estimated = false) no se pisa, ni siquiera ante una carrera con
-            // la captura nocturna entre la lectura y la escritura, salvo que sea obsoleta.
             setWhere: overwritable
               ? or(eq(portfolioSnapshots.estimated, true), overwritable)
               : eq(portfolioSnapshots.estimated, true),
@@ -431,7 +377,7 @@ export class PortfolioSnapshotsService {
     });
   }
 
-  /** Backfill de todos los usuarios con posiciones. Aislado por usuario, igual que `captureAll`. */
+  /** Backfill de todos los usuarios con posiciones, aislado por usuario. */
   async backfillAll(): Promise<void> {
     const userIds = await this.usersWithPositions();
     let backfilled = 0;
@@ -450,11 +396,7 @@ export class PortfolioSnapshotsService {
     );
   }
 
-  /**
-   * Reconstruye el histórico del usuario justo tras dar de alta (o editar el símbolo
-   * de) una posición — ver `position-events.ts` sobre por qué es un evento y no una llamada
-   * directa. Tolerante a fallos: nunca debe romper el flujo que disparó el evento.
-   */
+  /** Reconstruye el histórico tras un alta (ver `position-events.ts`). Nunca debe romper el flujo que disparó el evento. */
   @OnEvent(POSITION_CREATED_EVENT)
   async onPositionCreated({ userId }: PositionCreatedEvent): Promise<void> {
     try {
@@ -464,17 +406,12 @@ export class PortfolioSnapshotsService {
     }
   }
 
-  /**
-   * Un lote de una posición existente se añadió, editó o borró: si tiene una fecha anterior a lo
-   * que hay cacheado, pide el histórico que falta (el guard de `ensureHistory` no hace nada si ya
-   * llega) y reconstruye la evolución. Tolerante a fallos, como `onPositionCreated`.
-   */
+  /** Un lote cambió: pide el histórico de precios que falte y reconstruye la evolución. Tolerante a fallos. */
   @OnEvent(LOT_CHANGED_EVENT)
   async onLotChanged({ userId, positionId, invalidateFrom }: LotChangedEvent): Promise<void> {
-    // COALESCE por usuario: una ráfaga de ediciones (importar a mano, corregir fechas) dispararía
-    // una reconstrucción por evento, cada una con su conexión esperando el cerrojo del usuario, y
-    // más de ~10 agotarían el pool. Si ya hay una en curso, solo se anota la posición: la pasada
-    // en curso hace UNA repetición al terminar que cubre todas las anotadas.
+    // Coalesce por usuario: una ráfaga de ediciones dispararía una reconstrucción por evento,
+    // cada una con una conexión esperando el cerrojo, y más de ~10 agotarían el pool. Si ya hay
+    // una en curso solo se anota la posición; al terminar repite una vez cubriendo las anotadas.
     const earliest = (a: string | null, b: string | undefined): string | null =>
       b !== undefined && (a === null || b < a) ? b : a;
     const running = this.rebuilding.get(userId);
@@ -505,7 +442,6 @@ export class PortfolioSnapshotsService {
     }
   }
 
-  /** Pide el histórico de precios que falte para la operación más antigua de una posición. */
   private async ensureLotHistory(positionId: string): Promise<void> {
     const [position] = await this.db.select().from(positions).where(eq(positions.id, positionId));
     const [first] = await this.db
@@ -518,13 +454,9 @@ export class PortfolioSnapshotsService {
   }
 
   /**
-   * Serie histórica del usuario en los últimos `days` días, de la más antigua a la más
-   * reciente y REEXPRESADA a `display`.
-   *
-   * La reexpresión usa las tasas que guardó CADA snapshot (no las de hoy): así la gráfica en
-   * dólares refleja lo que la cartera valía en dólares aquel día, que es lo correcto, y no
-   * hay que recalcular el histórico al cambiar de divisa. Se reutiliza `convertCurrency`
-   * (la misma función que la valoración) en vez de reimplementar la conversión.
+   * Serie de los últimos `days` días, de la más antigua a la más reciente, reexpresada a
+   * `display` con las tasas que guardó cada snapshot (no las de hoy): la gráfica refleja lo
+   * que valía la cartera aquel día en esa divisa.
    */
   async history(
     userId: string,
@@ -559,7 +491,7 @@ export class PortfolioSnapshotsService {
     return { display, base: SNAPSHOT_BASE_CURRENCY, points };
   }
 
-  /** Usuarios con al menos una posición: los únicos de los que tiene sentido guardar serie. */
+  /** Usuarios con al menos una posición. */
   private async usersWithPositions(): Promise<string[]> {
     const rows = await this.db.selectDistinct({ userId: positions.userId }).from(positions);
     return rows.map((row) => row.userId);

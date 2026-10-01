@@ -3,18 +3,14 @@ import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/con
 import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
 
 /**
- * Tope superior de `quantity` y `avgPrice`. `numeric(18,6)` admite 12 dígitos enteros;
- * lo acotamos por debajo de ese límite para que un valor absurdo dé 400 (validación)
- * en lugar de un error de base de datos.
+ * Tope de `quantity` y `avgPrice`: `numeric(18,6)` admite 12 dígitos enteros y `@Max` es
+ * inclusivo, así que pasar del mayor entero de 12 dígitos da 400 en vez de un overflow (500).
  */
-// `numeric(18,6)` admite 12 dígitos enteros → máximo 999_999_999_999,999999. `@Max` es
-// inclusivo, así que el tope es el mayor entero de 12 dígitos: pasar de aquí da 400
-// (validación) en lugar de un overflow en la BD (500).
 export const NUMERIC_MAX = 999_999_999_999;
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
-/** Cuerpo de POST /api/positions. El `userId` NO va aquí: se lee del JWT. */
+/** Cuerpo de POST /api/positions (el `userId` sale del JWT). */
 export class CreatePositionDto {
   @IsString()
   @Transform(trim)
@@ -40,8 +36,7 @@ export class CreatePositionDto {
   @Max(NUMERIC_MAX)
   avgPrice!: number;
 
-  // Opcional a nivel de DTO: la regla "obligatorio si el símbolo ya existe" no se puede
-  // expresar aquí (depende de los datos del usuario), así que la aplica el servicio.
+  // Opcional aquí: "obligatorio si el símbolo ya existe" depende de los datos y lo aplica el servicio.
   @IsOptional()
   @IsString()
   @Transform(trim)

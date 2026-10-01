@@ -15,12 +15,9 @@ import { YahooPriceProvider } from './yahoo-price.provider.js';
 import { YahooInstrumentSearchProvider } from './yahoo-search.provider.js';
 
 /**
- * Módulo de precios. La fuente de precios (`PRICE_PROVIDER`) y la resolución de símbolos
- * (`SYMBOL_RESOLVER`) se inyectan por token: cambiar de Yahoo a una fuente de pago, o
- * enchufar OpenFIGI, es sustituir la clase aquí sin tocar el resto.
- *
- * El cron diario NO vive aquí: encadena refresco de precios y snapshots de cartera, así que
- * está en `jobs/DailyJobsModule`, por encima de este módulo y del de portfolio.
+ * Módulo de precios: fuente, resolver y buscador se inyectan por token, así que cambiar de
+ * proveedor es sustituir la clase aquí. El cron diario vive en `jobs/DailyJobsModule` porque
+ * encadena precios y snapshots.
  */
 @Module({
   imports: [
@@ -41,9 +38,7 @@ import { YahooInstrumentSearchProvider } from './yahoo-search.provider.js';
     { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
     { provide: INSTRUMENT_SEARCH, useClass: YahooInstrumentSearchProvider },
   ],
-  // Exportados para que la valoración de cartera (PortfolioModule, tools MCP) reutilice los
-  // precios y tasas FX cacheados, y para que la tool MCP `search_instruments` use el MISMO
-  // buscador que el alta de posiciones, sin duplicar el acceso a datos.
+  // Reutilizados por la valoración de cartera y las tools MCP (`search_instruments` usa el mismo buscador que el alta).
   exports: [PricesService, INSTRUMENT_SEARCH],
 })
 export class PricesModule {}

@@ -1,27 +1,17 @@
-// Presupuesto mensual con la regla 50/30/20 (necesidades / deseos / ahorro).
-// Core puro.
+// Presupuesto mensual con la regla 50/30/20 (necesidades / deseos / ahorro). Core puro.
 
 export interface BudgetInput {
-  /** Ingresos mensuales netos. */
   income: number;
-  /** Gasto mensual en necesidades (vivienda, comida, suministros…). */
   needs: number;
-  /** Gasto mensual en deseos (ocio, caprichos…). */
   wants: number;
 }
 
 export interface BudgetResult {
-  /** Ahorro mensual resultante (ingresos - necesidades - deseos). */
   savings: number;
-  /** Ahorro anual (ahorro mensual × 12). */
   annualSavings: number;
-  /** Tasa de ahorro (%). */
   savingsRate: number;
-  /** Porcentaje de los ingresos dedicado a necesidades (%). */
   needsRate: number;
-  /** Porcentaje de los ingresos dedicado a deseos (%). */
   wantsRate: number;
-  /** Recomendado por la regla 50/30/20. */
   recommendedNeeds: number;
   recommendedWants: number;
   recommendedSavings: number;

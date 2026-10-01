@@ -2,19 +2,11 @@ import "server-only";
 import { SESSION_COOKIE } from "@sextante/core/contracts";
 import { cookies } from "next/headers";
 
-/** Base de la API para llamadas server-side (Next server -> NestJS directo). */
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 /**
- * Petición server-side a la API reenviando la cookie de sesión del navegante.
- *
- * Devuelve el cuerpo ya parseado, o `null` si no hay cookie, si la API responde
- * con un estado de error o si la petición falla. El `null` es deliberadamente
- * ambiguo: cada llamante decide qué significa en su caso (usuario anónimo,
- * lista vacía…), porque el valor de reserva correcto depende de la pantalla.
- *
- * No toma NINGUNA decisión de autorización: se limita a reenviar la cookie
- * intacta. Quien autoriza y hace el scoping por usuario es siempre la API.
+ * Reenvía la cookie de sesión a la API. `null` (sin cookie, error o fallo de red) es
+ * ambiguo a propósito: cada llamante decide su valor de reserva. No autoriza nada: lo hace la API.
  */
 export async function apiFetch<T>(path: string): Promise<T | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;

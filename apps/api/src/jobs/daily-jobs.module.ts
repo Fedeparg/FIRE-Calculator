@@ -5,11 +5,7 @@ import { PortfolioModule } from '../portfolio/portfolio.module.js';
 import { PricesModule } from '../prices/prices.module.js';
 import { DailyJobsScheduler } from './daily-jobs.scheduler.js';
 
-/**
- * Orquestador de los trabajos nocturnos de la cartera (refresco de precios → snapshots).
- * Vive por ENCIMA de `PricesModule` y `PortfolioModule` e importa a los dos, que es lo que
- * permite encadenarlos sin crear un ciclo entre ellos (ver `DailyJobsScheduler`).
- */
+/** Orquesta los trabajos nocturnos por encima de `PricesModule` y `PortfolioModule` para evitar un ciclo entre ellos. */
 @Module({
   imports: [PricesModule, PortfolioModule, NotificationsModule],
   providers: [DailyJobsScheduler],

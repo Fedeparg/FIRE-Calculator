@@ -1,21 +1,6 @@
-// IRPF sobre rendimientos del trabajo: motor compartido por las calculadoras de
-// salario bruto→neto, retención en nómina, desgravación de planes de pensiones
-// e IRPF de autónomos. Core puro.
-//
-// Modelo ORIENTATIVO pero detallado: aproxima el cálculo de la AEAT por el
-// método de doble escala (cuota sobre la base − cuota sobre el mínimo personal y
-// familiar).
-//
-// La comunidad autónoma es OPCIONAL:
-//  - Sin comunidad: se aplica la escala conjunta `IRPF_GENERAL` (estatal +
-//    autonómica supletoria del art. 65 LIRPF) y el mínimo estatal. Es el
-//    comportamiento histórico de este módulo y el que rige para Ceuta y Melilla.
-//  - Con comunidad: cuota estatal (escala y mínimo estatales) + cuota autonómica
-//    (escala de la comunidad y su mínimo propio si lo ha aprobado), cada una
-//    acotada a cero por separado. Ver `regions.ts`.
-//
-// No contempla deducciones autonómicas concretas, que son muchas y afectan al
-// resultado real.
+// IRPF sobre rendimientos del trabajo (nómina, retención, planes de pensiones, autónomos):
+// aproximación orientativa del cálculo de la AEAT por doble escala. Core puro.
+// Alcance y supuestos: ver ./README.md. Sin comunidad rige la escala supletoria.
 
 import {
   IRPF_ESTATAL_GENERAL,
@@ -47,11 +32,7 @@ import {
 /** Tipos de contrato, en el orden en que se ofrecen en el desplegable. */
 export const CONTRACT_TYPES = ["indefinido", "temporal"] as const;
 export type ContractType = (typeof CONTRACT_TYPES)[number];
-/** Grado de discapacidad del contribuyente. */
-/**
- * Número de pagas al año que ofrecen las calculadoras de nómina. Es TEXTO porque es el
- * valor de un desplegable; el cálculo lo convierte a número.
- */
+/** Pagas al año de las calculadoras de nómina; son texto porque son el valor de un desplegable. */
 export const PAYMENT_COUNTS = ["14", "12"] as const;
 export type PaymentCount = (typeof PAYMENT_COUNTS)[number];
 
@@ -79,18 +60,11 @@ export interface PersonalCircumstances {
   disability?: DisabilityGrade;
   /** Tributación conjunta (unidad familiar): aplica una reducción en la base. */
   jointReturn?: boolean;
-  /**
-   * Comunidad autónoma de residencia (régimen común). Sin valor se aplica la
-   * escala autonómica supletoria, que es el comportamiento por defecto.
-   */
+  /** Comunidad de régimen común; sin valor, escala supletoria. */
   region?: RegionCode;
 }
 
-/**
- * Reducción por obtención de rendimientos del trabajo (art. 20 LIRPF), tres
- * tramos. Nunca negativa. Los umbrales, importes y coeficientes viven en
- * `brackets.ts`, única fuente de verdad de las cifras fiscales.
- */
+/** Reducción por rendimientos del trabajo (art. 20 LIRPF), nunca negativa; cifras en `brackets.ts`. */
 export function workIncomeReduction(netWorkIncome: number): number {
   const r = Math.max(0, Number.isFinite(netWorkIncome) ? netWorkIncome : 0);
   if (r <= WORK_INCOME_REDUCTION_FULL_LIMIT) return WORK_INCOME_REDUCTION_MAX;
@@ -109,12 +83,7 @@ export function workIncomeReduction(netWorkIncome: number): number {
   return 0;
 }
 
-/**
- * Aplica un cuadro de importes del mínimo personal y familiar a unas
- * circunstancias concretas. Aísla la aritmética para poder reutilizarla con el
- * cuadro estatal y con el autonómico, que difieren en los importes pero no en la
- * forma de acumularlos.
- */
+/** Aplica un cuadro de mínimos a unas circunstancias; sirve para el estatal y los autonómicos. */
 function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircumstances): number {
   const age = Math.max(0, c.age ?? 0);
   let min = age >= 75 ? schedule.taxpayer75 : age >= 65 ? schedule.taxpayer65 : schedule.taxpayer;
@@ -135,21 +104,14 @@ function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircu
 }
 
 /**
- * Mínimo personal y familiar ESTATAL (arts. 57-60 LIRPF): la parte de renta que
- * no tributa. Suma el mínimo del contribuyente y los incrementos por
- * descendientes, ascendientes y discapacidad. Los descendientes se computan al
- * 100 %. Es siempre el que alimenta la cuota estatal, aun cuando la comunidad
- * haya aprobado importes propios.
+ * Mínimo personal y familiar estatal (arts. 57-60 LIRPF), con descendientes al 100 %.
+ * Siempre alimenta la cuota estatal, aunque la comunidad tenga importes propios.
  */
 export function personalAndFamilyMinimum(c: PersonalCircumstances = {}): number {
   return minimumFromSchedule(STATE_PERSONAL_MINIMUM, c);
 }
 
-/**
- * Mínimo personal y familiar que alimenta la CUOTA AUTONÓMICA: el de la comunidad
- * indicada si ha aprobado importes propios (art. 46.1.a Ley 22/2009), y el estatal
- * en caso contrario o si no se indica comunidad.
- */
+/** Mínimo de la cuota autonómica: el de la comunidad si lo tiene (art. 46.1.a Ley 22/2009), si no el estatal. */
 export function regionalPersonalAndFamilyMinimum(c: PersonalCircumstances = {}): number {
   const schedule = c.region === undefined ? STATE_PERSONAL_MINIMUM : regionalMinimumSchedule(c.region);
   return minimumFromSchedule(schedule, c);
@@ -159,22 +121,14 @@ export function regionalPersonalAndFamilyMinimum(c: PersonalCircumstances = {}):
 export interface GeneralIncomeTaxOptions {
   /** Comunidad autónoma de régimen común. Sin valor: escala supletoria. */
   readonly region?: RegionCode;
-  /**
-   * Mínimo personal y familiar autonómico. Solo se usa si hay comunidad; por
-   * defecto, el mismo mínimo estatal que se pasa en `minimum`.
-   */
+  /** Mínimo autonómico; solo con comunidad. Por defecto, el estatal de `minimum`. */
   readonly regionalMinimum?: number;
 }
 
 /**
- * Cuota íntegra del IRPF sobre la base liquidable general, por el método de
- * doble escala: cuota(base) − cuota(mínimo). Nunca negativa. Si no se pasa
- * mínimo, usa el mínimo personal general (5.550 €).
- *
- * Sin comunidad aplica la escala conjunta `IRPF_GENERAL`. Con comunidad suma dos
- * cuotas independientes, estatal y autonómica, cada una con su escala y su
- * mínimo y cada una acotada a cero por separado: una base que supera el mínimo
- * estatal pero no el autonómico paga cuota estatal y no paga cuota autonómica.
+ * Cuota íntegra del IRPF sobre la base liquidable general (doble escala:
+ * cuota(base) − cuota(mínimo)), nunca negativa. Sin comunidad usa `IRPF_GENERAL`; con
+ * comunidad suma cuota estatal y autonómica, cada una acotada a cero por separado.
  */
 export function generalIncomeTax(
   taxableBase: number,
@@ -205,10 +159,7 @@ export function generalIncomeTax(
   return stateQuota + regionalQuota;
 }
 
-/**
- * Tipo marginal (%) del IRPF general: el conjunto estatal + autonómico. Sin
- * comunidad usa la escala conjunta supletoria.
- */
+/** Tipo marginal (%) del IRPF general, estatal + autonómico (supletoria sin comunidad). */
 export function generalMarginalRate(taxableBase: number, region?: RegionCode): number {
   if (region === undefined) return marginalRate(taxableBase, IRPF_GENERAL);
   return marginalRate(taxableBase, IRPF_ESTATAL_GENERAL) + marginalRate(taxableBase, regionalScale(region));
@@ -229,10 +180,7 @@ export interface NetSalaryResult {
   socialSecurity: number;
   /** Rendimiento neto del trabajo tras gastos y reducción. */
   netWorkIncome: number;
-  /**
-   * Mínimo personal y familiar ESTATAL aplicado. Si la comunidad elegida tiene
-   * mínimo propio, la cuota autonómica habrá usado ese otro importe.
-   */
+  /** Mínimo estatal aplicado; la cuota autonómica puede haber usado el de la comunidad. */
   personalMinimum: number;
   /** Base liquidable general (tras aportaciones y reducción conjunta). */
   taxableBase: number;

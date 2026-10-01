@@ -1,38 +1,19 @@
-// Núcleo fiscal compartido: escalas oficiales y motor de tramos progresivos.
-// Core puro (sin React). ÚNICA fuente de verdad de los tipos impositivos usados
-// por las calculadoras fiscales.
-//
-// IMPORTANTE: todas las cifras son ORIENTATIVAS. Las escalas autonómicas pueden
-// diferir de la estatal/supletoria. Revisadas con fuentes oficiales (AEAT, BOE)
-// para el ejercicio indicado en `FISCAL_YEAR`.
+// Núcleo fiscal compartido: escalas oficiales y motor de tramos progresivos. Core puro.
+// Alcance y supuestos: ver ./README.md. Cifras orientativas del ejercicio `FISCAL_YEAR`.
 
 /** Ejercicio fiscal de referencia de las escalas de este módulo. */
 export const FISCAL_YEAR = 2026;
 
-/**
- * `FISCAL_YEAR` en texto, para inyectarlo como argumento `{year}` en los avisos
- * traducidos de las calculadoras fiscales. Se pasa como cadena a propósito: así
- * el año nunca queda sujeto al formateo numérico del idioma, que le añadiría
- * separador de millares («2.026»).
- */
+/** `FISCAL_YEAR` como cadena: evita que el formato numérico del idioma lo pinte «2.026». */
 export const FISCAL_YEAR_LABEL = String(FISCAL_YEAR);
 
-/**
- * Un tramo de una escala progresiva.
- * - `upTo`: límite superior de la base para este tramo (incluido). `null` = sin
- *   límite (último tramo).
- * - `rate`: tipo marginal aplicable al tramo, en base 100 (19 = 19 %).
- */
+/** Tramo de una escala: `upTo` es el límite superior incluido (`null` = último); `rate` en % (19 = 19 %). */
 export interface Bracket {
   readonly upTo: number | null;
   readonly rate: number;
 }
 
-/**
- * Aplica una escala progresiva por tramos a una base imponible y devuelve la
- * cuota resultante. Cada tramo grava solo la porción de base que cae dentro de
- * él (no toda la base al tipo más alto).
- */
+/** Cuota de una base según una escala progresiva: cada tramo grava solo su porción de base. */
 export function applyProgressiveBrackets(base: number, brackets: readonly Bracket[]): number {
   const b = Math.max(0, Number.isFinite(base) ? base : 0);
   let tax = 0;
@@ -58,24 +39,16 @@ export function marginalRate(base: number, brackets: readonly Bracket[]): number
   return brackets.length > 0 ? brackets[brackets.length - 1].rate : 0;
 }
 
-/** Tipo efectivo (%) = cuota / base. 0 si la base es 0. */
 export function effectiveRate(base: number, brackets: readonly Bracket[]): number {
   const b = Math.max(0, Number.isFinite(base) ? base : 0);
   if (b === 0) return 0;
   return (applyProgressiveBrackets(b, brackets) / b) * 100;
 }
 
-// ---------------------------------------------------------------------------
-// Escalas oficiales (ejercicio 2026)
-// ---------------------------------------------------------------------------
-
 /**
- * IRPF — escala ESTATAL de la base liquidable general (art. 63.1.1º LIRPF).
- *
- * Se aplica VERBATIM: la ley ya la da dividida por dos (tipos 9,50 a 24,50), de
- * modo que la cuota íntegra general es `estatal(base) + autonómica(base)`, SIN
- * ningún factor 0,5. Multiplicarla por 0,5 dividiría una escala ya dividida.
- * Fuente: AEAT, Manual práctico de Renta 2025, "Gravamen estatal".
+ * IRPF — escala estatal de la base liquidable general (art. 63.1.1º LIRPF). Se aplica
+ * tal cual, sin factor 0,5: la ley ya la da dividida por dos. Fuente: AEAT, Manual
+ * práctico de Renta 2025.
  */
 export const IRPF_ESTATAL_GENERAL: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
@@ -87,18 +60,10 @@ export const IRPF_ESTATAL_GENERAL: readonly Bracket[] = [
 ];
 
 /**
- * IRPF — escala autonómica SUPLETORIA (art. 65 LIRPF).
- *
- * NO es idéntica a la estatal: coincide hasta 60.000 €, pero su último tramo es
- * un 22,50 % plano, sin el desdoblamiento en 300.000 € al 24,50 % que sí tiene la
- * estatal. Confundirlas sobreestimaría las rentas superiores a 300.000 € (49 % en
- * lugar del 47 % real).
- *
- * Desde 2011 no hay supletoriedad real (las 15 comunidades de régimen común tienen
- * escala propia, ver `regions.ts`): esta escala rige para Ceuta y Melilla
- * (DA 32ª LIRPF) y para residentes en el extranjero, y es la que usa este motor
- * cuando no se indica comunidad.
- * Fuente: AEAT, Manual práctico de Renta 2025, especialidad de Ceuta y Melilla.
+ * IRPF — escala autonómica supletoria (art. 65 LIRPF). No es idéntica a la estatal:
+ * su último tramo es un 22,50 % plano desde 60.000 €, sin el 24,50 % desde 300.000 €
+ * (confundirlas daría 49 % en vez de 47 %). Rige para Ceuta y Melilla (DA 32ª LIRPF)
+ * y no residentes, y es la que se usa sin comunidad (ver `regions.ts`).
  */
 export const IRPF_AUTONOMICA_SUPLETORIA: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
@@ -109,12 +74,8 @@ export const IRPF_AUTONOMICA_SUPLETORIA: readonly Bracket[] = [
 ];
 
 /**
- * IRPF — escala general (base liquidable general): suma tramo a tramo de
- * `IRPF_ESTATAL_GENERAL` e `IRPF_AUTONOMICA_SUPLETORIA` (el 47 % del último tramo
- * sale de 24,50 + 22,50). Es la escala que se aplica cuando el usuario no indica
- * comunidad autónoma; cada comunidad tiene la suya (ver `regions.ts`) y el
- * resultado real puede variar.
- * Fuente: AEAT, tramos IRPF 2026.
+ * IRPF — escala general: suma tramo a tramo de la estatal y la supletoria (47 % =
+ * 24,50 + 22,50). Se aplica sin comunidad; cada comunidad tiene la suya. Fuente: AEAT 2026.
  */
 export const IRPF_GENERAL: readonly Bracket[] = [
   { upTo: 12450, rate: 19 },
@@ -125,10 +86,7 @@ export const IRPF_GENERAL: readonly Bracket[] = [
   { upTo: null, rate: 47 },
 ];
 
-/**
- * IRPF — escala del ahorro (base liquidable del ahorro): intereses, dividendos,
- * ganancias patrimoniales. Fuente: AEAT, base del ahorro 2026.
- */
+/** IRPF — escala del ahorro (intereses, dividendos, ganancias patrimoniales). Fuente: AEAT 2026. */
 export const IRPF_AHORRO: readonly Bracket[] = [
   { upTo: 6000, rate: 19 },
   { upTo: 50000, rate: 21 },
@@ -137,10 +95,7 @@ export const IRPF_AHORRO: readonly Bracket[] = [
   { upTo: null, rate: 30 },
 ];
 
-/**
- * Impuesto sobre el Patrimonio — escala estatal (supletoria). Aplicada por las
- * CCAA que no aprueban escala propia. Fuente: Ley 19/1991, art. 30.
- */
+/** Impuesto sobre el Patrimonio — escala estatal (supletoria de las CCAA). Ley 19/1991, art. 30. */
 export const PATRIMONIO_ESTATAL: readonly Bracket[] = [
   { upTo: 167129.45, rate: 0.2 },
   { upTo: 334252.88, rate: 0.3 },
@@ -152,10 +107,7 @@ export const PATRIMONIO_ESTATAL: readonly Bracket[] = [
   { upTo: null, rate: 3.5 },
 ];
 
-/**
- * Impuesto sobre Sucesiones y Donaciones — tarifa estatal (supletoria).
- * Fuente: Ley 29/1987, art. 21. Las CCAA pueden aprobar su propia tarifa.
- */
+/** Sucesiones y Donaciones — tarifa estatal (supletoria de las CCAA). Ley 29/1987, art. 21. */
 export const ISD_ESTATAL: readonly Bracket[] = [
   { upTo: 7993.46, rate: 7.65 },
   { upTo: 15980.91, rate: 8.5 },
@@ -175,14 +127,9 @@ export const ISD_ESTATAL: readonly Bracket[] = [
   { upTo: null, rate: 34 },
 ];
 
-// ---------------------------------------------------------------------------
-// Constantes para el cálculo del rendimiento del trabajo (IRPF)
-// ---------------------------------------------------------------------------
-
 /**
- * Cotización del trabajador a la Seguridad Social (contrato indefinido), en
- * base 100: contingencias comunes 4,70 % + desempleo 1,55 % + FP 0,10 % +
- * MEI 0,15 %. Fuente: Orden de cotización 2026.
+ * Cotización del trabajador a la SS (indefinido), en %: contingencias comunes 4,70 +
+ * desempleo 1,55 + FP 0,10 + MEI 0,15. Fuente: Orden de cotización 2026.
  */
 export const SS_EMPLOYEE_RATE = 6.5;
 
@@ -198,27 +145,21 @@ export const WORK_OTHER_EXPENSES = 2000;
 /** Mínimo personal del contribuyente (general, < 65 años). Art. 57 LIRPF. */
 export const MINIMO_PERSONAL = 5550;
 
-/** Mínimo del contribuyente entre 65 y 74 años (5.550 + 1.150). */
 export const MINIMO_PERSONAL_65 = 6700;
 
-/** Mínimo del contribuyente a partir de 75 años (5.550 + 1.150 + 1.400). */
 export const MINIMO_PERSONAL_75 = 8100;
 
 /**
- * Mínimo por descendientes (art. 58 LIRPF), acumulativo por orden de hijo:
- * 1.º, 2.º, 3.º y 4.º en adelante. Se aplica completo (se asume que el
- * contribuyente computa el 100 %; si se reparte con el otro progenitor sería
- * la mitad).
+ * Mínimo por descendientes (art. 58 LIRPF) por orden de hijo (1.º, 2.º, 3.º, 4.º y
+ * siguientes). Se asume que el contribuyente computa el 100 % (compartido, la mitad).
  */
 export const MINIMO_DESCENDIENTES = [2400, 2700, 4000, 4500] as const;
 
 /** Incremento del mínimo por cada descendiente menor de 3 años. */
 export const MINIMO_DESCENDIENTE_MENOR_3 = 2800;
 
-/** Mínimo por cada ascendiente mayor de 65 años (o con discapacidad) a cargo. */
 export const MINIMO_ASCENDIENTES = 1150;
 
-/** Mínimo por discapacidad del contribuyente: grado 33-65 % y ≥ 65 %. */
 export const MINIMO_DISCAPACIDAD_33 = 3000;
 export const MINIMO_DISCAPACIDAD_65 = 9000;
 
@@ -228,25 +169,15 @@ export const REDUCCION_TRIBUTACION_CONJUNTA = 3400;
 /** Límite anual de aportación individual a planes de pensiones con reducción. Art. 52 LIRPF. */
 export const PENSION_INDIVIDUAL_LIMIT = 1500;
 
-/**
- * Incremento del límite por contribuciones empresariales a planes de empleo
- * (sobre el límite individual). Art. 52.1 LIRPF: hasta 8.500 € adicionales.
- */
+/** Incremento del límite por contribuciones empresariales a planes de empleo (art. 52.1 LIRPF). */
 export const PENSION_EMPLOYER_LIMIT = 8500;
 
-/**
- * Límite conjunto (individual + empresa) de aportaciones con reducción en la base
- * imponible general: 10.000 €. Art. 52.1 LIRPF. En todo caso, sujeto también al
- * 30 % de los rendimientos netos del trabajo y de actividades económicas.
- */
+/** Límite conjunto (individual + empresa) con reducción en la base (art. 52.1 LIRPF); además, 30 % de los rendimientos netos. */
 export const PENSION_JOINT_LIMIT = 10000;
 
 /**
- * Estimación directa simplificada — porcentaje de "gastos de difícil
- * justificación" (provisiones deducibles y gastos de difícil justificación):
- * 5 % del rendimiento neto positivo previo. Art. 30 del Reglamento del IRPF
- * (RD 439/2007). Nota: el 7 % fue excepcional del ejercicio 2023; para el
- * ejercicio de referencia (2026) rige de nuevo el 5 %.
+ * Estimación directa simplificada — gastos de difícil justificación: 5 % del
+ * rendimiento neto positivo previo (art. 30 RIRPF, RD 439/2007). El 7 % fue excepcional de 2023.
  */
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
 
@@ -254,15 +185,9 @@ export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP = 2000;
 
 /**
- * Reducción por obtención de rendimientos del trabajo (art. 20 LIRPF). Es una
- * escala decreciente de tres tramos sobre el rendimiento neto previo:
- *  1. Hasta `..._FULL_LIMIT`: se aplica el importe máximo.
- *  2. Hasta `..._TIER2_LIMIT`: el máximo menos `..._TIER2_SLOPE` € por cada euro
- *     que excede del primer límite.
- *  3. Hasta `..._TIER3_LIMIT`: `..._TIER3_BASE` menos `..._TIER3_SLOPE` € por
- *     cada euro que excede del segundo límite.
- * Por encima del tercer límite la reducción es 0.
- * Fuente: AEAT, ejercicio de referencia (ver `FISCAL_YEAR`).
+ * Reducción por rendimientos del trabajo (art. 20 LIRPF), decreciente en tres tramos:
+ * máximo hasta `FULL_LIMIT`; hasta `TIER2_LIMIT`, máximo − `TIER2_SLOPE` × exceso;
+ * hasta `TIER3_LIMIT`, `TIER3_BASE` − `TIER3_SLOPE` × exceso; después, 0. Fuente: AEAT.
  */
 export const WORK_INCOME_REDUCTION_FULL_LIMIT = 14852;
 export const WORK_INCOME_REDUCTION_MAX = 7302;

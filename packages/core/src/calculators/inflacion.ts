@@ -1,48 +1,30 @@
-// Inflación (IPC): erosión del poder adquisitivo en el tiempo. Core puro.
-// Modelo basado en una tasa media anual (v1). Una versión futura podrá usar
-// datos reales del IPC del INE.
-//
-// Además del dinero "parado", modela qué pasa si ese importe se invierte a una
-// rentabilidad nominal dada: comparar el poder adquisitivo del dinero quieto con
-// el del dinero invertido es la mejor forma de entender por qué hay que batir a
-// la inflación.
+// Inflación (IPC): erosión del poder adquisitivo con una tasa media anual. Core puro. Compara el
+// dinero parado con el invertido a una rentabilidad nominal, para ver por qué hay que batir a la inflación.
 
 export interface InflationInput {
-  /** Importe de referencia (hoy). */
   amount: number;
-  /** Inflación media anual, en base 100 (3 = 3 %). */
   annualRate: number;
-  /** Horizonte en años. */
   years: number;
-  /**
-   * Rentabilidad nominal anual a la que se coloca el dinero, en base 100
-   * (2 = 2 %). 0 = dinero "parado" (cuenta corriente). Opcional.
-   */
+  /** Rentabilidad nominal anual a la que se coloca el dinero, en base 100; 0 = parado. */
   nominalReturn?: number;
 }
 
 export interface InflationPoint {
-  // Firma de índice numérica para consumirlo como dato genérico de gráfica.
+  // firma de índice numérica: consumible como dato genérico de gráfica
   [key: string]: number;
   year: number;
-  /** Importe nominal necesario para mantener el poder adquisitivo. */
   nominalNeeded: number;
-  /** Valor real (poder adquisitivo) del importe original si se deja parado. */
+  /** Poder adquisitivo del importe parado. */
   realValue: number;
-  /** Valor real (poder adquisitivo) del importe si se invierte a `nominalReturn`. */
+  /** Poder adquisitivo del importe invertido a `nominalReturn`. */
   realValueInvested: number;
 }
 
 export interface InflationResult {
-  /** Importe nominal equivalente al final del horizonte. */
   nominalNeeded: number;
-  /** Poder adquisitivo del importe original (parado) al final del horizonte. */
   realValue: number;
-  /** Poder adquisitivo del importe si se invierte a `nominalReturn`, al final. */
   realValueInvested: number;
-  /** Pérdida de poder adquisitivo del dinero parado, en base 100 (%). */
   lossPercent: number;
-  /** Rentabilidad real anualizada del dinero invertido, en base 100 (%). */
   realReturn: number;
   series: InflationPoint[];
 }

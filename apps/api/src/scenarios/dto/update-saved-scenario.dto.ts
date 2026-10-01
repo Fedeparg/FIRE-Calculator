@@ -6,7 +6,7 @@ const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'stri
 
 /**
  * Cuerpo de PATCH /api/scenarios/:id. Solo se puede renombrar y cambiar los `inputs`: el
- * `slug` NO es editable a propósito, porque identifica QUÉ calculadora es el escenario y
+ * `slug` no es editable a propósito, porque identifica qué calculadora es el escenario y
  * cambiarlo convertiría unos inputs en basura para la calculadora de destino. Para eso,
  * guardar uno nuevo.
  */

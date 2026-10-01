@@ -14,7 +14,7 @@ import { oauthGrants, oauthTokens } from '../db/schema.js';
 export class OAuthGrantsService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  /** ¿El usuario ya consintió a este cliente TODOS los scopes pedidos? */
+  /** ¿El usuario ya consintió a este cliente todos los scopes pedidos? */
   async hasConsent(userId: string, clientId: string, scopes: string[]): Promise<boolean> {
     const [row] = await this.db
       .select({ scopes: oauthGrants.scopes })
@@ -60,7 +60,7 @@ export class OAuthGrantsService {
   }
 
   /**
-   * Revoca el acceso de un cliente para un usuario: borra el consentimiento y TODOS sus
+   * Revoca el acceso de un cliente para un usuario: borra el consentimiento y todos sus
    * tokens (access y refresh). Usado por "Aplicaciones conectadas" (Fase D) y por reuso de
    * refresh. El scoping por `userId` impide revocar lo de otro.
    */

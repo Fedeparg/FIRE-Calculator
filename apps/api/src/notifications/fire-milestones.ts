@@ -1,36 +1,24 @@
 /**
- * Hitos del objetivo FIRE: lógica pura (sin Nest ni BD), testeable.
- *
- * El objetivo se reconstruye con la MISMA fórmula que la calculadora FIRE
- * (`@sextante/core/calculators/fire`): patrimonio objetivo = gasto anual / tasa de retiro, con
- * la tasa por defecto del 4 % si no es positiva. Aquí solo hace falta esa división, no la
- * proyección entera, así que se repite y un test la fija.
+ * Hitos del objetivo FIRE (lógica pura). El objetivo repite la fórmula de la calculadora FIRE
+ * (gasto anual / tasa de retiro, 4 % si no es positiva); no hace falta la proyección entera y un test la fija.
  */
 
 import { goalModeFromInputs } from '@sextante/core/portfolio-goal';
 
-/** Hitos que se avisan, en % del objetivo, de menor a mayor. */
+/** Hitos avisados, en % del objetivo. */
 export const FIRE_MILESTONES = [25, 50, 75, 100] as const;
 export type FireMilestone = (typeof FIRE_MILESTONES)[number];
 
-/** Tasa de retiro por defecto (base 100), la misma que la calculadora FIRE. */
 const DEFAULT_WITHDRAWAL_RATE = 4;
 
-/** Objetivo FIRE tal y como sale de un escenario guardado. */
 export interface FireTarget {
-  /** Patrimonio objetivo, en `currency`. */
   target: number;
-  /** Divisa en la que se guardaron los importes del objetivo. */
   currency: string;
 }
 
 const finite = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-/**
- * Objetivo a partir de los `inputs` de un escenario de la calculadora FIRE, o `null` si no se
- * puede calcular (sin gasto anual positivo no hay objetivo que perseguir). `goalCurrency` es la
- * divisa que añade el bloque de la cartera; un escenario creado en la calculadora es en euros.
- */
+/** Objetivo de un escenario FIRE, o `null` si no hay gasto anual positivo. `goalCurrency` la añade el bloque de cartera; sin ella, EUR. */
 export function fireTargetFromInputs(inputs: Record<string, unknown>): FireTarget | null {
   const currency =
     typeof inputs.goalCurrency === 'string' && /^[A-Z]{3}$/.test(inputs.goalCurrency) ? inputs.goalCurrency : 'EUR';
@@ -46,7 +34,6 @@ export function fireTargetFromInputs(inputs: Record<string, unknown>): FireTarge
   return { target: expenses / (rate / 100), currency };
 }
 
-/** Hito más alto alcanzado con este progreso (en %), o 0 si no llega al primero. */
 export function reachedMilestone(progress: number): FireMilestone | 0 {
   let reached: FireMilestone | 0 = 0;
   for (const milestone of FIRE_MILESTONES) {
@@ -55,11 +42,7 @@ export function reachedMilestone(progress: number): FireMilestone | 0 {
   return reached;
 }
 
-/**
- * Hito NUEVO que avisar: el más alto alcanzado si supera al último avisado; `null` si no hay
- * nada nuevo. Si se cruzan varios de golpe (una aportación grande), solo se avisa del mayor:
- * tres emails seguidos no aportarían nada.
- */
+/** Hito nuevo a avisar (el más alto si supera al último avisado). Si se cruzan varios de golpe, solo el mayor. */
 export function newMilestone(progress: number, lastNotified: number): FireMilestone | null {
   const reached = reachedMilestone(progress);
   return reached !== 0 && reached > lastNotified ? reached : null;

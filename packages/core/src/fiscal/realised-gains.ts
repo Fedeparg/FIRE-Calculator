@@ -1,31 +1,6 @@
-// Informe anual de ganancias y pérdidas patrimoniales REALIZADAS: las ventas ya registradas en
-// la cartera, emparejadas por FIFO con las mismas reglas que la simulación de venta
-// (`walkLots` en `plusvalias.ts`), agrupadas por ejercicio y compensadas dentro de él.
-//
-// Core puro (sin React, sin fetch), testeable.
-//
-// ⚠️ ALCANCE FISCAL. Sí modela:
-//   - FIFO, valores de adquisición y transmisión con comisiones (ver `plusvalias.ts`).
-//   - **FIFO por VALOR, no por posición**: el criterio de los valores homogéneos se aplica a
-//     todas las participaciones del contribuyente, estén en el bróker que estén. Si el mismo
-//     símbolo está en dos posiciones (dos brókers), una venta en cualquiera de ellas empareja
-//     primero la compra más antigua de las dos. Cada venta se sigue atribuyendo a la posición
-//     donde se registró.
-//   - **Integración y compensación dentro del ejercicio** (art. 49.1.b LIRPF): las ganancias y
-//     pérdidas por transmisión del mismo año se suman entre sí, y la cuota se estima sobre el
-//     saldo si es positivo.
-//
-// NO modela (el informe lo dice en pantalla):
-//   - Los **saldos negativos de los cuatro ejercicios anteriores** (art. 49.1.b, último
-//     párrafo): un año con pérdida neta da cuota 0 y ese saldo no se arrastra aquí.
-//   - La **compensación cruzada del 25 %** con los rendimientos del capital mobiliario
-//     (dividendos, intereses), que la cartera no registra.
-//   - La **regla de los dos meses** (art. 33.5.f).
-//   - La **conversión a euros** de las posiciones en otra divisa. Hacienda exige el cambio
-//     oficial de la fecha de compra y de la de venta, y la aplicación solo guarda unos días de
-//     histórico de tipos de cambio: convertir con el cambio de hoy daría una cifra fiscalmente
-//     falsa. Por eso los importes se agrupan por divisa y la cuota solo se estima sobre el
-//     grupo en euros.
+// Informe anual de ganancias y pérdidas patrimoniales realizadas: ventas registradas,
+// emparejadas por FIFO (`walkLots`), agrupadas por ejercicio y compensadas dentro de él.
+// Core puro. Alcance y supuestos fiscales: ver ./README.md.
 
 import {
   walkLots,
@@ -47,7 +22,7 @@ export interface RealisedGainsPosition {
   lots: readonly TradeLot[];
 }
 
-/** Una venta del informe, con la posición a la que pertenece. Es la fila del CSV. */
+/** Venta del informe con su posición; es la fila del CSV. */
 export interface RealisedGainsSale extends RealisedSale {
   positionId: string;
   ticker: string;
@@ -100,18 +75,12 @@ function fiscalYear(tradedAt: string): number {
   return Number(tradedAt.slice(0, 4));
 }
 
-/**
- * Clave de "valor homogéneo": mismo símbolo (sin distinguir mayúsculas) y misma divisa. La
- * divisa entra en la clave porque los importes de dos divisas no se pueden emparejar entre sí.
- */
+/** Clave de valor homogéneo: símbolo (sin mayúsculas) y divisa, pues importes de divisas distintas no se emparejan. */
 function securityKey(position: RealisedGainsPosition): string {
   return `${position.ticker.trim().toUpperCase()}\u0000${position.currency}`;
 }
 
-/**
- * Construye el informe a partir de las posiciones y su histórico. Las posiciones sin ventas no
- * aparecen; una posición ya vendida del todo sí, porque sus ventas cuentan.
- */
+/** Construye el informe desde las posiciones y su histórico; solo aparecen las que tienen ventas. */
 export function buildRealisedGainsReport(positions: readonly RealisedGainsPosition[]): RealisedGainsReport {
   const bySecurity = new Map<string, RealisedGainsPosition[]>();
   for (const position of positions) {
@@ -122,7 +91,7 @@ export function buildRealisedGainsReport(positions: readonly RealisedGainsPositi
   const byYear = new Map<number, RealisedGainsSale[]>();
 
   for (const group of bySecurity.values()) {
-    // Todas las operaciones del valor juntas: el FIFO se hace sobre el conjunto.
+    // FIFO sobre todas las operaciones del valor juntas.
     const owner = new Map<string, RealisedGainsPosition>();
     for (const position of group) for (const lot of position.lots) owner.set(lot.id, position);
 
@@ -170,7 +139,7 @@ function buildYear(year: number, sales: RealisedGainsSale[]): RealisedGainsYear 
     year,
     groups,
     sales: ordered,
-    // La cuota se estima sobre el SALDO compensado; si es negativo, `estimateSavingsTax` da 0.
+    // Cuota sobre el saldo compensado; si es negativo, `estimateSavingsTax` da 0.
     tax: eur ? estimateSavingsTax(eur.net) : null,
   };
 }

@@ -1,66 +1,36 @@
-/**
- * Construcción de ficheros CSV para Excel y compañía. Core puro (sin React ni DOM): recibe
- * cabeceras ya traducidas y filas de celdas, y devuelve el texto. La descarga (Blob + enlace)
- * la hace `src/shared/format/download.ts`.
- *
- * **Dialecto según el idioma, por Excel.** Excel no lee el CSV con un dialecto fijo: usa el
- * separador de listas del sistema, que en un Windows/macOS en español es `;` y el decimal es
- * la coma; en inglés son `,` y el punto. Un fichero con comas y puntos abierto en un Excel
- * español mete toda la fila en una celda y lee "1234.56" como texto. Por eso el dialecto se
- * elige por idioma de la UI (`es` → `;` y coma; `en` → `,` y punto), que es el mismo criterio
- * con el que ya se formatean los números en pantalla (`src/shared/format/format.ts`).
- *
- * No se emite la línea `sep=;` (una extensión de Microsoft que Excel entiende, pero que
- * cualquier otro parser —pandas, Numbers, Google Sheets— lee como una fila de datos). Sí se
- * antepone un BOM UTF-8 al descargar (`UTF8_BOM`): sin él, Excel interpreta el fichero en la
- * página de códigos local y destroza los acentos y el símbolo del euro.
- *
- * Los importes van SIN separador de miles: es redundante en un fichero de datos y, con el
- * dialecto español, un "1.234,56" mal leído por otra herramienta se convertiría en 1,23456.
- */
+// CSV puro (sin React ni DOM); la descarga está en `download.ts`.
+// El dialecto va por idioma de la UI porque Excel usa el separador de listas del sistema:
+// es -> `;` y coma decimal, en -> `,` y punto. Sin `sep=;` (otros parsers lo leen como dato).
+// Los importes van sin separador de miles: "1.234,56" mal leído sería 1,23456.
 
 import { formatDecimalInput } from "./number-input";
 import type { Locale } from "@/i18n/types";
 
-/** Marca de orden de bytes UTF-8. Se antepone al contenido al construir el fichero. */
+// BOM al descargar: sin él Excel lee en la página de códigos local y rompe acentos y €.
 export const UTF8_BOM = "\uFEFF";
 
-/** Fin de línea de RFC 4180 (y el que espera Excel en Windows). */
 const LINE_BREAK = "\r\n";
 
-/** Separador de campos y separador decimal por idioma de la interfaz. */
 const DIALECTS: Record<Locale, { delimiter: string; decimal: string }> = {
   es: { delimiter: ";", decimal: "," },
   en: { delimiter: ",", decimal: "." },
 };
 
-/**
- * Una celda: texto (`string`), número (`number`, con el decimal del idioma) o vacía (`null`).
- * Un valor que no se puede calcular va como `null`, nunca como 0: una celda con 0 se leería
- * como "vale cero" en vez de "no lo sabemos". Los números no finitos también salen vacíos.
- */
+/** `null` (y los no finitos) salen vacíos, no como 0: "no lo sabemos" no es "vale cero". */
 export type CsvCell = string | number | null;
 
-/**
- * Neutraliza la inyección de fórmulas: una celda que empieza por `=`, `+`, `-` o `@` la
- * ejecuta Excel al abrir el fichero, y los textos (nombres, brókers) son texto libre que el
- * usuario puede haber pegado de un extracto. Se aplica SOLO a las celdas de texto: hacerlo en
- * las numéricas rompería los importes negativos.
- */
+// Evita la inyección de fórmulas (Excel ejecuta `=`, `+`, `-`, `@` iniciales). Solo en
+// texto: en las numéricas rompería los importes negativos.
 function escapeFormula(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
-/** Entrecomilla una celda si contiene el separador, comillas o un salto de línea (RFC 4180). */
 function quoteCell(value: string, delimiter: string): string {
   if (!value.includes(delimiter) && !/["\r\n]/.test(value)) return value;
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-/**
- * Construye el CSV: una fila de cabeceras y una por cada elemento de `rows`, con el dialecto
- * del idioma. Las cabeceras llegan YA traducidas: el core no traduce.
- */
+/** Las cabeceras llegan ya traducidas: este módulo no traduce. */
 export function buildCsv(headers: readonly string[], rows: readonly (readonly CsvCell[])[], locale: Locale): string {
   const { delimiter, decimal } = DIALECTS[locale];
   const cell = (value: CsvCell): string => {
