@@ -201,10 +201,12 @@ export class McpService {
         title: 'Histórico de valoración de la cartera',
         description:
           'Devuelve la serie diaria de coste y valor de mercado de la cartera (un punto por ' +
-          'día capturado), para analizar la evolución y la rentabilidad por periodo. Los ' +
+          'día), para analizar la evolución y la rentabilidad por periodo. Los ' +
           'importes se guardan en EUR y se reexpresan a la divisa `display` con las tasas de ' +
-          'CADA día. La serie empieza el día en que se capturó el primer snapshot, así que ' +
-          'una cuenta nueva puede tener pocos puntos o ninguno. Solo lectura.',
+          'CADA día. La serie se reconstruye desde la primera operación de la cartera (hasta 5 ' +
+          'años, con la cantidad que se tenía cada día) y los días posteriores son capturas ' +
+          'reales diarias; los puntos reconstruidos llevan `estimated: true`. Una cuenta ' +
+          'recién creada tiene pocos puntos. Solo lectura.',
         inputSchema: {
           days: z
             .number()

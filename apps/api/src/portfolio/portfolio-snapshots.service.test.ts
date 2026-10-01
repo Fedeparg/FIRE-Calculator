@@ -1,9 +1,9 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq } from 'drizzle-orm';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { instrumentPrices, portfolioSnapshots, positionLots } from '../db/schema.js';
+import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots } from '../db/schema.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
@@ -26,11 +26,11 @@ const identityResolver: SymbolResolver = {
 const silentProvider: PriceProvider = {
   name: 'test',
   getQuotes: () => Promise.resolve(new Map()),
-  getHistory: () => Promise.resolve([]),
+  getHistory: () => Promise.resolve({ quotes: [], splits: [] }),
 };
 
-/** Fecha de hoy en UTC, la que usa la captura. */
-const TODAY = new Date().toISOString().slice(0, 10);
+/** Fecha de hoy en UTC, la que usa la captura (con el reloj congelado: ver `beforeEach`). */
+const today = (): string => new Date().toISOString().slice(0, 10);
 
 describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   let db: Database;
@@ -41,7 +41,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   beforeAll(() => {
     ({ db, close } = createTestDb());
     const prices = new PricesService(db, silentProvider, identityResolver);
-    const lots = new PositionLotsService(db);
+    const lots = new PositionLotsService(db, new EventEmitter2());
     positions = new PositionsService(db, prices, lots, new EventEmitter2());
     snapshots = new PortfolioSnapshotsService(
       db,
@@ -51,7 +51,14 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     );
   });
 
+  // Reloj congelado (solo `Date`): una ejecución que cruce la medianoche UTC no debe cambiar el
+  // "hoy" a mitad de un test, ni dejar desfasadas las fechas relativas (`daysAgo`).
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date() });
+  });
+
   afterEach(async () => {
+    vi.useRealTimers();
     await resetDb(db);
   });
 
@@ -61,7 +68,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
   /** Cachea un cierre para un símbolo, como haría el refresco diario. */
   async function cachePrice(symbol: string, close_: string, currency: string): Promise<void> {
-    await cachePriceOn(symbol, TODAY, close_, currency);
+    await cachePriceOn(symbol, today(), close_, currency);
   }
 
   /** Igual que `cachePrice`, pero en una fecha concreta (para sembrar histórico pasado). */
@@ -90,7 +97,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     const [row] = await db.select().from(portfolioSnapshots);
     expect(row).toMatchObject({
       userId,
-      date: TODAY,
+      date: today(),
       invested: '1000.00000000',
       marketValue: '1200.00000000',
       valuedPositions: 1,
@@ -222,10 +229,14 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       await snapshots.backfillUser(userId);
 
-      const dates = (await rowsOf(userId)).map((r) => r.date);
-      expect(dates[0]).toBe(daysAgo(400));
-      expect(dates).toContain(daysAgo(200));
-      expect(dates).not.toContain(daysAgo(250));
+      // Cada cierre cubre su día y los 10 siguientes (margen de arrastre); el resto, hueco.
+      const covered = (from: number, to: number) => Array.from({ length: from - to + 1 }, (_, i) => daysAgo(from - i));
+      expect((await rowsOf(userId)).map((r) => r.date)).toEqual([
+        ...covered(400, 389), // cierres de hace 400 y 399 días
+        ...covered(200, 190),
+        ...covered(100, 90),
+        daysAgo(1),
+      ]);
     });
 
     it('tras una venta total no hay snapshot, y reaparece con la recompra', async () => {
@@ -265,7 +276,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       await snapshots.backfillUser(userId);
 
-      expect((await rowsOf(userId)).some((r) => r.date === TODAY)).toBe(false);
+      expect((await rowsOf(userId)).some((r) => r.date === today())).toBe(false);
     });
 
     it('nunca pisa una captura real ya existente', async () => {
@@ -400,7 +411,78 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       await snapshots.backfillUser(userId);
 
-      expect(await rowsOf(userId)).toHaveLength(450);
+      const rows = await rowsOf(userId);
+      expect(rows).toHaveLength(450);
+      expect(rows[0].date).toBe(daysAgo(450));
+      expect(rows.at(-1)?.date).toBe(daysAgo(1));
+    });
+
+    it('corrige un split: la cantidad cruda se expresa en acciones de hoy y no hay salto', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      // 10 acciones compradas a 1000 antes de un split 10:1; Yahoo da los cierres ya ajustados (100).
+      await createBoughtOn(userId, 'NVDA', 10, 1000, daysAgo(6));
+      for (const days of [5, 4, 3, 2, 1]) await cachePriceOn('NVDA', daysAgo(days), '100', 'EUR');
+      await db.insert(instrumentSplits).values({ symbol: 'NVDA', date: daysAgo(3), ratio: '10' });
+
+      await snapshots.backfillUser(userId);
+
+      const rows = await rowsOf(userId);
+      expect(rows.map((r) => r.marketValue)).toEqual(Array<string>(5).fill('10000.00000000'));
+      expect(rows.map((r) => r.invested)).toEqual(Array<string>(5).fill('10000.00000000'));
+    });
+
+    it('una estimada entre dos reales se actualiza sin tocar las reales, y la sobrante se retira', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      await createBoughtOn(userId, 'IWDA', 10, 100, daysAgo(6));
+      for (const days of [6, 5, 4, 3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '150', 'EUR');
+      const seed = (days: number, marketValue: string, estimated: boolean) =>
+        db.insert(portfolioSnapshots).values({
+          userId,
+          date: daysAgo(days),
+          invested: '1000.00000000',
+          marketValue,
+          valuedPositions: 1,
+          totalPositions: 1,
+          fxRates: { USD: 1 },
+          estimated,
+        });
+      await seed(5, '999.00000000', false); // real
+      await seed(4, '1.00000000', true); // estimada desfasada entre reales
+      await seed(3, '998.00000000', false); // real
+      await seed(20, '1.00000000', true); // estimada sobrante (antes de la primera operación)
+
+      await snapshots.backfillUser(userId);
+
+      const rows = await rowsOf(userId);
+      const byDate = Object.fromEntries(rows.map((r) => [r.date, r]));
+      expect(byDate[daysAgo(5)]).toMatchObject({ marketValue: '999.00000000', estimated: false });
+      expect(byDate[daysAgo(3)]).toMatchObject({ marketValue: '998.00000000', estimated: false });
+      expect(byDate[daysAgo(4)]).toMatchObject({ marketValue: '1500.00000000', estimated: true });
+      expect(byDate[daysAgo(20)]).toBeUndefined();
+    });
+
+    it('una segunda pasada sin cambios no reescribe ninguna fila', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      await createBoughtOn(userId, 'IWDA', 10, 100, daysAgo(3));
+      for (const days of [3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+      await snapshots.backfillUser(userId);
+      const before = await rowsOf(userId);
+
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      vi.setSystemTime(new Date(Date.now() + 60_000)); // `updatedAt` cambiaría si se reescribiese
+      await snapshots.backfillUser(userId);
+
+      expect((await rowsOf(userId)).map((r) => r.updatedAt)).toEqual(before.map((r) => r.updatedAt));
+    });
+
+    it('dos reconstrucciones concurrentes del mismo usuario no se pisan', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      await createBoughtOn(userId, 'IWDA', 10, 100, daysAgo(3));
+      for (const days of [3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+
+      await Promise.all([snapshots.backfillUser(userId), snapshots.backfillUser(userId)]);
+
+      expect(await rowsOf(userId)).toHaveLength(3);
     });
 
     it('backfillAll omite a los usuarios sin posiciones, igual que captureAll', async () => {
@@ -452,6 +534,33 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       // lo que importa es que el propio método nunca rechaza, tenga o no datos que backfillear.
       await expect(
         snapshots.onPositionCreated({ userId: '00000000-0000-0000-0000-000000000000' }),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('onLotChanged', () => {
+    it('reconstruye la evolución tras añadir un lote con fecha anterior', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const { id } = await positions.create(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+      for (const days of [5, 4, 3, 2, 1]) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+      await db.insert(positionLots).values({
+        positionId: id,
+        userId,
+        kind: 'buy',
+        quantity: '5',
+        price: '90',
+        tradedAt: daysAgo(4),
+      });
+
+      await snapshots.onLotChanged({ userId, positionId: id });
+
+      const rows = await db.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
+      expect(rows.map((r) => r.date).sort()).toEqual([4, 3, 2, 1].map(daysAgo).sort());
+    });
+
+    it('un fallo no se propaga', async () => {
+      await expect(
+        snapshots.onLotChanged({ userId: '00000000-0000-0000-0000-000000000000', positionId: '00000000-0000-0000-0000-000000000000' }),
       ).resolves.toBeUndefined();
     });
   });

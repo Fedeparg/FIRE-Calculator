@@ -120,6 +120,13 @@
       "when": 1790865404221,
       "tag": "0016_talented_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790874439228,
+      "tag": "0017_bitter_archangel",
+      "breakpoints": true
     }
   ]
 }

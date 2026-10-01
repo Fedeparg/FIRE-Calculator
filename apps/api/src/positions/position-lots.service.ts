@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, asc, eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -20,6 +21,7 @@ import {
   type LotAggregate,
 } from './lot-aggregate.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 
 /**
  * Lote tal y como lo consume el frontend. Igual que `PositionResponse`, los `numeric` de
@@ -62,13 +64,21 @@ export function todayUtc(): string {
  * termina reescribiendo esos dos campos, así que ambos representan siempre lo mismo y nada
  * de lo que existe hoy se rompe aunque la interfaz de lotes esté incompleta.
  *
- * Dependencias: solo `DRIZZLE`. La comprobación de propiedad se hace con
+ * Dependencias: `DRIZZLE` y el emisor de eventos (para avisar de que un lote cambió). La comprobación de propiedad se hace con
  * `findOwnedPosition` (helper compartido) en vez de inyectar `PositionsService`, porque es
  * este servicio el que aquel inyecta (evita el ciclo y el `forwardRef`).
  */
 @Injectable()
 export class PositionLotsService {
-  constructor(@Inject(DRIZZLE) private readonly db: Database) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly events: EventEmitter2,
+  ) {}
+
+  /** Avisa de que los lotes de una posición cambiaron (ver `LOT_CHANGED_EVENT`). */
+  private emitLotChanged(userId: string, positionId: string): void {
+    this.events.emit(LOT_CHANGED_EVENT, { userId, positionId } satisfies LotChangedEvent);
+  }
 
   /** Lotes de una posición del usuario, en orden cronológico (el mismo de la agregación). */
   async listByPosition(userId: string, positionId: string): Promise<PositionLotResponse[]> {
@@ -102,7 +112,7 @@ export class PositionLotsService {
     positionId: string,
     dto: CreatePositionLotDto,
   ): Promise<PositionLotResponse> {
-    return this.db.transaction(async (tx) => {
+    const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
 
       const [row] = await tx
@@ -123,6 +133,8 @@ export class PositionLotsService {
       await this.recompute(tx, positionId);
       return toResponse(row);
     });
+    this.emitLotChanged(userId, positionId);
+    return created;
   }
 
   /** Edita un lote de una posición del usuario y reagrega (misma transacción). */
@@ -132,7 +144,7 @@ export class PositionLotsService {
     lotId: string,
     dto: UpdatePositionLotDto,
   ): Promise<PositionLotResponse> {
-    return this.db.transaction(async (tx) => {
+    const updated = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const current = await this.findLot(tx, positionId, lotId);
 
@@ -153,6 +165,8 @@ export class PositionLotsService {
       await this.recompute(tx, positionId);
       return toResponse(row);
     });
+    this.emitLotChanged(userId, positionId);
+    return updated;
   }
 
   /** Borra un lote de una posición del usuario y reagrega (misma transacción). */
@@ -163,6 +177,7 @@ export class PositionLotsService {
       await tx.delete(positionLots).where(eq(positionLots.id, lotId));
       await this.recompute(tx, positionId);
     });
+    this.emitLotChanged(userId, positionId);
   }
 
   /**

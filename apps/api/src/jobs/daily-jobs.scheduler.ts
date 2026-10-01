@@ -102,7 +102,9 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
    * y sin bloquear `listen()`: `void`, tolerante a fallos en sus dos pasos.
    */
   onApplicationBootstrap(): void {
-    void this.bootstrapBackfill();
+    // Bajo el mismo cerrojo que el nocturno y el intradía: la pasada de arranque puede pedir
+    // decenas de históricos a Yahoo y no debe solaparse con un refresco.
+    void this.exclusive('arranque', () => this.bootstrapBackfill());
   }
 
   private async bootstrapBackfill(): Promise<void> {

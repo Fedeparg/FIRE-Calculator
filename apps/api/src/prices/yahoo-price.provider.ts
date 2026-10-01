@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { PriceProvider, Quote } from './price-provider.interface.js';
+import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
@@ -41,6 +41,8 @@ interface YahooChartResult {
   meta?: YahooChartMeta;
   /** Epoch (segundos) de cada barra, alineado por índice con `indicators.quote[0].close`. */
   timestamp?: unknown;
+  /** Con `events=split`: `{ splits: { "<epoch>": { date, numerator, denominator } } }`. */
+  events?: { splits?: Record<string, { date?: unknown; numerator?: unknown; denominator?: unknown }> };
   indicators?: { quote?: { close?: unknown }[] };
 }
 interface YahooChartResponse {
@@ -109,6 +111,33 @@ export function parseYahooChartHistory(symbol: string, body: unknown): Quote[] {
 }
 
 /**
+ * Extrae los splits de una respuesta `chart` pedida con `events=split`. Función pura. Se descartan
+ * los eventos con numerador/denominador no numéricos o no positivos: un ratio inválido
+ * corrompería la cantidad histórica de la cartera.
+ */
+export function parseYahooSplits(symbol: string, body: unknown): SplitEvent[] {
+  const splits = (body as YahooChartResponse)?.chart?.result?.[0]?.events?.splits;
+  if (!splits || typeof splits !== 'object') return [];
+
+  const out: SplitEvent[] = [];
+  for (const split of Object.values(splits)) {
+    const { date, numerator, denominator } = split ?? {};
+    if (
+      typeof date !== 'number' ||
+      typeof numerator !== 'number' ||
+      typeof denominator !== 'number' ||
+      !Number.isFinite(date) ||
+      !(numerator > 0) ||
+      !(denominator > 0)
+    ) {
+      continue;
+    }
+    out.push({ symbol, date: epochToUtcDate(date), ratio: numerator / denominator });
+  }
+  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+/**
  * Proveedor de precios sobre la API no oficial de Yahoo Finance. Cobertura amplia
  * (acciones, ETFs europeos con sufijo de mercado, cripto) y gratis, a cambio de ser no
  * oficial: por eso vive tras `PriceProvider` y se puede sustituir por una fuente de pago.
@@ -134,20 +163,21 @@ export class YahooPriceProvider implements PriceProvider {
   /**
    * Cinco años de cierres diarios en UNA sola petición al mismo endpoint (`range`/`interval`),
    * reutilizando el mismo camino de reintentos, backoff y timeout que el refresco: el trato
-   * con los límites de Yahoo es idéntico. Devuelve `[]` ante cualquier fallo.
+   * con los límites de Yahoo es idéntico. Devuelve una serie vacía ante cualquier fallo.
    */
-  async getHistory(symbol: string): Promise<Quote[]> {
+  async getHistory(symbol: string): Promise<PriceHistory> {
     const clean = symbol.trim();
-    if (!clean) return [];
+    if (!clean) return { quotes: [], splits: [] };
 
-    const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL);
-    if (body === null) return [];
+    // `events=split` viaja en la MISMA llamada: no cuesta una petición más.
+    const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'split');
+    if (body === null) return { quotes: [], splits: [] };
 
-    const history = parseYahooChartHistory(clean, body);
-    if (history.length === 0) {
+    const quotes = parseYahooChartHistory(clean, body);
+    if (quotes.length === 0) {
       this.logger.warn(`Yahoo ${clean}: histórico vacío o no utilizable`);
     }
-    return history;
+    return { quotes, splits: parseYahooSplits(clean, body) };
   }
 
   /** Última cotización de un símbolo, o `null` si no se pudo obtener. */
@@ -168,14 +198,20 @@ export class YahooPriceProvider implements PriceProvider {
    * El cuerpo se devuelve SIN parsear (`unknown`): el parseo frágil vive en las funciones
    * puras `parseYahooChart` / `parseYahooChartHistory`.
    */
-  private async fetchChart(symbol: string, range: string, interval: string): Promise<unknown> {
+  private async fetchChart(
+    symbol: string,
+    range: string,
+    interval: string,
+    events?: string,
+  ): Promise<unknown> {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
       try {
         const url =
           `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}` +
-          `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}`;
+          `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}` +
+          (events ? `&events=${encodeURIComponent(events)}` : '');
         const res = await fetch(url, {
           headers: { 'User-Agent': USER_AGENT },
           signal: controller.signal,

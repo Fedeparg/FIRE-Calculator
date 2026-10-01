@@ -1,10 +1,15 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { and, asc, eq, gte } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, min, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots, positionLots, positions } from '../db/schema.js';
-import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/position-events.js';
+import {
+  LOT_CHANGED_EVENT,
+  POSITION_CREATED_EVENT,
+  type LotChangedEvent,
+  type PositionCreatedEvent,
+} from '../positions/position-events.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { HISTORY_MAX_DAYS, PricesService } from '../prices/prices.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
@@ -74,6 +79,12 @@ export interface SnapshotSummary {
 const MAX_SNAPSHOT_AMOUNT = 1e12;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Igualdad de tasas FX (un `jsonb` no conserva el orden de las claves). */
+function sameRates(a: Record<string, number>, b: Record<string, number>): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+}
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
 function todayUtc(): string {
@@ -196,105 +207,169 @@ export class PortfolioSnapshotsService {
    * primera compra no hay snapshot, y tras vender del todo tampoco). La lógica es pura y vive en
    * `@sextante/core/portfolio-history`; aquí solo se cargan los datos y se escribe el resultado.
    *
-   * Coste acotado: 3 lecturas (posiciones, lotes y series de precios/FX de una vez) y
-   * ~`días / 200` escrituras, con independencia de cuántos días o símbolos haya. Por eso se puede
-   * lanzar siempre (alta, importación, arranque y cron nocturno) sin preocuparse por la factura.
+   * Coste acotado: unas pocas lecturas (posiciones, lotes, series de precios/FX y splits, y las
+   * filas ya guardadas) y SOLO las escrituras de lo que cambió (nada, en el caso normal de la
+   * pasada nocturna). Por eso se puede lanzar siempre (alta, importación, lote editado, arranque
+   * y cron nocturno) sin preocuparse por la factura. Los splits corrigen la cantidad cruda de los
+   * lotes (ver `@sextante/core/portfolio-history`, que también documenta las limitaciones).
    *
    * Las filas se guardan con `estimated: true`: son una reconstrucción con los cierres de la
    * caché, no una captura de ese día (p. ej. el instrumento pudo cotizar a otra hora). El
-   * frontend lo señala. Una captura REAL (`estimated: false`) nunca se pisa (`onConflictDoNothing`
-   * sobre `(userId, date)`), y las estimadas anteriores se sustituyen enteras en la misma
-   * transacción, lo que además RETIRA las que un backfill antiguo (cantidad de hoy aplicada a
-   * días previos a la compra) escribió sin base. Si la reconstrucción sale vacía (aún sin
-   * precios porque `primeSymbol` sigue trayendo histórico en segundo plano) no se toca nada: una
-   * pasada posterior la completa.
+   * frontend lo señala. Una captura REAL (`estimated: false`) nunca se pisa (el upsert solo
+   * actualiza filas estimadas), y las estimadas que ya no salen de la reconstrucción se retiran
+   * (incluidas las que un backfill antiguo, con la cantidad de hoy, escribió antes de la compra).
+   * Si la reconstrucción sale vacía (aún sin precios porque `primeSymbol` sigue trayendo
+   * histórico en segundo plano) no se toca nada: una pasada posterior la completa.
+   *
+   * LIMITACIÓN conocida: si se importan operaciones ANTERIORES a una captura real ya existente,
+   * esa captura (hecha con las cantidades de entonces) puede quedar desalineada respecto a la
+   * reconstrucción de los días vecinos y verse un salto. Se prefiere no reescribir datos reales;
+   * la gráfica sombrea por separado cada tramo estimado, así que se ve qué es qué.
    *
    * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar ese día
    * (`valuedPositions < totalPositions`), igual que la captura diaria.
    */
   async backfillUser(userId: string): Promise<void> {
-    const owned = await this.positionsService.findAllByUser(userId);
-    if (owned.length === 0) return; // mismo criterio que `usersWithPositions`
+    // La resolución ticker → símbolo (otra lectura) se hace ANTES de abrir la transacción: dentro,
+    // pediría una segunda conexión mientras esta mantiene una, y con el pool agotado se bloquearía.
+    const tickers = (await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))).map((p) => p.ticker);
+    const tickerToSymbol = await this.prices.resolveCachedTickers([...new Set(tickers)]);
 
-    const lotRows = await this.db
-      .select()
-      .from(positionLots)
-      .where(eq(positionLots.userId, userId))
-      // Orden canónico de la agregación de lotes (ver `compareLots`): el del mismo día importa.
-      .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
-    const lotsByPosition = new Map<string, HistoryLot[]>();
-    for (const row of lotRows) {
-      const list = lotsByPosition.get(row.positionId) ?? [];
-      list.push({
-        kind: row.kind,
-        quantity: Number(row.quantity),
-        price: Number(row.price),
-        tradedAt: row.tradedAt,
-      });
-      lotsByPosition.set(row.positionId, list);
-    }
-
-    const historyPositions: HistoryPosition[] = owned.map((p) => ({
-      ticker: p.ticker,
-      currency: p.currency,
-      isDerivative: p.isDerivative,
-      // Una posición sin lotes (anterior al modelo de lotes) se trata como una única compra
-      // el día de alta: es lo más cercano a la verdad que se conoce.
-      lots: lotsByPosition.get(p.id) ?? [
-        {
-          kind: 'buy',
-          quantity: p.quantity,
-          price: p.avgPrice,
-          tradedAt: p.createdAt.slice(0, 10),
-        },
-      ],
-    }));
-
-    const earliest = firstTradeDate(historyPositions);
-    if (earliest === null) return;
-    const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
-    const from = earliest > floor ? earliest : floor;
-    const to = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10); // ayer: hoy es del cron
-    if (from > to) return;
-
-    const series = await this.prices.getSeriesSince([...new Set(owned.map((p) => p.ticker))], from);
-    const days = reconstructHistory({
-      positions: historyPositions,
-      prices: series.prices,
-      fx: series.fx,
-      from,
-      to,
-      display: SNAPSHOT_BASE_CURRENCY,
-    });
-
-    const rows = days.flatMap(({ date, aggregate, rates }) => {
-      const invested = toNumeric(aggregate.invested);
-      const marketValue = toNumeric(aggregate.marketValue);
-      if (invested === null || marketValue === null) return []; // desbordado: se salta ese día
-      return [
-        {
-          userId,
-          date,
-          invested,
-          marketValue,
-          valuedPositions: aggregate.valued,
-          totalPositions: aggregate.total,
-          fxRates: rates,
-          estimated: true,
-        },
-      ];
-    });
-    if (rows.length === 0) return;
-
+    // Todo bajo un cerrojo consultivo por usuario: dos reconstrucciones concurrentes del mismo
+    // usuario (alta + importación, o el arranque + un alta) leerían lotes distintos y la última
+    // en escribir podría dejar la serie con el estado antiguo. El cerrojo se libera solo al
+    // terminar la transacción; los lotes se leen DENTRO para ver lo último confirmado.
     await this.db.transaction(async (tx) => {
-      await tx
-        .delete(portfolioSnapshots)
-        .where(and(eq(portfolioSnapshots.userId, userId), eq(portfolioSnapshots.estimated, true)));
-      for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
+
+      const owned = await tx.select().from(positions).where(eq(positions.userId, userId));
+      if (owned.length === 0) return; // mismo criterio que `usersWithPositions`
+
+      const lotRows = await tx
+        .select()
+        .from(positionLots)
+        .where(eq(positionLots.userId, userId))
+        // Orden canónico de la agregación de lotes (ver `compareLots`): el del mismo día importa.
+        .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
+      const lotsByPosition = new Map<string, HistoryLot[]>();
+      for (const row of lotRows) {
+        const list = lotsByPosition.get(row.positionId) ?? [];
+        list.push({
+          kind: row.kind,
+          quantity: Number(row.quantity),
+          price: Number(row.price),
+          tradedAt: row.tradedAt,
+        });
+        lotsByPosition.set(row.positionId, list);
+      }
+
+      const historyPositions: HistoryPosition[] = owned.map((p) => ({
+        ticker: p.ticker,
+        currency: p.currency,
+        isDerivative: p.isDerivative,
+        // Una posición sin lotes (anterior al modelo de lotes) se trata como una única compra
+        // el día de alta: es lo más cercano a la verdad que se conoce.
+        lots: lotsByPosition.get(p.id) ?? [
+          {
+            kind: 'buy',
+            quantity: Number(p.quantity),
+            price: Number(p.avgPrice),
+            tradedAt: p.createdAt.toISOString().slice(0, 10),
+          },
+        ],
+      }));
+
+      const earliest = firstTradeDate(historyPositions);
+      if (earliest === null) return;
+      const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
+      const from = earliest > floor ? earliest : floor;
+      const to = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10); // ayer: hoy es del cron
+      if (from > to) return;
+
+      const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
+      const days = reconstructHistory({
+        positions: historyPositions,
+        prices: series.prices,
+        fx: series.fx,
+        splits: series.splits,
+        from,
+        to,
+        display: SNAPSHOT_BASE_CURRENCY,
+      });
+
+      const rows = days.flatMap(({ date, aggregate, rates }) => {
+        const invested = toNumeric(aggregate.invested);
+        const marketValue = toNumeric(aggregate.marketValue);
+        if (invested === null || marketValue === null) return []; // desbordado: se salta ese día
+        return [
+          {
+            userId,
+            date,
+            invested,
+            marketValue,
+            valuedPositions: aggregate.valued,
+            totalPositions: aggregate.total,
+            fxRates: rates,
+            estimated: true,
+          },
+        ];
+      });
+      if (rows.length === 0) return;
+
+      // Solo se escribe la DIFERENCIA con lo guardado: reconstruir cada noche 5 años de filas
+      // idénticas sería escribir ~1.800 filas por usuario sin cambiar nada.
+      const existing = await tx
+        .select()
+        .from(portfolioSnapshots)
+        .where(eq(portfolioSnapshots.userId, userId));
+      const existingByDate = new Map(existing.map((row) => [row.date, row]));
+      const newDates = new Set(rows.map((row) => row.date));
+
+      const changed = rows.filter((row) => {
+        const current = existingByDate.get(row.date);
+        if (!current) return true;
+        if (!current.estimated) return false; // captura real: no se toca
+        return !(
+          current.invested === row.invested &&
+          current.marketValue === row.marketValue &&
+          current.valuedPositions === row.valuedPositions &&
+          current.totalPositions === row.totalPositions &&
+          sameRates(current.fxRates, row.fxRates)
+        );
+      });
+      // Estimadas que ya no salen de la reconstrucción (p. ej. de un backfill antiguo anterior a
+      // la primera compra, o de una operación borrada): se retiran.
+      const stale = existing.filter((row) => row.estimated && !newDates.has(row.date)).map((row) => row.date);
+
+      for (let i = 0; i < changed.length; i += UPSERT_CHUNK_SIZE) {
         await tx
           .insert(portfolioSnapshots)
-          .values(rows.slice(i, i + UPSERT_CHUNK_SIZE))
-          .onConflictDoNothing();
+          .values(changed.slice(i, i + UPSERT_CHUNK_SIZE))
+          .onConflictDoUpdate({
+            target: [portfolioSnapshots.userId, portfolioSnapshots.date],
+            set: {
+              invested: sql`excluded.invested`,
+              marketValue: sql`excluded.market_value`,
+              valuedPositions: sql`excluded.valued_positions`,
+              totalPositions: sql`excluded.total_positions`,
+              fxRates: sql`excluded.fx_rates`,
+              updatedAt: new Date(),
+            },
+            // Una captura real (estimated = false) nunca se pisa, ni siquiera ante una carrera
+            // con la captura nocturna entre la lectura y la escritura.
+            setWhere: eq(portfolioSnapshots.estimated, true),
+          });
+      }
+      for (let i = 0; i < stale.length; i += UPSERT_CHUNK_SIZE) {
+        await tx
+          .delete(portfolioSnapshots)
+          .where(
+            and(
+              eq(portfolioSnapshots.userId, userId),
+              eq(portfolioSnapshots.estimated, true),
+              inArray(portfolioSnapshots.date, stale.slice(i, i + UPSERT_CHUNK_SIZE)),
+            ),
+          );
       }
     });
   }
@@ -333,6 +408,30 @@ export class PortfolioSnapshotsService {
     } catch (error) {
       this.logger.warn(
         `Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`,
+      );
+    }
+  }
+
+  /**
+   * Un lote de una posición existente se añadió, editó o borró: si tiene una fecha anterior a lo
+   * que hay cacheado, pide el histórico que falta (el guard de `ensureHistory` no hace nada si ya
+   * llega) y reconstruye la evolución. Tolerante a fallos, como `onPositionCreated`.
+   */
+  @OnEvent(LOT_CHANGED_EVENT)
+  async onLotChanged({ userId, positionId }: LotChangedEvent): Promise<void> {
+    try {
+      const [position] = await this.db.select().from(positions).where(eq(positions.id, positionId));
+      const [first] = await this.db
+        .select({ firstTrade: min(positionLots.tradedAt) })
+        .from(positionLots)
+        .where(eq(positionLots.positionId, positionId));
+      if (position && first?.firstTrade) {
+        await this.prices.ensureHistoryForTicker(position.ticker, first.firstTrade);
+      }
+      await this.backfillUser(userId);
+    } catch (error) {
+      this.logger.warn(
+        `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
       );
     }
   }

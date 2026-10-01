@@ -313,6 +313,24 @@ export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
 export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
 
 /**
+ * Splits de un instrumento (fuente: `events=split` de la misma llamada de histórico). Los cierres
+ * de `instrument_prices` vienen ajustados por splits y las cantidades de los lotes son crudas, así
+ * que la reconstrucción del histórico de la cartera necesita saber cuándo hubo splits para
+ * expresar los lotes en acciones de hoy (ver `@sextante/core/portfolio-history`).
+ * `ratio` = acciones nuevas por cada antigua (10 en un 10:1, 0,5 en un 1:2 inverso). `date` es el
+ * primer día cotizando ya con el split (UTC). PK `(symbol, date)`.
+ */
+export const instrumentSplits = pgTable(
+  'instrument_splits',
+  {
+    symbol: varchar('symbol', { length: 40 }).notNull(),
+    date: date('date').notNull(),
+    ratio: numeric('ratio', { precision: 20, scale: 8 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.symbol, table.date] })],
+);
+
+/**
  * Caché de resolución ticker/ISIN → símbolo de la fuente de precios. La traducción real
  * (OpenFIGI: ISIN → ticker+mercado, validado contra Yahoo) es cara y NO cambia con el
  * tiempo, así que se cachea aquí permanentemente.

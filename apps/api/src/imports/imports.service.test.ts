@@ -63,7 +63,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new ImportsService(db, new PositionLotsService(db), pricesStub, new EventEmitter2());
+    service = new ImportsService(db, new PositionLotsService(db, new EventEmitter2()), pricesStub, new EventEmitter2());
   });
 
   afterEach(async () => {

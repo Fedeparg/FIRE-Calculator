@@ -4,12 +4,19 @@ import {
   MAX_CARRY_FORWARD_DAYS,
   type FxPoint,
   type PricePoint,
+  type SplitPoint,
 } from '@sextante/core/portfolio-history';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import { instrumentPrices, positionLots, positions } from '../db/schema.js';
+import type { DatabaseOrTransaction } from '../positions/position-access.js';
+import { instrumentPrices, instrumentSplits, positionLots, positions } from '../db/schema.js';
 import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
-import { PRICE_PROVIDER, type PriceProvider, type Quote } from './price-provider.interface.js';
+import {
+  PRICE_PROVIDER,
+  type PriceHistory,
+  type PriceProvider,
+  type Quote,
+} from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
@@ -38,6 +45,12 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * MS_PER_DAY).toISOString().slice(0, 10);
 }
+/**
+ * Pausa entre peticiones de histórico consecutivas (`ensureHistory`): Yahoo rate-limita por IP
+ * (429) y una pasada de arranque puede pedir decenas de símbolos seguidos. Igual que
+ * `REQUEST_DELAY_MS` del proveedor en el refresco.
+ */
+const HISTORY_REQUEST_DELAY_MS = 500;
 /**
  * Espera `ms`. El temporizador va `unref`: solo se usa como TOPE de espera en un
  * `Promise.race`, así que, si el trabajo termina antes, el timer pendiente no debe mantener
@@ -91,6 +104,8 @@ export interface FxRates {
 @Injectable()
 export class PricesService {
   private readonly logger = new Logger(PricesService.name);
+  /** Pausa entre peticiones de histórico seguidas; público para que los tests la pongan a 0. */
+  historyRequestDelayMs = HISTORY_REQUEST_DELAY_MS;
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -188,7 +203,9 @@ export class PricesService {
 
   /**
    * Series de cierres diarios desde `from` (YYYY-MM-DD), para reconstruir el histórico de la
-   * cartera (`PortfolioSnapshotsService.backfillUser`): los instrumentos pedidos por ticker y las
+   * cartera (`PortfolioSnapshotsService.backfillUser`): los instrumentos (ticker → símbolo ya
+   * resuelto con `resolveCachedTickers`, para no pedir una conexión más desde dentro de una
+   * transacción) y las
    * tasas FX de cada divisa soportada. Son DOS consultas en total, con independencia de cuántos
    * días o símbolos haya: la reconstrucción lee las series una vez y las recorre en memoria, en
    * vez de pedir "el precio de ese día" a la BD día a día (miles de consultas por usuario).
@@ -198,10 +215,14 @@ export class PricesService {
    * resuelto en caché o sin filas, o una divisa sin tasa, simplemente no aparece.
    */
   async getSeriesSince(
-    tickers: string[],
+    tickerToSymbol: ReadonlyMap<string, string>,
     from: string,
-  ): Promise<{ prices: Record<string, PricePoint[]>; fx: Record<string, FxPoint[]> }> {
-    const tickerToSymbol = await this.resolveCachedTickers(tickers);
+    executor: DatabaseOrTransaction = this.db,
+  ): Promise<{
+    prices: Record<string, PricePoint[]>;
+    fx: Record<string, FxPoint[]>;
+    splits: Record<string, SplitPoint[]>;
+  }> {
     const currencyBySymbol = new Map<string, string>();
     for (const c of SUPPORTED_CURRENCIES) {
       if (c !== FX_QUOTE) currencyBySymbol.set(fxSymbol(c), c);
@@ -214,7 +235,7 @@ export class PricesService {
     const rows =
       symbols.length === 0
         ? []
-        : await this.db
+        : await executor
             .select()
             .from(instrumentPrices)
             .where(and(inArray(instrumentPrices.symbol, symbols), gte(instrumentPrices.date, start)))
@@ -239,11 +260,33 @@ export class PricesService {
       const series = bySymbol.get(symbol);
       if (series) fx[currency] = series.map(({ date, close }) => ({ date, rate: close }));
     }
-    return { prices, fx };
+
+    // Los splits se leen enteros, no solo desde `from`: un lote anterior a la ventana puede ser
+    // anterior a un split de dentro de ella. Son pocas filas por símbolo.
+    const splitRows =
+      tickerToSymbol.size === 0
+        ? []
+        : await executor
+            .select()
+            .from(instrumentSplits)
+            .where(inArray(instrumentSplits.symbol, [...new Set(tickerToSymbol.values())]))
+            .orderBy(instrumentSplits.symbol, instrumentSplits.date);
+    const splitsBySymbol = new Map<string, SplitPoint[]>();
+    for (const row of splitRows) {
+      const list = splitsBySymbol.get(row.symbol) ?? [];
+      list.push({ date: row.date, ratio: Number(row.ratio) });
+      splitsBySymbol.set(row.symbol, list);
+    }
+    const splits: Record<string, SplitPoint[]> = {};
+    for (const [ticker, symbol] of tickerToSymbol) {
+      const list = splitsBySymbol.get(symbol);
+      if (list) splits[ticker] = list;
+    }
+    return { prices, fx, splits };
   }
 
   /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa). */
-  private async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
+  async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
     const out = new Map<string, string>();
     for (const ticker of tickers) {
       const symbol = await this.resolver.resolveCached(ticker);
@@ -371,7 +414,8 @@ export class PricesService {
    */
   async ensureHistory(required: ReadonlyMap<string, string>): Promise<void> {
     const missing = await this.symbolsNeedingHistory(required);
-    for (const symbol of missing) {
+    for (const [i, symbol] of missing.entries()) {
+      if (i > 0 && this.historyRequestDelayMs > 0) await delay(this.historyRequestDelayMs);
       try {
         await this.primeHistory(symbol);
       } catch (error) {
@@ -392,10 +436,15 @@ export class PricesService {
    */
   async ensureHistoryForActivePositions(): Promise<void> {
     const floor = daysAgo(HISTORY_MAX_DAYS);
+    // Left join: una posición sin lotes (anterior al modelo de lotes) también entra, con su fecha
+    // de alta como primera operación.
     const rows = await this.db
-      .select({ ticker: positions.ticker, firstTrade: min(positionLots.tradedAt) })
-      .from(positionLots)
-      .innerJoin(positions, eq(positions.id, positionLots.positionId))
+      .select({
+        ticker: positions.ticker,
+        firstTrade: min(sql<string>`coalesce(${positionLots.tradedAt}, ${positions.createdAt}::date)`),
+      })
+      .from(positions)
+      .leftJoin(positionLots, eq(positions.id, positionLots.positionId))
       .groupBy(positions.ticker);
 
     const required = new Map<string, string>();
@@ -414,19 +463,50 @@ export class PricesService {
   }
 
   /**
+   * Asegura el histórico de UN ticker hasta `since` (YYYY-MM-DD, con tope de 5 años): lo que hace
+   * falta cuando se añade o edita un lote con una fecha anterior a lo que ya hay cacheado. Solo
+   * pide a la fuente si la cobertura no llega (mismo guard que `ensureHistory`). Usa solo la
+   * resolución cacheada: un ticker aún sin resolver ya lo traerá `primeSymbol`/el arranque.
+   */
+  async ensureHistoryForTicker(ticker: string, since: string): Promise<void> {
+    const symbol = await this.resolver.resolveCached(ticker);
+    if (!symbol) return;
+    const floor = daysAgo(HISTORY_MAX_DAYS);
+    const required = new Map([[symbol, since > floor ? since : floor]]);
+    // Los pares FX también deben llegar hasta esa fecha para poder convertir los días antiguos.
+    for (const pair of this.fxSymbols()) required.set(pair, since > floor ? since : floor);
+    await this.ensureHistory(required);
+  }
+
+  /**
    * Trae y cachea el histórico de un símbolo recién dado de alta. Si la fuente no devuelve
    * serie (símbolo exótico, respuesta sin `timestamp`), CAE al último cierre: el
    * comportamiento previo al histórico, para no dejar la posición sin precio por intentar
    * conseguir más datos.
    */
   private async primeHistory(symbol: string): Promise<void> {
-    const history = await this.provider.getHistory(symbol);
-    if (history.length > 0) {
-      await this.upsertQuoteList(history);
-      this.logger.log(`Histórico de ${symbol}: ${history.length} cierres cacheados`);
+    const { quotes, splits }: PriceHistory = await this.provider.getHistory(symbol);
+    if (quotes.length > 0) {
+      await this.upsertQuoteList(quotes);
+      await this.upsertSplits(splits);
+      this.logger.log(
+        `Histórico de ${symbol}: ${quotes.length} cierres y ${splits.length} splits cacheados`,
+      );
       return;
     }
     await this.upsertQuotes(await this.provider.getQuotes([symbol]));
+  }
+
+  /** Upsert de los splits de un símbolo (PK `(symbol, date)`): reprimar no duplica filas. */
+  private async upsertSplits(splits: readonly { symbol: string; date: string; ratio: number }[]): Promise<void> {
+    if (splits.length === 0) return;
+    await this.db
+      .insert(instrumentSplits)
+      .values(splits.map((s) => ({ symbol: s.symbol, date: s.date, ratio: s.ratio.toString() })))
+      .onConflictDoUpdate({
+        target: [instrumentSplits.symbol, instrumentSplits.date],
+        set: { ratio: sql`excluded.ratio` },
+      });
   }
 
   /** Upsert de un lote de cotizaciones en `instrument_prices` (1 fila por símbolo y día). */

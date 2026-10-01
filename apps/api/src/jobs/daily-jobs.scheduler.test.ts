@@ -53,6 +53,24 @@ afterEach(() => {
 });
 
 describe('DailyJobsScheduler', () => {
+  it('la pasada de arranque corre bajo el cerrojo: un refresco intradía simultáneo se omite', async () => {
+    const { scheduler, prices } = setup();
+    let release: () => void = () => undefined;
+    prices.ensureHistoryForActivePositions.mockImplementation(
+      () => new Promise<void>((resolve) => (release = resolve)),
+    );
+
+    scheduler.onApplicationBootstrap();
+    await scheduler.runIntraday(); // el arranque aún tiene el cerrojo
+    expect(prices.refreshAll).not.toHaveBeenCalled();
+
+    release();
+    await vi.waitFor(async () => {
+      await scheduler.runIntraday();
+      expect(prices.refreshAll).toHaveBeenCalled();
+    });
+  });
+
   it('registra el trabajo nocturno y el intradía con su horario por defecto', () => {
     const { scheduler, jobs } = setup();
     scheduler.onModuleInit();

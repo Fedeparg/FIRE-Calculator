@@ -17,6 +17,20 @@ export interface Quote {
   date: string;
 }
 
+/** Split de un instrumento: `ratio` = acciones nuevas por cada antigua (10 en un 10:1). */
+export interface SplitEvent {
+  symbol: string;
+  /** Primer día cotizando ya con el split, YYYY-MM-DD (UTC). */
+  date: string;
+  ratio: number;
+}
+
+/** Histórico de un símbolo: serie de cierres y splits ocurridos en ese periodo. */
+export interface PriceHistory {
+  quotes: Quote[];
+  splits: SplitEvent[];
+}
+
 export interface PriceProvider {
   /** Nombre corto del proveedor, para trazabilidad (se guarda en `instrument_prices.source`). */
   readonly name: string;
@@ -29,7 +43,7 @@ export interface PriceProvider {
   getQuotes(symbols: string[]): Promise<Map<string, Quote>>;
 
   /**
-   * Devuelve la SERIE de cierres diarios del símbolo, del más antiguo al más reciente, para
+   * Devuelve la SERIE de cierres diarios del símbolo (y sus splits), del más antiguo al más reciente, para
    * los últimos 5 años aproximadamente (una sola llamada). Sirve para que un símbolo recién dado de alta tenga
    * histórico desde el primer día, en vez de tener que esperar meses a que el cron diario lo
    * construya cierre a cierre.
@@ -39,10 +53,13 @@ export interface PriceProvider {
    * diario: pedir un año entero de cada símbolo cada día multiplicaría el tráfico a la fuente
    * sin aportar nada (el cierre del día ya lo trae `getQuotes`).
    *
-   * Devuelve `[]` —nunca lanza— si el símbolo no existe o la fuente falla: el alta de una
+   * Los cierres vienen AJUSTADOS por splits (en acciones de hoy); los splits se devuelven aparte para
+   * poder expresar las cantidades históricas en la misma base.
+   *
+   * Devuelve una serie vacía —nunca lanza— si el símbolo no existe o la fuente falla: el alta de una
    * posición no puede depender de esto.
    */
-  getHistory(symbol: string): Promise<Quote[]>;
+  getHistory(symbol: string): Promise<PriceHistory>;
 }
 
 /** Token de inyección para el proveedor de precios activo. */

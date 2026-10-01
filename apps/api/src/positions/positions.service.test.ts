@@ -33,7 +33,7 @@ describe('PositionsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new PositionsService(db, pricesStub, new PositionLotsService(db), new EventEmitter2());
+    service = new PositionsService(db, pricesStub, new PositionLotsService(db, new EventEmitter2()), new EventEmitter2());
   });
 
   afterEach(async () => {
