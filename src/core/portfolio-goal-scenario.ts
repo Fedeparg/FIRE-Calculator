@@ -4,7 +4,15 @@
 // de la pestaña Resumen, para que las dos lean el mismo escenario de la misma manera.
 
 import { convertCurrency } from "@sextante/core/fx";
-import { computePortfolioGoal, type PortfolioGoalResult } from "@sextante/core/portfolio-goal";
+import {
+  computeAmountGoal,
+  computePortfolioGoal,
+  GOAL_MODES,
+  goalModeFromInputs,
+  type AmountGoalResult,
+  type GoalMode,
+  type PortfolioGoalResult,
+} from "@sextante/core/portfolio-goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { decodeCalculatorInputs, type FieldSpecs } from "./calculator-url-state";
 import { PORTFOLIO_CURRENCIES } from "../lib/portfolio";
@@ -29,10 +37,15 @@ export const GOAL_FIELD_SPECS: FieldSpecs = {
   volatility: { kind: "number", defaultValue: 15 },
   retirementYears: { kind: "number", defaultValue: 40 },
   goalCurrency: { kind: "option", defaultValue: "EUR", allowed: PORTFOLIO_CURRENCIES },
+  // Modo "X en N años": claves propias del objetivo, que la calculadora ignora.
+  goalMode: { kind: "option", defaultValue: "fire", allowed: GOAL_MODES },
+  targetAmount: { kind: "number", defaultValue: 100000 },
+  targetYears: { kind: "number", defaultValue: 10 },
 };
 
 /** Lo que define un objetivo, tal y como se guardó (importes en `currency`). */
 export interface GoalSettings {
+  mode: GoalMode;
   currency: string;
   annualExpenses: number;
   /** Aportación por periodo (`frequency`). */
@@ -42,7 +55,16 @@ export interface GoalSettings {
   withdrawalRate: number;
   volatility: number;
   retirementYears: number;
+  /** Modo cantidad: cifra a reunir, en `currency`. */
+  targetAmount: number;
+  /** Modo cantidad: plazo en años enteros. */
+  targetYears: number;
 }
+
+/** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
+export type GoalOutcome =
+  | ({ mode: "fire" } & PortfolioGoalResult)
+  | ({ mode: "amount" } & AmountGoalResult);
 
 function isFrequency(value: unknown): value is Frequency {
   return typeof value === "string" && (FREQUENCIES as readonly string[]).includes(value);
@@ -59,6 +81,7 @@ const number = (value: unknown, fallback: number): number =>
 export function goalSettingsFromInputs(inputs: unknown): GoalSettings {
   const values = decodeCalculatorInputs(inputs, GOAL_FIELD_SPECS);
   return {
+    mode: goalModeFromInputs(inputs),
     currency: typeof values.goalCurrency === "string" ? values.goalCurrency : "EUR",
     annualExpenses: number(values.annualExpenses, 0),
     contribution: number(values.savings, 0),
@@ -67,6 +90,8 @@ export function goalSettingsFromInputs(inputs: unknown): GoalSettings {
     withdrawalRate: number(values.withdrawalRate, 4),
     volatility: number(values.volatility, 15),
     retirementYears: number(values.retirementYears, 40),
+    targetAmount: number(values.targetAmount, 0),
+    targetYears: number(values.targetYears, 10),
   };
 }
 
@@ -80,18 +105,27 @@ export function goalProgress(
   currentValue: number,
   display: string,
   rates: Record<string, number>,
-): PortfolioGoalResult | null {
-  const annualExpenses = convertCurrency(settings.annualExpenses, settings.currency, display, rates);
-  const contribution = convertCurrency(settings.contribution, settings.currency, display, rates);
-  if (annualExpenses === null || contribution === null) return null;
-  return computePortfolioGoal({
-    annualExpenses,
-    withdrawalRate: settings.withdrawalRate,
+): GoalOutcome | null {
+  const convert = (amount: number) => convertCurrency(amount, settings.currency, display, rates);
+  const contribution = convert(settings.contribution);
+  if (contribution === null) return null;
+  const common = {
     currentValue,
     contribution,
     frequency: settings.frequency,
     annualReturn: settings.annualReturn,
-  });
+  };
+  if (settings.mode === "amount") {
+    const targetAmount = convert(settings.targetAmount);
+    if (targetAmount === null) return null;
+    return { mode: "amount", ...computeAmountGoal({ ...common, targetAmount, years: settings.targetYears }) };
+  }
+  const annualExpenses = convert(settings.annualExpenses);
+  if (annualExpenses === null) return null;
+  return {
+    mode: "fire",
+    ...computePortfolioGoal({ ...common, annualExpenses, withdrawalRate: settings.withdrawalRate }),
+  };
 }
 
 /**

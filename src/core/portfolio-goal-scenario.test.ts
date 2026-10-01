@@ -60,6 +60,28 @@ describe("goalProgress", () => {
   it("no compara divisas distintas si falta la tasa", () => {
     expect(goalProgress(settings, 100, "JPY", RATES)).toBeNull();
   });
+
+  it("en modo cantidad mide la cifra objetivo y el plazo, convertidos", () => {
+    const amount = goalSettingsFromInputs({
+      goalMode: "amount",
+      targetAmount: 100000,
+      targetYears: 5,
+      savings: 0,
+      annualReturn: 0,
+      goalCurrency: "EUR",
+    });
+    expect(amount).toMatchObject({ mode: "amount", targetAmount: 100000, targetYears: 5 });
+    const outcome = goalProgress(amount, 55000, "USD", RATES);
+    expect(outcome?.mode).toBe("amount");
+    expect(outcome?.target).toBeCloseTo(110000, 6);
+    expect(outcome?.progress).toBeCloseTo(50, 6);
+    expect(outcome?.mode === "amount" && outcome.onTrack).toBe(false);
+  });
+
+  it("los escenarios sin modo son FIRE", () => {
+    expect(settings.mode).toBe("fire");
+    expect(goalProgress(settings, 0, "EUR", RATES)?.mode).toBe("fire");
+  });
 });
 
 describe("activeScenario", () => {

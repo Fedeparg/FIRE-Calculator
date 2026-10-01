@@ -3,9 +3,16 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { activeScenario, goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
+import { activeScenario, goalSettingsFromInputs, type GoalOutcome } from "@/core/portfolio-goal-scenario";
 import { convertCurrency } from "@sextante/core/fx";
-import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
+import {
+  computeAmountGoal,
+  computePortfolioGoal,
+  FIRE_CALCULATOR_SLUG,
+  GOAL_MODES,
+  type GoalMode,
+} from "@sextante/core/portfolio-goal";
+import { MAX_YEARS } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/lib/format";
 import {
@@ -20,6 +27,7 @@ import Notice from "../ui/Notice";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
 import Stat from "../ui/Stat";
+import ToggleGroup from "../ui/ToggleGroup";
 import PortfolioGoalSimulation from "./PortfolioGoalSimulation";
 
 type Props = {
@@ -40,13 +48,13 @@ type Props = {
 };
 
 /** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
-type GoalAmounts = { currency: string; annualExpenses: number; contribution: number };
+type GoalAmounts = { currency: string; annualExpenses: number; contribution: number; targetAmount: number };
 
 /** Aviso sobre la divisa de los importes cuando no coincide con la que se está viendo. */
 type CurrencyNote = { kind: "converted" | "notConvertible"; from: string; to: string } | null;
 
 /** Importes ya expresados en la divisa que se está viendo, con el aviso que toque. */
-type ShownAmounts = { annualExpenses: number; contribution: number; note: CurrencyNote };
+type ShownAmounts = Omit<GoalAmounts, "currency"> & { note: CurrencyNote };
 
 /** Redondeo a céntimos: los importes convertidos no deben arrastrar decimales binarios. */
 function toCents(value: number): number {
@@ -87,7 +95,10 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     currency: display,
     annualExpenses: 24000,
     contribution: 800,
+    targetAmount: 100000,
   });
+  const [mode, setMode] = useState<GoalMode>("fire");
+  const [targetYears, setTargetYears] = useState(10);
   const [withdrawalRate, setWithdrawalRate] = useState(4);
   const [annualReturn, setAnnualReturn] = useState(5);
   const [frequency, setFrequency] = useState<Frequency>("monthly");
@@ -132,7 +143,10 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
       currency: settings.currency,
       annualExpenses: settings.annualExpenses,
       contribution: settings.contribution,
+      targetAmount: settings.targetAmount,
     });
+    setMode(settings.mode);
+    setTargetYears(settings.targetYears);
     setWithdrawalRate(settings.withdrawalRate);
     setAnnualReturn(settings.annualReturn);
     setFrequency(settings.frequency);
@@ -186,20 +200,18 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
    * y `note` lo dice—, en vez de comparar importes de divisas distintas.
    */
   const shown = useMemo<ShownAmounts>(() => {
-    const { currency, annualExpenses, contribution } = amounts;
-    if (currency === display) return { annualExpenses, contribution, note: null };
-    const expenses = convertCurrency(annualExpenses, currency, display, rates);
-    const periodic = convertCurrency(contribution, currency, display, rates);
-    if (expenses === null || periodic === null) {
-      return {
-        annualExpenses,
-        contribution,
-        note: { kind: "notConvertible", from: currency, to: display },
-      };
+    const { currency, ...original } = amounts;
+    if (currency === display) return { ...original, note: null };
+    const expenses = convertCurrency(original.annualExpenses, currency, display, rates);
+    const periodic = convertCurrency(original.contribution, currency, display, rates);
+    const target = convertCurrency(original.targetAmount, currency, display, rates);
+    if (expenses === null || periodic === null || target === null) {
+      return { ...original, note: { kind: "notConvertible", from: currency, to: display } };
     }
     return {
       annualExpenses: toCents(expenses),
       contribution: toCents(periodic),
+      targetAmount: toCents(target),
       note: { kind: "converted", from: currency, to: display },
     };
   }, [amounts, display, rates]);
@@ -215,21 +227,21 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
       currency: display,
       annualExpenses: next.annualExpenses ?? shown.annualExpenses,
       contribution: next.contribution ?? shown.contribution,
+      targetAmount: next.targetAmount ?? shown.targetAmount,
     });
   }
 
-  const goal = useMemo(
-    () =>
-      computePortfolioGoal({
-        annualExpenses: shown.annualExpenses,
-        withdrawalRate,
-        currentValue: marketValue,
-        contribution: shown.contribution,
-        frequency,
-        annualReturn,
-      }),
-    [shown, withdrawalRate, marketValue, frequency, annualReturn],
-  );
+  const goal = useMemo<GoalOutcome>(() => {
+    const common = {
+      currentValue: marketValue,
+      contribution: shown.contribution,
+      frequency,
+      annualReturn,
+    };
+    return mode === "amount"
+      ? { mode, ...computeAmountGoal({ ...common, targetAmount: shown.targetAmount, years: targetYears }) }
+      : { mode, ...computePortfolioGoal({ ...common, annualExpenses: shown.annualExpenses, withdrawalRate }) };
+  }, [mode, shown, withdrawalRate, marketValue, frequency, annualReturn, targetYears]);
 
   /**
    * Elegir un plan lo convierte en el activo: se aplica ya y se "toca" en la API (PATCH sin
@@ -289,6 +301,9 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         volatility,
         retirementYears,
         goalCurrency: display,
+        goalMode: mode,
+        targetAmount: shown.targetAmount,
+        targetYears,
       };
       const res = await fetch(
         updating ? `/api/scenarios/${loaded.id}` : "/api/scenarios",
@@ -348,25 +363,56 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
       )}
       {listLoaded && scenarios.length === 0 && <Notice variant="info">{t("noPlan")}</Notice>}
 
+      <ToggleGroup
+        label={t("modeLabel")}
+        value={mode}
+        options={GOAL_MODES.map((m) => ({ value: m, label: t(`mode.${m}`) }))}
+        onChange={setMode}
+        size="md"
+      />
+
       {/* La `key` remonta los campos al cargar un escenario o al cambiar de divisa. */}
       <Fragment key={`${version}-${display}`}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <NumberField
-            label={t("annualExpenses", { currency: display })}
-            value={shown.annualExpenses}
-            onChange={(value) => updateAmounts({ annualExpenses: value })}
-            step={1000}
-            help={t("help.annualExpenses")}
-          />
-          <NumberField
-            label={t("withdrawalRate")}
-            value={withdrawalRate}
-            onChange={setWithdrawalRate}
-            step={0.1}
-            min={1}
-            max={100}
-            help={t("help.withdrawalRate")}
-          />
+          {mode === "fire" ? (
+            <>
+              <NumberField
+                label={t("annualExpenses", { currency: display })}
+                value={shown.annualExpenses}
+                onChange={(value) => updateAmounts({ annualExpenses: value })}
+                step={1000}
+                help={t("help.annualExpenses")}
+              />
+              <NumberField
+                label={t("withdrawalRate")}
+                value={withdrawalRate}
+                onChange={setWithdrawalRate}
+                step={0.1}
+                min={1}
+                max={100}
+                help={t("help.withdrawalRate")}
+              />
+            </>
+          ) : (
+            <>
+              <NumberField
+                label={t("targetAmount", { currency: display })}
+                value={shown.targetAmount}
+                onChange={(value) => updateAmounts({ targetAmount: value })}
+                step={1000}
+                help={t("help.targetAmount")}
+              />
+              <NumberField
+                label={t("targetYears")}
+                value={targetYears}
+                onChange={(value) => setTargetYears(Math.round(value))}
+                step={1}
+                min={0}
+                max={MAX_YEARS}
+                help={t("help.targetYears")}
+              />
+            </>
+          )}
           <NumberField
             label={t("contribution", { currency: display })}
             value={shown.contribution}
@@ -396,7 +442,14 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         <Stat label={t("target")} value={formatCurrency(goal.target, display)} highlight />
         <Stat label={t("current")} value={formatCurrency(goal.current, display)} />
         <Stat label={t("remaining")} value={formatCurrency(goal.remaining, display)} />
-        <Stat label={t("eta")} value={etaValue} />
+        {goal.mode === "fire" ? (
+          <Stat label={t("eta")} value={etaValue} />
+        ) : (
+          <Stat
+            label={t("requiredContribution")}
+            value={goal.requiredContribution === null ? "—" : formatCurrency(goal.requiredContribution, display)}
+          />
+        )}
       </div>
 
       {goal.progress !== null && (
@@ -429,8 +482,16 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
 
       <div className="flex flex-col gap-1 text-xs text-muted">
         {goal.reached && <p className="text-success">{t("reached")}</p>}
-        {!goal.reached && goal.yearsToTarget === null && <p>{t("etaNever")}</p>}
-        {!goal.reached && goal.yearsToTarget !== null && (
+        {goal.mode === "amount" && !goal.reached && (
+          <p className={goal.onTrack ? "text-success" : undefined}>
+            {t(goal.onTrack ? "amountOnTrack" : "amountOffTrack", {
+              projected: formatCurrency(goal.projectedAtDeadline, display),
+              year: new Date().getFullYear() + goal.deadlineYears,
+            })}
+          </p>
+        )}
+        {goal.mode === "fire" && !goal.reached && goal.yearsToTarget === null && <p>{t("etaNever")}</p>}
+        {goal.mode === "fire" && !goal.reached && goal.yearsToTarget !== null && (
           // El año se deriva en el render. Servidor y cliente pintan el mismo salvo que la
           // hidratación cruzara la medianoche del 31 de diciembre, y React lo corregiría solo.
           <p>{t("etaYear", { year: new Date().getFullYear() + goal.yearsToTarget })}</p>
@@ -450,20 +511,23 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
 
       <Notice variant="info">{t("assumptions")}</Notice>
 
-      {/* Misma `key` que los campos de arriba: cargar un escenario remonta también estos. */}
-      <PortfolioGoalSimulation
-        key={`sim-${version}`}
-        annualExpenses={shown.annualExpenses}
-        contribution={shown.contribution}
-        frequency={frequency}
-        withdrawalRate={withdrawalRate}
-        annualReturn={annualReturn}
-        currentValue={goal.current}
-        volatility={volatility}
-        onVolatilityChange={setVolatility}
-        retirementYears={retirementYears}
-        onRetirementYearsChange={setRetirementYears}
-      />
+      {/* La simulación mide si el dinero DURA un retiro: solo tiene sentido en modo FIRE. Misma
+          `key` que los campos de arriba: cargar un escenario remonta también estos. */}
+      {mode === "fire" && (
+        <PortfolioGoalSimulation
+          key={`sim-${version}`}
+          annualExpenses={shown.annualExpenses}
+          contribution={shown.contribution}
+          frequency={frequency}
+          withdrawalRate={withdrawalRate}
+          annualReturn={annualReturn}
+          currentValue={goal.current}
+          volatility={volatility}
+          onVolatilityChange={setVolatility}
+          retirementYears={retirementYears}
+          onRetirementYearsChange={setRetirementYears}
+        />
+      )}
 
       {canSave && (
         <div className="flex flex-col gap-3 border-t border-border pt-4">

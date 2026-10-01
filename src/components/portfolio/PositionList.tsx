@@ -17,6 +17,7 @@ import {
 } from "@/core/portfolio-sort";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@/lib/portfolio";
+import ToggleGroup from "../ui/ToggleGroup";
 
 type Props = {
   positions: Position[];
@@ -170,25 +171,12 @@ export default function PositionList({
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface">
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2 md:px-5">
-        {/* Dos botones de alternancia (`aria-pressed`) y no un `tablist`: no hay paneles que
-            cambiar, solo la cifra de una columna. */}
-        <div role="group" aria-label={t("gainModeLabel")} className="flex rounded-lg bg-surface-2 p-0.5">
-          {GAIN_MODES.map((mode) => (
-            <button
-              key={mode}
-              type="button"
-              onClick={() => setGainMode(mode)}
-              aria-pressed={gainMode === mode}
-              className={`h-8 rounded-md px-3 text-xs transition ${
-                gainMode === mode
-                  ? "bg-surface font-semibold text-foreground shadow-sm"
-                  : "text-muted hover:text-foreground"
-              }`}
-            >
-              {t(`gainMode.${mode}`)}
-            </button>
-          ))}
-        </div>
+        <ToggleGroup
+          label={t("gainModeLabel")}
+          value={gainMode}
+          options={GAIN_MODES.map((mode) => ({ value: mode, label: t(`gainMode.${mode}`) }))}
+          onChange={setGainMode}
+        />
         {/* Móvil: no hay cabeceras de columna, así que se ordena con un selector. */}
         <div className="flex items-center gap-2 md:hidden">
           <label htmlFor="positions-sort" className="text-xs text-muted">
