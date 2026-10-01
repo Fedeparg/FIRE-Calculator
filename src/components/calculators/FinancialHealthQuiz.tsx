@@ -39,7 +39,7 @@ export default function FinancialHealthQuiz() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <div className="grid gap-4 rounded-xl border border-border bg-surface p-4 content-start">
         {FINANCIAL_HEALTH_QUESTIONS.map((q, i) => (
           <SelectField

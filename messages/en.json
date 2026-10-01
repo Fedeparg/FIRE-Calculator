@@ -1106,6 +1106,8 @@
     "goal": {
       "title": "Your financial independence goal",
       "intro": "Set how much you want to spend per year and compare the net worth you need with what you already have invested.",
+      "titleAmount": "Your savings goal",
+      "introAmount": "Choose how much you want to build up and by when, and compare the contribution you need with what you have already invested.",
       "annualExpenses": "Estimated annual spending ({currency})",
       "withdrawalRate": "Safe withdrawal rate (%)",
       "contribution": "Recurring contribution ({currency})",

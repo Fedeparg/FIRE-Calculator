@@ -22,7 +22,7 @@ export default function ToggleGroup<T extends string>({ label, value, options, o
           type="button"
           onClick={() => onChange(option.value)}
           aria-pressed={value === option.value}
-          className={`rounded-md px-3 transition ${size === "sm" ? "h-8 text-xs" : "h-9 text-sm"} ${
+          className={`rounded-md px-3 py-1 leading-tight transition ${size === "sm" ? "min-h-8 text-xs" : "min-h-9 text-sm"} ${
             value === option.value
               ? "bg-surface font-semibold text-foreground shadow-sm"
               : "text-muted hover:text-foreground"

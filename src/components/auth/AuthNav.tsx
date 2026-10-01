@@ -37,7 +37,7 @@ export default function AuthNav() {
       href={authed ? "/portfolio" : "/entrar"}
       className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium sm:min-h-0 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
     >
-      <IconNavProfile className="h-4 w-4" />
+      <IconNavProfile className="hidden h-4 w-4 sm:block" />
       {authed ? t("portfolio") : t("login")}
     </Link>
   );

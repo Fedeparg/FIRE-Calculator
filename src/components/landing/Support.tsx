@@ -15,7 +15,7 @@ export default function Support() {
 
   return (
     <section id="apoya" className="mx-auto max-w-5xl px-4 py-12">
-      <div className="grid items-center gap-8 rounded-3xl border border-border bg-surface-2 p-8 lg:grid-cols-[1.1fr_1fr]">
+      <div className="grid grid-cols-1 items-center gap-8 rounded-3xl border border-border bg-surface-2 p-8 lg:grid-cols-[1.1fr_1fr]">
         <div>
           <span className="text-2xl" aria-hidden>
             ☕

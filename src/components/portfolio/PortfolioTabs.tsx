@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/i18n/navigation";
@@ -35,18 +36,25 @@ export default function PortfolioTabs() {
     { href: "/portfolio/objetivo", label: t("goal"), usesDisplay: true },
   ];
   const active = tabs.find((tab) => tab.href === pathname);
+  const activeRef = useRef<HTMLAnchorElement>(null);
+
+  // En móvil la barra se desliza: la pestaña activa se trae a la vista para que no quede cortada.
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
 
   return (
     <div className="flex flex-col-reverse gap-3 border-b border-border sm:flex-row sm:items-end sm:justify-between">
-      <nav aria-label={t("label")} className="-mb-px flex gap-1 overflow-x-auto">
+      <nav aria-label={t("label")} className="-mb-px flex overflow-x-auto sm:gap-1">
         {tabs.map((tab) => {
           const current = tab === active;
           return (
             <Link
               key={tab.href}
               href={tab.href}
+              ref={current ? activeRef : undefined}
               aria-current={current ? "page" : undefined}
-              className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-3 py-3 text-sm whitespace-nowrap transition-colors sm:px-4 ${
+              className={`inline-flex shrink-0 items-center gap-2 border-b-2 px-2.5 py-3 text-sm whitespace-nowrap transition-colors sm:px-4 ${
                 current
                   ? "border-brand font-semibold text-brand"
                   : "border-transparent text-muted hover:text-foreground"
