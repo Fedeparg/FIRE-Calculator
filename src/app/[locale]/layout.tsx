@@ -11,7 +11,7 @@ import JsonLd from "@/components/seo/JsonLd";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ThemeScript from "@/components/ThemeScript";
-import AnalyticsScript from "@/components/analytics/AnalyticsScript";
+import AnalyticsScript from "@/features/analytics/components/AnalyticsScript";
 import "../globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });

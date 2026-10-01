@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { trackEvent } from "@/components/analytics/track";
+import { trackEvent } from "@/features/analytics/track";
 import { apiFetch } from "@/shared/api/client";
 
 type Status = "idle" | "sending" | "sent" | "error";
