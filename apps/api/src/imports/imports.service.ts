@@ -24,7 +24,12 @@ import { positionLots, positions, type Position, type PositionLot } from '../db/
 import { PricesService } from '../prices/prices.service.js';
 import { aggregateLots, LotAggregateError } from '../positions/lot-aggregate.js';
 import { type DatabaseOrTransaction } from '../positions/position-access.js';
-import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/position-events.js';
+import {
+  LOT_CHANGED_EVENT,
+  POSITION_CREATED_EVENT,
+  type LotChangedEvent,
+  type PositionCreatedEvent,
+} from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 
 /** Bróker de la importación: nombre de la posición y prefijo de los ids externos. */
@@ -122,6 +127,7 @@ export class ImportsService {
 
     const results: ImportResultPosition[] = [];
     const created: Position[] = [];
+    const extended: Position[] = [];
 
     for (const group of groups) {
       if (group.fresh.length === 0) {
@@ -131,6 +137,7 @@ export class ImportsService {
       try {
         const outcome = await this.db.transaction((tx) => this.importInstrument(tx, userId, group));
         if (outcome.wasCreated) created.push(outcome.position);
+        else if (outcome.inserted > 0) extended.push(outcome.position);
         results.push(
           resultOf(
             group,
@@ -155,6 +162,15 @@ export class ImportsService {
     if (created.length > 0) {
       // Los derivados no se valoran: no se piden sus precios.
       void this.primeInBackground(userId, created.filter((p) => !p.isDerivative));
+    }
+
+    // Importar sobre posiciones que ya existían puede traer operaciones antiguas: se rehace el
+    // histórico al momento (las nuevas ya lo hacen con `POSITION_CREATED_EVENT`).
+    for (const position of extended) {
+      this.events.emit(LOT_CHANGED_EVENT, {
+        userId,
+        positionId: position.id,
+      } satisfies LotChangedEvent);
     }
 
     return {

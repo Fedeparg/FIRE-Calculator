@@ -76,8 +76,12 @@ export class PositionLotsService {
   ) {}
 
   /** Avisa de que los lotes de una posición cambiaron (ver `LOT_CHANGED_EVENT`). */
-  private emitLotChanged(userId: string, positionId: string): void {
-    this.events.emit(LOT_CHANGED_EVENT, { userId, positionId } satisfies LotChangedEvent);
+  private emitLotChanged(userId: string, positionId: string, invalidateFrom?: string): void {
+    this.events.emit(LOT_CHANGED_EVENT, {
+      userId,
+      positionId,
+      invalidateFrom,
+    } satisfies LotChangedEvent);
   }
 
   /** Lotes de una posición del usuario, en orden cronológico (el mismo de la agregación). */
@@ -144,9 +148,36 @@ export class PositionLotsService {
     lotId: string,
     dto: UpdatePositionLotDto,
   ): Promise<PositionLotResponse> {
+    let previousDate: string | undefined;
+    let changed = true;
     const updated = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const current = await this.findLot(tx, positionId, lotId);
+      // Mover un lote a una fecha posterior vacía el tramo [antigua, nueva): su `updatedAt` solo
+      // alcanza a las capturas desde la fecha NUEVA, así que se avisa también de la antigua.
+      if (dto.tradedAt !== undefined && dto.tradedAt !== current.tradedAt) previousDate = current.tradedAt;
+
+      // Sin ningún cambio real no se escribe: tocar `updatedAt` en falso invalidaría las capturas
+      // reales de la posición (ver `staleSnapshotDates`) por una edición cosmética.
+      const next = {
+        kind: dto.kind ?? current.kind,
+        quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
+        price: dto.price !== undefined ? dto.price.toString() : current.price,
+        fees: dto.fees !== undefined ? dto.fees.toString() : current.fees,
+        tradedAt: dto.tradedAt ?? current.tradedAt,
+        note: dto.note !== undefined ? dto.note || null : current.note,
+      };
+      if (
+        next.kind === current.kind &&
+        sameAmount(next.quantity, current.quantity) &&
+        sameAmount(next.price, current.price) &&
+        sameAmount(next.fees, current.fees) &&
+        next.tradedAt === current.tradedAt &&
+        next.note === current.note
+      ) {
+        changed = false;
+        return toResponse(current);
+      }
 
       const [row] = await tx
         .update(positionLots)
@@ -165,19 +196,21 @@ export class PositionLotsService {
       await this.recompute(tx, positionId);
       return toResponse(row);
     });
-    this.emitLotChanged(userId, positionId);
+    if (changed) this.emitLotChanged(userId, positionId, previousDate);
     return updated;
   }
 
   /** Borra un lote de una posición del usuario y reagrega (misma transacción). */
   async remove(userId: string, positionId: string, lotId: string): Promise<void> {
-    await this.db.transaction(async (tx) => {
+    // Un lote borrado no deja marca de tiempo: se avisa de su fecha de operación.
+    const removedDate = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
-      await this.findLot(tx, positionId, lotId);
+      const lot = await this.findLot(tx, positionId, lotId);
       await tx.delete(positionLots).where(eq(positionLots.id, lotId));
       await this.recompute(tx, positionId);
+      return lot.tradedAt;
     });
-    this.emitLotChanged(userId, positionId);
+    this.emitLotChanged(userId, positionId, removedDate);
   }
 
   /**
@@ -289,10 +322,19 @@ export class PositionLotsService {
     }
 
     if (existing.length === 1) {
+      const [only] = existing;
+      // Declarar lo que ya hay no es un cambio: no se toca el lote (ver `staleSnapshotDates`).
+      if (
+        only.kind === 'buy' &&
+        sameAmount(only.quantity, input.quantity) &&
+        sameAmount(only.price, input.price)
+      ) {
+        return;
+      }
       await tx
         .update(positionLots)
         .set({ kind: 'buy', quantity: input.quantity, price: input.price, updatedAt: new Date() })
-        .where(eq(positionLots.id, existing[0].id));
+        .where(eq(positionLots.id, only.id));
     } else {
       const tradedAt = existing[0]?.tradedAt ?? todayUtc();
       if (existing.length > 1) {
@@ -378,7 +420,7 @@ export class PositionLotsService {
  * `Number()`. Un valor que no se deja leer como decimal plano (p. ej. notación exponencial de
  * un número diminuto) cuenta como distinto: ante la duda, se trata como un cambio real.
  */
-function sameAmount(a: string, b: string): boolean {
+export function sameAmount(a: string, b: string): boolean {
   try {
     return parseDecimal(a, AMOUNT_SCALE) === parseDecimal(b, AMOUNT_SCALE);
   } catch (error) {

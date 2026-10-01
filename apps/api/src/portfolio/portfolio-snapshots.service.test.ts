@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import type { Database } from '../db/database.module.js';
 import { instrumentPrices, instrumentSplits, portfolioSnapshots, positionLots } from '../db/schema.js';
+import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
@@ -301,6 +302,194 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       const [row] = (await rowsOf(userId)).filter((r) => r.date === daysAgo(1));
       expect(row.marketValue).toBe('999.00000000');
       expect(row.estimated).toBe(false);
+    });
+
+    describe('capturas reales obsoletas', () => {
+      /** Instante en que el cron escribió la captura de `date` (22:30 de ese día). */
+      const capturedAt = (date: string): Date => new Date(`${date}T22:30:00Z`);
+
+      /** Captura real con las marcas de tiempo de su día (una captura no nace "ahora"). */
+      async function insertReal(userId: string, date: string, invested: string): Promise<void> {
+        await db.insert(portfolioSnapshots).values({
+          userId,
+          date,
+          invested,
+          marketValue: invested,
+          valuedPositions: 1,
+          totalPositions: 1,
+          fxRates: { USD: 1 },
+          estimated: false,
+          createdAt: capturedAt(date),
+          updatedAt: capturedAt(date),
+        });
+      }
+
+      /** Posición con un lote antiguo (A), creado y registrado mucho antes de las capturas. */
+      async function createWithOldLot(userId: string, tradedAt: string): Promise<string> {
+        const { id } = await positions.create(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+        const old = capturedAt(daysAgo(40));
+        await db
+          .update(positionLots)
+          .set({ tradedAt, createdAt: old, updatedAt: old })
+          .where(eq(positionLots.positionId, id));
+        return id;
+      }
+
+      async function cacheFlatPrices(fromDaysAgo: number): Promise<void> {
+        for (let days = fromDaysAgo; days >= 1; days--) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+      }
+
+      it('repara el caso de producción: lote importado tras las capturas → reales posteriores pasan a estimadas, sin escalón', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(20));
+        await cacheFlatPrices(21);
+        // Estado inicial de producción: estimadas hasta daysAgo(11) y capturas reales de
+        // daysAgo(10) a daysAgo(1) con el coste ANTERIOR a la importación (1.000 €).
+        await snapshots.backfillUser(userId);
+        for (let days = 10; days >= 1; days--) {
+          await db.delete(portfolioSnapshots).where(eq(portfolioSnapshots.date, daysAgo(days)));
+          await insertReal(userId, daysAgo(days), '1000.00000000');
+        }
+        // HOY se importa una compra con fecha pasada (anterior a varias capturas), no a todas.
+        await addLot(userId, id, 'buy', '5', '100', daysAgo(8));
+
+        await snapshots.backfillUser(userId);
+
+        const rows = await rowsOf(userId);
+        for (const row of rows) {
+          const expected = row.date >= daysAgo(8) ? '1500.00000000' : '1000.00000000';
+          expect(row.invested, row.date).toBe(expected);
+        }
+        // Las reales posteriores al lote pasan a estimadas; las anteriores siguen reales.
+        for (const row of rows.filter((r) => r.date >= daysAgo(8))) expect(row.estimated, row.date).toBe(true);
+        for (const row of rows.filter((r) => r.date >= daysAgo(10) && r.date < daysAgo(8))) {
+          expect(row.estimated, row.date).toBe(false);
+          expect(row.updatedAt.toISOString(), row.date).toBe(capturedAt(row.date).toISOString());
+        }
+        // Sin escalón: el coste solo sube el día del lote y nunca baja.
+        const series = rows.map((r) => Number(r.invested));
+        expect(series.every((v, i) => i === 0 || v >= series[i - 1])).toBe(true);
+      });
+
+      it('es idempotente: una segunda pasada no vuelve a escribir las ya reparadas', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '1000.00000000');
+        await addLot(userId, id, 'buy', '5', '100', daysAgo(7));
+        await snapshots.backfillUser(userId);
+        const first = await rowsOf(userId);
+
+        await snapshots.backfillUser(userId);
+
+        expect(await rowsOf(userId)).toEqual(first);
+      });
+
+      it('un lote con fecha de hoy no invalida ninguna captura real', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '999.00000000');
+        await addLot(userId, id, 'buy', '5', '100', today());
+
+        await snapshots.backfillUser(userId);
+
+        for (const row of (await rowsOf(userId)).filter((r) => r.date >= daysAgo(5))) {
+          expect(row.estimated, row.date).toBe(false);
+          expect(row.invested, row.date).toBe('999.00000000');
+        }
+      });
+
+      it('una captura real escrita DESPUÉS del cambio del lote es fiel y se respeta', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        await addLot(userId, id, 'buy', '5', '100', daysAgo(8)); // createdAt = ahora
+        await db.insert(portfolioSnapshots).values({
+          userId,
+          date: daysAgo(3),
+          invested: '999.00000000',
+          marketValue: '999.00000000',
+          valuedPositions: 1,
+          totalPositions: 1,
+          fxRates: { USD: 1 },
+          estimated: false,
+          updatedAt: new Date(Date.now() + 60_000), // posterior al lote
+        });
+
+        await snapshots.backfillUser(userId);
+
+        const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(3));
+        expect(row).toMatchObject({ estimated: false, invested: '999.00000000' });
+      });
+
+      it('editar solo el nombre o el bróker (el formulario reenvía importes) no invalida las reales', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '999.00000000');
+        const events = new EventEmitter2();
+        const emitted: unknown[] = [];
+        events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
+        const prices = new PricesService(db, silentProvider, identityResolver);
+        const editor = new PositionsService(db, prices, new PositionLotsService(db, new EventEmitter2()), events);
+
+        // Mismos importes que ya tiene la posición, como hace `PositionForm`.
+        await editor.update(userId, id, { name: 'Renamed', broker: 'Other', quantity: 10, avgPrice: 100 });
+        await snapshots.backfillUser(userId);
+
+        expect(emitted).toEqual([]);
+        for (const row of (await rowsOf(userId)).filter((r) => r.date >= daysAgo(5))) {
+          expect(row, row.date).toMatchObject({ estimated: false, invested: '999.00000000' });
+        }
+      });
+
+      it('un lote editado tras la captura la invalida (p. ej. cantidad corregida)', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '1000.00000000');
+        // Edición del lote (como `declareState` o el PATCH de lotes): `updatedAt` = ahora.
+        await db.update(positionLots).set({ quantity: '20', updatedAt: new Date() }).where(eq(positionLots.positionId, id));
+
+        await snapshots.backfillUser(userId);
+
+        for (const row of (await rowsOf(userId)).filter((r) => r.date >= daysAgo(5))) {
+          expect(row, row.date).toMatchObject({ estimated: true, invested: '2000.00000000' });
+        }
+      });
+
+      it('onLotChanged con invalidateFrom (lote borrado) rehace las reales desde esa fecha', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(10));
+        await cacheFlatPrices(11);
+        // Las capturas incluían un lote que luego se borró (invested 1.500 €, ya inexistente).
+        for (let days = 5; days >= 1; days--) await insertReal(userId, daysAgo(days), '1500.00000000');
+
+        await snapshots.onLotChanged({ userId, positionId: id, invalidateFrom: daysAgo(3) });
+
+        const rows = await rowsOf(userId);
+        for (const row of rows.filter((r) => r.date >= daysAgo(3))) {
+          expect(row, row.date).toMatchObject({ estimated: true, invested: '1000.00000000' });
+        }
+        for (const row of rows.filter((r) => r.date >= daysAgo(5) && r.date < daysAgo(3))) {
+          expect(row, row.date).toMatchObject({ estimated: false, invested: '1500.00000000' });
+        }
+      });
+
+      it('una obsoleta que la reconstrucción no puede rehacer (sin precio) conserva el dato real', async () => {
+        const userId = await insertUser(db, 'a@example.com');
+        const id = await createWithOldLot(userId, daysAgo(30));
+        // El último cierre es de hace 25 días: pasado el margen de arrastre, hace 5 días no hay precio.
+        for (let days = 31; days >= 25; days--) await cachePriceOn('IWDA', daysAgo(days), '100', 'EUR');
+        await insertReal(userId, daysAgo(5), '1000.00000000');
+        await addLot(userId, id, 'buy', '5', '100', daysAgo(28));
+
+        await snapshots.backfillUser(userId);
+
+        const row = (await rowsOf(userId)).find((r) => r.date === daysAgo(5));
+        expect(row).toMatchObject({ estimated: false, invested: '1000.00000000' });
+      });
     });
 
     it('SÍ refina una estimación anterior con mejores datos', async () => {
