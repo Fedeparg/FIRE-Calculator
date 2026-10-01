@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { and, eq, lt } from 'drizzle-orm';
 
+import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots, userNotificationSettings, users } from '../db/schema.js';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
@@ -49,10 +50,10 @@ export class FireAlertsService {
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(EMAIL_SERVICE) private readonly email: EmailService,
     private readonly settings: NotificationSettingsService,
-    config: ConfigService,
+    config: ConfigService<Env, true>,
   ) {
-    this.appUrl = config.getOrThrow<string>('APP_URL').replace(/\/+$/, '');
-    this.secret = config.getOrThrow<string>('JWT_SECRET');
+    this.appUrl = config.getOrThrow('APP_URL', { infer: true }).replace(/\/+$/, '');
+    this.secret = config.getOrThrow('JWT_SECRET', { infer: true });
   }
 
   /**

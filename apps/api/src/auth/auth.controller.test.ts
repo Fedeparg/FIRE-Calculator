@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -9,13 +10,19 @@ import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, inject, it, vi } from 'vitest';
 
-import { AppModule } from '../app.module.js';
+import type { Env } from '../config/env.js';
 import type { Database } from '../db/database.module.js';
 import { loginTokens, users } from '../db/schema.js';
 import { DevEmailService } from '../email/dev-email.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
+
+/**
+ * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
+ * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ */
+const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
 const SECRET = 'test-secret-para-el-controller-de-auth';
 const APP_URL = 'https://sextante.example.test';
@@ -24,7 +31,10 @@ const sha256 = (value: string): string => createHash('sha256').update(value).dig
 
 /** Arranca la app completa (misma configuración que `main.ts`, sin MCP) en un puerto libre. */
 async function bootApp(): Promise<{ app: NestExpressApplication; baseUrl: string }> {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, { abortOnError: false, logger: false });
+  const app = await NestFactory.create<NestExpressApplication>(await loadAppModule(), {
+    abortOnError: false,
+    logger: false,
+  });
   // Como en producción: se confía en el primer proxy, así `X-Forwarded-For` fija la IP del
   // cliente. Los tests lo usan para no compartir el cupo de throttling de `/auth/request`.
   app.set('trust proxy', 1);
@@ -72,6 +82,17 @@ describe('AuthController (HTTP)', () => {
     return new URL(link).searchParams.get('token') ?? '';
   };
 
+  /**
+   * Cambia `COOKIE_SECURE` con la app ya arrancada. La configuración validada se congela al
+   * importar `AppModule`, así que tocar `process.env` ya no surte efecto: se intercepta la lectura.
+   */
+  const stubCookieSecure = (secure: boolean): void => {
+    const config = app.get<ConfigService<Env, true>>(ConfigService);
+    const realGet = config.get.bind(config) as unknown as (key: string, ...rest: unknown[]) => unknown;
+    vi.spyOn(config, 'get').mockImplementation(((key: string, ...rest: unknown[]) =>
+      key === 'COOKIE_SECURE' ? secure : realGet(key, ...rest)) as typeof config.get);
+  };
+
   /** Pide un enlace por la ruta real y devuelve su token en claro. */
   const requestToken = async (email: string): Promise<string> => {
     const res = await postJson(`${baseUrl}/request`, { email });
@@ -107,7 +128,6 @@ describe('AuthController (HTTP)', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.COOKIE_SECURE;
   });
 
   afterAll(async () => {
@@ -276,7 +296,7 @@ describe('AuthController (HTTP)', () => {
     });
 
     it('es Secure cuando COOKIE_SECURE=true', async () => {
-      process.env.COOKIE_SECURE = 'true';
+      stubCookieSecure(true);
       const token = await requestToken('a@example.com');
 
       const setCookie = sessionSetCookie(await postJson(`${baseUrl}/verify`, { token }));
@@ -285,7 +305,7 @@ describe('AuthController (HTTP)', () => {
     });
 
     it('no es Secure con COOKIE_SECURE=false', async () => {
-      process.env.COOKIE_SECURE = 'false';
+      stubCookieSecure(false);
       const token = await requestToken('a@example.com');
 
       const setCookie = sessionSetCookie(await postJson(`${baseUrl}/verify`, { token }));

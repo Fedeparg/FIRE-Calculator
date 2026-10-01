@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 
+import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, users, type User } from '../db/schema.js';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
@@ -68,7 +69,7 @@ export class AuthService {
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(EMAIL_SERVICE) private readonly email: EmailService,
     private readonly jwt: JwtService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
     private readonly positions: PositionsService,
     private readonly lots: PositionLotsService,
     private readonly snapshots: PortfolioSnapshotsService,
@@ -92,7 +93,7 @@ export class AuthService {
 
     await this.db.insert(loginTokens).values({ email, tokenHash, expiresAt });
 
-    const appUrl = this.config.getOrThrow<string>('APP_URL');
+    const appUrl = this.config.getOrThrow('APP_URL', { infer: true });
     const link = `${appUrl}/auth/verify?token=${token}`;
     await this.email.sendMagicLink(email, link);
   }

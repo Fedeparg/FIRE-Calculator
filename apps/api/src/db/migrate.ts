@@ -4,17 +4,17 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 
+import { parseDatabaseEnv } from '../config/env.js';
+
 /**
  * Migrador del servicio one-shot `migrate` de Compose. Usa `drizzle-orm` (no `drizzle-kit`)
  * para funcionar en la imagen de runtime; la API espera a que termine OK.
  */
 async function main(): Promise<void> {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error('DATABASE_URL no está definida');
-  }
+  // Mismo esquema que la API, pero solo `DATABASE_URL`: el migrador no necesita JWT, email, etc.
+  const { DATABASE_URL } = parseDatabaseEnv(process.env);
 
-  const client = postgres(url, { max: 1 });
+  const client = postgres(DATABASE_URL, { max: 1 });
   const db = drizzle(client);
 
   // Relativa a este archivo (dist/db/migrate.js -> ../../drizzle).

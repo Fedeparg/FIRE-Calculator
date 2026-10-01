@@ -1,4 +1,3 @@
-import type { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +5,7 @@ import type { Database } from '../db/database.module.js';
 import { portfolioSnapshots, savedScenarios, userNotificationSettings } from '../db/schema.js';
 import type { EmailService } from '../email/email.service.js';
 import type { FireMilestoneEmail } from '../email/templates/fire-milestone.js';
+import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { FireAlertsService } from './fire-alerts.service.js';
 import { FIRE_SCENARIO_SLUG, NotificationSettingsService } from './notification-settings.service.js';
@@ -13,9 +13,7 @@ import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
 const DATE = '2026-09-28';
 const SECRET = 'test-secret';
-const config = {
-  getOrThrow: (key: string) => ({ APP_URL: 'https://sextante.test/', JWT_SECRET: SECRET })[key],
-} as unknown as ConfigService;
+const config = fakeConfig({ APP_URL: 'https://sextante.test/', JWT_SECRET: SECRET });
 
 describe('FireAlertsService (integración con Postgres)', () => {
   let db: Database;

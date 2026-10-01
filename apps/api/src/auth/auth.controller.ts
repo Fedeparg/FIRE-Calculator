@@ -16,6 +16,7 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 
+import type { Env } from '../config/env.js';
 import { AuthService, type AccountExport, type SessionUser } from './auth.service.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { RequestLinkDto } from './dto/request-link.dto.js';
@@ -30,7 +31,7 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
-    private readonly config: ConfigService,
+    private readonly config: ConfigService<Env, true>,
   ) {}
 
   /** Solicita un magic link. Limitado para evitar abuso / bombardeo de emails. */
@@ -113,7 +114,7 @@ export class AuthController {
       // Secure explícito (no atado a NODE_ENV): así la API dockerizada puede servir
       // a un frontend en http://localhost sin que el navegador rechace la cookie.
       // En producción (HTTPS) se pone COOKIE_SECURE=true.
-      secure: this.config.get<string>('COOKIE_SECURE') === 'true',
+      secure: this.config.get('COOKIE_SECURE', { infer: true }),
       sameSite: 'lax',
       path: '/',
       maxAge: SESSION_TTL_SECONDS * 1000,

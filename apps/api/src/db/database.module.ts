@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 
+import type { Env } from '../config/env.js';
 import * as schema from './schema.js';
 
 export const DRIZZLE = Symbol('DRIZZLE');
@@ -20,8 +21,8 @@ const PG_CLIENT = Symbol('PG_CLIENT');
     {
       provide: PG_CLIENT,
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
-        const url = config.getOrThrow<string>('DATABASE_URL');
+      useFactory: (config: ConfigService<Env, true>) => {
+        const url = config.getOrThrow('DATABASE_URL', { infer: true });
         return postgres(url, { max: 10 });
       },
     },
