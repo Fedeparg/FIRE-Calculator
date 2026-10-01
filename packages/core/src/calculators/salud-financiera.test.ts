@@ -3,6 +3,7 @@ import {
   FINANCIAL_HEALTH_QUESTIONS,
   categoryForScore,
   computeFinancialHealth,
+  scoreFinancialHealthOptions,
 } from "./salud-financiera.js";
 
 describe("salud-financiera", () => {
@@ -35,5 +36,15 @@ describe("salud-financiera", () => {
     expect(categoryForScore(60)).toBe("stable");
     expect(categoryForScore(35)).toBe("fragile");
     expect(categoryForScore(34)).toBe("critical");
+  });
+
+  it("puntúa por índice de opción: todo lo mejor es 100 y todo lo peor 0", () => {
+    const n = FINANCIAL_HEALTH_QUESTIONS.length;
+    expect(scoreFinancialHealthOptions(Array(n).fill(3))).toEqual({ score: 100, category: "strong" });
+    expect(scoreFinancialHealthOptions(Array(n).fill(0))).toEqual({ score: 0, category: "critical" });
+  });
+
+  it("un índice fuera de rango o ausente puntúa 0", () => {
+    expect(scoreFinancialHealthOptions([9, -1])).toEqual(scoreFinancialHealthOptions([]));
   });
 });

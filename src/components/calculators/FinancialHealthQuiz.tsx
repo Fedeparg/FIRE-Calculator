@@ -3,14 +3,12 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
+  FINANCIAL_HEALTH_OPTION_SCORES,
   FINANCIAL_HEALTH_QUESTIONS,
-  computeFinancialHealth,
+  scoreFinancialHealthOptions,
   type HealthCategory,
 } from "@sextante/core/calculators/salud-financiera";
 import SelectField from "../ui/SelectField";
-
-/** Puntuación 0..1 asociada a cada opción (de peor a mejor). */
-const OPTION_SCORES = [0, 0.34, 0.67, 1] as const;
 
 /** Estilos del banner según categoría. */
 const CATEGORY_STYLES: Record<HealthCategory, string> = {
@@ -28,7 +26,7 @@ export default function FinancialHealthQuiz() {
   );
 
   const result = useMemo(
-    () => computeFinancialHealth(answers.map((i) => OPTION_SCORES[i] ?? 0)),
+    () => scoreFinancialHealthOptions(answers),
     [answers],
   );
 
@@ -49,7 +47,7 @@ export default function FinancialHealthQuiz() {
             label={t(`questions.${q.id}.label`)}
             value={String(answers[i])}
             onChange={(v) => setAnswer(i, v)}
-            options={OPTION_SCORES.map((_, oi) => ({
+            options={FINANCIAL_HEALTH_OPTION_SCORES.map((_, oi) => ({
               value: String(oi),
               label: t(`questions.${q.id}.o${oi}`),
             }))}
