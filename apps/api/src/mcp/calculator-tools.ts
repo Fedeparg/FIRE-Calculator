@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { computeRetirement } from '@sextante/core/calculators/ahorro-jubilacion';
 import { computeEarlyRepayment } from '@sextante/core/calculators/amortizacion-anticipada';
+import type { CalculatorCategory } from '@sextante/core/calculators/categories';
 import { computeDeposit } from '@sextante/core/calculators/deposito';
 import { computePensionRelief } from '@sextante/core/calculators/desgravacion-plan-pensiones';
 import { computeDividends } from '@sextante/core/calculators/dividendos';
@@ -53,18 +54,6 @@ import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
  * no en el navegador. Añadir una calculadora es añadir una entrada a `CALCULATORS`.
  */
 
-/** Familias de calculadoras, las mismas que agrupa la web. */
-export const CALCULATOR_CATEGORIES = [
-  'inversion',
-  'fire',
-  'hipoteca',
-  'ahorro',
-  'fiscalidad',
-  'deuda',
-  'herramientas',
-] as const;
-export type CalculatorCategory = (typeof CALCULATOR_CATEGORIES)[number];
-
 export interface CalculatorEntry {
   readonly category: CalculatorCategory;
   readonly title: string;
@@ -100,11 +89,13 @@ function defineCalculator<S extends z.ZodRawShape>(
 // absurdas (1e300 €, 10.000 años) que solo sirven para hacer trabajar al servidor.
 
 const MAX_AMOUNT = 1e12;
-const MAX_YEARS = 100;
+/** Tope por defecto de los campos de plazo; los que necesitan otro lo pasan a `horizon`. */
+const DEFAULT_MAX_HORIZON_YEARS = 100;
 
 const amount = (description: string) => z.number().min(0).max(MAX_AMOUNT).describe(description);
 const percent = (description: string, min = 0, max = 100) => z.number().min(min).max(max).describe(description);
-const horizon = (description: string, max = MAX_YEARS) => z.number().min(0).max(max).describe(description);
+const horizon = (description: string, max = DEFAULT_MAX_HORIZON_YEARS) =>
+  z.number().min(0).max(max).describe(description);
 const count = (description: string, max: number) => z.number().int().min(0).max(max).describe(description);
 
 const frequency = z
