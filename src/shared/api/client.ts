@@ -1,0 +1,102 @@
+/**
+ * Cliente HTTP del frontend contra la API (same-origin, vía el BFF de Next).
+ *
+ * Centraliza lo que antes cada componente reimplementaba: lanzar un error tipado cuando la
+ * respuesta no es 2xx, distinguir el fallo de red del de servidor y traducir ambos a una clave
+ * i18n común. La autorización la decide siempre la API; aquí solo se transporta y se clasifica.
+ */
+
+/** Claves i18n comunes que cada namespace de UI define con ese mismo nombre. */
+export type ApiErrorKey = "errorSession" | "errorNetwork" | "errorServer" | "errorInvalid" | "errorGeneric";
+
+/** Error de una llamada a la API. `status` es 0 cuando ni siquiera hubo respuesta (red). */
+export class ApiError extends Error {
+  readonly status: number;
+  /** Código de dominio que la API devuelve en el cuerpo de los 4xx (`{ code }`), si existe. */
+  readonly code?: string;
+
+  constructor(status: number, code?: string, options?: ErrorOptions) {
+    super(status === 0 ? "Network error" : `API error ${status}${code ? ` (${code})` : ""}`, options);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+
+  /** `true` si el navegador no pudo completar la petición (sin conexión, DNS, CORS…). */
+  get isNetwork(): boolean {
+    return this.status === 0;
+  }
+}
+
+/** Una cancelación (`AbortController`) no es un fallo: se propaga tal cual para que el llamador la ignore. */
+export function isAbortError(error: unknown): boolean {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+/** Extrae el `code` del cuerpo de error de la API sin fiarse de su forma. */
+async function readErrorCode(res: Response): Promise<string | undefined> {
+  try {
+    const body: unknown = await res.json();
+    if (typeof body === "object" && body !== null && "code" in body && typeof body.code === "string") {
+      return body.code;
+    }
+  } catch {
+    /* cuerpo vacío o no JSON: no hay código */
+  }
+  return undefined;
+}
+
+/**
+ * `fetch` same-origin que lanza `ApiError` si la respuesta no es 2xx o si hay fallo de red.
+ * Devuelve la `Response` para los casos que no son JSON (descargas en blob).
+ */
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  let res: Response;
+  try {
+    res = await fetch(path, init);
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    // La promesa de fetch solo rechaza por fallo de red/conexión.
+    throw new ApiError(0, undefined, { cause: error });
+  }
+  if (!res.ok) throw new ApiError(res.status, await readErrorCode(res));
+  return res;
+}
+
+/** Opciones de `apiJson`: como `RequestInit`, pero `body` es un valor JSON (se serializa aquí). */
+export type ApiJsonInit = Omit<RequestInit, "body"> & { body?: unknown };
+
+/**
+ * Llama a la API y parsea el JSON. Si hay `body`, lo serializa y añade
+ * `Content-Type: application/json`. Una respuesta sin contenido (204) devuelve `undefined`:
+ * usa `apiJson<void>` en esos casos.
+ */
+export async function apiJson<T>(path: string, init?: ApiJsonInit): Promise<T> {
+  const { body, headers, ...rest } = init ?? {};
+  const hasJsonBody = body !== undefined;
+  const res = await apiFetch(path, {
+    ...rest,
+    headers: hasJsonBody ? { "Content-Type": "application/json", ...headers } : headers,
+    body: hasJsonBody ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 204) return undefined as T;
+  try {
+    return (await res.json()) as T;
+  } catch (error) {
+    // 2xx con cuerpo no JSON: la API rompió el contrato; se trata como fallo del servidor.
+    throw new ApiError(500, undefined, { cause: error });
+  }
+}
+
+/**
+ * Clave i18n común para un fallo. Cada componente la usa tal cual o, antes de llamarla,
+ * resuelve sus `code` propios (`error.code === "DUPLICATE"`…) y delega aquí el resto.
+ */
+export function apiErrorKey(error: unknown): ApiErrorKey {
+  if (!(error instanceof ApiError)) return "errorGeneric";
+  if (error.isNetwork) return "errorNetwork";
+  if (error.status === 401) return "errorSession";
+  if (error.status >= 500) return "errorServer";
+  if (error.status === 400 || error.status === 422) return "errorInvalid";
+  return "errorGeneric";
+}
