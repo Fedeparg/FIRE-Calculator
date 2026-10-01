@@ -12,9 +12,9 @@
  * `currentValue` en la MISMA divisa (la elegida en la cartera); los resultados salen en esa.
  */
 
-import { computeFire } from "./calculators/fire.js";
+import { computeFire, MAX_YEARS } from "./calculators/fire.js";
 import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "./calculators/fire-montecarlo.js";
-import { PERIODS_PER_YEAR, type Frequency } from "./projection.js";
+import { PERIODS_PER_YEAR, project, type Frequency } from "./projection.js";
 
 /**
  * Slug de la calculadora de independencia financiera en `registry.ts`. Identifica los
@@ -98,6 +98,94 @@ export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalRe
     // igualmente para que "alcanzado" y "0 años" no puedan contradecirse nunca.
     yearsToTarget: reached ? 0 : fire.yearsToFire,
     reached,
+  };
+}
+
+/**
+ * Modo de un objetivo guardado. `fire`: vivir de las rentas (gasto anual / tasa de retiro).
+ * `amount`: reunir una cantidad en un plazo. Lo leen igual la web, los avisos y MCP.
+ */
+export type GoalMode = "fire" | "amount";
+export const GOAL_MODES: readonly GoalMode[] = ["fire", "amount"];
+
+/** Modo de los `inputs` de un escenario: sin la clave (escenarios antiguos) es `fire`. */
+export function goalModeFromInputs(inputs: unknown): GoalMode {
+  const mode = typeof inputs === "object" && inputs !== null ? (inputs as Record<string, unknown>).goalMode : undefined;
+  return mode === "amount" ? "amount" : "fire";
+}
+
+export interface AmountGoalInput {
+  /** Cantidad a reunir. */
+  targetAmount: number;
+  /** Plazo en años enteros (se redondea, como en `project`). */
+  years: number;
+  currentValue: number;
+  /** Aportación por periodo (`frequency`). */
+  contribution: number;
+  frequency: Frequency;
+  /** Rentabilidad anual esperada, en base 100. */
+  annualReturn: number;
+}
+
+export interface AmountGoalResult extends PortfolioGoalResult {
+  /** Plazo usado, en años enteros. */
+  deadlineYears: number;
+  /** Valor proyectado al final del plazo con la aportación actual. */
+  projectedAtDeadline: number;
+  /**
+   * Aportación por periodo necesaria para llegar justo a tiempo. 0 si ya se llega sin aportar;
+   * `null` si no se puede (plazo 0 sin haber llegado, o resultado no finito).
+   */
+  requiredContribution: number | null;
+  /** Si al ritmo actual se llega dentro del plazo. */
+  onTrack: boolean;
+}
+
+/**
+ * Objetivo "quiero X en N años", con las mismas convenciones que `project`: interés por
+ * periodo `annualReturn / 100 / periodosPorAño` y aportación al final de cada periodo. La
+ * aportación necesaria despeja P en `VF = C·(1+i)^n + P·((1+i)^n − 1) / i` (con i = 0, P·n).
+ */
+export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
+  const current =
+    Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
+  const target = Number.isFinite(input.targetAmount) && input.targetAmount > 0 ? input.targetAmount : 0;
+  const deadlineYears = Math.max(0, Math.round(Number.isFinite(input.years) ? input.years : 0));
+  const reached = current >= target;
+
+  const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
+  const periodRate = (input.annualReturn || 0) / 100 / periodsPerYear;
+  const periods = deadlineYears * periodsPerYear;
+  const growth = (1 + periodRate) ** periods;
+  const annuity = periodRate === 0 ? periods : (growth - 1) / periodRate;
+
+  const projection = project({
+    initial: current,
+    contribution: input.contribution,
+    frequency: input.frequency,
+    annualRate: input.annualReturn,
+    years: Math.max(MAX_YEARS, deadlineYears),
+  });
+  const projectedAtDeadline = projection.series[deadlineYears]?.value ?? current;
+  const firstYear = projection.series.find((p) => p.year <= MAX_YEARS && p.value >= target)?.year;
+
+  let requiredContribution: number | null;
+  if (reached || current * growth >= target) requiredContribution = 0;
+  else if (annuity <= 0) requiredContribution = null;
+  else requiredContribution = (target - current * growth) / annuity;
+  if (requiredContribution !== null && !Number.isFinite(requiredContribution)) requiredContribution = null;
+
+  return {
+    target,
+    current,
+    progress: target > 0 ? Math.min(100, (current / target) * 100) : null,
+    remaining: Math.max(0, target - current),
+    yearsToTarget: reached ? 0 : (firstYear ?? null),
+    reached,
+    deadlineYears,
+    projectedAtDeadline,
+    requiredContribution,
+    onTrack: reached || projectedAtDeadline >= target,
   };
 }
 
