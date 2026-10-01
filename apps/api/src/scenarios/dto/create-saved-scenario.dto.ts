@@ -2,21 +2,14 @@ import { SCENARIO_NAME_MAX_LENGTH } from '@sextante/core/contracts';
 import { Transform } from 'class-transformer';
 import { IsNotEmpty, IsObject, IsString, Matches, MaxLength } from 'class-validator';
 
-/**
- * Slug de calculadora: minúsculas, dígitos y guiones simples (el mismo formato que el
- * `registry.ts` del frontend). Acotarlo evita que este campo se use como cajón de sastre.
- */
+/** Slug de calculadora, mismo formato que el `registry.ts` del frontend; acotarlo evita usarlo como cajón de sastre. */
 export const CALCULATOR_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
 
 /**
- * Cuerpo de POST /api/scenarios. El `userId` NO va aquí: se lee del JWT.
- *
- * `inputs` se valida como OBJETO, sin tipar sus claves: el esquema de entrada de cada
- * calculadora vive en el frontend y cambia con ella. Lo que sí se acota —en el servicio, que
- * es donde se puede medir— es su TAMAÑO y el número de escenarios por usuario: esto es una
- * conveniencia de la cuenta, no almacenamiento libre.
+ * Cuerpo de POST /api/scenarios (el `userId` sale del JWT). `inputs` se valida solo como objeto:
+ * su esquema vive en el frontend; tamaño y número por usuario se acotan en el servicio.
  */
 export class CreateSavedScenarioDto {
   @IsString()

@@ -26,14 +26,14 @@ export type SavedScenarioResponse = {
 
 /**
  * Escenarios guardados de calculadora. Mismo patrón de aislamiento que `positions`: el
- * `userId` viene SIEMPRE del JWT y toda consulta filtra por él; por id, 404 si no existe y
+ * `userId` viene siempre del JWT y toda consulta filtra por él; por id, 404 si no existe y
  * 403 si es de otro usuario.
  */
 @Injectable()
 export class SavedScenariosService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  /** Escenarios del usuario, más recientes primero; opcionalmente los de UNA calculadora. */
+  /** Escenarios del usuario, más recientes primero; opcionalmente los de una calculadora. */
   async findAllByUser(userId: string, slug?: string): Promise<SavedScenarioResponse[]> {
     const conditions = [eq(savedScenarios.userId, userId)];
     if (slug) conditions.push(eq(savedScenarios.slug, slug));

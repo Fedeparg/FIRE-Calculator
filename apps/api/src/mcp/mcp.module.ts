@@ -7,14 +7,9 @@ import { ScenariosModule } from '../scenarios/scenarios.module.js';
 import { McpAuditService } from './mcp-audit.service.js';
 import { McpService } from './mcp.service.js';
 
-/**
- * Módulo del servidor MCP (tools sobre la cartera). El montaje del endpoint HTTP `/api/mcp`
- * (transporte Streamable HTTP + `requireBearerAuth`) se hace en `main.ts`, donde se recupera
- * `McpService` del contenedor; por eso se exporta.
- */
+/** Servidor MCP. El endpoint `/api/mcp` se monta en `main.ts`, que recupera `McpService` (de ahí el export). */
 @Module({
-  // `PricesModule` aporta el buscador de instrumentos (`INSTRUMENT_SEARCH`) que usa la tool
-  // `search_instruments`: el MISMO que el alta de posiciones, sin duplicar proveedor.
+  // `PricesModule`: el buscador `INSTRUMENT_SEARCH` de la tool `search_instruments`, el mismo del alta de posiciones.
   imports: [PositionsModule, PortfolioModule, PricesModule, ScenariosModule],
   providers: [McpService, McpAuditService],
   exports: [McpService],

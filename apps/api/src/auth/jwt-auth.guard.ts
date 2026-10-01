@@ -15,7 +15,7 @@ export type AuthedRequest = Request & { user: SessionUser };
 
 /**
  * Protege rutas exigiendo una cookie de sesión con un JWT válido. Adjunta el usuario
- * a `request.user`. La autorización se decide SIEMPRE en el servidor.
+ * a `request.user`. La autorización se decide siempre en el servidor.
  *
  * Además de verificar la firma, comprueba que el usuario del token **sigue existiendo**
  * en BD: un JWT con firma válida cuyo `sub` ya no existe (cuenta borrada, o BD reseteada

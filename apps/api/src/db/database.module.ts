@@ -5,20 +5,14 @@ import postgres from 'postgres';
 
 import * as schema from './schema.js';
 
-/** Token de inyección para el cliente Drizzle. */
 export const DRIZZLE = Symbol('DRIZZLE');
 
-/** Tipo del cliente Drizzle ya tipado con nuestro esquema. */
 export type Database = PostgresJsDatabase<typeof schema>;
 
-/** Token interno para el cliente `postgres` crudo (para poder cerrarlo al apagar). */
+/** Cliente `postgres` crudo, para cerrarlo al apagar. */
 const PG_CLIENT = Symbol('PG_CLIENT');
 
-/**
- * Módulo global de base de datos. Expone un cliente Drizzle (`DRIZZLE`) inyectable
- * en cualquier servicio. No existe un paquete oficial `@nestjs/drizzle`: lo
- * cableamos como proveedor propio, que es el patrón estándar.
- */
+/** Módulo global que expone el cliente Drizzle (`DRIZZLE`); no hay `@nestjs/drizzle` oficial, así que es un proveedor propio. */
 @Global()
 @Module({
   imports: [ConfigModule],
@@ -42,7 +36,6 @@ const PG_CLIENT = Symbol('PG_CLIENT');
 export class DatabaseModule implements OnModuleDestroy {
   constructor(@Inject(PG_CLIENT) private readonly client: ReturnType<typeof postgres>) {}
 
-  /** Cierra limpiamente el pool de conexiones al apagar la app. */
   async onModuleDestroy(): Promise<void> {
     await this.client.end({ timeout: 5 });
   }

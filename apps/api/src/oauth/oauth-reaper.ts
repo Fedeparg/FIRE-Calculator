@@ -40,7 +40,7 @@ export interface ReapSummary {
  * minimización de datos (RGPD): nada que ya no sirva debe seguir almacenado.
  *
  * Qué borra y por qué:
- *  1. Códigos de autorización y tokens OAuth CADUCADOS (`expiresAt < now`). Se borran SOLO
+ *  1. Códigos de autorización y tokens OAuth caducados (`expiresAt < now`). Se borran solo
  *     los caducados, no los consumidos-pero-vigentes: un refresh ya rotado pero aún válido
  *     debe conservarse para detectar su reuso. Un token caducado ya no sirve para nada.
  *  2. `login_tokens` caducados o ya consumidos con más de N días: los magic link viven 15
@@ -157,7 +157,7 @@ export class OAuthReaper implements OnModuleInit {
    * excluimos explícitamente todo cliente con un consentimiento o un token asociado.
    *
    * Esa exclusión es también lo que hace seguro el estreno de esta poda: `lastUsedAt` no se
-   * escribía hasta ahora, así que TODAS las filas existentes lo tienen a NULL y solo el
+   * escribía hasta ahora, así que todas las filas existentes lo tienen a NULL y solo el
    * criterio "sin grants ni tokens" las salva. Un cliente en uso real siempre tiene grant.
    */
   private async reapAbandonedClients(now: Date): Promise<number> {

@@ -36,7 +36,7 @@ export type ConnectedAppExport = {
 
 /**
  * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye el
- * email de la cuenta, TODAS sus posiciones y sus lotes, el histórico de valoración, los
+ * email de la cuenta, todas sus posiciones y sus lotes, el histórico de valoración, los
  * escenarios guardados y las aplicaciones conectadas (accesos OAuth/MCP). Si se añaden más
  * datos personales en el futuro, deben sumarse aquí para que la exportación siga siendo
  * completa: una tabla nueva con datos del usuario que no aparezca aquí es un agujero de
@@ -98,7 +98,7 @@ export class AuthService {
   }
 
   /**
-   * Canjea el token del enlace por un usuario. El token es de un SOLO USO: el
+   * Canjea el token del enlace por un usuario. El token es de un solo uso: el
    * `UPDATE ... WHERE consumedAt IS NULL ... RETURNING` lo consume atómicamente, así
    * que dos peticiones simultáneas no pueden usar el mismo token dos veces.
    */
@@ -134,7 +134,7 @@ export class AuthService {
   /**
    * Exporta todos los datos personales del usuario (RGPD): email, posiciones, lotes,
    * histórico de valoración, escenarios guardados y apps conectadas. El `userId` viene
-   * SIEMPRE del JWT, nunca del cliente.
+   * siempre del JWT, nunca del cliente.
    */
   async exportData(user: SessionUser): Promise<AccountExport> {
     const positions = await this.positions.findAllByUser(user.id);

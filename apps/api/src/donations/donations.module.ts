@@ -7,7 +7,7 @@ import { STRIPE_CLIENT } from './donations.constants.js';
 import { DonationsService } from './donations.service.js';
 
 /**
- * Construye el cliente de Stripe SOLO si hay STRIPE_SECRET_KEY (igual que el módulo de
+ * Construye el cliente de Stripe solo si hay STRIPE_SECRET_KEY (igual que el módulo de
  * email elige transporte por env). Sin clave, el provider es `null` y los endpoints de
  * donación responden 503 / `enabled: false`, sin romper el arranque en desarrollo.
  */

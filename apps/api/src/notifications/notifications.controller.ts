@@ -9,7 +9,7 @@ import { UpdateNotificationSettingsDto } from './dto/update-notification-setting
 import { NotificationSettingsService, type NotificationSettingsResponse } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
-/** Preferencias de notificación del usuario autenticado (`userId` SIEMPRE del JWT). */
+/** Preferencias de notificación del usuario autenticado (`userId` siempre del JWT). */
 @Controller('account/notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationSettingsController {
@@ -30,7 +30,7 @@ export class NotificationSettingsController {
 }
 
 /**
- * Baja de las alertas desde el email, SIN sesión: la identidad la da el token firmado del
+ * Baja de las alertas desde el email, sin sesión: la identidad la da el token firmado del
  * enlace. Solo POST, a propósito: los escáneres de enlaces del correo (antivirus, vistas
  * previas) abren con GET todo lo que ven, y un GET que diera de baja desactivaría las alertas
  * sin que nadie lo pidiera. El email enlaza a una página que confirma con este POST, y la

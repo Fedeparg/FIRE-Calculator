@@ -19,13 +19,8 @@ import {
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 
 /**
- * Esquema de base de datos (única fuente de verdad). Drizzle genera las
- * migraciones a partir de aquí (`pnpm db:generate`).
- *
- * Principio de minimización de datos (RGPD): solo guardamos lo imprescindible.
- * Para el esqueleto, únicamente la tabla `users` (sin contraseñas: el login será
- * por magic link). Las tablas de tokens de acceso y de posiciones se añadirán en
- * sus respectivas rebanadas.
+ * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
+ * (`pnpm db:generate`). Minimización de datos (RGPD): sin contraseñas, el login es por magic link.
  */
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -37,11 +32,8 @@ export const users = pgTable('users', {
 export type User = typeof users.$inferSelect;
 
 /**
- * Tokens de inicio de sesión sin contraseña (magic link).
- *
- * Seguridad: NUNCA guardamos el token en claro, solo su hash (SHA-256). El enlace
- * que recibe el usuario lleva el token en claro; al verificar, hasheamos lo recibido
- * y buscamos por hash. Son de un solo uso (`consumedAt`) y caducan (`expiresAt`).
+ * Tokens de magic link. Solo se guarda el hash (SHA-256): el enlace lleva el token en claro y
+ * al verificar se busca por hash. De un solo uso (`consumedAt`) y con caducidad (`expiresAt`).
  */
 export const loginTokens = pgTable('login_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -55,26 +47,16 @@ export const loginTokens = pgTable('login_tokens', {
 export type LoginToken = typeof loginTokens.$inferSelect;
 
 /**
- * Posiciones de la cartera introducidas manualmente por el usuario. Sextante es un
- * agregador: el usuario teclea sus posiciones; no nos conectamos a bancos ni brokers.
+ * Posiciones tecleadas por el usuario (no hay conexión a bancos ni brókers).
  *
- * Seguridad / aislamiento: cada posición pertenece a un `userId` (FK a `users`, con
- * borrado en cascada para respetar el "borrar mi cuenta" del RGPD). El scoping por
- * usuario se aplica SIEMPRE en el servidor; el `userId` se lee del JWT, nunca del body.
+ * Aislamiento: `userId` con borrado en cascada (RGPD); el scoping se aplica en el servidor
+ * con el `userId` del JWT, nunca del body. `quantity`/`avgPrice` son `numeric(18,6)` (Drizzle
+ * los devuelve como `string`).
  *
- * Precisión: `quantity` y `avgPrice` usan `numeric(18,6)` (no float) para no perder
- * céntimos ni fracciones de participación. Drizzle los devuelve como `string`.
- *
- * Unicidad: una posición se identifica por `(userId, ticker, broker)`. El bróker es
- * OPCIONAL en general, pero pasa a ser obligatorio al añadir un símbolo que YA tiene otra
- * entrada (regla de negocio en el servicio, no en el esquema): así se puede distinguir el
- * mismo símbolo comprado en distintos sitios. El índice único FUNCIONAL es la barrera de
- * último recurso para duplicados, y refleja EXACTAMENTE la regla del servicio:
- * `lower(coalesce(broker, ''))` hace que sea case-insensitive (Degiro = degiro) y que el
- * bróker ausente (NULL) cuente como cadena vacía → un usuario no puede tener dos entradas
- * del mismo símbolo sin bróker (en Postgres dos NULL serían distintos, lo que dejaría
- * pasar duplicados). La detección case-insensitive y el flujo de "combinar" viven en el
- * servicio; este índice los respalda a nivel de BD.
+ * Unicidad `(userId, ticker, broker)`: el bróker es opcional salvo al añadir un símbolo que ya
+ * existe (regla del servicio). El índice funcional es la barrera de último recurso y replica
+ * esa regla: `lower(coalesce(broker, ''))` lo hace case-insensitive y trata el bróker ausente
+ * como cadena vacía (en Postgres dos NULL serían distintos y dejarían pasar duplicados).
  */
 export const positions = pgTable(
   'positions',
@@ -85,18 +67,15 @@ export const positions = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     // Lo que el usuario introduce: símbolo (p.ej. "IWDA") o ISIN ("IE00B4L5Y983").
     ticker: varchar('ticker', { length: 20 }).notNull(),
-    // Nombre legible opcional (p.ej. "iShares Core MSCI World").
     name: varchar('name', { length: 100 }),
     quantity: numeric('quantity', { precision: 18, scale: 6 }).notNull(),
     // Precio medio de compra, en la divisa de la posición.
     avgPrice: numeric('avg_price', { precision: 18, scale: 6 }).notNull(),
-    // Nombre libre del bróker/banco ("Degiro", "IBKR", "MyInvestor"…). Opcional; el
-    // servicio lo exige solo cuando ya existe otra entrada del mismo símbolo.
+    // Nombre libre ("Degiro", "IBKR"…).
     broker: varchar('broker', { length: 100 }),
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
-    // Derivado (knock-out, warrant, turbo…): se registra con sus operaciones (cuenta para el
-    // informe de plusvalías) pero NO se valora ni entra en los totales de la cartera: Sextante
-    // no sigue su precio. Lo fija la importación según el tipo de activo del bróker.
+    // Derivado (knock-out, warrant, turbo…): cuenta para el informe de plusvalías pero no se
+    // valora ni entra en los totales. Lo fija la importación según el tipo de activo del bróker.
     isDerivative: boolean('is_derivative').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -117,26 +96,17 @@ export const positions = pgTable(
 export type Position = typeof positions.$inferSelect;
 
 /**
- * Lotes (transacciones individuales) de una posición: cada compra o venta concreta, con su
- * fecha, precio y comisiones. Es el histórico que `positions` —una FOTO del estado actual—
- * no puede dar: sin lotes no hay evolución temporal, ni rentabilidad por periodo, ni
- * fiscalidad de plusvalías (FIFO del IRPF español).
+ * Lotes: cada compra o venta de una posición, con fecha, precio y comisiones. Dan el histórico
+ * que `positions` (foto del estado actual) no puede: evolución, rentabilidad por periodo y
+ * plusvalías FIFO.
  *
- * COMPATIBILIDAD: `positions.quantity` y `positions.avgPrice` SIGUEN siendo la fuente que
- * leen la valoración, las tools MCP y la UI. No se sustituyen: se RECALCULAN a partir de los
- * lotes en cada mutación (ver `PositionLotsService.recompute`), de modo que nada de lo que
- * existe hoy se rompe aunque la interfaz de lotes esté incompleta.
+ * `positions.quantity/avgPrice` siguen siendo lo que leen valoración, MCP y UI y se recalculan
+ * desde los lotes en cada mutación (`PositionLotsService.recompute`).
  *
- * `userId` está DESNORMALIZADO a propósito (se puede derivar por `positionId`): permite
- * filtrar e indexar por usuario sin join y deja el borrado RGPD en cascada por partida doble
- * (borrar el usuario borra sus lotes aunque la posición se hubiese desligado).
- *
- * Precisión: `numeric(18,6)`, la MISMA de `positions`, nunca float. Drizzle los devuelve como
- * `string` y la agregación se hace con aritmética decimal exacta (ver `decimal.ts`).
- *
- * `tradedAt` es un `date` (sin hora): dos lotes pueden caer el mismo día, así que el orden
- * canónico de la agregación es `(tradedAt, createdAt, id)` —definido en el servicio— para que
- * el coste medio móvil sea determinista.
+ * `userId` está desnormalizado a propósito: filtra e indexa por usuario sin join y deja el
+ * borrado RGPD en cascada por doble vía. Precisión `numeric(18,6)`, como `positions`.
+ * `tradedAt` es un `date` sin hora, de ahí el orden canónico `(tradedAt, createdAt, id)` de la
+ * agregación.
  */
 export const positionLots = pgTable(
   'position_lots',
@@ -148,19 +118,17 @@ export const positionLots = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    // 'buy' | 'sell'. Mismo patrón que `oauth_tokens.type` y `mcp_audit_log.outcome`.
     kind: varchar('kind', { length: 4 }).$type<PositionLotKind>().notNull(),
     quantity: numeric('quantity', { precision: 18, scale: 6 }).notNull(),
-    // Precio unitario de la operación, en la divisa de la posición.
+    // Precio unitario, en la divisa de la posición.
     price: numeric('price', { precision: 18, scale: 6 }).notNull(),
-    // Comisiones/gastos de la operación, en la divisa de la posición. No entran en el precio
-    // medio (que es precio de mercado puro), pero se guardan para la futura fiscalidad.
+    // Comisiones, en la divisa de la posición. No entran en el precio medio (precio de mercado
+    // puro) pero se guardan para la fiscalidad.
     fees: numeric('fees', { precision: 18, scale: 6 }).notNull().default('0'),
     tradedAt: date('traded_at').notNull(),
     note: varchar('note', { length: 200 }),
-    // Id de la operación en el bróker de origen, con prefijo de bróker ("trade-republic:<uuid>").
-    // NULL en lo registrado a mano. Es la clave de deduplicación de las importaciones: reimportar
-    // el mismo fichero no duplica operaciones (ver el índice único parcial de abajo).
+    // Id de la operación en el bróker, con prefijo ("trade-republic:<uuid>"); NULL si es manual.
+    // Clave de deduplicación: reimportar un fichero no duplica operaciones.
     externalId: varchar('external_id', { length: 100 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
@@ -170,9 +138,8 @@ export const positionLots = pgTable(
   },
   (table) => [
     index('position_lots_position_id_idx').on(table.positionId),
-    // Único POR USUARIO (el lote lleva `user_id` desnormalizado): dos usuarios pueden importar
-    // el mismo id de operación sin colisionar, y un mismo id no puede acabar en dos posiciones
-    // del mismo usuario. Parcial: los lotes manuales (NULL) no entran.
+    // Único por usuario: dos usuarios pueden importar el mismo id sin colisionar, y un id no
+    // puede acabar en dos posiciones del mismo usuario. Parcial: los manuales (NULL) no entran.
     uniqueIndex('position_lots_user_external_id_idx')
       .on(table.userId, table.externalId)
       .where(sql`${table.externalId} is not null`),
@@ -181,28 +148,20 @@ export const positionLots = pgTable(
   ],
 );
 
-/** Tipo de operación de un lote. */
 export type PositionLotKind = 'buy' | 'sell';
 
 export type PositionLot = typeof positionLots.$inferSelect;
 
 /**
- * Foto diaria del valor de la cartera de un usuario. Es lo que convierte el portfolio en una
- * PELÍCULA: la gráfica de evolución y la rentabilidad temporal se leen de aquí, no se
- * recalculan hacia atrás (los precios históricos de un instrumento que el usuario ya vendió
- * no bastarían para reconstruir qué tenía cada día).
+ * Foto diaria del valor de la cartera: la evolución y la rentabilidad temporal se leen de aquí
+ * (los precios históricos de lo ya vendido no bastarían para reconstruir qué había cada día).
  *
- * DIVISA BASE CANÓNICA: `invested` y `marketValue` se guardan SIEMPRE en **EUR**. Sextante
- * está enfocado al inversor español, así que el euro es la unidad natural del histórico y
- * evita tener que decidir la divisa en el momento de capturar. Para poder REEXPRESAR la serie
- * en cualquier divisa soportada sin recalcularla, se guardan además las tasas FX del día en
- * `fxRates` (USD por unidad de divisa, USD = 1: la misma forma que `PricesService.getFxRates`),
- * de modo que EUR→X es `importe * fxRates.EUR / fxRates.X` con las tasas de AQUEL día.
+ * `invested` y `marketValue` se guardan siempre en EUR. Para reexpresar la serie en otra divisa
+ * se guardan las tasas del día en `fxRates` (USD por unidad, USD = 1, como
+ * `PricesService.getFxRates`): EUR→X es `importe * fxRates.EUR / fxRates.X` con las de ese día.
  *
- * Clave primaria `(userId, date)`: un snapshot por usuario y día. La captura es idempotente
- * (upsert), así que correr el cron dos veces el mismo día actualiza la fila, no la duplica.
- *
- * Precisión: `numeric(20,8)` (como `instrument_prices.close`), no float.
+ * PK `(userId, date)`: la captura es un upsert idempotente. `numeric(20,8)` como
+ * `instrument_prices.close`.
  */
 export const portfolioSnapshots = pgTable(
   'portfolio_snapshots',
@@ -212,9 +171,8 @@ export const portfolioSnapshots = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     // Fecha del snapshot (UTC), no la del precio: en fin de semana se repite el último cierre.
     date: date('date').notNull(),
-    /** Coste de las posiciones VALORADAS ese día, en EUR. */
+    /** Coste de las posiciones valoradas ese día, en EUR. */
     invested: numeric('invested', { precision: 20, scale: 8 }).notNull(),
-    /** Valor de mercado de las posiciones valoradas ese día, en EUR. */
     marketValue: numeric('market_value', { precision: 20, scale: 8 }).notNull(),
     /** Nº de posiciones que se pudieron valorar (había precio y FX convertible). */
     valuedPositions: integer('valued_positions').notNull(),
@@ -223,17 +181,13 @@ export const portfolioSnapshots = pgTable(
     /** Tasas FX del día: USD por unidad de cada divisa (USD = 1). */
     fxRates: jsonb('fx_rates').$type<Record<string, number>>().notNull(),
     /**
-     * `true` si esta fecha es ANTERIOR a que el usuario empezara a registrar su cartera en
-     * Sextante (`trackingSince` = fecha UTC del `created_at` más antiguo de sus posiciones): la fila
-     * es entonces una RECONSTRUCCIÓN a partir de los lotes (cantidad y coste de ese día según las
-     * operaciones, valorados con los cierres de la caché). Desde `trackingSince` es `false` aunque
-     * la fila la haya (re)escrito el backfill (obsoleta sustituida, hueco rellenado). La captura
-     * real (`PortfolioSnapshotsService.captureUser`) SIEMPRE sustituye la fila y la deja en `false`;
-     * una reconstrucción posterior solo reescribe filas estimadas y no pisa una real salvo que haya
-     * quedado OBSOLETA (se registró después una operación con fecha anterior a la captura). Cada
-     * `backfillUser` además corrige las filas cuyo valor no coincide con la regla; ver ese método y
-     * `@sextante/core/snapshot-staleness`. El frontend la usa para no presentar una aproximación
-     * con la misma certeza que un dato real.
+     * `true` si la fecha es anterior a `trackingSince` (fecha UTC del `created_at` más antiguo
+     * de sus posiciones): reconstrucción a partir de los lotes, valorada con la caché de
+     * cierres. Desde `trackingSince` es `false` aunque la reescriba el backfill. La captura real
+     * (`captureUser`) siempre sustituye la fila; una reconstrucción solo pisa filas estimadas u
+     * obsoletas (operación registrada después con fecha anterior a la captura). Ver
+     * `backfillUser` y `@sextante/core/snapshot-staleness`. El frontend la usa para no
+     * presentar una aproximación con la certeza de un dato real.
      */
     estimated: boolean('estimated').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -248,13 +202,10 @@ export const portfolioSnapshots = pgTable(
 export type PortfolioSnapshot = typeof portfolioSnapshots.$inferSelect;
 
 /**
- * Configuraciones guardadas de una calculadora ("mi plan FIRE a los 45"). `slug` identifica
- * la calculadora (el mismo del `registry.ts` del frontend) e `inputs` guarda sus campos tal
- * cual, como `jsonb`: el esquema de entrada de cada calculadora vive en el frontend y cambia
- * con ella, así que tipar aquí cada una acoplaría la API a 26 formularios.
- *
- * NO es almacenamiento libre: el servicio acota el tamaño del JSON, el número de escenarios
- * por usuario y la forma del `slug` (ver `SavedScenariosService`). FK con borrado en cascada.
+ * Configuraciones guardadas de una calculadora. `inputs` es `jsonb` tal cual: el esquema de
+ * cada calculadora vive en el frontend y tiparlo aquí acoplaría la API a 26 formularios. No es
+ * almacenamiento libre: el servicio acota tamaño del JSON, nº de escenarios por usuario y forma
+ * del `slug` (ver `SavedScenariosService`).
  */
 export const savedScenarios = pgTable(
   'saved_scenarios',
@@ -263,7 +214,7 @@ export const savedScenarios = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    // Slug de la calculadora (p. ej. "fire-basico"). Minúsculas, dígitos y guiones.
+    // Slug de la calculadora (el del `registry.ts` del frontend): minúsculas, dígitos y guiones.
     slug: varchar('slug', { length: 64 }).notNull(),
     name: varchar('name', { length: 100 }).notNull(),
     inputs: jsonb('inputs').$type<Record<string, unknown>>().notNull(),
@@ -282,26 +233,22 @@ export const savedScenarios = pgTable(
 export type SavedScenario = typeof savedScenarios.$inferSelect;
 
 /**
- * Precios de cierre (EOD) por símbolo y día. Caché propia: el frontend SIEMPRE lee de
- * aquí, nunca de la API externa. Un job diario refresca los símbolos en uso (compartido
- * entre TODOS los usuarios: 1 fila por símbolo y día, no por usuario), así que el tráfico
- * a la API de cotización es mínimo. Ver `_local/datos-inversiones-api.md`.
+ * Precios de cierre (EOD) por símbolo y día. Caché propia compartida por todos los usuarios
+ * (una fila por símbolo y día): el frontend lee siempre de aquí y un job diario refresca los
+ * símbolos en uso. Ver `_local/datos-inversiones-api.md`.
  *
- * `symbol` es el símbolo ya resuelto a la fuente de precios (hoy Yahoo: "AAPL", "EUNL.DE",
- * "BTC-USD"). La traducción ticker/ISIN → símbolo es responsabilidad del `SymbolResolver`
- * (hoy identidad; OpenFIGI más adelante), no de esta tabla.
- *
- * Precisión: `numeric(20,8)` cubre tanto precios grandes como fracciones de cripto.
+ * `symbol` ya está resuelto a la fuente de precios; la traducción ticker/ISIN → símbolo es del
+ * `SymbolResolver`. `numeric(20,8)` cubre precios grandes y fracciones de cripto.
  */
 export const instrumentPrices = pgTable(
   'instrument_prices',
   {
     symbol: varchar('symbol', { length: 40 }).notNull(),
-    // Fecha del cierre (en UTC). En findes/festivos de bolsa, es la del último cierre.
+    // Fecha del cierre (UTC); en findes/festivos, la del último cierre.
     date: date('date').notNull(),
     close: numeric('close', { precision: 20, scale: 8 }).notNull(),
     currency: varchar('currency', { length: 8 }).notNull(),
-    // Proveedor que dio el dato ("yahoo"…), para trazabilidad y futuros fallbacks.
+    // Proveedor del dato ("yahoo"…), para trazabilidad y fallbacks.
     source: varchar('source', { length: 20 }).notNull(),
     fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -311,12 +258,11 @@ export const instrumentPrices = pgTable(
 export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
 
 /**
- * Splits de un instrumento (fuente: `events=split` de la misma llamada de histórico). Los cierres
- * de `instrument_prices` vienen ajustados por splits y las cantidades de los lotes son crudas, así
- * que la reconstrucción del histórico de la cartera necesita saber cuándo hubo splits para
- * expresar los lotes en acciones de hoy (ver `@sextante/core/portfolio-history`).
- * `ratio` = acciones nuevas por cada antigua (10 en un 10:1, 0,5 en un 1:2 inverso). `date` es el
- * primer día cotizando ya con el split (UTC). PK `(symbol, date)`.
+ * Splits de un instrumento. Los cierres de `instrument_prices` vienen ajustados y las
+ * cantidades de los lotes son crudas, así que la reconstrucción del histórico necesita los
+ * splits para expresar los lotes en acciones de hoy (`@sextante/core/portfolio-history`).
+ * `ratio` = acciones nuevas por cada antigua (10 en un 10:1, 0,5 en un 1:2 inverso); `date` =
+ * primer día cotizando ya con el split (UTC).
  */
 export const instrumentSplits = pgTable(
   'instrument_splits',
@@ -329,10 +275,9 @@ export const instrumentSplits = pgTable(
 );
 
 /**
- * Marca de "splits consultados" por símbolo. Una `instrument_splits` sin filas no distingue "sin
- * splits" de "nunca consultado" (los símbolos cacheados antes de existir esta tabla), así que la
- * consulta deja aquí su fecha: el arranque consulta los símbolos en uso sin marca y refresca los
- * de marca antigua (un split posterior al priming no se vería de otro modo).
+ * Marca de "splits consultados" por símbolo: `instrument_splits` vacía no distingue "sin
+ * splits" de "nunca consultado". El arranque consulta los símbolos sin marca y refresca los de
+ * marca antigua (un split posterior al priming no se vería de otro modo).
  */
 export const instrumentSplitChecks = pgTable('instrument_split_checks', {
   symbol: varchar('symbol', { length: 40 }).primaryKey(),
@@ -340,53 +285,38 @@ export const instrumentSplitChecks = pgTable('instrument_split_checks', {
 });
 
 /**
- * Caché de resolución ticker/ISIN → símbolo de la fuente de precios. La traducción real
- * (OpenFIGI: ISIN → ticker+mercado, validado contra Yahoo) es cara y NO cambia con el
- * tiempo, así que se cachea aquí permanentemente.
+ * Caché permanente de resolución ticker/ISIN → símbolo de la fuente de precios (la traducción
+ * es cara y no cambia).
  *
- * `query` es lo que el usuario tecleó, NORMALIZADO (trim + mayúsculas). `symbol` es el
- * símbolo resuelto (p. ej. "EUNL.DE") o NULL si se confirmó que no existe (p. ej. OpenFIGI
- * devolvió 0 coincidencias): cachear el "no encontrado" evita repetir la búsqueda. Los
- * fallos transitorios (red, rate-limit de Yahoo) NO escriben fila, para no "bloquear" un
- * símbolo válido por un hipo puntual. Ver `_local/datos-inversiones-api.md`.
+ * `query` es lo tecleado, normalizado (trim + mayúsculas). `symbol` es NULL si se confirmó que
+ * no existe: cachear el "no encontrado" evita repetir la búsqueda. Los fallos transitorios
+ * (red, rate-limit) no escriben fila, para no bloquear un símbolo válido por un hipo.
  */
 export const instruments = pgTable('instruments', {
   query: varchar('query', { length: 40 }).primaryKey(),
   symbol: varchar('symbol', { length: 40 }),
-  // Cómo se resolvió: "yahoo_search" | "openfigi" | "identity" | "not_found" (trazabilidad).
+  // Cómo se resolvió: "yahoo_search" | "openfigi" | "identity" | "not_found".
   source: varchar('source', { length: 20 }).notNull(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 export type Instrument = typeof instruments.$inferSelect;
 
-/* ------------------------------------------------------------------------- */
-/* MCP / OAuth 2.1                                                            */
-/*                                                                           */
-/* Sextante expone un servidor MCP remoto (Streamable HTTP) para que LLMs    */
-/* externos (Claude, ChatGPT…) lean/escriban la cartera del usuario. La      */
-/* autorización es OAuth 2.1 (estándar MCP): el Authorization Server lo monta */
-/* el propio SDK oficial (`mcpAuthRouter`) y NOSOTROS implementamos el        */
-/* provider y emitimos los tokens. Ver `_local/mcp-integracion.md`.          */
-/*                                                                           */
-/* Anti data-leakage: el `userId` viaja DENTRO del token; toda tool filtra   */
-/* por él (igual que `positions`). Audience binding (el token solo vale para  */
-/* nuestro `…/api/mcp`). Tokens/códigos SOLO se guardan hasheados (SHA-256),  */
-/* nunca en claro (mismo patrón que `login_tokens`).                         */
-/* ------------------------------------------------------------------------- */
+/*
+ * MCP / OAuth 2.1. El Authorization Server lo monta el SDK (`mcpAuthRouter`); nosotros
+ * implementamos el provider y emitimos los tokens (`_local/mcp-integracion.md`).
+ * El `userId` viaja dentro del token y toda tool filtra por él; audience binding al `…/api/mcp`;
+ * tokens y códigos solo se guardan hasheados (SHA-256), como `login_tokens`.
+ */
 
 /**
- * Clientes OAuth registrados, normalmente vía Dynamic Client Registration (RFC 7591):
- * cuando el usuario conecta Claude/ChatGPT, su cliente se registra aquí automáticamente.
+ * Clientes OAuth, normalmente vía Dynamic Client Registration (RFC 7591). Se guarda la info
+ * completa (`OAuthClientInformationFull`) como `jsonb`, justo lo que lee/escribe el
+ * `clientsStore` del SDK. El cliente es anónimo (sin `userId`): el consentimiento vive en
+ * `oauth_grants`.
  *
- * Guardamos la información completa del cliente (la forma que define el SDK,
- * `OAuthClientInformationFull`) como `jsonb`, porque es justo lo que el `clientsStore`
- * del SDK lee/escribe. El cliente DCR es ANÓNIMO (no hay `userId`): el vínculo
- * usuario↔cliente —el consentimiento— vive en `oauth_grants`, no aquí.
- *
- * Nota seguridad: los clientes MCP públicos (Claude/ChatGPT) usan PKCE sin
- * `client_secret`; cuando hay secreto, el SDK lo compara en claro, así que se conserva
- * dentro del JSON tal cual lo exige la librería (PKCE es la barrera real).
+ * Los clientes públicos (Claude/ChatGPT) usan PKCE sin `client_secret`; si lo hay, el SDK lo
+ * compara en claro, así que se conserva en el JSON (PKCE es la barrera real).
  */
 export const oauthClients = pgTable('oauth_clients', {
   clientId: text('client_id').primaryKey(),
@@ -398,10 +328,9 @@ export const oauthClients = pgTable('oauth_clients', {
 export type OAuthClientRow = typeof oauthClients.$inferSelect;
 
 /**
- * Consentimientos: qué scopes ha concedido un usuario a un cliente. Es la base jurídica
- * (RGPD) del acceso y lo que se lista/revoca en "Aplicaciones conectadas". Único por
- * `(userId, clientId)`: un cliente tiene un consentimiento por usuario (los scopes se
- * actualizan en sitio). FK con borrado en cascada para "borrar mi cuenta".
+ * Consentimientos: scopes que un usuario concede a un cliente (base jurídica RGPD; se
+ * lista/revoca en "Aplicaciones conectadas"). Único por `(userId, clientId)`: los scopes se
+ * actualizan en sitio.
  */
 export const oauthGrants = pgTable(
   'oauth_grants',
@@ -424,11 +353,10 @@ export const oauthGrants = pgTable(
 export type OAuthGrant = typeof oauthGrants.$inferSelect;
 
 /**
- * Códigos de autorización (PKCE), efímeros y de UN SOLO USO. Se guardan SOLO hasheados.
- * Ligados a `(clientId, redirectUri, codeChallenge, resource, userId)` para que el canje
- * valide que nada cambió entre `/authorize` y `/token`. El SDK valida el `code_verifier`
- * contra `codeChallenge` (PKCE) por nosotros; nosotros validamos lo demás y el single-use
- * atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`, como en `login_tokens`).
+ * Códigos de autorización (PKCE): efímeros, de un solo uso y solo hasheados. Ligados a
+ * `(clientId, redirectUri, codeChallenge, resource, userId)` para validar en el canje que nada
+ * cambió entre `/authorize` y `/token`. El SDK valida el `code_verifier`; nosotros lo demás y
+ * el single-use atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
  */
 export const oauthAuthCodes = pgTable('oauth_auth_codes', {
   codeHash: text('code_hash').primaryKey(),
@@ -439,7 +367,7 @@ export const oauthAuthCodes = pgTable('oauth_auth_codes', {
   scopes: jsonb('scopes').$type<string[]>().notNull(),
   codeChallenge: text('code_challenge').notNull(),
   redirectUri: text('redirect_uri').notNull(),
-  // URI canónico del recurso (RFC 8707) solicitado en `/authorize`; se propaga al token.
+  // URI canónico del recurso (RFC 8707) pedido en `/authorize`; se propaga al token.
   resource: text('resource'),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   consumedAt: timestamp('consumed_at', { withTimezone: true }),
@@ -449,13 +377,10 @@ export const oauthAuthCodes = pgTable('oauth_auth_codes', {
 export type OAuthAuthCode = typeof oauthAuthCodes.$inferSelect;
 
 /**
- * Access y refresh tokens, SOLO hasheados (SHA-256), nunca en claro. Cada token lleva su
- * dueño (`userId`), `clientId`, `scopes`, `audience` (binding RFC 8707) y caducidad.
- *
- * Aislamiento: `verifyAccessToken` resuelve el Bearer → `userId` y RECHAZA si la
- * `audience` no es nuestro `…/api/mcp`. Refresh con rotación: al canjear un refresh se
- * marca `consumedAt` y se emite uno nuevo encadenado por `parentHash` (permite detectar
- * reuso de un refresh ya gastado y cortar la cadena).
+ * Access y refresh tokens, solo hasheados. `verifyAccessToken` resuelve el Bearer a `userId` y
+ * rechaza si la `audience` (RFC 8707) no es nuestro `…/api/mcp`. Refresh con rotación: al
+ * canjearlo se marca `consumedAt` y se emite otro encadenado por `parentHash`, lo que permite
+ * detectar el reuso de un refresh gastado y cortar la cadena.
  */
 export const oauthTokens = pgTable(
   'oauth_tokens',
@@ -471,7 +396,7 @@ export const oauthTokens = pgTable(
     audience: text('audience').notNull(),
     expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
-    // Hash del refresh padre del que nació este token (rotación); null si es el primero.
+    // Hash del refresh padre (rotación); null si es el primero.
     parentHash: text('parent_hash'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -484,9 +409,8 @@ export const oauthTokens = pgTable(
 export type OAuthTokenRow = typeof oauthTokens.$inferSelect;
 
 /**
- * Registro de auditoría de invocaciones MCP: quién (usuario+cliente) llamó a qué tool y
- * con qué resultado. Para trazabilidad e investigación de incidentes (no guarda los datos
- * de la cartera, solo metadatos de la llamada). FK con borrado en cascada.
+ * Auditoría de invocaciones MCP: quién (usuario+cliente) llamó a qué tool y con qué resultado.
+ * Solo metadatos de la llamada, no datos de la cartera.
  */
 export const mcpAuditLog = pgTable(
   'mcp_audit_log',
@@ -503,10 +427,8 @@ export const mcpAuditLog = pgTable(
   },
   (table) => [
     index('mcp_audit_log_user_id_idx').on(table.userId),
-    // Índice por fecha: la tabla crece sin límite (una fila por invocación de tool) y el
-    // reaper de retención la poda con `DELETE ... WHERE created_at < corte`. Sin este
-    // índice esa purga —y cualquier consulta por rango de fechas— haría seq scan sobre
-    // toda la tabla. Descendente porque las consultas interesantes son "lo más reciente".
+    // La tabla crece sin límite y el reaper de retención la poda por fecha: sin este índice
+    // esa purga y las consultas por rango harían seq scan. Descendente: se consulta lo reciente.
     index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
   ],
 );
@@ -514,22 +436,18 @@ export const mcpAuditLog = pgTable(
 export type McpAuditLogRow = typeof mcpAuditLog.$inferSelect;
 
 /**
- * Preferencias de notificación por email de cada usuario. Una fila por usuario, creada la
- * primera vez que las toca: sin fila, todo está DESACTIVADO (las alertas son opt-in).
+ * Preferencias de email por usuario. Sin fila, todo está desactivado (las alertas son opt-in).
  *
- * `lastFireMilestone` es el último hito del objetivo FIRE (25/50/75/100 %) ya avisado. Solo
- * sube: una caída del mercado no vuelve a disparar un hito ya enviado. `null` significa "aún
- * sin referencia": la primera evaluación tras activar las alertas fija el hito actual SIN
- * enviar nada, para no estrenar la suscripción con un aviso de algo que ya se había pasado.
+ * `lastFireMilestone` es el último hito FIRE (25/50/75/100 %) avisado; solo sube, así que una
+ * caída del mercado no repite un hito. `null` = sin referencia: la primera evaluación tras
+ * activar las alertas fija el hito actual sin enviar nada.
  *
- * `fireGoalRef` identifica la versión del objetivo sobre la que se tomó esa referencia
- * (`<id del escenario>@<updatedAt>`). Si el usuario cambia de objetivo o lo edita, la
- * referencia se vuelve a tomar en silencio: un hito del objetivo anterior no dice nada del
- * nuevo (subir el objetivo tras llegar al 100 % no debe dejar las alertas mudas, y bajarlo
- * no debe disparar un aviso esa misma noche).
+ * `fireGoalRef` (`<id del escenario>@<updatedAt>`) identifica la versión del objetivo sobre la
+ * que se tomó esa referencia; si el usuario lo cambia o edita, se retoma en silencio (subir el
+ * objetivo tras el 100 % no debe dejar las alertas mudas, ni bajarlo disparar un aviso).
  *
- * No hay token de baja guardado: el enlace lleva un HMAC del `userId` (ver
- * `notifications/unsubscribe-token.ts`), que no caduca ni hay que rotar.
+ * No se guarda token de baja: el enlace lleva un HMAC del `userId`
+ * (`notifications/unsubscribe-token.ts`).
  */
 export const userNotificationSettings = pgTable('user_notification_settings', {
   userId: uuid('user_id')

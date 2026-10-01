@@ -14,12 +14,12 @@ import { McpService } from './mcp.service.js';
 /**
  * Monta el Authorization Server OAuth (endpoints en la RAÍZ, fuera del prefijo `/api`) y el
  * endpoint MCP `/api/mcp` (Streamable HTTP protegido por Bearer). Se hace aquí, sobre el
- * Express subyacente, porque `mcpAuthRouter` DEBE colgar de la raíz (`/authorize`, `/token`,
+ * Express subyacente, porque `mcpAuthRouter` debe colgar de la raíz (`/authorize`, `/token`,
  * `/register`, `/revoke`, `/.well-known/...`); el prefijo global de Nest solo afecta a los
  * controllers, no a este middleware. Ver `_local/mcp-integracion.md`.
  *
- * Debe llamarse DESPUÉS de `app.use(cookieParser())` (el provider lee la cookie de sesión en
- * `/authorize`) y ANTES de `app.listen()`.
+ * Debe llamarse después de `app.use(cookieParser())` (el provider lee la cookie de sesión en
+ * `/authorize`) y antes de `app.listen()`.
  */
 export function mountMcp(app: NestExpressApplication): void {
   const logger = new Logger('MCP');
@@ -49,9 +49,9 @@ export function mountMcp(app: NestExpressApplication): void {
   });
 
   // CORS para el endpoint MCP. El router OAuth del SDK ya pone CORS en /authorize|token|
-  // register|.well-known, pero /api/mcp lo montamos a mano y SIN esto un cliente de
+  // register|.well-known, pero /api/mcp lo montamos a mano y sin esto un cliente de
   // navegador (MCP Inspector, conectores web) no puede ni leer el 401 de descubrimiento
-  // (necesita ver WWW-Authenticate) ni hacer el preflight del POST. Se monta ANTES del
+  // (necesita ver WWW-Authenticate) ni hacer el preflight del POST. Se monta antes del
   // bearer para que el propio 401 lleve las cabeceras CORS.
   server_.use('/api/mcp', (req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
@@ -70,14 +70,14 @@ export function mountMcp(app: NestExpressApplication): void {
     next();
   });
 
-  // Rate limit del endpoint MCP. Va DESPUÉS del CORS (para que el 429 lleve sus cabeceras y
-  // un cliente de navegador pueda leerlo) y ANTES de los handlers, incluidos el bearer y los
+  // Rate limit del endpoint MCP. Va después del CORS (para que el 429 lleve sus cabeceras y
+  // un cliente de navegador pueda leerlo) y antes de los handlers, incluidos el bearer y los
   // 405: el orden de registro es el orden de ejecución en Express, así que montarlo al final
   // dejaría rutas sin limitar. Ver `mcp-rate-limit.ts` para la elección de clave.
   server_.use('/api/mcp', createMcpRateLimiter());
 
   // Servidor sin estado: no hay stream SSE servidor→cliente ni sesión que cerrar. Tras el
-  // initialize, los clientes abren un GET para el stream; respondemos 405 (NO 404) para que
+  // initialize, los clientes abren un GET para el stream; respondemos 405 (no 404) para que
   // sepan que el endpoint existe y sigan en modo solo-POST en vez de creer que no hay MCP.
   const methodNotAllowed = (_req: Request, res: Response): void => {
     res.status(405).json({

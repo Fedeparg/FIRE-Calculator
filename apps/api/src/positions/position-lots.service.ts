@@ -17,11 +17,7 @@ import {
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 
-/**
- * Lote tal y como lo consume el frontend. Igual que `PositionResponse`, los `numeric` de
- * Drizzle (que llegan como `string`) se exponen como `number` porque la vista es de solo
- * lectura; los cálculos internos NUNCA pasan por aquí (ver `lot-aggregate.ts`).
- */
+/** Lote para el frontend: `numeric` como `number` (solo lectura; los cálculos internos no pasan por aquí). */
 export type PositionLotResponse = {
   id: string;
   positionId: string;
@@ -34,7 +30,7 @@ export type PositionLotResponse = {
   createdAt: string;
 };
 
-/** Lote importado de un bróker tal y como lo recibe `appendImported` (importes en decimal `string`). */
+/** Lote importado de un bróker (importes en decimal `string`). */
 export type ImportedLotInput = {
   externalId: string;
   kind: 'buy' | 'sell';
@@ -50,17 +46,10 @@ export function todayUtc(): string {
 }
 
 /**
- * CRUD de lotes (compras y ventas) de una posición y —lo importante— el RECÁLCULO de
- * `positions.quantity` y `positions.avgPrice` a partir de ellos.
- *
- * COMPATIBILIDAD: `positions` sigue siendo la foto que leen la valoración, las tools MCP y la
- * UI; los lotes son la película. Cada mutación de lotes ocurre DENTRO de una transacción que
- * termina reescribiendo esos dos campos, así que ambos representan siempre lo mismo y nada
- * de lo que existe hoy se rompe aunque la interfaz de lotes esté incompleta.
- *
- * Dependencias: `DRIZZLE` y el emisor de eventos (para avisar de que un lote cambió). La comprobación de propiedad se hace con
- * `findOwnedPosition` (helper compartido) en vez de inyectar `PositionsService`, porque es
- * este servicio el que aquel inyecta (evita el ciclo y el `forwardRef`).
+ * CRUD de lotes y recálculo de `positions.quantity/avgPrice` a partir de ellos. Cada mutación
+ * ocurre dentro de una transacción que termina reescribiendo esos campos, así que foto
+ * (`positions`) y lotes dicen siempre lo mismo. La propiedad se comprueba con
+ * `findOwnedPosition` y no con `PositionsService`, que inyecta a este servicio (evita ciclo).
  */
 @Injectable()
 export class PositionLotsService {
@@ -69,7 +58,6 @@ export class PositionLotsService {
     private readonly events: EventEmitter2,
   ) {}
 
-  /** Avisa de que los lotes de una posición cambiaron (ver `LOT_CHANGED_EVENT`). */
   private emitLotChanged(userId: string, positionId: string, invalidateFrom?: string): void {
     this.events.emit(LOT_CHANGED_EVENT, {
       userId,
@@ -78,18 +66,14 @@ export class PositionLotsService {
     } satisfies LotChangedEvent);
   }
 
-  /** Lotes de una posición del usuario, en orden cronológico (el mismo de la agregación). */
+  /** Lotes de una posición del usuario, en orden cronológico. */
   async listByPosition(userId: string, positionId: string): Promise<PositionLotResponse[]> {
     await findOwnedPosition(this.db, userId, positionId);
     const rows = await this.selectLots(this.db, positionId);
     return rows.map((row) => toResponse(row));
   }
 
-  /**
-   * TODOS los lotes del usuario, de cualquier posición, en orden cronológico. Se apoya en la
-   * columna desnormalizada `userId` (sin join con `positions`). Lo consumen la exportación
-   * RGPD y la tool MCP de histórico de operaciones.
-   */
+  /** Todos los lotes del usuario (por `userId` desnormalizado, sin join); los usan la exportación RGPD y la tool MCP de operaciones. */
   async findAllByUser(userId: string): Promise<PositionLotResponse[]> {
     const rows = await this.db
       .select()
@@ -100,11 +84,7 @@ export class PositionLotsService {
     return rows.map((row) => toResponse(row));
   }
 
-  /**
-   * Añade un lote a una posición del usuario y reagrega. Todo en una transacción: si la
-   * secuencia resultante fuese inválida (una venta que deja la cantidad en negativo), se
-   * revierte y NO queda el lote suelto descuadrando la posición.
-   */
+  /** Añade un lote y reagrega en una transacción: una secuencia inválida (venta en negativo) lo revierte. */
   async create(userId: string, positionId: string, dto: CreatePositionLotDto): Promise<PositionLotResponse> {
     const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
@@ -115,7 +95,6 @@ export class PositionLotsService {
           positionId,
           userId,
           kind: dto.kind,
-          // `numeric` se guarda como string para conservar la precisión exacta.
           quantity: dto.quantity.toString(),
           price: dto.price.toString(),
           fees: (dto.fees ?? 0).toString(),
@@ -131,7 +110,7 @@ export class PositionLotsService {
     return created;
   }
 
-  /** Edita un lote de una posición del usuario y reagrega (misma transacción). */
+  /** Edita un lote y reagrega (misma transacción). */
   async update(
     userId: string,
     positionId: string,
@@ -143,12 +122,12 @@ export class PositionLotsService {
     const updated = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const current = await this.findLot(tx, positionId, lotId);
-      // Mover un lote a una fecha posterior vacía el tramo [antigua, nueva): su `updatedAt` solo
-      // alcanza a las capturas desde la fecha NUEVA, así que se avisa también de la antigua.
+      // Mover un lote a una fecha posterior vacía el tramo [antigua, nueva) y su `updatedAt` solo
+      // alcanza desde la nueva: se avisa también de la antigua.
       if (dto.tradedAt !== undefined && dto.tradedAt !== current.tradedAt) previousDate = current.tradedAt;
 
-      // Sin ningún cambio real no se escribe: tocar `updatedAt` en falso invalidaría las capturas
-      // reales de la posición (ver `staleSnapshotDates`) por una edición cosmética.
+      // Sin cambio real no se escribe: tocar `updatedAt` invalidaría las capturas reales (ver
+      // `staleSnapshotDates`) por una edición cosmética.
       const next = {
         kind: dto.kind ?? current.kind,
         quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
@@ -190,7 +169,7 @@ export class PositionLotsService {
     return updated;
   }
 
-  /** Borra un lote de una posición del usuario y reagrega (misma transacción). */
+  /** Borra un lote y reagrega (misma transacción). */
   async remove(userId: string, positionId: string, lotId: string): Promise<void> {
     // Un lote borrado no deja marca de tiempo: se avisa de su fecha de operación.
     const removedDate = await this.db.transaction(async (tx) => {
@@ -203,12 +182,7 @@ export class PositionLotsService {
     this.emitLotChanged(userId, positionId, removedDate);
   }
 
-  /**
-   * Añade un lote SIN comprobar propiedad (el llamante ya la comprobó) y reagrega. Es el
-   * punto de entrada que usa `PositionsService` para que el alta de una posición y la
-   * combinación de una compra dejen histórico, en lugar de escribir `quantity`/`avgPrice`
-   * a mano (que es justo lo que perdía precisión).
-   */
+  /** Añade un lote sin comprobar propiedad (el llamante ya lo hizo) y reagrega; lo usa `PositionsService` en alta y combinación. */
   async appendLotOwned(
     tx: DatabaseOrTransaction,
     input: {
@@ -232,20 +206,14 @@ export class PositionLotsService {
   }
 
   /**
-   * Añade lotes IMPORTADOS de un bróker a una posición (el llamante ya comprobó propiedad) y
-   * reagrega UNA sola vez al final, en vez de una por lote: una importación son cientos.
+   * Añade lotes importados (el llamante ya comprobó propiedad) y reagrega una sola vez, no por
+   * lote. Idempotente: `ON CONFLICT DO NOTHING` sobre `(user_id, external_id)` descarta los ya
+   * importados, también ante una petición concurrente; devuelve cuántos entraron.
    *
-   * IDEMPOTENTE: `ON CONFLICT DO NOTHING` sobre el índice único parcial `(user_id, external_id)`
-   * descarta los lotes ya importados, también si otra petición concurrente los acaba de
-   * insertar. Devuelve cuántos se insertaron de verdad.
-   *
-   * ORDEN: los lotes llegan ya ordenados por instante de ejecución. El agregado desempata los
-   * del mismo día por `createdAt`, y `defaultNow()` da el MISMO valor a toda una transacción,
-   * así que se asigna uno creciente (+1 ms por lote) para que el orden de ejecución del bróker
-   * (una compra y una venta del mismo día) se respete en el coste medio móvil.
-   *
-   * Si la secuencia resultante es inválida (`NEGATIVE_QUANTITY`), `recompute` lanza y la
-   * transacción del llamante revierte los lotes insertados.
+   * Los lotes llegan ordenados por ejecución, pero el agregado desempata el mismo día por
+   * `createdAt` y `defaultNow()` da el mismo valor a toda la transacción: se asigna uno
+   * creciente (+1 ms) para respetar el orden del bróker en el coste medio móvil.
+   * Una secuencia inválida (`NEGATIVE_QUANTITY`) hace lanzar a `recompute` y revierte el llamante.
    */
   async appendImported(
     tx: DatabaseOrTransaction,
@@ -275,23 +243,16 @@ export class PositionLotsService {
   }
 
   /**
-   * Rehace el histórico de una posición para que refleje EXACTAMENTE una cantidad y un
-   * precio medio declarados a mano (edición manual desde la UI o desde MCP).
-   *
-   * Una edición manual de `quantity`/`avgPrice` es una DECLARACIÓN del estado actual, no una
-   * operación de mercado, así que no se puede expresar como compra ni como venta (bajar el
-   * precio medio no es ninguna de las dos). Criterio:
-   *   - 1 lote (el caso de TODA posición recién migrada o recién creada) → se edita EN SITIO:
-   *     no se pierde nada.
-   *   - 0 lotes → se crea el lote inicial.
-   *   - >1 lote → el histórico se colapsa en un único lote sintético, conservando la fecha
-   *     del lote MÁS ANTIGUO (para no perder el inicio de la serie). Es destructivo a
-   *     propósito: la alternativa —dejar lotes y posición descuadrados— rompería el siguiente
-   *     recálculo. Para conservar el histórico hay que usar los endpoints de lotes.
-   *   - Si hay alguna VENTA, colapsar borraría ganancias ya realizadas (el informe anual de
-   *     plusvalías sale de ellas), así que se rechaza con 409 `HAS_SALES`. Salvo que los
-   *     importes declarados sean los que ya tiene la posición: el formulario de edición los
-   *     envía siempre, y cambiar solo el nombre o el bróker no debe fallar.
+   * Rehace los lotes para que reflejen una cantidad y un precio medio declarados a mano (UI o
+   * MCP). Es una declaración del estado actual, no una operación de mercado (bajar el precio
+   * medio no es compra ni venta):
+   *   - 1 lote: se edita en sitio. 0 lotes: se crea el inicial.
+   *   - más de 1: se colapsan en un lote sintético con la fecha del más antiguo. Es destructivo
+   *     a propósito (lotes y posición descuadrados romperían el siguiente recálculo); para
+   *     conservar el histórico están los endpoints de lotes.
+   *   - con alguna venta se rechaza con 409 `HAS_SALES`: colapsar borraría ganancias realizadas
+   *     (base del informe de plusvalías). Salvo que los importes sean los actuales: el formulario
+   *     los envía siempre y cambiar solo nombre o bróker no debe fallar.
    */
   async declareState(
     tx: DatabaseOrTransaction,
@@ -313,7 +274,7 @@ export class PositionLotsService {
 
     if (existing.length === 1) {
       const [only] = existing;
-      // Declarar lo que ya hay no es un cambio: no se toca el lote (ver `staleSnapshotDates`).
+      // Declarar lo que ya hay no toca el lote (ver `staleSnapshotDates`).
       if (only.kind === 'buy' && sameAmount(only.quantity, input.quantity) && sameAmount(only.price, input.price)) {
         return;
       }
@@ -339,11 +300,7 @@ export class PositionLotsService {
     await this.recompute(tx, input.positionId);
   }
 
-  /**
-   * Reagrega los lotes de una posición y escribe el resultado en `positions`. Es el ÚNICO
-   * sitio que sincroniza foto y película; llamarlo siempre dentro de la transacción de la
-   * mutación que lo motiva.
-   */
+  /** Reagrega los lotes y escribe el resultado en `positions`: único sitio que lo sincroniza; llamar dentro de la transacción de la mutación. */
   async recompute(tx: DatabaseOrTransaction, positionId: string): Promise<LotAggregate> {
     const lots = await this.selectLots(tx, positionId);
     const aggregate = this.aggregate(lots);
@@ -360,7 +317,7 @@ export class PositionLotsService {
     return aggregate;
   }
 
-  /** Agrega traduciendo los errores de la lógica pura a 400 con mensaje para el usuario. */
+  /** Traduce los errores de la lógica pura a 400. */
   private aggregate(lots: readonly AggregatableLot[]): LotAggregate {
     try {
       return aggregateLots(lots);
@@ -381,10 +338,7 @@ export class PositionLotsService {
       .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
   }
 
-  /**
-   * Localiza un lote DENTRO de la posición indicada. Filtrar por `positionId` (ya validada
-   * como propia) impide que un id de lote de otro usuario se cuele por la ruta: sería 404.
-   */
+  /** Filtrar por `positionId` (ya validada como propia) hace que el id de un lote ajeno dé 404. */
   private async findLot(tx: DatabaseOrTransaction, positionId: string, lotId: string): Promise<PositionLot> {
     const [row] = await tx
       .select()
@@ -397,11 +351,7 @@ export class PositionLotsService {
   }
 }
 
-/**
- * ¿Dos importes son el mismo a la escala de la columna? Se compara en coma fija, nunca con
- * `Number()`. Un valor que no se deja leer como decimal plano (p. ej. notación exponencial de
- * un número diminuto) cuenta como distinto: ante la duda, se trata como un cambio real.
- */
+/** ¿Mismo importe a la escala de la columna? Compara en coma fija; un valor ilegible (p. ej. exponencial) cuenta como distinto. */
 export function sameAmount(a: string, b: string): boolean {
   try {
     return parseDecimal(a, AMOUNT_SCALE) === parseDecimal(b, AMOUNT_SCALE);

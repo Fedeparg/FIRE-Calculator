@@ -42,7 +42,7 @@ import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
 /**
  * Registro de las calculadoras de Sextante expuestas por MCP con DOS tools genéricas
  * (`list_calculators` y `calculate`, ver `McpService`), en vez de una tool por calculadora.
- * Ejecutan EXACTAMENTE el mismo código que la web (`@sextante/core`), así que el asistente y la
+ * Ejecutan exactamente el mismo código que la web (`@sextante/core`), así que el asistente y la
  * calculadora no pueden dar cifras distintas. No leen datos del usuario: son funciones puras
  * sobre lo que el cliente envía. La clave es el slug de la web (el mismo que devuelve
  * `list_saved_scenarios`).
@@ -50,7 +50,7 @@ import { FREQUENCIES, type Frequency } from '@sextante/core/projection';
  * Cada entrada declara su esquema zod con límites (importes, tasas, años, simulaciones). Además de
  * documentar las unidades al cliente (se publica como JSON Schema en `list_calculators`), los
  * límites acotan el trabajo que una llamada puede pedir al servidor: el Monte Carlo corre aquí,
- * no en el navegador. Añadir una calculadora es añadir UNA entrada a `CALCULATORS`.
+ * no en el navegador. Añadir una calculadora es añadir una entrada a `CALCULATORS`.
  */
 
 /** Familias de calculadoras, las mismas que agrupa la web. */

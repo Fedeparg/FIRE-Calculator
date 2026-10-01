@@ -4,7 +4,7 @@ import type { EmailService } from './email.service.js';
 import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
 
 /**
- * Transporte de email para desarrollo: NO envía nada, escribe el enlace mágico en
+ * Transporte de email para desarrollo: no envía nada, escribe el enlace mágico en
  * el log. Permite construir y probar todo el flujo de login sin cuenta de Resend ni
  * dominio. En producción se usa `ResendEmailService` (seleccionado por env).
  */

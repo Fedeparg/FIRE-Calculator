@@ -4,10 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
 
-/**
- * Endpoints de precios. La lectura sale SIEMPRE de nuestra DB (caché), nunca de la API
- * externa: a la fuente externa solo va el cron diario (o el refresco manual de dev).
- */
+/** Precios: la lectura sale de nuestra DB; a la fuente externa solo va el cron diario (o el refresco manual de dev). */
 @Controller('prices')
 @UseGuards(JwtAuthGuard)
 export class PricesController {
@@ -16,10 +13,7 @@ export class PricesController {
     private readonly config: ConfigService,
   ) {}
 
-  /**
-   * Último precio conocido (desde DB) de cada ticker pedido. `?symbols=AAPL,EUNL.DE,BTC-USD`.
-   * Devuelve un objeto indexado por el ticker original.
-   */
+  /** `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original. */
   @Get()
   async get(@Query('symbols') symbols?: string): Promise<Record<string, PriceInfo>> {
     const tickers = (symbols ?? '')
@@ -30,20 +24,13 @@ export class PricesController {
     return Object.fromEntries(prices);
   }
 
-  /**
-   * Tasas FX (USD por unidad de cada divisa soportada) desde nuestra DB. Las usa el total
-   * agregado de la cartera para convertir a la divisa que elija el usuario.
-   */
+  /** Tasas FX (USD por unidad de divisa) para convertir el total agregado de la cartera. */
   @Get('fx')
   async fx(): Promise<FxRates> {
     return this.prices.getFxRates();
   }
 
-  /**
-   * Fuerza un refresco contra la fuente externa. Es una comodidad de DESARROLLO (en
-   * producción lo hace el cron diario): se bloquea con NODE_ENV=production para no exponer
-   * un disparador de tráfico externo.
-   */
+  /** Refresco manual solo para desarrollo: bloqueado en producción para no exponer un disparador de tráfico externo. */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(): Promise<RefreshSummary> {

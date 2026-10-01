@@ -26,11 +26,11 @@ function todayUtc(): string {
 
 /**
  * Evalúa los hitos del objetivo FIRE de cada usuario con alertas activas, justo después de la
- * captura nocturna de snapshots, y envía un email por cada hito NUEVO alcanzado.
+ * captura nocturna de snapshots, y envía un email por cada hito nuevo alcanzado.
  *
  * Por usuario:
  *   1. Objetivo = el escenario FIRE guardado más reciente (sin escenario, nada que vigilar).
- *   2. Valor = el snapshot REAL de hoy (no uno estimado por backfill), convertido a la divisa
+ *   2. Valor = el snapshot real de hoy (no uno estimado por backfill), convertido a la divisa
  *      del objetivo con las tasas FX guardadas en ese mismo snapshot.
  *   3. Si aún no hay referencia (recién activadas) o el objetivo ha cambiado desde que se tomó,
  *      se fija el hito actual sin enviar nada.

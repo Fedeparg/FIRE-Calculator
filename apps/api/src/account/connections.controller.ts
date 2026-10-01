@@ -19,7 +19,7 @@ export interface ConnectedApp {
 /**
  * Gestión de "Aplicaciones conectadas" (RGPD): listar y revocar los clientes OAuth/MCP a los
  * que el usuario ha dado acceso a su cartera. Todo exige sesión (JwtAuthGuard) y el `userId`
- * se lee SIEMPRE del JWT: nadie puede ver ni revocar las conexiones de otro.
+ * se lee siempre del JWT: nadie puede ver ni revocar las conexiones de otro.
  * Ver `_local/mcp-integracion.md`.
  */
 @Controller('account/connections')

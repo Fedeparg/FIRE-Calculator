@@ -1,12 +1,9 @@
-// Agregación de lotes → (cantidad, precio medio) de una posición. Lógica PURA (sin Nest ni
-// BD), testeable, y el único sitio donde se decide la semántica del coste medio.
+// Agregación de lotes → (cantidad, precio medio) de una posición. Lógica pura y único sitio
+// donde se decide la semántica del coste medio.
 //
-// ⚠️ PRECISIÓN: aquí NO se pasa por `number` en ningún momento. Los `numeric` de Postgres
-// llegan como `string` y se operan como enteros de coma fija (`bigint`), igual que haría un
-// motor de base de datos. El código anterior de `combine` hacía la media ponderada con
-// `Number()`, lo que introduce el error binario clásico (0.1 + 0.2 ≠ 0.3) y, acumulado sobre
-// decenas de operaciones, desplaza el precio medio en céntimos. Ese error NO se propaga a los
-// lotes.
+// Precisión: los `numeric` de Postgres llegan como `string` y se operan como enteros de coma
+// fija (`bigint`); pasar por `number` introduce error binario (0.1 + 0.2 ≠ 0.3) que, sobre
+// decenas de operaciones, desplaza el precio medio en céntimos.
 
 import type { PositionLotKind } from '../db/schema.js';
 
@@ -14,15 +11,10 @@ import type { PositionLotKind } from '../db/schema.js';
 export const AMOUNT_SCALE = 6;
 
 /**
- * Escala interna del coste acumulado. Un coste es `cantidad · precio`, es decir el producto
- * de dos números de escala 6, luego 12 decimales lo representan EXACTAMENTE: mientras solo
- * haya compras, el acumulado no pierde ni un dígito.
- *
- * LÍMITE DE PRECISIÓN DOCUMENTADO: la única operación que redondea es la VENTA, que retira
- * coste al coste medio vigente (`coste' = coste · (cantidad − vendida) / cantidad`); ese
- * cociente se redondea a 12 decimales con redondeo half-up. El error máximo por venta es de
- * 5·10⁻¹³ unidades monetarias, seis órdenes de magnitud por debajo de la escala en la que se
- * guarda el resultado (6 decimales), así que es irrelevante incluso tras miles de ventas.
+ * Escala interna del coste acumulado: cantidad · precio son dos escalas 6, así que 12
+ * decimales lo representan exactamente mientras solo haya compras. Solo la venta redondea
+ * (half-up, `coste · (cantidad − vendida) / cantidad`): error máximo 5·10⁻¹³ por venta, seis
+ * órdenes por debajo de la escala de almacenamiento.
  */
 export const COST_SCALE = 12;
 
@@ -30,33 +22,27 @@ export const COST_SCALE = 12;
 export interface AggregatableLot {
   id: string;
   kind: PositionLotKind;
-  /** Cantidad de la operación, decimal en `string` (tal y como lo devuelve Drizzle). */
+  /** Decimal en `string`, tal y como lo devuelve Drizzle. */
   quantity: string;
-  /** Precio unitario de la operación, decimal en `string`. */
   price: string;
   /** Fecha de la operación (YYYY-MM-DD). */
   tradedAt: string;
-  /** Instante de alta de la fila; desempata los lotes del MISMO día. */
+  /** Instante de alta; desempata los lotes del mismo día. */
   createdAt: Date;
 }
 
 /** Resultado de agregar: los dos campos que `positions` mantiene sincronizados. */
 export interface LotAggregate {
-  /** Cantidad viva = compras − ventas, como decimal en `string` con 6 decimales. */
+  /** Cantidad viva = compras − ventas, decimal en `string` con 6 decimales. */
   quantity: string;
-  /** Precio medio de coste de las participaciones vivas, decimal en `string` con 6 decimales. */
   avgPrice: string;
-  /**
-   * Coste total vivo (cantidad · precio medio), decimal en `string` con 6 decimales. Es
-   * INFORMATIVO (no tiene columna propia): la base de la futura fiscalidad de plusvalías.
-   */
+  /** Coste vivo (cantidad · precio medio). Informativo, sin columna propia: base de la futura fiscalidad de plusvalías. */
   cost: string;
 }
 
 /** Códigos de error de la agregación (el servicio los traduce a 400). */
 export type LotAggregateErrorCode = 'NEGATIVE_QUANTITY' | 'OVERFLOW' | 'INVALID_DECIMAL';
 
-/** Error de agregación con código, para que la capa HTTP dé un mensaje concreto. */
 export class LotAggregateError extends Error {
   constructor(
     readonly code: LotAggregateErrorCode,
@@ -67,20 +53,16 @@ export class LotAggregateError extends Error {
   }
 }
 
-/**
- * Tope de `numeric(18,6)`: 12 dígitos enteros. Se comprueba aquí para que una secuencia de
- * lotes que desbordaría la columna dé un 400 con mensaje claro en vez de un 500 del driver.
- */
+/** Tope de `numeric(18,6)` (12 dígitos enteros): un 400 claro en vez de un 500 del driver. */
 const MAX_AMOUNT_UNITS = 10n ** 12n;
 
 const ONE_AMOUNT = 10n ** BigInt(AMOUNT_SCALE);
 
 /**
- * Tolerancia de redondeo de una venta: 1 unidad a la escala de la columna (10⁻⁶). Las cantidades
- * se redondean a 6 decimales al guardarlas (el export de un bróker trae hasta 10), así que
- * vender "todo" puede exceder lo comprado por esa diferencia de redondeo. Un exceso dentro de
- * la tolerancia es ruido y deja la posición en exactamente 0; mayor, es una venta de más
- * (no admitimos cortos) y falla.
+ * Tolerancia de una venta: 1 unidad de la escala de la columna (10⁻⁶). Las cantidades se
+ * redondean a 6 decimales al guardarlas (un bróker exporta hasta 10), así que vender "todo"
+ * puede exceder lo comprado por redondeo: dentro de la tolerancia deja la posición en 0;
+ * más allá es una venta de más (no hay cortos) y falla.
  */
 const SELL_ROUNDING_TOLERANCE = 1n;
 
@@ -88,9 +70,8 @@ const SELL_ROUNDING_TOLERANCE = 1n;
 const PLAIN_DECIMAL = /^[+-]?(\d+)(?:\.(\d+))?$/;
 
 /**
- * Convierte un decimal en `string` a entero de coma fija con `scale` decimales. Redondea
- * half-up si la cadena trae más decimales de los que caben (no debería, pero un `numeric`
- * de otra escala no debe corromper el cálculo en silencio).
+ * Convierte un decimal en `string` a entero de coma fija con `scale` decimales, con redondeo
+ * half-up si trae más decimales de los que caben.
  */
 export function parseDecimal(value: string, scale: number): bigint {
   const match = PLAIN_DECIMAL.exec(value.trim());
@@ -110,7 +91,7 @@ export function parseDecimal(value: string, scale: number): bigint {
   return negative ? -units : units;
 }
 
-/** Formatea un entero de coma fija como decimal en `string` (inverso de `parseDecimal`). */
+/** Inverso de `parseDecimal`. */
 export function formatDecimal(units: bigint, scale: number): string {
   const negative = units < 0n;
   const digits = (negative ? -units : units).toString().padStart(scale + 1, '0');
@@ -129,10 +110,8 @@ function divRoundHalfUp(dividend: bigint, divisor: bigint): bigint {
 }
 
 /**
- * Orden canónico de los lotes: `(tradedAt, createdAt, id)`. `tradedAt` es un `date` sin hora,
- * así que dos operaciones del mismo día empatarían y el coste medio móvil dependería del
- * orden en que la BD devolviese las filas. Se desempata por instante de alta y, en última
- * instancia, por id: el resultado es determinista SIEMPRE.
+ * Orden canónico `(tradedAt, createdAt, id)`. `tradedAt` no lleva hora: sin desempate, el
+ * coste medio móvil dependería del orden en que la BD devuelva las filas del mismo día.
  */
 export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
   if (a.tradedAt !== b.tradedAt) return a.tradedAt < b.tradedAt ? -1 : 1;
@@ -143,21 +122,16 @@ export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
 }
 
 /**
- * Recorre los lotes en orden cronológico y devuelve la cantidad viva y el precio medio de
- * coste, que es lo que `positions.quantity` y `positions.avgPrice` deben reflejar.
+ * Recorre los lotes en orden cronológico y devuelve cantidad viva y precio medio de coste
+ * (lo que reflejan `positions.quantity` y `positions.avgPrice`).
  *
- * SEMÁNTICA: **coste medio móvil** (el estándar contable, y lo que ya hacía `combine`):
- *   - compra  → `cantidad += q`, `coste += q · p`
- *   - venta   → `cantidad −= q`, `coste −= q · precioMedioVigente` (el precio medio NO cambia)
- *
- * No es lo mismo que la media ponderada de TODAS las compras cuando hay ventas por medio.
- * Ejemplo: compra 10@100, venta 5, compra 5@200 → cantidad 10 y medio 150 (coste vivo
- * 500 + 1000), no 133,33 (que sería promediar las compras ignorando la venta).
+ * Semántica: coste medio móvil. Compra: `cantidad += q`, `coste += q · p`. Venta:
+ * `cantidad −= q`, `coste −= q · precioMedioVigente` (el medio no cambia). No equivale a
+ * promediar todas las compras: compra 10@100, venta 5, compra 5@200 → cantidad 10, medio 150
+ * (no 133,33).
  *
  * @throws {LotAggregateError} `NEGATIVE_QUANTITY` si una venta deja la cantidad en negativo
- *   por más de la tolerancia de redondeo (no admitimos cortos: no se puede vender lo que no se
- *   tiene; un exceso de hasta 10⁻⁶ se trata como 0), `OVERFLOW` si el resultado
- *   no cabe en `numeric(18,6)`.
+ *   por encima de la tolerancia; `OVERFLOW` si el resultado no cabe en `numeric(18,6)`.
  */
 export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
   const ordered = [...lots].sort(compareLots);
@@ -172,7 +146,7 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
 
     if (lot.kind === 'buy') {
       quantity += q;
-      // escala 6 · escala 6 = escala 12: producto EXACTO, sin redondeo.
+      // escala 6 · escala 6 = escala 12: producto exacto, sin redondeo.
       cost += q * p;
       continue;
     }
@@ -185,21 +159,17 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
         'La venta deja la posición en negativo: no puedes vender más de lo que tienes',
       );
     }
-    // Retira coste al coste medio vigente. Se hace como `coste · restante / cantidad` (una
-    // sola división) en vez de calcular el precio medio y multiplicar: así solo se redondea
-    // una vez, no dos.
+    // `coste · restante / cantidad` en una sola división: se redondea una vez, no dos.
     cost = remaining === 0n || quantity === 0n ? 0n : divRoundHalfUp(cost * remaining, quantity);
     quantity = remaining;
   }
 
   // avgPrice = coste / cantidad. En unidades: (cost/10¹²) / (quantity/10⁶) · 10⁶ = cost/quantity.
   const avgPrice = quantity > 0n ? divRoundHalfUp(cost, quantity) : 0n;
-  // Coste vivo llevado a escala 6 para exponerlo junto a los otros dos.
   const costAmount = divRoundHalfUp(cost, 10n ** BigInt(COST_SCALE - AMOUNT_SCALE));
 
-  // Solo se comprueban los DOS valores que se escriben en `numeric(18,6)`. El coste vivo no
-  // tiene columna (es informativo, para la futura fiscalidad), así que un coste enorme con
-  // cantidad y precio medio dentro de rango es perfectamente válido y no debe rechazarse.
+  // Solo se comprueban los dos valores que van a `numeric(18,6)`: el coste vivo no tiene
+  // columna, así que uno enorme con cantidad y medio en rango es válido.
   for (const units of [quantity, avgPrice]) {
     if (units >= MAX_AMOUNT_UNITS * ONE_AMOUNT) {
       throw new LotAggregateError('OVERFLOW', 'El resultado de los lotes excede el máximo admitido por la posición');

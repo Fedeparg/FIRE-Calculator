@@ -1,19 +1,11 @@
-/**
- * Abstracción de la fuente de precios. El resto del sistema no sabe de dónde vienen los
- * datos: hoy Yahoo (no oficial, gratis), mañana una fuente de pago (EODHD/Twelve Data) sin
- * tocar nada salvo añadir otra implementación. Ver `_local/datos-inversiones-api.md`.
- *
- * La interfaz es "batch-shaped" a propósito (`symbols[]`): aunque Yahoo obligue hoy a una
- * llamada por símbolo, un proveedor de pago futuro puede resolver el lote en una sola.
- */
+/** Abstracción de la fuente de precios (hoy Yahoo). */
 export interface Quote {
   /** Símbolo tal y como lo entiende la fuente (p.ej. "AAPL", "EUNL.DE", "BTC-USD"). */
   symbol: string;
-  /** Precio de cierre / último. */
   close: number;
-  /** Divisa del precio (ISO 4217, p.ej. "EUR", "USD"). */
+  /** ISO 4217. */
   currency: string;
-  /** Fecha del cierre en formato YYYY-MM-DD (UTC). */
+  /** Fecha del cierre, YYYY-MM-DD (UTC). */
   date: string;
 }
 
@@ -25,42 +17,24 @@ export interface SplitEvent {
   ratio: number;
 }
 
-/** Histórico de un símbolo: serie de cierres y splits ocurridos en ese periodo. */
 export interface PriceHistory {
   quotes: Quote[];
   splits: SplitEvent[];
 }
 
 export interface PriceProvider {
-  /** Nombre corto del proveedor, para trazabilidad (se guarda en `instrument_prices.source`). */
+  /** Se guarda en `instrument_prices.source` para trazabilidad. */
   readonly name: string;
 
-  /**
-   * Devuelve la cotización de cada símbolo pedido. Los símbolos que fallen o no existan
-   * simplemente NO aparecen en el mapa (no se lanza por un símbolo malo): el job debe
-   * poder refrescar el resto aunque uno falle.
-   */
+  /** Los símbolos que fallen o no existan no aparecen en el mapa: el job debe poder refrescar el resto. */
   getQuotes(symbols: string[]): Promise<Map<string, Quote>>;
 
   /**
-   * Devuelve la SERIE de cierres diarios del símbolo (y sus splits), del más antiguo al más reciente, para
-   * los últimos 5 años aproximadamente (una sola llamada). Sirve para que un símbolo recién dado de alta tenga
-   * histórico desde el primer día, en vez de tener que esperar meses a que el cron diario lo
-   * construya cierre a cierre.
-   *
-   * Es una llamada por símbolo y solo se usa en el ALTA/importación (`primeSymbol`) y al reparar un hueco de cobertura
-   * (`ensureHistory`), nunca en el refresco
-   * diario: pedir un año entero de cada símbolo cada día multiplicaría el tráfico a la fuente
-   * sin aportar nada (el cierre del día ya lo trae `getQuotes`).
-   *
-   * Los cierres vienen AJUSTADOS por splits (en acciones de hoy); los splits se devuelven aparte para
-   * poder expresar las cantidades históricas en la misma base.
-   *
-   * Devuelve una serie vacía —nunca lanza— si el símbolo no existe o la fuente falla: el alta de una
-   * posición no puede depender de esto.
+   * Cierres diarios (~5 años, antiguo a reciente) ajustados por splits; los splits van aparte
+   * para expresar las cantidades históricas en la misma base. Solo para alta/importación y
+   * reparar huecos, no para el refresco diario. Serie vacía, sin lanzar, si falla la fuente.
    */
   getHistory(symbol: string): Promise<PriceHistory>;
 }
 
-/** Token de inyección para el proveedor de precios activo. */
 export const PRICE_PROVIDER = Symbol('PRICE_PROVIDER');

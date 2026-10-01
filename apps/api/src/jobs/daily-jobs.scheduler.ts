@@ -9,57 +9,33 @@ import { PricesService } from '../prices/prices.service.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
-/**
- * Refresco intradía por defecto: en punto, de 9:00 a 21:00 hora de Madrid, de lunes a viernes.
- * Cubre la sesión europea (9:00-17:30) y casi toda la de EE. UU. (15:30-22:00), y termina antes
- * del trabajo nocturno de las 22:30 para no pisarse con él.
- */
+/** Intradía: en punto de 9:00 a 21:00 (Madrid), lunes a viernes; cubre Europa y casi todo EE. UU. y acaba antes del nocturno. */
 export const DEFAULT_INTRADAY_CRON = '0 0 9-21 * * 1-5';
-/** Valor de `PRICE_INTRADAY_CRON` que desactiva el refresco intradía (interruptor de emergencia). */
+/** Valor de `PRICE_INTRADAY_CRON` que desactiva el intradía. */
 export const INTRADAY_OFF = 'off';
 const TIME_ZONE = 'Europe/Madrid';
 
 /**
- * Trabajo nocturno de la cartera, en CUATRO pasos y en este orden:
- *   1. Refresco de precios de todos los símbolos en uso y de los pares FX.
- *   2. Snapshot de valoración de la cartera de cada usuario (captura REAL de hoy).
- *   3. Reconstrucción del histórico desde la primera operación (autocurativa).
- *   4. Alertas de hitos del objetivo FIRE (opt-in), sobre el snapshot real recién capturado.
+ * Trabajo nocturno (22:30 Madrid, `PRICE_REFRESH_CRON`; ya cerradas las bolsas europea y
+ * estadounidense), todos los días: los findes las acciones devuelven el último cierre, la cripto
+ * se actualiza y el snapshot diario no puede tener huecos. Pasos, en orden:
+ *   1. Refresco de precios (símbolos en uso y pares FX).
+ *   2. Snapshot de cada cartera. Va tras el 1: capturar antes guardaría el cierre de ayer con fecha de hoy.
+ *   3. Reconstrucción del histórico, autocurativa. Solo lee precios de la caché (no vuelve a bajar
+ *      5 años cada noche); repara altas reconstruidas con el histórico a medio traer.
+ *   4. Alertas de hitos FIRE (opt-in) sobre el snapshot recién capturado.
  *
- * El orden de 1→2 importa: el snapshot valora con el último precio conocido, así que
- * capturarlo ANTES del refresco guardaría el cierre de ayer con fecha de hoy. El paso 3 va
- * después y solo LEE precios de la caché (3 lecturas y unas pocas escrituras por usuario): no
- * llama a la fuente externa, así que el histórico largo (5 años) no se vuelve a descargar cada
- * noche. Sirve para reparar reconstrucciones parciales de altas que corrieron mientras el
- * histórico aún se estaba trayendo; el histórico que falte lo pide `ensureHistoryForActivePositions`
- * al arrancar y `primeSymbol` al dar de alta.
+ * El intradía (`PRICE_INTRADAY_CRON`, `off` lo desactiva) solo actualiza precios y FX; el
+ * nocturno deja la fila del día con el cierre. Ambos comparten un cerrojo en memoria: si uno sigue
+ * en marcha, el otro se salta (y se registra) en vez de duplicar peticiones a Yahoo. El cerrojo
+ * es de proceso, no distribuido: vale porque la API corre en una sola réplica.
  *
- * Se ejecuta TODOS los días (no solo en días de bolsa): en findes/festivos las acciones
- * devuelven el último cierre y la cripto —que cotiza 24/7— se actualiza igualmente; el
- * snapshot diario tampoco puede tener huecos si la gráfica ha de ser continua.
- *
- * Hora: 22:30 de Madrid, ya cerrada tanto la bolsa europea como la estadounidense (que
- * cierra ~22:00 hora de Madrid). Configurable con `PRICE_REFRESH_CRON`.
- *
- * Además hay un refresco INTRADÍA (`PRICE_INTRADAY_CRON`, por defecto cada hora en días
- * laborables) que SOLO actualiza precios y FX: la fila del día se sobrescribe con el último
- * precio y el trabajo nocturno la deja con el cierre. No captura snapshots, que son uno al día.
- * `off` lo desactiva sin tocar el nocturno. Los dos comparten un cerrojo en memoria: si uno
- * sigue en marcha cuando toca el otro, el segundo se salta (y se registra) en vez de lanzar
- * dos rondas de peticiones a Yahoo a la vez.
- *
- * El cerrojo es de proceso, no distribuido: vale porque la API corre en UNA sola réplica.
- *
- * POR QUÉ AQUÍ y no en `prices/`: el snapshot necesita la valoración (`PortfolioModule`), que
- * a su vez depende de `PricesModule`. Colgar el cron de `prices/` obligaría a la dependencia
- * inversa —un ciclo que solo se rompe con `forwardRef`—, así que el orquestador vive en su
- * propio módulo, por encima de los dos. En DESARROLLO no se depende de esto: está el trigger
- * manual `POST /api/prices/refresh`.
+ * Vive aquí y no en `prices/` porque el snapshot necesita `PortfolioModule`, que depende de
+ * `PricesModule`: colgarlo de `prices/` crearía un ciclo que solo se rompe con `forwardRef`.
  */
 @Injectable()
 export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap {
   private readonly logger = new Logger(DailyJobsScheduler.name);
-  /** Cerrojo compartido por el trabajo nocturno y el intradía (ver la cabecera). */
   private running = false;
 
   constructor(
@@ -90,15 +66,12 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   /**
-   * Pasada de arranque: repara de inmediato a los usuarios YA existentes en producción (cuyo
-   * histórico de precios o de snapshots pueda tener huecos previos a este cambio), sin
-   * esperar al próximo cron. Se dispara cuando TODA la app terminó de inicializarse —no en
-   * `onModuleInit`, que depende del orden relativo entre `PricesModule` y `PortfolioModule`—
-   * y sin bloquear `listen()`: `void`, tolerante a fallos en sus dos pasos.
+   * Pasada de arranque: repara huecos de usuarios existentes sin esperar al cron. Va aquí y no
+   * en `onModuleInit` (depende del orden entre `PricesModule` y `PortfolioModule`), sin bloquear
+   * `listen()` y tolerante a fallos.
    */
   onApplicationBootstrap(): void {
-    // Bajo el mismo cerrojo que el nocturno y el intradía: la pasada de arranque puede pedir
-    // decenas de históricos a Yahoo y no debe solaparse con un refresco.
+    // Mismo cerrojo: puede pedir decenas de históricos a Yahoo y no debe solaparse con un refresco.
     void this.exclusive('arranque', () => this.bootstrapBackfill());
   }
 
@@ -115,16 +88,11 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     }
   }
 
-  /**
-   * Ejecuta los tres pasos capturando errores por separado: si la fuente de precios está
-   * caída, el snapshot se guarda igual (con los precios de ayer, que es información válida y
-   * mejor que un hueco en la serie), y ningún fallo tumba el proceso.
-   */
+  /** Pasos con errores capturados por separado: con la fuente caída el snapshot se guarda igual (precios de ayer, mejor que un hueco). */
   async run(): Promise<void> {
     await this.exclusive('nocturno', () => this.runNightly());
   }
 
-  /** Refresco intradía: solo precios y FX, sin snapshots. */
   async runIntraday(): Promise<void> {
     await this.exclusive('intradía', async () => {
       try {
@@ -136,10 +104,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     });
   }
 
-  /**
-   * Ejecuta `task` si no hay otro trabajo en marcha; si lo hay, lo salta y lo registra. El
-   * cerrojo se libera siempre (`finally`), incluso si `task` lanza.
-   */
+  /** Ejecuta `task` si no hay otro trabajo en marcha; el cerrojo se libera siempre. */
   private async exclusive(label: string, task: () => Promise<void>): Promise<void> {
     if (this.running) {
       this.logger.warn(`Trabajo ${label} omitido: hay otro trabajo de precios en marcha`);
@@ -160,7 +125,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       this.logger.error(`Refresco de precios falló: ${(error as Error).message}`);
     }
 
-    // Fecha de la captura: las alertas evalúan EXACTAMENTE ese snapshot (ver `evaluateAll`).
+    // Las alertas evalúan este snapshot concreto (ver `evaluateAll`).
     let captureDate: string | undefined;
     try {
       captureDate = (await this.snapshots.captureAll()).date;

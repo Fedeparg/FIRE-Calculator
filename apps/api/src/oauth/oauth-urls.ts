@@ -2,15 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 /**
- * URLs canónicas del Authorization Server (issuer) y del Resource Server MCP (audiencia).
- *
- * Se derivan UNA sola vez de `APP_URL` (el origen público same-origin: el navegador y los
- * clientes siempre hablan con el mismo origen, que enruta `/api` y las rutas OAuth a esta
- * API). Mantenerlas idénticas al emitir, en la metadata y al verificar es lo que evita el
- * 90 % de los "token rejected" de OAuth/MCP (issuer/audience inconsistentes).
- *
- * - `issuer`   = origen público, p. ej. `http://localhost:3000` (dev).
- * - `resource` = URI canónico del servidor MCP = AUDIENCIA del token: `<issuer>/api/mcp`.
+ * Issuer y Resource Server MCP, derivados una sola vez de `APP_URL` (origen público same-origin).
+ * Deben ser idénticos al emitir, en la metadata y al verificar: si no, "token rejected".
+ * `resource` (`<issuer>/api/mcp`) es la audiencia del token.
  */
 @Injectable()
 export class OAuthUrls {
@@ -24,7 +18,7 @@ export class OAuthUrls {
     this.resource = new URL('/api/mcp', this.issuer);
   }
 
-  /** Audiencia canónica como string (lo que se guarda y compara en los tokens). */
+  /** Audiencia como string (lo que se guarda y compara en los tokens). */
   get audience(): string {
     return this.resource.href;
   }

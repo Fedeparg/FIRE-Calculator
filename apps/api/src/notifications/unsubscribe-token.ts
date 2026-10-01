@@ -1,17 +1,10 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Token del enlace de baja de las alertas por email: `<userId>.<firma>`, con la firma un
- * HMAC-SHA256 del `userId`. Lógica pura, testeable.
- *
- * POR QUÉ UN HMAC y no un token aleatorio guardado en BD: la baja tiene que funcionar desde
- * CUALQUIER email que el usuario conserve, también desde uno antiguo. Un token aleatorio
- * obligaría a guardar uno por usuario para siempre o a rotarlo, y rotarlo rompería los enlaces
- * de los emails anteriores. Con un HMAC no hay nada que guardar ni que caduque. Lo peor que
- * permite un enlace filtrado es DESACTIVAR las alertas de ese usuario, que es inocuo.
- *
- * La clave se deriva del secreto de sesión con un prefijo propio, para que una firma de baja
- * no sirva nunca como nada más.
+ * Token del enlace de baja: `<userId>.<HMAC-SHA256 del userId>`. HMAC y no token aleatorio en BD:
+ * la baja debe funcionar desde cualquier email antiguo, y guardar o rotar tokens rompería enlaces.
+ * Un enlace filtrado solo permite desactivar las alertas de ese usuario. La clave se deriva del
+ * secreto de sesión con prefijo propio, para que la firma no sirva para nada más.
  */
 const KEY_CONTEXT = 'sextante:unsubscribe:v1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -36,6 +29,6 @@ export function verifyUnsubscribeToken(token: string, secret: string): string | 
   if (!UUID.test(userId)) return null;
   const given = Buffer.from(token.slice(dot + 1));
   const expected = Buffer.from(sign(userId, secret));
-  // Comparación en tiempo constante (y con la longitud comprobada antes, que lo exige).
+  // Tiempo constante; `timingSafeEqual` exige longitudes iguales.
   return given.length === expected.length && timingSafeEqual(given, expected) ? userId : null;
 }

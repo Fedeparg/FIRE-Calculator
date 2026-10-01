@@ -5,13 +5,12 @@ import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/con
 import { HISTORY_MAX_DAYS } from '../portfolio-snapshots.service.js';
 
 /**
- * Query de GET /api/portfolio/history. Es una CLASE, no `@Query('days')` suelto, para que el
- * `ValidationPipe` global (con `whitelist` + `forbidNonWhitelisted`) se aplique también aquí:
- * un `days` no numérico o un parámetro desconocido dan 400 en vez de colarse hasta el
- * servicio. `@Type(() => Number)` es obligatorio porque los query params llegan como texto.
+ * Query de GET /api/portfolio/history. Clase (no `@Query` suelto) para que el `ValidationPipe`
+ * global rechace con 400 un `days` no numérico o parámetros desconocidos; `@Type(() => Number)`
+ * es necesario porque los query params llegan como texto.
  */
 export class PortfolioHistoryQueryDto {
-  /** Ventana en días hacia atrás. Por defecto la del servicio (1 año). */
+  /** Ventana en días hacia atrás; por defecto la del servicio. */
   @IsOptional()
   @Type(() => Number)
   @IsInt()
