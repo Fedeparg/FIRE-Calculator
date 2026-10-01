@@ -10,7 +10,7 @@ import {
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
 import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
-import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
+import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
 import { PRICE_PROVIDER, type PriceHistory, type PriceProvider, type Quote } from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 

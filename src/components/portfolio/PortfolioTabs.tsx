@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import { PORTFOLIO_CURRENCIES } from "@/lib/portfolio";
+import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Tab = {
@@ -82,7 +82,7 @@ export default function PortfolioTabs() {
             onChange={(e) => setDisplay(e.target.value)}
             className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
           >
-            {PORTFOLIO_CURRENCIES.map((c) => (
+            {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>
                 {currencyLabel(c)}
               </option>

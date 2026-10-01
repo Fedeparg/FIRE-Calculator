@@ -14,6 +14,61 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "75d0b22b",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura el cambio de ruta de calculadoras",
+            "en": "curate the calculator route refactor"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "b566684b",
+          "type": "refactor",
+          "scope": "core",
+          "category": "internal",
+          "text": {
+            "es": "constantes compartidas entre web y API en @sextante/core/contracts",
+            "en": "share frontend/API contract constants via @sextante/core/contracts"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "2cb0f0cb",
+          "type": "refactor",
+          "scope": "calculators",
+          "category": "internal",
+          "text": {
+            "es": "todas las calculadoras se sirven desde una sola ruta",
+            "en": "serve every calculator from one dynamic route"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "072df704",
+          "type": "refactor",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "borra código muerto",
+            "en": "remove dead code"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "d2e7103e",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "cura los commits de Prettier",
+            "en": "curate the Prettier commits"
+          },
+          "hidden": true
+        },
+        {
           "hash": "598525e7",
           "type": "chore",
           "scope": null,

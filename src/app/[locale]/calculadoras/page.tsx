@@ -29,7 +29,6 @@ export default async function CalculatorsIndex({ params }: Props) {
     name: c.name[l],
     description: c.description[l],
     category: c.category,
-    status: c.status,
     search: [c.name[l], c.description[l], ...c.keywords].join(" "),
   }));
 

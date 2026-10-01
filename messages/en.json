@@ -106,7 +106,6 @@
     "searchPlaceholder": "Search for a calculator…",
     "allCategories": "All",
     "noResults": "No calculators match your search.",
-    "soon": "Coming soon",
     "open": "Open",
     "resultsCount": "{count, plural, =0 {No results} =1 {1 calculator} other {# calculators}}"
   },
@@ -343,7 +342,6 @@
       "inflationRate": "Estimated annual inflation (%)",
       "finalNet": "Net final value",
       "realFinalNet": "Real value (today)",
-      "grossInterest": "Gross interest",
       "withheld": "Withheld",
       "netInterest": "Net interest",
       "donutTitle": "Final value breakdown",
@@ -661,7 +659,6 @@
       "maintenanceAnnual": "Maintenance per year (€)",
       "netYield": "Net yield",
       "grossYield": "Gross yield",
-      "annualRentIncome": "Potential income",
       "effectiveRentIncome": "Effective income",
       "totalAnnualExpenses": "Annual expenses",
       "netIncome": "Net annual income",

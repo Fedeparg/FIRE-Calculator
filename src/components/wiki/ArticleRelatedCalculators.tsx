@@ -14,13 +14,13 @@ type Props = {
  * Enlazado interno inverso: desde un artículo hacia las calculadoras que lo
  * referencian (mapeo central en `relatedArticles.ts`). Complementa los chips de
  * "sigue aprendiendo" que van en sentido calculadora → artículo, cerrando el
- * círculo de enlaces. Degradación elegante: si no hay calculadoras (live)
+ * círculo de enlaces. Degradación elegante: si no hay calculadoras
  * relacionadas, no se renderiza nada.
  */
 export default async function ArticleRelatedCalculators({ articleSlug }: Props) {
   const locale = asLocale(await getLocale());
   const relatedSlugs = new Set(getRelatedCalculatorSlugs(articleSlug));
-  const calculators = CALCULATORS.filter((c) => c.status === "live" && relatedSlugs.has(c.slug));
+  const calculators = CALCULATORS.filter((c) => relatedSlugs.has(c.slug));
 
   if (calculators.length === 0) return null;
 

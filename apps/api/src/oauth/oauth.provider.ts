@@ -20,7 +20,7 @@ import {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { oauthAuthCodes, oauthTokens } from '../db/schema.js';
-import { SESSION_COOKIE } from '../auth/session.constants.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';

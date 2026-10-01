@@ -6,7 +6,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
-import { MAX_INPUTS_BYTES, MAX_SCENARIOS_PER_USER, SavedScenariosService } from './saved-scenarios.service.js';
+import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
+import { MAX_INPUTS_BYTES, SavedScenariosService } from './saved-scenarios.service.js';
 
 function dto(partial: Partial<CreateSavedScenarioDto> = {}): CreateSavedScenarioDto {
   return {

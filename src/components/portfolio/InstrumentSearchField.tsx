@@ -3,12 +3,11 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
+import { MIN_INSTRUMENT_QUERY_LENGTH } from "@sextante/core/contracts";
 import type { InstrumentSearchResult, InstrumentType } from "@/lib/portfolio";
 
 /** Espera tras la última tecla antes de buscar: evita una petición por carácter. */
 const DEBOUNCE_MS = 300;
-/** Mínimo de caracteres para buscar (en paridad con el backend `MIN_QUERY_LENGTH`). */
-const MIN_QUERY_LENGTH = 2;
 
 type Props = {
   /** Valor actual del símbolo (texto libre del input; se envía tal cual al guardar). */
@@ -66,7 +65,7 @@ export default function InstrumentSearchField({
 
   useEffect(() => {
     const query = value.trim();
-    if (justSelected.current === query || query.length < MIN_QUERY_LENGTH) {
+    if (justSelected.current === query || query.length < MIN_INSTRUMENT_QUERY_LENGTH) {
       setResults([]);
       setOpen(false);
       setLoading(false);

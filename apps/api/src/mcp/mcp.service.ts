@@ -18,7 +18,7 @@ import {
   PortfolioSnapshotsService,
 } from '../portfolio/portfolio-snapshots.service.js';
 import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service.js';
-import { SUPPORTED_CURRENCIES } from '../positions/dto/create-position.dto.js';
+import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
 import { CombinePositionDto } from '../positions/dto/combine-position.dto.js';
 import { CreatePositionDto } from '../positions/dto/create-position.dto.js';
 import { CreatePositionLotDto } from '../positions/dto/create-position-lot.dto.js';
