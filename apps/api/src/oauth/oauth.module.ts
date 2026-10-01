@@ -1,14 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 
-import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { ConsentController } from './consent.controller.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthReaper } from './oauth-reaper.js';
 import { OAuthUrls } from './oauth-urls.js';
 import { SextanteOAuthProvider } from './oauth.provider.js';
+import { SessionModule } from '../auth/session.module.js';
 
 /**
  * Módulo del Authorization Server MCP. Provee el provider del SDK (respaldado por Drizzle),
@@ -18,17 +16,9 @@ import { SextanteOAuthProvider } from './oauth.provider.js';
  * y las URLs para recuperarlos del contenedor allí.
  */
 @Module({
-  imports: [
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
-      }),
-    }),
-  ],
+  imports: [SessionModule],
   controllers: [ConsentController],
-  providers: [OAuthUrls, OAuthClientsStore, OAuthGrantsService, SextanteOAuthProvider, OAuthReaper, JwtAuthGuard],
+  providers: [OAuthUrls, OAuthClientsStore, OAuthGrantsService, SextanteOAuthProvider, OAuthReaper],
   exports: [SextanteOAuthProvider, OAuthUrls, OAuthGrantsService, OAuthClientsStore],
 })
 export class OauthModule {}

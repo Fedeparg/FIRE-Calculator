@@ -1,5 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
-
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
@@ -31,6 +29,7 @@ import {
   SCOPE_PORTFOLIO_READ,
   SCOPES_SUPPORTED,
 } from './oauth.constants.js';
+import { randomToken, sha256Hex } from '../common/crypto.js';
 
 type SessionJwt = { sub: string; email: string };
 
@@ -374,10 +373,10 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   private hash(value: string): string {
-    return createHash('sha256').update(value).digest('hex');
+    return sha256Hex(value);
   }
 
   private randomToken(): string {
-    return randomBytes(32).toString('base64url');
+    return randomToken();
   }
 }

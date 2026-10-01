@@ -4,13 +4,7 @@ import { Resend } from 'resend';
 
 import type { EmailService } from './email.service.js';
 import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
-
-/**
- * Minutos de validez del enlace mágico que mostramos al usuario en el email.
- * Debe coincidir con `TOKEN_TTL_MS` de `auth.service.ts` (15 minutos). Si cambias
- * la TTL allí, actualiza este valor.
- */
-const LINK_TTL_MINUTES = 15;
+import { LOGIN_LINK_TTL_MINUTES } from '../auth/session.constants.js';
 
 const SUBJECT = 'Tu enlace de acceso a Sextante';
 
@@ -103,7 +97,7 @@ export class ResendEmailService implements EmailService {
       '',
       link,
       '',
-      `El enlace caduca en ${LINK_TTL_MINUTES} minutos y solo puede usarse una vez.`,
+      `El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.`,
       '',
       'Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu',
       'cuenta sin abrir el enlace.',
@@ -155,7 +149,7 @@ export class ResendEmailService implements EmailService {
             <tr>
               <td style="padding:0 32px 32px 32px;border-top:1px solid #e5e7eb;">
                 <p style="margin:16px 0 0 0;font-size:13px;line-height:1.6;color:#64748b;">
-                  El enlace caduca en ${LINK_TTL_MINUTES} minutos y solo puede usarse una vez.
+                  El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.
                   Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu
                   cuenta sin abrir el enlace.
                 </p>

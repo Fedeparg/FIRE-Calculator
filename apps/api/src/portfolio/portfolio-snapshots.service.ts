@@ -21,6 +21,7 @@ import {
   type HistoryPosition,
 } from '@sextante/core/portfolio-history';
 import { staleSnapshotDates } from '@sextante/core/snapshot-staleness';
+import { isoDate, todayUtc } from '../common/dates.js';
 
 /**
  * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
@@ -81,9 +82,6 @@ function sameRates(a: Record<string, number>, b: Record<string, number>): boolea
 }
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
 function toNumeric(value: number): string | null {
@@ -251,19 +249,19 @@ export class PortfolioSnapshotsService {
             kind: 'buy',
             quantity: Number(p.quantity),
             price: Number(p.avgPrice),
-            tradedAt: p.createdAt.toISOString().slice(0, 10),
+            tradedAt: isoDate(p.createdAt),
           },
         ],
       }));
 
       // Inicio del seguimiento en Sextante, no de las operaciones.
-      const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))).toISOString().slice(0, 10);
+      const trackingSince = isoDate(new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))));
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
-      const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
+      const floor = isoDate(new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS));
       const from = earliest > floor ? earliest : floor;
-      const to = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10); // ayer: hoy es del cron
+      const to = isoDate(new Date(Date.now() - DAY_MS)); // ayer: hoy es del cron
       if (from > to) return;
 
       const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
@@ -464,7 +462,7 @@ export class PortfolioSnapshotsService {
     display: string = SNAPSHOT_BASE_CURRENCY,
   ): Promise<PortfolioHistory> {
     const span = Math.min(Math.max(Math.trunc(days), 1), HISTORY_MAX_DAYS);
-    const from = new Date(Date.now() - span * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const from = isoDate(new Date(Date.now() - span * 24 * 60 * 60 * 1000));
 
     const rows = await this.db
       .select()

@@ -1,5 +1,3 @@
-import { createHash, randomBytes } from 'node:crypto';
-
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -19,9 +17,11 @@ import {
 import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { SavedScenariosService, type SavedScenarioResponse } from '../scenarios/saved-scenarios.service.js';
+import { randomToken, sha256Hex } from '../common/crypto.js';
+import { LOGIN_LINK_TTL_MINUTES } from './session.constants.js';
 
 /** Validez del enlace mágico. */
-const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutos
+const TOKEN_TTL_MS = LOGIN_LINK_TTL_MINUTES * 60 * 1000;
 
 export type SessionUser = { id: string; email: string };
 
@@ -86,7 +86,7 @@ export class AuthService {
     const email = this.normalizeEmail(rawEmail);
 
     // Token en claro para el enlace; en BD solo su hash.
-    const token = randomBytes(32).toString('base64url');
+    const token = randomToken();
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
@@ -193,6 +193,6 @@ export class AuthService {
   }
 
   private hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+    return sha256Hex(token);
   }
 }

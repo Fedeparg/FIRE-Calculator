@@ -16,6 +16,7 @@ import {
 } from './lot-aggregate.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
+import { todayUtc } from '../common/dates.js';
 
 /** Lote para el frontend: `numeric` como `number` (solo lectura; los cálculos internos no pasan por aquí). */
 export type PositionLotResponse = {
@@ -41,9 +42,6 @@ export type ImportedLotInput = {
 };
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usan `instrument_prices`. */
-export function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /**
  * CRUD de lotes y recálculo de `positions.quantity/avgPrice` a partir de ellos. Cada mutación

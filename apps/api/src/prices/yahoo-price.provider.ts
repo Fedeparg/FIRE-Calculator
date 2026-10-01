@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
+import { isoDate, todayUtc } from '../common/dates.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
@@ -47,7 +48,7 @@ interface YahooChartResponse {
 
 /** Convierte un epoch (segundos) a fecha YYYY-MM-DD en UTC. */
 export function epochToUtcDate(epochSeconds: number): string {
-  return new Date(epochSeconds * 1000).toISOString().slice(0, 10);
+  return isoDate(new Date(epochSeconds * 1000));
 }
 
 /** Extrae una `Quote` de la respuesta de Yahoo, o `null` si falta algún dato esencial. Pura: el parseo frágil vive aquí, aislado de la E/S. */
@@ -58,8 +59,7 @@ export function parseYahooChart(symbol: string, body: unknown): Quote | null {
   if (typeof regularMarketPrice !== 'number' || !Number.isFinite(regularMarketPrice) || typeof currency !== 'string') {
     return null;
   }
-  const date =
-    typeof regularMarketTime === 'number' ? epochToUtcDate(regularMarketTime) : new Date().toISOString().slice(0, 10);
+  const date = typeof regularMarketTime === 'number' ? epochToUtcDate(regularMarketTime) : todayUtc();
   return { symbol, close: regularMarketPrice, currency, date };
 }
 

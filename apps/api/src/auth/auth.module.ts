@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { JwtModule } from '@nestjs/jwt';
 
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
@@ -10,8 +8,7 @@ import { ScenariosModule } from '../scenarios/scenarios.module.js';
 import { EmailModule } from '../email/email.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
-import { JwtAuthGuard } from './jwt-auth.guard.js';
-import { SESSION_TTL_SECONDS } from './session.constants.js';
+import { SessionModule } from './session.module.js';
 
 @Module({
   imports: [
@@ -24,16 +21,9 @@ import { SESSION_TTL_SECONDS } from './session.constants.js';
     OauthModule,
     // Preferencias de avisos por email, también datos personales.
     NotificationsModule,
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: SESSION_TTL_SECONDS },
-      }),
-    }),
+    SessionModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard],
+  providers: [AuthService],
 })
 export class AuthModule {}
