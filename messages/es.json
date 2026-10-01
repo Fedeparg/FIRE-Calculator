@@ -1089,16 +1089,19 @@
       "body": "Añade tu primera inversión con el formulario de abajo para verla aquí."
     },
     "summary": {
-      "title": "Total de la cartera",
       "displayIn": "Ver en",
       "invested": "Invertido",
       "marketValue": "Valor actual",
-      "pnl": "Ganancia/pérdida",
       "noData": "Aún no hay precios para calcular el total. Vuelve cuando se haya actualizado el mercado.",
       "excluded": "{count} de {total} posiciones no se incluyen en el total (sin precio o divisa no convertible).",
       "fxAsOf": "Tipos de cambio a {date}.",
       "priceCadence": "Los precios se actualizan cada hora de 9:00 a 21:00 (hora de España) de lunes a viernes, y con el cierre sobre las 22:30. Una posición recién añadida puede no mostrar precio hasta el siguiente refresco.",
-      "pricesUpdated": "Precios actualizados {ago}."
+      "pricesUpdated": "Precios actualizados {ago}.",
+      "sincePurchase": "{amount} · {percent} desde la compra",
+      "sincePurchaseAmount": "{amount} desde la compra",
+      "thisYear": "Este año",
+      "thisYearSince": "Desde el {date}",
+      "thisYearEstimated": "La ganancia del año parte de una estimación: tu cartera actual valorada con los precios de entonces."
     },
     "goal": {
       "title": "Tu objetivo de independencia financiera",
@@ -1279,15 +1282,10 @@
         "broker": "Bróker",
         "currency": "Divisa"
       },
-      "chartTitle": {
-        "asset": "Peso por activo",
-        "broker": "Peso por bróker",
-        "currency": "Peso por divisa"
-      },
-      "center": "Valor total",
       "noBroker": "Sin bróker",
       "noData": "Todavía no se puede repartir la cartera: ninguna posición tiene precio convertible a la divisa elegida.",
-      "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible)."
+      "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible).",
+      "more": "{count, plural, one {# más} other {# más}}"
     },
     "lots": {
       "loading": "Cargando las operaciones…",
@@ -1548,6 +1546,20 @@
         "closed": "No tienes posiciones cerradas: aquí aparecen las que has vendido del todo.",
         "derivatives": "No tienes derivados."
       }
+    },
+    "goalCard": {
+      "title": "Objetivo FIRE",
+      "details": "Ver detalle",
+      "define": "Definirlo",
+      "loading": "Cargando tu objetivo…",
+      "empty": "Aún no has guardado un objetivo. Defínelo para ver cuánto te falta.",
+      "notConvertible": "Tu objetivo está en otra divisa y no hay tipo de cambio para compararlo con la cartera.",
+      "summary": "de {target} · {years, plural, =-1 {con esta aportación no se alcanza en 60 años} one {falta # año al ritmo actual} other {faltan # años al ritmo actual}}"
+    },
+    "movers": {
+      "title": "Mayores movimientos de la última sesión:",
+      "none": "Aún no hay dos sesiones de precios para comparar.",
+      "seeAll": "{count, plural, one {Ver la posición →} other {Ver las # posiciones →}}"
     }
   },
   "account": {

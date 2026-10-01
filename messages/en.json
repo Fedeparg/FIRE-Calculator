@@ -1089,16 +1089,19 @@
       "body": "Add your first investment with the form below to see it here."
     },
     "summary": {
-      "title": "Portfolio total",
       "displayIn": "Show in",
       "invested": "Invested",
       "marketValue": "Current value",
-      "pnl": "Profit/loss",
       "noData": "No prices yet to compute the total. Check back once the market has refreshed.",
       "excluded": "{count} of {total} positions are not included in the total (no price or non-convertible currency).",
       "fxAsOf": "Exchange rates as of {date}.",
       "priceCadence": "Prices are refreshed every hour from 9:00 to 21:00 (Spanish time) Monday to Friday, and with the close at around 22:30. A newly added position may not show a price until the next refresh.",
-      "pricesUpdated": "Prices updated {ago}."
+      "pricesUpdated": "Prices updated {ago}.",
+      "sincePurchase": "{amount} · {percent} since purchase",
+      "sincePurchaseAmount": "{amount} since purchase",
+      "thisYear": "This year",
+      "thisYearSince": "Since {date}",
+      "thisYearEstimated": "This year's gain starts from an estimate: your current portfolio valued at the prices back then."
     },
     "goal": {
       "title": "Your financial independence goal",
@@ -1279,15 +1282,10 @@
         "broker": "Broker",
         "currency": "Currency"
       },
-      "chartTitle": {
-        "asset": "Weight by asset",
-        "broker": "Weight by broker",
-        "currency": "Weight by currency"
-      },
-      "center": "Total value",
       "noBroker": "No broker",
       "noData": "The portfolio cannot be split yet: no position has a price convertible to the selected currency.",
-      "excluded": "{count} of {total} positions are left out of the split (no price, or currency not convertible)."
+      "excluded": "{count} of {total} positions are left out of the split (no price, or currency not convertible).",
+      "more": "{count, plural, one {# more} other {# more}}"
     },
     "lots": {
       "loading": "Loading trades…",
@@ -1548,6 +1546,20 @@
         "closed": "You have no closed positions: positions you have sold in full show up here.",
         "derivatives": "You have no derivatives."
       }
+    },
+    "goalCard": {
+      "title": "FIRE goal",
+      "details": "See details",
+      "define": "Set it",
+      "loading": "Loading your goal…",
+      "empty": "You haven't saved a goal yet. Set one to see how far you have to go.",
+      "notConvertible": "Your goal is in another currency and there is no exchange rate to compare it with the portfolio.",
+      "summary": "of {target} · {years, plural, =-1 {not reached within 60 years at this pace} one {# year to go at the current pace} other {# years to go at the current pace}}"
+    },
+    "movers": {
+      "title": "Biggest moves in the last session:",
+      "none": "There aren't two sessions of prices to compare yet.",
+      "seeAll": "{count, plural, one {See the position →} other {See all # positions →}}"
     }
   },
   "account": {
