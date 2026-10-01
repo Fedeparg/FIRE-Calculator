@@ -1285,7 +1285,9 @@
       "noBroker": "Sin bróker",
       "noData": "Todavía no se puede repartir la cartera: ninguna posición tiene precio convertible a la divisa elegida.",
       "excluded": "{count} de {total} posiciones no entran en el reparto (sin precio o divisa no convertible).",
-      "more": "{count, plural, one {# más} other {# más}}"
+      "more": "{count, plural, one {# más} other {# más}}",
+      "showAll": "Ver los {count, plural, one {# restante} other {# restantes}}",
+      "showLess": "Ver menos"
     },
     "lots": {
       "loading": "Cargando las operaciones…",

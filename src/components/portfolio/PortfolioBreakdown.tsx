@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { paletteColor } from "@/components/charts/palette";
@@ -36,6 +36,8 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
   const t = useTranslations("portfolio.breakdown");
   const { formatCurrency, formatPercent } = useFormat();
   const [groupBy, setGroupBy] = useState<BreakdownGroupBy>("asset");
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
 
   const unknownBrokerLabel = t("noBroker");
   const breakdown = useMemo(
@@ -43,8 +45,10 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
     [positions, prices, rates, display, groupBy, unknownBrokerLabel],
   );
 
-  const shown = breakdown.slices.slice(0, VISIBLE_GROUPS);
+  // Plegado: los más pesados y una fila "N más" con su peso sumado. Desplegado: todos los grupos
+  // (la barra de arriba ya los dibuja todos; la lista es la que se lee).
   const rest = breakdown.slices.slice(VISIBLE_GROUPS);
+  const shown = expanded ? breakdown.slices : breakdown.slices.slice(0, VISIBLE_GROUPS);
   const restShare = rest.reduce((sum, slice) => sum + slice.share, 0);
 
   return (
@@ -81,7 +85,7 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
               />
             ))}
           </div>
-          <ul className="flex flex-col gap-2 text-sm">
+          <ul id={listId} className="flex flex-col gap-2 text-sm">
             {shown.map((slice, index) => (
               <li key={slice.key} className="flex items-center justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-2">
@@ -97,13 +101,32 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
                 <span className="tabular-nums text-foreground">{formatPercent(Math.round(slice.share))}</span>
               </li>
             ))}
-            {rest.length > 0 && (
+            {rest.length > 0 && !expanded && (
               <li className="flex items-center justify-between gap-3 text-muted">
                 <span className="pl-[1.125rem]">{t("more", { count: rest.length })}</span>
                 <span className="tabular-nums">{formatPercent(Math.round(restShare))}</span>
               </li>
             )}
           </ul>
+          {rest.length > 0 && (
+            // Botón de alternancia con `aria-expanded`: anuncia si la lista está completa o plegada.
+            <button
+              type="button"
+              onClick={() => setExpanded((open) => !open)}
+              aria-expanded={expanded}
+              aria-controls={listId}
+              className="-mt-2 inline-flex min-h-8 items-center gap-1 self-start rounded-lg text-xs font-medium text-brand transition hover:underline"
+            >
+              {expanded ? t("showLess") : t("showAll", { count: rest.length })}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className={`h-3.5 w-3.5 fill-current transition-transform ${expanded ? "rotate-180" : ""}`}
+              >
+                <path d="M5.5 7.5 10 12l4.5-4.5-1-1L10 10 6.5 6.5z" />
+              </svg>
+            </button>
+          )}
           {breakdown.excluded > 0 && (
             <p className="text-xs text-muted">
               {t("excluded", { count: breakdown.excluded, total: positions.length })}
