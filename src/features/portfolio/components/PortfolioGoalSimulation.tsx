@@ -8,7 +8,7 @@ import { encodeFieldValue } from "@/features/calculators/url-state";
 import { monthlyContribution, simulatePortfolioGoal } from "@sextante/core/portfolio-goal";
 import type { Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 

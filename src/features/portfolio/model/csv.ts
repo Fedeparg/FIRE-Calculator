@@ -4,11 +4,11 @@
  * fichero. El dialecto, el escapado y el BOM son los de `core/csv.ts`.
  */
 
-import { buildCsv, type CsvCell } from "@/core/csv";
+import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import { convertCurrency } from "@sextante/core/fx";
 import type { Locale } from "@/core/types";
 
-export { UTF8_BOM } from "@/core/csv";
+export { UTF8_BOM } from "@/shared/format/csv";
 
 /** Columnas del fichero, en orden. Es también el orden de `PortfolioCsvHeaders`. */
 export const CSV_COLUMNS = [

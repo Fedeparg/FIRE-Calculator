@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 
 type Entry = {
   name?: string;

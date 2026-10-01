@@ -1,6 +1,6 @@
 import { useLocale } from "next-intl";
 
-import { getFormatters, type Formatters } from "@/core/format";
+import { getFormatters, type Formatters } from "@/shared/format/format";
 import { asLocale } from "@/core/types";
 
 /**

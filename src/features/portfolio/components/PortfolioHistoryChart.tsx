@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import TimeSeriesChart, { type DataRow } from "@/shared/charts/TimeSeriesChart";
 import type { ChartTableColumn } from "@/shared/charts/ChartDataTable";
 import Notice from "@/shared/ui/Notice";
-import { formatIsoDate } from "@/core/format";
+import { formatIsoDate } from "@/shared/format/format";
 import {
   buildHistorySeries,
   withLivePoint,
@@ -15,7 +15,7 @@ import {
   type HistoryRangeKey,
 } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import { usePortfolioData } from "./PortfolioDataProvider";
 

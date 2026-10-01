@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, usePathname } from "@/i18n/navigation";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 import { usePortfolioData } from "./PortfolioDataProvider";
 

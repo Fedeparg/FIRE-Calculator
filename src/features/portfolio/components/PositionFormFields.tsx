@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
-import { sanitizeDecimalInput } from "@/core/number-input";
-import { useFormat } from "@/lib/format";
+import { sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import type { InstrumentSearchResult } from "@sextante/core/portfolio/types";
 import InstrumentSearchField from "./InstrumentSearchField";
 

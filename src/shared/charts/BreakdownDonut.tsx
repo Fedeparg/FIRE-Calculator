@@ -2,7 +2,7 @@
 
 import { Cell, Pie, PieChart, ResponsiveContainer } from "recharts";
 import { useTranslations } from "next-intl";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 
 export type DonutSlice = { name: string; value: number; color: string };
 

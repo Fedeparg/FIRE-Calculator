@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import DerivativesNotice from "./DerivativesNotice";
 
 type FormatQuantity = (n: number) => string;

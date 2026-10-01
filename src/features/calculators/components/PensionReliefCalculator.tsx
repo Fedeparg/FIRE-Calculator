@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { computePensionRelief } from "@sextante/core/calculators/desgravacion-plan-pensiones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";

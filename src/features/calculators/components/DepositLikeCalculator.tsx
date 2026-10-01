@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeDeposit } from "@sextante/core/calculators/deposito";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";

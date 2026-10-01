@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeMortgage, type MortgageYearPoint } from "@sextante/core/calculators/hipoteca";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import ChartDataTable, { type ChartTableColumn } from "@/shared/charts/ChartDataTable";

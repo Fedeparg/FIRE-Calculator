@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 
 import type { MatchedLot } from "@sextante/core/fiscal/plusvalias";
-import { formatIsoDate } from "@/core/format";
-import { useFormat } from "@/lib/format";
+import { formatIsoDate } from "@/shared/format/format";
+import { useFormat } from "@/shared/format/use-format";
 
 type Props = {
   /** Lotes de compra que consume la venta, emparejados por FIFO. */

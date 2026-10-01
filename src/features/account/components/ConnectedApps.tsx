@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { formatIsoDate } from "@/core/format";
+import { formatIsoDate } from "@/shared/format/format";
 import { absoluteUrl } from "@/shared/seo/site";
 import { apiFetch } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";

@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 
 import { getFormatters } from "./format";
 import { PROPERTY_PARAMS } from "@sextante/core/property-config";
-import { LOCALES } from "./types";
+import { LOCALES } from "@/core/types";
 
 const NON_FINITE = "—";
 const locale = fc.constantFrom(...LOCALES);

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
 import Notice from "@/shared/ui/Notice";
-import { downloadBlob } from "@/lib/download";
+import { downloadBlob } from "@/shared/format/download";
 import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
 
 /** Claves de error que define el namespace `account` (no tiene `errorInvalid`). */

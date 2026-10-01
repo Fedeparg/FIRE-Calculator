@@ -3,11 +3,11 @@
 import { useLocale, useTranslations } from "next-intl";
 
 import type { PortfolioAggregate } from "@sextante/core/fx";
-import { formatIsoDate, formatRelativeTime } from "@/core/format";
+import { formatIsoDate, formatRelativeTime } from "@/shared/format/format";
 import { gainSince } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { asLocale } from "@/core/types";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import { NO_STORE, historyPath } from "@/features/portfolio/api";
 import { useApiQuery } from "@/shared/api/use-api-query";
 

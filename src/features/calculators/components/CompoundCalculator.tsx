@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeCompound } from "@sextante/core/calculators/interes-compuesto";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
 import Stat from "@/shared/ui/Stat";

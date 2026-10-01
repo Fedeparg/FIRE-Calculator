@@ -11,7 +11,7 @@ import {
   type JointReturnOption,
 } from "@sextante/core/fiscal/irpf";
 import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";

@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";
-import { UTF8_BOM } from "@/core/csv";
+import { UTF8_BOM } from "@/shared/format/csv";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   buildRealisedGainsReport,
@@ -14,8 +14,8 @@ import {
 } from "@sextante/core/fiscal/realised-gains";
 import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
 import { asLocale } from "@/core/types";
-import { downloadBlob } from "@/lib/download";
-import { useFormat } from "@/lib/format";
+import { downloadBlob } from "@/shared/format/download";
+import { useFormat } from "@/shared/format/use-format";
 import type { Position, PositionLot } from "@sextante/core/portfolio/types";
 
 type Props = {

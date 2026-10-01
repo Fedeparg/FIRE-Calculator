@@ -10,7 +10,7 @@ import {
   type ReturnModel,
 } from "@sextante/core/calculators/fire-montecarlo";
 import { HISTORICAL_RETURNS } from "@sextante/core/data/shiller-returns";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";

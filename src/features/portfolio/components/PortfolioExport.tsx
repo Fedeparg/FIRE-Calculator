@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { buildPortfolioCsv, UTF8_BOM } from "@/features/portfolio/model/csv";
 import { asLocale } from "@/core/types";
-import { downloadBlob } from "@/lib/download";
+import { downloadBlob } from "@/shared/format/download";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 
 type Props = {

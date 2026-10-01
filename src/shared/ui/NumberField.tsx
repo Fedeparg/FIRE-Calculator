@@ -9,8 +9,8 @@ import {
   parseDecimalInput,
   sanitizeDecimalInput,
   stripLeadingZeros,
-} from "@/core/number-input";
-import { useFormat } from "@/lib/format";
+} from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import HelpTooltip from "./HelpTooltip";
 
 type Props = {

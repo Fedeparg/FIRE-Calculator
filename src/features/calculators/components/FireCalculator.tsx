@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { computeFire } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
 import Stat from "@/shared/ui/Stat";

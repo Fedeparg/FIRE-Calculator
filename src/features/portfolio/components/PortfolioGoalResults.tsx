@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import type { CurrencyNote } from "@/features/portfolio/model/goal-amounts";
 import type { GoalOutcome } from "@/features/portfolio/model/goal-scenario";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import Stat from "@/shared/ui/Stat";
 
 type Props = {

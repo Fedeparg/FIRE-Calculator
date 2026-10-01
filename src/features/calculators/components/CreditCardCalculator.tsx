@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { PAYMENT_MODES, computeCreditCard, type PaymentMode } from "@sextante/core/calculators/tarjeta-credito";
-import { useFormat } from "@/lib/format";
+import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
 import Stat from "@/shared/ui/Stat";

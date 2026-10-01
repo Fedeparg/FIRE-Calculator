@@ -14,8 +14,8 @@ import {
   YAxis,
 } from "recharts";
 import { useTranslations } from "next-intl";
-import { useFormat } from "@/lib/format";
-import { useMediaQuery } from "@/lib/use-media-query";
+import { useFormat } from "@/shared/format/use-format";
+import { useMediaQuery } from "@/shared/ui/use-media-query";
 import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
 

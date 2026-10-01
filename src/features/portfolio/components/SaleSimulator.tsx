@@ -6,10 +6,10 @@ import { useTranslations } from "next-intl";
 import Notice from "@/shared/ui/Notice";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { estimateSavingsTax, simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
-import { formatIsoDate } from "@/core/format";
+import { formatIsoDate } from "@/shared/format/format";
 import { convertCurrency } from "@sextante/core/fx";
-import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
-import { useFormat } from "@/lib/format";
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
 
