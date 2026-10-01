@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { CALCULATORS } from "@/features/calculators/registry";
 import { asLocale } from "@/core/types";
-import { getRelatedCalculatorSlugs } from "./relatedArticles";
+import { getRelatedCalculatorSlugs } from "../relatedArticles";
 
 type Props = {
   /** Slug del artículo de la wiki (ver `content/wiki/<slug>.<locale>.md`). */

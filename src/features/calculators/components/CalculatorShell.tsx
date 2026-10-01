@@ -6,7 +6,7 @@ import { calculatorSchema } from "@/lib/jsonld";
 import CalculatorStateProvider from "./CalculatorState";
 import Breadcrumbs from "@/components/seo/Breadcrumbs";
 import JsonLd from "@/components/seo/JsonLd";
-import CalculatorExplainer from "@/components/wiki/CalculatorExplainer";
+import CalculatorExplainer from "@/features/wiki/components/CalculatorExplainer";
 
 type Props = {
   title: string;

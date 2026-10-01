@@ -1,8 +1,8 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
 import { Link } from "@/i18n/navigation";
-import { getExplainer, getArticle } from "./content";
-import { getRelatedArticleSlugs } from "./relatedArticles";
+import { getExplainer, getArticle } from "../content";
+import { getRelatedArticleSlugs } from "../relatedArticles";
 
 type Props = {
   /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */

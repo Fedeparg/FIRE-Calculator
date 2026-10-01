@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
 import { routing } from "@/i18n/routing";
-import { getLegalDoc, getLegalSlugs } from "@/components/wiki/content";
+import { getLegalDoc, getLegalSlugs } from "@/features/wiki/content";
 import { buildMetadata } from "@/lib/seo";
 
 // Documentos legales: estáticos, se regeneran cada hora (igual que la wiki).
