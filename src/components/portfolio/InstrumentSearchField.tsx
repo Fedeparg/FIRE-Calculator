@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { MIN_INSTRUMENT_QUERY_LENGTH } from "@sextante/core/contracts";
 import type { InstrumentSearchResult, InstrumentType } from "@/lib/portfolio";
+import { isAbortError } from "@/shared/api/client";
+import { searchInstruments } from "@/shared/api/portfolio-api";
 
 /** Espera tras la última tecla antes de buscar: evita una petición por carácter. */
 const DEBOUNCE_MS = 300;
@@ -76,23 +78,20 @@ export default function InstrumentSearchField({
     setLoading(true);
     const handle = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/instruments/search?q=${encodeURIComponent(query)}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) {
-          setResults([]);
-          setOpen(false);
-          return;
-        }
-        const body = (await res.json()) as { results: InstrumentSearchResult[] };
-        setResults(body.results);
+        const found = await searchInstruments(query, controller.signal);
+        if (controller.signal.aborted) return;
+        setResults(found);
         setActiveIndex(-1);
         setOpen(true);
-      } catch {
-        // Abort (tecla nueva) o fallo de red: degradamos a "sin resultados".
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        // Una tecla nueva cancela esta petición: el efecto siguiente ya gestiona `loading`, y
+        // tocarlo aquí lo apagaría mientras la nueva búsqueda espera su debounce.
+        if (isAbortError(error)) return;
+        // Fallo de red o de la API: se degrada a "sin resultados".
+        setResults([]);
+        setOpen(false);
       }
+      setLoading(false);
     }, DEBOUNCE_MS);
 
     return () => {

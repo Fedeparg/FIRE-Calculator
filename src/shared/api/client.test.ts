@@ -43,6 +43,21 @@ describe("apiJson", () => {
     expect(error).toMatchObject({ status: 400, code: "NEGATIVE_QUANTITY" });
   });
 
+  it("keeps the raw JSON body of the error", async () => {
+    mockFetch(() => Response.json({ code: "DUPLICATE", existing: { id: "p1" } }, { status: 409 }));
+    const error = await apiJson("/api/x").catch((e: unknown) => e);
+    expect((error as ApiError).body).toEqual({ code: "DUPLICATE", existing: { id: "p1" } });
+  });
+
+  it("sends a Blob body untouched, with the caller's content type", async () => {
+    const fn = mockFetch(() => Response.json({}));
+    const csv = new Blob(["a,b"], { type: "text/csv" });
+    await apiJson("/api/x", { method: "POST", body: csv, headers: { "Content-Type": "text/csv" } });
+    const [, init] = fn.mock.calls[0];
+    expect(init?.body).toBe(csv);
+    expect(init?.headers).toEqual({ "Content-Type": "text/csv" });
+  });
+
   it("throws ApiError without code when the error body is not JSON", async () => {
     mockFetch(() => new Response("<html>", { status: 502 }));
     const error = await apiJson("/api/x").catch((e: unknown) => e);

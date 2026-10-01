@@ -71,3 +71,23 @@ export type PositionLot = {
   note: string | null;
   createdAt: string;
 };
+
+/** Cuerpo que espera la API de lotes (`POST`/`PATCH .../lots`). */
+export type LotPayload = {
+  kind: PositionLotKind;
+  quantity: number;
+  price: number;
+  fees: number;
+  tradedAt: string;
+  note?: string;
+};
+
+/** Cuerpo de alta/edición de una posición (`POST /api/positions`, `PATCH /api/positions/:id`). */
+export type PositionPayload = {
+  ticker: string;
+  name?: string;
+  quantity: number;
+  avgPrice: number;
+  broker?: string;
+  currency: string;
+};

@@ -11,6 +11,7 @@ import { convertCurrency } from "@sextante/core/fx";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/core/number-input";
 import { useFormat } from "@/lib/format";
 import type { PositionLot, PriceInfo, Position } from "@/lib/portfolio";
+import SaleMatchesTable from "./SaleMatchesTable";
 
 type Props = {
   position: Position;
@@ -236,58 +237,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
             </dl>
           )}
 
-          {simulation.matched.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full min-w-[34rem] text-left text-sm">
-                <caption className="px-3 pt-3 text-left text-xs text-muted">{t("fifoCaption")}</caption>
-                <thead>
-                  <tr className="border-b border-border text-muted">
-                    <th scope="col" className="px-3 py-2 font-medium">
-                      {t("lotDate")}
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">
-                      {t("lotQuantity")}
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">
-                      {t("lotPrice")}
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">
-                      {t("lotAcquisition")}
-                    </th>
-                    <th scope="col" className="px-3 py-2 text-right font-medium">
-                      {t("lotGain")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {simulation.matched.map((match) => (
-                    <tr key={match.lotId} className="border-b border-border last:border-0">
-                      <th scope="row" className="px-3 py-2 font-normal text-muted">
-                        {formatIsoDate(match.tradedAt)}
-                      </th>
-                      <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                        {formatQuantity(match.quantity)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                        {formatCurrency(match.price, currency)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                        {formatCurrency(match.acquisitionValue, currency)}
-                      </td>
-                      <td
-                        className={`px-3 py-2 text-right tabular-nums ${
-                          match.gain > 0 ? "text-success" : match.gain < 0 ? "text-danger" : "text-foreground"
-                        }`}
-                      >
-                        {match.gain > 0 ? "+" : ""}
-                        {formatCurrency(match.gain, currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {simulation.matched.length > 0 && <SaleMatchesTable matched={simulation.matched} currency={currency} />}
 
           <p className="text-sm text-muted">
             {t("remaining", {
