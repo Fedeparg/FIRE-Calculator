@@ -13,6 +13,7 @@ import { DonationsModule } from './donations/donations.module.js';
 import { EmailModule } from './email/email.module.js';
 import { DailyJobsModule } from './jobs/daily-jobs.module.js';
 import { HealthModule } from './health/health.module.js';
+import { ImportsModule } from './imports/imports.module.js';
 import { McpModule } from './mcp/mcp.module.js';
 import { OauthModule } from './oauth/oauth.module.js';
 import { PortfolioModule } from './portfolio/portfolio.module.js';
@@ -36,6 +37,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     AuthModule,
     HealthModule,
     PositionsModule,
+    ImportsModule,
     PricesModule,
     PortfolioModule,
     ScenariosModule,

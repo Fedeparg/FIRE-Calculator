@@ -157,6 +157,10 @@ export const positionLots = pgTable(
     fees: numeric('fees', { precision: 18, scale: 6 }).notNull().default('0'),
     tradedAt: date('traded_at').notNull(),
     note: varchar('note', { length: 200 }),
+    // Id de la operación en el bróker de origen, con prefijo de bróker ("trade-republic:<uuid>").
+    // NULL en lo registrado a mano. Es la clave de deduplicación de las importaciones: reimportar
+    // el mismo fichero no duplica operaciones (ver el índice único parcial de abajo).
+    externalId: varchar('external_id', { length: 100 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -165,6 +169,12 @@ export const positionLots = pgTable(
   },
   (table) => [
     index('position_lots_position_id_idx').on(table.positionId),
+    // Único POR USUARIO (el lote lleva `user_id` desnormalizado): dos usuarios pueden importar
+    // el mismo id de operación sin colisionar, y un mismo id no puede acabar en dos posiciones
+    // del mismo usuario. Parcial: los lotes manuales (NULL) no entran.
+    uniqueIndex('position_lots_user_external_id_idx')
+      .on(table.userId, table.externalId)
+      .where(sql`${table.externalId} is not null`),
     index('position_lots_user_id_idx').on(table.userId),
     index('position_lots_traded_at_idx').on(table.tradedAt),
   ],

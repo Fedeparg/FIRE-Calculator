@@ -38,6 +38,16 @@ export type PositionLotResponse = {
   createdAt: string;
 };
 
+/** Lote importado de un bróker tal y como lo recibe `appendImported` (importes en decimal `string`). */
+export type ImportedLotInput = {
+  externalId: string;
+  kind: 'buy' | 'sell';
+  quantity: string;
+  price: string;
+  fees: string;
+  tradedAt: string;
+};
+
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usan `instrument_prices`. */
 export function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
@@ -181,6 +191,49 @@ export class PositionLotsService {
       tradedAt: input.tradedAt,
     });
     await this.recompute(tx, input.positionId);
+  }
+
+  /**
+   * Añade lotes IMPORTADOS de un bróker a una posición (el llamante ya comprobó propiedad) y
+   * reagrega UNA sola vez al final, en vez de una por lote: una importación son cientos.
+   *
+   * IDEMPOTENTE: `ON CONFLICT DO NOTHING` sobre el índice único parcial `(user_id, external_id)`
+   * descarta los lotes ya importados, también si otra petición concurrente los acaba de
+   * insertar. Devuelve cuántos se insertaron de verdad.
+   *
+   * ORDEN: los lotes llegan ya ordenados por instante de ejecución. El agregado desempata los
+   * del mismo día por `createdAt`, y `defaultNow()` da el MISMO valor a toda una transacción,
+   * así que se asigna uno creciente (+1 ms por lote) para que el orden de ejecución del bróker
+   * (una compra y una venta del mismo día) se respete en el coste medio móvil.
+   *
+   * Si la secuencia resultante es inválida (`NEGATIVE_QUANTITY`), `recompute` lanza y la
+   * transacción del llamante revierte los lotes insertados.
+   */
+  async appendImported(
+    tx: DatabaseOrTransaction,
+    input: { positionId: string; userId: string; lots: readonly ImportedLotInput[] },
+  ): Promise<{ inserted: number; aggregate: LotAggregate }> {
+    const base = Date.now();
+    const inserted = await tx
+      .insert(positionLots)
+      .values(
+        input.lots.map((lot, i) => ({
+          positionId: input.positionId,
+          userId: input.userId,
+          kind: lot.kind,
+          quantity: lot.quantity,
+          price: lot.price,
+          fees: lot.fees,
+          tradedAt: lot.tradedAt,
+          externalId: lot.externalId,
+          createdAt: new Date(base + i),
+        })),
+      )
+      .onConflictDoNothing()
+      .returning({ id: positionLots.id });
+
+    const aggregate = await this.recompute(tx, input.positionId);
+    return { inserted: inserted.length, aggregate };
   }
 
   /**
