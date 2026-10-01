@@ -7,6 +7,7 @@ import {
   HISTORY_RANGES,
   MIN_HISTORY_POINTS,
   type HistoryPointDto,
+  withLivePoint,
 } from "./portfolio-history";
 
 /** Punto de serie con lo mínimo: el resto de campos no influye en la construcción. */
@@ -200,5 +201,38 @@ describe("gainSince", () => {
   it("devuelve null con menos de dos puntos utilizables", () => {
     expect(gainSince([point("2026-02-01", 1, 1)], "2026-01-01")).toBeNull();
     expect(gainSince([], "2026-01-01")).toBeNull();
+  });
+});
+
+describe("withLivePoint", () => {
+  const snapshot = (date: string) => ({
+    date,
+    invested: 100,
+    marketValue: 110,
+    pnlAbs: 10,
+    pnlPct: 10,
+    valuedPositions: 1,
+    totalPositions: 1,
+    estimated: false,
+  });
+  const live = { date: "2026-10-01", marketValue: 120, invested: 100, pnlAbs: 20, pnlPct: 20, valuedPositions: 1, totalPositions: 1 };
+
+  it("cierra la serie con el valor de hoy", () => {
+    const points = withLivePoint([snapshot("2026-09-30")], live);
+    expect(points.map((p) => p.date)).toEqual(["2026-09-30", "2026-10-01"]);
+    expect(points[1]).toMatchObject({ marketValue: 120, estimated: false });
+  });
+
+  it("si ya hay snapshot de hoy, manda el snapshot", () => {
+    expect(withLivePoint([snapshot("2026-10-01")], live)).toHaveLength(1);
+  });
+
+  it("no añade nada sin valoración o sin posiciones valoradas", () => {
+    expect(withLivePoint([snapshot("2026-09-30")], null)).toHaveLength(1);
+    expect(withLivePoint([snapshot("2026-09-30")], { ...live, valuedPositions: 0 })).toHaveLength(1);
+  });
+
+  it("con la serie vacía, el punto de hoy es el único", () => {
+    expect(withLivePoint([], live)).toHaveLength(1);
   });
 });
