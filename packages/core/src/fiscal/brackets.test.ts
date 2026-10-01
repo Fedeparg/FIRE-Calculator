@@ -6,7 +6,7 @@ import {
   effectiveRate,
   marginalRate,
   type Bracket,
-} from "./brackets";
+} from "./brackets.js";
 
 const SIMPLE: Bracket[] = [
   { upTo: 100, rate: 10 },

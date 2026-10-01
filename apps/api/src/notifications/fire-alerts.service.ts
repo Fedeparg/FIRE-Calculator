@@ -5,7 +5,7 @@ import { and, eq, lt } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots, userNotificationSettings, users } from '../db/schema.js';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
-import { convertCurrency } from '../portfolio/valuation.js';
+import { convertCurrency } from '@sextante/core/fx';
 import { fireTargetFromInputs, newMilestone, reachedMilestone } from './fire-milestones.js';
 import { NotificationSettingsService } from './notification-settings.service.js';
 import { createUnsubscribeToken } from './unsubscribe-token.js';

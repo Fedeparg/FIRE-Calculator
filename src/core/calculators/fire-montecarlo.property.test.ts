@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "../property-config";
+import { PROPERTY_PARAMS } from "@sextante/core/property-config";
 import { computeFire } from "./fire";
 import { simulateFire, withdrawalSensitivity, type MonteCarloInput } from "./fire-montecarlo";
 

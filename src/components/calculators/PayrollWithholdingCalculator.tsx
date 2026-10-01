@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computePayrollWithholding } from "@/core/calculators/irpf-nomina";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   CONTRACT_TYPES,
   DISABILITY_GRADES,
@@ -13,12 +13,12 @@ import {
   type DisabilityGrade,
   type JointReturnOption,
   type PaymentCount,
-} from "@/core/fiscal/irpf";
+} from "@sextante/core/fiscal/irpf";
 import {
   SELECTABLE_REGIONS,
   toSupportedRegion,
   type RegionSelection,
-} from "@/core/fiscal/regions";
+} from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
 import NumberField from "../ui/NumberField";

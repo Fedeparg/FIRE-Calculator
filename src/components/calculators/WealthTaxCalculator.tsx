@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeWealthTax } from "@/core/calculators/impuesto-patrimonio";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

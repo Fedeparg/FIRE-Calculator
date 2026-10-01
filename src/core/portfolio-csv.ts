@@ -5,7 +5,7 @@
  */
 
 import { buildCsv, type CsvCell } from "./csv";
-import { convertCurrency } from "./fx";
+import { convertCurrency } from "@sextante/core/fx";
 import type { Locale } from "./types";
 
 export { UTF8_BOM } from "./csv";

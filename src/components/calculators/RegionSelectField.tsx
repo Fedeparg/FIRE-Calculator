@@ -5,7 +5,7 @@ import {
   REGION_CODES,
   UNSUPPORTED_REGIONS,
   type RegionSelection,
-} from "@/core/fiscal/regions";
+} from "@sextante/core/fiscal/regions";
 import SelectField from "../ui/SelectField";
 
 type Props = {

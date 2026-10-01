@@ -6,7 +6,7 @@
 // convertible a la divisa elegida. Las que no cumplen se excluyen y se cuentan, para poder
 // decirlo en la interfaz en lugar de repartir un total incompleto como si fuera el bueno.
 
-import { convertCurrency } from "./fx";
+import { convertCurrency } from "@sextante/core/fx";
 
 /** Criterio de agrupación del donut. */
 export type BreakdownGroupBy = "asset" | "broker" | "currency";

@@ -6,7 +6,7 @@ import {
   simulateSale,
   walkLots,
   type TradeLot,
-} from "./plusvalias";
+} from "./plusvalias.js";
 
 /** Constructor breve de lotes: los tests solo fijan lo que les importa. */
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {

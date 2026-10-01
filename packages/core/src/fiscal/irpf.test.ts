@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MINIMO_PERSONAL } from "./brackets";
+import { MINIMO_PERSONAL } from "./brackets.js";
 import {
   estimateNetSalary,
   generalIncomeTax,
@@ -7,8 +7,8 @@ import {
   personalAndFamilyMinimum,
   regionalPersonalAndFamilyMinimum,
   workIncomeReduction,
-} from "./irpf";
-import { REGION_CODES } from "./regions";
+} from "./irpf.js";
+import { REGION_CODES } from "./regions.js";
 
 describe("workIncomeReduction", () => {
   it("rendimiento bajo → reducción máxima fija", () => {

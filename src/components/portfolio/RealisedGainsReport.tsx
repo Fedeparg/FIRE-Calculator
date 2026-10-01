@@ -6,12 +6,12 @@ import { useLocale, useTranslations } from "next-intl";
 import Notice from "@/components/ui/Notice";
 import SelectField from "@/components/ui/SelectField";
 import { UTF8_BOM } from "@/core/csv";
-import { FISCAL_YEAR_LABEL } from "@/core/fiscal/brackets";
+import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   buildRealisedGainsReport,
   TAX_CURRENCY,
   type RealisedGainsCurrencyGroup,
-} from "@/core/fiscal/realised-gains";
+} from "@sextante/core/fiscal/realised-gains";
 import { buildRealisedGainsCsv } from "@/core/fiscal/realised-gains-csv";
 import { asLocale } from "@/core/types";
 import { downloadBlob } from "@/lib/download";

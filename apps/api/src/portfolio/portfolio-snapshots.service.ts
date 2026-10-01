@@ -8,7 +8,7 @@ import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/
 import { PositionsService } from '../positions/positions.service.js';
 import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
-import { aggregatePortfolio, convertCurrency } from './valuation.js';
+import { aggregatePortfolio, convertCurrency } from '@sextante/core/fx';
 
 /**
  * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan

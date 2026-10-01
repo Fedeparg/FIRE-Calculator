@@ -13,9 +13,12 @@ FROM base AS build
 # Manifiestos primero (cachea la instalación).
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
+COPY packages/core/package.json ./packages/core/package.json
 RUN pnpm install --frozen-lockfile --filter @sextante/api...
 
-# Código y compilación a dist.
+# Código y compilación a dist. El build de la API compila antes @sextante/core
+# (lógica compartida con el frontend), cuyo `dist/` copia luego `pnpm deploy`.
+COPY packages/core ./packages/core
 COPY apps/api ./apps/api
 RUN pnpm --filter @sextante/api build
 
