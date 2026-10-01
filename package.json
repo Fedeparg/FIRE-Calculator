@@ -3,13 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Suite de calculadoras de finanzas personales y FIRE para el sistema fiscal español, con cartera agregada y servidor MCP.",
-  "license": "AGPL-3.0-only",
+  "license": "UNLICENSED",
   "author": "Federico Pardo",
   "homepage": "https://sextante.fpardo.net",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Fedeparg/sextante.git"
-  },
   "packageManager": "pnpm@11.6.0",
   "engines": {
     "node": ">=22.13"

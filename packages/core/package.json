@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Lógica pura de Sextante (motor fiscal español, divisas) compartida por el frontend y la API.",
-  "license": "AGPL-3.0-only",
+  "license": "UNLICENSED",
   "exports": {
     "./*": {
       "types": "./dist/*.d.ts",

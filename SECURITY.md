@@ -5,11 +5,10 @@ security reports are genuinely welcome.
 
 ## Reporting a vulnerability
 
-**Please do not open a public issue for security problems.**
+**Please report security problems privately, never in public.**
 
-Use GitHub's private reporting instead:
-[**Report a vulnerability**](https://github.com/Fedeparg/sextante/security/advisories/new)
-(Security → Advisories → Report a vulnerability).
+Email **sextante_support.reunite445@passmail.net** with the details and, if you
+can, steps to reproduce.
 
 I'll acknowledge within a few days. This is a single-maintainer side project, so
 please don't expect enterprise response times — but anything affecting user data
@@ -30,8 +29,8 @@ In scope:
 Out of scope:
 
 - The **accuracy of financial or tax calculations**. Those are documented as
-  approximations and explicitly not advice. Bugs there are ordinary issues —
-  please do open a public issue, ideally with the expected figure and a source.
+  approximations and explicitly not advice. Bugs there are ordinary reports —
+  email them, ideally with the expected figure and a source.
 - Anything requiring physical or already-privileged access to the host.
 - Missing hardening on the demo/dev Compose stack (`docker-compose.yml`), which
   ships intentionally weak defaults for local development.
