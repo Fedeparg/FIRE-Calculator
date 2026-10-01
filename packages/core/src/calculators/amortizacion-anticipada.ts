@@ -1,5 +1,6 @@
 // Amortización anticipada: compara reducir cuota (mismo plazo) o plazo (misma cuota), con la comisión por amortización anticipada. Core puro.
 
+import { amortizationSchedule, monthlyRate } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
 
 export interface EarlyRepaymentInput {
@@ -24,7 +25,7 @@ export interface EarlyRepaymentResult {
 export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymentResult {
   const pending = Math.max(0, input.pendingPrincipal || 0);
   const remainingYears = Math.max(1, Math.round(input.remainingYears || 1));
-  const i = (input.annualRate || 0) / 100 / 12;
+  const i = monthlyRate(input.annualRate);
   const totalMonths = remainingYears * 12;
   const extra = Math.min(pending, Math.max(0, input.extraPayment || 0));
   const newPrincipal = pending - extra;
@@ -55,13 +56,15 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
   // Opción B: reducir plazo; se simula mes a mes (último pago parcial) para que meses e intereses sean coherentes
   let newMonths = 0;
   let interestAfterTerm = 0;
-  let balance = newPrincipal;
-  while (balance > 0.005 && newMonths < totalMonths) {
-    const interest = balance * i;
-    const principalPart = Math.min(balance, monthlyPaymentBefore - interest);
+  for (const { balanceBefore, interest, principalPart } of amortizationSchedule(
+    newPrincipal,
+    i,
+    monthlyPaymentBefore,
+    totalMonths,
+  )) {
+    if (!(balanceBefore > 0.005)) break; // saldo liquidado
     if (principalPart <= 0) break; // la cuota no cubre ni los intereses
     interestAfterTerm += interest;
-    balance -= principalPart;
     newMonths++;
   }
   const reduceTermInterestSaved = totalInterestBefore - interestAfterTerm;

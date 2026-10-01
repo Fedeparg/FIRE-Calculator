@@ -1,6 +1,7 @@
 // ¿Qué hipoteca me puedo permitir? Combina la regla del esfuerzo, el LTV máximo del banco y el
 // ahorro, que debe cubrir entrada y gastos de compra. Core puro.
 
+import { monthlyRate, presentValueOfPayments } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
 
 export interface AffordabilityInput {
@@ -37,13 +38,13 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
   const effort = Math.min(100, Math.max(0, input.effortRatio ?? 35)) / 100;
   const ltv = Math.min(100, Math.max(0, input.maxLtv ?? 80)) / 100;
   const costsRate = Math.max(0, input.purchaseCostsRate ?? 12) / 100;
-  const i = (input.annualRate || 0) / 100 / 12;
+  const i = monthlyRate(input.annualRate);
   const term = Math.max(1, Math.round(input.termYears || 1));
   const n = term * 12;
 
   // 1) Préstamo máximo por capacidad de pago (regla del esfuerzo).
   const maxMonthlyPayment = Math.max(0, income * effort - debts);
-  const maxLoanByPayment = i === 0 ? maxMonthlyPayment * n : (maxMonthlyPayment * (1 - Math.pow(1 + i, -n))) / i;
+  const maxLoanByPayment = presentValueOfPayments(maxMonthlyPayment, i, n);
 
   // 2) Precio máximo: mayor P con efectivo(P) = P·(1 + gastos) − préstamo(P) ≤ ahorro, siendo
   //    préstamo(P) = min(maxLoanByPayment, ltv·P); efectivo es monótono creciente.
