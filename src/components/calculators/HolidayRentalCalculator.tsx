@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeHolidayRental } from "@/core/calculators/rentabilidad-alquiler-vacacional";
+import { computeHolidayRental } from "@sextante/core/calculators/rentabilidad-alquiler-vacacional";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

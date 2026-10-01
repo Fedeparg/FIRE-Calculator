@@ -13,7 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { computeMortgage, type MortgageYearPoint } from "@/core/calculators/hipoteca";
+import { computeMortgage, type MortgageYearPoint } from "@sextante/core/calculators/hipoteca";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

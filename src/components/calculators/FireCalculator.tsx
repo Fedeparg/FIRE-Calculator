@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeFire } from "@/core/calculators/fire";
-import { FREQUENCIES, type Frequency } from "@/core/projection";
+import { computeFire } from "@sextante/core/calculators/fire";
+import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";

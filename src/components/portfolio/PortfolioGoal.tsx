@@ -9,8 +9,8 @@ import {
   type FieldValues,
 } from "@/core/calculator-url-state";
 import { convertCurrency } from "@sextante/core/fx";
-import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@/core/portfolio-goal";
-import { FREQUENCIES, type Frequency } from "@/core/projection";
+import { computePortfolioGoal, FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
+import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/lib/format";
 import { PORTFOLIO_CURRENCIES } from "@/lib/portfolio";
 import {

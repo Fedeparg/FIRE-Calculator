@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeBudget } from "@/core/calculators/presupuesto";
+import { computeBudget } from "@sextante/core/calculators/presupuesto";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

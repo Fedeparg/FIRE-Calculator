@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeNetSalary } from "@/core/calculators/salario-bruto-neto";
+import { estimateNetSalary } from "@sextante/core/fiscal/irpf";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {
   CONTRACT_TYPES,
@@ -58,7 +58,7 @@ export default function NetSalaryCalculator() {
 
   const result = useMemo(
     () =>
-      computeNetSalary({
+      estimateNetSalary({
         grossAnnual,
         payments: payments === "12" ? 12 : 14,
         contractType,

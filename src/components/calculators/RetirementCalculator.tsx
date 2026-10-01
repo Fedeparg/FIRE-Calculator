@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeRetirement } from "@/core/calculators/ahorro-jubilacion";
+import { computeRetirement } from "@sextante/core/calculators/ahorro-jubilacion";
 import { useFormat } from "@/lib/format";
 import NumberField from "../ui/NumberField";
 import Stat from "../ui/Stat";

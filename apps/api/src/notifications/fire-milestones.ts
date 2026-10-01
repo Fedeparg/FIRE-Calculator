@@ -1,10 +1,10 @@
 /**
  * Hitos del objetivo FIRE: lógica pura (sin Nest ni BD), testeable.
  *
- * El objetivo se reconstruye con la MISMA fórmula que la calculadora del frontend
- * (`src/core/calculators/fire.ts`): patrimonio objetivo = gasto anual / tasa de retiro, con la
- * tasa por defecto del 4 % si no es positiva. La API no importa el core del frontend (ver
- * ROADMAP), así que la fórmula —una división— se repite aquí y un test la fija.
+ * El objetivo se reconstruye con la MISMA fórmula que la calculadora FIRE
+ * (`@sextante/core/calculators/fire`): patrimonio objetivo = gasto anual / tasa de retiro, con
+ * la tasa por defecto del 4 % si no es positiva. Aquí solo hace falta esa división, no la
+ * proyección entera, así que se repite y un test la fija.
  */
 
 /** Hitos que se avisan, en % del objetivo, de menor a mayor. */
