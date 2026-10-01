@@ -14,6 +14,17 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "e9ddcbc5",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "describe la composición desplegable",
+            "en": "describe the expandable composition"
+          },
+          "hidden": true
+        },
+        {
           "hash": "0235220a",
           "type": "docs",
           "scope": "changelog",
@@ -23,6 +34,17 @@
             "en": "describe today's gain in Positions"
           },
           "hidden": true
+        },
+        {
+          "hash": "975f0ad0",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "el bloque de evolución se simplifica: título corto, rangos compactos, la variación del periodo en una línea y una leyenda clara de la zona estimada",
+            "en": "the history block is simpler: a short title, compact ranges, the period change on one line and a clear legend for the estimated area"
+          },
+          "hidden": false
         },
         {
           "hash": "f5f1c360",
