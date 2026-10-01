@@ -21,11 +21,13 @@ const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 const USER_AGENT = 'Mozilla/5.0';
 
 /**
- * Rango del histórico que se pide al dar de alta un símbolo. Un año de cierres diarios cabe
- * en la MISMA llamada que ya se hacía (mismo endpoint, distintos `range`/`interval`), así que
- * el coste frente a la fuente es idéntico: una petición.
+ * Rango del histórico que se pide al dar de alta un símbolo. Cinco años de cierres diarios
+ * (~1.280 barras, ~135 kB de JSON, comprobado en vivo con IWDA.AS) caben en UNA llamada al mismo
+ * endpoint con otro `range`/`interval`: el coste en peticiones frente a la fuente es idéntico al
+ * de pedir un solo cierre. 5 años es también el tope de la serie que reconstruye la cartera
+ * (`HISTORY_MAX_DAYS` en `prices.service.ts`).
  */
-const HISTORY_RANGE = '1y';
+const HISTORY_RANGE = '5y';
 const HISTORY_INTERVAL = '1d';
 
 /** Forma (parcial) de la respuesta de Yahoo que nos interesa. */
@@ -130,7 +132,7 @@ export class YahooPriceProvider implements PriceProvider {
   }
 
   /**
-   * Un año de cierres diarios en UNA sola petición al mismo endpoint (`range`/`interval`),
+   * Cinco años de cierres diarios en UNA sola petición al mismo endpoint (`range`/`interval`),
    * reutilizando el mismo camino de reintentos, backoff y timeout que el refresco: el trato
    * con los límites de Yahoo es idéntico. Devuelve `[]` ante cualquier fallo.
    */

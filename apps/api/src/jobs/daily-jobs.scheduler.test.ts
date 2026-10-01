@@ -25,7 +25,7 @@ function setup(env: Record<string, string> = {}) {
   const config = { get: (key: string) => env[key] } as unknown as ConfigService;
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
-    ensureRecentHistoryForActivePositions: vi.fn(() => Promise.resolve()),
+    ensureHistoryForActivePositions: vi.fn(() => Promise.resolve()),
   };
   const snapshots = {
     captureAll: vi.fn(() => Promise.resolve({ date: '2026-09-28', users: 0, captured: 0, failed: 0 })),

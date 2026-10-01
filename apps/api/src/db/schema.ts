@@ -227,13 +227,12 @@ export const portfolioSnapshots = pgTable(
     /** Tasas FX del día: USD por unidad de cada divisa (USD = 1). */
     fxRates: jsonb('fx_rates').$type<Record<string, number>>().notNull(),
     /**
-     * `true` si esta fila es una valoración BACKFILLED (cantidad ACTUAL de la cartera
-     * aplicada a los precios de un día pasado), no una captura real del cron de esa fecha.
-     * Una captura real (`PortfolioSnapshotsService.captureUser`) SIEMPRE la sustituye,
-     * pase lo que pase; una pasada de backfill posterior solo puede REFINAR una fila que ya
-     * era estimada (ver el `setWhere` del upsert en `backfillUser`), nunca pisar una real.
-     * El frontend la usa para no presentar una aproximación con la misma certeza que un
-     * dato real.
+     * `true` si esta fila es una RECONSTRUCCIÓN a partir de los lotes (la cantidad y el coste
+     * que se tenían ese día según las operaciones, valorados con los cierres de la caché), no una
+     * captura real del cron de esa fecha. Una captura real (`PortfolioSnapshotsService.captureUser`)
+     * SIEMPRE la sustituye, pase lo que pase; una reconstrucción posterior solo vuelve a escribir
+     * las filas estimadas (borra y regenera) y nunca pisa una real (ver `backfillUser`). El
+     * frontend la usa para no presentar una aproximación con la misma certeza que un dato real.
      */
     estimated: boolean('estimated').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

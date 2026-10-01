@@ -30,11 +30,12 @@ export interface PriceProvider {
 
   /**
    * Devuelve la SERIE de cierres diarios del símbolo, del más antiguo al más reciente, para
-   * el último año aproximadamente. Sirve para que un símbolo recién dado de alta tenga
+   * los últimos 5 años aproximadamente (una sola llamada). Sirve para que un símbolo recién dado de alta tenga
    * histórico desde el primer día, en vez de tener que esperar meses a que el cron diario lo
    * construya cierre a cierre.
    *
-   * Es una llamada por símbolo y solo se usa en el ALTA (`primeSymbol`), nunca en el refresco
+   * Es una llamada por símbolo y solo se usa en el ALTA/importación (`primeSymbol`) y al reparar un hueco de cobertura
+   * (`ensureHistory`), nunca en el refresco
    * diario: pedir un año entero de cada símbolo cada día multiplicaría el tráfico a la fuente
    * sin aportar nada (el cierre del día ya lo trae `getQuotes`).
    *

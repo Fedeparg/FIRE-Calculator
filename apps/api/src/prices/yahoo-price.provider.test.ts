@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   epochToUtcDate,
   parseYahooChart,
   parseYahooChartHistory,
+  YahooPriceProvider,
 } from './yahoo-price.provider.js';
 
 /** Construye una respuesta de Yahoo con el `meta` indicado. */
@@ -156,5 +157,35 @@ describe('parseYahooChartHistory', () => {
     ['sin closes', { chart: { result: [{ meta: { currency: 'EUR' }, timestamp: [DAY_1] }] } }],
   ])('devuelve [] con una respuesta inutilizable: %s', (_label, body) => {
     expect(parseYahooChartHistory('X', body)).toEqual([]);
+  });
+});
+
+describe('YahooPriceProvider.getHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('pide 5 años de cierres diarios en UNA sola llamada', async () => {
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(
+        Response.json({
+          chart: {
+            result: [
+              { meta: { currency: 'EUR' }, timestamp: [1_773_570_600], indicators: { quote: [{ close: [95.4] }] } },
+            ],
+          },
+        }),
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const history = await new YahooPriceProvider().getHistory('IWDA.AS');
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url] = fetchMock.mock.calls[0] as unknown as [string];
+    expect(url).toContain('/IWDA.AS?');
+    expect(url).toContain('range=5y');
+    expect(url).toContain('interval=1d');
+    expect(history).toEqual([{ symbol: 'IWDA.AS', close: 95.4, currency: 'EUR', date: '2026-03-15' }]);
   });
 });

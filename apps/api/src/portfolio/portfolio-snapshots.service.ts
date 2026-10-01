@@ -1,14 +1,20 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { and, asc, gte, eq } from 'drizzle-orm';
+import { and, asc, eq, gte } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import { portfolioSnapshots, positions } from '../db/schema.js';
+import { portfolioSnapshots, positionLots, positions } from '../db/schema.js';
 import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/position-events.js';
 import { PositionsService } from '../positions/positions.service.js';
-import { HISTORY_BACKFILL_DAYS, PricesService } from '../prices/prices.service.js';
+import { HISTORY_MAX_DAYS, PricesService } from '../prices/prices.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
-import { aggregatePortfolio, convertCurrency } from '@sextante/core/fx';
+import { convertCurrency } from '@sextante/core/fx';
+import {
+  firstTradeDate,
+  reconstructHistory,
+  type HistoryLot,
+  type HistoryPosition,
+} from '@sextante/core/portfolio-history';
 
 /**
  * DIVISA BASE CANÓNICA del histórico. Los importes de `portfolio_snapshots` se guardan
@@ -19,9 +25,12 @@ import { aggregatePortfolio, convertCurrency } from '@sextante/core/fx';
  */
 export const SNAPSHOT_BASE_CURRENCY = 'EUR';
 
-/** Rango por defecto y máximo del histórico que se puede pedir, en días. */
+/** Rango por defecto del histórico que se puede pedir, en días. El máximo (5 años) vive en `prices.service.ts`. */
 export const HISTORY_DEFAULT_DAYS = 365;
-export const HISTORY_MAX_DAYS = 1825;
+export { HISTORY_MAX_DAYS };
+
+/** Filas por sentencia al escribir el histórico reconstruido (evita una sentencia por día). */
+const UPSERT_CHUNK_SIZE = 200;
 
 /** Un punto de la serie, ya reexpresado a la divisa pedida. */
 export interface PortfolioHistoryPoint {
@@ -37,8 +46,9 @@ export interface PortfolioHistoryPoint {
   valuedPositions: number;
   totalPositions: number;
   /**
-   * `true` si este punto es una estimación BACKFILLED (cartera actual aplicada a precios de
-   * ese día pasado), no una captura real de aquel día. Ver `backfillUser`.
+   * `true` si este punto es una RECONSTRUCCIÓN a partir de las operaciones (cantidad y coste
+   * de aquel día según los lotes, valorados con los cierres de ese día), no una captura real del
+   * cron de aquella fecha. Ver `backfillUser`.
    */
   estimated: boolean;
 }
@@ -62,6 +72,8 @@ export interface SnapshotSummary {
 
 /** Tope de `numeric(20,8)`: 12 dígitos enteros. */
 const MAX_SNAPSHOT_AMOUNT = 1e12;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
 function todayUtc(): string {
@@ -178,96 +190,123 @@ export class PortfolioSnapshotsService {
   }
 
   /**
-   * Backfill de los últimos `days` días para UN usuario, con la cantidad ACTUAL de sus
-   * posiciones (foto de hoy) aplicada a los precios "como estaban" cada día pasado. Usa
-   * `aggregatePortfolio` DIRECTAMENTE (no `PortfolioValuationService.valuate`, que solo sabe
-   * valorar "hoy"): es pura y agnóstica de fecha, y ya es la misma fórmula que ve la UI.
+   * Reconstruye el histórico de UN usuario desde su PRIMERA operación (con tope de
+   * `HISTORY_MAX_DAYS`) hasta ayer, usando sus lotes: cada día se valora la cantidad y el coste
+   * medio que se tenían ESE día, no los actuales, así que no se inventa historia (antes de la
+   * primera compra no hay snapshot, y tras vender del todo tampoco). La lógica es pura y vive en
+   * `@sextante/core/portfolio-history`; aquí solo se cargan los datos y se escribe el resultado.
    *
-   * Simplificación consciente y aceptada por producto: si el usuario compró/vendió dentro de
-   * esta ventana, los puntos backfilled anteriores a esa operación quedan aproximados (aplican
-   * la cantidad de HOY a precios de ANTES). Por eso se guardan con `estimated: true` — y el
-   * frontend lo señala de forma visible, no solo con un icono sutil.
+   * Coste acotado: 3 lecturas (posiciones, lotes y series de precios/FX de una vez) y
+   * ~`días / 200` escrituras, con independencia de cuántos días o símbolos haya. Por eso se puede
+   * lanzar siempre (alta, importación, arranque y cron nocturno) sin preocuparse por la factura.
    *
-   * El upsert NUNCA pisa una captura real (`estimated: false`): el `setWhere` solo permite
-   * actualizar una fila que YA era estimada. Esto además permite que una pasada de backfill
-   * posterior REFINE una estimación anterior con mejores datos (p. ej. si la primera corrió
-   * mientras `primeSymbol` aún estaba trayendo histórico en segundo plano, dado su tope de
-   * espera de 9s), en vez de dejarla congelada para siempre.
+   * Las filas se guardan con `estimated: true`: son una reconstrucción con los cierres de la
+   * caché, no una captura de ese día (p. ej. el instrumento pudo cotizar a otra hora). El
+   * frontend lo señala. Una captura REAL (`estimated: false`) nunca se pisa (`onConflictDoNothing`
+   * sobre `(userId, date)`), y las estimadas anteriores se sustituyen enteras en la misma
+   * transacción, lo que además RETIRA las que un backfill antiguo (cantidad de hoy aplicada a
+   * días previos a la compra) escribió sin base. Si la reconstrucción sale vacía (aún sin
+   * precios porque `primeSymbol` sigue trayendo histórico en segundo plano) no se toca nada: una
+   * pasada posterior la completa.
+   *
+   * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar ese día
+   * (`valuedPositions < totalPositions`), igual que la captura diaria.
    */
-  async backfillUser(userId: string, days: number = HISTORY_BACKFILL_DAYS): Promise<void> {
+  async backfillUser(userId: string): Promise<void> {
     const owned = await this.positionsService.findAllByUser(userId);
     if (owned.length === 0) return; // mismo criterio que `usersWithPositions`
 
-    const tickers = [...new Set(owned.map((p) => p.ticker))];
-
-    for (const date of this.backfillDates(days)) {
-      const priceMap = await this.prices.getPricesAsOf(tickers, date);
-      const fx = await this.prices.getFxRatesAsOf(date);
-
-      const pricesRecord: Record<string, { close: number; currency: string }> = {};
-      for (const [ticker, info] of priceMap) {
-        pricesRecord[ticker] = { close: info.close, currency: info.currency };
-      }
-
-      const aggregate = aggregatePortfolio({
-        positions: owned.map((p) => ({
-          ticker: p.ticker,
-          quantity: p.quantity,
-          avgPrice: p.avgPrice,
-          currency: p.currency,
-          isDerivative: p.isDerivative,
-        })),
-        prices: pricesRecord,
-        rates: fx.rates,
-        display: SNAPSHOT_BASE_CURRENCY,
+    const lotRows = await this.db
+      .select()
+      .from(positionLots)
+      .where(eq(positionLots.userId, userId))
+      // Orden canónico de la agregación de lotes (ver `compareLots`): el del mismo día importa.
+      .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
+    const lotsByPosition = new Map<string, HistoryLot[]>();
+    for (const row of lotRows) {
+      const list = lotsByPosition.get(row.positionId) ?? [];
+      list.push({
+        kind: row.kind,
+        quantity: Number(row.quantity),
+        price: Number(row.price),
+        tradedAt: row.tradedAt,
       });
+      lotsByPosition.set(row.positionId, list);
+    }
 
-      // Sin ningún precio convertible ese día: no hay nada honesto que guardar (mismo
-      // criterio que "usuarios sin posiciones se omiten" — aquí, "día sin datos se omite").
-      if (aggregate.valued === 0) continue;
+    const historyPositions: HistoryPosition[] = owned.map((p) => ({
+      ticker: p.ticker,
+      currency: p.currency,
+      isDerivative: p.isDerivative,
+      // Una posición sin lotes (anterior al modelo de lotes) se trata como una única compra
+      // el día de alta: es lo más cercano a la verdad que se conoce.
+      lots: lotsByPosition.get(p.id) ?? [
+        {
+          kind: 'buy',
+          quantity: p.quantity,
+          price: p.avgPrice,
+          tradedAt: p.createdAt.slice(0, 10),
+        },
+      ],
+    }));
 
+    const earliest = firstTradeDate(historyPositions);
+    if (earliest === null) return;
+    const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
+    const from = earliest > floor ? earliest : floor;
+    const to = new Date(Date.now() - DAY_MS).toISOString().slice(0, 10); // ayer: hoy es del cron
+    if (from > to) return;
+
+    const series = await this.prices.getSeriesSince([...new Set(owned.map((p) => p.ticker))], from);
+    const days = reconstructHistory({
+      positions: historyPositions,
+      prices: series.prices,
+      fx: series.fx,
+      from,
+      to,
+      display: SNAPSHOT_BASE_CURRENCY,
+    });
+
+    const rows = days.flatMap(({ date, aggregate, rates }) => {
       const invested = toNumeric(aggregate.invested);
       const marketValue = toNumeric(aggregate.marketValue);
-      if (invested === null || marketValue === null) continue; // desbordado: se salta ese día
+      if (invested === null || marketValue === null) return []; // desbordado: se salta ese día
+      return [
+        {
+          userId,
+          date,
+          invested,
+          marketValue,
+          valuedPositions: aggregate.valued,
+          totalPositions: aggregate.total,
+          fxRates: rates,
+          estimated: true,
+        },
+      ];
+    });
+    if (rows.length === 0) return;
 
-      const row = {
-        userId,
-        date,
-        invested,
-        marketValue,
-        valuedPositions: aggregate.valued,
-        totalPositions: aggregate.total,
-        fxRates: fx.rates,
-        estimated: true,
-      };
-
-      await this.db
-        .insert(portfolioSnapshots)
-        .values(row)
-        .onConflictDoUpdate({
-          target: [portfolioSnapshots.userId, portfolioSnapshots.date],
-          set: {
-            invested: row.invested,
-            marketValue: row.marketValue,
-            valuedPositions: row.valuedPositions,
-            totalPositions: row.totalPositions,
-            fxRates: row.fxRates,
-            estimated: true,
-            updatedAt: new Date(),
-          },
-          setWhere: eq(portfolioSnapshots.estimated, true),
-        });
-    }
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(portfolioSnapshots)
+        .where(and(eq(portfolioSnapshots.userId, userId), eq(portfolioSnapshots.estimated, true)));
+      for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+        await tx
+          .insert(portfolioSnapshots)
+          .values(rows.slice(i, i + UPSERT_CHUNK_SIZE))
+          .onConflictDoNothing();
+      }
+    });
   }
 
   /** Backfill de todos los usuarios con posiciones. Aislado por usuario, igual que `captureAll`. */
-  async backfillAll(days: number = HISTORY_BACKFILL_DAYS): Promise<void> {
+  async backfillAll(): Promise<void> {
     const userIds = await this.usersWithPositions();
     let backfilled = 0;
     let failed = 0;
     for (const userId of userIds) {
       try {
-        await this.backfillUser(userId, days);
+        await this.backfillUser(userId);
         backfilled += 1;
       } catch (error) {
         failed += 1;
@@ -277,31 +316,13 @@ export class PortfolioSnapshotsService {
       }
     }
     this.logger.log(
-      `Backfill de histórico (${days} días): ${backfilled}/${userIds.length} usuarios` +
+      `Backfill de histórico: ${backfilled}/${userIds.length} usuarios` +
         (failed ? ` — ${failed} con error` : ''),
     );
   }
 
   /**
-   * Últimos `days` días naturales ANTERIORES a hoy, en `YYYY-MM-DD`. Excluye HOY a propósito:
-   * valorar el día de hoy es responsabilidad exclusiva de `captureUser`/el cron nocturno, que
-   * es una captura real (`estimated: false`). Si hoy entrase en esta ventana, cualquier
-   * backfill disparado durante el día (el evento `position.created`, o el autocurado de
-   * `onApplicationBootstrap` al reiniciar la API) escribiría una fila `estimated: true` para
-   * hoy mientras aún no existe la captura real de la noche — y como `estimatedRange` en el
-   * frontend toma el primer y el último día estimado, ese único punto en el extremo más
-   * reciente bastaría para marcar TODO el histórico real intermedio como "estimación".
-   */
-  private backfillDates(days: number): string[] {
-    const out: string[] = [];
-    for (let i = 1; i <= days; i++) {
-      out.push(new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
-    }
-    return out;
-  }
-
-  /**
-   * Backfillea el histórico reciente del usuario justo tras dar de alta (o editar el símbolo
+   * Reconstruye el histórico del usuario justo tras dar de alta (o editar el símbolo
    * de) una posición — ver `position-events.ts` sobre por qué es un evento y no una llamada
    * directa. Tolerante a fallos: nunca debe romper el flujo que disparó el evento.
    */
