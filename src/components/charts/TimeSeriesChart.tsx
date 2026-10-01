@@ -120,8 +120,8 @@ type Props = {
   /** Dibuja la leyenda de Recharts. Se apaga cuando quien llama pinta una propia, más explicada. */
   showLegend?: boolean;
   /**
-   * `fromSm`: sin eje Y por debajo de `sm`. En un móvil el eje se come ~70 px de ancho; quien
-   * lo pide enseña las cifras clave encima de la gráfica, y el tooltip da el valor exacto.
+   * `fromSm`: sin ejes por debajo de `sm`. En un móvil los ejes se comen el ancho; quien lo pide
+   * enseña encima el valor y el rango de fechas, y el tooltip da cada punto exacto.
    */
   yAxis?: "always" | "fromSm";
 };
@@ -244,7 +244,9 @@ export default function TimeSeriesChart({
   ];
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    // Sin eje Y (móvil compacto) la gráfica ya vive dentro de la tarjeta de quien la usa: sin
+    // segunda caja, para aprovechar todo el ancho.
+    <div className={showYAxis ? "rounded-xl border border-border bg-surface p-4" : "sm:rounded-xl sm:border sm:border-border sm:bg-surface sm:p-4"}>
       <div className={`flex items-center justify-between gap-3 ${hideTitle && !summary ? "" : "mb-3 min-h-[20px]"}`}>
         <h2 className={hideTitle ? "sr-only" : "text-sm font-medium text-foreground"}>{title}</h2>
         {summary && (
@@ -273,8 +275,7 @@ export default function TimeSeriesChart({
         <ResponsiveContainer>
           <AreaChart
             data={data}
-            // Sin eje Y, las fechas de los extremos del eje X (centradas en su marca) necesitan aire.
-            margin={{ top: 8, right: showYAxis ? 8 : 40, bottom: 0, left: showYAxis ? 8 : 40 }}
+            margin={{ top: 8, right: showYAxis ? 8 : 2, bottom: 0, left: showYAxis ? 8 : 2 }}
             onMouseDown={(s: RechartsState) => {
               if (!selectable || s?.activeLabel === undefined) return;
               const x = toNum(s.activeLabel);
@@ -298,6 +299,9 @@ export default function TimeSeriesChart({
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
               dataKey={xKey}
+              // En el modo compacto tampoco hay eje X: quien lo pide enseña el rango de fechas
+              // encima, y así la gráfica ocupa todo el ancho sin etiquetas cortadas.
+              hide={!showYAxis}
               tick={{ fontSize: 12, fill: "var(--muted)" }}
               // Sin `xFormat` no se pasa formateador: el eje se pinta igual que siempre.
               tickFormatter={xFormat}
