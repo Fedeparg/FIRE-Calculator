@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { REGION_CODES, UNSUPPORTED_REGIONS, type RegionSelection } from "@sextante/core/fiscal/regions";
-import SelectField from "../ui/SelectField";
+import SelectField from "@/components/ui/SelectField";
 
 type Props = {
   value: RegionSelection;

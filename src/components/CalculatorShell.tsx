@@ -3,7 +3,7 @@ import { Link } from "@/i18n/navigation";
 import { asLocale } from "@/core/types";
 import { SITE_NAME } from "@/lib/site";
 import { calculatorSchema } from "@/lib/jsonld";
-import CalculatorStateProvider from "./calculators/CalculatorState";
+import CalculatorStateProvider from "../features/calculators/components/CalculatorState";
 import Breadcrumbs from "./seo/Breadcrumbs";
 import JsonLd from "./seo/JsonLd";
 import CalculatorExplainer from "./wiki/CalculatorExplainer";

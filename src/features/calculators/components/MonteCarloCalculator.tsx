@@ -11,12 +11,12 @@ import {
 } from "@sextante/core/calculators/fire-montecarlo";
 import { HISTORICAL_RETURNS } from "@sextante/core/data/shiller-returns";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Notice from "../ui/Notice";
-import SelectField from "../ui/SelectField";
-import Stat from "../ui/Stat";
-import TimeSeriesChart from "../charts/TimeSeriesChart";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Notice from "@/components/ui/Notice";
+import SelectField from "@/components/ui/SelectField";
+import Stat from "@/components/ui/Stat";
+import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 
 const MODELS = ["lognormal", "historical"] as const;

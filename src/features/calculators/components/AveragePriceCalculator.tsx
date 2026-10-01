@@ -4,8 +4,8 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { computeAveragePrice } from "@sextante/core/calculators/promediar-acciones";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
 
 type Row = { id: number; price: number; shares: number; commission: number };
 

@@ -5,10 +5,10 @@ import { useTranslations } from "next-intl";
 import { computeWealthTax } from "@sextante/core/calculators/impuesto-patrimonio";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import Notice from "../ui/Notice";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import Notice from "@/components/ui/Notice";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function WealthTaxCalculator() {

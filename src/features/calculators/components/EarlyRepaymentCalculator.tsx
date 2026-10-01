@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeEarlyRepayment } from "@sextante/core/calculators/amortizacion-anticipada";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function EarlyRepaymentCalculator() {

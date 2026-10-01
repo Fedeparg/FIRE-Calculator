@@ -5,11 +5,11 @@ import { useTranslations } from "next-intl";
 import { KINSHIP_GROUPS, computeGiftTax, type KinshipGroup } from "@sextante/core/calculators/impuesto-donaciones";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import SelectField from "../ui/SelectField";
-import Stat from "../ui/Stat";
-import Notice from "../ui/Notice";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import SelectField from "@/components/ui/SelectField";
+import Stat from "@/components/ui/Stat";
+import Notice from "@/components/ui/Notice";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function GiftTaxCalculator() {

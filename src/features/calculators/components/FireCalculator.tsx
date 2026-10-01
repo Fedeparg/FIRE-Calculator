@@ -6,12 +6,12 @@ import { computeFire } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import SelectField from "../ui/SelectField";
-import Stat from "../ui/Stat";
-import TimeSeriesChart from "../charts/TimeSeriesChart";
-import BreakdownDonut from "../charts/BreakdownDonut";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import SelectField from "@/components/ui/SelectField";
+import Stat from "@/components/ui/Stat";
+import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 
 export default function FireCalculator() {

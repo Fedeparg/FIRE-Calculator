@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { describe, expect, it } from "vitest";
 
-import { CALCULATOR_COMPONENTS } from "../components/calculators/CalculatorBody";
+import { CALCULATOR_COMPONENTS } from "../features/calculators/components/CalculatorBody";
 import { CALCULATORS } from "./registry";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");

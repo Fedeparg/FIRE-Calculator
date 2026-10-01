@@ -4,10 +4,10 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeInflation } from "@sextante/core/calculators/inflacion";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import TimeSeriesChart from "../charts/TimeSeriesChart";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function InflationCalculator() {

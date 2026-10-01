@@ -2,29 +2,29 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { computeSimpleInterest } from "@sextante/core/calculators/interes-simple";
+import { computeStaking } from "@sextante/core/calculators/staking";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import Notice from "../ui/Notice";
-import TimeSeriesChart from "../charts/TimeSeriesChart";
-import BreakdownDonut from "../charts/BreakdownDonut";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import Notice from "@/components/ui/Notice";
+import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
-export default function SimpleInterestCalculator() {
-  const t = useTranslations("calc.interes-simple");
+export default function StakingCalculator() {
+  const t = useTranslations("calc.staking");
   const { formatEUR } = useFormat();
   const tc = useTranslations("chart");
 
-  const [principal, setPrincipal] = useNumberField("principal", 10000);
-  const [annualRate, setAnnualRate] = useNumberField("annualRate", 4);
-  const [years, setYears] = useNumberField("years", 15);
+  const [principal, setPrincipal] = useNumberField("principal", 5000);
+  const [apy, setApy] = useNumberField("apy", 8);
+  const [years, setYears] = useNumberField("years", 5);
   const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
 
   const result = useMemo(
-    () => computeSimpleInterest({ principal, annualRate, years, withholdingRate }),
-    [principal, annualRate, years, withholdingRate],
+    () => computeStaking({ principal, apy, years, withholdingRate }),
+    [principal, apy, years, withholdingRate],
   );
 
   return (
@@ -37,18 +37,11 @@ export default function SimpleInterestCalculator() {
             label={t("principal")}
             value={principal}
             onChange={setPrincipal}
-            step={1000}
+            step={500}
             help={t("help.principal")}
           />
-          <NumberField
-            label={t("annualRate")}
-            value={annualRate}
-            onChange={setAnnualRate}
-            step={0.5}
-            max={100}
-            help={t("help.annualRate")}
-          />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
+          <NumberField label={t("apy")} value={apy} onChange={setApy} step={0.5} max={1000} help={t("help.apy")} />
+          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={50} help={t("help.years")} />
           <NumberField
             label={t("withholdingRate")}
             value={withholdingRate}
@@ -61,12 +54,11 @@ export default function SimpleInterestCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label={t("netFinalValue")} value={formatEUR(result.netFinalValue)} highlight />
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} />
-            <Stat label={t("totalInterest")} value={formatEUR(result.totalInterest)} />
-            <Stat label={t("netInterest")} value={formatEUR(result.netInterest)} />
-            <Stat label={t("withheld")} value={formatEUR(result.withheld)} />
+            <Stat label={t("rewards")} value={formatEUR(result.rewards)} />
+            <Stat label={t("netRewards")} value={formatEUR(result.netRewards)} />
           </div>
 
           <TimeSeriesChart
@@ -74,8 +66,8 @@ export default function SimpleInterestCalculator() {
             data={result.series}
             xKey="year"
             stack={[
-              { key: "contributed", name: t("seriesContributed"), color: "var(--brand)" },
-              { key: "interest", name: t("seriesInterest"), color: "var(--accent)" },
+              { key: "contributed", name: t("seriesPrincipal"), color: "var(--brand)" },
+              { key: "interest", name: t("seriesRewards"), color: "var(--accent)" },
             ]}
             valueKey="value"
             contributedKey="contributed"
@@ -94,8 +86,8 @@ export default function SimpleInterestCalculator() {
             title={t("donutTitle")}
             centerLabel={t("donutCenter")}
             data={[
-              { name: t("seriesContributed"), value: principal, color: "var(--brand)" },
-              { name: t("seriesInterest"), value: result.totalInterest, color: "var(--accent)" },
+              { name: t("seriesPrincipal"), value: principal, color: "var(--brand)" },
+              { name: t("seriesRewards"), value: result.rewards, color: "var(--accent)" },
             ]}
           />
         </>

@@ -5,12 +5,12 @@ import { useTranslations } from "next-intl";
 import { Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { computeMortgage, type MortgageYearPoint } from "@sextante/core/calculators/hipoteca";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import ChartDataTable, { type ChartTableColumn } from "../charts/ChartDataTable";
-import ChartTooltip from "../charts/ChartTooltip";
-import BreakdownDonut from "../charts/BreakdownDonut";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import ChartDataTable, { type ChartTableColumn } from "@/components/charts/ChartDataTable";
+import ChartTooltip from "@/components/charts/ChartTooltip";
+import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function MortgageCalculator() {

@@ -4,10 +4,10 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeBudget } from "@sextante/core/calculators/presupuesto";
 import { useFormat } from "@/lib/format";
-import NumberField from "../ui/NumberField";
-import Stat from "../ui/Stat";
-import BreakdownDonut from "../charts/BreakdownDonut";
-import CalculatorLayout from "../CalculatorLayout";
+import NumberField from "@/components/ui/NumberField";
+import Stat from "@/components/ui/Stat";
+import BreakdownDonut from "@/components/charts/BreakdownDonut";
+import CalculatorLayout from "@/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 
 export default function BudgetCalculator() {
