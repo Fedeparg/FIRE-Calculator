@@ -6,7 +6,7 @@ import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
 import { goalProgress, goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
+import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 
 type Props = {
   /** Valor de mercado de la cartera en `display` (el mismo total que el resto del Resumen). */

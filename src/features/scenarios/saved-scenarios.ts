@@ -5,8 +5,8 @@
  * (`apps/api/src/scenarios/`), que autoriza y hace el scoping por usuario.
  */
 
-import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "./client";
-import type { ApiQueryState } from "./use-api-query";
+import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
+import type { ApiQueryState } from "@/shared/api/use-api-query";
 
 /** Un escenario tal y como lo devuelve `GET /api/scenarios` (fechas como ISO string). */
 export type SavedScenario = {
