@@ -8,6 +8,7 @@ import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function AffordabilityCalculator() {
   const t = useTranslations("calc.que-hipoteca-me-puedo-permitir");
@@ -40,7 +41,7 @@ export default function AffordabilityCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -109,14 +110,14 @@ export default function AffordabilityCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatGrid columns={3}>
             <Stat label={t("maxPrice")} value={formatEUR(result.maxPrice)} highlight />
             <Stat label={t("maxLoan")} value={formatEUR(result.maxLoan)} />
             <Stat label={t("estimatedMonthlyPayment")} value={formatEURCents(result.estimatedMonthlyPayment)} />
             <Stat label={t("downPaymentNeeded")} value={formatEUR(result.downPaymentNeeded)} />
             <Stat label={t("purchaseCostsAmount")} value={formatEUR(result.purchaseCostsAmount)} />
             <Stat label={t("maxMonthlyPayment")} value={formatEURCents(result.maxMonthlyPayment)} />
-          </div>
+          </StatGrid>
           <p className="text-sm text-muted">
             {t("bindingLabel")} <span className="font-medium text-foreground">{bindingText}</span>
           </p>

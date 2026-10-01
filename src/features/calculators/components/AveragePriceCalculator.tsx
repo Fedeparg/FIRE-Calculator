@@ -6,6 +6,8 @@ import { computeAveragePrice } from "@sextante/core/calculators/promediar-accion
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
+import Button from "@/shared/ui/Button";
+import StatGrid from "@/shared/ui/StatGrid";
 
 type Row = { id: number; price: number; shares: number; commission: number };
 
@@ -79,13 +81,9 @@ export default function AveragePriceCalculator() {
             </li>
           ))}
         </ul>
-        <button
-          type="button"
-          onClick={addRow}
-          className="mt-4 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand-soft"
-        >
+        <Button variant="accent" size="sm" onClick={addRow} className="mt-4">
           + {t("addRow")}
-        </button>
+        </Button>
 
         <div className="mt-5 border-t border-border pt-4 sm:max-w-xs">
           <NumberField
@@ -98,7 +96,7 @@ export default function AveragePriceCalculator() {
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <StatGrid columns={3}>
         <Stat label={t("averagePrice")} value={formatEURCents(result.averagePrice)} highlight />
         <Stat label={t("breakEvenPrice")} value={formatEURCents(result.breakEvenPrice)} />
         <Stat label={t("totalShares")} value={formatNumber(result.totalShares)} />
@@ -110,7 +108,7 @@ export default function AveragePriceCalculator() {
           value={result.unrealizedGain === null ? "—" : formatEUR(result.unrealizedGain)}
         />
         <Stat label={t("returnPct")} value={result.returnPct === null ? "—" : formatPercent(result.returnPct)} />
-      </div>
+      </StatGrid>
     </div>
   );
 }

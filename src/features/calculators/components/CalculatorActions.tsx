@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { trackEvent } from "@/shared/analytics/track";
 import { useCalculatorState } from "./CalculatorState";
 import ScenarioPanel from "./ScenarioPanel";
+import Button from "@/shared/ui/Button";
 
 /** Resultado del último intento de copiar (el portapapeles puede estar denegado). */
 type CopyStatus = "idle" | "copied" | "error";
@@ -55,13 +56,9 @@ export default function CalculatorActions() {
     <section className="mt-6 grid gap-4 rounded-xl border border-border bg-surface p-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h2 className="mr-auto text-sm font-semibold text-foreground">{t("title")}</h2>
-        <button
-          type="button"
-          onClick={handleCopy}
-          className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-brand transition-colors hover:bg-brand-soft"
-        >
+        <Button variant="accent" size="sm" onClick={handleCopy}>
           {t("copyLink")}
-        </button>
+        </Button>
         {/*
           Región viva: el cambio de estado del botón se ANUNCIA, no solo se colorea. Está
           siempre en el DOM (no se crea al copiar) para que el lector de pantalla la observe.

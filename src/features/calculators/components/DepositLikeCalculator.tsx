@@ -9,6 +9,7 @@ import Stat from "@/shared/ui/Stat";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 type Props = {
   /** Namespace de i18n ("deposito-plazo-fijo" | "cuenta-remunerada"). */
@@ -45,7 +46,7 @@ export default function DepositLikeCalculator({ namespace, principalKey, default
 
   return (
     <CalculatorLayout
-      inputCount={5}
+      layout="sidebar"
       inputs={
         <>
           <NumberField
@@ -77,12 +78,12 @@ export default function DepositLikeCalculator({ namespace, principalKey, default
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("finalNet")} value={formatEUR(result.finalNet)} highlight />
             <Stat label={t("realFinalNet")} value={formatEUR(result.realFinalNet)} />
             <Stat label={t("netInterest")} value={formatEUR(result.netInterest)} />
             <Stat label={t("withheld")} value={formatEUR(result.withheld)} />
-          </div>
+          </StatGrid>
 
           <BreakdownDonut
             title={t("donutTitle")}

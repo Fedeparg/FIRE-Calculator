@@ -6,6 +6,7 @@ import type { CurrencyNote } from "@/features/portfolio/model/goal-amounts";
 import type { GoalOutcome } from "@/features/portfolio/model/goal-scenario";
 import { useFormat } from "@/shared/format/use-format";
 import Stat from "@/shared/ui/Stat";
+import StatGrid from "@/shared/ui/StatGrid";
 
 type Props = {
   goal: GoalOutcome;
@@ -32,7 +33,7 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <StatGrid>
         <Stat label={t("target")} value={formatCurrency(goal.target, display)} highlight />
         <Stat label={t("current")} value={formatCurrency(goal.current, display)} />
         <Stat label={t("remaining")} value={formatCurrency(goal.remaining, display)} />
@@ -44,7 +45,7 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
             value={goal.requiredContribution === null ? "—" : formatCurrency(goal.requiredContribution, display)}
           />
         )}
-      </div>
+      </StatGrid>
 
       {goal.progress !== null && (
         <div className="flex flex-col gap-1.5">

@@ -7,6 +7,7 @@ import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/shared/format/use-format";
 import DerivativesNotice from "./DerivativesNotice";
+import Button from "@/shared/ui/Button";
 
 type FormatQuantity = (n: number) => string;
 
@@ -154,14 +155,9 @@ export function PlanView({
 
       {lotsToImport > 0 ? (
         <div>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={importing}
-            className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button size="lg" onClick={onConfirm} disabled={importing} className="text-sm">
             {importing ? t("confirming") : t("confirm", { count: lotsToImport })}
-          </button>
+          </Button>
         </div>
       ) : (
         plan.positions.length > 0 && <p className="text-sm text-muted">{t("alreadyImported")}</p>

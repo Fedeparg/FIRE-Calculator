@@ -28,7 +28,7 @@ export default function GiftTaxCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={5}
+      layout="sidebar"
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>

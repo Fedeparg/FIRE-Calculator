@@ -23,6 +23,7 @@ import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function PayrollWithholdingCalculator() {
   const t = useTranslations("calc.irpf-nomina");
@@ -73,7 +74,7 @@ export default function PayrollWithholdingCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={11}
+      layout="grid"
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>
@@ -169,14 +170,14 @@ export default function PayrollWithholdingCalculator() {
         </>
       }
       results={
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StatGrid columns={3}>
           <Stat label={t("withholdingRate")} value={formatPercent(result.withholdingRate)} highlight />
           <Stat label={t("withholdingPerPayment")} value={formatEURCents(result.withholdingPerPayment)} />
           <Stat label={t("netPerPayment")} value={formatEURCents(result.netPerPayment)} />
           <Stat label={t("annualWithholding")} value={formatEUR(result.annualWithholding)} />
           <Stat label={t("socialSecurityPerPayment")} value={formatEURCents(result.socialSecurityPerPayment)} />
           <Stat label={t("grossPerPayment")} value={formatEURCents(result.grossPerPayment)} />
-        </div>
+        </StatGrid>
       }
     />
   );

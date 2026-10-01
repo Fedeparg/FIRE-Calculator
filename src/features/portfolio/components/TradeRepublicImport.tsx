@@ -12,6 +12,7 @@ import { importErrorKey, type ImportErrorKey } from "@/features/portfolio/model/
 import { useFormat } from "@/shared/format/use-format";
 import { apiJson } from "@/shared/api/client";
 import { PlanView, ResultView } from "./TradeRepublicImportViews";
+import { inputClass } from "@/shared/ui/field-classes";
 
 /** Slug del bróker para la analítica (sin datos del usuario). */
 const BROKER_SLUG = "trade-republic";
@@ -27,8 +28,7 @@ type Step =
   | { kind: "importing"; plan: ImportPlan }
   | { kind: "done"; result: ImportResult };
 
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
+const fileInputClass = `${inputClass} text-sm file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground`;
 
 /**
  * Flujo de importación desde Trade Republic: elegir fichero → vista previa → confirmar →
@@ -143,7 +143,7 @@ export default function TradeRepublicImport() {
           disabled={busy}
           onChange={handleFileChange}
           aria-describedby={`${uid}-file-hint`}
-          className={inputClass}
+          className={fileInputClass}
         />
         <p id={`${uid}-file-hint`} className="text-xs text-muted">
           {t("file.hint")}

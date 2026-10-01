@@ -12,6 +12,7 @@ import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function CompoundCalculator() {
   const t = useTranslations("calc.interes-compuesto");
@@ -48,7 +49,7 @@ export default function CompoundCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField
@@ -109,12 +110,12 @@ export default function CompoundCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} highlight />
             {inflationRate > 0 && <Stat label={t("finalRealValue")} value={formatEUR(result.finalRealValue)} />}
             <Stat label={t("totalContributed")} value={formatEUR(result.totalContributed)} />
             <Stat label={t("totalInterest")} value={formatEUR(result.totalInterest)} />
-          </div>
+          </StatGrid>
 
           <TimeSeriesChart
             title={t("chartTitle")}
@@ -127,14 +128,6 @@ export default function CompoundCalculator() {
             valueKey="value"
             contributedKey="contributed"
             interestKey="interest"
-            labels={{
-              axisX: tc("axisYear"),
-              total: tc("total"),
-              selectionTitle: tc("selectionTitle"),
-              growth: tc("growth"),
-              contributed: tc("contributed"),
-              interest: tc("interest"),
-            }}
           />
 
           <BreakdownDonut

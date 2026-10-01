@@ -27,7 +27,7 @@ export default function EarlyRepaymentCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={5}
+      layout="sidebar"
       inputs={
         <>
           <NumberField

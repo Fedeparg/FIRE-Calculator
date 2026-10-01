@@ -16,6 +16,7 @@ import {
   type PositionErrorKey,
 } from "@/features/portfolio/api";
 import PositionFormFields, { type PositionFormValues } from "./PositionFormFields";
+import Button from "@/shared/ui/Button";
 
 /** Id del título: da nombre al panel que contiene el formulario. */
 export const POSITION_FORM_TITLE_ID = "position-form-title";
@@ -165,14 +166,9 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             {t("duplicate", { ticker: duplicate.ticker, broker: duplicate.broker ?? "" })}
           </p>
           <p className="text-xs text-muted">{t("duplicateHint")}</p>
-          <button
-            type="button"
-            onClick={handleCombine}
-            disabled={status === "combining"}
-            className="self-start rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
-          >
+          <Button size="sm" onClick={handleCombine} disabled={status === "combining"} className="self-start">
             {status === "combining" ? t("combining") : t("combine")}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -191,11 +187,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       )}
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={status !== "idle" || !isValid}
-          className="rounded-lg bg-brand px-4 py-2.5 font-medium text-brand-fg transition hover:opacity-90 disabled:opacity-50"
-        >
+        <Button size="lg" type="submit" disabled={status !== "idle" || !isValid}>
           {isEditing
             ? status === "submitting"
               ? t("saving")
@@ -203,15 +195,11 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             : status === "submitting"
               ? t("submitting")
               : t("submit")}
-        </button>
+        </Button>
         {isEditing && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="rounded-lg border border-border px-4 py-2.5 font-medium text-foreground transition hover:bg-surface-2"
-          >
+          <Button variant="secondary" size="lg" onClick={onCancelEdit}>
             {t("cancel")}
-          </button>
+          </Button>
         )}
       </div>
     </form>

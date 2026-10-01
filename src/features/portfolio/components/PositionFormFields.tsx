@@ -7,6 +7,7 @@ import { sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
 import type { InstrumentSearchResult } from "@sextante/core/portfolio/types";
 import InstrumentSearchField from "./InstrumentSearchField";
+import { inputClass } from "@/shared/ui/field-classes";
 
 /** Lo que el usuario teclea en el formulario de posición (las cantidades, como texto). */
 export type PositionFormValues = {
@@ -26,9 +27,6 @@ type Props = {
   /** Al editar, intento de vaciar un bróker que la posición ya tenía (no se permite). */
   brokerEmptied: boolean;
 };
-
-const inputClass =
-  "w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30";
 
 /** Campos del formulario de posición. Presentacional: el estado y el envío viven en `PositionForm`. */
 export default function PositionFormFields({ values, onChange, brokerRequired, brokerEmptied }: Props) {

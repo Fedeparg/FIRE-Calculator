@@ -10,11 +10,11 @@ import Notice from "@/shared/ui/Notice";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function DividendsCalculator() {
   const t = useTranslations("calc.dividendos");
   const { formatEUR, formatPercent } = useFormat();
-  const tc = useTranslations("chart");
 
   const [shares, setShares] = useNumberField("shares", 100);
   const [dividendPerShare, setDividendPerShare] = useNumberField("dividendPerShare", 1.5);
@@ -30,7 +30,7 @@ export default function DividendsCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={6}
+      layout="grid"
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
@@ -70,14 +70,14 @@ export default function DividendsCalculator() {
       }
       results={
         <>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatGrid columns={3}>
             <Stat label={t("net")} value={formatEUR(result.net)} highlight />
             <Stat label={t("gross")} value={formatEUR(result.gross)} />
             <Stat label={t("withheld")} value={formatEUR(result.withheld)} />
             <Stat label={t("netYield")} value={result.netYield === null ? "—" : formatPercent(result.netYield)} />
             {years > 0 && <Stat label={t("cumulativeNet")} value={formatEUR(result.cumulativeNet)} />}
             {years > 0 && <Stat label={t("finalYearNet")} value={formatEUR(result.finalYearNet)} />}
-          </div>
+          </StatGrid>
 
           {years > 0 && (
             <TimeSeriesChart
@@ -86,14 +86,6 @@ export default function DividendsCalculator() {
               xKey="year"
               stack={[{ key: "cumulativeNet", name: t("seriesCumulativeNet"), color: "var(--accent)" }]}
               valueKey="cumulativeNet"
-              labels={{
-                axisX: tc("axisYear"),
-                total: tc("total"),
-                selectionTitle: tc("selectionTitle"),
-                growth: tc("growth"),
-                contributed: tc("contributed"),
-                interest: tc("interest"),
-              }}
             />
           )}
         </>

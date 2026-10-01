@@ -10,11 +10,11 @@ import Stat from "@/shared/ui/Stat";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
+import StatGrid from "@/shared/ui/StatGrid";
 
 export default function CreditCardCalculator() {
   const t = useTranslations("calc.intereses-tarjeta-credito");
   const { formatEUR, formatEURCents, formatNumber } = useFormat();
-  const tc = useTranslations("chart");
 
   const [balance, setBalance] = useNumberField("balance", 2000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 22);
@@ -33,7 +33,7 @@ export default function CreditCardCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={isPercent ? 5 : 4}
+      layout="sidebar"
       inputs={
         <>
           <NumberField label={t("balance")} value={balance} onChange={setBalance} step={100} help={t("help.balance")} />
@@ -91,7 +91,7 @@ export default function CreditCardCalculator() {
           {neverPaysOff && (
             <p className="rounded-xl border border-border bg-surface p-4 text-sm text-foreground">{t("never")}</p>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatGrid>
             <Stat
               label={t("monthsToPayoff")}
               value={neverPaysOff ? "∞" : formatNumber(result.monthsToPayoff ?? 0)}
@@ -102,7 +102,7 @@ export default function CreditCardCalculator() {
             {isPercent && (
               <Stat label={t("firstPayment")} value={neverPaysOff ? "—" : formatEURCents(result.firstPayment)} />
             )}
-          </div>
+          </StatGrid>
 
           {!neverPaysOff && result.series.length > 1 && (
             <TimeSeriesChart
@@ -115,14 +115,7 @@ export default function CreditCardCalculator() {
                 { key: "interestPaid", name: t("seriesInterest"), color: "var(--accent)" },
               ]}
               valueKey="balance"
-              labels={{
-                axisX: t("axisMonth"),
-                total: tc("total"),
-                selectionTitle: tc("selectionTitle"),
-                growth: tc("growth"),
-                contributed: tc("contributed"),
-                interest: tc("interest"),
-              }}
+              xLabel={t("axisMonth")}
             />
           )}
         </>

@@ -6,7 +6,9 @@ import { useTranslations } from "next-intl";
 import { formatIsoDate } from "@/shared/format/format";
 import { absoluteUrl } from "@/shared/seo/site";
 import { NO_STORE, apiFetch } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import Button from "@/shared/ui/Button";
 
 /** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
 type Connection = {
@@ -45,8 +47,9 @@ export default function ConnectedApps() {
   const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
   const state = query.status === "ready" ? "loaded" : query.status;
   const items = query.status === "ready" ? query.data.filter((c) => !revoked.has(c.clientId)) : [];
+  const revocation = useApiMutation();
+  // Qué conexión se está revocando, para deshabilitar y rotular solo su botón.
   const [revoking, setRevoking] = useState<string | null>(null);
-  const [revokeError, setRevokeError] = useState(false);
   const [copied, setCopied] = useState(false);
 
   async function copyUrl() {
@@ -61,15 +64,11 @@ export default function ConnectedApps() {
 
   async function revoke(clientId: string) {
     setRevoking(clientId);
-    setRevokeError(false);
-    try {
-      await apiFetch(`/api/account/connections/${encodeURIComponent(clientId)}`, { method: "DELETE" });
-      setRevoked((prev) => new Set(prev).add(clientId));
-    } catch {
-      setRevokeError(true);
-    } finally {
-      setRevoking(null);
-    }
+    const result = await revocation.run(() =>
+      apiFetch(`/api/account/connections/${encodeURIComponent(clientId)}`, { method: "DELETE" }),
+    );
+    if (result.ok) setRevoked((prev) => new Set(prev).add(clientId));
+    setRevoking(null);
   }
 
   return (
@@ -103,20 +102,20 @@ export default function ConnectedApps() {
                   {c.lastUsedAt ? t("lastUsed", { date: formatIsoDate(c.lastUsedAt.slice(0, 10)) }) : t("neverUsed")}
                 </span>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="dangerOutline"
                 onClick={() => revoke(c.clientId)}
                 disabled={revoking === c.clientId}
-                className="self-start rounded-lg border border-danger-border px-3 py-2 text-sm font-medium text-danger transition hover:bg-danger-soft disabled:cursor-not-allowed disabled:opacity-50"
+                className="self-start"
               >
                 {revoking === c.clientId ? t("revoking") : t("revoke")}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
 
-      {revokeError && <p className="text-sm text-warning">{t("revokeError")}</p>}
+      {revocation.status === "error" && <p className="text-sm text-warning">{t("revokeError")}</p>}
 
       {/* Cómo conectar un asistente de IA al servidor MCP de Sextante. */}
       <details className="mt-1 rounded-xl border border-border bg-background p-4">
