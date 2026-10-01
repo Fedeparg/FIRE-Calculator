@@ -14,6 +14,17 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "8dc30c7f",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se redactan las novedades del aviso de «buscando precio»",
+            "en": "the release notes for the price lookup notice are written"
+          },
+          "hidden": true
+        },
+        {
           "hash": "108061f1",
           "type": "feat",
           "scope": "portfolio",
@@ -41,8 +52,8 @@
           "scope": "changelog",
           "category": "internal",
           "text": {
-            "es": "el hito del MCP completo se anuncia en el registro de cambios",
-            "en": "the full MCP milestone is announced in the changelog"
+            "es": "se anuncia el MCP completo como hito",
+            "en": "the full MCP is announced as a milestone"
           },
           "hidden": true
         },
@@ -52,8 +63,8 @@
           "scope": null,
           "category": "internal",
           "text": {
-            "es": "la documentación cuenta 26 herramientas de calculadoras, 42 en total",
-            "en": "the docs count 26 calculator tools, 42 in all"
+            "es": "se cuentan las 26 herramientas de calculadora",
+            "en": "the 26 calculator tools are counted"
           },
           "hidden": true
         },

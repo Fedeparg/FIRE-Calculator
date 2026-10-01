@@ -39,6 +39,7 @@ export type ImportSkipReason =
   | "cash_movement"
   | "migration_pair"
   | "migration_unbalanced"
+  | "bonus_issue_cancelled"
   | "crypto"
   | "unsupported_currency"
   | "duplicate_row"

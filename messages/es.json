@@ -1485,6 +1485,7 @@
         "cash_movement": "Movimientos de efectivo (ingresos, retiradas, tarjeta)",
         "migration_pair": "Cambios de custodia (se anulan entre sí)",
         "migration_unbalanced": "Cambios de custodia sin pareja",
+        "bonus_issue_cancelled": "Ampliaciones liberadas canceladas (se anulan con su emisión)",
         "crypto": "Criptomonedas (aún no admitidas)",
         "unsupported_currency": "Operaciones en una divisa distinta del euro",
         "duplicate_row": "Filas repetidas",
