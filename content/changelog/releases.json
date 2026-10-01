@@ -14,6 +14,39 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "03b028ff",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se recupera la redacción de novedades perdida al fusionar",
+            "en": "release notes lost in a merge are restored"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "ac6dd0b6",
+          "type": "feat",
+          "scope": "header",
+          "category": "feature",
+          "text": {
+            "es": "Mi cuenta y Cerrar sesión pasan a un menú de usuario en la cabecera",
+            "en": "My account and Log out move into a user menu in the header"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "b57dab7b",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la cartera se reparte en pestañas (Resumen, Posiciones, Plusvalías y Objetivo FIRE) en lugar de apilarlo todo en una página",
+            "en": "the portfolio is split into tabs (Summary, Positions, Capital gains and FIRE goal) instead of stacking everything on one page"
+          },
+          "hidden": false
+        },
+        {
           "hash": "8dc30c7f",
           "type": "docs",
           "scope": "changelog",
@@ -43,6 +76,61 @@
           "text": {
             "es": "lógica y textos del estado de precio pendiente",
             "en": "logic and copy for the pending price state"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "9e13d3e6",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se corrigen dos entradas internas intercambiadas",
+            "en": "two swapped internal entries are fixed"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "002c21f0",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se describen los arreglos de importación y precios",
+            "en": "the import and price fixes are described"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "df4de965",
+          "type": "fix",
+          "scope": "import",
+          "category": "fix",
+          "text": {
+            "es": "las ampliaciones liberadas de Trade Republic se importan como acciones sin coste, y las retiradas de efectivo ya no salen como operaciones desconocidas",
+            "en": "Trade Republic bonus issues are imported as zero-cost shares, and cash withdrawals no longer show up as unknown transactions"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "312ac3fd",
+          "type": "fix",
+          "scope": "prices",
+          "category": "fix",
+          "text": {
+            "es": "más ETFs y acciones de fuera de Europa (como Hong Kong) encuentran su cotización a partir del ISIN, así que ya suman al valor de la cartera",
+            "en": "more ETFs and non-European stocks (such as Hong Kong ones) now find their quote from the ISIN, so they count towards the portfolio value"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "0fcffabc",
+          "type": "chore",
+          "scope": "deps-dev",
+          "category": "internal",
+          "text": {
+            "es": "librerías al día",
+            "en": "libraries up to date"
           },
           "hidden": true
         },

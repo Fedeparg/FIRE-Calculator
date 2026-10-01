@@ -408,8 +408,9 @@ function ResultView({ result, formatQuantity }: { result: ImportResult; formatQu
       <SkippedList plan={result} />
 
       <div>
+        {/* A Posiciones, no al Resumen: es donde se ven las recién importadas buscando precio. */}
         <Link
-          href="/portfolio"
+          href="/portfolio/posiciones"
           className="inline-block rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-fg transition hover:opacity-90"
         >
           {t("viewPortfolio")}

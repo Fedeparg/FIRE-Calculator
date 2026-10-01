@@ -1074,13 +1074,13 @@
       "errorCta": "Volver a entrar"
     },
     "portfolio": {
-      "greeting": "Hola, {email}",
       "title": "Tu cartera",
       "logout": "Cerrar sesión"
     },
     "nav": {
       "login": "Entrar",
-      "portfolio": "Mi cartera"
+      "portfolio": "Mi cartera",
+      "accountMenu": "Tu cuenta"
     }
   },
   "portfolio": {
@@ -1360,8 +1360,6 @@
       "disclaimerFx": "Además, tu posición está en {currency}: la ganancia se convierte a euros con el tipo de cambio de hoy, no con el que hubiera el día de una venta real."
     },
     "realisedGains": {
-      "link": "Plusvalías",
-      "back": "← Volver a la cartera",
       "title": "Ganancias y pérdidas realizadas",
       "subtitle": "Las ventas que has registrado, emparejadas con sus compras por FIFO y agrupadas por ejercicio, para preparar la declaración de la renta.",
       "empty": "Aún no has registrado ninguna venta. Cuando anotes una en las operaciones de una posición, aparecerá aquí con su ganancia o pérdida.",
@@ -1520,7 +1518,19 @@
       "notice": "Sextante no sigue el precio de los derivados (futuros, opciones, warrants, knock-outs…). Se guardan con sus operaciones y cuentan en el informe de plusvalías, pero no se valoran ni entran en los totales de la cartera.",
       "learnMore": "Qué son los derivados"
     },
-    "guideLink": "¿Qué puedes hacer aquí? Guía de la cartera"
+    "guideLink": "¿Qué puedes hacer aquí? Guía de la cartera",
+    "tabs": {
+      "label": "Secciones de la cartera",
+      "summary": "Resumen",
+      "positions": "Posiciones",
+      "gains": "Plusvalías",
+      "goal": "Objetivo FIRE",
+      "addPosition": "Añadir posición",
+      "addFirst": "Añade tu primera posición",
+      "summaryTitle": "Tu cartera",
+      "positionsTitle": "Posiciones de tu cartera",
+      "goalTitle": "Tu objetivo FIRE"
+    }
   },
   "account": {
     "link": "Mi cuenta",
