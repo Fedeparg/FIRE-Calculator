@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import VerifyClient from "@/features/auth/components/VerifyClient";
+import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -14,10 +15,12 @@ export default async function VerifyPage({ params }: Props) {
   setRequestLocale(locale);
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-24">
-      <Suspense>
-        <VerifyClient />
-      </Suspense>
-    </div>
+    <RouteMessages route="auth/verify">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-6 px-4 py-24">
+        <Suspense>
+          <VerifyClient />
+        </Suspense>
+      </div>
+    </RouteMessages>
   );
 }

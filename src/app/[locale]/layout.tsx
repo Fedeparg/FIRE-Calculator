@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import { pickMessages } from "@/i18n/pick-messages";
+import { CHROME_NAMESPACES } from "@/i18n/route-namespaces";
 import { asLocale } from "@/i18n/types";
 import { SITE_NAME, SITE_URL } from "@/shared/seo/site";
 import { organizationSchema, websiteSchema } from "@/shared/seo/json-ld";
@@ -54,6 +56,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
+  // Sin `messages` el provider hereda el catálogo entero; ver `src/i18n/route-namespaces.ts`.
+  const messages = pickMessages(await getMessages(), CHROME_NAMESPACES);
 
   return (
     <html
@@ -64,7 +68,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeScript />
         <JsonLd data={[organizationSchema(), websiteSchema(asLocale(locale))]} />
-        <NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
           <Header authSlot={<AuthNav />} />
           <main className="flex-1">{children}</main>
           <Footer showDonations={DONATIONS_ENABLED} />

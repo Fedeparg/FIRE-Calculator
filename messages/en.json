@@ -1058,7 +1058,8 @@
     "nav": {
       "login": "Sign in",
       "portfolio": "My portfolio",
-      "accountMenu": "Your account"
+      "accountMenu": "Your account",
+      "account": "My account"
     }
   },
   "portfolio": {
@@ -1571,7 +1572,6 @@
     }
   },
   "account": {
-    "link": "My account",
     "title": "My account",
     "subtitle": "Manage your personal data and your account.",
     "back": "Back to portfolio",

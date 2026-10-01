@@ -1058,7 +1058,8 @@
     "nav": {
       "login": "Entrar",
       "portfolio": "Mi cartera",
-      "accountMenu": "Tu cuenta"
+      "accountMenu": "Tu cuenta",
+      "account": "Mi cuenta"
     }
   },
   "portfolio": {
@@ -1571,7 +1572,6 @@
     }
   },
   "account": {
-    "link": "Mi cuenta",
     "title": "Mi cuenta",
     "subtitle": "Gestiona tus datos personales y tu cuenta.",
     "back": "Volver a la cartera",
