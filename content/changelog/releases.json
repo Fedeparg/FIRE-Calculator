@@ -14,6 +14,61 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "002c21f0",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se describen los arreglos de importación y precios",
+            "en": "the import and price fixes are described"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "df4de965",
+          "type": "fix",
+          "scope": "import",
+          "category": "fix",
+          "text": {
+            "es": "las ampliaciones liberadas de Trade Republic se importan como acciones sin coste, y las retiradas de efectivo ya no salen como operaciones desconocidas",
+            "en": "Trade Republic bonus issues are imported as zero-cost shares, and cash withdrawals no longer show up as unknown transactions"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "312ac3fd",
+          "type": "fix",
+          "scope": "prices",
+          "category": "fix",
+          "text": {
+            "es": "más ETFs y acciones de fuera de Europa (como Hong Kong) encuentran su cotización a partir del ISIN, así que ya suman al valor de la cartera",
+            "en": "more ETFs and non-European stocks (such as Hong Kong ones) now find their quote from the ISIN, so they count towards the portfolio value"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "85f4e00b",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se anuncia el MCP completo como hito",
+            "en": "the full MCP is announced as a milestone"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "05a4e8fc",
+          "type": "docs",
+          "scope": null,
+          "category": "internal",
+          "text": {
+            "es": "se cuentan las 26 herramientas de calculadora",
+            "en": "the 26 calculator tools are counted"
+          },
+          "hidden": true
+        },
+        {
           "hash": "66755712",
           "type": "fix",
           "scope": "mcp",

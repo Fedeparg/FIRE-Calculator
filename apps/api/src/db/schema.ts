@@ -327,7 +327,7 @@ export type NewInstrumentPrice = typeof instrumentPrices.$inferInsert;
 export const instruments = pgTable('instruments', {
   query: varchar('query', { length: 40 }).primaryKey(),
   symbol: varchar('symbol', { length: 40 }),
-  // Cómo se resolvió: "openfigi" | "identity" | "not_found" (trazabilidad).
+  // Cómo se resolvió: "yahoo_search" | "openfigi" | "identity" | "not_found" (trazabilidad).
   source: varchar('source', { length: 20 }).notNull(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }).notNull().defaultNow(),
 });
