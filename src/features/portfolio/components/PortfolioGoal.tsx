@@ -18,9 +18,9 @@ import {
 import { goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 import type { SavedScenario } from "@/features/scenarios/saved-scenarios";
 import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
-import Notice from "@/components/ui/Notice";
-import SelectField from "@/components/ui/SelectField";
-import ToggleGroup from "@/components/ui/ToggleGroup";
+import Notice from "@/shared/ui/Notice";
+import SelectField from "@/shared/ui/SelectField";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import PortfolioGoalFields from "./PortfolioGoalFields";
 import PortfolioGoalPlanForm from "./PortfolioGoalPlanForm";
 import PortfolioGoalResults from "./PortfolioGoalResults";

@@ -3,7 +3,7 @@
 import { useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { paletteColor } from "@/components/charts/palette";
+import { paletteColor } from "@/shared/charts/palette";
 import { BREAKDOWN_GROUPS, buildBreakdown, type BreakdownGroupBy } from "@sextante/core/portfolio-breakdown";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";

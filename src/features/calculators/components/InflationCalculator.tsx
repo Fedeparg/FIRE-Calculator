@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeInflation } from "@sextante/core/calculators/inflacion";
 import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import Stat from "@/components/ui/Stat";
-import TimeSeriesChart from "@/components/charts/TimeSeriesChart";
+import NumberField from "@/shared/ui/NumberField";
+import Stat from "@/shared/ui/Stat";
+import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField } from "./CalculatorState";
 

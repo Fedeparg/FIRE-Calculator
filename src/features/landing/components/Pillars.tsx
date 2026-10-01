@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { IconSuite, IconTax, IconLearn, IconPortfolio } from "@/components/illustrations";
+import { IconSuite, IconTax, IconLearn, IconPortfolio } from "@/shared/illustrations";
 
 const PILLARS = [
   { key: "suite", Icon: IconSuite },

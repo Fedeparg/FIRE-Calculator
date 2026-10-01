@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 
 /** Aviso visible: información orientativa, no asesoramiento financiero. */
 export default function DisclaimerBanner() {

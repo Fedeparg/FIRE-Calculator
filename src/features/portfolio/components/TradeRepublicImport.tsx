@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { MAX_IMPORT_BYTES } from "@sextante/core/imports/limits";
 import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import { trackEvent } from "@/features/analytics/track";
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 import { importErrorKey, type ImportErrorKey } from "@/features/portfolio/model/import-errors";
 import { useFormat } from "@/lib/format";
 import { apiJson } from "@/shared/api/client";

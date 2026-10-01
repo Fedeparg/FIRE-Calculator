@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { HeroSextant } from "@/components/illustrations";
+import { HeroSextant } from "@/shared/illustrations";
 import CtaLink from "./CtaLink";
 
 /** Sección principal: marca, tagline, subcopy, CTAs e ilustración del sextante. */

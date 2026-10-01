@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 import { downloadBlob } from "@/lib/download";
 import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
 

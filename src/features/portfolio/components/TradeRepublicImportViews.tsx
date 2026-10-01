@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 
 import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
-import Notice from "@/components/ui/Notice";
+import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
 import DerivativesNotice from "./DerivativesNotice";

@@ -9,8 +9,8 @@ import { monthlyContribution, simulatePortfolioGoal } from "@sextante/core/portf
 import type { Frequency } from "@sextante/core/projection";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import NumberField from "@/components/ui/NumberField";
-import Stat from "@/components/ui/Stat";
+import NumberField from "@/shared/ui/NumberField";
+import Stat from "@/shared/ui/Stat";
 
 type Props = {
   /** Importes ya expresados en la divisa que se está viendo (los mismos que usa el objetivo). */

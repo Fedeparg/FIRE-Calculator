@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import TimeSeriesChart, { type DataRow } from "@/components/charts/TimeSeriesChart";
-import type { ChartTableColumn } from "@/components/charts/ChartDataTable";
-import Notice from "@/components/ui/Notice";
+import TimeSeriesChart, { type DataRow } from "@/shared/charts/TimeSeriesChart";
+import type { ChartTableColumn } from "@/shared/charts/ChartDataTable";
+import Notice from "@/shared/ui/Notice";
 import { formatIsoDate } from "@/core/format";
 import {
   buildHistorySeries,

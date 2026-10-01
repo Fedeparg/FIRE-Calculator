@@ -15,7 +15,7 @@ import {
 } from "@/features/portfolio/model/sort";
 import { useFormat } from "@/lib/format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
-import ToggleGroup from "@/components/ui/ToggleGroup";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import { PendingPrice, SortHeader, StaleBadge } from "./PositionListParts";
 
 type Props = {

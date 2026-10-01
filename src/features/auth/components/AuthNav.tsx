@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useApiQuery } from "@/shared/api/use-api-query";
-import { IconNavProfile } from "@/components/illustrations";
+import { IconNavProfile } from "@/shared/illustrations";
 import UserMenu from "./UserMenu";
 
 /**

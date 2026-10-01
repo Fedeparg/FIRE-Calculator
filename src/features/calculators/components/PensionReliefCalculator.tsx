@@ -7,9 +7,9 @@ import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { SELECTABLE_REGIONS, toSupportedRegion, type RegionSelection } from "@sextante/core/fiscal/regions";
 import { useFormat } from "@/lib/format";
 import RegionSelectField from "./RegionSelectField";
-import NumberField from "@/components/ui/NumberField";
-import Stat from "@/components/ui/Stat";
-import Notice from "@/components/ui/Notice";
+import NumberField from "@/shared/ui/NumberField";
+import Stat from "@/shared/ui/Stat";
+import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
 import { useNumberField, useOptionField } from "./CalculatorState";
 

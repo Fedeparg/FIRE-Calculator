@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-import Notice from "@/components/ui/Notice";
-import SelectField from "@/components/ui/SelectField";
+import Notice from "@/shared/ui/Notice";
+import SelectField from "@/shared/ui/SelectField";
 import { UTF8_BOM } from "@/core/csv";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import {

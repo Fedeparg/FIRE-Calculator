@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { WaveDivider } from "@/components/illustrations";
+import { WaveDivider } from "@/shared/illustrations";
 import CtaLink from "./CtaLink";
 
 /** Invitación a la wiki "Aprende". */

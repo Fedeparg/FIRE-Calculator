@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { BrandCompass, IconNavCalculator, IconNavLearn } from "./illustrations";
+import { BrandCompass, IconNavCalculator, IconNavLearn } from "../shared/illustrations";
 import AuthNav from "../features/auth/components/AuthNav";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
