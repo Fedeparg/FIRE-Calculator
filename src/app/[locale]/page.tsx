@@ -4,12 +4,12 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { CALCULATORS } from "@/features/calculators/registry";
 import { CATEGORIES, type CategoryId, type Locale } from "@/core/types";
 import { buildMetadata } from "@/lib/seo";
-import Hero from "@/components/landing/Hero";
-import Pillars from "@/components/landing/Pillars";
-import Categories, { type LandingCategory } from "@/components/landing/Categories";
-import LearnCallout from "@/components/landing/LearnCallout";
-import Support from "@/components/landing/Support";
-import DisclaimerBanner from "@/components/landing/DisclaimerBanner";
+import Hero from "@/features/landing/components/Hero";
+import Pillars from "@/features/landing/components/Pillars";
+import Categories, { type LandingCategory } from "@/features/landing/components/Categories";
+import LearnCallout from "@/features/landing/components/LearnCallout";
+import Support from "@/features/landing/components/Support";
+import DisclaimerBanner from "@/features/landing/components/DisclaimerBanner";
 
 type Props = { params: Promise<{ locale: string }> };
 
