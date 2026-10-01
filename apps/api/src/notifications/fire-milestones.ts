@@ -7,6 +7,8 @@
  * proyección entera, así que se repite y un test la fija.
  */
 
+import { goalModeFromInputs } from '@sextante/core/portfolio-goal';
+
 /** Hitos que se avisan, en % del objetivo, de menor a mayor. */
 export const FIRE_MILESTONES = [25, 50, 75, 100] as const;
 export type FireMilestone = (typeof FIRE_MILESTONES)[number];
@@ -31,14 +33,19 @@ const finite = (value: unknown): number | null =>
  * divisa que añade el bloque de la cartera; un escenario creado en la calculadora es en euros.
  */
 export function fireTargetFromInputs(inputs: Record<string, unknown>): FireTarget | null {
-  const expenses = finite(inputs.annualExpenses);
-  if (expenses === null || expenses <= 0) return null;
-  const rawRate = finite(inputs.withdrawalRate);
-  const rate = rawRate !== null && rawRate > 0 ? rawRate : DEFAULT_WITHDRAWAL_RATE;
   const currency =
     typeof inputs.goalCurrency === 'string' && /^[A-Z]{3}$/.test(inputs.goalCurrency)
       ? inputs.goalCurrency
       : 'EUR';
+  // Modo cantidad ("X en N años"): el objetivo es la cifra tal cual.
+  if (goalModeFromInputs(inputs) === 'amount') {
+    const amount = finite(inputs.targetAmount);
+    return amount !== null && amount > 0 ? { target: amount, currency } : null;
+  }
+  const expenses = finite(inputs.annualExpenses);
+  if (expenses === null || expenses <= 0) return null;
+  const rawRate = finite(inputs.withdrawalRate);
+  const rate = rawRate !== null && rawRate > 0 ? rawRate : DEFAULT_WITHDRAWAL_RATE;
   return { target: expenses / (rate / 100), currency };
 }
 
