@@ -55,12 +55,6 @@
       "body": "En Aprende encontrarás guías sencillas sobre interés compuesto, hipotecas, inversión e independencia financiera. Pensadas para entenderlo todo desde el principio.",
       "cta": "Ir a Aprende"
     },
-    "mcp": {
-      "badge": "Novedad",
-      "heading": "Conecta tu propio asistente de IA",
-      "body": "Sextante expone tu cartera mediante MCP, el estándar abierto para conectar modelos de IA. Enlaza tu propio Claude o ChatGPT y deja que analice tus inversiones con tus datos reales: el asistente lo pones tú; nosotros, la información.",
-      "cta": "Conecta tu IA"
-    },
     "disclaimer": {
       "body": "Sextante ofrece información orientativa con fines informativos y no constituye asesoramiento financiero ni fiscal. No tomes decisiones basándote únicamente en estos cálculos: contrasta siempre con un profesional y con las fuentes oficiales."
     }
@@ -1489,6 +1483,7 @@
         "cash_movement": "Movimientos de efectivo (ingresos, retiradas, tarjeta)",
         "migration_pair": "Cambios de custodia (se anulan entre sí)",
         "migration_unbalanced": "Cambios de custodia sin pareja",
+        "bonus_issue_cancelled": "Ampliaciones liberadas canceladas (se anulan con su emisión)",
         "crypto": "Criptomonedas (aún no admitidas)",
         "unsupported_currency": "Operaciones en una divisa distinta del euro",
         "duplicate_row": "Filas repetidas",
@@ -1553,7 +1548,7 @@
       "revoking": "Revocando…",
       "revokeError": "No se pudo revocar el acceso. Inténtalo de nuevo.",
       "howToTitle": "¿Cómo conecto un asistente de IA?",
-      "howToIntro": "Puedes conectar Claude (y otros clientes compatibles con MCP) para que lean y analicen tu cartera. En tu cliente, añade un conector MCP personalizado con esta dirección:",
+      "howToIntro": "Puedes conectar Claude (y otros clientes compatibles con MCP) para que lean y analicen tu cartera y usen todas las calculadoras. En tu cliente, añade un conector MCP personalizado con esta dirección:",
       "urlLabel": "URL del servidor MCP",
       "copy": "Copiar",
       "copied": "Copiado",

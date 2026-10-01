@@ -56,10 +56,10 @@ Spanish, and every calculator runs in your browser — no account needed.
 | **Realised gains report** | Your recorded sales matched FIFO per security across brokers, netted by tax year, with a tax estimate and a one-row-per-sale CSV for your return |
 | **Shareable and saveable** | Every input lives in the URL, so a calculation is a link; signed in, you can save named scenarios to your account |
 | **Your goal, your real money** | The portfolio tracks progress towards your financial-independence target using the net worth you actually hold — and its Monte Carlo probability of success — sharing saved scenarios with the FIRE calculator. Opt-in emails tell you when you cross 25/50/75/100 % |
-| **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio — you bring the model, Sextante brings the data |
+| **MCP server** | Connect Claude, ChatGPT or any MCP client and let it read *and* write your portfolio, prepare your realised gains for the tax return and run every calculator — you bring the model, Sextante brings the data and the maths |
 | **Bilingual** | Spanish (default) and English: 1,260 translation keys per locale, with parity enforced by a test, not by hope |
 | **A wiki** | 33 explainer articles (including a portfolio guide) plus a "how this calculator works" page for each of the 27 tools, in both languages |
-| **No tracking** | No analytics, no ads, no third-party scripts. The CSP allowlist is `'self'` and nothing else. |
+| **No tracking** | No ads, no third-party scripts, no cookies for analytics: visits are counted by a self-hosted, cookieless Umami behind the same origin. The CSP allowlist is `'self'` and nothing else. |
 
 > **Not financial advice.** Sextante computes and explains; it never recommends.
 > Every result is an estimate, and the tax pages say plainly where they
@@ -243,10 +243,9 @@ build if they ever drift, so this is checked, not assumed.
 
 ## Connect your own AI assistant (MCP)
 
-<img src="docs/images/landing-mcp.jpg" alt="MCP section: connect your own AI assistant" width="880">
-
 Sextante exposes a **remote MCP server** so an LLM you already pay for can work
-with your portfolio. You bring the assistant; Sextante brings the data.
+with your portfolio and run every calculator. You bring the assistant; Sextante
+brings the data and the maths.
 
 ```
 https://sextante.fpardo.net/api/mcp
@@ -257,15 +256,29 @@ standard — not personal access tokens.
 
 ### The tools
 
+**Portfolio** (`portfolio:read` to read, `portfolio:write` to change it):
+
 | Tool | Scope | What it does |
 |---|---|---|
-| `list_positions` | `portfolio:read` | Every position: symbol, name, quantity, average price, broker, currency |
-| `get_portfolio_valuation` | `portfolio:read` | Market value and P&L, aggregated into a display currency, with a per-position breakdown |
-| `get_position` | `portfolio:read` | One position by id, with its market value and P&L |
-| `add_position` | `portfolio:write` | Create a position |
-| `update_position` | `portfolio:write` | Patch the given fields of a position |
-| `combine_position` | `portfolio:write` | Merge a new purchase into an existing position by weighted average |
-| `delete_position` | `portfolio:write` | Remove a position (annotated `destructiveHint`) |
+| `list_positions`, `get_position` | read | Positions with quantity, average price, broker and currency; one position with its P&L |
+| `get_portfolio_valuation` | read | Market value and P&L, aggregated into a display currency, with a per-position breakdown |
+| `get_portfolio_history` | read | Daily cost and market value series, re-expressed in any currency with each day's rates |
+| `list_position_lots` | read | The buys and sells a position is derived from |
+| `search_instruments` | read | Exact symbol lookup, so the model never guesses a ticker |
+| `get_realised_gains` | read | Recorded sales matched FIFO and netted by tax year, with a savings-tax estimate — the realised gains report |
+| `get_portfolio_breakdown` | read | Weight of each asset, broker or currency in the portfolio |
+| `get_fire_goal_progress` | read | Progress of the real portfolio towards a FIRE target, optionally with its Monte Carlo probability |
+| `list_saved_scenarios` | read | Calculator scenarios the user saved on the web |
+| `add_position`, `update_position`, `combine_position`, `delete_position` | write | Create, patch, merge a purchase into, or remove a position |
+| `add_position_lot`, `delete_position_lot` | write | Record or remove a buy or sell |
+
+**Calculators** (any connected token; they read nothing from the account): one tool
+per calculator — `calculate_mortgage`, `calculate_net_salary`, `calculate_fire`,
+`simulate_fire_monte_carlo`, `compare_buy_vs_rent`, `calculate_wealth_tax`,
+`score_financial_health` and the rest, 26 in all. They run the **same
+`@sextante/core` code as the web**, so the assistant and the page can never
+disagree, and every input is bounded so a call can't make the server simulate a
+million lives.
 
 Write tools validate their input with the **same DTOs as the REST API**, so there
 is one set of validation rules, not two.
@@ -309,13 +322,13 @@ re-checks its scope at call time. A read-only token calling `add_position` gets 
 Why not HTTP 403? Because every MCP tool shares a single endpoint. Authorization
 has to be per-tool, or it isn't authorization at all.
 
-### What MCP does *not* expose
+### Why the calculators came late
 
-**The calculators.** Exposing them would mean duplicating `projection.ts`, ~25
-calculator modules and the entire tax engine in the backend — because the engine
-lives in the frontend `core/` and runs in the user's browser, where it can be
-audited. Two copies of a tax engine drift apart. The gain didn't justify the cost,
-so it was cut on purpose.
+They were left out on purpose at first: the engine lived in the frontend, and
+exposing it would have meant a second copy of the tax engine in the backend, and two
+copies of a tax engine drift apart. Moving the engine into the shared
+`packages/core` removed the trade-off — the API now imports the very modules the
+browser runs — so the calculators went in without duplicating a line.
 
 ---
 

@@ -55,12 +55,6 @@
       "body": "In Learn you'll find simple guides on compound interest, mortgages, investing and financial independence. Written to understand everything from the ground up.",
       "cta": "Go to Learn"
     },
-    "mcp": {
-      "badge": "New",
-      "heading": "Connect your own AI assistant",
-      "body": "Sextante exposes your portfolio over MCP, the open standard for connecting AI models. Link your own Claude or ChatGPT and let it analyze your investments with your real data: you bring the assistant, we bring the information.",
-      "cta": "Connect your AI"
-    },
     "disclaimer": {
       "body": "Sextante provides indicative information for informational purposes and does not constitute financial or tax advice. Don't make decisions based on these calculations alone: always check with a professional and official sources."
     }
@@ -1489,6 +1483,7 @@
         "cash_movement": "Cash movements (deposits, withdrawals, card)",
         "migration_pair": "Custody migrations (they cancel each other out)",
         "migration_unbalanced": "Custody migrations without a pair",
+        "bonus_issue_cancelled": "Cancelled bonus issues (they cancel out their issue)",
         "crypto": "Cryptocurrencies (not supported yet)",
         "unsupported_currency": "Transactions in a currency other than the euro",
         "duplicate_row": "Repeated rows",
@@ -1553,7 +1548,7 @@
       "revoking": "Revoking…",
       "revokeError": "We couldn't revoke access. Please try again.",
       "howToTitle": "How do I connect an AI assistant?",
-      "howToIntro": "You can connect Claude (and other MCP-compatible clients) to read and analyse your portfolio. In your client, add a custom MCP connector with this address:",
+      "howToIntro": "You can connect Claude (and other MCP-compatible clients) to read and analyse your portfolio and use every calculator. In your client, add a custom MCP connector with this address:",
       "urlLabel": "MCP server URL",
       "copy": "Copy",
       "copied": "Copied",

@@ -4,6 +4,12 @@ import { eq } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instruments } from '../db/schema.js';
+import {
+  INSTRUMENT_SEARCH,
+  type InstrumentSearchProvider,
+  type InstrumentSearchResult,
+  type InstrumentType,
+} from './instrument-search.js';
 import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.js';
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
 
@@ -60,6 +66,30 @@ export function isinCandidates(tickers: string[]): string[] {
   return [...new Set(out)].slice(0, MAX_CANDIDATES);
 }
 
+/** Tipos de la búsqueda de Yahoo que pueden ser el instrumento de un ISIN. */
+const SEARCH_TYPES = new Set<InstrumentType>(['equity', 'etf', 'fund']);
+/** Tope de resultados de la búsqueda que se validan contra la fuente. */
+const MAX_SEARCH_CANDIDATES = 5;
+
+/**
+ * Candidatos para un ISIN a partir de la búsqueda de Yahoo, que acepta el ISIN como consulta
+ * y devuelve las cotizaciones de ESE instrumento. Primero las de los mercados en euros, en el
+ * orden de `YAHOO_SUFFIXES` (para un inversor español, la cotización en euros evita convertir
+ * divisas); después el resto en el orden de Yahoo, que es lo que cubre los valores que no
+ * cotizan en Europa (p. ej. Hong Kong, `.HK`). Función pura.
+ */
+export function searchCandidates(results: readonly InstrumentSearchResult[]): string[] {
+  const symbols = [
+    ...new Set(results.filter((r) => SEARCH_TYPES.has(r.type)).map((r) => r.symbol.trim().toUpperCase())),
+  ].filter(Boolean);
+  const rank = (symbol: string): number => {
+    const index = YAHOO_SUFFIXES.findIndex((suffix) => symbol.endsWith(suffix));
+    return index === -1 ? YAHOO_SUFFIXES.length : index;
+  };
+  // `sort` es estable: a igual rango se conserva el orden de Yahoo.
+  return symbols.sort((a, b) => rank(a) - rank(b)).slice(0, MAX_SEARCH_CANDIDATES);
+}
+
 /**
  * Símbolos de cripto que en Yahoo SON un par "<T>-USD", pero cuyo ticker suelto colisiona
  * con un valor bursátil real (p. ej. "BTC" cotiza como el ETF Grayscale Bitcoin Mini Trust a
@@ -85,8 +115,14 @@ export function tickerCandidates(query: string): string[] {
 }
 
 /**
- * Resolver real: ISIN/ticker → símbolo de Yahoo, vía OpenFIGI (para ISIN) + validación
- * contra la propia fuente de precios (el candidato gana solo si COTIZA de verdad). Cachea
+ * Resolver real: ISIN/ticker → símbolo de Yahoo. Para un ISIN prueba primero la búsqueda de
+ * Yahoo por ISIN y, si no da nada que cotice, OpenFIGI; en los dos casos el candidato gana
+ * solo si COTIZA de verdad en la fuente de precios.
+ *
+ * Por qué la búsqueda va primero: OpenFIGI devuelve TODOS los listados del instrumento
+ * (decenas o cientos, con tickers como "VAPUUSD" o "1810EUR" que Yahoo no conoce) y solo
+ * probamos sufijos europeos, así que ETFs con ticker propio por mercado y valores asiáticos
+ * se quedaban sin precio. La búsqueda de Yahoo devuelve directamente sus símbolos. Cachea
  * permanentemente en `instruments`: las resoluciones positivas y los "no encontrado" reales
  * (OpenFIGI sin coincidencias); los fallos transitorios NO se cachean para no bloquear un
  * símbolo válido por un rate-limit puntual. Ver `_local/datos-inversiones-api.md`.
@@ -99,6 +135,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(PRICE_PROVIDER) private readonly provider: PriceProvider,
+    @Inject(INSTRUMENT_SEARCH) private readonly search: InstrumentSearchProvider,
     config: ConfigService,
   ) {
     this.apiKey = config.get<string>('OPENFIGI_API_KEY')?.trim() || undefined;
@@ -121,6 +158,13 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     if (cached !== undefined) return cached; // hit: símbolo resuelto o null (no encontrado).
 
     if (ISIN_RE.test(query)) {
+      // La búsqueda nunca lanza: ante un fallo devuelve [] y se sigue con OpenFIGI.
+      const searched = await this.firstThatPrices(searchCandidates(await this.search.search(query)));
+      if (searched) {
+        await this.cache(query, searched, 'yahoo_search');
+        return searched;
+      }
+
       const outcome = await this.mapIsin(query);
       if (outcome.kind === 'error') return null; // transitorio: no cachear, reintentar.
       if (outcome.kind === 'empty') {

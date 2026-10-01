@@ -53,6 +53,10 @@ connection uses the **OAuth 2.1** standard:
 - When you use a connected application, you **share your portfolio data with that
   application's provider**, which you choose; that processing is governed by the
   provider's own privacy policy.
+- The application can also use Sextante's **calculators** (mortgages, income tax,
+  FIRE…). The values it sends them are used only to return the result and **are
+  not stored**; as with every other tool, we only log which tool was used, when
+  and from which application.
 - You can view and **revoke** any application's access at any time from *My
   account → Connected applications*.
 - **Legal basis:** your **consent**, which you can withdraw at any time.
