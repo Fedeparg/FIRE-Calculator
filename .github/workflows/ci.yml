@@ -47,6 +47,18 @@ jobs:
       - name: Instalar dependencias
         run: pnpm install --frozen-lockfile
 
+      # Caché de compilación de Next: sin ella, cada build parte de cero. La clave
+      # incluye el lockfile y las fuentes; si solo cambian las fuentes, `restore-keys`
+      # recupera la caché del último lockfile igual y Next reaprovecha lo que no cambió.
+      - name: Caché de Next.js
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('src/**', 'content/**', 'messages/**', 'packages/core/src/**') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
+            nextjs-${{ runner.os }}-
+
       - name: Typecheck
         run: pnpm typecheck
 

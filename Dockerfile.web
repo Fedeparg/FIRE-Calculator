@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Imagen del frontend (Next.js 16, App Router + BFF). Node 24 LTS.
 # Multi-etapa: build (instala deps del front + `next build` en modo standalone)
 # -> runtime delgado que solo lleva la salida autocontenida (server.js + el
@@ -10,6 +11,9 @@
 FROM node:24-slim AS base
 ENV CI=true
 RUN corepack enable
+# Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
+# `pnpm install` no re-descarga todo el árbol cuando cambia el lockfile.
+RUN pnpm config set store-dir /pnpm/store
 WORKDIR /app
 
 # ---- Build ----
@@ -21,7 +25,8 @@ FROM base AS build
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/core/package.json ./packages/core/package.json
-RUN pnpm install --frozen-lockfile --filter "sextante..."
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --filter "sextante..."
 
 # URL de la API. CRÍTICO: el rewrite /api/* de next.config se evalúa en BUILD
 # TIME y se congela en el manifiesto (el server standalone NO lo recalcula en

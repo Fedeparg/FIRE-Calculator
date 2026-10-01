@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # Imagen de la API (NestJS). Node 24 LTS (no usamos versiones impares/non-LTS).
 # Multi-etapa: build (compila + genera un paquete desplegable autocontenido con
 # `pnpm deploy`) -> runtime delgado.
@@ -6,6 +7,9 @@
 FROM node:24-slim AS base
 ENV CI=true
 RUN corepack enable
+# Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
+# `pnpm install` no re-descarga todo el árbol cuando cambia el lockfile.
+RUN pnpm config set store-dir /pnpm/store
 WORKDIR /app
 
 # ---- Build ----
@@ -14,7 +18,8 @@ FROM base AS build
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/core/package.json ./packages/core/package.json
-RUN pnpm install --frozen-lockfile --filter @sextante/api...
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile --filter @sextante/api...
 
 # Código y compilación a dist. El build de la API compila antes @sextante/core
 # (lógica compartida con el frontend), cuyo `dist/` copia luego `pnpm deploy`.
@@ -24,7 +29,8 @@ RUN pnpm --filter @sextante/api build
 
 # `pnpm deploy` copia el paquete (incluido dist) + un node_modules AUTOCONTENIDO
 # (sin symlinks al store de la raíz) en /app/deploy.
-RUN pnpm --filter @sextante/api deploy --prod --legacy /app/deploy
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm --filter @sextante/api deploy --prod --legacy /app/deploy
 
 # `pnpm deploy` copia el paquete ENTERO, así que arrastra fuentes, tests y tooling que la
 # imagen final no ejecuta (solo corre `dist/`). Se eliminan para reducir superficie y tamaño.
