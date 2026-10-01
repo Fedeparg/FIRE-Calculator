@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countByFilter,
+  dailyGain,
   dailyMovers,
   matchesQuery,
   positionFilterOf,
@@ -112,5 +113,48 @@ describe("dailyMovers", () => {
       5,
     );
     expect(moves).toEqual([]);
+  });
+});
+
+describe("dailyGain", () => {
+  const holding = { quantity: 10, avgPrice: 80, currency: "EUR" };
+
+  it("multiplica la cantidad por el movimiento del precio", () => {
+    const gain = dailyGain(holding, { close: 102, previousClose: 100, currency: "EUR" }, RATES);
+    expect(gain?.abs).toBeCloseTo(20, 10);
+    expect(gain?.pct).toBeCloseTo(2, 10);
+  });
+
+  it("enseña una pérdida con signo negativo", () => {
+    const gain = dailyGain(holding, { close: 95, previousClose: 100, currency: "EUR" }, RATES);
+    expect(gain?.abs).toBeCloseTo(-50, 10);
+    expect(gain?.pct).toBeCloseTo(-5, 10);
+  });
+
+  it("convierte a la divisa de la posición cuando el precio cotiza en otra", () => {
+    // 10 × 11 USD = 110 USD = 100 EUR.
+    const gain = dailyGain(holding, { close: 111, previousClose: 100, currency: "USD" }, RATES);
+    expect(gain?.abs).toBeCloseTo(100, 10);
+  });
+
+  it("devuelve null sin precio, sin cierre anterior o con cierre anterior no positivo", () => {
+    expect(dailyGain(holding, undefined, RATES)).toBeNull();
+    expect(dailyGain(holding, { close: 100, previousClose: null, currency: "EUR" }, RATES)).toBeNull();
+    expect(dailyGain(holding, { close: 100, previousClose: 0, currency: "EUR" }, RATES)).toBeNull();
+    expect(dailyGain(holding, { close: 100, previousClose: -1, currency: "EUR" }, RATES)).toBeNull();
+  });
+
+  it("devuelve null si falta la tasa de la divisa", () => {
+    expect(dailyGain(holding, { close: 101, previousClose: 100, currency: "JPY" }, RATES)).toBeNull();
+  });
+
+  it("devuelve null para una posición cerrada y 0 si el precio no se ha movido", () => {
+    const price = { close: 100, previousClose: 100, currency: "EUR" };
+    expect(dailyGain({ ...holding, quantity: 0 }, price, RATES)).toBeNull();
+    expect(dailyGain(holding, price, RATES)).toEqual({ abs: 0, pct: 0 });
+  });
+
+  it("devuelve null con valores no finitos", () => {
+    expect(dailyGain(holding, { close: Number.NaN, previousClose: 100, currency: "EUR" }, RATES)).toBeNull();
   });
 });

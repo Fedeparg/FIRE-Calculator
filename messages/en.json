@@ -1132,14 +1132,15 @@
       "currencyConverted": "Goal amounts were converted from {from} to {to} using today's exchange rates.",
       "currencyNotConvertible": "No {from}→{to} exchange rate available: amounts are shown as they were, so check them before trusting the result.",
       "assumptions": "The estimate assumes a constant return and contributions you never miss, and ignores taxes and inflation. It is a ballpark, not a forecast.",
+      "planLabel": "Active plan",
+      "planHint": "This is the plan shown in the Summary and the one email alerts watch. Choosing another makes it the active one.",
+      "noPlan": "You have no saved plan yet: these are example values. Save it below to see it in the Summary.",
       "scenarioTitle": "Save your goal",
       "scenarioHint": "It is stored as a scenario of the financial independence calculator, so you will find it there too.",
-      "loadLabel": "Load a saved goal",
-      "loadPlaceholder": "Choose a scenario…",
       "update": "Update",
       "saved": "Goal saved as “{name}”.",
       "updated": "Goal “{name}” updated.",
-      "loaded": "Goal “{name}” loaded.",
+      "activated": "Plan “{name}” is now active.",
       "montecarlo": {
         "title": "What if the market doesn't cooperate?",
         "intro": "Simulates thousands of random return sequences starting from your portfolio's real value, and counts how often you reach the goal and your money then lasts.",
@@ -1192,6 +1193,12 @@
       "asset": "Asset",
       "weight": "Weight",
       "gain": "Gain",
+      "gainToday": "Today's gain",
+      "gainModeLabel": "Gain shown",
+      "gainMode": {
+        "today": "Today",
+        "total": "Total"
+      },
       "sortLabel": "Sort by",
       "sort": {
         "invested": "Amount invested",
@@ -1526,6 +1533,7 @@
     },
     "detail": {
       "priceOn": "Price ({date})",
+      "todayGain": "Today",
       "viewLabel": "What to show for this position",
       "viewLots": "Transactions",
       "viewSale": "Simulate a sale",
@@ -1553,6 +1561,7 @@
       "title": "FIRE goal",
       "details": "See details",
       "define": "Set it",
+      "plan": "Plan: {name}",
       "loading": "Loading your goal…",
       "empty": "You haven't saved a goal yet. Set one to see how far you have to go.",
       "notConvertible": "Your goal is in another currency and there is no exchange rate to compare it with the portfolio.",

@@ -93,3 +93,16 @@ export function goalProgress(
     annualReturn: settings.annualReturn,
   });
 }
+
+/**
+ * Plan activo entre los escenarios FIRE guardados: el actualizado más recientemente. Es la
+ * misma regla que siguen los avisos de hitos de la API, así que Resumen, Objetivo y avisos
+ * miran siempre el mismo plan. Elegir otro plan lo "toca" (PATCH sin cambios) para activarlo.
+ */
+export function activeScenario<T extends { updatedAt: string }>(scenarios: readonly T[]): T | null {
+  let active: T | null = null;
+  for (const scenario of scenarios) {
+    if (active === null || Date.parse(scenario.updatedAt) > Date.parse(active.updatedAt)) active = scenario;
+  }
+  return active;
+}
