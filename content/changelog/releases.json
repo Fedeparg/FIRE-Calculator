@@ -14,6 +14,39 @@
       "highlight": true,
       "entries": [
         {
+          "hash": "b985fd5c",
+          "type": "feat",
+          "scope": "portfolio",
+          "category": "feature",
+          "text": {
+            "es": "la pestaña Posiciones se rediseña: buscador y filtro de abiertas, cerradas y derivados, cuatro columnas y el detalle en un panel junto a la fila (en móvil, una hoja que sube desde abajo)",
+            "en": "the Positions tab is redesigned: a search and an open/closed/derivatives filter, four columns and the detail in a panel next to the row (a bottom sheet on mobile)"
+          },
+          "hidden": false
+        },
+        {
+          "hash": "9a626b48",
+          "type": "feat",
+          "scope": "core",
+          "category": "feature",
+          "text": {
+            "es": "lógica de valoración, filtro y búsqueda de posiciones",
+            "en": "position valuation, filter and search logic"
+          },
+          "hidden": true
+        },
+        {
+          "hash": "c0606342",
+          "type": "docs",
+          "scope": "changelog",
+          "category": "internal",
+          "text": {
+            "es": "se redactan las novedades de las pestañas",
+            "en": "the release notes for the tabs are written"
+          },
+          "hidden": true
+        },
+        {
           "hash": "03b028ff",
           "type": "docs",
           "scope": "changelog",
