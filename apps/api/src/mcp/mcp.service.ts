@@ -206,10 +206,11 @@ export class McpService {
           'día), para analizar la evolución y la rentabilidad por periodo. Los ' +
           'importes se guardan en EUR y se reexpresan a la divisa `display` con las tasas de ' +
           'CADA día. La serie se reconstruye desde la primera operación de la cartera (hasta 5 ' +
-          'años, con la cantidad que se tenía cada día) y los días posteriores son capturas ' +
-          'reales diarias; los puntos reconstruidos llevan `estimated: true`. Pueden aparecer ' +
-          'tramos estimados intercalados entre capturas reales: ocurre al registrar operaciones ' +
-          'antiguas, que rehacen las capturas posteriores a su fecha. Una cuenta ' +
+          'años, con la cantidad que se tenía cada día). Los puntos anteriores a que el ' +
+          'usuario empezara a registrar su cartera en Sextante son una reconstrucción y ' +
+          'llevan `estimated: true`; desde ese momento los puntos llevan `estimated: false` ' +
+          '(captura diaria, o reconstrucción de un día que la captura no cubrió o que ' +
+          'quedó obsoleta al registrar operaciones antiguas). Una cuenta ' +
           'recién creada tiene pocos puntos. Solo lectura.',
         inputSchema: {
           days: z

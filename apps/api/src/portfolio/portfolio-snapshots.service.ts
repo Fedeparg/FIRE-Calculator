@@ -52,9 +52,10 @@ export interface PortfolioHistoryPoint {
   valuedPositions: number;
   totalPositions: number;
   /**
-   * `true` si este punto es una RECONSTRUCCIÓN a partir de las operaciones (cantidad y coste
-   * de aquel día según los lotes, valorados con los cierres de ese día), no una captura real del
-   * cron de aquella fecha. Ver `backfillUser`.
+   * `true` si este punto es ANTERIOR a que el usuario empezara a registrar su cartera en
+   * Sextante: una reconstrucción a partir de las operaciones (cantidad y coste de aquel día según
+   * los lotes, valorados con los cierres de ese día). Desde ese inicio de seguimiento es `false`
+   * aunque la fila la haya rehecho la reconstrucción. Ver `backfillUser`.
    */
   estimated: boolean;
 }
@@ -219,10 +220,22 @@ export class PortfolioSnapshotsService {
    * y cron nocturno) sin preocuparse por la factura. Los splits corrigen la cantidad cruda de los
    * lotes (ver `@sextante/core/portfolio-history`, que también documenta las limitaciones).
    *
-   * Las filas se guardan con `estimated: true`: son una reconstrucción con los cierres de la
-   * caché, no una captura de ese día (p. ej. el instrumento pudo cotizar a otra hora). El
-   * frontend lo señala. Una captura REAL (`estimated: false`) solo se pisa si ha quedado
-   * obsoleta (ver más abajo; el upsert solo actualiza filas estimadas o esas reales), y las estimadas que ya no salen de la reconstrucción se retiran
+   * QUÉ ES "ESTIMADO": lo ANTERIOR a que el usuario empezara a registrar su cartera en Sextante.
+   * `trackingSince` = fecha UTC del `created_at` más antiguo de sus posiciones, y toda fila que
+   * escribe esta función lleva `estimated = (date < trackingSince)`. Desde esa fecha la serie se
+   * considera fiable aunque la haya rehecho la reconstrucción (p. ej. una captura real obsoleta
+   * sustituida tras importar operaciones antiguas): el usuario ya estaba usando Sextante y el
+   * valor de esos días es, en lo sustancial, lo que habría capturado el cron. Por la misma
+   * razón, los HUECOS (días >= `trackingSince` en los que el cron falló) que rellena el backfill
+   * quedan `estimated = false`: es un trade-off aceptado, no distinguimos "cron caído" de
+   * "captura real". Frontend y MCP lo señalan para no presentar una aproximación como dato real.
+   *
+   * REPARACIÓN AUTOMÁTICA: una fila estimada cuyo `estimated` no coincide con la regla (p. ej. las
+   * que el PR de capturas obsoletas marcó `true` posteriores a `trackingSince`) cuenta como
+   * cambiada en el diff y se corrige en la primera pasada (arranque o nocturna). Una captura
+   * REAL (`estimated: false`) solo se pisa si ha quedado obsoleta (ver más abajo; el upsert solo
+   * actualiza filas estimadas o esas reales); una real anterior a `trackingSince` no debería
+   * existir, y si existe se deja como está. Las estimadas que ya no salen de la reconstrucción se retiran
    * (incluidas las que un backfill antiguo, con la cantidad de hoy, escribió antes de la compra).
    * Si la reconstrucción sale vacía (aún sin precios porque `primeSymbol` sigue trayendo
    * histórico en segundo plano) no se toca nada: una pasada posterior la completa.
@@ -230,7 +243,7 @@ export class PortfolioSnapshotsService {
    * CAPTURAS REALES OBSOLETAS: una captura real solo se respeta mientras sea una foto fiel. Si
    * después se registró (importó, editó) una operación con fecha anterior o igual a la de la
    * captura, esa captura no la incluye y mostraría un escalón falso; entonces se sustituye por
-   * la reconstrucción de ese día y pasa a `estimated: true` (regla en
+   * la reconstrucción de ese día, con `estimated` según la regla anterior (normalmente `false`; regla en
    * `@sextante/core/snapshot-staleness`: lote con `tradedAt <= fecha` cambiado DESPUÉS de que se
    * escribiera la captura). El borrado de un lote no deja marca, así que el llamante pasa
    * `invalidateFrom` (su fecha). Las reales no obsoletas no se tocan nunca. Si un día obsoleto no
@@ -294,6 +307,11 @@ export class PortfolioSnapshotsService {
         ],
       }));
 
+      // Inicio del seguimiento en Sextante (no de las operaciones): ver "QUÉ ES ESTIMADO" arriba.
+      const trackingSince = new Date(Math.min(...owned.map((p) => p.createdAt.getTime())))
+        .toISOString()
+        .slice(0, 10);
+
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
       const floor = new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS).toISOString().slice(0, 10);
@@ -325,7 +343,7 @@ export class PortfolioSnapshotsService {
             valuedPositions: aggregate.valued,
             totalPositions: aggregate.total,
             fxRates: rates,
-            estimated: true,
+            estimated: date < trackingSince,
           },
         ];
       });
@@ -357,7 +375,9 @@ export class PortfolioSnapshotsService {
         const current = existingByDate.get(row.date);
         if (!current) return true;
         if (!current.estimated) return staleReal.has(row.date); // real: solo si está obsoleta
+        // Un `estimated` incoherente con la regla también es un cambio (reparación automática).
         return !(
+          current.estimated === row.estimated &&
           current.invested === row.invested &&
           current.marketValue === row.marketValue &&
           current.valuedPositions === row.valuedPositions &&
@@ -394,8 +414,8 @@ export class PortfolioSnapshotsService {
               valuedPositions: sql`excluded.valued_positions`,
               totalPositions: sql`excluded.total_positions`,
               fxRates: sql`excluded.fx_rates`,
-              // Una real obsoleta sustituida ya no es una foto fiel: pasa a estimada.
-              estimated: true,
+              // La regla (`date < trackingSince`) decide también para una real obsoleta sustituida.
+              estimated: sql`excluded.estimated`,
               updatedAt: new Date(),
             },
             // Una captura real (estimated = false) no se pisa, ni siquiera ante una carrera con

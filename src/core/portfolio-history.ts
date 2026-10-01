@@ -19,9 +19,10 @@ export interface HistoryPointDto {
   valuedPositions: number;
   totalPositions: number;
   /**
-   * `true` si este punto es una RECONSTRUCCIÓN a partir de las operaciones (cantidad y coste
-   * de aquel día según los lotes, con los cierres de la caché), no una captura real del cron
-   * nocturno de esa fecha. Ver `apps/api/src/portfolio/portfolio-snapshots.service.ts`.
+   * `true` si este punto es ANTERIOR a que el usuario empezara a registrar su cartera en
+   * Sextante: una reconstrucción a partir de las operaciones (cantidad y coste de aquel día
+   * según los lotes, con los cierres de la caché). Ver
+   * `apps/api/src/portfolio/portfolio-snapshots.service.ts`.
    */
   estimated: boolean;
 }
@@ -88,10 +89,9 @@ export interface HistorySeries {
   from: string | null;
   to: string | null;
   /**
-   * Tramos contiguos de puntos `estimated`, en orden. Normalmente es uno (la reconstrucción
-   * cubre desde la primera operación hasta ayer y las capturas reales empiezan después), pero
-   * puede haber varios: una captura real anterior a importar operaciones antiguas queda entre
-   * dos tramos estimados. Se sombrea cada tramo por separado en vez de asumir un prefijo.
+   * Tramos contiguos de puntos `estimated`, en orden. Con la regla actual (estimado = anterior
+   * al inicio del seguimiento) es uno, un prefijo de la serie; se sigue calculando por tramos
+   * para tolerar datos que no lo cumplan (p. ej. filas aún sin reparar por el backfill).
    */
   estimatedRanges: { from: string; to: string }[];
 }
@@ -166,7 +166,7 @@ export interface PeriodGain {
   gain: number;
   /** Fecha del punto de partida (el primero disponible desde `from`). */
   since: string;
-  /** El punto de partida es una reconstrucción, no una captura real. */
+  /** El punto de partida es anterior al inicio del seguimiento en Sextante (reconstrucción). */
   estimated: boolean;
 }
 
