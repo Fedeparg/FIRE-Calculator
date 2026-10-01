@@ -118,6 +118,11 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?define NEXT_PUBLIC_SITE_URL (https://sextante.fpardo.net)}
         # Interruptor público de donaciones ("1" = mostrar). Se inlinea en build.
         NEXT_PUBLIC_DONATIONS_ENABLED: ${NEXT_PUBLIC_DONATIONS_ENABLED:-}
+        # Analítica propia: el web proxea /stats/* al servicio `analytics` por la red
+        # interna (se hornea en build, como API_URL). Sin ID de sitio (vacío hasta crear
+        # el sitio en el panel de Umami) no se emite el script.
+        ANALYTICS_URL: http://analytics:3000
+        NEXT_PUBLIC_ANALYTICS_WEBSITE_ID: ${NEXT_PUBLIC_ANALYTICS_WEBSITE_ID:-}
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -150,6 +155,51 @@ services:
       start_period: 20s
 
   # Backups cifrados: pg_dump -> gzip -> gpg (AES256) -> rclone (Google Drive).
+  # Analítica propia (Umami): sin cookies, sin terceros. Base de datos APARTE de la de
+  # Sextante: así ni el export/borrado RGPD ni los backups de la app la mezclan con
+  # datos de usuarios, y perderla no compromete nada (son métricas agregadas).
+  analytics-db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD:?define ANALYTICS_DB_PASSWORD en el .env}
+      POSTGRES_DB: umami
+    volumes:
+      - sextante_analytics_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U umami -d umami']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  analytics:
+    # Versión fijada: el tracker y la ruta de envío (/api/send) forman parte del
+    # contrato con los rewrites de next.config; un salto de versión se prueba antes.
+    image: ghcr.io/umami-software/umami:3.4.0
+    restart: unless-stopped
+    init: true
+    environment:
+      DATABASE_URL: postgresql://umami:${ANALYTICS_DB_PASSWORD}@analytics-db:5432/umami
+      APP_SECRET: ${ANALYTICS_APP_SECRET:?define ANALYTICS_APP_SECRET en el .env (openssl rand -base64 48)}
+      # No avisar de versiones nuevas ni mandar telemetría a umami.is.
+      DISABLE_UPDATES: '1'
+      DISABLE_TELEMETRY: '1'
+      # El código que agrupa las visitas de una persona cambia cada DÍA (por defecto,
+      # cada mes): no se puede seguir a nadie entre días. Cuesta precisión en
+      # "visitantes únicos" mensuales; la política de privacidad lo promete así.
+      SALT_ROTATION: day
+    ports:
+      # El PANEL solo se publica en la red local (y Tailscale), nunca por el proxy
+      # público: desde fuera solo existen /stats/script.js y /stats/api/send, que el
+      # web reenvía por la red interna. Mismo motivo que WEB_PORT para no ligarlo al
+      # loopback (ver el comentario del servicio `web`).
+      - '${ANALYTICS_PORT:-8791}:3000'
+    depends_on:
+      analytics-db:
+        condition: service_healthy
+
   # Hace un backup al arrancar y luego uno diario (cron). El cifrado ocurre ANTES
   # de salir del servidor. Ver scripts/backup/ y docs/DEPLOY.md.
   backup:
@@ -176,3 +226,5 @@ services:
 volumes:
   sextante_pgdata:
     name: sextante_pgdata
+  sextante_analytics_pgdata:
+    name: sextante_analytics_pgdata

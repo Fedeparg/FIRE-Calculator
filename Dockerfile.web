@@ -43,6 +43,14 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_DONATIONS_ENABLED=""
 ENV NEXT_PUBLIC_DONATIONS_ENABLED=$NEXT_PUBLIC_DONATIONS_ENABLED
 
+# Analítica propia (Umami). ANALYTICS_URL es interna (como API_URL, los rewrites de
+# /stats/* se congelan en build); el ID de sitio es PÚBLICO y se inlinea en build.
+# Vacíos = sin analítica: ni rewrites ni script.
+ARG ANALYTICS_URL=""
+ENV ANALYTICS_URL=$ANALYTICS_URL
+ARG NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=""
+ENV NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=$NEXT_PUBLIC_ANALYTICS_WEBSITE_ID
+
 # Código del front y compilación. `output: "standalone"` genera
 # .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
 COPY . .

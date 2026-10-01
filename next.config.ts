@@ -8,6 +8,11 @@ const withNextIntl = createNextIntlPlugin();
 // (http://api:3001), manteniendo el navegador en same-origin.
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
+// URL interna de Umami (analítica propia). Opcional: sin ella no se proxea nada y el
+// script tampoco se emite. En prod, la red interna de Compose (http://analytics:3000).
+// Como API_URL, se congela en build en el manifiesto de rewrites.
+const ANALYTICS_URL = process.env.ANALYTICS_URL;
+
 const isDev = process.env.NODE_ENV !== "production";
 
 /**
@@ -18,8 +23,9 @@ const isDev = process.env.NODE_ENV !== "production";
  * tema sin parpadeo y los scripts de hidratación de Next. Stripe no aparece: el flujo
  * de donación es una REDIRECCIÓN (no carga Stripe.js ni usa iframes).
  *
- * La app no carga NINGÚN recurso de terceros: no hay analítica, ni publicidad, ni
- * fuentes externas. Por eso el allowlist es estrictamente 'self'.
+ * La app no carga NINGÚN recurso de terceros: ni publicidad ni fuentes externas. La
+ * analítica (Umami) es propia y se sirve por este mismo origen bajo /stats (ver
+ * rewrites), así que el allowlist sigue siendo estrictamente 'self'.
  */
 function contentSecurityPolicy(): string {
   const directives: Record<string, string[]> = {
@@ -85,6 +91,15 @@ const nextConfig: NextConfig = {
       { source: "/token", destination: `${API_URL}/token` },
       { source: "/register", destination: `${API_URL}/register` },
       { source: "/revoke", destination: `${API_URL}/revoke` },
+      // Analítica propia (Umami). Solo se exponen el script del tracker y su endpoint
+      // de envío: el panel de Umami NO es accesible desde el origen público (se
+      // consulta por la red local). `/stats` está excluido del proxy de i18n.
+      ...(ANALYTICS_URL
+        ? [
+            { source: "/stats/script.js", destination: `${ANALYTICS_URL}/script.js` },
+            { source: "/stats/api/send", destination: `${ANALYTICS_URL}/api/send` },
+          ]
+        : []),
     ];
   },
 };
