@@ -106,7 +106,6 @@
     "searchPlaceholder": "Busca una calculadora…",
     "allCategories": "Todas",
     "noResults": "No hay calculadoras que coincidan con tu búsqueda.",
-    "soon": "Próximamente",
     "open": "Abrir",
     "resultsCount": "{count, plural, =0 {Sin resultados} =1 {1 calculadora} other {# calculadoras}}"
   },
@@ -343,7 +342,6 @@
       "inflationRate": "Inflación anual estimada (%)",
       "finalNet": "Valor final neto",
       "realFinalNet": "Valor real (hoy)",
-      "grossInterest": "Intereses brutos",
       "withheld": "Retención",
       "netInterest": "Intereses netos",
       "donutTitle": "Reparto del valor final",
@@ -661,7 +659,6 @@
       "maintenanceAnnual": "Mantenimiento anual (€)",
       "netYield": "Rentabilidad neta",
       "grossYield": "Rentabilidad bruta",
-      "annualRentIncome": "Ingresos potenciales",
       "effectiveRentIncome": "Ingresos efectivos",
       "totalAnnualExpenses": "Gastos anuales",
       "netIncome": "Ingreso neto anual",

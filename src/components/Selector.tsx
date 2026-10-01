@@ -9,7 +9,6 @@ export type SelectorItem = {
   name: string;
   description: string;
   category: string;
-  status: "live" | "soon";
   search: string;
 };
 
@@ -95,30 +94,14 @@ function CategoryChip({ active, onClick, label }: { active: boolean; onClick: ()
 function Card({ item, categoryLabel }: { item: SelectorItem; categoryLabel: string }) {
   const t = useTranslations("selector");
 
-  const inner = (
-    <div
-      className={`flex h-full flex-col rounded-xl border border-border bg-surface p-4 transition-all ${
-        item.status === "live" ? "hover:-translate-y-0.5 hover:border-brand hover:shadow-sm" : "opacity-60"
-      }`}
-    >
-      <div className="flex items-center justify-between gap-2">
+  return (
+    <Link href={`/calculadoras/${item.slug}`} className="block h-full">
+      <div className="flex h-full flex-col rounded-xl border border-border bg-surface p-4 transition-all hover:-translate-y-0.5 hover:border-brand hover:shadow-sm">
         <span className="text-xs font-medium uppercase tracking-wide text-muted">{categoryLabel}</span>
-        {item.status === "soon" && (
-          <span className="rounded-full bg-background px-2 py-0.5 text-[11px] text-muted">{t("soon")}</span>
-        )}
+        <h3 className="mt-2 font-semibold text-foreground">{item.name}</h3>
+        <p className="mt-1 flex-1 text-sm text-muted">{item.description}</p>
+        <span className="mt-3 text-sm font-medium text-brand">{t("open")} →</span>
       </div>
-      <h3 className="mt-2 font-semibold text-foreground">{item.name}</h3>
-      <p className="mt-1 flex-1 text-sm text-muted">{item.description}</p>
-      {item.status === "live" && <span className="mt-3 text-sm font-medium text-brand">{t("open")} →</span>}
-    </div>
+    </Link>
   );
-
-  if (item.status === "live") {
-    return (
-      <Link href={`/calculadoras/${item.slug}`} className="block h-full">
-        {inner}
-      </Link>
-    );
-  }
-  return inner;
 }

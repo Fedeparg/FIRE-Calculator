@@ -1,9 +1,7 @@
 import type { CalculatorMeta } from "./types";
 
 // Catálogo completo de calculadoras del producto.
-// status "live" = implementada (navegable en /calculadoras/<slug>).
-// status "soon" = aparece en el selector como "próximamente".
-// El selector muestra TODAS para que el buscador sea útil desde el día 1.
+// Cada entrada es una calculadora implementada y navegable en /calculadoras/<slug>.
 
 export const CALCULATORS: CalculatorMeta[] = [
   {
@@ -15,7 +13,6 @@ export const CALCULATORS: CalculatorMeta[] = [
       en: "Project your investment growth with regular contributions.",
     },
     keywords: ["interes", "compuesto", "inversion", "fondos", "indexados", "compound", "investing", "snowball"],
-    status: "live",
   },
   {
     slug: "independencia-financiera",
@@ -26,7 +23,6 @@ export const CALCULATORS: CalculatorMeta[] = [
       en: "Work out your FIRE number and how many years until you can live off your assets.",
     },
     keywords: ["fire", "independencia", "libertad", "financiera", "regla 4", "25x", "retire early", "freedom"],
-    status: "live",
   },
   {
     slug: "simulador-montecarlo",
@@ -49,7 +45,6 @@ export const CALCULATORS: CalculatorMeta[] = [
       "probability",
       "retirement",
     ],
-    status: "live",
   },
   {
     slug: "hipoteca-fija",
@@ -60,7 +55,6 @@ export const CALCULATORS: CalculatorMeta[] = [
       en: "Monthly payment, total interest and amortization schedule.",
     },
     keywords: ["hipoteca", "fija", "cuota", "amortizacion", "mortgage", "loan", "payment"],
-    status: "live",
   },
 
   {
@@ -69,7 +63,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "inversion",
     description: { es: "Cálculo básico de interés simple.", en: "Basic simple-interest calculation." },
     keywords: ["interes", "simple", "interest"],
-    status: "live",
   },
   {
     slug: "promediar-acciones",
@@ -77,7 +70,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "inversion",
     description: { es: "Precio medio ponderado de tus compras.", en: "Weighted average price of your purchases." },
     keywords: ["promediar", "acciones", "dca", "average"],
-    status: "live",
   },
   {
     slug: "dividendos",
@@ -85,7 +77,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "inversion",
     description: { es: "Ingresos por dividendos y retención.", en: "Dividend income and withholding." },
     keywords: ["dividendos", "dividends", "rentas"],
-    status: "live",
   },
   {
     slug: "roi",
@@ -93,7 +84,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "inversion",
     description: { es: "Retorno de la inversión.", en: "Return on investment." },
     keywords: ["roi", "retorno", "return"],
-    status: "live",
   },
   {
     slug: "staking",
@@ -101,7 +91,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "inversion",
     description: { es: "Rendimiento de staking en criptoactivos.", en: "Yield from crypto staking." },
     keywords: ["staking", "cripto", "crypto", "apy"],
-    status: "live",
   },
 
   {
@@ -110,7 +99,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fire",
     description: { es: "Cuánto necesitas ahorrar para tu jubilación.", en: "How much to save for retirement." },
     keywords: ["jubilacion", "ahorro", "retirement"],
-    status: "live",
   },
   {
     slug: "presupuesto-mensual",
@@ -121,7 +109,6 @@ export const CALCULATORS: CalculatorMeta[] = [
       en: "Organize income and expenses (50/30/20 rule).",
     },
     keywords: ["presupuesto", "budget", "50/30/20"],
-    status: "live",
   },
 
   {
@@ -130,7 +117,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "hipoteca",
     description: { es: "Importe máximo según tus ingresos.", en: "Maximum amount based on your income." },
     keywords: ["hipoteca", "permitir", "afford", "esfuerzo"],
-    status: "live",
   },
   {
     slug: "hipoteca-vs-alquiler",
@@ -138,7 +124,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "hipoteca",
     description: { es: "Comprar o alquilar: comparativa.", en: "Buying or renting: a comparison." },
     keywords: ["hipoteca", "alquiler", "buy", "rent"],
-    status: "live",
   },
   {
     slug: "amortizacion-anticipada",
@@ -146,7 +131,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "hipoteca",
     description: { es: "Reducir cuota o plazo amortizando antes.", en: "Reduce payment or term by repaying early." },
     keywords: ["amortizacion", "anticipada", "early", "repayment"],
-    status: "live",
   },
   {
     slug: "rentabilidad-alquiler",
@@ -154,7 +138,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "hipoteca",
     description: { es: "Rentabilidad bruta y neta de un inmueble.", en: "Gross and net yield of a property." },
     keywords: ["alquiler", "rentabilidad", "rental", "yield"],
-    status: "live",
   },
   {
     slug: "rentabilidad-alquiler-vacacional",
@@ -162,7 +145,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "hipoteca",
     description: { es: "Rentabilidad de un alquiler turístico.", en: "Yield of a holiday let." },
     keywords: ["alquiler", "vacacional", "holiday", "turistico"],
-    status: "live",
   },
 
   {
@@ -171,7 +153,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "ahorro",
     description: { es: "Intereses de un depósito bancario.", en: "Interest on a bank deposit." },
     keywords: ["deposito", "plazo fijo", "deposit", "tae"],
-    status: "live",
   },
   {
     slug: "cuenta-remunerada",
@@ -179,7 +160,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "ahorro",
     description: { es: "Rentabilidad de una cuenta remunerada.", en: "Return of a high-yield savings account." },
     keywords: ["cuenta", "remunerada", "savings", "tae"],
-    status: "live",
   },
 
   {
@@ -188,7 +168,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "Estimación por CCAA y parentesco.", en: "Estimate by region and kinship." },
     keywords: ["donaciones", "gift", "impuesto", "tax"],
-    status: "live",
   },
   {
     slug: "impuesto-patrimonio",
@@ -196,7 +175,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "Estimación según patrimonio y CCAA.", en: "Estimate by wealth and region." },
     keywords: ["patrimonio", "wealth", "tax"],
-    status: "live",
   },
   {
     slug: "desgravacion-plan-pensiones",
@@ -204,7 +182,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "Ahorro fiscal por aportar a un plan.", en: "Tax savings from pension contributions." },
     keywords: ["plan", "pensiones", "pension", "irpf"],
-    status: "live",
   },
   {
     slug: "salario-bruto-neto",
@@ -212,7 +189,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "De salario bruto a neto mensual.", en: "From gross to net monthly salary." },
     keywords: ["salario", "bruto", "neto", "salary", "net"],
-    status: "live",
   },
   {
     slug: "irpf-nomina",
@@ -220,7 +196,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "Retención de IRPF en nómina.", en: "Income-tax withholding on payroll." },
     keywords: ["irpf", "nomina", "payroll", "tax"],
-    status: "live",
   },
   {
     slug: "irpf-autonomos",
@@ -228,7 +203,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "fiscalidad",
     description: { es: "IRPF para autónomos.", en: "Income tax for the self-employed." },
     keywords: ["irpf", "autonomos", "self-employed"],
-    status: "live",
   },
 
   {
@@ -237,7 +211,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "deuda",
     description: { es: "Coste de la deuda revolving.", en: "Cost of revolving debt." },
     keywords: ["tarjeta", "credito", "credit card", "revolving"],
-    status: "live",
   },
 
   {
@@ -246,7 +219,6 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "herramientas",
     description: { es: "Poder adquisitivo a lo largo del tiempo.", en: "Purchasing power over time." },
     keywords: ["inflacion", "ipc", "inflation", "cpi"],
-    status: "live",
   },
   {
     slug: "salud-financiera",
@@ -254,6 +226,5 @@ export const CALCULATORS: CalculatorMeta[] = [
     category: "herramientas",
     description: { es: "Cuestionario sobre tus finanzas.", en: "A quiz about your finances." },
     keywords: ["test", "salud", "health", "quiz"],
-    status: "live",
   },
 ];

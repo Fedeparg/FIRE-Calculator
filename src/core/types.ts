@@ -32,6 +32,4 @@ export interface CalculatorMeta {
   description: Localized;
   /** Palabras clave (es+en) para el buscador del selector. */
   keywords: string[];
-  /** "live" = implementada y navegable; "soon" = próximamente. */
-  status: "live" | "soon";
 }

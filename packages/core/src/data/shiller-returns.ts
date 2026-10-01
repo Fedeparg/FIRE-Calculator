@@ -19,8 +19,6 @@ export interface HistoricalYear {
   bonds: number;
 }
 
-export const SHILLER_SOURCE = "Robert J. Shiller, U.S. Stock Markets 1871-Present and CAPE Ratio";
-
 export const HISTORICAL_RETURNS: readonly HistoricalYear[] = [
   { year: 1871, stocks: 0.139054, bonds: 0.03567 },
   { year: 1872, stocks: 0.087812, bonds: 0.015562 },

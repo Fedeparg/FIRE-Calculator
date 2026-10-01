@@ -37,7 +37,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const articleSlugs = [...new Set([...esArticles, ...enArticles])].sort();
   const legalSlugs = [...new Set([...esLegal, ...enLegal])].sort();
-  const liveCalculators = CALCULATORS.filter((c) => c.status === "live");
 
   /** Una entrada con su URL canónica (es) y el mapa hreflang completo. */
   const entry = (
@@ -69,7 +68,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // diferencia de las calculadoras: se emite el `lastmod`.
     entry("/novedades", 0.5, "weekly", changelogDate),
     entry("/sobre-mi", 0.3, "yearly"),
-    ...liveCalculators.map((c) => entry(`/calculadoras/${c.slug}`, 0.8, "monthly")),
+    ...CALCULATORS.map((c) => entry(`/calculadoras/${c.slug}`, 0.8, "monthly")),
     ...articleSlugs.map((slug) => entry(`/aprende/${slug}`, 0.7, "monthly", articleDates.get(slug))),
     ...legalSlugs.map((slug) => entry(`/legal/${slug}`, 0.2, "yearly", legalDates.get(slug))),
   ];
