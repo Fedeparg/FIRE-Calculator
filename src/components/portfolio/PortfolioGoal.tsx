@@ -1,9 +1,9 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { activeScenario, goalSettingsFromInputs, type GoalOutcome } from "@/core/portfolio-goal-scenario";
+import { goalSettingsFromInputs, type GoalOutcome } from "@/core/portfolio-goal-scenario";
 import { convertCurrency } from "@sextante/core/fx";
 import {
   computeAmountGoal,
@@ -16,12 +16,8 @@ import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core
 import { MAX_YEARS } from "@sextante/core/calculators/fire";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/lib/format";
-import {
-  scenarioErrorKeyForResponse,
-  scenarioErrorKeyForStatus,
-  type SavedScenario,
-  type ScenarioErrorKey,
-} from "@/lib/scenarios";
+import type { SavedScenario } from "@/shared/api/saved-scenarios";
+import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
 import Notice from "../ui/Notice";
 import NumberField from "../ui/NumberField";
 import SelectField from "../ui/SelectField";
@@ -115,12 +111,19 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
    */
   const [version, setVersion] = useState(0);
 
-  // Escenarios guardados de la calculadora FIRE (los mismos que se ven en su página).
-  const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
-  // `true` cuando la lista ya se ha pedido (con o sin éxito): hasta entonces no se avisa de
-  // que no hay planes, para no enseñar el aviso un instante antes de cargar el activo.
-  const [listLoaded, setListLoaded] = useState(false);
-  const [canSave, setCanSave] = useState(false);
+  // Escenarios guardados de la calculadora FIRE (los mismos que se ven en su página). Un 401
+  // (sesión caducada mientras se navegaba) o un fallo de red dejan el bloque calculando en
+  // local: la autorización la decide la API, aquí solo se refleja su respuesta.
+  const {
+    status: listStatus,
+    scenarios,
+    active,
+    error: errorKey,
+    create,
+    update,
+    activate,
+  } = useSavedScenarios(FIRE_CALCULATOR_SLUG);
+  const canSave = listStatus === "ready";
   const [selectedId, setSelectedId] = useState("");
   /**
    * `inputs` completos del escenario cargado. Se conservan para que al actualizarlo no se
@@ -130,16 +133,15 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   const [loadedInputs, setLoadedInputs] = useState<Record<string, unknown>>({});
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [errorKey, setErrorKey] = useState<ScenarioErrorKey | null>(null);
   // Último mensaje de estado (guardado/actualizado/cargado) para la región viva.
   const [status, setStatus] = useState("");
 
   /**
    * Aplica un escenario guardado. Los importes se guardan en SU divisa (`goalCurrency`, o EUR
    * si viene de la calculadora, que solo trabaja en euros): la conversión a lo que se está
-   * viendo la hace `shown`. Solo usa setters de estado, que son estables: de ahí las deps vacías.
+   * viendo la hace `shown`.
    */
-  const applyScenario = useCallback((scenario: SavedScenario) => {
+  function applyScenario(scenario: SavedScenario) {
     const settings = goalSettingsFromInputs(scenario.inputs);
     setAmounts({
       currency: settings.currency,
@@ -159,41 +161,16 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     setLoadedInputs(scenario.inputs);
     setName(scenario.name);
     setVersion((current) => current + 1);
-  }, []);
+  }
 
-  // Carga inicial: la lista de planes y, si hay alguno, el activo (el mismo que enseña la
-  // tarjeta del Resumen). Un 401 (sesión caducada mientras se navegaba) deja el bloque
-  // calculando en local: la autorización la decide la API, aquí solo se refleja su respuesta.
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/scenarios?slug=${FIRE_CALCULATOR_SLUG}`, {
-          cache: "no-store",
-        });
-        if (cancelled) return;
-        if (res.status === 401) return;
-        if (!res.ok) {
-          setErrorKey(scenarioErrorKeyForStatus(res.status));
-          return;
-        }
-        const list = (await res.json()) as SavedScenario[];
-        if (cancelled) return;
-        setScenarios(list);
-        setCanSave(true);
-        const active = activeScenario(list);
-        if (active) applyScenario(active);
-      } catch {
-        // Sin respuesta, el objetivo se sigue calculando; simplemente no se ofrece guardar.
-      } finally {
-        if (!cancelled) setListLoaded(true);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [applyScenario]);
+  // Al terminar la carga inicial se aplica el plan activo (el mismo que enseña la tarjeta del
+  // Resumen), una sola vez. Se ajusta durante el render, el patrón de React para derivar
+  // estado de un cambio (aquí, del hook), en vez de un efecto que lo sincronice a posteriori.
+  const [initialApplied, setInitialApplied] = useState(false);
+  if (!initialApplied && listStatus !== "loading") {
+    setInitialApplied(true);
+    if (active) applyScenario(active);
+  }
 
   /**
    * Importes en la divisa que se está viendo. Es una DERIVACIÓN, no estado sincronizado con un
@@ -266,23 +243,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
     const scenario = scenarios.find((s) => s.id === id);
     if (!scenario) return;
     applyScenario(scenario);
-    setErrorKey(null);
-    try {
-      const res = await fetch(`/api/scenarios/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) {
-        setErrorKey(await scenarioErrorKeyForResponse(res));
-        return;
-      }
-      const activated = (await res.json()) as SavedScenario;
-      setScenarios((prev) => [activated, ...prev.filter((s) => s.id !== activated.id)]);
-      setStatus(t("activated", { name: activated.name }));
-    } catch {
-      setErrorKey("errorNetwork");
-    }
+    const activated = await activate(id);
+    if (activated) setStatus(t("activated", { name: activated.name }));
   }
 
   /**
@@ -294,52 +256,34 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) {
-      setErrorKey("errorInvalid");
-      return;
-    }
     const loaded = scenarios.find((s) => s.id === selectedId);
     const updating = loaded !== undefined && loaded.name === trimmed;
+    const inputs = {
+      ...loadedInputs,
+      annualExpenses: shown.annualExpenses,
+      currentSavings: toCents(goal.current),
+      savings: shown.contribution,
+      frequency,
+      annualReturn,
+      withdrawalRate,
+      volatility,
+      retirementYears,
+      goalCurrency: display,
+      goalMode: mode,
+      targetAmount: shown.targetAmount,
+      targetYears,
+    };
 
     setSaving(true);
-    setErrorKey(null);
-    try {
-      const inputs = {
-        ...loadedInputs,
-        annualExpenses: shown.annualExpenses,
-        currentSavings: toCents(goal.current),
-        savings: shown.contribution,
-        frequency,
-        annualReturn,
-        withdrawalRate,
-        volatility,
-        retirementYears,
-        goalCurrency: display,
-        goalMode: mode,
-        targetAmount: shown.targetAmount,
-        targetYears,
-      };
-      const res = await fetch(updating ? `/api/scenarios/${loaded.id}` : "/api/scenarios", {
-        method: updating ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          updating ? { name: trimmed, inputs } : { slug: FIRE_CALCULATOR_SLUG, name: trimmed, inputs },
-        ),
-      });
-      if (!res.ok) {
-        setErrorKey(await scenarioErrorKeyForResponse(res));
-        return;
-      }
-      const saved = (await res.json()) as SavedScenario;
-      // Guardar renueva `updatedAt`: el plan guardado pasa a ser el activo.
-      setScenarios((prev) => [saved, ...prev.filter((s) => s.id !== saved.id)]);
+    // Guardar renueva `updatedAt`: el plan guardado pasa a ser el activo (primero de la lista).
+    const saved = updating
+      ? await update(loaded.id, { name: trimmed, inputs }, { promote: true })
+      : await create(trimmed, inputs);
+    setSaving(false);
+    if (saved) {
       setSelectedId(saved.id);
       setLoadedInputs(saved.inputs);
       setStatus(t(updating ? "updated" : "saved", { name: saved.name }));
-    } catch {
-      setErrorKey("errorNetwork");
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -370,7 +314,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
           help={t("planHint")}
         />
       )}
-      {listLoaded && scenarios.length === 0 && <Notice variant="info">{t("noPlan")}</Notice>}
+      {listStatus !== "loading" && scenarios.length === 0 && <Notice variant="info">{t("noPlan")}</Notice>}
 
       <ToggleGroup
         label={t("modeLabel")}

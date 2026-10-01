@@ -1,18 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
-import {
-  activeScenario,
-  goalProgress,
-  goalSettingsFromInputs,
-  type GoalSettings,
-} from "@/core/portfolio-goal-scenario";
+import { goalProgress, goalSettingsFromInputs } from "@/core/portfolio-goal-scenario";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/lib/format";
-import type { SavedScenario } from "@/lib/scenarios";
+import { useSavedScenarios } from "@/shared/api/use-saved-scenarios";
 
 type Props = {
   /** Valor de mercado de la cartera en `display` (el mismo total que el resto del Resumen). */
@@ -20,9 +14,6 @@ type Props = {
   display: string;
   rates: Record<string, number>;
 };
-
-/** Estado de la carga del objetivo guardado. */
-type Loaded = { kind: "loading" } | { kind: "none" } | { kind: "goal"; name: string; settings: GoalSettings };
 
 /**
  * Resumen del objetivo FIRE en la pestaña Resumen: el porcentaje conseguido y el tiempo que
@@ -33,49 +24,25 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
   const t = useTranslations("portfolio.goalCard");
   const tGoal = useTranslations("portfolio.goal");
   const { formatCurrency, formatPercent } = useFormat();
-  const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" });
+  // Cualquier fallo (sin sesión, red, servidor) se trata como "sin plan guardado".
+  const { status, active } = useSavedScenarios(FIRE_CALCULATOR_SLUG);
+  const settings = active ? goalSettingsFromInputs(active.inputs) : null;
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/scenarios?slug=${FIRE_CALCULATOR_SLUG}`, { cache: "no-store" });
-        const scenarios = res.ok ? ((await res.json()) as SavedScenario[]) : [];
-        const active = activeScenario(scenarios);
-        if (!cancelled) {
-          setLoaded(
-            active
-              ? { kind: "goal", name: active.name, settings: goalSettingsFromInputs(active.inputs) }
-              : { kind: "none" },
-          );
-        }
-      } catch {
-        if (!cancelled) setLoaded({ kind: "none" });
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const progress = loaded.kind === "goal" ? goalProgress(loaded.settings, marketValue, display, rates) : null;
+  const progress = settings ? goalProgress(settings, marketValue, display, rates) : null;
 
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground">{t("title")}</h2>
         <Link href="/portfolio/objetivo" className="text-sm font-medium text-brand underline-offset-2 hover:underline">
-          {loaded.kind === "goal" ? t("details") : t("define")}
+          {active ? t("details") : t("define")}
         </Link>
       </div>
 
-      {loaded.kind === "goal" && (
-        <p className="-mt-2 truncate text-sm text-muted">{t("plan", { name: loaded.name })}</p>
-      )}
-      {loaded.kind === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
-      {loaded.kind === "none" && <p className="text-sm text-muted">{t("empty")}</p>}
-      {loaded.kind === "goal" && progress === null && <p className="text-sm text-muted">{t("notConvertible")}</p>}
+      {active && <p className="-mt-2 truncate text-sm text-muted">{t("plan", { name: active.name })}</p>}
+      {status === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
+      {status !== "loading" && !active && <p className="text-sm text-muted">{t("empty")}</p>}
+      {active && progress === null && <p className="text-sm text-muted">{t("notConvertible")}</p>}
       {progress && progress.progress !== null && (
         <>
           <p className="text-3xl font-semibold tabular-nums text-foreground">
