@@ -9,7 +9,7 @@ import PositionDeleteBar from "./PositionDeleteBar";
 import PositionDetailSummary from "./PositionDetailSummary";
 import PositionLotForm from "./PositionLotForm";
 import SaleSimulator from "./SaleSimulator";
-import { usePositionLots } from "./use-position-lots";
+import { usePositionLots } from "../use-position-lots";
 
 export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
 
