@@ -30,7 +30,7 @@ export default function DividendsCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={6}
+      layout="grid"
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>

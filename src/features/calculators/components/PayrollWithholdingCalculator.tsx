@@ -73,7 +73,7 @@ export default function PayrollWithholdingCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={11}
+      layout="grid"
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>

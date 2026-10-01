@@ -76,7 +76,7 @@ export default function SelfEmployedTaxCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={12}
+      layout="grid"
       notice={<Notice>{t("note", { year: FISCAL_YEAR_LABEL })}</Notice>}
       inputs={
         <>

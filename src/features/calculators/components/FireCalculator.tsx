@@ -55,7 +55,7 @@ export default function FireCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={7}
+      layout="grid"
       inputs={
         <>
           <NumberField

@@ -27,7 +27,7 @@ export default function InflationCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={4}
+      layout="sidebar"
       inputs={
         <>
           <NumberField label={t("amount")} value={amount} onChange={setAmount} step={1000} help={t("help.amount")} />

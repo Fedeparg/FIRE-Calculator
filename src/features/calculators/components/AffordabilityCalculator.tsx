@@ -40,7 +40,7 @@ export default function AffordabilityCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField

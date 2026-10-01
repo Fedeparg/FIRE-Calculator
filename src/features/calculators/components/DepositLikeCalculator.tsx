@@ -45,7 +45,7 @@ export default function DepositLikeCalculator({ namespace, principalKey, default
 
   return (
     <CalculatorLayout
-      inputCount={5}
+      layout="sidebar"
       inputs={
         <>
           <NumberField

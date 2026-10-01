@@ -90,7 +90,7 @@ export default function MonteCarloCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>

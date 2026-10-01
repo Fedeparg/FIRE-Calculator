@@ -33,7 +33,7 @@ export default function CreditCardCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={isPercent ? 5 : 4}
+      layout="sidebar"
       inputs={
         <>
           <NumberField label={t("balance")} value={balance} onChange={setBalance} step={100} help={t("help.balance")} />

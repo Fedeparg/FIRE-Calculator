@@ -47,7 +47,7 @@ export default function RentalYieldCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={8}
+      layout="grid"
       inputs={
         <>
           <NumberField

@@ -29,7 +29,7 @@ export default function StakingCalculator() {
 
   return (
     <CalculatorLayout
-      inputCount={4}
+      layout="sidebar"
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
