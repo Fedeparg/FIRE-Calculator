@@ -83,6 +83,11 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           # Interruptor público de donaciones (Variable, no Secret): "1" = mostrar.
           NEXT_PUBLIC_DONATIONS_ENABLED: ${{ vars.NEXT_PUBLIC_DONATIONS_ENABLED }}
+          # Analítica propia (Umami): su Postgres y el secreto del panel. El ID de sitio
+          # es público (Variable): vacío hasta crear el sitio en el panel.
+          ANALYTICS_DB_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
+          ANALYTICS_APP_SECRET: ${{ secrets.ANALYTICS_APP_SECRET }}
+          NEXT_PUBLIC_ANALYTICS_WEBSITE_ID: ${{ vars.NEXT_PUBLIC_ANALYTICS_WEBSITE_ID }}
         run: |
           umask 077
           # Heredoc SIN -x: los valores se expanden desde el entorno del step
@@ -107,6 +112,9 @@ jobs:
           RCLONE_CONF_BASE64=${RCLONE_CONF_BASE64}
           STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
           NEXT_PUBLIC_DONATIONS_ENABLED=${NEXT_PUBLIC_DONATIONS_ENABLED}
+          ANALYTICS_DB_PASSWORD=${ANALYTICS_DB_PASSWORD}
+          ANALYTICS_APP_SECRET=${ANALYTICS_APP_SECRET}
+          NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=${NEXT_PUBLIC_ANALYTICS_WEBSITE_ID}
           EOF
 
       - name: Construir y levantar el stack
