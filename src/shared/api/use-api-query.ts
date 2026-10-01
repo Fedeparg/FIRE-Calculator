@@ -12,6 +12,11 @@ export type ApiQueryState<T> =
 export type ApiQueryOptions = {
   /** Opciones de `fetch` (p. ej. `cache: "no-store"`). Deben ser estables entre renders (constante de módulo). */
   init?: Omit<RequestInit, "signal" | "body">;
+  /**
+   * Mientras se recarga (`refetch` o cambio de `path`), seguir devolviendo el último resultado
+   * en vez de `loading`: evita que la interfaz parpadee en recargas de fondo.
+   */
+  keepPrevious?: boolean;
 };
 
 /**
@@ -45,6 +50,7 @@ export function useApiQuery<T>(
   options?: ApiQueryOptions,
 ): ApiQueryState<T> & { refetch: () => void } {
   const init = options?.init;
+  const keepPrevious = options?.keepPrevious ?? false;
   // `state` se asocia a la clave de la petición que lo produjo: al cambiar `path` o hacer
   // `refetch` la clave cambia y el estado derivado vuelve a "loading" sin fijar estado de
   // forma síncrona dentro del effect.
@@ -60,6 +66,7 @@ export function useApiQuery<T>(
   }, [path, init, requestKey]);
 
   const refetch = useCallback(() => setReloadKey((k) => k + 1), []);
-  const state: ApiQueryState<T> = result?.key === requestKey ? result.state : { status: "loading" };
+  const state: ApiQueryState<T> =
+    result && (result.key === requestKey || keepPrevious) ? result.state : { status: "loading" };
   return { ...state, refetch };
 }
