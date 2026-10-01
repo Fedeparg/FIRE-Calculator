@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { ConnectedApp } from "@sextante/core/contracts";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/shared/format/format";
@@ -9,16 +10,6 @@ import { NO_STORE, apiFetch } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import Button from "@/shared/ui/Button";
-
-/** Una aplicación conectada, tal y como la devuelve la API (`GET /api/account/connections`). */
-type Connection = {
-  clientId: string;
-  clientName: string | null;
-  clientUri: string | null;
-  scopes: string[];
-  createdAt: string;
-  lastUsedAt: string | null;
-};
 
 const CONNECTIONS_PATH = "/api/account/connections";
 // Constante de módulo: `useApiQuery` exige opciones estables entre renders.
@@ -42,7 +33,7 @@ const MCP_URL = absoluteUrl("/api/mcp");
  */
 export default function ConnectedApps() {
   const t = useTranslations("account.connections");
-  const query = useApiQuery<Connection[]>(CONNECTIONS_PATH, { init: NO_STORE });
+  const query = useApiQuery<ConnectedApp[]>(CONNECTIONS_PATH, { init: NO_STORE });
   // Las revocadas se ocultan sin volver a pedir la lista.
   const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
   const state = query.status === "ready" ? "loaded" : query.status;

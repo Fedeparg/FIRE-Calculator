@@ -19,7 +19,8 @@ import type { SessionUser } from '../auth/auth.service.js';
 import { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import { SavedScenariosQueryDto } from './dto/saved-scenarios-query.dto.js';
 import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
-import { SavedScenariosService, type SavedScenarioResponse } from './saved-scenarios.service.js';
+import type { SavedScenarioResponse } from '@sextante/core/contracts';
+import { SavedScenariosService } from './saved-scenarios.service.js';
 
 /**
  * Escenarios guardados de calculadora. todos los endpoints están autenticados y el `userId`

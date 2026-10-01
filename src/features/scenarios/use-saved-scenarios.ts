@@ -6,14 +6,17 @@ import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
 import {
   activeScenario,
+  applyScenarioChange,
   classifyScenariosQuery,
   createScenarioRequest,
+  currentScenarios,
   deleteScenarioRequest,
   promoteScenario,
   replaceScenario,
   scenarioErrorKey,
   scenariosListPath,
   updateScenarioRequest,
+  type LocalScenarios,
   type SavedScenario,
   type ScenarioErrorKey,
   type ScenarioPatch,
@@ -55,8 +58,8 @@ export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
   const loaded = query.status === "ready" ? query.data : null;
 
   // Lista corregida a mano, atada a los datos de la consulta de los que parte.
-  const [local, setLocal] = useState<{ source: SavedScenario[]; list: SavedScenario[] } | null>(null);
-  const scenarios = (local && local.source === loaded ? local.list : loaded) ?? [];
+  const [local, setLocal] = useState<LocalScenarios | null>(null);
+  const scenarios = currentScenarios(local, loaded);
 
   // `undefined` = aún no hay acciones: se muestra el fallo de la carga, si lo hubo.
   const [actionError, setActionError] = useState<ScenarioErrorKey | null | undefined>(undefined);
@@ -64,7 +67,7 @@ export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
 
   function applyToList(change: (list: readonly SavedScenario[]) => SavedScenario[]) {
     if (!loaded) return;
-    setLocal((prev) => ({ source: loaded, list: change(prev && prev.source === loaded ? prev.list : loaded) }));
+    setLocal((prev) => applyScenarioChange(prev, loaded, change));
   }
 
   async function run<T>(request: () => Promise<T>): Promise<T | null> {

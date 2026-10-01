@@ -1,6 +1,6 @@
 import { IsBoolean, IsIn } from 'class-validator';
 
-import { NOTIFICATION_LOCALES, type NotificationLocale } from '../notification-settings.service.js';
+import { NOTIFICATION_LOCALES, type NotificationLocale } from '@sextante/core/contracts';
 
 export class UpdateNotificationSettingsDto {
   @IsBoolean()

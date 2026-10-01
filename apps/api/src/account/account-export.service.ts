@@ -1,17 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
+import type { SavedScenarioResponse } from '@sextante/core/contracts';
+import type { HistoryPointDto } from '@sextante/core/portfolio/types';
 import type { SessionUser } from '../auth/auth.service.js';
 import { NotificationSettingsService } from '../notifications/notification-settings.service.js';
 import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
-import {
-  PortfolioSnapshotsService,
-  HISTORY_MAX_DAYS,
-  type PortfolioHistoryPoint,
-} from '../portfolio/portfolio-snapshots.service.js';
+import { PortfolioSnapshotsService, HISTORY_MAX_DAYS } from '../portfolio/portfolio-snapshots.service.js';
 import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
-import { SavedScenariosService, type SavedScenarioResponse } from '../scenarios/saved-scenarios.service.js';
+import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
 
 /** Una aplicación OAuth/MCP conectada, tal y como aparece en la exportación RGPD. */
 export type ConnectedAppExport = {
@@ -37,7 +35,7 @@ export type AccountExport = {
   /** Compras y ventas de todas sus posiciones (el histórico del que salen los agregados). */
   positionLots: PositionLotResponse[];
   /** Serie de valoración diaria, en EUR (la divisa base del histórico). */
-  portfolioHistory: PortfolioHistoryPoint[];
+  portfolioHistory: HistoryPointDto[];
   savedScenarios: SavedScenarioResponse[];
   connectedApps: ConnectedAppExport[];
   /** Preferencias de avisos por email (opt-in). */

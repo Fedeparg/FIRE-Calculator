@@ -1,4 +1,4 @@
-import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
+import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, count, desc, eq } from 'drizzle-orm';
 
@@ -13,16 +13,6 @@ import { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
  * puerta a usar la cuenta como almacén de ficheros.
  */
 export const MAX_INPUTS_BYTES = 8 * 1024;
-
-/** Escenario tal y como lo consume el frontend (fechas como ISO string). */
-export type SavedScenarioResponse = {
-  id: string;
-  slug: string;
-  name: string;
-  inputs: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
 
 /**
  * Escenarios guardados de calculadora. Mismo patrón de aislamiento que `positions`: el

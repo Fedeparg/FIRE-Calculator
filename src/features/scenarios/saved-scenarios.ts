@@ -5,18 +5,12 @@
  * (`apps/api/src/scenarios/`), que autoriza y hace el scoping por usuario.
  */
 
+import type { SavedScenarioResponse } from "@sextante/core/contracts";
 import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
 import type { ApiQueryState } from "@/shared/api/use-api-query";
 
 /** Un escenario tal y como lo devuelve `GET /api/scenarios` (fechas como ISO string). */
-export type SavedScenario = {
-  id: string;
-  slug: string;
-  name: string;
-  inputs: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
-};
+export type SavedScenario = SavedScenarioResponse;
 
 /**
  * Error mostrado al guardar/cargar escenarios. Coincide con las claves
@@ -90,6 +84,26 @@ export function promoteScenario(list: readonly SavedScenario[], scenario: SavedS
 /** Sustituye un escenario conservando su posición. */
 export function replaceScenario(list: readonly SavedScenario[], scenario: SavedScenario): SavedScenario[] {
   return list.map((s) => (s.id === scenario.id ? scenario : s));
+}
+
+/**
+ * Lista corregida a mano tras una acción, atada a los datos de la consulta (`source`) de los que
+ * parte: cuando la consulta devuelve datos nuevos (otro array), la corrección se descarta.
+ */
+export type LocalScenarios = { source: SavedScenario[]; list: SavedScenario[] };
+
+/** Lista a mostrar: la corregida si sigue vigente respecto a `loaded`, y si no la cargada. */
+export function currentScenarios(local: LocalScenarios | null, loaded: SavedScenario[] | null): SavedScenario[] {
+  return (local && local.source === loaded ? local.list : loaded) ?? [];
+}
+
+/** Aplica `change` sobre la lista vigente y devuelve el nuevo estado local, atado a `loaded`. */
+export function applyScenarioChange(
+  prev: LocalScenarios | null,
+  loaded: SavedScenario[],
+  change: (list: readonly SavedScenario[]) => SavedScenario[],
+): LocalScenarios {
+  return { source: loaded, list: change(prev && prev.source === loaded ? prev.list : loaded) };
 }
 
 /**

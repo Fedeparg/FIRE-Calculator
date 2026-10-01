@@ -1,5 +1,6 @@
 "use client";
 
+import type { SessionUser } from "@sextante/core/contracts";
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -20,7 +21,7 @@ import UserMenu from "./UserMenu";
 export default function AuthNav() {
   const t = useTranslations("auth.nav");
   const pathname = usePathname();
-  const me = useApiQuery<unknown>("/api/auth/me", { keepPrevious: true });
+  const me = useApiQuery<SessionUser>("/api/auth/me", { keepPrevious: true });
   const { refetch } = me;
   const firstPath = useRef(pathname);
 

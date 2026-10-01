@@ -1,20 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import type { NotificationSettingsResponse } from "@sextante/core/contracts";
 import { useLocale, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { NO_STORE, apiJson } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
-
-/** Preferencias tal y como las devuelve `GET /api/account/notifications`. */
-type Settings = {
-  fireAlertsEnabled: boolean;
-  locale: "es" | "en";
-  lastFireMilestone: number | null;
-  goal: { name: string; updatedAt: string } | null;
-};
 
 const NOTIFICATIONS_PATH = "/api/account/notifications";
 // Constante de módulo: `useApiQuery` exige opciones estables entre renders.
@@ -29,9 +22,9 @@ const NOTIFICATIONS_PATH = "/api/account/notifications";
 export default function NotificationSettings() {
   const t = useTranslations("account.notifications");
   const locale = useLocale() === "en" ? "en" : "es";
-  const query = useApiQuery<Settings>(NOTIFICATIONS_PATH, { init: NO_STORE });
+  const query = useApiQuery<NotificationSettingsResponse>(NOTIFICATIONS_PATH, { init: NO_STORE });
   // Lo guardado (respuesta del PATCH) manda sobre la carga inicial.
-  const [saved, setSaved] = useState<Settings | null>(null);
+  const [saved, setSaved] = useState<NotificationSettingsResponse | null>(null);
   const save = useApiMutation();
 
   const settings = saved ?? (query.status === "ready" ? query.data : null);
@@ -39,7 +32,10 @@ export default function NotificationSettings() {
 
   async function toggle(enabled: boolean) {
     const result = await save.run(() =>
-      apiJson<Settings>(NOTIFICATIONS_PATH, { method: "PATCH", body: { fireAlertsEnabled: enabled, locale } }),
+      apiJson<NotificationSettingsResponse>(NOTIFICATIONS_PATH, {
+        method: "PATCH",
+        body: { fireAlertsEnabled: enabled, locale },
+      }),
     );
     if (result.ok) setSaved(result.data);
   }
