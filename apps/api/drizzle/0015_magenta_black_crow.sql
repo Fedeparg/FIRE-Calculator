@@ -1,0 +1,2 @@
+ALTER TABLE "position_lots" ADD COLUMN "external_id" varchar(100);--> statement-breakpoint
+CREATE UNIQUE INDEX "position_lots_user_external_id_idx" ON "position_lots" USING btree ("user_id","external_id") WHERE "position_lots"."external_id" is not null;
