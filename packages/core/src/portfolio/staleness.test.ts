@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { staleSnapshotDates, type StalenessLot, type StalenessSnapshot } from "./snapshot-staleness.js";
+import { staleSnapshotDates, type StalenessLot, type StalenessSnapshot } from "./staleness.js";
 
 const at = (iso: string): number => Date.parse(iso);
 

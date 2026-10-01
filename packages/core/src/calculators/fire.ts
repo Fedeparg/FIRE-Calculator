@@ -23,11 +23,15 @@ export interface FireResult {
   series: FireYearPoint[];
 }
 
-export const MAX_YEARS = 60;
+/** Regla del 4 %, en base 100: tasa de retirada segura por defecto (también la usa `ahorro-jubilacion`). */
+export const SAFE_WITHDRAWAL_RATE_PERCENT = 4;
+
+/** Horizonte máximo (años) en el que se busca alcanzar el número FIRE. */
+export const FIRE_SEARCH_MAX_YEARS = 60;
 
 export function computeFire(input: FireInput): FireResult {
   const annualExpenses = Math.max(0, input.annualExpenses || 0);
-  const withdrawalRate = input.withdrawalRate > 0 ? input.withdrawalRate : 4;
+  const withdrawalRate = input.withdrawalRate > 0 ? input.withdrawalRate : SAFE_WITHDRAWAL_RATE_PERCENT;
   const fireNumber = annualExpenses / (withdrawalRate / 100);
 
   const projection = project({
@@ -35,7 +39,7 @@ export function computeFire(input: FireInput): FireResult {
     contribution: input.savings,
     frequency: input.frequency ?? "monthly",
     annualRate: input.annualReturn,
-    years: MAX_YEARS,
+    years: FIRE_SEARCH_MAX_YEARS,
     contributionGrowth: input.savingsGrowth,
   });
 

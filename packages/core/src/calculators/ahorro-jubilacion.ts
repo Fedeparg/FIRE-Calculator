@@ -3,6 +3,7 @@
 // sobre el valor real para no mostrar euros futuros inflados.
 
 import { project, type ProjectionResult } from "../projection.js";
+import { SAFE_WITHDRAWAL_RATE_PERCENT } from "./fire.js";
 
 export interface RetirementInput {
   currentAge: number;
@@ -39,8 +40,9 @@ export function computeRetirement(input: RetirementInput): RetirementResult {
   });
 
   // Regla del 4 %: renta anual segura = 4 % del patrimonio.
-  const monthlyIncome = (projection.finalRealValue * 0.04) / 12;
-  const monthlyIncomeNominal = (projection.finalValue * 0.04) / 12;
+  const withdrawalRate = SAFE_WITHDRAWAL_RATE_PERCENT / 100;
+  const monthlyIncome = (projection.finalRealValue * withdrawalRate) / 12;
+  const monthlyIncomeNominal = (projection.finalValue * withdrawalRate) / 12;
 
   return { ...projection, yearsToRetirement, monthlyIncome, monthlyIncomeNominal };
 }

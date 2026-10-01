@@ -3,7 +3,7 @@
  * (gasto anual / tasa de retiro, 4 % si no es positiva); no hace falta la proyección entera y un test la fija.
  */
 
-import { goalModeFromInputs } from '@sextante/core/portfolio-goal';
+import { goalModeFromInputs } from '@sextante/core/portfolio/goal';
 
 /** Hitos avisados, en % del objetivo. */
 export const FIRE_MILESTONES = [25, 50, 75, 100] as const;

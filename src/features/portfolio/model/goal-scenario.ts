@@ -12,7 +12,7 @@ import {
   type AmountGoalResult,
   type GoalMode,
   type PortfolioGoalResult,
-} from "@sextante/core/portfolio-goal";
+} from "@sextante/core/portfolio/goal";
 import { FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { decodeCalculatorInputs, type FieldSpecs } from "@/shared/url-state/url-state";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";

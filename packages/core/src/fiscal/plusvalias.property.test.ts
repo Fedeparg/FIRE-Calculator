@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "../property-config.js";
+import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { walkLots, type TradeLot } from "./plusvalias.js";
 
 /** Histórico arbitrario: compras y ventas en fechas de 2020-2025, en cualquier orden. */

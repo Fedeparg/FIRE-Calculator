@@ -7,7 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio-goal";
+import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio/goal";
 import { describe, expect, it } from "vitest";
 
 import { CALCULATOR_COMPONENTS } from "./components/CalculatorBody";

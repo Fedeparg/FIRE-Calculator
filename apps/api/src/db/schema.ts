@@ -165,7 +165,7 @@ export const portfolioSnapshots = pgTable(
      * `true` si la fecha es anterior a `trackingSince` (`created_at` más antiguo de sus
      * posiciones): reconstrucción desde los lotes. La captura real (`captureUser`) siempre
      * sustituye la fila; una reconstrucción solo pisa estimadas u obsoletas. Ver `backfillUser`
-     * y `@sextante/core/snapshot-staleness`. El frontend la usa para no presentarla como dato real.
+     * y `@sextante/core/portfolio/staleness`. El frontend la usa para no presentarla como dato real.
      */
     estimated: boolean('estimated').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -234,7 +234,7 @@ export type InstrumentPrice = typeof instrumentPrices.$inferSelect;
 /**
  * Splits: los cierres vienen ajustados y las cantidades de los lotes son crudas, así que el
  * histórico los necesita para expresar los lotes en acciones de hoy
- * (`@sextante/core/portfolio-history`). `ratio` = nuevas por antigua (10 en un 10:1); `date` =
+ * (`@sextante/core/portfolio/history-reconstruction`). `ratio` = nuevas por antigua (10 en un 10:1); `date` =
  * primer día cotizando con el split (UTC).
  */
 export const instrumentSplits = pgTable(

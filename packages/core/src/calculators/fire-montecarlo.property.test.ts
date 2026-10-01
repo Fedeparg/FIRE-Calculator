@@ -1,7 +1,7 @@
 import fc from "fast-check";
 import { describe, it } from "vitest";
 
-import { PROPERTY_PARAMS } from "../property-config.js";
+import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { computeFire } from "./fire.js";
 import { simulateFire, withdrawalSensitivity, type MonteCarloInput } from "./fire-montecarlo.js";
 

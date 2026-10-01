@@ -7,7 +7,7 @@ import {
   monthlyContribution,
   simulatePortfolioGoal,
   type PortfolioGoalInput,
-} from "./portfolio-goal.js";
+} from "./goal.js";
 
 /** Objetivo típico: 24.000 €/año al 4 % → 600.000 € de patrimonio objetivo. */
 const BASE: PortfolioGoalInput = {

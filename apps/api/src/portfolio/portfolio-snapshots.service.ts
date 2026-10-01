@@ -19,8 +19,8 @@ import {
   reconstructHistory,
   type HistoryLot,
   type HistoryPosition,
-} from '@sextante/core/portfolio-history';
-import { staleSnapshotDates } from '@sextante/core/snapshot-staleness';
+} from '@sextante/core/portfolio/history-reconstruction';
+import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
 import { isoDate, todayUtc } from '../common/dates.js';
 
 /**
@@ -178,7 +178,7 @@ export class PortfolioSnapshotsService {
   /**
    * Reconstruye el histórico de un usuario desde su primera operación (tope `HISTORY_MAX_DAYS`)
    * hasta ayer, valorando cada día la cantidad y el coste que había ese día (sin inventar
-   * historia). La lógica pura vive en `@sextante/core/portfolio-history`, que documenta también
+   * historia). La lógica pura vive en `@sextante/core/portfolio/history-reconstruction`, que documenta también
    * los splits y sus límites. Solo escribe lo que cambió (nada, en la pasada nocturna normal),
    * así que se lanza siempre: alta, importación, lote editado, arranque y cron.
    *
@@ -196,7 +196,7 @@ export class PortfolioSnapshotsService {
    *
    * Capturas reales obsoletas: una real solo se respeta mientras sea una foto fiel. Si después
    * se registró una operación con fecha <= la de la captura, esa captura mostraría un escalón
-   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/snapshot-staleness`).
+   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/portfolio/staleness`).
    * El borrado de un lote no deja marca, así que el llamante pasa `invalidateFrom`. Las reales
    * no obsoletas no se tocan nunca, y si un día obsoleto no sale de la reconstrucción se
    * conserva la real: mejor un dato desfasado que borrar uno que no podemos rehacer.
