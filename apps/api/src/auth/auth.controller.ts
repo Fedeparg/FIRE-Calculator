@@ -3,11 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import type { CookieOptions, Request, Response } from 'express';
 
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import type { Env } from '../config/env.js';
 import { AuthService, type SessionUser } from './auth.service.js';
 import { CurrentUser } from './current-user.decorator.js';
-import { RequestLinkDto } from './dto/request-link.dto.js';
-import { VerifyDto } from './dto/verify.dto.js';
+import { requestLinkSchema, type RequestLinkDto } from './dto/request-link.dto.js';
+import { verifySchema, type VerifyDto } from './dto/verify.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
@@ -25,7 +26,10 @@ export class AuthController {
   @Post('request')
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async request(@Body() dto: RequestLinkDto, @Req() req: Request): Promise<{ ok: true }> {
+  async request(
+    @Body(new ZodValidationPipe(requestLinkSchema)) dto: RequestLinkDto,
+    @Req() req: Request,
+  ): Promise<{ ok: true }> {
     this.logDetectedIp(req);
     await this.auth.requestLink(dto.email);
     // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
@@ -35,7 +39,10 @@ export class AuthController {
   /** Canjea el token del enlace por una sesión (cookie HttpOnly con el JWT). */
   @Post('verify')
   @HttpCode(HttpStatus.OK)
-  async verify(@Body() dto: VerifyDto, @Res({ passthrough: true }) res: Response): Promise<SessionUser> {
+  async verify(
+    @Body(new ZodValidationPipe(verifySchema)) dto: VerifyDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<SessionUser> {
     const user = await this.auth.verify(dto.token);
     const jwt = await this.auth.signSession(user);
     res.cookie(SESSION_COOKIE, jwt, this.cookieOptions());

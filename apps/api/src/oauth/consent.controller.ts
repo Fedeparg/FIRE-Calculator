@@ -1,9 +1,10 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, Post, UseGuards } from '@nestjs/common';
 
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
-import { ConsentDto } from './dto/consent.dto.js';
+import { consentSchema, type ConsentDto } from './dto/consent.dto.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 
@@ -41,7 +42,10 @@ export class ConsentController {
   /** Registra el consentimiento del usuario para el cliente y los scopes indicados. */
   @Post()
   @HttpCode(HttpStatus.OK)
-  async approve(@CurrentUser() user: SessionUser, @Body() dto: ConsentDto): Promise<{ ok: true }> {
+  async approve(
+    @CurrentUser() user: SessionUser,
+    @Body(new ZodValidationPipe(consentSchema)) dto: ConsentDto,
+  ): Promise<{ ok: true }> {
     await this.grants.recordConsent(user.id, dto.clientId, dto.scopes);
     return { ok: true };
   }

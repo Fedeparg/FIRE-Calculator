@@ -1,64 +1,25 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  IsDateString,
-  IsIn,
-  IsNumber,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-} from 'class-validator';
+import { z } from 'zod';
 
 import type { PositionLotKind } from '../../db/schema.js';
-import { NUMERIC_MAX } from './create-position.dto.js';
+import { amountSchema, quantitySchema, trimmedText } from './create-position.dto.js';
 
-export const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionLotKind[];
-
-/** Fecha en formato `YYYY-MM-DD` (la columna `traded_at` es un `date`, sin hora). */
-export const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-
-const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
+const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionLotKind[];
 
 /**
  * Cuerpo de POST /api/positions/:positionId/lots (`positionId` y `userId` vienen de la ruta y
- * el JWT). La fecha se valida dos veces: `@Matches` exige `YYYY-MM-DD` (`@IsDateString` solo
- * aceptaría un datetime) y `@IsDateString` strict comprueba que existe (rechaza "2026-02-30").
+ * el JWT). La fecha es `YYYY-MM-DD` (la columna `traded_at` es un `date`, sin hora) y debe existir
+ * en el calendario: `z.iso.date` rechaza "2026-02-30".
  */
-export class CreatePositionLotDto {
-  @IsIn(POSITION_LOT_KINDS)
-  kind!: PositionLotKind;
-
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @IsPositive()
-  @Max(NUMERIC_MAX)
-  quantity!: number;
-
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @Min(0)
-  @Max(NUMERIC_MAX)
-  price!: number;
-
+export const createPositionLotSchema = z.strictObject({
+  kind: z.enum(POSITION_LOT_KINDS).describe('Tipo de operación: compra o venta.'),
+  quantity: quantitySchema.describe('Cantidad operada.'),
+  price: amountSchema.describe('Precio unitario de la operación.'),
   /** Comisiones de la operación. No entran en el precio medio; se guardan para fiscalidad. */
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @Min(0)
-  @Max(NUMERIC_MAX)
-  fees?: number;
+  fees: amountSchema.optional().describe('Comisiones (opcional).'),
+  tradedAt: z.iso
+    .date({ error: 'tradedAt debe ser una fecha real con el formato YYYY-MM-DD' })
+    .describe('Fecha de la operación en formato YYYY-MM-DD.'),
+  note: trimmedText(200).optional().describe('Nota libre (opcional).'),
+});
 
-  @IsString()
-  @Matches(ISO_DATE_PATTERN, { message: 'tradedAt debe tener el formato YYYY-MM-DD' })
-  @IsDateString({ strict: true }, { message: 'tradedAt debe ser una fecha real' })
-  tradedAt!: string;
-
-  @IsOptional()
-  @IsString()
-  @Transform(trim)
-  @MaxLength(200)
-  note?: string;
-}
+export type CreatePositionLotDto = z.infer<typeof createPositionLotSchema>;

@@ -1,25 +1,17 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { z } from 'zod';
 
-import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
+import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
 import { HISTORY_MAX_DAYS } from '../portfolio-snapshots.service.js';
 
 /**
- * Query de GET /api/portfolio/history. Clase (no `@Query` suelto) para que el `ValidationPipe`
- * global rechace con 400 un `days` no numérico o parámetros desconocidos; `@Type(() => Number)`
- * es necesario porque los query params llegan como texto.
+ * Query de GET /api/portfolio/history. Estricta: un `days` no numérico o un parámetro desconocido
+ * da 400. `z.coerce` es necesario porque los query params llegan como texto.
  */
-export class PortfolioHistoryQueryDto {
+export const portfolioHistoryQuerySchema = z.strictObject({
   /** Ventana en días hacia atrás; por defecto la del servicio. */
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(HISTORY_MAX_DAYS)
-  days?: number;
-
+  days: z.coerce.number().int().min(1).max(HISTORY_MAX_DAYS).optional(),
   /** Divisa en la que reexpresar la serie (los datos se guardan en EUR). */
-  @IsOptional()
-  @IsIn(SUPPORTED_CURRENCIES)
-  display?: SupportedCurrency;
-}
+  display: z.enum(SUPPORTED_CURRENCIES).optional(),
+});
+
+export type PortfolioHistoryQueryDto = z.infer<typeof portfolioHistoryQuerySchema>;

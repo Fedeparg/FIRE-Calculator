@@ -11,7 +11,7 @@ import type { Database } from '../db/database.module.js';
 import { positionLots, positions } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
-import { CreatePositionDto } from './dto/create-position.dto.js';
+import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { aggregateLots } from './lot-aggregate.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
 import { PositionLotsService } from './position-lots.service.js';

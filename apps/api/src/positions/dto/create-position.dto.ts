@@ -1,49 +1,46 @@
-import { Transform, Type } from 'class-transformer';
-import { SUPPORTED_CURRENCIES, type SupportedCurrency } from '@sextante/core/contracts';
-import { IsIn, IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Max, MaxLength, Min } from 'class-validator';
+import { z } from 'zod';
+
+import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
 
 /**
- * Tope de `quantity` y `avgPrice`: `numeric(18,6)` admite 12 dígitos enteros y `@Max` es
+ * Tope de `quantity` y `avgPrice`: `numeric(18,6)` admite 12 dígitos enteros y el máximo es
  * inclusivo, así que pasar del mayor entero de 12 dígitos da 400 en vez de un overflow (500).
  */
 export const NUMERIC_MAX = 999_999_999_999;
 
-const trim = ({ value }: { value: unknown }): unknown => (typeof value === 'string' ? value.trim() : value);
+/** Cantidad estrictamente positiva con a lo sumo 6 decimales (la escala de `numeric(18,6)`). */
+export const quantitySchema = z
+  .number()
+  .positive()
+  .max(NUMERIC_MAX)
+  .refine((value) => hasAtMostSixDecimals(value), { error: 'máximo 6 decimales' });
+
+/** Importe no negativo (precio, comisión) con a lo sumo 6 decimales. */
+export const amountSchema = z
+  .number()
+  .min(0)
+  .max(NUMERIC_MAX)
+  .refine((value) => hasAtMostSixDecimals(value), { error: 'máximo 6 decimales' });
+
+function hasAtMostSixDecimals(value: number): boolean {
+  return Number(value.toFixed(6)) === value;
+}
+
+/** Texto sin espacios sobrantes y con tope de longitud (el recorte va antes de validar). */
+export const trimmedText = (max: number) => z.string().trim().max(max);
+
+/** Divisa admitida; la compara contra la de la posición el servicio, no el esquema. */
+export const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
 /** Cuerpo de POST /api/positions (el `userId` sale del JWT). */
-export class CreatePositionDto {
-  @IsString()
-  @Transform(trim)
-  @IsNotEmpty()
-  @MaxLength(20)
-  ticker!: string;
-
-  @IsOptional()
-  @IsString()
-  @Transform(trim)
-  @MaxLength(100)
-  name?: string;
-
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @IsPositive()
-  @Max(NUMERIC_MAX)
-  quantity!: number;
-
-  @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 6 })
-  @Min(0)
-  @Max(NUMERIC_MAX)
-  avgPrice!: number;
-
+export const createPositionSchema = z.strictObject({
+  ticker: trimmedText(20).min(1).describe('Símbolo (p. ej. "IWDA", "AAPL").'),
+  name: trimmedText(100).optional().describe('Nombre legible (opcional).'),
+  quantity: quantitySchema.describe('Número de participaciones/acciones.'),
+  avgPrice: amountSchema.describe('Precio medio de compra.'),
   // Opcional aquí: "obligatorio si el símbolo ya existe" depende de los datos y lo aplica el servicio.
-  @IsOptional()
-  @IsString()
-  @Transform(trim)
-  @MaxLength(100)
-  broker?: string;
+  broker: trimmedText(100).optional().describe('Bróker (opcional).'),
+  currency: currencySchema.optional().describe('Divisa (por defecto EUR).'),
+});
 
-  @IsOptional()
-  @IsIn(SUPPORTED_CURRENCIES)
-  currency?: SupportedCurrency;
-}
+export type CreatePositionDto = z.infer<typeof createPositionSchema>;
