@@ -51,6 +51,7 @@ const DYNAMIC_PREFIXES: readonly string[] = [
   "portfolio.form.error",
   "portfolio.lots.error",
   "portfolio.income.error",
+  "portfolio.pendingBalances.error",
   "portfolio.import.error",
   "account.error",
 ];

@@ -1651,7 +1651,28 @@
       "incomplete": "This figure is incomplete: some sales or payouts have no exchange rate, or foreign dividends lack the withholding at source. Check the notices above.",
       "excessWithholding": "{country}: {amount} was withheld above the treaty rate. The Spanish tax agency does not credit it; it is reclaimed from that country.",
       "noTreatyRate": "{country}: we do not have the treaty rate, so its withholding ({amount}) has not been credited.",
-      "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Losses from previous years and custody fees are not included. Indicative, not advice."
+      "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Custody fees are not included. Indicative, not advice.",
+      "pendingAfter": "Pending for later years: {amount}."
+    },
+    "pendingBalances": {
+      "title": "Losses from previous years pending offset ({count})",
+      "help": "If returns before {firstYear} left negative balances in your savings base, copy them here from appendix C.3 of your last return (what was pending at the start of {firstYear}). Balances from years Sextante already calculates carry forward on their own for four years.",
+      "originYear": "Year of origin",
+      "kind": "Type",
+      "kindGains": "Capital gains and losses",
+      "kindCapitalIncome": "Investment income",
+      "amount": "Pending (€)",
+      "add": "Add balance",
+      "remove": "Remove",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "duplicated": "Each year and type can only appear once.",
+      "errorSession": "Your session has expired. Sign in again to continue.",
+      "errorNetwork": "Could not reach the server. Check your connection and try again.",
+      "errorServer": "The server failed. Try again in a moment.",
+      "errorInvalid": "Check the data: something is not valid.",
+      "errorGeneric": "It could not be saved. Try again."
     }
   },
   "account": {

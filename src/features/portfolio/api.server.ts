@@ -3,6 +3,7 @@ import "server-only";
 import { apiFetch } from "@/shared/api/api.server";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
 import { incomeRatesNeeded, type IncomeEvent } from "@sextante/core/fiscal/income";
+import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import { referenceRatesNeeded, type RealisedGainsPosition } from "@sextante/core/fiscal/realised-gains";
 import type { Position, PositionLot } from "@sextante/core/portfolio/types";
 
@@ -17,6 +18,8 @@ export async function fetchPositions(): Promise<Position[]> {
 export type RealisedGainsData = {
   positions: RealisedGainsPosition[];
   income: IncomeEvent[];
+  /** Saldos negativos pendientes de años que Sextante no calcula. */
+  pendingBalances: PendingNegative[];
   /** Tipos de referencia del BCE de las divisas con ventas o cobros (vacío si todo es en euros). */
   rates: ReferenceRates;
   /** `false` si hacían falta tipos y no se pudieron cargar: las ventas en divisa quedan sin convertir. */
@@ -30,20 +33,21 @@ export type RealisedGainsData = {
  * pudo convertir.
  */
 export async function fetchRealisedGainsData(): Promise<RealisedGainsData | null> {
-  const [positions, lots, income] = await Promise.all([
+  const [positions, lots, income, pendingBalances] = await Promise.all([
     apiFetch<Position[]>("/api/positions"),
     apiFetch<PositionLot[]>("/api/positions/lots"),
     apiFetch<IncomeEvent[]>("/api/income"),
+    apiFetch<PendingNegative[]>("/api/tax-return/pending-balances"),
   ]);
-  if (!positions || !lots || !income) return null;
+  if (!positions || !lots || !income || !pendingBalances) return null;
 
   const input = toRealisedGainsPositions(positions, lots);
   const needed = [referenceRatesNeeded(input), incomeRatesNeeded(income)].filter((n) => n !== null);
-  if (needed.length === 0) return { positions: input, income, rates: {}, ratesLoaded: true };
+  if (needed.length === 0) return { positions: input, income, pendingBalances, rates: {}, ratesLoaded: true };
 
   const currencies = [...new Set(needed.flatMap((n) => n.currencies))].sort();
   const from = needed.map((n) => n.from).sort()[0];
   const query = new URLSearchParams({ currencies: currencies.join(","), from });
   const rates = await apiFetch<ReferenceRates>(`/api/fx/reference-rates?${query.toString()}`);
-  return { positions: input, income, rates: rates ?? {}, ratesLoaded: rates !== null };
+  return { positions: input, income, pendingBalances, rates: rates ?? {}, ratesLoaded: rates !== null };
 }

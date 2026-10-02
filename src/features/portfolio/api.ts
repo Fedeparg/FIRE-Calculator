@@ -5,6 +5,7 @@
  */
 
 import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
+import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import type {
   InstrumentSearchResult,
   LotPayload,
@@ -84,6 +85,11 @@ export function saveIncome(incomeId: string | null, payload: IncomePayload): Pro
 
 export function deleteIncome(incomeId: string): Promise<void> {
   return apiJson<void>(`/api/income/${incomeId}`, { method: "DELETE" });
+}
+
+/** Sustituye los saldos negativos pendientes de años que Sextante no calcula. */
+export function savePendingBalances(balances: PendingNegative[]): Promise<PendingNegative[]> {
+  return apiJson<PendingNegative[]>("/api/tax-return/pending-balances", { method: "PUT", body: { balances } });
 }
 
 /** Resultados del buscador de instrumentos; `signal` cancela la petición (debounce). */

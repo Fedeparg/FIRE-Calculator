@@ -8,7 +8,8 @@ import SelectField from "@/shared/ui/SelectField";
 import { UTF8_BOM } from "@/shared/format/csv";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
 import { buildIncomeReport, type IncomeEvent } from "@sextante/core/fiscal/income";
-import { buildSavingsReturn } from "@sextante/core/fiscal/savings-return";
+import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
+import { buildSavingsReturns } from "@sextante/core/fiscal/savings-return";
 import {
   buildRealisedGainsReport,
   TAX_CURRENCY,
@@ -21,12 +22,15 @@ import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
 import IncomeSection from "./IncomeSection";
+import PendingBalancesForm from "./PendingBalancesForm";
 import SavingsReturnSection from "./SavingsReturnSection";
 
 type Props = {
   positions: RealisedGainsPosition[];
   /** Dividendos, intereses y recompensas. */
   income: IncomeEvent[];
+  /** Saldos negativos pendientes de años que Sextante no calcula. */
+  pendingBalances: PendingNegative[];
   /** Tipos de referencia del BCE de las divisas con ventas. */
   rates: ReferenceRates;
   /** `false` si hacían falta tipos y no se pudieron cargar. */
@@ -45,7 +49,7 @@ function signColor(value: number): string {
  * El cálculo es `buildRealisedGainsReport` (core puro y testeado); aquí solo se elige el
  * ejercicio, se pinta y se exporta. Los tipos del BCE llegan ya cargados del servidor.
  */
-export default function RealisedGainsReport({ positions, income, rates, ratesLoaded }: Props) {
+export default function RealisedGainsReport({ positions, income, pendingBalances, rates, ratesLoaded }: Props) {
   const t = useTranslations("portfolio.realisedGains");
   const locale = asLocale(useLocale());
 
@@ -64,15 +68,19 @@ export default function RealisedGainsReport({ positions, income, rates, ratesLoa
   const year = report.years.find((y) => y.year === selectedYear);
   const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
   const incomeSummary = incomeReport.years.find((y) => y.year === selectedYear);
-  // Sin saldos negativos de años anteriores todavía: se introducirán con el formulario de pendientes.
-  const savingsReturn = buildSavingsReturn({
-    year: selectedYear,
-    gains: year,
-    income: incomeSummary,
-    incomeEvents,
-    rates,
-    pending: [],
-  });
+  // Todos los ejercicios encadenados: los saldos negativos pasan de uno a otro (art. 49 LIRPF).
+  const savingsReturns = useMemo(
+    () =>
+      buildSavingsReturns({
+        gains: report.years,
+        income: incomeReport.years,
+        incomeEvents: income,
+        rates,
+        manualPending: pendingBalances,
+      }),
+    [report, incomeReport, income, rates, pendingBalances],
+  );
+  const savingsReturn = savingsReturns.find((r) => r.year === selectedYear);
 
   const hasForeign = year?.sales.some((sale) => sale.currency !== TAX_CURRENCY) ?? false;
 
@@ -151,7 +159,9 @@ export default function RealisedGainsReport({ positions, income, rates, ratesLoa
 
       <IncomeSection year={selectedYear} summary={incomeSummary} events={incomeEvents} />
 
-      <SavingsReturnSection result={savingsReturn} />
+      {savingsReturn && <SavingsReturnSection result={savingsReturn} />}
+
+      <PendingBalancesForm balances={pendingBalances} firstYear={years[years.length - 1]} />
 
       <Notice variant="info">{t("scope")}</Notice>
     </div>

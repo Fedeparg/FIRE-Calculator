@@ -66,6 +66,11 @@ export default function SavingsReturnSection({ result }: { result: SavingsReturn
         ))}
       </dl>
 
+      {result.savingsBase.pending.length > 0 && (
+        <p className="text-sm text-muted">
+          {t("pendingAfter", { amount: eur(result.savingsBase.pending.reduce((sum, p) => sum + p.amount, 0)) })}
+        </p>
+      )}
       {result.incomplete && <Notice variant="warning">{t("incomplete")}</Notice>}
       {excess.map((w) => (
         <Notice key={`excess-${w.country}`} variant="info">

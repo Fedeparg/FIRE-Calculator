@@ -1651,7 +1651,28 @@
       "incomplete": "La cifra no está completa: hay ventas o cobros sin tipo de cambio, o dividendos extranjeros sin retención en origen. Revisa los avisos de arriba.",
       "excessWithholding": "{country}: te retuvieron {amount} por encima del convenio. Hacienda no los deduce; se reclaman a la administración de ese país.",
       "noTreatyRate": "{country}: no tenemos el tipo del convenio, así que su retención ({amount}) no se ha deducido.",
-      "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye pérdidas de años anteriores ni gastos de custodia. Orientativo, no es asesoramiento."
+      "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye gastos de custodia. Orientativo, no es asesoramiento.",
+      "pendingAfter": "Quedan pendientes para años siguientes: {amount}."
+    },
+    "pendingBalances": {
+      "title": "Pérdidas de años anteriores pendientes de compensar ({count})",
+      "help": "Si en declaraciones anteriores a {firstYear} te quedaron saldos negativos en la base del ahorro, cópialos aquí del anexo C.3 de tu última declaración (lo pendiente al empezar {firstYear}). Los de los años que Sextante ya calcula se arrastran solos durante cuatro años.",
+      "originYear": "Ejercicio de origen",
+      "kind": "Tipo",
+      "kindGains": "Ganancias y pérdidas patrimoniales",
+      "kindCapitalIncome": "Rendimientos del capital mobiliario",
+      "amount": "Pendiente (€)",
+      "add": "Añadir saldo",
+      "remove": "Quitar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "duplicated": "Cada ejercicio y tipo solo puede aparecer una vez.",
+      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
+      "errorInvalid": "Revisa los datos: alguno no es válido.",
+      "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
     }
   },
   "account": {

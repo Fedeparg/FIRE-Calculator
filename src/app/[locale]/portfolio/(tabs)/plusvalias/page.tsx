@@ -43,6 +43,7 @@ export default async function RealisedGainsPage({ params }: Props) {
         <RealisedGainsReport
           positions={data.positions}
           income={data.income}
+          pendingBalances={data.pendingBalances}
           rates={data.rates}
           ratesLoaded={data.ratesLoaded}
         />
