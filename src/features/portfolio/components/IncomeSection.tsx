@@ -55,6 +55,9 @@ export default function IncomeSection({ year, summary, events }: Props) {
       {summary && summary.originUnknown > 0 && (
         <Notice variant="warning">{t("originUnknown", { count: summary.originUnknown })}</Notice>
       )}
+      {summary && summary.originEstimated > 0 && (
+        <Notice variant="warning">{t("originEstimated", { count: summary.originEstimated })}</Notice>
+      )}
 
       <details className="group rounded-xl border border-border">
         <summary className="cursor-pointer px-4 py-3 text-sm font-medium text-foreground">

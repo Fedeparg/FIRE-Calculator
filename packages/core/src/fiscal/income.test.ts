@@ -16,6 +16,11 @@ function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "pai
     withholdingSpain: 0,
     reportedToAeat: false,
     source: "manual",
+    grossSource: "manual",
+    withholdingOriginSource: "manual",
+    quantity: null,
+    originalAmount: null,
+    originalCurrency: null,
     createdAt: "2026-01-01T00:00:00Z",
     ...overrides,
   };
@@ -111,6 +116,32 @@ describe("buildIncomeReport", () => {
     expect(year.unconverted).toEqual([{ currency: "HKD", events: 1 }]);
     expect(year.dividend.total.gross).toBe(5);
     expect(year.originUnknown).toBe(1);
+  });
+
+  it("cuenta aparte los dividendos con la retención en origen estimada", () => {
+    const [year] = buildIncomeReport(
+      [
+        event({
+          kind: "dividend",
+          paidAt: "2025-05-15",
+          gross: 1,
+          country: "CN",
+          withholdingOrigin: 0.1,
+          withholdingOriginSource: "estimate",
+        }),
+        event({
+          kind: "dividend",
+          paidAt: "2025-05-16",
+          gross: 1,
+          country: "US",
+          withholdingOrigin: 0.15,
+          withholdingOriginSource: "market",
+        }),
+      ],
+      {},
+    ).years;
+    expect(year.originEstimated).toBe(1);
+    expect(year.originUnknown).toBe(0);
   });
 
   it("una anulación del bróker (íntegro negativo) resta", () => {

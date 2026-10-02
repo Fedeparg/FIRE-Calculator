@@ -59,12 +59,25 @@ export default function IncomeList({
             </span>
           </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+            {event.grossSource !== "broker" && event.grossSource !== "manual" && (
+              <span>
+                {t("grossShort")}: {t(`sources.${event.grossSource}`)}
+              </span>
+            )}
             <span>
               {t("withholdingOriginShort")}:{" "}
               {event.withholdingOrigin === null ? (
                 <span className="text-warning">{t("unknown")}</span>
               ) : (
-                formatCurrency(event.withholdingOrigin, event.currency)
+                <>
+                  {formatCurrency(event.withholdingOrigin, event.currency)}
+                  {event.withholdingOriginSource && (
+                    <span className={event.withholdingOriginSource === "estimate" ? "text-warning" : undefined}>
+                      {" "}
+                      ({t(`sources.${event.withholdingOriginSource}`)})
+                    </span>
+                  )}
+                </>
               )}
             </span>
             <span>

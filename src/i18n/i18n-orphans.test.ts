@@ -43,6 +43,7 @@ const DYNAMIC_PREFIXES: readonly string[] = [
   "portfolio.positions.filter.",
   "portfolio.positions.empty.",
   "portfolio.income.kinds.",
+  "portfolio.income.sources.",
   "account.notifications.languages.",
   // Claves de error que devuelve una función tipada (`ApiErrorKey`,
   // `ImportErrorKey`…) y el componente traduce con `t(key)`.
