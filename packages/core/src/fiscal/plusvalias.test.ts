@@ -418,3 +418,55 @@ describe("walkLots", () => {
     expect(sales[0]).toMatchObject({ quantity: 0, sellFees: 0, transferValue: 0, gain: 0 });
   });
 });
+
+describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
+  // Ejemplo del Manual práctico de Renta 2025 (Parte 1, págs. 885-887).
+  const manualHistory: TradeLot[] = [
+    lot({ id: "buy-2001", quantity: 900, price: 10, tradedAt: "2001-03-05" }),
+    lot({ id: "bonus-2007", quantity: 600, price: 0, tradedAt: "2007-05-11" }),
+    // Parcialmente liberadas: se pagan 5 €/acción, así que cuentan como compra normal.
+    lot({ id: "buy-2011", quantity: 500, price: 5, tradedAt: "2011-09-14" }),
+  ];
+
+  it("reproduce el ejemplo del Manual de Renta 2025: 6.000 + 500 = 6.500 €", () => {
+    const sim = simulateSale({ lots: manualHistory, quantity: 1600, price: 10 });
+
+    expect(sim?.gain).toBeCloseTo(6500, 6);
+    expect(sim?.matched.map((m) => [m.lotId, m.tradedAt, Math.round(m.quantity), Math.round(m.gain)])).toEqual([
+      ["buy-2001", "2001-03-05", 1500, 6000],
+      ["buy-2011", "2011-09-14", 100, 500],
+    ]);
+    expect(sim?.matched[0].price).toBeCloseTo(6, 9);
+  });
+
+  it("la ampliación no crea lote propio: conserva el coste total y la fecha", () => {
+    const walk = walkLots(manualHistory);
+
+    expect(walk.bonusIssueIds).toEqual(["bonus-2007"]);
+    expect(walk.open.map((o) => o.lotId)).toEqual(["buy-2001", "buy-2011"]);
+    expect(walk.open[0].quantity).toBeCloseTo(1500, 9);
+    expect(walk.open[0].quantity * walk.open[0].price).toBeCloseTo(9000, 6);
+  });
+
+  it("reparte proporcionalmente entre varios lotes vivos y respeta lo ya vendido", () => {
+    const open = buildOpenLots([
+      lot({ id: "a", quantity: 100, price: 10, fees: 10, tradedAt: "2020-01-01" }),
+      lot({ id: "b", quantity: 100, price: 20, tradedAt: "2020-02-01" }),
+      lot({ id: "s", kind: "sell", quantity: 50, price: 15, tradedAt: "2020-03-01" }),
+      lot({ id: "bonus", quantity: 75, price: 0, tradedAt: "2020-04-01" }),
+    ]);
+
+    // Vivos antes: a=50, b=100 (total 150) → factor 1,5.
+    expect(open.map((o) => [o.lotId, o.quantity])).toEqual([
+      ["a", 75],
+      ["b", 150],
+    ]);
+    expect(open[0].quantity * (open[0].price + open[0].feesPerUnit)).toBeCloseTo(50 * (10 + 0.1), 6);
+    expect(open[1].quantity * open[1].price).toBeCloseTo(2000, 6);
+  });
+
+  it("una compra a precio 0 con comisiones, o sin lotes vivos, sigue siendo compra normal", () => {
+    expect(buildOpenLots([lot({ id: "a", price: 10 }), lot({ id: "x", price: 0, fees: 1 })])).toHaveLength(2);
+    expect(buildOpenLots([lot({ id: "x", quantity: 5, price: 0 })])).toHaveLength(1);
+  });
+});

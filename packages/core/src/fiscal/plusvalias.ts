@@ -127,6 +127,22 @@ export interface LotWalk {
   open: OpenLot[];
   /** Ventas registradas, en orden cronológico, con su ganancia o pérdida. */
   sales: RealisedSale[];
+  /**
+   * Ids de las compras que se trataron como ampliación liberada y se repartieron entre los
+   * lotes vivos (no son lote propio ni compra a efectos de la regla de los dos meses).
+   */
+  bonusIssueIds: string[];
+  /**
+   * Solo con `trackOpenLots`: lotes vivos justo después de cada venta (clave: id de la venta),
+   * en las participaciones de ese momento. No forma parte del resultado serializable.
+   */
+  openAfterSale?: ReadonlyMap<string, readonly { lotId: string; quantity: number }[]>;
+}
+
+/** Opciones de `walkLots`. */
+export interface WalkLotsOptions {
+  /** Guarda en `openAfterSale` los lotes vivos tras cada venta (lo necesita `wash-sale.ts`). */
+  trackOpenLots?: boolean;
 }
 
 /** Importes de una venta emparejada contra `open` (que se consume en el proceso). */
@@ -188,20 +204,49 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
 const cleanFees = (fees: number) => (Number.isFinite(fees) && fees > 0 ? fees : 0);
 
 /**
+ * Ampliación liberada (art. 37.1.a LIRPF): las acciones nuevas reparten el coste de las
+ * antiguas y heredan su antigüedad. Reparte `quantity` entre los lotes vivos en proporción a
+ * sus participaciones: cada lote gana títulos, conserva su coste total (precio y comisiones por
+ * participación bajan en la misma proporción) y su fecha, y por tanto su orden FIFO.
+ */
+function applyBonusIssue(open: OpenLot[], quantity: number): void {
+  const total = open.reduce((sum, lot) => sum + lot.quantity, 0);
+  const factor = (total + quantity) / total;
+  for (const lot of open) {
+    lot.quantity *= factor;
+    lot.price /= factor;
+    lot.feesPerUnit /= factor;
+  }
+}
+
+/**
  * Recorre el histórico en orden canónico aplicando las ventas por FIFO; devuelve los lotes
  * vivos y las ventas con su ganancia. Una venta que exceda lo disponible (el backend la
  * rechaza) agota existencias y el exceso se ignora, para no dejar cantidades negativas.
+ *
+ * **Ampliaciones liberadas.** Una compra a precio 0 y sin comisiones se interpreta como acciones
+ * totalmente liberadas (el importador convierte así las `BONUS_ISSUE`) y se reparte entre los
+ * lotes vivos (`applyBonusIssue`), con la antigüedad de las antiguas. Las parcialmente liberadas
+ * (se paga algo) no se distinguen de una compra normal y siguen como compra. Sin lotes vivos, es
+ * una compra a precio 0. Afecta también a `simulateSale` y `buildOpenLots`.
  */
-export function walkLots(lots: readonly TradeLot[]): LotWalk {
+export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {}): LotWalk {
   const ordered = [...lots].sort(compareTradeLots);
   const open: OpenLot[] = [];
   const sales: RealisedSale[] = [];
+  const bonusIssueIds: string[] = [];
+  const openAfterSale = options.trackOpenLots ? new Map<string, { lotId: string; quantity: number }[]>() : undefined;
 
   for (const lot of ordered) {
     if (!Number.isFinite(lot.quantity) || lot.quantity <= 0) continue;
     const price = Number.isFinite(lot.price) ? lot.price : 0;
 
     if (lot.kind === "buy") {
+      if (price === 0 && cleanFees(lot.fees) === 0 && open.some((l) => l.quantity > QUANTITY_EPSILON)) {
+        applyBonusIssue(open, lot.quantity);
+        bonusIssueIds.push(lot.id);
+        continue;
+      }
       open.push({
         lotId: lot.id,
         tradedAt: lot.tradedAt,
@@ -214,9 +259,13 @@ export function walkLots(lots: readonly TradeLot[]): LotWalk {
 
     const match = matchSale(open, lot.quantity, price, cleanFees(lot.fees));
     sales.push({ lotId: lot.id, tradedAt: lot.tradedAt, price, ...match });
+    openAfterSale?.set(
+      lot.id,
+      open.map((l) => ({ lotId: l.lotId, quantity: l.quantity })),
+    );
   }
 
-  return { open, sales };
+  return { open, sales, bonusIssueIds, ...(openAfterSale ? { openAfterSale } : {}) };
 }
 
 /** Lotes de compra vivos tras aplicar las ventas registradas (ver `walkLots`). */
