@@ -8,6 +8,7 @@ import SelectField from "@/shared/ui/SelectField";
 import { UTF8_BOM } from "@/shared/format/csv";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
+import { buildIncomeReport, type IncomeEvent } from "@sextante/core/fiscal/income";
 import {
   buildRealisedGainsReport,
   TAX_CURRENCY,
@@ -19,9 +20,12 @@ import { asLocale } from "@/i18n/types";
 import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
+import IncomeSection from "./IncomeSection";
 
 type Props = {
   positions: RealisedGainsPosition[];
+  /** Dividendos, intereses y recompensas. */
+  income: IncomeEvent[];
   /** Tipos de referencia del BCE de las divisas con ventas. */
   rates: ReferenceRates;
   /** `false` si hacían falta tipos y no se pudieron cargar. */
@@ -40,22 +44,27 @@ function signColor(value: number): string {
  * El cálculo es `buildRealisedGainsReport` (core puro y testeado); aquí solo se elige el
  * ejercicio, se pinta y se exporta. Los tipos del BCE llegan ya cargados del servidor.
  */
-export default function RealisedGainsReport({ positions, rates, ratesLoaded }: Props) {
+export default function RealisedGainsReport({ positions, income, rates, ratesLoaded }: Props) {
   const t = useTranslations("portfolio.realisedGains");
   const locale = asLocale(useLocale());
   const { formatCurrency, formatPercent } = useFormat();
 
   const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
+  const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
+  // Ejercicios con ventas o con cobros; sin ninguno, el actual (para poder anotar el primer cobro).
+  const years = useMemo(() => {
+    const all = new Set([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)]);
+    if (all.size === 0) all.add(new Date().getUTCFullYear());
+    return [...all].sort((a, b) => b - a);
+  }, [report, incomeReport]);
 
-  const [selected, setSelected] = useState<string>(() => String(report.years[0]?.year ?? ""));
+  const [selected, setSelected] = useState<string>(() => String(years[0]));
   const [failed, setFailed] = useState(false);
-  const year = report.years.find((y) => String(y.year) === selected) ?? report.years[0];
+  const selectedYear = years.find((y) => String(y) === selected) ?? years[0];
+  const year = report.years.find((y) => y.year === selectedYear);
+  const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
 
-  if (!year) {
-    return <Notice variant="info">{t("empty")}</Notice>;
-  }
-
-  const hasForeign = year.sales.some((sale) => sale.currency !== TAX_CURRENCY);
+  const hasForeign = year?.sales.some((sale) => sale.currency !== TAX_CURRENCY) ?? false;
 
   function handleDownload() {
     if (!year) return;
@@ -98,50 +107,56 @@ export default function RealisedGainsReport({ positions, rates, ratesLoaded }: P
         <div className="w-40">
           <SelectField
             label={t("yearLabel")}
-            value={String(year.year)}
+            value={String(selectedYear)}
             onChange={setSelected}
-            options={report.years.map((y) => ({ value: String(y.year), label: String(y.year) }))}
+            options={years.map((y) => ({ value: String(y), label: String(y) }))}
           />
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <Button variant="secondary" onClick={handleDownload}>
-            {t("download", { year: year.year })}
-          </Button>
-          {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
-        </div>
+        {year && (
+          <div className="flex flex-col items-end gap-1">
+            <Button variant="secondary" onClick={handleDownload}>
+              {t("download", { year: year.year })}
+            </Button>
+            {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
+          </div>
+        )}
       </div>
 
       {!ratesLoaded && <Notice variant="warning">{t("ratesUnavailable")}</Notice>}
 
-      <SalesSection year={year} showFx={hasForeign} />
+      {year ? <SalesSection year={year} showFx={hasForeign} /> : <Notice variant="info">{t("noSalesThisYear")}</Notice>}
 
-      <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
-        <h2 className="text-lg font-semibold text-foreground">{t("taxTitle", { year: year.year })}</h2>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="flex flex-col gap-1">
-            <dt className="text-sm text-muted">{t("taxBase")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-foreground">
-              {formatCurrency(year.tax.base, TAX_CURRENCY)}
-            </dd>
-          </div>
-          <div className="flex flex-col gap-1">
-            <dt className="text-sm text-muted">{t("tax")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-foreground">
-              {formatCurrency(year.tax.tax, TAX_CURRENCY)}
-              {year.tax.effectiveRate !== null && (
-                <span className="ml-1.5 text-sm font-medium text-muted">({formatPercent(year.tax.effectiveRate)})</span>
-              )}
-            </dd>
-          </div>
-          <div className="flex flex-col gap-1">
-            <dt className="text-sm text-muted">{t("marginal")}</dt>
-            <dd className="text-lg font-semibold tabular-nums text-foreground">{formatPercent(year.tax.marginal)}</dd>
-          </div>
-        </dl>
-        <p className="text-xs text-muted">{t("taxScale", { scaleYear: FISCAL_YEAR_LABEL })}</p>
-      </section>
+      {year && (
+        <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
+          <h2 className="text-lg font-semibold text-foreground">{t("taxTitle", { year: year.year })}</h2>
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm text-muted">{t("taxBase")}</dt>
+              <dd className="text-lg font-semibold tabular-nums text-foreground">
+                {formatCurrency(year.tax.base, TAX_CURRENCY)}
+              </dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm text-muted">{t("tax")}</dt>
+              <dd className="text-lg font-semibold tabular-nums text-foreground">
+                {formatCurrency(year.tax.tax, TAX_CURRENCY)}
+                {year.tax.effectiveRate !== null && (
+                  <span className="ml-1.5 text-sm font-medium text-muted">
+                    ({formatPercent(year.tax.effectiveRate)})
+                  </span>
+                )}
+              </dd>
+            </div>
+            <div className="flex flex-col gap-1">
+              <dt className="text-sm text-muted">{t("marginal")}</dt>
+              <dd className="text-lg font-semibold tabular-nums text-foreground">{formatPercent(year.tax.marginal)}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-muted">{t("taxScale", { scaleYear: FISCAL_YEAR_LABEL })}</p>
+        </section>
+      )}
 
-      {year.unconverted.length > 0 && (
+      {year && year.unconverted.length > 0 && (
         <Notice variant="warning">
           {t("unconverted", {
             currencies: year.unconverted.map((u) => u.currency).join(", "),
@@ -149,8 +164,16 @@ export default function RealisedGainsReport({ positions, rates, ratesLoaded }: P
           })}
         </Notice>
       )}
-      {year.fxIncomplete > 0 && <Notice variant="warning">{t("fxIncomplete", { count: year.fxIncomplete })}</Notice>}
+      {year && year.fxIncomplete > 0 && (
+        <Notice variant="warning">{t("fxIncomplete", { count: year.fxIncomplete })}</Notice>
+      )}
       {hasForeign && <Notice variant="info">{t("fxCriterion")}</Notice>}
+
+      <IncomeSection
+        year={selectedYear}
+        summary={incomeReport.years.find((y) => y.year === selectedYear)}
+        events={incomeEvents}
+      />
 
       <Notice variant="info">{t("scope")}</Notice>
     </div>

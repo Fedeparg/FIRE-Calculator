@@ -1358,7 +1358,6 @@
     "realisedGains": {
       "title": "Ganancias y pérdidas realizadas",
       "subtitle": "Las ventas que has registrado, emparejadas con sus compras por FIFO, pasadas a euros y agrupadas por ejercicio, para preparar la declaración de la renta.",
-      "empty": "Aún no has registrado ninguna venta. Cuando anotes una en las operaciones de una posición, aparecerá aquí con su ganancia o pérdida.",
       "yearLabel": "Ejercicio",
       "download": "Descargar CSV de {year}",
       "downloadError": "No se pudo generar el fichero. Inténtalo de nuevo.",
@@ -1402,7 +1401,8 @@
       "ratesUnavailable": "No se pudieron cargar los tipos de cambio del BCE. Las ventas en otra divisa quedan fuera de los totales; recarga la página en unos momentos.",
       "unconverted": "Ventas en {currencies} sin tipo de cambio del BCE para el día de la venta: {count}. Quedan fuera de los totales y de la cuota; el CSV las incluye en su divisa.",
       "fxIncomplete": "Ventas en las que falta el tipo del BCE de alguna compra (anterior a 1999 o de una divisa que el BCE no publica): {count}. Su diferencia de cambio no se ha calculado.",
-      "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender. Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias."
+      "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender. Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias.",
+      "noSalesThisYear": "No hay ventas registradas en este ejercicio."
     },
     "import": {
       "link": "Importar de Trade Republic",
@@ -1545,7 +1545,10 @@
       "viewSale": "Simular venta",
       "editPosition": "Editar posición",
       "deletePosition": "Eliminar",
-      "deleteError": "No se pudo eliminar la posición. Inténtalo de nuevo."
+      "deleteError": "No se pudo eliminar la posición. Inténtalo de nuevo.",
+      "viewIncome": "Cobros",
+      "incomeLoading": "Cargando los cobros…",
+      "incomeLoadError": "No se han podido cargar los cobros. Inténtalo de nuevo en unos momentos."
     },
     "positions": {
       "searchLabel": "Buscar posiciones",
@@ -1578,6 +1581,55 @@
       "title": "Mayores movimientos de la última sesión:",
       "none": "Aún no hay dos sesiones de precios para comparar.",
       "seeAll": "{count, plural, one {Ver la posición →} other {Ver las # posiciones →}}"
+    },
+    "income": {
+      "sectionTitle": "Dividendos e intereses de {year}",
+      "sectionSubtitle": "Rendimientos del capital mobiliario: tributan en la base del ahorro. Lo que el pagador ya comunicó a Hacienda puede salir en tu borrador; el resto hay que añadirlo a mano.",
+      "categoryInterest": "Intereses y recompensas",
+      "categoryDividend": "Dividendos",
+      "noneThisYear": "No hay cobros registrados en este ejercicio.",
+      "reported": "Ya en el borrador (comunicado por el pagador): {count}",
+      "pending": "A añadir a mano: {count}",
+      "unconverted": "Cobros en {currencies} sin tipo de cambio del BCE para su fecha: {count}. Quedan fuera de los totales.",
+      "originUnknown": "Dividendos extranjeros sin la retención en origen: {count}. Sin ella no se puede calcular la deducción por doble imposición; complétala con el certificado o el informe fiscal de tu bróker.",
+      "manageTitle": "Ver y editar los cobros del ejercicio ({count})",
+      "listLabel": "Cobros",
+      "empty": "Todavía no hay cobros. Se importan con el fichero de Trade Republic o se añaden aquí a mano.",
+      "kinds": {
+        "dividend": "Dividendo",
+        "interest": "Intereses",
+        "benefit": "Recompensa del bróker"
+      },
+      "kind": "Tipo",
+      "paidAt": "Fecha de cobro",
+      "gross": "Íntegro",
+      "currency": "Divisa",
+      "withholdingOrigin": "Retención en origen",
+      "withholdingOriginHint": "Lo que retuvo el país de la fuente. Déjalo vacío si no lo sabes.",
+      "withholdingSpain": "Retención en España",
+      "withholdingOriginShort": "Origen",
+      "withholdingSpainShort": "España",
+      "unknown": "sin saber",
+      "country": "País de la fuente",
+      "countryHint": "Código de dos letras (US, NL, ES…). Hace falta para la doble imposición.",
+      "name": "Valor o cuenta",
+      "reportedToAeat": "El pagador ya lo comunicó a Hacienda (sale en mi borrador)",
+      "reportedBadge": "En el borrador",
+      "invalid": "Las retenciones no pueden superar el íntegro y el país debe ser un código de dos letras.",
+      "formAddTitle": "Añadir cobro",
+      "formEditTitle": "Editar cobro",
+      "add": "Añadir cobro",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "confirmDelete": "Sí, eliminar",
+      "cancel": "Cancelar",
+      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
+      "errorInvalid": "Revisa los datos: alguno no es válido.",
+      "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
     }
   },
   "account": {

@@ -1,9 +1,10 @@
 /**
- * Llamadas de la cartera a la API (posiciones, lotes, precios, FX, buscador de instrumentos).
+ * Llamadas de la cartera a la API (posiciones, lotes, cobros, precios, FX, buscador de instrumentos).
  * Sin React: se prueba sin DOM. La autorización y el scoping por usuario los decide la API;
  * aquí solo se transporta y se traducen los fallos a claves i18n.
  */
 
+import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
 import type {
   InstrumentSearchResult,
   LotPayload,
@@ -66,6 +67,23 @@ export function saveLot(positionId: string, lotId: string | null, payload: LotPa
 
 export function deleteLot(positionId: string, lotId: string): Promise<void> {
   return apiJson<void>(`${lotsPath(positionId)}/${lotId}`, { method: "DELETE" });
+}
+
+/** Cobros del usuario; con `positionId`, solo los de esa posición. */
+export function incomePath(positionId?: string): string {
+  return positionId ? `/api/income?positionId=${encodeURIComponent(positionId)}` : "/api/income";
+}
+
+/** Alta (`incomeId === null`) o edición de un cobro. */
+export function saveIncome(incomeId: string | null, payload: IncomePayload): Promise<IncomeEvent> {
+  return apiJson<IncomeEvent>(incomeId ? `/api/income/${incomeId}` : "/api/income", {
+    method: incomeId ? "PATCH" : "POST",
+    body: payload,
+  });
+}
+
+export function deleteIncome(incomeId: string): Promise<void> {
+  return apiJson<void>(`/api/income/${incomeId}`, { method: "DELETE" });
 }
 
 /** Resultados del buscador de instrumentos; `signal` cancela la petición (debounce). */

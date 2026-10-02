@@ -40,7 +40,12 @@ export default async function RealisedGainsPage({ params }: Props) {
         </p>
       </div>
       {data ? (
-        <RealisedGainsReport positions={data.positions} rates={data.rates} ratesLoaded={data.ratesLoaded} />
+        <RealisedGainsReport
+          positions={data.positions}
+          income={data.income}
+          rates={data.rates}
+          ratesLoaded={data.ratesLoaded}
+        />
       ) : (
         <Notice variant="warning">{t("loadError")}</Notice>
       )}

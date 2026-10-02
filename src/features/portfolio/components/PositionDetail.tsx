@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { LotPayload, PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
+import IncomeManager from "./IncomeManager";
 import LotList from "./LotList";
 import PositionDeleteBar from "./PositionDeleteBar";
 import PositionDetailSummary from "./PositionDetailSummary";
 import PositionLotForm from "./PositionLotForm";
 import SaleSimulator from "./SaleSimulator";
+import { usePositionIncome } from "../use-income";
 import { usePositionLots } from "../use-position-lots";
 
 export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
@@ -32,12 +34,18 @@ type Props = {
   onDeleted: (id: string) => void;
 };
 
-/** Las dos vistas del detalle. */
-type View = "lots" | "sale";
+/** Las vistas del detalle. */
+type View = "lots" | "income" | "sale";
+
+const VIEW_LABELS = { lots: "viewLots", income: "viewIncome", sale: "viewSale" } as const;
+
+/** Un ticker con forma de ISIN (posiciones importadas): da el ISIN y el país del emisor de sus dividendos. */
+const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 
 /**
  * Detalle de una posición, dentro del panel: cuánto vale y cuánto gana, sus datos clave, sus
- * operaciones (lotes) o la simulación fiscal de una venta, y editar o eliminar la posición.
+ * operaciones (lotes), sus cobros (dividendos) o la simulación fiscal de una venta, y editar o
+ * eliminar la posición.
  *
  * LA IDEA QUE DEBE QUEDAR CLARA: la posición es la FOTO (cuánto tengo y a qué precio medio) y
  * los lotes son la PELÍCULA (cada compra y cada venta). Al tocar un lote, el servidor reagrega
@@ -49,7 +57,9 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const tDetail = useTranslations("portfolio.detail");
 
   const { lots, loadState, errorKey, submitting, save, remove } = usePositionLots(position.id, onMutated);
+  const incomeState = usePositionIncome(position.id);
   const [view, setView] = useState<View>("lots");
+  const isin = ISIN.test(position.ticker) ? position.ticker : null;
   const [editingLot, setEditingLot] = useState<PositionLot | null>(null);
   const [confirmingLotId, setConfirmingLotId] = useState<string | null>(null);
 
@@ -70,10 +80,10 @@ export default function PositionDetail({ position, price, rates, pricePending, o
     <div className="flex flex-col gap-5">
       <PositionDetailSummary position={position} price={price} rates={rates} pricePending={pricePending} />
 
-      {/* Dos vistas del mismo panel: botones de alternancia (`aria-pressed`), no un `tablist`,
+      {/* Tres vistas del mismo panel: botones de alternancia (`aria-pressed`), no un `tablist`,
           que exigiría además navegación con flechas. */}
       <div role="group" aria-label={tDetail("viewLabel")} className="flex rounded-xl bg-surface-2 p-1">
-        {(["lots", "sale"] as const).map((option) => (
+        {(["lots", "income", "sale"] as const).map((option) => (
           <button
             key={option}
             type="button"
@@ -85,13 +95,13 @@ export default function PositionDetail({ position, price, rates, pricePending, o
                 : "text-muted hover:text-foreground"
             }`}
           >
-            {tDetail(option === "lots" ? "viewLots" : "viewSale")}
+            {tDetail(VIEW_LABELS[option])}
           </button>
         ))}
       </div>
 
-      {loadState === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
-      {loadState === "error" && <p className="text-sm text-warning">{t("loadError")}</p>}
+      {view !== "income" && loadState === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
+      {view !== "income" && loadState === "error" && <p className="text-sm text-warning">{t("loadError")}</p>}
 
       {loadState === "ready" && view === "lots" && (
         <div className="flex flex-col gap-4">
@@ -124,6 +134,30 @@ export default function PositionDetail({ position, price, rates, pricePending, o
             onCancelEdit={() => setEditingLot(null)}
           />
         </div>
+      )}
+
+      {view === "income" && incomeState.loadState === "loading" && (
+        <p className="text-sm text-muted">{tDetail("incomeLoading")}</p>
+      )}
+      {view === "income" && incomeState.loadState === "error" && (
+        <p className="text-sm text-warning">{tDetail("incomeLoadError")}</p>
+      )}
+      {view === "income" && incomeState.loadState === "ready" && (
+        <IncomeManager
+          income={incomeState.income}
+          defaults={{
+            kind: "dividend",
+            positionId: position.id,
+            isin,
+            name: position.name ?? position.ticker,
+            country: isin ? isin.slice(0, 2) : null,
+            currency: position.currency,
+          }}
+          submitting={incomeState.submitting}
+          errorKey={incomeState.errorKey}
+          save={incomeState.save}
+          remove={incomeState.remove}
+        />
       )}
 
       {loadState === "ready" && view === "sale" && (

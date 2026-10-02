@@ -1358,7 +1358,6 @@
     "realisedGains": {
       "title": "Realised gains and losses",
       "subtitle": "The sales you have recorded, matched against their purchases FIFO, converted to euros and grouped by tax year, to help with your Spanish tax return.",
-      "empty": "You have not recorded any sales yet. Once you add one to a position's transactions, it will show up here with its gain or loss.",
       "yearLabel": "Tax year",
       "download": "Download {year} CSV",
       "downloadError": "The file could not be generated. Please try again.",
@@ -1402,7 +1401,8 @@
       "ratesUnavailable": "The ECB exchange rates could not be loaded. Sales in other currencies are left out of the totals; reload the page in a moment.",
       "unconverted": "Sales in {currencies} without an ECB exchange rate for the sale date: {count}. They are left out of the totals and the tax; the CSV lists them in their own currency.",
       "fxIncomplete": "Sales missing the ECB rate of a purchase (before 1999 or in a currency the ECB does not publish): {count}. Their exchange difference has not been calculated.",
-      "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell. If you keep the currency in an account, that difference is not declared until you convert it."
+      "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell. If you keep the currency in an account, that difference is not declared until you convert it.",
+      "noSalesThisYear": "No sales recorded for this tax year."
     },
     "import": {
       "link": "Import from Trade Republic",
@@ -1545,7 +1545,10 @@
       "viewSale": "Simulate a sale",
       "editPosition": "Edit position",
       "deletePosition": "Delete",
-      "deleteError": "The position could not be deleted. Please try again."
+      "deleteError": "The position could not be deleted. Please try again.",
+      "viewIncome": "Payouts",
+      "incomeLoading": "Loading payouts…",
+      "incomeLoadError": "Payouts could not be loaded. Try again in a moment."
     },
     "positions": {
       "searchLabel": "Search positions",
@@ -1578,6 +1581,55 @@
       "title": "Biggest moves in the last session:",
       "none": "There aren't two sessions of prices to compare yet.",
       "seeAll": "{count, plural, one {See the position →} other {See all # positions →}}"
+    },
+    "income": {
+      "sectionTitle": "Dividends and interest for {year}",
+      "sectionSubtitle": "Investment income: taxed in the savings base. What the payer already reported to the Spanish tax agency may appear in your draft return; the rest must be added by hand.",
+      "categoryInterest": "Interest and rewards",
+      "categoryDividend": "Dividends",
+      "noneThisYear": "No payouts recorded for this tax year.",
+      "reported": "Already in the draft (reported by the payer): {count}",
+      "pending": "To add by hand: {count}",
+      "unconverted": "Payouts in {currencies} without an ECB exchange rate for their date: {count}. They are left out of the totals.",
+      "originUnknown": "Foreign dividends without the withholding at source: {count}. Without it the double taxation relief cannot be calculated; fill it in from your broker's certificate or tax report.",
+      "manageTitle": "View and edit the year's payouts ({count})",
+      "listLabel": "Payouts",
+      "empty": "No payouts yet. They are imported with the Trade Republic file or added here by hand.",
+      "kinds": {
+        "dividend": "Dividend",
+        "interest": "Interest",
+        "benefit": "Broker reward"
+      },
+      "kind": "Type",
+      "paidAt": "Payment date",
+      "gross": "Gross",
+      "currency": "Currency",
+      "withholdingOrigin": "Withholding at source",
+      "withholdingOriginHint": "What the source country withheld. Leave it empty if you do not know.",
+      "withholdingSpain": "Spanish withholding",
+      "withholdingOriginShort": "Source",
+      "withholdingSpainShort": "Spain",
+      "unknown": "unknown",
+      "country": "Source country",
+      "countryHint": "Two-letter code (US, NL, ES…). Needed for double taxation relief.",
+      "name": "Security or account",
+      "reportedToAeat": "The payer already reported it to the Spanish tax agency (it is in my draft return)",
+      "reportedBadge": "In the draft",
+      "invalid": "Withholdings cannot exceed the gross amount and the country must be a two-letter code.",
+      "formAddTitle": "Add payout",
+      "formEditTitle": "Edit payout",
+      "add": "Add payout",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Yes, delete",
+      "cancel": "Cancel",
+      "errorSession": "Your session has expired. Sign in again to continue.",
+      "errorNetwork": "Could not reach the server. Check your connection and try again.",
+      "errorServer": "The server failed. Try again in a moment.",
+      "errorInvalid": "Check the data: something is not valid.",
+      "errorGeneric": "It could not be saved. Try again."
     }
   },
   "account": {

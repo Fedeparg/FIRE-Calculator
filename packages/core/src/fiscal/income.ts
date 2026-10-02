@@ -40,6 +40,21 @@ export interface IncomeEvent {
   createdAt: string;
 }
 
+/** Alta o edición de un cobro (`POST`/`PATCH /api/income`). */
+export interface IncomePayload {
+  kind: IncomeKind;
+  paidAt: string;
+  positionId?: string | null;
+  isin?: string | null;
+  name?: string | null;
+  country?: string | null;
+  currency?: string;
+  gross: number;
+  withholdingOrigin?: number | null;
+  withholdingSpain?: number;
+  reportedToAeat?: boolean;
+}
+
 /** Agrupación de la declaración: intereses (incluye recompensas) o dividendos. */
 export type IncomeCategory = "interest" | "dividend";
 
