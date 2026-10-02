@@ -24,6 +24,28 @@ export type ImportedTrade = {
   executedAt: string;
 };
 
+/**
+ * Cobro normalizado (interés, recompensa o dividendo). Importes en `string` decimal, en euros, ya
+ * redondeados a 6 decimales. `reportedToAeat`: el bróker ya lo comunicó a la AEAT (sucursal
+ * española), así que puede estar en el borrador.
+ */
+export type ImportedIncome = {
+  externalId: string;
+  kind: "dividend" | "interest" | "benefit";
+  paidAt: string;
+  isin: string | null;
+  name: string | null;
+  /** País de la fuente (ISO 3166-1 alfa-2). */
+  country: string | null;
+  currency: "EUR";
+  /** Íntegro; negativo en una anulación. */
+  gross: string;
+  /** `null` si no se puede saber. */
+  withholdingOrigin: string | null;
+  withholdingSpain: string;
+  reportedToAeat: boolean;
+};
+
 export type ImportSkipReason =
   | "dividend"
   | "interest"
@@ -55,6 +77,8 @@ export type ImportWarning =
 export type ImportParseResult = {
   /** Ordenadas por `executedAt` y por línea ante empate. */
   trades: ImportedTrade[];
+  /** Cobros, en orden de fecha y de línea. */
+  income: ImportedIncome[];
   skipped: ImportSkippedRow[];
   warnings: ImportWarning[];
 };

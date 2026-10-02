@@ -10,6 +10,7 @@ import { CsvSyntaxError, parseCsv, type CsvRecord } from "./csv.js";
 import { MAX_IMPORT_ROWS } from "./limits.js";
 import type {
   ImportedAssetClass,
+  ImportedIncome,
   ImportedTrade,
   ImportParseResult,
   ImportSkippedRow,
@@ -79,11 +80,6 @@ function skipReasonForType(type: string): ImportSkipReason {
   switch (type) {
     case "DIVIDEND":
       return "dividend";
-    case "INTEREST_PAYMENT":
-      return "interest";
-    case "BENEFITS_SAVEBACK":
-    case "STOCKPERK":
-      return "benefit";
     case "IPO_SUBSCRIPTION":
       return "ipo_subscription";
     case "CUSTOMER_INBOUND":
@@ -162,6 +158,7 @@ type Row = {
   symbol: string;
   shares: string;
   price: string;
+  amount: string;
   fee: string;
   tax: string;
   currency: string;
@@ -180,6 +177,7 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
     symbol: get("symbol"),
     shares: get("shares"),
     price: get("price"),
+    amount: get("amount"),
     fee: get("fee"),
     tax: get("tax"),
     currency: get("currency"),
@@ -193,9 +191,11 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
  * Reglas (verificadas contra un export real):
  * - Se importan `BUY` y `SELL`. El importe bruto es `cantidad × precio`; la columna `amount`
  *   no se usa (hay una compra antigua con `amount` y `fee` vacíos que sigue siendo válida).
- * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` no se suma al coste
- *   (se cree que son retenciones de dividendos que TR liquida en la fila de la compra): solo
- *   se avisa de cuántas operaciones la traen.
+ * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` no se suma al coste. En
+ *   las compras de un saveback es la retención del 19 % de la recompensa y pasa a su cobro (ver
+ *   `resolveIncome`); del resto solo se avisa de cuántas operaciones la traen.
+ * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK` y `STOCKPERK` son cobros (`income`). La recompensa
+ *   llega además como una `BUY` aparte por el mismo importe: esa compra entra con su coste.
  * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
  * - Las `MIGRATION` (cambio de custodia) vienen en parejas salida/entrada con el mismo ISIN y
  *   cantidad, a pocos milisegundos entre sí, y efecto neto cero: se ignoran las parejas y se avisa de las sueltas.
@@ -251,6 +251,9 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
   const parsed: { trade: ImportedTrade; line: number }[] = [];
   const migrations: Row[] = [];
   const bonusIssues: Row[] = [];
+  const incomeRows: Row[] = [];
+  /** Compras con retención en su fila: candidatas a ser la retención de un saveback (ver `resolveIncome`). */
+  const taxedBuys: { row: Row; amount: bigint; tax: bigint }[] = [];
   const seenIds = new Set<string>();
   let tradesWithTax = 0;
 
@@ -267,6 +270,10 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     }
     if (row.type === "BONUS_ISSUE" || row.type === "BONUS_ISSUE_CANCELLED") {
       bonusIssues.push(row);
+      continue;
+    }
+    if (INCOME_TYPES.has(row.type)) {
+      incomeRows.push(row);
       continue;
     }
     if (row.type !== "BUY" && row.type !== "SELL") {
@@ -311,7 +318,11 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     }
     seenIds.add(row.transactionId);
 
-    if (tax !== 0n) tradesWithTax++;
+    if (tax !== 0n) {
+      tradesWithTax++;
+      const amount = parseUnits(row.amount, AMOUNT_SCALE);
+      if (row.type === "BUY" && amount !== null) taxedBuys.push({ row, amount: amount < 0n ? -amount : amount, tax });
+    }
     const trade: ImportedTrade = {
       externalId: row.transactionId,
       isin: row.symbol,
@@ -329,10 +340,13 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
 
   for (const bonus of resolveBonusIssues(bonusIssues, skip, seenIds)) parsed.push(bonus);
 
+  const { income, buysWithBenefitTax } = resolveIncome(incomeRows, migrations, taxedBuys, skip, seenIds);
+
   const warnings: ImportWarning[] = [];
   warnings.push(...resolveMigrations(migrations, skip));
-  if (tradesWithTax > 0) {
-    warnings.push({ code: "trade_tax_ignored", count: tradesWithTax });
+  // La retención de un saveback que TR anota en la compra asociada ya está en el cobro: no se avisa.
+  if (tradesWithTax - buysWithBenefitTax > 0) {
+    warnings.push({ code: "trade_tax_ignored", count: tradesWithTax - buysWithBenefitTax });
   }
 
   // Estable: ante el mismo instante, el orden del fichero.
@@ -344,7 +358,111 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
   const trades = parsed.map(({ trade }) => trade);
   skipped.sort((a, b) => a.line - b.line);
 
-  return { trades, skipped, warnings };
+  return { trades, income, skipped, warnings };
+}
+
+function previousDay(date: string): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+}
+
+/** Tipos de fila que son cobros. Los dividendos aún no se importan (ver `skipReasonForType`). */
+const INCOME_TYPES = new Set(["INTEREST_PAYMENT", "BENEFITS_SAVEBACK", "STOCKPERK"]);
+
+/**
+ * Día del cambio de custodia a la sucursal española de TR, o `null`. Desde el día siguiente TR
+ * retiene en España e informa a la AEAT (modelos 187, 189, 193, 196…): esos cobros salen en el
+ * borrador. Se reconoce por las filas `MIGRATION` (traspaso de valores entre las dos entidades);
+ * sin ellas, por el primer interés con retención española (cuenta española desde el principio).
+ */
+function spanishBranchCutoff(
+  migrations: readonly Row[],
+  incomeRows: readonly Row[],
+): { date: string; inclusive: boolean } | null {
+  const migrationDates = migrations.map((row) => row.date).filter(isValidDate);
+  if (migrationDates.length > 0) return { date: migrationDates.sort().at(-1) as string, inclusive: false };
+  const withheld = incomeRows
+    .filter(
+      (row) =>
+        row.type === "INTEREST_PAYMENT" && isValidDate(row.date) && (parseUnits(row.tax, AMOUNT_SCALE) ?? 0n) !== 0n,
+    )
+    .map((row) => row.date)
+    .sort();
+  return withheld.length > 0 ? { date: withheld[0], inclusive: true } : null;
+}
+
+/**
+ * Intereses y recompensas (saveback, stockperk) → cobros. TR declara las recompensas como
+ * intereses, con su retención del 19 %. Entre julio y noviembre de 2025 esa retención no venía en
+ * la fila del saveback sino en la compra que lo invierte (mismo día e importe): se toma de ahí.
+ * Antes del cambio a la sucursal española no hay retención ni comunicación a la AEAT, y el
+ * pagador es TR Alemania (país `DE`); después, España.
+ */
+function resolveIncome(
+  rows: readonly Row[],
+  migrations: readonly Row[],
+  taxedBuys: { row: Row; amount: bigint; tax: bigint }[],
+  skip: (row: { line: number; type: string }, reason: ImportSkipReason) => void,
+  seenIds: Set<string>,
+): { income: ImportedIncome[]; buysWithBenefitTax: number } {
+  const cutoff = spanishBranchCutoff(migrations, rows);
+  const reported = (date: string) => cutoff !== null && (cutoff.inclusive ? date >= cutoff.date : date > cutoff.date);
+  const income: { item: ImportedIncome; line: number }[] = [];
+  let buysWithBenefitTax = 0;
+
+  for (const row of rows) {
+    const amount = parseUnits(row.amount, AMOUNT_SCALE);
+    const ownTax = row.tax === "" ? 0n : parseUnits(row.tax, AMOUNT_SCALE);
+    if (
+      !isValidDate(row.date) ||
+      row.transactionId === "" ||
+      amount === null ||
+      ownTax === null ||
+      row.currency !== "EUR"
+    ) {
+      skip(row, "invalid_row");
+      continue;
+    }
+    if (seenIds.has(row.transactionId)) {
+      skip(row, "duplicate_row");
+      continue;
+    }
+    seenIds.add(row.transactionId);
+
+    let tax = ownTax < 0n ? -ownTax : ownTax;
+    if (row.type !== "INTEREST_PAYMENT" && tax === 0n) {
+      const at = taxedBuys.findIndex((buy) => buy.row.date === row.date && buy.amount === amount);
+      if (at !== -1) {
+        const [buy] = taxedBuys.splice(at, 1);
+        tax = buy.tax < 0n ? -buy.tax : buy.tax;
+        buysWithBenefitTax++;
+      }
+    }
+
+    const isReported = reported(row.date);
+    // La sucursal española comunica a la AEAT los intereses del mes con fecha de su último día,
+    // aunque los abone el día 1 del siguiente: así el de diciembre cuenta en su año, como en el borrador.
+    const paidAt =
+      row.type === "INTEREST_PAYMENT" && isReported && row.date.endsWith("-01") ? previousDay(row.date) : row.date;
+    income.push({
+      line: row.line,
+      item: {
+        externalId: row.transactionId,
+        kind: row.type === "INTEREST_PAYMENT" ? "interest" : "benefit",
+        paidAt,
+        isin: null,
+        name: null,
+        country: isReported ? "ES" : "DE",
+        currency: "EUR",
+        gross: formatUnits(amount, AMOUNT_SCALE),
+        withholdingOrigin: "0",
+        withholdingSpain: formatUnits(tax, AMOUNT_SCALE),
+        reportedToAeat: isReported,
+      },
+    });
+  }
+
+  income.sort((a, b) => (a.item.paidAt < b.item.paidAt ? -1 : a.item.paidAt > b.item.paidAt ? 1 : a.line - b.line));
+  return { income: income.map(({ item }) => item), buysWithBenefitTax };
 }
 
 /**
