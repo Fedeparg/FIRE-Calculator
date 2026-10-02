@@ -1,7 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, asc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
 
-import { resolveWithMarket, type DividendFacts } from '@sextante/core/fiscal/dividend-resolution';
+import {
+  estimateWithStatutoryRate,
+  resolveWithMarket,
+  type DividendFacts,
+  type DividendResolution,
+} from '@sextante/core/fiscal/dividend-resolution';
+import { STATUTORY_DIVIDEND_WITHHOLDING } from '@sextante/core/fiscal/withholding-rates';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
 import { PricesService } from '../prices/prices.service.js';
@@ -14,11 +20,12 @@ const MS_PER_DAY = 86_400_000;
 type MarketDividend = { exDate: string; amount: number; currency: string };
 
 /**
- * Completa los dividendos importados cuya retención en origen no se sabe, o solo se estima, con el
- * dividendo por acción de mercado (`instrument_dividends`, de Yahoo) × las acciones que da el
- * bróker (`@sextante/core/fiscal/dividend-resolution`, capa 2). Solo lee datos ya cacheados: no
- * llama a ninguna fuente externa, así que se puede repetir sin coste cuando llegan datos nuevos
- * (tras importar, tras el refresco de precios).
+ * Completa los dividendos cuya retención en origen no se sabe, o solo se estima
+ * (`@sextante/core/fiscal/dividend-resolution`): primero con el dividendo por acción de mercado
+ * (`instrument_dividends`, de Yahoo) × las acciones que da el bróker (capa 2) y, si no hay dato de
+ * mercado, con el tipo legal del país marcado como estimación (capa 3). Solo lee datos ya
+ * cacheados: no llama a ninguna fuente externa, así que se puede repetir sin coste cuando llegan
+ * datos nuevos (tras importar, tras el refresco de precios).
  */
 @Injectable()
 export class DividendResolutionService {
@@ -34,28 +41,24 @@ export class DividendResolutionService {
     const pending = await this.db
       .select({ event: incomeEvents, ticker: positions.ticker })
       .from(incomeEvents)
-      .innerJoin(positions, eq(positions.id, incomeEvents.positionId))
+      .leftJoin(positions, eq(positions.id, incomeEvents.positionId))
       .where(
         and(
           eq(incomeEvents.kind, 'dividend'),
-          isNotNull(incomeEvents.quantity),
           or(isNull(incomeEvents.withholdingOrigin), eq(incomeEvents.withholdingOriginSource, 'estimate')),
           ...(userId ? [eq(incomeEvents.userId, userId)] : []),
         ),
       );
     if (pending.length === 0) return 0;
 
-    const symbolByTicker = await this.prices.resolveCachedTickers([...new Set(pending.map((p) => p.ticker))]);
+    const tickers = pending.map((p) => p.ticker).filter((t): t is string => t !== null);
+    const symbolByTicker = await this.prices.resolveCachedTickers([...new Set(tickers)]);
     const market = await this.marketDividends([...new Set(symbolByTicker.values())]);
 
     let resolved = 0;
     for (const { event, ticker } of pending) {
-      const symbol = symbolByTicker.get(ticker);
-      const dividend = symbol ? matchDividend(market.get(symbol) ?? [], event) : null;
-      if (!dividend || event.quantity === null) continue;
-
-      const result = resolveWithMarket(factsOf(event), Number(event.quantity) * dividend.amount);
-      if (!result || result.originSource !== 'market') continue;
+      const result = this.resolve(event, ticker ? symbolByTicker.get(ticker) : undefined, market);
+      if (!result) continue;
       await this.db
         .update(incomeEvents)
         .set({
@@ -68,8 +71,26 @@ export class DividendResolutionService {
         .where(eq(incomeEvents.id, event.id));
       resolved++;
     }
-    if (resolved > 0) this.logger.log(`Dividendos completados con el dato de mercado: ${resolved}`);
+    if (resolved > 0) this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${resolved}`);
     return resolved;
+  }
+
+  /** Capa 2 (mercado) y, si no hay dato, capa 3 (tipo legal); `null` si no cambia nada. */
+  private resolve(
+    event: IncomeEventRow,
+    symbol: string | undefined,
+    market: ReadonlyMap<string, MarketDividend[]>,
+  ): DividendResolution | null {
+    const facts = factsOf(event);
+    const dividend = symbol && event.quantity !== null ? matchDividend(market.get(symbol) ?? [], event) : null;
+    if (dividend && event.quantity !== null) {
+      const result = resolveWithMarket(facts, Number(event.quantity) * dividend.amount);
+      if (result?.originSource === 'market') return result;
+    }
+    // Una estimación ya hecha no se repite; solo se estima lo que no se sabe.
+    if (event.withholdingOrigin !== null) return null;
+    const statutory = STATUTORY_DIVIDEND_WITHHOLDING[facts.country];
+    return statutory ? estimateWithStatutoryRate(facts, statutory.rate) : null;
   }
 
   /** Dividendos por acción de cada símbolo, sin el ajuste por los splits posteriores a su fecha ex. */

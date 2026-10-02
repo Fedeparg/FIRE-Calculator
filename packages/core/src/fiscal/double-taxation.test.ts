@@ -70,11 +70,25 @@ describe("computeDoubleTaxationDeduction", () => {
       NL: 15,
       DE: 15,
       FR: 15,
-      IE: 15,
       CH: 15,
       GB: 10,
       CN: 10,
       HK: 10,
+      JP: 5,
     });
+    // Irlanda, en duda (la tabla de 2018 y el texto del convenio no coinciden): sin dato.
+    expect(TREATY_DIVIDEND_RATES.IE).toBeUndefined();
+  });
+
+  it("sin convenio (Dinamarca) se acredita todo lo pagado, con el límite del tipo medio", () => {
+    const r = computeDoubleTaxationDeduction([{ country: "DK", gross: 100, withholdingOrigin: 27 }], 19);
+    expect(r.countries[0]).toMatchObject({ creditable: 27, excessReclaimable: 0, treatyRatePct: null });
+    expect(r.deduction).toBeCloseTo(19, 10);
+    expect(r.warnings).toEqual([]);
+  });
+
+  it("Japón usa el 5 % del convenio vigente desde 2021, no el 15 % de la tabla de 2018", () => {
+    const r = computeDoubleTaxationDeduction([{ country: "JP", gross: 100, withholdingOrigin: 15.315 }], 19);
+    expect(r.countries[0].creditable).toBeCloseTo(5, 10);
   });
 });

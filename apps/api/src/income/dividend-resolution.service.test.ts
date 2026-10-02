@@ -110,7 +110,7 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     expect(row.withholdingOriginSource).toBe('market');
   });
 
-  it('no toca lo que no casa: otra divisa, sin dividendo cerca de la fecha o de otro usuario', async () => {
+  it('sin un dato de mercado que case (otra divisa, fuera de fecha) cae a la estimación, no al mercado', async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     const wrongCurrency = await dividend(a, 'CH0038863350', { originalAmount: '1.2', originalCurrency: 'USD' });
@@ -122,11 +122,26 @@ describe('DividendResolutionService (integración con Postgres)', () => {
       .insert(instrumentDividends)
       .values({ symbol: 'ASML.AS', exDate: '2025-07-28', amount: '1.6', currency: 'EUR' });
 
-    expect(await service.resolvePending(a)).toBe(0);
-    expect(await service.resolvePending(b)).toBe(0);
+    // Ningún dato de mercado casa: los dos quedan como estimación con el tipo legal (Suiza, Países Bajos).
+    expect(await service.resolvePending(a)).toBe(1);
+    expect(await service.resolvePending(b)).toBe(1);
     for (const id of [wrongCurrency, tooOld]) {
       const [row] = await db.select().from(incomeEvents).where(eq(incomeEvents.id, id));
-      expect(row.withholdingOrigin).toBeNull();
+      expect(row.withholdingOriginSource).toBe('estimate');
     }
+  });
+
+  it('sin dato de mercado, estima con el tipo legal del país y lo marca como estimación', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    // Alemania: 26,375 %. Abonados 7,36 € netos, con la española del 19 % (1,40 €).
+    const id = await dividend(userId, 'DE0007164600', { gross: '7.36', withholdingSpain: '1.4' });
+
+    expect(await service.resolvePending(userId)).toBe(1);
+    const [row] = await db.select().from(incomeEvents).where(eq(incomeEvents.id, id));
+    expect(Number(row.gross)).toBeCloseTo(10, 2);
+    expect(Number(row.withholdingOrigin)).toBeCloseTo(2.64, 2);
+    expect(row).toMatchObject({ grossSource: 'estimate', withholdingOriginSource: 'estimate' });
+    // Volver a pasar no la cambia.
+    expect(await service.resolvePending(userId)).toBe(0);
   });
 });

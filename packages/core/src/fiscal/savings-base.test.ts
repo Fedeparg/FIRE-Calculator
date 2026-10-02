@@ -98,4 +98,21 @@ describe("savingsTax", () => {
     expect(tax).toBeCloseTo(6000 * 0.19 + 4000 * 0.21, 9);
     expect(averageRatePct).toBeCloseTo((tax / 10000) * 100, 9);
   });
+
+  it("reproduce el caso práctico del Manual de Renta 2025 de la AEAT (cap. 12): base del ahorro 200", () => {
+    // https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/irpf-2025/c12-integracion-compensacion-rentas/caso-practico.html
+    const r = computeSavingsBase({
+      year: 2025,
+      gainsBalance: 5600 - 1600,
+      capitalIncomeBalance: -800,
+      pending: [
+        { originYear: 2021, kind: "gains", amount: 700 },
+        { originYear: 2021, kind: "capitalIncome", amount: 500 },
+        { originYear: 2022, kind: "gains", amount: 2100 },
+      ],
+    });
+    expect(r.base).toBeCloseTo(200, 10);
+    expect(r.totalCompensated).toBeCloseTo(3800, 10);
+    expect(r.pending).toEqual([{ originYear: 2021, kind: "capitalIncome", amount: 300 }]);
+  });
 });

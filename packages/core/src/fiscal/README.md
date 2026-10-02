@@ -233,6 +233,20 @@ Reparte un dividendo importado en íntegro, retención en origen y retención es
 dividendos de valores sin dato de mercado en la divisa de pago (quedan como estimación o sin
 saber, con aviso).
 
+## `withholding-rates.ts`
+
+Retención que aplica de hecho cada país a los dividendos de una persona física residente en
+España. Solo sirve para **estimar** la retención en origen cuando faltan el dato del bróker y el de
+mercado; lo que sale de aquí se marca como estimación y la pantalla lo avisa.
+
+- Fuentes por país en el propio fichero: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
+  Worldwide Tax Summaries (fuente secundaria: confianza media). Las autoridades fiscales de
+  Alemania, Suiza, Países Bajos, Italia, Noruega, Canadá y Japón no se pudieron consultar.
+- Fuera: Irlanda (25 % o 0 % con declaración de no residente) y Australia (30 % o 0 % según el
+  dividendo esté "franked"): el tipo depende de un dato que no tenemos.
+- Distinto del convenio (`double-taxation.ts`): lo retenido por encima del convenio no se deduce en
+  España y se reclama en origen (Suiza 35 % → 15 %, Alemania 26,375 % → 15 %).
+
 ## `savings-base.ts`
 
 Integración y compensación de la base imponible del ahorro y cuota por la escala del
@@ -264,6 +278,14 @@ ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 ## `double-taxation.ts`
+
+> Contraste de 2026-10-03: la tabla de la DGT es de 2018. Japón está al 5 % (BOE-A-2021-2977) e
+> Irlanda queda sin dato porque el art. 10.1.c) de su convenio exime en origen al residente en
+> España y la tabla dice 15 %. Dinamarca (sin convenio desde 2009) e Islas Caimán no tienen
+> convenio: se acredita todo lo pagado, con el límite del tipo medio. El tipo medio que se usa es
+> el de la escala del ahorro; el del art. 80.2 es cuota líquida total × (cuota íntegra del ahorro /
+> cuota íntegra total) / base liquidable del ahorro (ejemplo del Manual de Renta 2025, cap. 18), que
+> exige la base general, que Sextante no conoce.
 
 Deducción por doble imposición internacional (art. 80 LIRPF) para dividendos del
 extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,

@@ -8,7 +8,10 @@
  * los CDI suscritos por España» (actualización 01/01/2018),
  * https://www.hacienda.gob.es/SGT/NormativaDoctrina/Tributaria/CDI/Documentacion/Limites_Imposicion_CDI.pdf
  * Solo entran países con tipo único y sin nota al pie en esa columna; un país ausente no
- * tiene dato confirmado.
+ * tiene dato confirmado. La tabla es de 2018 y se contrasta con los convenios posteriores:
+ * - Japón: 5 % desde el convenio de 2018, en vigor el 01/05/2021 (BOE-A-2021-2977, art. 10.2).
+ * - Irlanda queda fuera: la tabla dice 15 %, pero el art. 10.1.c) del convenio exime en Irlanda al
+ *   residente en España; hasta aclararlo, sin dato.
  */
 export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
   AT: 15,
@@ -22,9 +25,8 @@ export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
   FR: 15,
   GB: 10,
   HK: 10,
-  IE: 15,
   IT: 15,
-  JP: 15,
+  JP: 5,
   KR: 15,
   LU: 15,
   NL: 15,
@@ -33,6 +35,14 @@ export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
   SE: 15,
   US: 15,
 };
+
+/**
+ * Países sin convenio con España: la deducción del art. 80 LIRPF no tiene el límite de un convenio
+ * y alcanza todo el impuesto satisfecho (con el límite del tipo medio). Dinamarca, sin convenio
+ * desde el 01/01/2009 (AEAT, folleto "Residentes con rentas en Dinamarca"); Islas Caimán, sin
+ * convenio.
+ */
+export const NO_TREATY_COUNTRIES: ReadonlySet<string> = new Set(["DK", "KY"]);
 
 /** Renta bruta del extranjero de un país (ISO 3166-1 alfa-2), en euros. */
 export interface ForeignIncome {
@@ -126,7 +136,8 @@ export function computeDoubleTaxationDeduction(
     acc.withholding += withholding;
     const rate = TREATY_DIVIDEND_RATES[country];
     if (rate === undefined) {
-      acc.noTreatyWithholding += withholding;
+      if (NO_TREATY_COUNTRIES.has(country)) acc.creditable += withholding;
+      else acc.noTreatyWithholding += withholding;
       continue;
     }
     const creditable = Math.min(withholding, (rate / 100) * gross);
