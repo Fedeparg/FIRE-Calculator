@@ -190,12 +190,17 @@ describe("parseTradeRepublicCsv — export sintético", () => {
         "currency",
         "externalId",
         "gross",
+        "grossSource",
         "isin",
         "kind",
         "name",
+        "originalAmount",
+        "originalCurrency",
         "paidAt",
+        "quantity",
         "reportedToAeat",
         "withholdingOrigin",
+        "withholdingOriginSource",
         "withholdingSpain",
       ]);
     }
@@ -490,6 +495,8 @@ describe("parseTradeRepublicCsv — cobros", () => {
       withholdingOrigin: "0.03",
       withholdingSpain: "0.04",
       reportedToAeat: true,
+      grossSource: "broker",
+      withholdingOriginSource: "derived",
     });
   });
 
@@ -498,7 +505,15 @@ describe("parseTradeRepublicCsv — cobros", () => {
     const { income } = parseTradeRepublicCsv(
       afterMigration(dividend("2025-08-06", "NL0010273215", "1.36", "-0.26", "d1")),
     );
-    expect(income[0]).toMatchObject({ gross: "1.6", withholdingOrigin: "0.24", withholdingSpain: "0.26" });
+    // Deshacer el neto con el 15 % es una estimación hasta que lo confirme el dato de mercado.
+    expect(income[0]).toMatchObject({
+      gross: "1.6",
+      withholdingOrigin: "0.24",
+      withholdingSpain: "0.26",
+      grossSource: "estimate",
+      withholdingOriginSource: "estimate",
+      quantity: "1",
+    });
   });
 
   it("antes de la migración `tax` es la retención en origen", () => {

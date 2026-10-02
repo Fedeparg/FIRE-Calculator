@@ -1,6 +1,8 @@
 // Tipos compartidos de la importación de operaciones. Genéricos a propósito: cada parser de bróker
 // produce `ImportedTrade` y el resto (plan en la API, vista previa en la UI) no sabe de qué bróker viene.
 
+import type { ValueSource } from "../fiscal/income.js";
+
 /** Clase de activo normalizada; `other` cubre lo vacío o lo no clasificado. */
 export type ImportedAssetClass = "fund" | "stock" | "derivative" | "other";
 
@@ -44,6 +46,14 @@ export type ImportedIncome = {
   withholdingOrigin: string | null;
   withholdingSpain: string;
   reportedToAeat: boolean;
+  /** Procedencia de cada cifra (ver `ValueSource` en `fiscal/income`). */
+  grossSource: ValueSource;
+  withholdingOriginSource: ValueSource | null;
+  /** Acciones con derecho al dividendo, como las da el bróker. */
+  quantity: string | null;
+  /** Abonado en la divisa de pago, si no era el euro. */
+  originalAmount: string | null;
+  originalCurrency: string | null;
 };
 
 export type ImportSkipReason =

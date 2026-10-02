@@ -14,6 +14,14 @@ export type IncomeKind = (typeof INCOME_KINDS)[number];
 export const INCOME_SOURCES = ["manual", "trade_republic"] as const;
 export type IncomeSource = (typeof INCOME_SOURCES)[number];
 
+/**
+ * De dónde sale una cifra: `broker` (tal cual en el fichero del bróker), `derived` (aritmética
+ * sobre datos del bróker), `market` (contraste con el dividendo por acción de mercado),
+ * `estimate` (tipo legal del país, sin confirmar) o `manual` (lo introdujo el usuario).
+ */
+export const VALUE_SOURCES = ["broker", "derived", "market", "estimate", "manual"] as const;
+export type ValueSource = (typeof VALUE_SOURCES)[number];
+
 /** Un cobro, tal y como lo sirve `GET /api/income`. Importes en `currency`. */
 export interface IncomeEvent {
   id: string;
@@ -37,6 +45,14 @@ export interface IncomeEvent {
   /** El pagador ya lo comunicó a la AEAT: puede aparecer en el borrador. */
   reportedToAeat: boolean;
   source: IncomeSource;
+  grossSource: ValueSource;
+  /** `null` mientras la retención en origen sea desconocida. */
+  withholdingOriginSource: ValueSource | null;
+  /** Acciones con derecho al cobro (dividendos importados). */
+  quantity: number | null;
+  /** Importe abonado en la divisa de pago, si no era el euro. */
+  originalAmount: number | null;
+  originalCurrency: string | null;
   createdAt: string;
 }
 
@@ -95,6 +111,8 @@ export interface IncomeYear {
   unconverted: { currency: string; events: number }[];
   /** Dividendos extranjeros sin retención en origen conocida (la doble imposición no se puede calcular). */
   originUnknown: number;
+  /** Dividendos extranjeros cuya retención en origen es una estimación (tipo legal del país). */
+  originEstimated: number;
 }
 
 export interface IncomeReport {
@@ -156,6 +174,7 @@ function buildYear(year: number, events: readonly IncomeEvent[], rates: Referenc
   const categories = { interest: emptyCategory("interest"), dividend: emptyCategory("dividend") };
   const unconverted = new Map<string, number>();
   let originUnknown = 0;
+  let originEstimated = 0;
 
   for (const event of events) {
     const rate = referenceRateOn(rates, event.currency, event.paidAt);
@@ -166,7 +185,10 @@ function buildYear(year: number, events: readonly IncomeEvent[], rates: Referenc
     const gross = toEur(event.gross, rate);
     const origin = event.withholdingOrigin === null ? 0 : toEur(event.withholdingOrigin, rate);
     const spain = toEur(event.withholdingSpain, rate);
-    if (event.kind === "dividend" && event.withholdingOrigin === null && event.country !== "ES") originUnknown += 1;
+    if (event.kind === "dividend" && event.country !== "ES") {
+      if (event.withholdingOrigin === null) originUnknown += 1;
+      else if (event.withholdingOriginSource === "estimate") originEstimated += 1;
+    }
 
     const category = categories[incomeCategoryOf(event.kind)];
     add(category.total, gross, origin, spain);
@@ -190,5 +212,6 @@ function buildYear(year: number, events: readonly IncomeEvent[], rates: Referenc
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([currency, count]) => ({ currency, events: count })),
     originUnknown,
+    originEstimated,
   };
 }

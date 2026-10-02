@@ -6,6 +6,7 @@
 // columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
+import { resolveFromBroker } from "../fiscal/dividend-resolution.js";
 import { CsvSyntaxError, parseCsv, type CsvRecord } from "./csv.js";
 import { MAX_IMPORT_ROWS } from "./limits.js";
 import type {
@@ -160,6 +161,8 @@ type Row = {
   fee: string;
   tax: string;
   currency: string;
+  originalAmount: string;
+  originalCurrency: string;
   transactionId: string;
 };
 
@@ -179,6 +182,8 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
     fee: get("fee"),
     tax: get("tax"),
     currency: get("currency"),
+    originalAmount: get("original_amount"),
+    originalCurrency: get("original_currency"),
     transactionId: get("transaction_id"),
   };
 }
@@ -194,7 +199,7 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
  *   `resolveIncome`); del resto solo se avisa de cuántas operaciones la traen.
  * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK`, `STOCKPERK` y `DIVIDEND` son cobros (`income`). La
  *   recompensa llega además como una `BUY` aparte por el mismo importe: esa compra entra con su
- *   coste. Las retenciones de un dividendo se reparten con `splitDividend`.
+ *   coste. Las retenciones de un dividendo se reparten con `resolveFromBroker`.
  * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
  * - Las `MIGRATION` (cambio de custodia) vienen en parejas salida/entrada con el mismo ISIN y
  *   cantidad, a pocos milisegundos entre sí, y efecto neto cero: se ignoran las parejas y se avisa de las sueltas.
@@ -367,61 +372,6 @@ function previousDay(date: string): string {
 /** Tipos de fila que son cobros. */
 const INCOME_TYPES = new Set(["INTEREST_PAYMENT", "BENEFITS_SAVEBACK", "STOCKPERK", "DIVIDEND"]);
 
-/** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF). */
-const SPANISH_WITHHOLDING_RATE = 0.19;
-
-/**
- * Retención en origen que TR aplica de hecho, por país del emisor (prefijo del ISIN), donde coincide
- * con el convenio: EE. UU. con el W-8BEN de TR y Países Bajos, 15 %. En el resto (Suiza 35 %,
- * Alemania 26,375 %, Francia, Irlanda, China…) lo retenido no suele ser el tipo del convenio y no
- * se deduce: el cobro queda con la retención en origen desconocida para que la complete el usuario.
- */
-const KNOWN_ORIGIN_RATES: Readonly<Record<string, number>> = { US: 0.15, NL: 0.15 };
-
-/** Margen para comparar importes que TR redondea a céntimos en cada paso. */
-const CENT_TOLERANCE = 0.011;
-
-const round2 = (value: number) => Math.round(value * 100) / 100;
-
-/**
- * Reparte un dividendo de TR en íntegro, retención en origen y retención española. El significado de
- * `amount` y `tax` cambia con el periodo y el emisor (verificado contra los informes fiscales de TR):
- *
- * - Antes de la sucursal española: `amount` es el íntegro y `tax`, la retención en origen.
- * - Después, España retiene el 19 % del cobro neto de origen. Si `tax/amount` ≈ 19 %, `amount` ya
- *   llegó neto de origen (ASML) y `tax` es solo la española; si ≈ origen + 19 % del resto, `amount`
- *   es el íntegro y `tax` suma las dos (EE. UU.). Lo que no encaja queda con el origen sin saber.
- *
- * Sin retención y con un importe tan pequeño que la de origen redondearía a 0, el origen es 0.
- */
-function splitDividend(
-  amount: number,
-  tax: number,
-  country: string,
-  reported: boolean,
-): { gross: number; origin: number | null; spain: number } {
-  const rate = KNOWN_ORIGIN_RATES[country];
-  if (tax === 0) {
-    const negligible = rate !== undefined && round2(Math.abs(amount) * rate) === 0;
-    return { gross: amount, origin: negligible || country === "ES" ? 0 : null, spain: 0 };
-  }
-  if (!reported) return { gross: amount, origin: tax, spain: 0 };
-  if (Math.abs(tax - SPANISH_WITHHOLDING_RATE * amount) <= CENT_TOLERANCE) {
-    if (rate === undefined) return { gross: amount, origin: country === "ES" ? 0 : null, spain: tax };
-    const gross = round2(amount / (1 - rate));
-    return { gross, origin: round2(gross - amount), spain: tax };
-  }
-  if (
-    rate !== undefined &&
-    Math.abs(tax - (rate + SPANISH_WITHHOLDING_RATE * (1 - rate)) * amount) <= 2 * CENT_TOLERANCE
-  ) {
-    const origin = round2(rate * amount);
-    return { gross: amount, origin, spain: round2(tax - origin) };
-  }
-  // Sin clasificar: la española no puede pasar del 19 % de lo cobrado; el resto, sin saber.
-  return { gross: amount, origin: null, spain: Math.min(tax, round2(SPANISH_WITHHOLDING_RATE * amount)) };
-}
-
 /** Número ya redondeado → decimal de la escala de la BD. */
 function decimalOf(value: number): string {
   return formatUnits(parseUnits(value.toFixed(AMOUNT_SCALE), AMOUNT_SCALE) ?? 0n, AMOUNT_SCALE);
@@ -533,12 +483,17 @@ function resolveIncome(
     const isReported = reported(row.date);
     if (row.type === "DIVIDEND") {
       const country = row.symbol.slice(0, 2);
-      const split = splitDividend(
-        Number(formatUnits(amount, AMOUNT_SCALE)),
-        Number(formatUnits(tax, AMOUNT_SCALE)),
+      const shares = parseUnits(row.shares, AMOUNT_SCALE);
+      const original = row.originalCurrency === "" ? null : parseUnits(row.originalAmount, AMOUNT_SCALE);
+      const originalCurrency =
+        original !== null && /^[A-Z]{3}$/.test(row.originalCurrency) ? row.originalCurrency : null;
+      const split = resolveFromBroker({
+        amount: Number(formatUnits(amount, AMOUNT_SCALE)),
+        tax: Number(formatUnits(tax, AMOUNT_SCALE)),
+        originalAmount: originalCurrency && original !== null ? Number(formatUnits(original, AMOUNT_SCALE)) : null,
+        reported: isReported,
         country,
-        isReported,
-      );
+      });
       income.push({
         line: row.line,
         item: {
@@ -553,6 +508,11 @@ function resolveIncome(
           withholdingOrigin: split.origin === null ? null : decimalOf(split.origin),
           withholdingSpain: decimalOf(split.spain),
           reportedToAeat: isReported,
+          grossSource: split.grossSource,
+          withholdingOriginSource: split.originSource,
+          quantity: shares !== null && shares > 0n ? formatUnits(shares, AMOUNT_SCALE) : null,
+          originalAmount: originalCurrency && original !== null ? formatUnits(original, AMOUNT_SCALE) : null,
+          originalCurrency,
         },
       });
       continue;
@@ -575,6 +535,11 @@ function resolveIncome(
         withholdingOrigin: "0",
         withholdingSpain: formatUnits(tax, AMOUNT_SCALE),
         reportedToAeat: isReported,
+        grossSource: "broker",
+        withholdingOriginSource: "broker",
+        quantity: null,
+        originalAmount: null,
+        originalCurrency: null,
       },
     });
   }
