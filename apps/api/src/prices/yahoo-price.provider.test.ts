@@ -4,6 +4,7 @@ import {
   epochToUtcDate,
   parseYahooChart,
   parseYahooChartHistory,
+  parseYahooDividends,
   parseYahooSplits,
   YahooPriceProvider,
 } from './yahoo-price.provider.js';
@@ -181,7 +182,8 @@ describe('YahooPriceProvider.getHistory', () => {
     expect(url).toContain('/IWDA.AS?');
     expect(url).toContain('range=5y');
     expect(url).toContain('interval=1d');
-    expect(url).toContain('events=split');
+    // Splits y dividendos viajan en la misma llamada.
+    expect(url).toContain('events=div%7Csplit');
     expect(history.quotes).toEqual([{ symbol: 'IWDA.AS', close: 95.4, currency: 'EUR', date: '2026-03-15' }]);
     expect(history.splits).toEqual([]);
   });
@@ -214,5 +216,42 @@ describe('parseYahooSplits', () => {
     ['null', null],
   ])('descarta lo inutilizable: %s', (_label, input) => {
     expect(parseYahooSplits('X', input)).toEqual([]);
+  });
+});
+
+describe('parseYahooDividends', () => {
+  it('lee el dividendo por acción con la divisa de cotización, ordenado por fecha ex', () => {
+    const body = {
+      chart: {
+        result: [
+          {
+            meta: { currency: 'EUR' },
+            events: {
+              dividends: {
+                '1753689600': { date: 1753689600, amount: 1.6 },
+                '1745539200': { date: 1745539200, amount: 1.84 },
+              },
+            },
+          },
+        ],
+      },
+    };
+    expect(parseYahooDividends('ASML.AS', body)).toEqual([
+      { symbol: 'ASML.AS', exDate: '2025-04-25', amount: 1.84, currency: 'EUR' },
+      { symbol: 'ASML.AS', exDate: '2025-07-28', amount: 1.6, currency: 'EUR' },
+    ]);
+  });
+
+  it('descarta importes no positivos o fechas inválidas, y sin divisa no devuelve nada', () => {
+    const events = {
+      dividends: { a: { date: 1753689600, amount: 0 }, b: { date: 'x', amount: 1 }, c: { date: 1753689600 } },
+    };
+    expect(parseYahooDividends('X', { chart: { result: [{ meta: { currency: 'EUR' }, events }] } })).toEqual([]);
+    expect(
+      parseYahooDividends('X', {
+        chart: { result: [{ meta: {}, events: { dividends: { a: { date: 1, amount: 1 } } } }] },
+      }),
+    ).toEqual([]);
+    expect(parseYahooDividends('X', null)).toEqual([]);
   });
 });

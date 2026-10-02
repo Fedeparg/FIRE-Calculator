@@ -23,6 +23,7 @@ import type {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type Position, type PositionLot } from '../db/schema.js';
+import { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { IncomeService } from '../income/income.service.js';
 import { PricesService } from '../prices/prices.service.js';
 import { aggregateLots, LotAggregateError } from '../positions/lot-aggregate.js';
@@ -68,6 +69,7 @@ export class ImportsService {
     private readonly prices: PricesService,
     private readonly events: EventEmitter2,
     private readonly income: IncomeService,
+    private readonly dividends: DividendResolutionService,
   ) {}
 
   /** Calcula qué haría la confirmación, sin escribir nada. */
@@ -156,11 +158,13 @@ export class ImportsService {
     }
 
     if (created.length > 0) {
-      // Los derivados no se valoran: no se piden sus precios.
+      // Los derivados no se valoran: no se piden sus precios. Al terminar, resuelve los dividendos.
       void this.primeInBackground(
         userId,
         created.filter((p) => !p.isDerivative),
       );
+    } else {
+      void this.resolveDividendsInBackground(userId);
     }
 
     // Después de las posiciones: un dividendo se enlaza con la posición de su ISIN, aunque sea nueva.
@@ -294,9 +298,21 @@ export class ImportsService {
         await this.prices.primeSymbol(position.ticker, position.currency);
       }
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
+      await this.resolveDividendsInBackground(userId);
     } catch (error) {
       this.logger.warn(
         `Refresco de precios tras importar falló: ${error instanceof Error ? error.name : 'error desconocido'}`,
+      );
+    }
+  }
+
+  /** Completa los dividendos con los datos de mercado ya cacheados; un fallo no afecta a la importación. */
+  private async resolveDividendsInBackground(userId: string): Promise<void> {
+    try {
+      await this.dividends.resolvePending(userId);
+    } catch (error) {
+      this.logger.warn(
+        `Resolución de dividendos tras importar falló: ${error instanceof Error ? error.name : 'error desconocido'}`,
       );
     }
   }

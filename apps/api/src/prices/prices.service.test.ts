@@ -38,6 +38,7 @@ class StubProvider implements PriceProvider {
     return Promise.resolve({
       quotes: this.history.filter((q) => q.symbol === symbol),
       splits: this.splits.filter((e) => e.symbol === symbol),
+      dividends: [],
     });
   }
 }

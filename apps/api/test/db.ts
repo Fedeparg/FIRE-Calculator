@@ -40,6 +40,7 @@ export async function resetDb(db: Database): Promise<void> {
       fx_reference_rates,
       fx_reference_coverage,
       instrument_splits,
+      instrument_dividends,
       instrument_split_checks,
       instruments,
       mcp_audit_log,

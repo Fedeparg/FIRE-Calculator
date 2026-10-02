@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 
 import type { Env } from '../config/env.js';
+import { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PricesService } from '../prices/prices.service.js';
@@ -42,6 +43,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     private readonly prices: PricesService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly fireAlerts: FireAlertsService,
+    private readonly dividends: DividendResolutionService,
     private readonly config: ConfigService<Env, true>,
     private readonly registry: SchedulerRegistry,
   ) {}
@@ -158,6 +160,13 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       await this.prices.refreshStaleSplits();
     } catch (error) {
       this.logger.error(`Refresco de splits falló: ${(error as Error).message}`);
+    }
+
+    // Con los dividendos de mercado recién cacheados (viajan con los splits), se completan los cobros pendientes.
+    try {
+      await this.dividends.resolvePending();
+    } catch (error) {
+      this.logger.error(`Resolución de dividendos falló: ${(error as Error).message}`);
     }
   }
 }

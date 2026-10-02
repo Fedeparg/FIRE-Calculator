@@ -17,9 +17,19 @@ export interface SplitEvent {
   ratio: number;
 }
 
+/** Dividendo por acción, en la divisa de cotización y ajustado por splits posteriores (como lo da la fuente). */
+export interface DividendEvent {
+  symbol: string;
+  /** Fecha ex-dividendo, YYYY-MM-DD (UTC). */
+  exDate: string;
+  amount: number;
+  currency: string;
+}
+
 export interface PriceHistory {
   quotes: Quote[];
   splits: SplitEvent[];
+  dividends: DividendEvent[];
 }
 
 export interface PriceProvider {

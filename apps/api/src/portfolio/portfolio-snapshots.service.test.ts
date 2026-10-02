@@ -33,7 +33,7 @@ const identityResolver: SymbolResolver = {
 const silentProvider: PriceProvider = {
   name: 'test',
   getQuotes: () => Promise.resolve(new Map()),
-  getHistory: () => Promise.resolve({ quotes: [], splits: [] }),
+  getHistory: () => Promise.resolve({ quotes: [], splits: [], dividends: [] }),
 };
 
 /** Fecha de hoy en UTC, la que usa la captura (con el reloj congelado: ver `beforeEach`). */

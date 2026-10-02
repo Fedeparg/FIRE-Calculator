@@ -17,7 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
-import type { IncomeKind, IncomeSource } from '@sextante/core/fiscal/income';
+import type { IncomeKind, IncomeSource, ValueSource } from '@sextante/core/fiscal/income';
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -163,6 +163,14 @@ export const incomeEvents = pgTable(
     // El pagador ya lo comunicó a la AEAT: puede estar en el borrador.
     reportedToAeat: boolean('reported_to_aeat').notNull().default(false),
     source: varchar('source', { length: 20 }).$type<IncomeSource>().notNull(),
+    // De dónde sale cada cifra (`ValueSource`): bróker, deducida, dato de mercado, estimación o manual.
+    grossSource: varchar('gross_source', { length: 10 }).$type<ValueSource>().notNull().default('manual'),
+    // NULL mientras la retención en origen sea desconocida.
+    withholdingOriginSource: varchar('withholding_origin_source', { length: 10 }).$type<ValueSource>(),
+    // Datos del bróker que permiten volver a resolver el cobro con datos de mercado más tarde.
+    quantity: numeric('quantity', { precision: 18, scale: 6 }),
+    originalAmount: numeric('original_amount', { precision: 18, scale: 6 }),
+    originalCurrency: varchar('original_currency', { length: 3 }),
     // Como en `position_lots`: "trade-republic:<uuid>", NULL si es manual.
     externalId: varchar('external_id', { length: 100 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -319,6 +327,24 @@ export const instrumentSplits = pgTable(
     ratio: numeric('ratio', { precision: 20, scale: 8 }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.symbol, table.date] })],
+);
+
+/**
+ * Dividendo por acción de cada pago, según la fuente de precios (Yahoo `events=div`), en la divisa
+ * de cotización del símbolo y AJUSTADO por splits posteriores (como lo da Yahoo): se deshace con
+ * `instrument_splits`. Contraste independiente del íntegro que declara el bróker
+ * (`@sextante/core/fiscal/dividend-resolution`). Se refresca con los splits.
+ */
+export const instrumentDividends = pgTable(
+  'instrument_dividends',
+  {
+    symbol: varchar('symbol', { length: 40 }).notNull(),
+    // Fecha ex-dividendo (UTC), la que da Yahoo.
+    exDate: date('ex_date').notNull(),
+    amount: numeric('amount', { precision: 20, scale: 8 }).notNull(),
+    currency: varchar('currency', { length: 8 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.symbol, table.exDate] })],
 );
 
 /** Marca de "splits consultados": una `instrument_splits` vacía no distingue "sin splits" de "nunca consultado", ni vería un split posterior al priming. */

@@ -31,6 +31,11 @@ function toResponse(row: IncomeEventRow): IncomeEvent {
     withholdingSpain: Number(row.withholdingSpain),
     reportedToAeat: row.reportedToAeat,
     source: row.source,
+    grossSource: row.grossSource,
+    withholdingOriginSource: row.withholdingOrigin === null ? null : row.withholdingOriginSource,
+    quantity: row.quantity === null ? null : Number(row.quantity),
+    originalAmount: row.originalAmount === null ? null : Number(row.originalAmount),
+    originalCurrency: row.originalCurrency,
     createdAt: row.createdAt.toISOString(),
   };
 }
@@ -82,6 +87,8 @@ export class IncomeService {
         withholdingSpain: decimal(dto.withholdingSpain ?? 0),
         reportedToAeat: dto.reportedToAeat ?? false,
         source: 'manual',
+        grossSource: 'manual',
+        withholdingOriginSource: dto.withholdingOrigin == null ? null : 'manual',
       })
       .returning();
     return toResponse(row);
@@ -116,9 +123,11 @@ export class IncomeService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.country !== undefined && { country: dto.country }),
         ...(dto.currency !== undefined && { currency: dto.currency }),
-        ...(dto.gross !== undefined && { gross: decimal(dto.gross) }),
+        // Lo que toca el usuario pasa a ser suyo: deja de ser del bróker, deducido o estimado.
+        ...(dto.gross !== undefined && { gross: decimal(dto.gross), grossSource: 'manual' as const }),
         ...(dto.withholdingOrigin !== undefined && {
           withholdingOrigin: dto.withholdingOrigin === null ? null : decimal(dto.withholdingOrigin),
+          withholdingOriginSource: dto.withholdingOrigin === null ? null : ('manual' as const),
         }),
         ...(dto.withholdingSpain !== undefined && { withholdingSpain: decimal(dto.withholdingSpain) }),
         ...(dto.reportedToAeat !== undefined && { reportedToAeat: dto.reportedToAeat }),
@@ -177,6 +186,11 @@ export class IncomeService {
             reportedToAeat: item.reportedToAeat,
             source: 'trade_republic' as const,
             externalId: item.externalId,
+            grossSource: item.grossSource,
+            withholdingOriginSource: item.withholdingOriginSource,
+            quantity: item.quantity,
+            originalAmount: item.originalAmount,
+            originalCurrency: item.originalCurrency,
           })),
         )
         .onConflictDoNothing()

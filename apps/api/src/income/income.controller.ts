@@ -21,13 +21,17 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { createIncomeSchema, type CreateIncomeDto } from './dto/create-income.dto.js';
 import { incomeQuerySchema, type IncomeQueryDto } from './dto/income-query.dto.js';
 import { updateIncomeSchema, type UpdateIncomeDto } from './dto/update-income.dto.js';
+import { DividendResolutionService } from './dividend-resolution.service.js';
 import { IncomeService } from './income.service.js';
 
 /** Dividendos, intereses y recompensas del usuario del JWT. Un id ajeno da 404. */
 @Controller('income')
 @UseGuards(JwtAuthGuard)
 export class IncomeController {
-  constructor(private readonly income: IncomeService) {}
+  constructor(
+    private readonly income: IncomeService,
+    private readonly dividends: DividendResolutionService,
+  ) {}
 
   @Get()
   list(
@@ -35,6 +39,13 @@ export class IncomeController {
     @Query(new ZodValidationPipe(incomeQuerySchema)) query: IncomeQueryDto,
   ): Promise<IncomeEvent[]> {
     return this.income.list(user.id, query);
+  }
+
+  /** Completa los dividendos pendientes con el dato de mercado ya cacheado (sin llamadas externas). */
+  @Post('resolve-dividends')
+  @HttpCode(HttpStatus.OK)
+  async resolveDividends(@CurrentUser() user: SessionUser): Promise<{ resolved: number }> {
+    return { resolved: await this.dividends.resolvePending(user.id) };
   }
 
   @Post()

@@ -6,11 +6,15 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { incomeEvents, positionLots, positions } from '../db/schema.js';
+import type { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { IncomeService } from '../income/income.service.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack, pricesStub } from '../../test/positions-stack.js';
 import { ImportsService, TRADE_REPUBLIC_BROKER } from './imports.service.js';
+
+/** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */
+const dividendsStub = { resolvePending: () => Promise.resolve(0) } as unknown as DividendResolutionService;
 
 type Fields = Partial<Record<(typeof TRADE_REPUBLIC_HEADER)[number], string>>;
 
@@ -67,6 +71,7 @@ describe('ImportsService (integración con Postgres)', () => {
       pricesStub,
       new EventEmitter2(),
       new IncomeService(db),
+      dividendsStub,
     );
   });
 
@@ -155,7 +160,14 @@ describe('ImportsService (integración con Postgres)', () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-    const svc = new ImportsService(db, buildPositionsStack(db).lots, pricesStub, events, new IncomeService(db));
+    const svc = new ImportsService(
+      db,
+      buildPositionsStack(db).lots,
+      pricesStub,
+      events,
+      new IncomeService(db),
+      dividendsStub,
+    );
     const userId = await insertUser(db, 'a@example.com');
 
     await svc.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1)));
@@ -362,6 +374,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
       pricesStub,
       new EventEmitter2(),
       new IncomeService(db),
+      dividendsStub,
     );
   });
   afterEach(() => resetDb(db));

@@ -3,6 +3,7 @@ import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fakeConfig } from '../../test/config.js';
+import type { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import type { PricesService, RefreshSummary } from '../prices/prices.service.js';
@@ -34,10 +35,12 @@ function setup(env: Record<string, string> = {}) {
   const fireAlerts = {
     evaluateAll: vi.fn(() => Promise.resolve({ users: 0, sent: 0, failed: 0 })),
   };
+  const dividends = { resolvePending: vi.fn(() => Promise.resolve(0)) };
   const scheduler = new DailyJobsScheduler(
     prices as unknown as PricesService,
     snapshots as unknown as PortfolioSnapshotsService,
     fireAlerts as unknown as FireAlertsService,
+    dividends as unknown as DividendResolutionService,
     fakeConfig(env),
     registry,
   );

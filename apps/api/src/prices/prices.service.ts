@@ -9,9 +9,22 @@ import {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
-import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
+import {
+  instrumentDividends,
+  instrumentPrices,
+  instrumentSplitChecks,
+  instrumentSplits,
+  positionLots,
+  positions,
+} from '../db/schema.js';
 import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
-import { PRICE_PROVIDER, type PriceHistory, type PriceProvider, type Quote } from './price-provider.interface.js';
+import {
+  PRICE_PROVIDER,
+  type DividendEvent,
+  type PriceHistory,
+  type PriceProvider,
+  type Quote,
+} from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 import { isoDate } from '../common/dates.js';
 
@@ -391,12 +404,15 @@ export class PricesService {
 
   /** Cachea el histórico; si la fuente no devuelve serie cae al último cierre para no dejar la posición sin precio. */
   private async primeHistory(symbol: string): Promise<void> {
-    const { quotes, splits }: PriceHistory = await this.provider.getHistory(symbol);
+    const { quotes, splits, dividends }: PriceHistory = await this.provider.getHistory(symbol);
     if (quotes.length > 0) {
       await this.upsertQuoteList(quotes);
       await this.upsertSplits(splits);
+      await this.upsertDividends(dividends);
       await this.markSplitsChecked(symbol);
-      this.logger.log(`Histórico de ${symbol}: ${quotes.length} cierres y ${splits.length} splits cacheados`);
+      this.logger.log(
+        `Histórico de ${symbol}: ${quotes.length} cierres, ${splits.length} splits y ${dividends.length} dividendos cacheados`,
+      );
       return;
     }
     await this.upsertQuotes(await this.provider.getQuotes([symbol]));
@@ -443,6 +459,28 @@ export class PricesService {
       .onConflictDoUpdate({
         target: [instrumentSplits.symbol, instrumentSplits.date],
         set: { ratio: sql`excluded.ratio` },
+      });
+  }
+
+  /**
+   * Upsert de los dividendos por acción de un símbolo (PK `(symbol, ex_date)`). `DO UPDATE`: Yahoo
+   * reajusta los importes pasados tras un split, igual que los cierres.
+   */
+  private async upsertDividends(dividends: readonly DividendEvent[]): Promise<void> {
+    if (dividends.length === 0) return;
+    await this.db
+      .insert(instrumentDividends)
+      .values(
+        dividends.map((d) => ({
+          symbol: d.symbol,
+          exDate: d.exDate,
+          amount: d.amount.toString(),
+          currency: d.currency,
+        })),
+      )
+      .onConflictDoUpdate({
+        target: [instrumentDividends.symbol, instrumentDividends.exDate],
+        set: { amount: sql`excluded.amount`, currency: sql`excluded.currency` },
       });
   }
 

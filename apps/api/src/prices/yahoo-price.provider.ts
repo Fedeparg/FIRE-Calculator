@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
+import type { DividendEvent, PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
 import { isoDate, todayUtc } from '../common/dates.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
@@ -38,8 +38,14 @@ interface YahooChartResult {
   meta?: YahooChartMeta;
   /** Epoch (segundos) de cada barra, alineado por índice con `indicators.quote[0].close`. */
   timestamp?: unknown;
-  /** Con `events=split`: `{ splits: { "<epoch>": { date, numerator, denominator } } }`. */
-  events?: { splits?: Record<string, { date?: unknown; numerator?: unknown; denominator?: unknown }> };
+  /**
+   * Con `events=div|split`: `{ splits: { "<epoch>": { date, numerator, denominator } },
+   * dividends: { "<epoch>": { date, amount } } }`.
+   */
+  events?: {
+    splits?: Record<string, { date?: unknown; numerator?: unknown; denominator?: unknown }>;
+    dividends?: Record<string, { date?: unknown; amount?: unknown }>;
+  };
   indicators?: { quote?: { close?: unknown }[] };
 }
 interface YahooChartResponse {
@@ -114,6 +120,26 @@ export function parseYahooSplits(symbol: string, body: unknown): SplitEvent[] {
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
 
+/**
+ * Extrae los dividendos por acción de una respuesta con `events=div` (pura), en la divisa de
+ * cotización (`meta.currency`). Un importe no positivo o una fecha inválida se descartan: un dato
+ * falso daría una retención en origen inventada.
+ */
+export function parseYahooDividends(symbol: string, body: unknown): DividendEvent[] {
+  const result = (body as YahooChartResponse)?.chart?.result?.[0];
+  const currency = result?.meta?.currency;
+  const dividends = result?.events?.dividends;
+  if (typeof currency !== 'string' || !dividends || typeof dividends !== 'object') return [];
+
+  const out: DividendEvent[] = [];
+  for (const dividend of Object.values(dividends)) {
+    const { date, amount } = dividend ?? {};
+    if (typeof date !== 'number' || !Number.isFinite(date) || typeof amount !== 'number' || !(amount > 0)) continue;
+    out.push({ symbol, exDate: epochToUtcDate(date), amount, currency });
+  }
+  return out.sort((a, b) => (a.exDate < b.exDate ? -1 : a.exDate > b.exDate ? 1 : 0));
+}
+
 /** Precios sobre la API no oficial de Yahoo: amplia y gratis, por eso vive tras `PriceProvider`. */
 @Injectable()
 export class YahooPriceProvider implements PriceProvider {
@@ -136,17 +162,17 @@ export class YahooPriceProvider implements PriceProvider {
   /** Una petición con los mismos reintentos y timeout que el refresco; serie vacía ante cualquier fallo. */
   async getHistory(symbol: string): Promise<PriceHistory> {
     const clean = symbol.trim();
-    if (!clean) return { quotes: [], splits: [] };
+    if (!clean) return { quotes: [], splits: [], dividends: [] };
 
-    // `events=split` viaja en la misma llamada.
-    const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'split');
-    if (body === null) return { quotes: [], splits: [] };
+    // Splits y dividendos viajan en la misma llamada.
+    const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'div|split');
+    if (body === null) return { quotes: [], splits: [], dividends: [] };
 
     const quotes = parseYahooChartHistory(clean, body);
     if (quotes.length === 0) {
       this.logger.warn(`Yahoo ${clean}: histórico vacío o no utilizable`);
     }
-    return { quotes, splits: parseYahooSplits(clean, body) };
+    return { quotes, splits: parseYahooSplits(clean, body), dividends: parseYahooDividends(clean, body) };
   }
 
   /** Última cotización de un símbolo, o `null` si no se pudo obtener. */
