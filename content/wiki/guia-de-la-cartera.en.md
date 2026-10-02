@@ -92,7 +92,7 @@ an estimate of the tax. It records nothing: it is a what-if.
 
 ## 6. The capital gains report
 
-The **Capital gains** button in the portfolio header opens a summary of your sales
+The **Tax return** tab in the portfolio header opens a summary of your sales
 **by tax year**: gains and losses netted, the estimated tax and a **CSV with one row
 per sale** for your tax return. What it covers and what it does not: [capital gains
 when selling](/aprende/plusvalias-al-vender).

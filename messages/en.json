@@ -1356,8 +1356,6 @@
       "disclaimerFx": "On top of that, your position is in {currency}: the gain is converted to euros at today's exchange rate, not the one that would apply on the day of a real sale."
     },
     "realisedGains": {
-      "title": "Realised gains and losses",
-      "subtitle": "The sales you have recorded, matched against their purchases FIFO, converted to euros and grouped by tax year, to help with your Spanish tax return.",
       "yearLabel": "Tax year",
       "download": "Download {year} CSV",
       "downloadError": "The file could not be generated. Please try again.",
@@ -1389,8 +1387,6 @@
         "gainEur": "Gain/loss (EUR)",
         "fxDifferenceEur": "Exchange difference (EUR)"
       },
-      "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures.",
-      "learnMore": "How capital gains are calculated.",
       "salesTitle": "Sales in the year",
       "fxDifference": "Exchange differences",
       "ratesUnavailable": "The ECB exchange rates could not be loaded. Sales in other currencies are left out of the totals; reload the page in a moment.",
@@ -1521,13 +1517,13 @@
       "label": "Portfolio sections",
       "summary": "Summary",
       "positions": "Positions",
-      "gains": "Capital gains",
       "goal": "FIRE goal",
       "addPosition": "Add position",
       "addFirst": "Add your first position",
       "summaryTitle": "Your portfolio",
       "positionsTitle": "Your portfolio positions",
-      "goalTitle": "Your FIRE goal"
+      "goalTitle": "Your FIRE goal",
+      "taxReturn": "Tax return"
     },
     "panel": {
       "close": "Close panel"
@@ -1673,6 +1669,12 @@
       "errorServer": "The server failed. Try again in a moment.",
       "errorInvalid": "Check the data: something is not valid.",
       "errorGeneric": "It could not be saved. Try again."
+    },
+    "taxReturn": {
+      "title": "Tax return",
+      "subtitle": "What your investments add to each year's savings base: sales, dividends, interest, offsets and double taxation relief, with the box of every figure and where it comes from. Indicative: check it against your draft return.",
+      "learnMore": "How to declare investments held with a foreign broker.",
+      "loadError": "Your data could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures."
     }
   },
   "account": {

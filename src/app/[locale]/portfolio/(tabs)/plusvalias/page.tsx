@@ -1,55 +1,12 @@
-import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { permanentRedirect } from "next/navigation";
 
-import { fetchRealisedGainsData } from "@/features/portfolio/api.server";
-import Notice from "@/shared/ui/Notice";
-import { Link } from "@/i18n/navigation";
-import RealisedGainsReport from "@/features/portfolio/components/RealisedGainsReport";
+import { getPathname } from "@/i18n/navigation";
+import { asLocale } from "@/i18n/types";
 
 type Props = { params: Promise<{ locale: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+/** La pestaña Plusvalías pasó a ser Declaración: los enlaces antiguos siguen funcionando. */
+export default async function LegacyGainsPage({ params }: Props) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "portfolio.realisedGains" });
-  // Página privada: nada que indexar.
-  return { title: t("title"), robots: { index: false, follow: false } };
-}
-
-/**
- * Pestaña Plusvalías. Pide sus propios datos (posiciones CON lotes y los tipos del BCE) en vez de
- * usar los del layout: el informe necesita todo el histórico de operaciones, que el resto de
- * pestañas no.
- * La sesión ya la comprueba el layout.
- */
-export default async function RealisedGainsPage({ params }: Props) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
-  const t = await getTranslations("portfolio.realisedGains");
-  const data = await fetchRealisedGainsData();
-
-  return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold text-foreground">{t("title")}</h2>
-        <p className="text-sm text-muted">
-          {t("subtitle")}{" "}
-          <Link href="/aprende/plusvalias-al-vender" className="font-medium text-brand underline underline-offset-2">
-            {t("learnMore")}
-          </Link>
-        </p>
-      </div>
-      {data ? (
-        <RealisedGainsReport
-          positions={data.positions}
-          income={data.income}
-          pendingBalances={data.pendingBalances}
-          rates={data.rates}
-          ratesLoaded={data.ratesLoaded}
-        />
-      ) : (
-        <Notice variant="warning">{t("loadError")}</Notice>
-      )}
-    </div>
-  );
+  permanentRedirect(getPathname({ href: "/portfolio/declaracion", locale: asLocale(locale) }));
 }

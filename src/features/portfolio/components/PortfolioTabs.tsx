@@ -32,7 +32,7 @@ export default function PortfolioTabs() {
   const tabs: Tab[] = [
     { href: "/portfolio", label: t("summary"), usesDisplay: true },
     { href: "/portfolio/posiciones", label: t("positions"), count: openPositions, usesDisplay: true },
-    { href: "/portfolio/plusvalias", label: t("gains"), usesDisplay: false },
+    { href: "/portfolio/declaracion", label: t("taxReturn"), usesDisplay: false },
     { href: "/portfolio/objetivo", label: t("goal"), usesDisplay: true },
   ];
   const active = tabs.find((tab) => tab.href === pathname);

@@ -91,8 +91,7 @@ sale.
 
 ## Sextante's capital gains report
 
-If you record your purchases and sales in the [portfolio](/portfolio), the **Capital
-gains** section (in the portfolio header) prepares the year's summary for you:
+If you record your purchases and sales in the [portfolio](/portfolio), the **Tax return** tab (in the portfolio header) prepares the year's summary for you:
 
 - It matches each sale against its purchases with **FIFO per security**, across all
   your brokers, with purchase fees spread across the units.

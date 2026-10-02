@@ -1356,8 +1356,6 @@
       "disclaimerFx": "Además, tu posición está en {currency}: la ganancia se convierte a euros con el tipo de cambio de hoy, no con el que hubiera el día de una venta real."
     },
     "realisedGains": {
-      "title": "Ganancias y pérdidas realizadas",
-      "subtitle": "Las ventas que has registrado, emparejadas con sus compras por FIFO, pasadas a euros y agrupadas por ejercicio, para preparar la declaración de la renta.",
       "yearLabel": "Ejercicio",
       "download": "Descargar CSV de {year}",
       "downloadError": "No se pudo generar el fichero. Inténtalo de nuevo.",
@@ -1389,8 +1387,6 @@
         "gainEur": "Ganancia/pérdida (EUR)",
         "fxDifferenceEur": "Diferencia de cambio (EUR)"
       },
-      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas.",
-      "learnMore": "Cómo se calculan las plusvalías.",
       "salesTitle": "Ventas del ejercicio",
       "fxDifference": "Diferencias de cambio",
       "ratesUnavailable": "No se pudieron cargar los tipos de cambio del BCE. Las ventas en otra divisa quedan fuera de los totales; recarga la página en unos momentos.",
@@ -1521,13 +1517,13 @@
       "label": "Secciones de la cartera",
       "summary": "Resumen",
       "positions": "Posiciones",
-      "gains": "Plusvalías",
       "goal": "Objetivo FIRE",
       "addPosition": "Añadir posición",
       "addFirst": "Añade tu primera posición",
       "summaryTitle": "Tu cartera",
       "positionsTitle": "Posiciones de tu cartera",
-      "goalTitle": "Tu objetivo FIRE"
+      "goalTitle": "Tu objetivo FIRE",
+      "taxReturn": "Declaración"
     },
     "panel": {
       "close": "Cerrar panel"
@@ -1673,6 +1669,12 @@
       "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
       "errorInvalid": "Revisa los datos: alguno no es válido.",
       "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
+    },
+    "taxReturn": {
+      "title": "Declaración de la Renta",
+      "subtitle": "Lo que tus inversiones aportan a la base del ahorro de cada ejercicio: ventas, dividendos, intereses, compensaciones y doble imposición, con la casilla de cada cifra y de dónde sale. Orientativo: contrástalo con tu borrador.",
+      "learnMore": "Cómo declarar las inversiones de un bróker extranjero.",
+      "loadError": "No se pudieron cargar tus datos. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas."
     }
   },
   "account": {

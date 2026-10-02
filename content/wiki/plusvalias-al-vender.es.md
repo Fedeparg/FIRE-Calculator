@@ -92,7 +92,7 @@ ETF, en general, no admiten traspaso: venderlos para comprar otro es una venta.
 ## El informe de plusvalías de Sextante
 
 Si registras tus compras y ventas en la [cartera](/portfolio), el apartado
-**Plusvalías** (en la cabecera de la cartera) te prepara el resumen del año:
+**Declaración** (en la cabecera de la cartera) te prepara el resumen del año:
 
 - Empareja cada venta con sus compras por **FIFO por valor**, sumando todos tus
   brókers, con las comisiones de compra repartidas entre las participaciones.
