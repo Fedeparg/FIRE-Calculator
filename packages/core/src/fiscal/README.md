@@ -187,6 +187,52 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
 - Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
   posición, como el resto de importes del lote.
 
+## `income.ts`
+
+Rendimientos del capital mobiliario del ejercicio (art. 25 LIRPF): dividendos, intereses y
+recompensas del bróker (saveback, stockperk), con su íntegro y sus retenciones.
+
+- **Recompensas como intereses:** Trade Republic las declara en la casilla de intereses de
+  cuentas con retención del 19 % (sus informes fiscales de 2025, periodos alemán y español). Se
+  sigue ese criterio; la compra en la que se invierten entra con su coste.
+- **Ya en el borrador:** lo que el pagador comunicó a la AEAT (`reportedToAeat`) se separa de lo
+  que hay que añadir a mano. En Trade Republic, todo lo posterior al cambio de custodia a su
+  sucursal española, que retiene e informa con los modelos 187, 189, 193 y 196.
+- **Divisa:** cada cobro se convierte con el tipo del BCE del día de cobro (`fx-reference.ts`).
+- **Procedencia (`ValueSource`):** cada cifra dice de dónde sale: `broker` (tal cual en el
+  fichero), `derived` (aritmética sobre él), `market` (dividendo por acción de mercado),
+  `estimate` (tipo legal del país, sin confirmar) o `manual`. Una estimación nunca se presenta
+  como exacta: la pantalla la marca y cuenta aparte.
+
+## `dividend-resolution.ts`
+
+Reparte un dividendo importado en íntegro, retención en origen y retención española, por capas.
+
+1. **Bróker** (`resolveFromBroker`). El export de Trade Republic cambia de significado según el
+   periodo y el emisor; se distingue por la razón `tax/amount` (verificado contra sus informes
+   fiscales de 2025: periodo español exacto al céntimo):
+   - antes de la sucursal española, `amount` es el íntegro y `tax` la retención en origen;
+   - después, España retiene el 19 % de lo cobrado neto de origen. Si `tax/amount` ≈ 19 %, lo
+     abonado llegó neto de origen y `tax` es solo la española (ASML); si ≈ origen + 19 % del
+     resto, `amount` es el íntegro y `tax` suma ambas (EE. UU. con W-8BEN, 15 %).
+   - **Base del 19 %:** el art. 93.1 RIRPF habla de la "contraprestación íntegra", pero la AEAT
+     explica que el depositario retiene sobre los dividendos netos de la retención en origen
+     (sede.agenciatributaria.gob.es, "Obtención de dividendos procedentes de otro país") y es lo que
+     aplica Trade Republic. No se ha localizado una consulta de la DGT que lo fije.
+   - Deshacer un neto con un tipo supuesto (Países Bajos 15 %) es una **estimación**.
+2. **Mercado** (`resolveWithMarket`): acciones × dividendo por acción de mercado (Yahoo, sin el
+   ajuste por splits posteriores), en la divisa de pago. Si coincide con lo abonado, el bróker dio
+   el íntegro; si es mayor, la diferencia es la retención en origen, sea cual sea el país. Se
+   compara en la divisa de pago y lo derivado se pasa a euros con el cambio implícito del bróker,
+   para que íntegro, retenciones y neto cuadren. Se descarta un dato menor que lo abonado o que
+   implique una retención superior al 40 %. Solo se usa la cotización en la divisa de pago.
+3. **Estimación** (`estimateWithStatutoryRate`): sin dato de mercado, el tipo que retiene por
+   ley el país, con su fuente, marcado como estimación.
+
+**No modela:** retenciones en origen recuperadas después (devoluciones de Suiza, Alemania…), ni
+dividendos de valores sin dato de mercado en la divisa de pago (quedan como estimación o sin
+saber, con aviso).
+
 ## `savings-base.ts`
 
 Integración y compensación de la base imponible del ahorro y cuota por la escala del
