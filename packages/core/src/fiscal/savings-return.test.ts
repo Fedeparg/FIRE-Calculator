@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildIncomeReport, type IncomeEvent } from "./income.js";
 import { buildRealisedGainsReport } from "./realised-gains.js";
-import { buildSavingsReturn } from "./savings-return.js";
+import { buildSavingsReturn, buildSavingsReturns } from "./savings-return.js";
 
 let seq = 0;
 function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "gross">): IncomeEvent {
@@ -119,5 +119,56 @@ describe("buildSavingsReturn", () => {
       pending: [],
     });
     expect(result).toMatchObject({ gainsBalance: 0, capitalIncomeBalance: 0, netTax: 0, result: 0, incomplete: false });
+  });
+});
+
+describe("buildSavingsReturns", () => {
+  it("arrastra la pérdida de un año al siguiente y la compensa", () => {
+    const losing = buildRealisedGainsReport(
+      [
+        {
+          id: "p",
+          ticker: "X",
+          name: null,
+          currency: "EUR",
+          lots: [
+            { id: "b", kind: "buy", quantity: 1, price: 1000, fees: 0, tradedAt: "2023-01-02" },
+            { id: "s", kind: "sell", quantity: 1, price: 600, fees: 0, tradedAt: "2023-06-01" },
+            { id: "b2", kind: "buy", quantity: 1, price: 0, fees: 0, tradedAt: "2024-01-02" },
+            { id: "s2", kind: "sell", quantity: 1, price: 1000, fees: 0, tradedAt: "2025-03-14" },
+          ],
+        },
+      ],
+      {},
+    ).years;
+    const results = buildSavingsReturns({ gains: losing, income: [], incomeEvents: [], rates: {}, manualPending: [] });
+
+    expect(results.map((r) => r.year)).toEqual([2025, 2023]);
+    const [y2025, y2023] = results;
+    expect(y2023.savingsBase.pending).toEqual([{ originYear: 2023, kind: "gains", amount: 400 }]);
+    // 2024 sin datos se recorre igualmente; en 2025 la pérdida de 2023 compensa la ganancia.
+    expect(y2025.savingsBase.base).toBeCloseTo(600, 10);
+  });
+
+  it("aplica los saldos manuales de años que Sextante no calcula y los deja caducar a los cuatro años", () => {
+    const income = [
+      event({ kind: "interest", gross: 100, paidAt: "2021-06-01" }),
+      event({ kind: "interest", gross: 100, paidAt: "2026-06-01" }),
+    ];
+    const results = buildSavingsReturns({
+      gains: [],
+      income: buildIncomeReport(income, {}).years,
+      incomeEvents: income,
+      rates: {},
+      manualPending: [{ originYear: 2020, kind: "capitalIncome", amount: 500 }],
+    });
+    const [y2026, y2021] = results;
+    expect(y2021.savingsBase.base).toBe(0);
+    // Quedaban 400 de 2020: caducan en 2025 (cuatro años: 2021-2024).
+    expect(y2026.savingsBase.base).toBeCloseTo(100, 10);
+  });
+
+  it("sin datos no hay ejercicios", () => {
+    expect(buildSavingsReturns({ gains: [], income: [], incomeEvents: [], rates: {}, manualPending: [] })).toEqual([]);
   });
 });

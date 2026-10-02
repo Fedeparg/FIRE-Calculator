@@ -97,3 +97,43 @@ export function buildSavingsReturn(input: SavingsReturnInput): SavingsReturn {
   };
 }
 
+export interface SavingsReturnsInput {
+  gains: readonly RealisedGainsYear[];
+  income: readonly IncomeYear[];
+  incomeEvents: readonly IncomeEvent[];
+  rates: ReferenceRates;
+  /**
+   * Saldos negativos pendientes al empezar el primer ejercicio que calcula Sextante, de años que
+   * no calcula (los copia el usuario de su última declaración).
+   */
+  manualPending: readonly PendingNegative[];
+}
+
+/**
+ * La base del ahorro de todos los ejercicios con datos, en orden, arrastrando de uno a otro los
+ * saldos negativos pendientes (art. 49 LIRPF: cuatro años). Los años intermedios sin datos
+ * también se recorren, para que los saldos caduquen cuando toca. Devuelve los ejercicios con
+ * ventas o cobros, del más reciente al más antiguo.
+ */
+export function buildSavingsReturns(input: SavingsReturnsInput): SavingsReturn[] {
+  const gainsByYear = new Map(input.gains.map((y) => [y.year, y]));
+  const incomeByYear = new Map(input.income.map((y) => [y.year, y]));
+  const years = [...new Set([...gainsByYear.keys(), ...incomeByYear.keys()])].sort((a, b) => a - b);
+  if (years.length === 0) return [];
+
+  const out: SavingsReturn[] = [];
+  let carried: PendingNegative[] = [...input.manualPending];
+  for (let year = years[0]; year <= years[years.length - 1]; year++) {
+    const result = buildSavingsReturn({
+      year,
+      gains: gainsByYear.get(year),
+      income: incomeByYear.get(year),
+      incomeEvents: input.incomeEvents.filter((event) => event.paidAt.startsWith(String(year))),
+      rates: input.rates,
+      pending: carried,
+    });
+    carried = [...result.savingsBase.pending];
+    if (gainsByYear.has(year) || incomeByYear.has(year)) out.push(result);
+  }
+  return out.reverse();
+}

@@ -8,7 +8,9 @@ import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 import { PortfolioSnapshotsService, HISTORY_MAX_DAYS } from '../portfolio/portfolio-snapshots.service.js';
 import type { IncomeEvent } from '@sextante/core/fiscal/income';
+import type { PendingNegative } from '@sextante/core/fiscal/savings-base';
 import { IncomeService } from '../income/income.service.js';
+import { PendingBalancesService } from '../tax-return/pending-balances.service.js';
 import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
@@ -37,6 +39,7 @@ export type AccountExport = {
   /** Compras y ventas de todas sus posiciones (el histórico del que salen los agregados). */
   positionLots: PositionLotResponse[];
   income: IncomeEvent[];
+  savingsPendingBalances: PendingNegative[];
   /** Serie de valoración diaria, en EUR (la divisa base del histórico). */
   portfolioHistory: HistoryPointDto[];
   savedScenarios: SavedScenarioResponse[];
@@ -55,6 +58,7 @@ export class AccountExportService {
     private readonly positions: PositionsService,
     private readonly lots: PositionLotsService,
     private readonly income: IncomeService,
+    private readonly pendingBalances: PendingBalancesService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly scenarios: SavedScenariosService,
     private readonly grants: OAuthGrantsService,
@@ -71,6 +75,7 @@ export class AccountExportService {
     const positions = await this.positions.findAllByUser(user.id);
     const positionLots = await this.lots.findAllByUser(user.id);
     const income = await this.income.list(user.id);
+    const savingsPendingBalances = await this.pendingBalances.list(user.id);
     // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
     const history = await this.snapshots.history(user.id, HISTORY_MAX_DAYS);
     const savedScenarios = await this.scenarios.findAllByUser(user.id);
@@ -94,6 +99,7 @@ export class AccountExportService {
       positions,
       positionLots,
       income,
+      savingsPendingBalances,
       portfolioHistory: history.points,
       savedScenarios,
       connectedApps,

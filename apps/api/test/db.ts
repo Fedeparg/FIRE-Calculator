@@ -32,6 +32,7 @@ export async function resetDb(db: Database): Promise<void> {
     TRUNCATE TABLE
       position_lots,
       income_events,
+      savings_pending_balances,
       portfolio_snapshots,
       saved_scenarios,
       user_notification_settings,

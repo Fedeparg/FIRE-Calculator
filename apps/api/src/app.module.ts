@@ -22,6 +22,7 @@ import { OauthModule } from './oauth/oauth.module.js';
 import { PortfolioModule } from './portfolio/portfolio.module.js';
 import { PositionsModule } from './positions/positions.module.js';
 import { PricesModule } from './prices/prices.module.js';
+import { TaxReturnModule } from './tax-return/tax-return.module.js';
 import { ScenariosModule } from './scenarios/scenarios.module.js';
 
 @Module({
@@ -42,6 +43,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     HealthModule,
     PositionsModule,
     IncomeModule,
+    TaxReturnModule,
     ImportsModule,
     PricesModule,
     FxReferenceModule,

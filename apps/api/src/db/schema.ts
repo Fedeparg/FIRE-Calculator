@@ -18,6 +18,7 @@ import {
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { IncomeKind, IncomeSource, ValueSource } from '@sextante/core/fiscal/income';
+import type { SavingsGroup } from '@sextante/core/fiscal/savings-base';
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -189,6 +190,30 @@ export const incomeEvents = pgTable(
 );
 
 export type IncomeEventRow = typeof incomeEvents.$inferSelect;
+
+/**
+ * Saldos negativos de la base del ahorro pendientes de compensar que vienen de ejercicios que
+ * Sextante no calcula (los copia el usuario de su última declaración, anexo C.3). Los de los
+ * ejercicios que sí calcula se arrastran solos (`@sextante/core/fiscal/savings-return`).
+ * `amount` es lo pendiente al empezar el primer ejercicio que calcula Sextante.
+ */
+export const savingsPendingBalances = pgTable(
+  'savings_pending_balances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    originYear: integer('origin_year').notNull(),
+    // "gains" (ganancias y pérdidas patrimoniales) o "capitalIncome" (capital mobiliario).
+    kind: varchar('kind', { length: 16 }).$type<SavingsGroup>().notNull(),
+    amount: numeric('amount', { precision: 18, scale: 2 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('savings_pending_balances_user_year_kind_idx').on(table.userId, table.originYear, table.kind),
+  ],
+);
 
 export type PositionLotKind = 'buy' | 'sell';
 

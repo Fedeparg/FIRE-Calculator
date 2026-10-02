@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { SessionModule } from '../auth/session.module.js';
 import { IncomeModule } from '../income/income.module.js';
+import { TaxReturnModule } from '../tax-return/tax-return.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
 import { PortfolioModule } from '../portfolio/portfolio.module.js';
@@ -26,6 +27,7 @@ import { ConnectionsController } from './connections.controller.js';
     ScenariosModule,
     NotificationsModule,
     IncomeModule,
+    TaxReturnModule,
   ],
   controllers: [ConnectionsController, AccountExportController],
   providers: [AccountExportService],
