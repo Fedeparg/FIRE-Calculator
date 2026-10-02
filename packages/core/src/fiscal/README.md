@@ -186,3 +186,60 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
 - Regla de los dos meses (art. 33.5.f).
 - Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
   posición, como el resto de importes del lote.
+
+## `savings-base.ts`
+
+Integración y compensación de la base imponible del ahorro y cuota por la escala del
+ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
+
+- **Qué modela** (arts. 46, 48 y 49 LIRPF): dos grupos, ganancias y pérdidas
+  patrimoniales por transmisión (art. 49.1.b) y rendimientos del capital mobiliario
+  (art. 49.1.a). Un saldo negativo se compensa con el positivo del **otro** grupo con
+  el límite del **25 %** de ese positivo (límite vigente desde 2018). Lo que no cabe
+  queda pendiente **cuatro años** «en el mismo orden establecido en los párrafos
+  anteriores» (art. 49.1): primero contra el positivo de su mismo grupo y después contra
+  el del otro con el 25 %. Se compensa «en la cuantía máxima que permita cada uno de los
+  ejercicios» (art. 49.2). Caducan los saldos con origen anterior a `ejercicio − 4`.
+- **Orden aplicado** (interpretación): primero el saldo negativo del propio ejercicio
+  contra el otro grupo; después los pendientes, del más antiguo al más reciente. El 25 %
+  es único por grupo positivo (se calcula sobre su saldo positivo del ejercicio antes de
+  compensar) y lo comparten el propio ejercicio y los arrastres. La compensación con el
+  mismo grupo no tiene límite porcentual. El texto del art. 49 no fija un orden entre
+  cruzar el saldo del propio ejercicio y aplicar los arrastres; se ha elegido el de la
+  integración anual (primero el ejercicio). A igual año, GPP antes que RCM.
+- `savingsTax(base)` aplica `IRPF_AHORRO` y devuelve cuota íntegra y tipo medio
+  efectivo en % (`null` con base 0).
+- **No modela**: la reducción del art. 55 LIRPF (remanente que reduce la base del
+  ahorro, art. 50.2), deducciones ni rentas exentas. Los tests son de elaboración propia
+  a partir del texto legal: no se encontraron ejemplos numéricos en el Manual práctico
+  de Renta 2025 de la AEAT que reproducir.
+- **Fuentes**: Ley 35/2006, arts. 46, 48, 49 y 50.2 (art. 49 en la redacción de la
+  Ley 26/2014, de 27 de noviembre),
+  https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
+
+## `double-taxation.ts`
+
+Deducción por doble imposición internacional (art. 80 LIRPF) para dividendos del
+extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,
+`excess_withholding`) con país e importe.
+
+- **Qué modela**: deducción total = mín(a) impuesto satisfecho en el extranjero, b) tipo
+  medio efectivo × renta gravada en el extranjero), art. 80.1. Por país, lo
+  acreditable es mín(retención, tipo del convenio × íntegro); la retención por encima
+  del convenio se devuelve como `excessReclaimable` (se reclama en origen, no se
+  deduce en España). El tipo medio se redondea a dos decimales (art. 80.2).
+- **Tabla `TREATY_DIVIDEND_RATES`**: tipo «General» de dividendos de la tabla de la DGT
+  (actualización 01/01/2018), solo países con un único tipo sin nota al pie. No incluye
+  la cláusula matriz-filial ni cambios de convenio posteriores a 2018. Revisar al
+  cambiar de ejercicio.
+- **Prudencia**: sin tipo confirmado en la tabla (país sin convenio o no verificado) no
+  se deduce nada y se avisa. Con retención desconocida tampoco.
+- **Simplificaciones**: el tipo medio efectivo del art. 80.2 es cuota líquida total /
+  base liquidable; aquí se recibe el de la escala del ahorro (cuota íntegra / base,
+  `savingsTax`), sin deducciones. El límite b) usa el íntegro de todas las rentas
+  extranjeras, sin descontar gastos. No modela intereses, cánones ni ganancias del
+  extranjero ni la devolución efectiva en origen.
+- **Fuentes**: Ley 35/2006, art. 80,
+  https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 ; DGT, «Límites de imposición
+  sobre dividendos, intereses y cánones resultantes de los CDI»,
+  https://www.hacienda.gob.es/SGT/NormativaDoctrina/Tributaria/CDI/Documentacion/Limites_Imposicion_CDI.pdf
