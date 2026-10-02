@@ -247,6 +247,21 @@ mercado; lo que sale de aquí se marca como estimación y la pantalla lo avisa.
 - Distinto del convenio (`double-taxation.ts`): lo retenido por encima del convenio no se deduce en
   España y se reclama en origen (Suiza 35 % → 15 %, Alemania 26,375 % → 15 %).
 
+## `tax-boxes.ts`
+
+Casillas del modelo 100 con las que se presenta cada cifra. Cambian cada ejercicio: un año sin
+tabla verificada se muestra sin números de casilla, nunca con los de otro año.
+
+- **2025:** Orden HAC/277/2026, de 25 de marzo (BOE-A-2026-7041), números leídos del formulario
+  del propio modelo; las de capital mobiliario y la 0597 contrastadas con el Manual práctico de
+  Renta 2025. Acciones por entidad emisora (0326-0340: valor de transmisión 0328 y de adquisición
+  0331, importes globales por entidad); fondos y ETF no sujetos a retención (2224-2236); IIC con
+  retención (0310-0325, cuando el depositario español retiene en el reembolso); otros elementos
+  patrimoniales (1624-1654).
+- **Derivados:** el modelo no los nombra. Van en otros elementos patrimoniales por exclusión
+  (Trade Republic los pone ahí en su informe fiscal). Es una inferencia: confianza baja.
+- **Doble imposición:** solo el importe global (0588); el detalle por país no está en la Orden.
+
 ## `savings-base.ts`
 
 Integración y compensación de la base imponible del ahorro y cuota por la escala del
