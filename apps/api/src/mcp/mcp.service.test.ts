@@ -102,6 +102,9 @@ function makeService() {
       ],
     }),
   };
+  const taxReturn = {
+    build: vi.fn().mockResolvedValue({ year: 2025, availableYears: [2025], savings: null }),
+  };
   const service = new McpService(
     { findAllByUser: vi.fn().mockResolvedValue(positions) } as never,
     { findAllByUser: vi.fn().mockResolvedValue(lots) } as never,
@@ -111,9 +114,10 @@ function makeService() {
     {} as never,
     referenceRates as never,
     { list: vi.fn().mockResolvedValue([]) } as never,
+    taxReturn as never,
     audit as never,
   );
-  return { service, audit, valuation, scenarios };
+  return { service, audit, valuation, scenarios, taxReturn };
 }
 
 async function connect(service: McpService): Promise<Client> {
@@ -152,6 +156,7 @@ describe('McpService', () => {
         'update_income',
         'delete_income',
         'get_realised_gains',
+        'get_tax_return_report',
         'get_portfolio_breakdown',
         'get_fire_goal_progress',
         'list_saved_scenarios',
@@ -272,6 +277,26 @@ describe('McpService', () => {
 
     const none = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2024 } }));
     expect(none).toEqual({ years: [] });
+  });
+
+  it('sirve el informe de la Renta del ejercicio pedido o, sin él, el del último con datos', async () => {
+    const { service, taxReturn, audit } = makeService();
+    client = await connect(service);
+    const { tools } = await client.listTools();
+    expect(tools.find((t) => t.name === 'get_tax_return_report')?.annotations).toMatchObject({ readOnlyHint: true });
+
+    expect(parse(await client.callTool({ name: 'get_tax_return_report', arguments: { year: 2025 } }))).toEqual({
+      year: 2025,
+      availableYears: [2025],
+      savings: null,
+    });
+    expect(taxReturn.build).toHaveBeenLastCalledWith(USER, 2025);
+    parse(await client.callTool({ name: 'get_tax_return_report', arguments: {} }));
+    expect(taxReturn.build).toHaveBeenLastCalledWith(USER, undefined);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_tax_return_report', 'ok');
+
+    const invalid = await client.callTool({ name: 'get_tax_return_report', arguments: { year: 1800 } });
+    expect(invalid.isError).toBe(true);
   });
 
   it('mide el objetivo FIRE con el valor de mercado real de la cartera', async () => {

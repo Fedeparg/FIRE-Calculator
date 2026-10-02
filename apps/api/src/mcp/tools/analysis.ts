@@ -15,6 +15,7 @@ import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.s
 import { PositionLotsService } from '../../positions/position-lots.service.js';
 import { PositionsService } from '../../positions/positions.service.js';
 import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
+import { TaxReturnService } from '../../tax-return/tax-return.service.js';
 import { jsonResult } from '../mcp-results.js';
 import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-schemas.js';
 import { InvalidToolInputError, type ToolRunner } from './tool-runner.js';
@@ -25,6 +26,7 @@ export type AnalysisToolDeps = {
   valuation: PortfolioValuationService;
   scenarios: SavedScenariosService;
   referenceRates: ReferenceRatesService;
+  taxReturn: TaxReturnService;
 };
 
 /** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
@@ -90,6 +92,47 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
         return jsonResult({ years });
       }),
+  );
+
+  server.registerTool(
+    'get_tax_return_report',
+    {
+      title: 'Base del ahorro de un ejercicio (para rellenar la Renta WEB)',
+      description:
+        'Informe de la base del ahorro de un ejercicio para ayudar a rellenar la Renta WEB, ' +
+        'montado con las mismas funciones que la web. Bloques: `gains` = ventas de valores ' +
+        '(FIFO, en euros, con valor de transmisión, de adquisición y resultado de cada venta ' +
+        'en `sales`, más la diferencia de cambio `fxDifference`); `income` = intereses y ' +
+        'dividendos cobrados (rendimientos del capital mobiliario, con retenciones en origen ' +
+        'y en España y la parte que ya consta en el borrador de la AEAT); `incomeEvents` = ' +
+        'cada cobro; `savings` = la base del ahorro: saldo de ganancias y pérdidas, ' +
+        'rendimientos del capital, compensación de saldos negativos de años anteriores ' +
+        '(incluidos los pendientes que el usuario introdujo a mano), cuota, deducción por ' +
+        'doble imposición internacional y retenciones españolas (`result` = cuota − ' +
+        'retenciones). `availableYears` lista los ejercicios con datos; `null` en un bloque ' +
+        'significa que ese ejercicio no tiene datos de ese tipo. Las cifras son orientativas, ' +
+        'no asesoramiento, y no sustituyen al borrador de la AEAT: contrástalas con él. ' +
+        'Cada cifra lleva su procedencia: en los cobros, `grossSource` y ' +
+        '`withholdingOriginSource` valen `broker` (dato del bróker), `derived` (calculado a ' +
+        'partir de datos del bróker), `market` (dato de mercado), `estimate` (estimación, p. ' +
+        'ej. el tipo legal de retención del país: hay que contrastarla con el certificado del ' +
+        'pagador) o `manual` (lo escribió el usuario); en las ventas, `eur` indica el tipo ' +
+        'del BCE (y su fecha) aplicado a la venta y a cada compra. Si `incomplete` es true o ' +
+        '`ratesLoaded` es false, la cifra está incompleta (ventas o cobros sin tipo de cambio, ' +
+        'o retención en origen desconocida) y debes avisar al usuario. Solo lectura.',
+      inputSchema: {
+        year: z
+          .number()
+          .int()
+          .min(1990)
+          .max(2100)
+          .optional()
+          .describe('Ejercicio fiscal. Sin valor, el último ejercicio con ventas o cobros.'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ year }) =>
+      runner.run('get_tax_return_report', async () => jsonResult(await deps.taxReturn.build(runner.userId, year))),
   );
 
   server.registerTool(
