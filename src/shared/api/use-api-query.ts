@@ -5,9 +5,7 @@ import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import { ApiError, apiJson, isAbortError } from "./client";
 
 export type ApiQueryState<T> =
-  | { status: "loading" }
-  | { status: "ready"; data: T }
-  | { status: "error"; error: ApiError };
+  { status: "loading" } | { status: "ready"; data: T } | { status: "error"; error: ApiError };
 
 export type ApiQueryOptions<T = unknown> = {
   /** Opciones de `fetch` (p. ej. `cache: "no-store"`). Deben ser estables entre renders (constante de módulo). */
