@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { IncomeModule } from '../income/income.module.js';
 import { FxReferenceModule } from '../fx-reference/fx-reference.module.js';
 import { PortfolioModule } from '../portfolio/portfolio.module.js';
 import { PositionsModule } from '../positions/positions.module.js';
@@ -12,7 +13,7 @@ import { McpService } from './mcp.service.js';
 @Module({
   // `PricesModule`: el buscador `INSTRUMENT_SEARCH` de la tool `search_instruments`, el mismo del alta de posiciones.
   // `FxReferenceModule`: los tipos del BCE con los que `get_realised_gains` pasa las ventas a euros.
-  imports: [PositionsModule, PortfolioModule, PricesModule, ScenariosModule, FxReferenceModule],
+  imports: [PositionsModule, PortfolioModule, PricesModule, ScenariosModule, FxReferenceModule, IncomeModule],
   providers: [McpService, McpAuditService],
   exports: [McpService],
 })

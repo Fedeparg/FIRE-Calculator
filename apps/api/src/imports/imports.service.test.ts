@@ -5,7 +5,8 @@ import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { positionLots, positions } from '../db/schema.js';
+import { incomeEvents, positionLots, positions } from '../db/schema.js';
+import { IncomeService } from '../income/income.service.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack, pricesStub } from '../../test/positions-stack.js';
@@ -60,7 +61,13 @@ describe('ImportsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new ImportsService(db, buildPositionsStack(db).lots, pricesStub, new EventEmitter2());
+    service = new ImportsService(
+      db,
+      buildPositionsStack(db).lots,
+      pricesStub,
+      new EventEmitter2(),
+      new IncomeService(db),
+    );
   });
 
   afterEach(async () => {
@@ -148,7 +155,7 @@ describe('ImportsService (integración con Postgres)', () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-    const svc = new ImportsService(db, buildPositionsStack(db).lots, pricesStub, events);
+    const svc = new ImportsService(db, buildPositionsStack(db).lots, pricesStub, events, new IncomeService(db));
     const userId = await insertUser(db, 'a@example.com');
 
     await svc.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1)));
@@ -324,12 +331,12 @@ describe('ImportsService (integración con Postgres)', () => {
         trade('BUY', ETF, '1', '100', 3, { tax: '-0.30' }),
         trade('BUY', ETF, '1', '100', 4, { type: 'DIVIDEND', shares: '', price: '' }),
         trade('BUY', ETF, '1', '100', 5, { type: 'DIVIDEND', shares: '', price: '' }),
-        trade('BUY', ETF, '1', '100', 6, { type: 'INTEREST_PAYMENT', shares: '', price: '' }),
+        trade('BUY', ETF, '1', '100', 6, { type: 'CARD_TRANSACTION', shares: '', price: '' }),
       ),
     );
     expect(plan.skipped).toEqual([
       { reason: 'dividend', count: 2 },
-      { reason: 'interest', count: 1 },
+      { reason: 'cash_movement', count: 1 },
     ]);
     expect(plan.warnings).toEqual([{ code: 'trade_tax_ignored', count: 1 }]);
   });
@@ -339,5 +346,77 @@ describe('ImportsService (integración con Postgres)', () => {
     const error = await service.preview(userId, 'a,b\n1,2\n').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(BadRequestException);
     expect((error as BadRequestException).getResponse()).toMatchObject({ code: 'NOT_TRADE_REPUBLIC' });
+  });
+});
+
+describe('ImportsService — cobros (integración con Postgres)', () => {
+  let db: Database;
+  let close: () => Promise<void>;
+  let service: ImportsService;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+    service = new ImportsService(
+      db,
+      buildPositionsStack(db).lots,
+      pricesStub,
+      new EventEmitter2(),
+      new IncomeService(db),
+    );
+  });
+  afterEach(() => resetDb(db));
+  afterAll(() => close());
+
+  const interest = (date: string, amount: string, tax: string) =>
+    trade('BUY', ETF, '', '', 1, {
+      datetime: `${date}T22:00:00.000000Z`,
+      date,
+      category: 'CASH',
+      type: 'INTEREST_PAYMENT',
+      asset_class: '',
+      name: '',
+      symbol: '',
+      shares: '',
+      price: '',
+      amount,
+      tax,
+    });
+
+  it('la vista previa cuenta los cobros sin escribirlos y la confirmación los guarda una sola vez', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    const file = csv(
+      interest('2025-01-01', '1.48', ''),
+      interest('2025-07-01', '1.50', '-0.29'),
+      trade('BUY', ETF, '1', '100', 3),
+    );
+
+    const plan = await service.preview(userId, file);
+    expect(plan.income).toEqual({ created: 2, duplicates: 0, reportedToAeat: 1 });
+    expect(await db.select().from(incomeEvents)).toEqual([]);
+
+    const first = await service.confirm(userId, file);
+    expect(first.income).toEqual({ created: 2, duplicates: 0, reportedToAeat: 1 });
+    const rows = await db.select().from(incomeEvents).orderBy(asc(incomeEvents.paidAt));
+    expect(rows.map((r) => [r.kind, r.paidAt, r.gross, r.withholdingSpain, r.reportedToAeat, r.positionId])).toEqual([
+      ['interest', '2025-01-01', '1.480000', '0.000000', false, null],
+      ['interest', '2025-06-30', '1.500000', '0.290000', true, null],
+    ]);
+    expect(
+      rows.every(
+        (r) => r.userId === userId && r.source === 'trade_republic' && r.externalId?.startsWith('trade-republic:'),
+      ),
+    ).toBe(true);
+
+    const again = await service.confirm(userId, file);
+    expect(again.income).toEqual({ created: 0, duplicates: 2, reportedToAeat: 0 });
+    expect(await db.select().from(incomeEvents)).toHaveLength(2);
+  });
+
+  it('los cobros de un usuario no chocan con los mismos ids de otro', async () => {
+    const a = await insertUser(db, 'a@example.com');
+    const b = await insertUser(db, 'b@example.com');
+    const file = csv(interest('2025-01-01', '1.48', ''));
+    await service.confirm(a, file);
+    expect((await service.confirm(b, file)).income.created).toBe(1);
   });
 });

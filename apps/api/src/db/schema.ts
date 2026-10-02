@@ -17,6 +17,7 @@ import {
 } from 'drizzle-orm/pg-core';
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
+import type { IncomeKind, IncomeSource } from '@sextante/core/fiscal/income';
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -132,6 +133,54 @@ export const positionLots = pgTable(
     index('position_lots_traded_at_idx').on(table.tradedAt),
   ],
 );
+
+/**
+ * Cobros que tributan como rendimientos del capital mobiliario: dividendos, intereses y
+ * recompensas del bróker (`@sextante/core/fiscal/income`). Van aparte de los lotes porque no
+ * mueven la cantidad de ninguna posición; `positionId` es opcional (un interés de cuenta no tiene
+ * posición) y se pone a NULL si la posición se borra: el cobro sigue siendo del ejercicio.
+ */
+export const incomeEvents = pgTable(
+  'income_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    positionId: uuid('position_id').references(() => positions.id, { onDelete: 'set null' }),
+    kind: varchar('kind', { length: 10 }).$type<IncomeKind>().notNull(),
+    paidAt: date('paid_at').notNull(),
+    isin: varchar('isin', { length: 12 }),
+    name: varchar('name', { length: 100 }),
+    // País de la fuente (ISO 3166-1 alfa-2), para la doble imposición.
+    country: varchar('country', { length: 2 }),
+    currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+    // Íntegro; negativo solo en la anulación de un cobro importado.
+    gross: numeric('gross', { precision: 18, scale: 6 }).notNull(),
+    // NULL = no se sabe (no es lo mismo que 0).
+    withholdingOrigin: numeric('withholding_origin', { precision: 18, scale: 6 }),
+    withholdingSpain: numeric('withholding_spain', { precision: 18, scale: 6 }).notNull().default('0'),
+    // El pagador ya lo comunicó a la AEAT: puede estar en el borrador.
+    reportedToAeat: boolean('reported_to_aeat').notNull().default(false),
+    source: varchar('source', { length: 20 }).$type<IncomeSource>().notNull(),
+    // Como en `position_lots`: "trade-republic:<uuid>", NULL si es manual.
+    externalId: varchar('external_id', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('income_events_user_paid_at_idx').on(table.userId, table.paidAt),
+    index('income_events_position_id_idx').on(table.positionId),
+    uniqueIndex('income_events_user_external_id_idx')
+      .on(table.userId, table.externalId)
+      .where(sql`${table.externalId} is not null`),
+  ],
+);
+
+export type IncomeEventRow = typeof incomeEvents.$inferSelect;
 
 export type PositionLotKind = 'buy' | 'sell';
 

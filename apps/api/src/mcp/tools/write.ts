@@ -1,6 +1,8 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
+import { incomeFieldsSchema } from '../../income/dto/create-income.dto.js';
+import { IncomeService } from '../../income/income.service.js';
 import { combinePositionSchema } from '../../positions/dto/combine-position.dto.js';
 import { createPositionSchema } from '../../positions/dto/create-position.dto.js';
 import { createPositionLotSchema } from '../../positions/dto/create-position-lot.dto.js';
@@ -13,6 +15,7 @@ import type { ToolRunner } from './tool-runner.js';
 export type WriteToolDeps = {
   positions: PositionsService;
   lots: PositionLotsService;
+  income: IncomeService;
 };
 
 /**
@@ -145,6 +148,62 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
       runner.runWrite('delete_position_lot', async () => {
         await deps.lots.remove(runner.userId, positionId, lotId);
         return jsonResult({ deleted: true, lotId });
+      }),
+  );
+
+  server.registerTool(
+    'add_income',
+    {
+      title: 'Registrar un dividendo, interés o recompensa',
+      description:
+        'Añade un cobro que tributa como rendimiento del capital mobiliario, con su fecha de ' +
+        'cobro, el íntegro y las retenciones (en origen y en España). Para un dividendo ' +
+        'extranjero indica `country` y la retención en origen: hacen falta para la deducción ' +
+        'por doble imposición. Requiere permiso de escritura.',
+      inputSchema: incomeFieldsSchema.shape,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    },
+    (args) =>
+      runner.runWrite('add_income', async () => {
+        const income = await deps.income.create(runner.userId, args);
+        return jsonResult({ income });
+      }),
+  );
+
+  server.registerTool(
+    'update_income',
+    {
+      title: 'Editar un cobro',
+      description:
+        'Actualiza los campos indicados de un cobro (por id); solo cambian los enviados. ' +
+        'Requiere permiso de escritura.',
+      inputSchema: {
+        id: z.string().min(1).describe('Id del cobro.'),
+        ...incomeFieldsSchema.partial().shape,
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    },
+    ({ id, ...rest }) =>
+      runner.runWrite('update_income', async () => {
+        const income = await deps.income.update(runner.userId, id, rest);
+        return jsonResult({ income });
+      }),
+  );
+
+  server.registerTool(
+    'delete_income',
+    {
+      title: 'Borrar un cobro',
+      description: 'Elimina un cobro (por id). Acción irreversible. Requiere permiso de escritura.',
+      inputSchema: {
+        id: z.string().min(1).describe('Id del cobro a borrar.'),
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+    },
+    ({ id }) =>
+      runner.runWrite('delete_income', async () => {
+        await deps.income.remove(runner.userId, id);
+        return jsonResult({ deleted: true, id });
       }),
   );
 }

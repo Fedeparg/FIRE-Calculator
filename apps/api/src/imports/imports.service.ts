@@ -8,7 +8,9 @@ import {
 } from '@sextante/core/imports/trade-republic';
 import type {
   ImportedAssetClass,
+  ImportedIncome,
   ImportedTrade,
+  ImportIncomeSummary,
   ImportFailureCode,
   ImportParseResult,
   ImportPlan,
@@ -21,6 +23,7 @@ import type {
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type Position, type PositionLot } from '../db/schema.js';
+import { IncomeService } from '../income/income.service.js';
 import { PricesService } from '../prices/prices.service.js';
 import { aggregateLots, LotAggregateError } from '../positions/lot-aggregate.js';
 import { type DatabaseOrTransaction } from '../positions/position-access.js';
@@ -64,6 +67,7 @@ export class ImportsService {
     private readonly lots: PositionLotsService,
     private readonly prices: PricesService,
     private readonly events: EventEmitter2,
+    private readonly income: IncomeService,
   ) {}
 
   /** Calcula qué haría la confirmación, sin escribir nada. */
@@ -103,6 +107,7 @@ export class ImportsService {
         newLots: sum(planned.map((p) => p.newBuys + p.newSells)),
         duplicates: sum(planned.map((p) => p.duplicates)),
       },
+      income: await this.planIncome(userId, parsed.income),
       skipped: summarizeSkipped(parsed),
       warnings: parsed.warnings,
     };
@@ -158,6 +163,9 @@ export class ImportsService {
       );
     }
 
+    // Después de las posiciones: un dividendo se enlaza con la posición de su ISIN, aunque sea nueva.
+    const income = await this.importIncome(userId, parsed.income);
+
     // Importar sobre posiciones que ya existían puede traer operaciones antiguas: se rehace el
     // histórico al momento (las nuevas ya lo hacen con `POSITION_CREATED_EVENT`).
     for (const position of extended) {
@@ -175,8 +183,63 @@ export class ImportsService {
         duplicates: sum(results.map((r) => r.duplicates)),
         failedPositions: results.filter((r) => r.status === 'failed').length,
       },
+      income,
       skipped: summarizeSkipped(parsed),
       warnings: parsed.warnings,
+    };
+  }
+
+  /** Qué cobros del fichero se crearían. */
+  private async planIncome(userId: string, items: readonly ImportedIncome[]): Promise<ImportIncomeSummary> {
+    const known = await this.income.findImportedIds(userId, items.map(incomeExternalIdOf));
+    const fresh = items.filter((item) => !known.has(incomeExternalIdOf(item)));
+    return {
+      created: fresh.length,
+      duplicates: items.length - fresh.length,
+      reportedToAeat: fresh.filter((item) => item.reportedToAeat).length,
+    };
+  }
+
+  /**
+   * Guarda los cobros en una transacción, enlazando cada uno con la posición de Trade Republic de su
+   * ISIN si la hay. Idempotente por `external_id`.
+   */
+  private async importIncome(userId: string, items: readonly ImportedIncome[]): Promise<ImportIncomeSummary> {
+    if (items.length === 0) return { created: 0, duplicates: 0, reportedToAeat: 0 };
+    const known = await this.income.findImportedIds(userId, items.map(incomeExternalIdOf));
+    const fresh = items.filter((item) => !known.has(incomeExternalIdOf(item)));
+    const isins = [...new Set(fresh.map((item) => item.isin).filter((isin): isin is string => isin !== null))];
+    const positionByIsin = new Map<string, string>();
+    if (isins.length > 0) {
+      const rows = await this.db
+        .select({ id: positions.id, ticker: positions.ticker })
+        .from(positions)
+        .where(
+          and(
+            eq(positions.userId, userId),
+            inArray(positions.ticker, isins),
+            sql`lower(${positions.broker}) = lower(${TRADE_REPUBLIC_BROKER})`,
+          ),
+        );
+      for (const row of rows) positionByIsin.set(row.ticker, row.id);
+    }
+
+    const created = await this.db.transaction((tx) =>
+      this.income.appendImported(
+        tx,
+        userId,
+        fresh.map((item) => ({
+          ...item,
+          externalId: incomeExternalIdOf(item),
+          positionId: item.isin ? (positionByIsin.get(item.isin) ?? null) : null,
+        })),
+      ),
+    );
+    return {
+      created,
+      // Incluye lo que otra petición concurrente importó entre la lectura y la escritura.
+      duplicates: items.length - created,
+      reportedToAeat: fresh.filter((item) => item.reportedToAeat).length,
     };
   }
 
@@ -342,6 +405,10 @@ const ID_BATCH_SIZE = 500;
 
 function externalIdOf(trade: ImportedTrade): string {
   return `${EXTERNAL_ID_PREFIX}${trade.externalId}`;
+}
+
+function incomeExternalIdOf(item: ImportedIncome): string {
+  return `${EXTERNAL_ID_PREFIX}${item.externalId}`;
 }
 
 function toLotInput(trade: ImportedTrade) {

@@ -7,6 +7,8 @@ import { NotificationSettingsService } from '../notifications/notification-setti
 import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 import { PortfolioSnapshotsService, HISTORY_MAX_DAYS } from '../portfolio/portfolio-snapshots.service.js';
+import type { IncomeEvent } from '@sextante/core/fiscal/income';
+import { IncomeService } from '../income/income.service.js';
 import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
@@ -34,6 +36,7 @@ export type AccountExport = {
   positions: PositionResponse[];
   /** Compras y ventas de todas sus posiciones (el histórico del que salen los agregados). */
   positionLots: PositionLotResponse[];
+  income: IncomeEvent[];
   /** Serie de valoración diaria, en EUR (la divisa base del histórico). */
   portfolioHistory: HistoryPointDto[];
   savedScenarios: SavedScenarioResponse[];
@@ -51,6 +54,7 @@ export class AccountExportService {
   constructor(
     private readonly positions: PositionsService,
     private readonly lots: PositionLotsService,
+    private readonly income: IncomeService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly scenarios: SavedScenariosService,
     private readonly grants: OAuthGrantsService,
@@ -66,6 +70,7 @@ export class AccountExportService {
   async export(user: SessionUser): Promise<AccountExport> {
     const positions = await this.positions.findAllByUser(user.id);
     const positionLots = await this.lots.findAllByUser(user.id);
+    const income = await this.income.list(user.id);
     // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
     const history = await this.snapshots.history(user.id, HISTORY_MAX_DAYS);
     const savedScenarios = await this.scenarios.findAllByUser(user.id);
@@ -88,6 +93,7 @@ export class AccountExportService {
       exportedAt: new Date().toISOString(),
       positions,
       positionLots,
+      income,
       portfolioHistory: history.points,
       savedScenarios,
       connectedApps,

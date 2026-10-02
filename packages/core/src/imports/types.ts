@@ -109,10 +109,15 @@ export type ImportPlanPosition = {
   isDerivative: boolean;
 };
 
+/** Cobros del fichero: nuevos, ya importados y cuántos de los nuevos ya comunicó el bróker a la AEAT. */
+export type ImportIncomeSummary = { created: number; duplicates: number; reportedToAeat: number };
+
 export type ImportPlan = {
   broker: string;
   positions: ImportPlanPosition[];
   totals: { newLots: number; duplicates: number };
+  /** En la vista previa, `created` son los que se crearían. */
+  income: ImportIncomeSummary;
   skipped: SkippedSummary[];
   warnings: ImportWarning[];
 };
@@ -131,6 +136,7 @@ export type ImportResult = {
   broker: string;
   positions: ImportResultPosition[];
   totals: { lotsCreated: number; duplicates: number; failedPositions: number };
+  income: ImportIncomeSummary;
   skipped: SkippedSummary[];
   warnings: ImportWarning[];
 };

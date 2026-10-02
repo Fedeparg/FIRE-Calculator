@@ -148,6 +148,13 @@
       "when": 1790975326569,
       "tag": "0020_fx_reference_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790977060486,
+      "tag": "0021_income_events",
+      "breakpoints": true
     }
   ]
 }

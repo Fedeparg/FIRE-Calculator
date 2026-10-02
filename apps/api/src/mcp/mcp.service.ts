@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
+import { IncomeService } from '../income/income.service.js';
 import { ReferenceRatesService } from '../fx-reference/reference-rates.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service.js';
@@ -34,6 +35,7 @@ export class McpService {
     private readonly scenarios: SavedScenariosService,
     @Inject(INSTRUMENT_SEARCH) private readonly instruments: InstrumentSearchProvider,
     private readonly referenceRates: ReferenceRatesService,
+    private readonly income: IncomeService,
     private readonly audit: McpAuditService,
   ) {}
 
@@ -52,7 +54,8 @@ export class McpService {
           '`{ calculator: <slug>, inputs: {...} }`. Los porcentajes van en base 100. ' +
           '(2) Cartera: leer, analizar y (con permiso de ' +
           'escritura) modificar las posiciones del usuario autenticado, incluidas las ' +
-          'plusvalías realizadas por ejercicio para la declaración de la Renta, el reparto por ' +
+          'plusvalías realizadas por ejercicio para la declaración de la Renta, los dividendos e ' +
+          'intereses cobrados (`list_income`), el reparto por ' +
           'activo/bróker/divisa y el progreso hacia su objetivo FIRE. Los escenarios que el ' +
           'usuario guardó en las calculadoras están en `list_saved_scenarios`. Todo es ' +
           'orientativo y no constituye asesoramiento. Los importes de cada posición están en su ' +
@@ -73,6 +76,7 @@ export class McpService {
       scenarios: this.scenarios,
       instruments: this.instruments,
       referenceRates: this.referenceRates,
+      income: this.income,
     };
     registerReadTools(server, runner, deps);
     registerAnalysisTools(server, runner, deps);

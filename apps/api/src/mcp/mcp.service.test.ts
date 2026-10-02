@@ -110,6 +110,7 @@ function makeService() {
     scenarios as never,
     {} as never,
     referenceRates as never,
+    { list: vi.fn().mockResolvedValue([]) } as never,
     audit as never,
   );
   return { service, audit, valuation, scenarios };
@@ -146,6 +147,10 @@ describe('McpService', () => {
     expect(names).toEqual(
       expect.arrayContaining([
         'list_positions',
+        'list_income',
+        'add_income',
+        'update_income',
+        'delete_income',
         'get_realised_gains',
         'get_portfolio_breakdown',
         'get_fire_goal_progress',

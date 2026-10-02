@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { SessionModule } from '../auth/session.module.js';
+import { IncomeModule } from '../income/income.module.js';
 import { NotificationsModule } from '../notifications/notifications.module.js';
 import { OauthModule } from '../oauth/oauth.module.js';
 import { PortfolioModule } from '../portfolio/portfolio.module.js';
@@ -17,7 +18,15 @@ import { ConnectionsController } from './connections.controller.js';
  * `SessionModule` para que `JwtAuthGuard` valide la cookie de sesión.
  */
 @Module({
-  imports: [OauthModule, SessionModule, PositionsModule, PortfolioModule, ScenariosModule, NotificationsModule],
+  imports: [
+    OauthModule,
+    SessionModule,
+    PositionsModule,
+    PortfolioModule,
+    ScenariosModule,
+    NotificationsModule,
+    IncomeModule,
+  ],
   controllers: [ConnectionsController, AccountExportController],
   providers: [AccountExportService],
 })
