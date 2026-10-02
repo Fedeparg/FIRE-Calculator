@@ -73,7 +73,7 @@ Lo retenido **por encima del convenio** no se deduce. Se reclama en el país de
 origen. Ejemplos habituales: Suiza retiene el 35 % y el convenio permite el 15 %.
 Alemania retiene el 26,375 % frente al mismo 15 %.
 
-Los convenios cambian. Japón retiene el 5 % desde 2021 (BOE-A-2021-2977). Dinamarca
+Los convenios cambian. Con Japón, el límite es el 5 % desde 2021 (BOE-A-2021-2977), aunque allí se retiene el 15,315 %. Dinamarca
 no tiene convenio con España desde 2009, así que se deduce lo pagado con el límite
 del tipo medio. Para cada país, consulta los folletos de la AEAT "Residentes con
 rentas extranjeras".
@@ -121,8 +121,9 @@ obligación sigue.
 
 Para Trade Republic, la DGT (V2475-25) dice que una cuenta de efectivo con IBAN
 español, asignada a la sucursal española, no está "en el extranjero". La consulta se
-refiere a esa cuenta. Si tienes dudas con los valores o con otro bróker, pregunta a
-un asesor.
+refiere a esa cuenta, y advierte de que el dinero que acabe en una cuenta ómnibus de un
+banco extranjero sí cuenta. Si tienes dudas con los valores o con otro bróker,
+pregunta a un asesor.
 
 ## Cómo te ayuda Sextante
 

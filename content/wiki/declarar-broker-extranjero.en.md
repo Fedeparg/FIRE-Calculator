@@ -75,7 +75,7 @@ Anything withheld **above the treaty rate** is not deducted. You claim it back i
 source country. Common examples: Switzerland withholds 35% and the treaty allows 15%.
 Germany withholds 26.375% against the same 15%.
 
-Treaties change. Japan withholds 5% since 2021 (BOE-A-2021-2977). Denmark has had no
+Treaties change. With Japan the cap has been 5% since 2021 (BOE-A-2021-2977), although Japan withholds 15.315%. Denmark has had no
 treaty with Spain since 2009, so you deduct what you paid, capped by the average
 rate. For each country, see the AEAT leaflets "Residentes con rentas extranjeras".
 
@@ -120,8 +120,9 @@ estate), you must report them with modelo 720. The 2022 CJEU ruling (C-788/19) a
 Law 5/2022 removed the disproportionate penalties, but the obligation remains.
 
 For Trade Republic, the DGT (V2475-25) says a cash account with a Spanish IBAN,
-assigned to the Spanish branch, is not "abroad". The ruling covers that account. If
-you are unsure about securities or another broker, ask an adviser.
+assigned to the Spanish branch, is not "abroad". The ruling covers that account and
+warns that money ending up in an omnibus account at a foreign bank does count. If you
+are unsure about securities or another broker, ask an adviser.
 
 ## How Sextante helps
 
