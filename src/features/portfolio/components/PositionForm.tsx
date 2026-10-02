@@ -56,7 +56,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     broker: editing?.broker ?? "",
     currency: toCurrency(editing?.currency),
   });
-  const { ticker, name, quantity, avgPrice, broker, currency } = values;
+  const { ticker, name, quantity, avgPrice, broker, currency, assetClass } = values;
   const [status, setStatus] = useState<Status>("idle");
   const [errorKey, setErrorKey] = useState<PositionErrorKey | null>(null);
   // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
@@ -92,6 +92,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     avgPrice: avgPriceNum,
     broker: broker.trim() || undefined,
     currency,
+    assetClass,
   });
 
   async function handleSubmit(event: React.FormEvent) {

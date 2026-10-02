@@ -448,6 +448,17 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
     expect(row).toMatchObject({ kind: 'dividend', isin: STOCK, positionId: position.id, gross: '1.360000' });
   });
 
+  it('guarda la clase de activo del bróker en las posiciones, también en las que no la tenían', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    await service.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1), trade('BUY', DERIVATIVE, '1', '10', 1)));
+    await db.update(positions).set({ assetClass: null }).where(eq(positions.ticker, ETF));
+    await service.confirm(userId, csv(trade('BUY', ETF, '1', '100', 2)));
+
+    const byTicker = new Map((await positionsOf(userId)).map((p) => [p.ticker, p.assetClass]));
+    expect(byTicker.get(ETF)).toBe('fund');
+    expect(byTicker.get(DERIVATIVE)).toBe('derivative');
+  });
+
   it('los cobros de un usuario no chocan con los mismos ids de otro', async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');

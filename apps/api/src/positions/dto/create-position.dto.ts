@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
+import { ASSET_CLASSES } from '@sextante/core/portfolio/types';
 
 /**
  * Tope de `quantity` y `avgPrice`: `numeric(18,6)` admite 12 dígitos enteros y el máximo es
@@ -32,6 +33,9 @@ export const trimmedText = (max: number) => z.string().trim().max(max);
 /** Divisa admitida; la compara contra la de la posición el servicio, no el esquema. */
 export const currencySchema = z.enum(SUPPORTED_CURRENCIES);
 
+/** Clase de activo: decide el bloque de la declaración en que van sus ventas. */
+export const assetClassSchema = z.enum(ASSET_CLASSES);
+
 /** Cuerpo de POST /api/positions (el `userId` sale del JWT). */
 export const createPositionSchema = z.strictObject({
   ticker: trimmedText(20).min(1).describe('Símbolo (p. ej. "IWDA", "AAPL").'),
@@ -41,6 +45,9 @@ export const createPositionSchema = z.strictObject({
   // Opcional aquí: "obligatorio si el símbolo ya existe" depende de los datos y lo aplica el servicio.
   broker: trimmedText(100).optional().describe('Bróker (opcional).'),
   currency: currencySchema.optional().describe('Divisa (por defecto EUR).'),
+  assetClass: assetClassSchema
+    .optional()
+    .describe('Clase de activo: stock (acción), fund (fondo o ETF), derivative u other.'),
 });
 
 export type CreatePositionDto = z.infer<typeof createPositionSchema>;

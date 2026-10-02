@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Inject, Injectable, Unauthorize
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, desc, eq, ne, sql } from 'drizzle-orm';
 
+import type { AssetClass } from '@sextante/core/portfolio/types';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 import { PricesService } from '../prices/prices.service.js';
@@ -29,6 +30,7 @@ export type PositionResponse = {
   currency: string;
   /** Derivado: se registra pero no se valora ni entra en los totales. */
   isDerivative: boolean;
+  assetClass: AssetClass | null;
   createdAt: string;
 };
 
@@ -61,6 +63,7 @@ export class PositionsService {
             avgPrice: dto.avgPrice.toString(),
             broker: broker || null,
             currency: dto.currency ?? 'EUR',
+            assetClass: dto.assetClass ?? null,
           })
           .returning();
 
@@ -159,6 +162,7 @@ export class PositionsService {
           quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
           avgPrice: dto.avgPrice !== undefined ? dto.avgPrice.toString() : current.avgPrice,
           currency: dto.currency ?? current.currency,
+          assetClass: dto.assetClass ?? current.assetClass,
           updatedAt: new Date(),
         })
         .where(eq(positions.id, id))
@@ -276,6 +280,7 @@ export class PositionsService {
       broker: row.broker,
       currency: row.currency,
       isDerivative: row.isDerivative,
+      assetClass: row.assetClass,
       createdAt: row.createdAt.toISOString(),
     };
   }

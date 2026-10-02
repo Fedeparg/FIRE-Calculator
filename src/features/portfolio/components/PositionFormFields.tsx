@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
-import type { InstrumentSearchResult } from "@sextante/core/portfolio/types";
+import type { AssetClass, InstrumentSearchResult, InstrumentType } from "@sextante/core/portfolio/types";
 import InstrumentSearchField from "./InstrumentSearchField";
 import { inputClass } from "@/shared/ui/field-classes";
 
@@ -17,6 +17,19 @@ export type PositionFormValues = {
   avgPrice: string;
   broker: string;
   currency: SupportedCurrency;
+  /** Clase de activo deducida del buscador; `undefined` si el usuario escribió el símbolo a mano. */
+  assetClass?: AssetClass;
+};
+
+/** Tipo del buscador → clase de activo de la declaración. */
+const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
+  equity: "stock",
+  etf: "fund",
+  fund: "fund",
+  crypto: "other",
+  index: "other",
+  currency: "other",
+  other: "other",
 };
 
 type Props = {
@@ -36,7 +49,11 @@ export default function PositionFormFields({ values, onChange, brokerRequired, b
   function handleSelect(result: InstrumentSearchResult) {
     // Prefill del nombre solo si el usuario no escribió uno propio. Truncado a 100:
     // el `longname` de Yahoo puede excederlo y el DTO (@MaxLength(100)) daría 400.
-    onChange({ ticker: result.symbol, name: values.name || result.name.slice(0, 100) });
+    onChange({
+      ticker: result.symbol,
+      name: values.name || result.name.slice(0, 100),
+      assetClass: ASSET_CLASS_OF[result.type],
+    });
   }
 
   return (
@@ -48,7 +65,7 @@ export default function PositionFormFields({ values, onChange, brokerRequired, b
         <InstrumentSearchField
           id="ticker"
           value={values.ticker}
-          onChange={(ticker) => onChange({ ticker })}
+          onChange={(ticker) => onChange({ ticker, assetClass: undefined })}
           onSelect={handleSelect}
           placeholder={t("tickerPlaceholder")}
           inputClass={inputClass}

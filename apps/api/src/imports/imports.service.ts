@@ -268,7 +268,17 @@ export class ImportsService {
           broker: TRADE_REPUBLIC_BROKER,
           currency: 'EUR',
           isDerivative: group.assetClass === 'derivative',
+          assetClass: group.assetClass,
         })
+        .returning();
+    }
+
+    // Una posición importada antes de guardar la clase de activo la recibe ahora.
+    if (!wasCreated && position.assetClass === null) {
+      [position] = await tx
+        .update(positions)
+        .set({ assetClass: group.assetClass })
+        .where(eq(positions.id, position.id))
         .returning();
     }
 

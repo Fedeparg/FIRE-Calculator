@@ -169,6 +169,13 @@
       "when": 1790984915159,
       "tag": "0023_savings_pending_balances",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790985199210,
+      "tag": "0024_position_asset_class",
+      "breakpoints": true
     }
   ]
 }

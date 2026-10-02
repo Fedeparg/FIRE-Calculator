@@ -19,6 +19,7 @@ import {
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { IncomeKind, IncomeSource, ValueSource } from '@sextante/core/fiscal/income';
 import type { SavingsGroup } from '@sextante/core/fiscal/savings-base';
+import type { AssetClass } from '@sextante/core/portfolio/types';
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -71,6 +72,8 @@ export const positions = pgTable(
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     // Derivado (knock-out, warrant…): cuenta para plusvalías pero no se valora ni entra en los totales.
     isDerivative: boolean('is_derivative').notNull().default(false),
+    // Clase de activo (`AssetClass`): decide el bloque de la declaración. NULL = sin clasificar.
+    assetClass: varchar('asset_class', { length: 12 }).$type<AssetClass>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

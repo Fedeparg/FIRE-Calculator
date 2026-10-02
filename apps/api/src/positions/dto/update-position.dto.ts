@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { amountSchema, currencySchema, quantitySchema, trimmedText } from './create-position.dto.js';
+import { amountSchema, assetClassSchema, currencySchema, quantitySchema, trimmedText } from './create-position.dto.js';
 
 /** Cuerpo de PATCH /api/positions/:id: campos opcionales, validados como en el alta (`ticker` y `broker` no pueden quedar vacíos). */
 export const updatePositionSchema = z.strictObject({
@@ -10,6 +10,7 @@ export const updatePositionSchema = z.strictObject({
   avgPrice: amountSchema.optional(),
   broker: trimmedText(100).min(1).optional(),
   currency: currencySchema.optional(),
+  assetClass: assetClassSchema.optional(),
 });
 
 export type UpdatePositionDto = z.infer<typeof updatePositionSchema>;
