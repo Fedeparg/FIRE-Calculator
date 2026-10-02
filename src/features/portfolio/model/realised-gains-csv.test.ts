@@ -11,8 +11,10 @@ const lots: TradeLot[] = [
   { id: "2", kind: "sell", quantity: 2, price: 12.5, fees: 0.5, tradedAt: "2024-05-02" },
 ];
 
-const year = buildRealisedGainsReport([{ id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots }])
-  .years[0];
+const year = buildRealisedGainsReport(
+  [{ id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots }],
+  {},
+).years[0];
 
 describe("buildRealisedGainsCsv", () => {
   it("una fila por venta, con el dialecto español", () => {
@@ -21,12 +23,38 @@ describe("buildRealisedGainsCsv", () => {
 
     expect(lines[0]).toBe(REALISED_GAINS_CSV_COLUMNS.join(";"));
     // Transmisión 25 − 0,5 = 24,5; adquisición 2 × (10 + 1/3) = 20,67; ganancia 3,83.
-    expect(lines[1]).toBe("2024-05-02;VWCE;'=cmd|' /C calc'!A0;EUR;2;12,5;0,5;24,5;20,67;3,83");
+    // En euros el tipo es 1, los importes coinciden y no hay diferencia de cambio.
+    expect(lines[1]).toBe("2024-05-02;VWCE;'=cmd|' /C calc'!A0;EUR;2;12,5;0,5;24,5;20,67;3,83;1;24,5;20,67;3,83;0");
     expect(lines).toHaveLength(2);
   });
 
   it("con el dialecto inglés usa coma y punto", () => {
     const csv = buildRealisedGainsCsv(year, HEADERS, "en");
-    expect(csv.split("\r\n")[1]).toBe("2024-05-02,VWCE,'=cmd|' /C calc'!A0,EUR,2,12.5,0.5,24.5,20.67,3.83");
+    expect(csv.split("\r\n")[1]).toBe(
+      "2024-05-02,VWCE,'=cmd|' /C calc'!A0,EUR,2,12.5,0.5,24.5,20.67,3.83,1,24.5,20.67,3.83,0",
+    );
+  });
+
+  it("en divisa añade el tipo del BCE y los importes en euros; sin tipo, deja vacías esas columnas", () => {
+    const usdLots: TradeLot[] = [
+      { id: "1", kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-02" },
+      { id: "2", kind: "sell", quantity: 1, price: 120, fees: 0, tradedAt: "2024-06-03" },
+    ];
+    const position = { id: "u", ticker: "AAPL", name: null, currency: "USD", lots: usdLots };
+    const converted = buildRealisedGainsReport([position], {
+      USD: [
+        { date: "2024-01-02", unitsPerEur: 1.1 },
+        { date: "2024-06-03", unitsPerEur: 1.08 },
+      ],
+    }).years[0];
+    // 20 / 1,08 = 18,52; diferencia de cambio 100 / 1,08 − 100 / 1,1 = 1,68.
+    expect(buildRealisedGainsCsv(converted, HEADERS, "en").split("\r\n")[1]).toBe(
+      "2024-06-03,AAPL,,USD,1,120,0,120,100,20,1.08,111.11,92.59,18.52,1.68",
+    );
+
+    const missing = buildRealisedGainsReport([position], {}).years[0];
+    expect(buildRealisedGainsCsv(missing, HEADERS, "en").split("\r\n")[1]).toBe(
+      "2024-06-03,AAPL,,USD,1,120,0,120,100,20,,,,,",
+    );
   });
 });

@@ -20,9 +20,7 @@ class StubProvider implements ReferenceRatesProvider {
   getRates(currencies: readonly string[], from: string, to: string): Promise<EcbRate[]> {
     this.calls.push({ currencies: [...currencies], from, to });
     if (this.fail) return Promise.reject(new Error('ECB down'));
-    return Promise.resolve(
-      this.rates.filter((r) => currencies.includes(r.currency) && r.date >= from && r.date <= to),
-    );
+    return Promise.resolve(this.rates.filter((r) => currencies.includes(r.currency) && r.date >= from && r.date <= to));
   }
 }
 

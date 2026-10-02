@@ -1,7 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, asc, gte, inArray, sql } from 'drizzle-orm';
 
-import { MAX_RATE_GAP_DAYS, TAX_CURRENCY, type ReferenceRatePoint, type ReferenceRates } from '@sextante/core/fiscal/fx-reference';
+import {
+  MAX_RATE_GAP_DAYS,
+  TAX_CURRENCY,
+  type ReferenceRatePoint,
+  type ReferenceRates,
+} from '@sextante/core/fiscal/fx-reference';
 import { isoDate, todayUtc } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { fxReferenceCoverage, fxReferenceRates } from '../db/schema.js';
@@ -50,7 +55,11 @@ export class ReferenceRatesService {
     await this.ensureCoverage(wanted, start, end);
 
     const rows = await this.db
-      .select({ currency: fxReferenceRates.currency, date: fxReferenceRates.date, unitsPerEur: fxReferenceRates.unitsPerEur })
+      .select({
+        currency: fxReferenceRates.currency,
+        date: fxReferenceRates.date,
+        unitsPerEur: fxReferenceRates.unitsPerEur,
+      })
       .from(fxReferenceRates)
       .where(and(inArray(fxReferenceRates.currency, wanted), gte(fxReferenceRates.date, start)))
       .orderBy(asc(fxReferenceRates.currency), asc(fxReferenceRates.date));
@@ -63,9 +72,9 @@ export class ReferenceRatesService {
   /** Descarga los tramos que falten de cada divisa y anota lo cubierto. */
   private async ensureCoverage(currencies: string[], start: string, end: string): Promise<void> {
     const coverage = new Map(
-      (
-        await this.db.select().from(fxReferenceCoverage).where(inArray(fxReferenceCoverage.currency, currencies))
-      ).map((row) => [row.currency, row]),
+      (await this.db.select().from(fxReferenceCoverage).where(inArray(fxReferenceCoverage.currency, currencies))).map(
+        (row) => [row.currency, row],
+      ),
     );
     const now = Date.now();
 
@@ -114,9 +123,12 @@ export class ReferenceRatesService {
       await this.db
         .insert(fxReferenceRates)
         .values(
-          rates
-            .slice(i, i + INSERT_CHUNK)
-            .map((r) => ({ currency: r.currency, date: r.date, unitsPerEur: String(r.unitsPerEur), source: this.provider.name })),
+          rates.slice(i, i + INSERT_CHUNK).map((r) => ({
+            currency: r.currency,
+            date: r.date,
+            unitsPerEur: String(r.unitsPerEur),
+            source: this.provider.name,
+          })),
         )
         .onConflictDoUpdate({
           target: [fxReferenceRates.currency, fxReferenceRates.date],

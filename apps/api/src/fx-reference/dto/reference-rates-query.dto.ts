@@ -10,8 +10,20 @@ export const referenceRatesQuerySchema = z.strictObject({
   currencies: z
     .string()
     .trim()
-    .transform((value) => [...new Set(value.split(',').map((c) => c.trim().toUpperCase()).filter(Boolean))])
-    .pipe(z.array(z.string().regex(/^[A-Z]{3}$/)).min(1).max(MAX_REFERENCE_CURRENCIES)),
+    .transform((value) => [
+      ...new Set(
+        value
+          .split(',')
+          .map((c) => c.trim().toUpperCase())
+          .filter(Boolean),
+      ),
+    ])
+    .pipe(
+      z
+        .array(z.string().regex(/^[A-Z]{3}$/))
+        .min(1)
+        .max(MAX_REFERENCE_CURRENCIES),
+    ),
   from: z.iso
     .date()
     .refine((date) => date >= ECB_FIRST_DATE, { message: `from must be on or after ${ECB_FIRST_DATE}` }),

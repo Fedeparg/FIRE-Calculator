@@ -1,7 +1,9 @@
 /**
  * CSV del informe de ganancias realizadas: una fila por VENTA del ejercicio, que es el nivel
  * de detalle que pide la declaración (cada transmisión con su valor de transmisión y de
- * adquisición). Dialecto, escapado y BOM: `src/shared/format/csv.ts`.
+ * adquisición). Los importes van en la divisa de la posición y en euros con el tipo del BCE del
+ * día de la venta; sin ese tipo, las columnas en euros quedan vacías. Dialecto, escapado y BOM:
+ * `src/shared/format/csv.ts`.
  */
 
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
@@ -20,6 +22,11 @@ export const REALISED_GAINS_CSV_COLUMNS = [
   "transferValue",
   "acquisitionValue",
   "gain",
+  "exchangeRate",
+  "transferValueEur",
+  "acquisitionValueEur",
+  "gainEur",
+  "fxDifferenceEur",
 ] as const;
 
 /** Cabeceras YA traducidas por quien llama. */
@@ -45,6 +52,11 @@ export function buildRealisedGainsCsv(
     cents(sale.transferValue),
     cents(sale.acquisitionValue),
     cents(sale.gain),
+    sale.eur?.sellRate.unitsPerEur ?? null,
+    sale.eur ? cents(sale.eur.transferValue) : null,
+    sale.eur ? cents(sale.eur.acquisitionValue) : null,
+    sale.eur ? cents(sale.eur.gain) : null,
+    sale.eur?.fxDifference != null ? cents(sale.eur.fxDifference) : null,
   ]);
   return buildCsv(
     REALISED_GAINS_CSV_COLUMNS.map((column) => headers[column]),

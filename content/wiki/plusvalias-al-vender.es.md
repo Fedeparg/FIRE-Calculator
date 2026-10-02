@@ -70,10 +70,18 @@ siguiente.
 
 ## Ventas en otra divisa
 
-Si el valor cotiza en dólares (u otra divisa), la ganancia se calcula **en euros**:
-el coste se convierte al tipo de cambio del **día de cada compra** y lo cobrado al
-del **día de la venta**. Por eso puedes tener ganancia en dólares y pérdida en euros
-(o al revés) si la divisa se ha movido.
+Si el valor cotiza en dólares (u otra divisa), Hacienda pide dos cálculos separados
+(consulta vinculante de la DGT V0152-26):
+
+- **La ganancia de las acciones** se calcula **en dólares** (venta menos compra) y esa
+  diferencia se pasa a euros con el tipo de cambio del **día de la venta**.
+- **La diferencia de cambio** de los dólares invertidos es otra ganancia o pérdida:
+  lo que te costaron en euros al comprar frente a lo que valen en euros al vender.
+
+Si tu bróker cambia a euros al comprar y al vender, las dos juntas suman lo mismo que
+convertir la compra al tipo de su día y la venta al del suyo. Por eso puedes ganar en
+dólares y perder en euros (o al revés) si el dólar se ha movido. Si guardas los
+dólares en una cuenta, la diferencia de cambio no se declara hasta que los cambies.
 
 ## Fondos de inversión: el traspaso
 
@@ -90,13 +98,15 @@ Si registras tus compras y ventas en la [cartera](/portfolio), el apartado
   brókers, con las comisiones de compra repartidas entre las participaciones.
 - **Compensa** ganancias y pérdidas del mismo ejercicio y estima la cuota con la
   escala del ahorro.
+- Pasa a euros las ventas en otra divisa con el **tipo de referencia del BCE** del
+  día de la venta y calcula aparte la diferencia de cambio, como se explica arriba.
 - Te deja **descargar un CSV** con una fila por venta (fecha, valor de transmisión,
-  valor de adquisición y ganancia), que es el detalle que pide la declaración.
+  valor de adquisición y ganancia, en la divisa y en euros), que es el detalle que pide
+  la declaración.
 
 Lo que **no** hace, y conviene revisar tú: el arrastre de pérdidas de años
-anteriores, la compensación del 25 % con dividendos e intereses, la regla de los dos
-meses y la conversión a euros de las ventas en otra divisa (las muestra aparte, en su
-moneda, para que no las sumes sin convertir).
+anteriores, la compensación del 25 % con dividendos e intereses y la regla de los dos
+meses.
 
 ---
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { estimateSavingsTax, type TradeLot } from "./plusvalias.js";
 import type { ReferenceRates } from "./fx-reference.js";
-import { buildRealisedGainsReport, type RealisedGainsPosition } from "./realised-gains.js";
+import { buildRealisedGainsReport, referenceRatesNeeded, type RealisedGainsPosition } from "./realised-gains.js";
 
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
   return { kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-01", ...overrides };
@@ -146,7 +146,9 @@ describe("buildRealisedGainsReport", () => {
   });
 
   it("en euros no hay diferencia de cambio ni hace falta serie", () => {
-    const report = build([position({ id: "a", lots: [buy("1", 2, 10, "2024-01-01"), sell("2", 2, 12, "2024-03-01")] })]);
+    const report = build([
+      position({ id: "a", lots: [buy("1", 2, 10, "2024-01-01"), sell("2", 2, 12, "2024-03-01")] }),
+    ]);
     const [sale] = report.years[0].sales;
     expect(sale.eur).toMatchObject({ gain: 4, fxDifference: 0, sellRate: { unitsPerEur: 1 } });
     expect(report.years[0].fxIncomplete).toBe(0);
@@ -231,5 +233,27 @@ describe("buildRealisedGainsReport", () => {
       }),
     ]);
     expect(report.years[0].unconverted).toEqual([{ currency: "USD", sales: 1, gain: 10 }]);
+  });
+});
+
+describe("referenceRatesNeeded", () => {
+  it("pide las divisas con ventas desde su operación más antigua", () => {
+    expect(
+      referenceRatesNeeded([
+        position({ id: "eur", lots: [buy("1", 1, 1, "2010-01-01"), sell("2", 1, 1, "2011-01-01")] }),
+        position({ id: "usd", currency: "USD", lots: [buy("3", 1, 1, "2019-05-02"), sell("4", 1, 1, "2024-01-01")] }),
+        position({ id: "chf", currency: "CHF", lots: [buy("5", 1, 1, "2015-01-01")] }),
+        position({ id: "gbp", currency: "GBP", lots: [buy("6", 1, 1, "2021-03-01"), sell("7", 1, 1, "2022-01-01")] }),
+      ]),
+    ).toEqual({ currencies: ["GBP", "USD"], from: "2019-05-02" });
+  });
+
+  it("sin ventas en divisa no hace falta ningún tipo", () => {
+    expect(
+      referenceRatesNeeded([
+        position({ id: "eur", lots: [buy("1", 1, 1, "2010-01-01"), sell("2", 1, 1, "2011-01-01")] }),
+      ]),
+    ).toBeNull();
+    expect(referenceRatesNeeded([])).toBeNull();
   });
 });

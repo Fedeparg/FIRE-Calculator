@@ -18,7 +18,11 @@ describe("referenceRateOn", () => {
   });
 
   it("usa la publicación del mismo día", () => {
-    expect(referenceRateOn(rates, "USD", "2024-04-02")).toEqual({ currency: "USD", unitsPerEur: 1.0745, date: "2024-04-02" });
+    expect(referenceRateOn(rates, "USD", "2024-04-02")).toEqual({
+      currency: "USD",
+      unitsPerEur: 1.0745,
+      date: "2024-04-02",
+    });
   });
 
   it("en festivos y fines de semana usa la última publicación anterior", () => {
@@ -41,7 +45,10 @@ describe("referenceRateOn", () => {
   });
 
   it("descarta tipos no finitos o no positivos", () => {
-    const bad: ReferenceRates = { USD: [{ date: "2024-01-02", unitsPerEur: 0 }], JPY: [{ date: "2024-01-02", unitsPerEur: NaN }] };
+    const bad: ReferenceRates = {
+      USD: [{ date: "2024-01-02", unitsPerEur: 0 }],
+      JPY: [{ date: "2024-01-02", unitsPerEur: NaN }],
+    };
     expect(referenceRateOn(bad, "USD", "2024-01-02")).toBeNull();
     expect(referenceRateOn(bad, "JPY", "2024-01-02")).toBeNull();
   });

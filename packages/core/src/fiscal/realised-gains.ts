@@ -116,6 +116,28 @@ function securityKey(position: RealisedGainsPosition): string {
   return `${position.ticker.trim().toUpperCase()}\u0000${position.currency}`;
 }
 
+/** Tipos de referencia que necesita el informe: divisas y fecha desde la que pedirlos. */
+export interface ReferenceRatesRequest {
+  currencies: string[];
+  /** Operación más antigua de esas divisas (`YYYY-MM-DD`). */
+  from: string;
+}
+
+/**
+ * Qué tipos pedir para `buildRealisedGainsReport`: las divisas distintas del euro de las
+ * posiciones con alguna venta, desde su operación más antigua. `null` si no hace falta ninguno.
+ */
+export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]): ReferenceRatesRequest | null {
+  const currencies = new Set<string>();
+  let from: string | null = null;
+  for (const position of positions) {
+    if (position.currency === TAX_CURRENCY || !position.lots.some((lot) => lot.kind === "sell")) continue;
+    currencies.add(position.currency);
+    for (const lot of position.lots) if (from === null || lot.tradedAt < from) from = lot.tradedAt;
+  }
+  return from === null ? null : { currencies: [...currencies].sort(), from };
+}
+
 /** Pasa una venta a euros con el criterio de la DGT, o `null` si falta el tipo del día de la venta. */
 function convertSale(sale: RealisedSale, currency: string, rates: ReferenceRates): SaleInEur | null {
   const sellRate = referenceRateOn(rates, currency, sale.tradedAt);

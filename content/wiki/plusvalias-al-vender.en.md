@@ -67,10 +67,20 @@ just to save tax and buying back the next day.
 
 ## Sales in another currency
 
-If the security trades in dollars (or another currency), the gain is computed **in
-euros**: the cost is converted at the exchange rate of **each purchase date** and the
-proceeds at the rate of the **sale date**. That is why you can have a gain in dollars
-and a loss in euros (or vice versa) if the currency has moved.
+If the security trades in dollars (or another currency), the Spanish tax authority
+asks for two separate calculations (DGT binding ruling V0152-26):
+
+- **The gain on the shares** is calculated **in dollars** (sale minus purchase) and
+  that difference is converted to euros at the exchange rate of the **sale date**.
+- **The exchange difference** on the dollars invested is a separate gain or loss: what
+  they cost you in euros when you bought versus what they are worth in euros when you
+  sell.
+
+If your broker converts to euros when you buy and when you sell, both together add up
+to converting the purchase at its date's rate and the sale at its own. That is why you
+can gain in dollars and lose in euros (or vice versa) if the dollar has moved. If you
+keep the dollars in an account, the exchange difference is not declared until you
+convert them.
 
 ## Investment funds: switching
 
@@ -88,13 +98,14 @@ gains** section (in the portfolio header) prepares the year's summary for you:
   your brokers, with purchase fees spread across the units.
 - It **nets** gains and losses within the tax year and estimates the tax with the
   savings scale.
+- It converts sales in other currencies to euros at the **ECB reference rate** of the
+  sale date and works out the exchange difference separately, as explained above.
 - It lets you **download a CSV** with one row per sale (date, transfer value,
-  acquisition value and gain), which is the detail the tax return asks for.
+  acquisition value and gain, in the currency and in euros), which is the detail the
+  tax return asks for.
 
 What it does **not** do, and you should check yourself: carrying forward losses from
-previous years, the 25% offset against dividends and interest, the two-month rule and
-converting sales in other currencies to euros (it shows them separately, in their own
-currency, so you do not add them up unconverted).
+previous years, the 25% offset against dividends and interest and the two-month rule.
 
 ---
 

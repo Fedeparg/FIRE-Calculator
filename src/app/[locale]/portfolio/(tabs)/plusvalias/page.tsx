@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { fetchPositionsWithLots } from "@/features/portfolio/api.server";
+import { fetchRealisedGainsData } from "@/features/portfolio/api.server";
 import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
 import RealisedGainsReport from "@/features/portfolio/components/RealisedGainsReport";
@@ -16,8 +16,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Pestaña Plusvalías. Pide sus propios datos (posiciones CON lotes) en vez de usar los del
- * layout: el informe necesita todo el histórico de operaciones, que el resto de pestañas no.
+ * Pestaña Plusvalías. Pide sus propios datos (posiciones CON lotes y los tipos del BCE) en vez de
+ * usar los del layout: el informe necesita todo el histórico de operaciones, que el resto de
+ * pestañas no.
  * La sesión ya la comprueba el layout.
  */
 export default async function RealisedGainsPage({ params }: Props) {
@@ -25,7 +26,7 @@ export default async function RealisedGainsPage({ params }: Props) {
   setRequestLocale(locale);
 
   const t = await getTranslations("portfolio.realisedGains");
-  const data = await fetchPositionsWithLots();
+  const data = await fetchRealisedGainsData();
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,7 +40,7 @@ export default async function RealisedGainsPage({ params }: Props) {
         </p>
       </div>
       {data ? (
-        <RealisedGainsReport positions={data.positions} lots={data.lots} />
+        <RealisedGainsReport positions={data.positions} rates={data.rates} ratesLoaded={data.ratesLoaded} />
       ) : (
         <Notice variant="warning">{t("loadError")}</Notice>
       )}

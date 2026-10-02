@@ -127,10 +127,22 @@ realizadas (`realised-gains.ts`), con las mismas reglas.
 - Retenciones, coeficientes de abatimiento (DT 9ª), no residentes, traspasos de
   fondos con diferimiento (art. 94) y especialidades forales.
 
+## `fx-reference.ts`
+
+Tipo de cambio de referencia del BCE vigente en una fecha, para pasar a euros operaciones en
+divisa. La serie la descarga y cachea la API (`apps/api/src/fx-reference/`) del ECB Data Portal
+(series `EXR.D.<DIVISA>.EUR.SP00.A`), que son los tipos que publica el Banco de España.
+
+- **Festivos y fines de semana:** el BCE no publica; vale la última publicación anterior a la
+  fecha. Si la última queda a más de `MAX_RATE_GAP_DAYS` (7) días, no es un festivo sino que
+  falta la serie, y no hay tipo (mejor sin cifra que con un cambio que no corresponde).
+- **Sin publicación posterior:** nunca se usa un tipo de un día posterior a la operación.
+- **Antes de 1999** no hay serie (el euro nace el 4 de enero de 1999).
+
 ## `realised-gains.ts`
 
 Informe anual de ganancias y pérdidas realizadas: ventas ya registradas, emparejadas
-por FIFO (`walkLots`), agrupadas por ejercicio y compensadas dentro de él.
+por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas dentro de él.
 
 **Modela**
 
@@ -142,6 +154,28 @@ por FIFO (`walkLots`), agrupadas por ejercicio y compensadas dentro de él.
 - Integración y compensación dentro del ejercicio (art. 49.1.b LIRPF): se suman
   ganancias y pérdidas del mismo año y la cuota se estima sobre el saldo si es
   positivo.
+- **Valores en divisa (criterio de la DGT):** la ganancia se calcula en la divisa en que
+  están denominados los valores y la diferencia se convierte a euros al tipo vigente el día
+  de la venta. Los valores de transmisión y de adquisición se convierten con ese mismo tipo,
+  de modo que su resta es la ganancia. Fuentes: consultas vinculantes V2422-20, V0706-22 y
+  V0152-26 (27/01/2026), que repiten literalmente el criterio de una consulta de 6 de julio
+  de 2017: «debiendo efectuarse dicho
+  cálculo en la moneda en que se encuentren denominadas las acciones y efectuar la conversión
+  de la diferencia resultante a euros al tipo de cambio vigente en la fecha en la que haya
+  tenido lugar la alteración patrimonial».
+- **Diferencias de cambio:** cambiar la divisa a euros es otra ganancia o pérdida (art. 33
+  LIRPF; V2466-08, citada en V0152-26), por la diferencia entre lo que costó la divisa y lo
+  que se recibe por ella. El informe la calcula por lote vendido como
+  `adquisición / tipo de la venta − adquisición / tipo de la compra`, **suponiendo que la
+  divisa se compró el día de la compra y se cambia a euros el día de la venta** (lo que hace
+  un bróker con cuenta en euros). Con ese supuesto, ganancia + diferencia de cambio es
+  exactamente convertir cada operación al tipo de su fecha (lo comprueba un test de
+  propiedades). Si el usuario guarda la divisa en una cuenta, la diferencia se imputa cuando
+  la cambia (art. 14.2.e LIRPF) y el informe no puede saberlo: lo avisa en pantalla.
+- **Sin tipo del día de la venta** (divisa que el BCE no publica, serie no disponible), la
+  venta va a `unconverted`, en su divisa y fuera de los totales y de la cuota. **Sin tipo de
+  alguna compra** (anterior a 1999), la ganancia sí se convierte pero no la diferencia de
+  cambio (`fxIncomplete`).
 
 **No modela** (el informe lo avisa en pantalla)
 
@@ -150,8 +184,5 @@ por FIFO (`walkLots`), agrupadas por ejercicio y compensadas dentro de él.
 - Compensación cruzada del 25 % con rendimientos del capital mobiliario (la cartera
   no registra dividendos ni intereses).
 - Regla de los dos meses (art. 33.5.f).
-- Conversión a euros de posiciones en otra divisa: Hacienda exige el cambio oficial
-  de la fecha de compra y de venta, y la aplicación solo guarda unos días de
-  histórico de tipos; convertir con el cambio de hoy daría una cifra fiscalmente
-  falsa. Los importes se agrupan por divisa y la cuota solo se estima sobre el grupo
-  en euros.
+- Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
+  posición, como el resto de importes del lote.
