@@ -1371,11 +1371,6 @@
       "transferValue": "Valor de transmisión",
       "acquisitionValue": "Valor de adquisición",
       "gain": "Ganancia/pérdida",
-      "taxTitle": "Cuota estimada del ejercicio {year}",
-      "taxBase": "Saldo positivo sujeto",
-      "tax": "Cuota estimada",
-      "marginal": "Tipo marginal",
-      "taxScale": "Estimación con la escala del ahorro de {scaleYear}. Si el ejercicio es anterior, la escala pudo ser distinta.",
       "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio y aplica el FIFO a cada valor entero, aunque lo tengas en varios brókers. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
       "csv": {
         "date": "Fecha de venta",
@@ -1639,6 +1634,24 @@
         "manual": "manual"
       },
       "originEstimated": "Dividendos con la retención en origen estimada con el tipo legal del país: {count}. Contrástala con el certificado o el informe fiscal de tu bróker antes de declarar."
+    },
+    "savingsReturn": {
+      "title": "Base del ahorro de {year}",
+      "subtitle": "Ventas y rendimientos juntos, compensados como manda el art. 49 de la Ley del IRPF, con la deducción por doble imposición internacional y las retenciones españolas.",
+      "gainsBalance": "Saldo de ganancias y pérdidas por ventas",
+      "capitalIncome": "Rendimientos del capital mobiliario",
+      "compensated": "Compensaciones aplicadas",
+      "base": "Base liquidable del ahorro",
+      "tax": "Cuota íntegra del ahorro",
+      "doubleTaxation": "Deducción por doble imposición internacional",
+      "netTax": "Cuota tras la deducción",
+      "withholdingSpain": "Retenciones españolas",
+      "resultPay": "Aporta a pagar",
+      "resultRefund": "Aporta a devolver",
+      "incomplete": "La cifra no está completa: hay ventas o cobros sin tipo de cambio, o dividendos extranjeros sin retención en origen. Revisa los avisos de arriba.",
+      "excessWithholding": "{country}: te retuvieron {amount} por encima del convenio. Hacienda no los deduce; se reclaman a la administración de ese país.",
+      "noTreatyRate": "{country}: no tenemos el tipo del convenio, así que su retención ({amount}) no se ha deducido.",
+      "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye pérdidas de años anteriores ni gastos de custodia. Orientativo, no es asesoramiento."
     }
   },
   "account": {

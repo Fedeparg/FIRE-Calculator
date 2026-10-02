@@ -6,9 +6,9 @@ import { useLocale, useTranslations } from "next-intl";
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";
 import { UTF8_BOM } from "@/shared/format/csv";
-import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
 import { buildIncomeReport, type IncomeEvent } from "@sextante/core/fiscal/income";
+import { buildSavingsReturn } from "@sextante/core/fiscal/savings-return";
 import {
   buildRealisedGainsReport,
   TAX_CURRENCY,
@@ -21,6 +21,7 @@ import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
 import IncomeSection from "./IncomeSection";
+import SavingsReturnSection from "./SavingsReturnSection";
 
 type Props = {
   positions: RealisedGainsPosition[];
@@ -47,7 +48,6 @@ function signColor(value: number): string {
 export default function RealisedGainsReport({ positions, income, rates, ratesLoaded }: Props) {
   const t = useTranslations("portfolio.realisedGains");
   const locale = asLocale(useLocale());
-  const { formatCurrency, formatPercent } = useFormat();
 
   const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
   const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
@@ -63,6 +63,16 @@ export default function RealisedGainsReport({ positions, income, rates, ratesLoa
   const selectedYear = years.find((y) => String(y) === selected) ?? years[0];
   const year = report.years.find((y) => y.year === selectedYear);
   const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
+  const incomeSummary = incomeReport.years.find((y) => y.year === selectedYear);
+  // Sin saldos negativos de años anteriores todavía: se introducirán con el formulario de pendientes.
+  const savingsReturn = buildSavingsReturn({
+    year: selectedYear,
+    gains: year,
+    income: incomeSummary,
+    incomeEvents,
+    rates,
+    pending: [],
+  });
 
   const hasForeign = year?.sales.some((sale) => sale.currency !== TAX_CURRENCY) ?? false;
 
@@ -126,36 +136,6 @@ export default function RealisedGainsReport({ positions, income, rates, ratesLoa
 
       {year ? <SalesSection year={year} showFx={hasForeign} /> : <Notice variant="info">{t("noSalesThisYear")}</Notice>}
 
-      {year && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
-          <h2 className="text-lg font-semibold text-foreground">{t("taxTitle", { year: year.year })}</h2>
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("taxBase")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCurrency(year.tax.base, TAX_CURRENCY)}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("tax")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCurrency(year.tax.tax, TAX_CURRENCY)}
-                {year.tax.effectiveRate !== null && (
-                  <span className="ml-1.5 text-sm font-medium text-muted">
-                    ({formatPercent(year.tax.effectiveRate)})
-                  </span>
-                )}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("marginal")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">{formatPercent(year.tax.marginal)}</dd>
-            </div>
-          </dl>
-          <p className="text-xs text-muted">{t("taxScale", { scaleYear: FISCAL_YEAR_LABEL })}</p>
-        </section>
-      )}
-
       {year && year.unconverted.length > 0 && (
         <Notice variant="warning">
           {t("unconverted", {
@@ -169,11 +149,9 @@ export default function RealisedGainsReport({ positions, income, rates, ratesLoa
       )}
       {hasForeign && <Notice variant="info">{t("fxCriterion")}</Notice>}
 
-      <IncomeSection
-        year={selectedYear}
-        summary={incomeReport.years.find((y) => y.year === selectedYear)}
-        events={incomeEvents}
-      />
+      <IncomeSection year={selectedYear} summary={incomeSummary} events={incomeEvents} />
+
+      <SavingsReturnSection result={savingsReturn} />
 
       <Notice variant="info">{t("scope")}</Notice>
     </div>

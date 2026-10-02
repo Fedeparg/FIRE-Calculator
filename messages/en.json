@@ -1371,11 +1371,6 @@
       "transferValue": "Transfer value",
       "acquisitionValue": "Acquisition value",
       "gain": "Gain/loss",
-      "taxTitle": "Estimated tax for {year}",
-      "taxBase": "Taxable positive net",
-      "tax": "Estimated tax",
-      "marginal": "Marginal rate",
-      "taxScale": "Estimated with the {scaleYear} savings scale. For earlier years the scale may have been different.",
       "scope": "Nets the gains and losses of sales within the same tax year and applies FIFO to each security as a whole, even if you hold it with several brokers. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
       "csv": {
         "date": "Sale date",
@@ -1639,6 +1634,24 @@
         "manual": "manual"
       },
       "originEstimated": "Dividends whose withholding at source is estimated with the country's statutory rate: {count}. Check it against your broker's certificate or tax report before filing."
+    },
+    "savingsReturn": {
+      "title": "Savings base for {year}",
+      "subtitle": "Sales and investment income together, offset as article 49 of the Spanish income tax law requires, with the international double taxation relief and the Spanish withholdings.",
+      "gainsBalance": "Net gains and losses from sales",
+      "capitalIncome": "Investment income",
+      "compensated": "Offsets applied",
+      "base": "Taxable savings base",
+      "tax": "Gross savings tax",
+      "doubleTaxation": "International double taxation relief",
+      "netTax": "Tax after relief",
+      "withholdingSpain": "Spanish withholdings",
+      "resultPay": "Adds to pay",
+      "resultRefund": "Adds to refund",
+      "incomplete": "This figure is incomplete: some sales or payouts have no exchange rate, or foreign dividends lack the withholding at source. Check the notices above.",
+      "excessWithholding": "{country}: {amount} was withheld above the treaty rate. The Spanish tax agency does not credit it; it is reclaimed from that country.",
+      "noTreatyRate": "{country}: we do not have the treaty rate, so its withholding ({amount}) has not been credited.",
+      "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Losses from previous years and custody fees are not included. Indicative, not advice."
     }
   },
   "account": {
