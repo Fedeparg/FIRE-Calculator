@@ -197,7 +197,9 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
   it('salta a OpenFIGI si ningún resultado de la búsqueda cotiza', async () => {
     const openFigi = vi
       .fn()
-      .mockResolvedValue(new Response(JSON.stringify([{ data: [{ ticker: 'VWCE', exchCode: 'NA' }] }]), { status: 200 }));
+      .mockResolvedValue(
+        new Response(JSON.stringify([{ data: [{ ticker: 'VWCE', exchCode: 'NA' }] }]), { status: 200 }),
+      );
     vi.stubGlobal('fetch', openFigi);
     const { resolver } = makeResolver([result('NOPE.L')], ['VWCE.AS']);
 
@@ -206,8 +208,15 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
   });
 
   it('en el fallback no acepta un ticker que cotiza en una bolsa donde OpenFIGI no lo lista', async () => {
-    const listings = [{ ticker: 'AMZN', exchCode: 'US' }, { ticker: 'AMZ', exchCode: 'GY' }, { ticker: null, exchCode: null }];
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([{ data: listings }]), { status: 200 })));
+    const listings = [
+      { ticker: 'AMZN', exchCode: 'US' },
+      { ticker: 'AMZ', exchCode: 'GY' },
+      { ticker: null, exchCode: null },
+    ];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response(JSON.stringify([{ data: listings }]), { status: 200 })),
+    );
     // `AMZN.AS` cotiza (es el ETP), pero Amazon no está listada en Amsterdam.
     const { resolver } = makeResolver([], ['AMZN.AS', 'AMZ.DE', 'AMZN']);
 
