@@ -248,6 +248,20 @@ describe("referenceRatesNeeded", () => {
     ).toEqual({ currencies: ["GBP", "USD"], from: "2019-05-02" });
   });
 
+  it("incluye la compra antigua del mismo valor en otro bróker, que el FIFO puede emparejar", () => {
+    expect(
+      referenceRatesNeeded([
+        position({ id: "a", ticker: "AAPL", currency: "USD", lots: [buy("1", 1, 1, "2019-03-01")] }),
+        position({
+          id: "b",
+          ticker: "aapl",
+          currency: "USD",
+          lots: [buy("2", 1, 1, "2024-01-02"), sell("3", 1, 1, "2024-06-03")],
+        }),
+      ]),
+    ).toEqual({ currencies: ["USD"], from: "2019-03-01" });
+  });
+
   it("sin ventas en divisa no hace falta ningún tipo", () => {
     expect(
       referenceRatesNeeded([

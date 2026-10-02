@@ -124,16 +124,26 @@ export interface ReferenceRatesRequest {
 }
 
 /**
- * Qué tipos pedir para `buildRealisedGainsReport`: las divisas distintas del euro de las
- * posiciones con alguna venta, desde su operación más antigua. `null` si no hace falta ninguno.
+ * Qué tipos pedir para `buildRealisedGainsReport`: las divisas distintas del euro de los valores
+ * con alguna venta, desde su operación más antigua. Mira el valor entero, no la posición: el FIFO
+ * puede emparejar la venta de un bróker con una compra antigua de otro. `null` si no hace falta
+ * ninguno.
  */
 export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]): ReferenceRatesRequest | null {
+  const bySecurity = new Map<string, RealisedGainsPosition[]>();
+  for (const position of positions) {
+    if (position.currency === TAX_CURRENCY) continue;
+    const key = securityKey(position);
+    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+  }
+
   const currencies = new Set<string>();
   let from: string | null = null;
-  for (const position of positions) {
-    if (position.currency === TAX_CURRENCY || !position.lots.some((lot) => lot.kind === "sell")) continue;
-    currencies.add(position.currency);
-    for (const lot of position.lots) if (from === null || lot.tradedAt < from) from = lot.tradedAt;
+  for (const group of bySecurity.values()) {
+    const lots = group.flatMap((p) => p.lots);
+    if (!lots.some((lot) => lot.kind === "sell")) continue;
+    currencies.add(group[0].currency);
+    for (const lot of lots) if (from === null || lot.tradedAt < from) from = lot.tradedAt;
   }
   return from === null ? null : { currencies: [...currencies].sort(), from };
 }
