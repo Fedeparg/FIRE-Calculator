@@ -140,7 +140,6 @@ describe("parseTradeRepublicCsv — export sintético", () => {
     for (const { reason } of result.skipped) reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
     expect(Object.fromEntries(reasons)).toEqual({
       cash_movement: 7, // CUSTOMER_INBOUND + 2 CARD + 4 TRANSFER
-      dividend: 2,
       ipo_subscription: 1,
       migration_pair: 2,
     });
@@ -150,6 +149,15 @@ describe("parseTradeRepublicCsv — export sintético", () => {
   it("importa intereses y recompensas como cobros, informados a la AEAT tras el cambio a la sucursal española", () => {
     // La migración de custodia del fixture es el 2025-06-06: todo lo posterior ya lo informa TR.
     expect(result.income).toEqual([
+      // Antes de la migración: `tax` es solo la retención en origen.
+      expect.objectContaining({ kind: "dividend", paidAt: "2025-05-05", gross: "2.55", withholdingOrigin: "0.45" }),
+      // Sin retención y de un emisor sin tipo conocido: el origen queda sin saber.
+      expect.objectContaining({
+        kind: "dividend",
+        paidAt: "2025-05-20",
+        withholdingOrigin: null,
+        reportedToAeat: false,
+      }),
       expect.objectContaining({
         kind: "interest",
         paidAt: "2025-06-30",
@@ -451,6 +459,87 @@ describe("parseTradeRepublicCsv — cobros", () => {
   it("sin ninguna señal de cuenta española, nada está informado", () => {
     const { income } = parseTradeRepublicCsv(csv(interest("2025-01-01", "1.00", "", "i1")));
     expect(income[0]).toMatchObject({ reportedToAeat: false, country: "DE", withholdingSpain: "0" });
+  });
+
+  const dividend = (date: string, isin: string, amount: string, tax: string, id: string) =>
+    row({
+      date,
+      datetime: `${date}T06:00:00.000000Z`,
+      category: "CASH",
+      type: "DIVIDEND",
+      symbol: isin,
+      shares: "1",
+      price: "",
+      amount,
+      tax,
+      transaction_id: id,
+    });
+  const afterMigration = (...rows: string[]) =>
+    csv(migration("2025-06-06", "-1", "m1"), migration("2025-06-06", "1", "m2"), ...rows);
+
+  it("tras la migración, un dividendo de EE. UU. trae el íntegro y las dos retenciones juntas en `tax`", () => {
+    // Informe fiscal de TR: íntegro 0,22, origen 0,03, España 0,04.
+    const { income } = parseTradeRepublicCsv(
+      afterMigration(dividend("2025-08-14", "US0378331005", "0.22", "-0.07", "d1")),
+    );
+    expect(income[0]).toMatchObject({
+      kind: "dividend",
+      isin: "US0378331005",
+      country: "US",
+      gross: "0.22",
+      withholdingOrigin: "0.03",
+      withholdingSpain: "0.04",
+      reportedToAeat: true,
+    });
+  });
+
+  it("tras la migración, un dividendo neerlandés llega neto de origen y `tax` es solo la española", () => {
+    // Informe fiscal de TR: íntegro 1,60, origen 0,24, España 0,26 (ASML).
+    const { income } = parseTradeRepublicCsv(
+      afterMigration(dividend("2025-08-06", "NL0010273215", "1.36", "-0.26", "d1")),
+    );
+    expect(income[0]).toMatchObject({ gross: "1.6", withholdingOrigin: "0.24", withholdingSpain: "0.26" });
+  });
+
+  it("antes de la migración `tax` es la retención en origen", () => {
+    const { income } = parseTradeRepublicCsv(csv(dividend("2025-05-15", "US0378331005", "0.11", "-0.02", "d1")));
+    expect(income[0]).toMatchObject({
+      gross: "0.11",
+      withholdingOrigin: "0.02",
+      withholdingSpain: "0",
+      reportedToAeat: false,
+    });
+  });
+
+  it("no deduce el origen de países donde lo retenido no es el convenio, ni de lo que no encaja", () => {
+    const { income } = parseTradeRepublicCsv(
+      afterMigration(
+        dividend("2025-09-01", "CH0038863350", "10.00", "-1.90", "d1"),
+        dividend("2025-09-02", "US0378331005", "10.00", "-2.50", "d2"),
+      ),
+    );
+    expect(income.map((i) => [i.withholdingOrigin, i.withholdingSpain])).toEqual([
+      [null, "1.9"],
+      // Ni 15 %, ni 19 %, ni 31,15 %: la española no puede pasar del 19 % de lo cobrado.
+      [null, "1.9"],
+    ]);
+  });
+
+  it("un dividendo diminuto sin retención tiene origen 0, no desconocido", () => {
+    const { income } = parseTradeRepublicCsv(afterMigration(dividend("2025-07-03", "US67066G1040", "0.01", "", "d1")));
+    expect(income[0]).toMatchObject({ withholdingOrigin: "0", withholdingSpain: "0" });
+  });
+
+  it("descarta un dividendo provisional y su anulación, y conserva el definitivo", () => {
+    const { income, skipped } = parseTradeRepublicCsv(
+      csv(
+        dividend("2025-07-29", "CNE100000296", "1.47", "", "d1"),
+        dividend("2025-08-12", "CNE100000296", "-1.47", "", "d2"),
+        dividend("2025-08-12", "CNE100000296", "1.44", "", "d3"),
+      ),
+    );
+    expect(income.map((i) => [i.externalId, i.gross, i.withholdingOrigin])).toEqual([["d3", "1.44", null]]);
+    expect(skipped.map((s) => s.reason)).toEqual(["dividend_reversed", "dividend_reversed"]);
   });
 
   it("descarta cobros con importe inválido, divisa no euro o repetidos", () => {

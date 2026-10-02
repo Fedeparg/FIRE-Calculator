@@ -78,8 +78,6 @@ const PLAIN_DECIMAL = /^(-)?(\d+)(?:\.(\d+))?$/;
 /** Tipos que son solo movimientos de efectivo o de renta, sin efecto en las posiciones. */
 function skipReasonForType(type: string): ImportSkipReason {
   switch (type) {
-    case "DIVIDEND":
-      return "dividend";
     case "IPO_SUBSCRIPTION":
       return "ipo_subscription";
     case "CUSTOMER_INBOUND":
@@ -194,8 +192,9 @@ function toRow(record: CsvRecord, index: Record<string, number>): Row {
  * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` no se suma al coste. En
  *   las compras de un saveback es la retención del 19 % de la recompensa y pasa a su cobro (ver
  *   `resolveIncome`); del resto solo se avisa de cuántas operaciones la traen.
- * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK` y `STOCKPERK` son cobros (`income`). La recompensa
- *   llega además como una `BUY` aparte por el mismo importe: esa compra entra con su coste.
+ * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK`, `STOCKPERK` y `DIVIDEND` son cobros (`income`). La
+ *   recompensa llega además como una `BUY` aparte por el mismo importe: esa compra entra con su
+ *   coste. Las retenciones de un dividendo se reparten con `splitDividend`.
  * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
  * - Las `MIGRATION` (cambio de custodia) vienen en parejas salida/entrada con el mismo ISIN y
  *   cantidad, a pocos milisegundos entre sí, y efecto neto cero: se ignoran las parejas y se avisa de las sueltas.
@@ -365,8 +364,95 @@ function previousDay(date: string): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
 }
 
-/** Tipos de fila que son cobros. Los dividendos aún no se importan (ver `skipReasonForType`). */
-const INCOME_TYPES = new Set(["INTEREST_PAYMENT", "BENEFITS_SAVEBACK", "STOCKPERK"]);
+/** Tipos de fila que son cobros. */
+const INCOME_TYPES = new Set(["INTEREST_PAYMENT", "BENEFITS_SAVEBACK", "STOCKPERK", "DIVIDEND"]);
+
+/** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF). */
+const SPANISH_WITHHOLDING_RATE = 0.19;
+
+/**
+ * Retención en origen que TR aplica de hecho, por país del emisor (prefijo del ISIN), donde coincide
+ * con el convenio: EE. UU. con el W-8BEN de TR y Países Bajos, 15 %. En el resto (Suiza 35 %,
+ * Alemania 26,375 %, Francia, Irlanda, China…) lo retenido no suele ser el tipo del convenio y no
+ * se deduce: el cobro queda con la retención en origen desconocida para que la complete el usuario.
+ */
+const KNOWN_ORIGIN_RATES: Readonly<Record<string, number>> = { US: 0.15, NL: 0.15 };
+
+/** Margen para comparar importes que TR redondea a céntimos en cada paso. */
+const CENT_TOLERANCE = 0.011;
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * Reparte un dividendo de TR en íntegro, retención en origen y retención española. El significado de
+ * `amount` y `tax` cambia con el periodo y el emisor (verificado contra los informes fiscales de TR):
+ *
+ * - Antes de la sucursal española: `amount` es el íntegro y `tax`, la retención en origen.
+ * - Después, España retiene el 19 % del cobro neto de origen. Si `tax/amount` ≈ 19 %, `amount` ya
+ *   llegó neto de origen (ASML) y `tax` es solo la española; si ≈ origen + 19 % del resto, `amount`
+ *   es el íntegro y `tax` suma las dos (EE. UU.). Lo que no encaja queda con el origen sin saber.
+ *
+ * Sin retención y con un importe tan pequeño que la de origen redondearía a 0, el origen es 0.
+ */
+function splitDividend(
+  amount: number,
+  tax: number,
+  country: string,
+  reported: boolean,
+): { gross: number; origin: number | null; spain: number } {
+  const rate = KNOWN_ORIGIN_RATES[country];
+  if (tax === 0) {
+    const negligible = rate !== undefined && round2(Math.abs(amount) * rate) === 0;
+    return { gross: amount, origin: negligible || country === "ES" ? 0 : null, spain: 0 };
+  }
+  if (!reported) return { gross: amount, origin: tax, spain: 0 };
+  if (Math.abs(tax - SPANISH_WITHHOLDING_RATE * amount) <= CENT_TOLERANCE) {
+    if (rate === undefined) return { gross: amount, origin: country === "ES" ? 0 : null, spain: tax };
+    const gross = round2(amount / (1 - rate));
+    return { gross, origin: round2(gross - amount), spain: tax };
+  }
+  if (
+    rate !== undefined &&
+    Math.abs(tax - (rate + SPANISH_WITHHOLDING_RATE * (1 - rate)) * amount) <= 2 * CENT_TOLERANCE
+  ) {
+    const origin = round2(rate * amount);
+    return { gross: amount, origin, spain: round2(tax - origin) };
+  }
+  // Sin clasificar: la española no puede pasar del 19 % de lo cobrado; el resto, sin saber.
+  return { gross: amount, origin: null, spain: Math.min(tax, round2(SPANISH_WITHHOLDING_RATE * amount)) };
+}
+
+/** Número ya redondeado → decimal de la escala de la BD. */
+function decimalOf(value: number): string {
+  return formatUnits(parseUnits(value.toFixed(AMOUNT_SCALE), AMOUNT_SCALE) ?? 0n, AMOUNT_SCALE);
+}
+
+/**
+ * Anulaciones de dividendos: TR a veces abona un dividendo provisional y luego lo anula con la
+ * misma cantidad en negativo antes de abonar el definitivo. Cada anulación se empareja con el
+ * abono anterior del mismo ISIN e importe y se descartan los dos.
+ */
+function reversedDividends(rows: readonly Row[]): Set<Row> {
+  const dropped = new Set<Row>();
+  const dividends = rows.filter((row) => row.type === "DIVIDEND");
+  for (const reversal of dividends) {
+    const amount = parseUnits(reversal.amount, AMOUNT_SCALE);
+    if (amount === null || amount >= 0n) continue;
+    const original = dividends.findLast(
+      (row) =>
+        !dropped.has(row) &&
+        row !== reversal &&
+        row.symbol === reversal.symbol &&
+        row.date <= reversal.date &&
+        parseUnits(row.amount, AMOUNT_SCALE) === -amount,
+    );
+    if (original) {
+      dropped.add(original);
+      dropped.add(reversal);
+    }
+  }
+  return dropped;
+}
 
 /**
  * Día del cambio de custodia a la sucursal española de TR, o `null`. Desde el día siguiente TR
@@ -408,8 +494,13 @@ function resolveIncome(
   const reported = (date: string) => cutoff !== null && (cutoff.inclusive ? date >= cutoff.date : date > cutoff.date);
   const income: { item: ImportedIncome; line: number }[] = [];
   let buysWithBenefitTax = 0;
+  const reversed = reversedDividends(rows);
 
   for (const row of rows) {
+    if (reversed.has(row)) {
+      skip(row, "dividend_reversed");
+      continue;
+    }
     const amount = parseUnits(row.amount, AMOUNT_SCALE);
     const ownTax = row.tax === "" ? 0n : parseUnits(row.tax, AMOUNT_SCALE);
     if (
@@ -417,7 +508,8 @@ function resolveIncome(
       row.transactionId === "" ||
       amount === null ||
       ownTax === null ||
-      row.currency !== "EUR"
+      row.currency !== "EUR" ||
+      (row.type === "DIVIDEND" && !ISIN.test(row.symbol))
     ) {
       skip(row, "invalid_row");
       continue;
@@ -439,6 +531,32 @@ function resolveIncome(
     }
 
     const isReported = reported(row.date);
+    if (row.type === "DIVIDEND") {
+      const country = row.symbol.slice(0, 2);
+      const split = splitDividend(
+        Number(formatUnits(amount, AMOUNT_SCALE)),
+        Number(formatUnits(tax, AMOUNT_SCALE)),
+        country,
+        isReported,
+      );
+      income.push({
+        line: row.line,
+        item: {
+          externalId: row.transactionId,
+          kind: "dividend",
+          paidAt: row.date,
+          isin: row.symbol,
+          name: row.name || null,
+          country,
+          currency: "EUR",
+          gross: decimalOf(split.gross),
+          withholdingOrigin: split.origin === null ? null : decimalOf(split.origin),
+          withholdingSpain: decimalOf(split.spain),
+          reportedToAeat: isReported,
+        },
+      });
+      continue;
+    }
     // La sucursal española comunica a la AEAT los intereses del mes con fecha de su último día,
     // aunque los abone el día 1 del siguiente: así el de diciembre cuenta en su año, como en el borrador.
     const paidAt =

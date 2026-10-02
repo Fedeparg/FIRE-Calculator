@@ -65,6 +65,7 @@ export function PlanView({
   const extended = plan.positions.filter((p) => p.action === "extend" && !p.blockedBy).length;
   const importable = plan.positions.filter((p) => !p.blockedBy && p.newBuys + p.newSells > 0);
   const lotsToImport = importable.reduce((sum, p) => sum + p.newBuys + p.newSells, 0);
+  const incomeInFile = plan.income.created + plan.income.duplicates;
 
   return (
     <section
@@ -75,8 +76,14 @@ export function PlanView({
         {t("title")}
       </h2>
 
+      {plan.income.created > 0 && (
+        <p className="text-sm text-foreground">
+          {t("income", { count: plan.income.created, reported: plan.income.reportedToAeat })}
+        </p>
+      )}
+
       {plan.positions.length === 0 ? (
-        <p className="text-sm text-muted">{t("nothingToImport")}</p>
+        incomeInFile === 0 && <p className="text-sm text-muted">{t("nothingToImport")}</p>
       ) : (
         <>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -153,14 +160,18 @@ export function PlanView({
       <WarningsList plan={plan} />
       <SkippedList plan={plan} />
 
-      {lotsToImport > 0 ? (
+      {lotsToImport > 0 || plan.income.created > 0 ? (
         <div>
           <Button size="lg" onClick={onConfirm} disabled={importing} className="text-sm">
-            {importing ? t("confirming") : t("confirm", { count: lotsToImport })}
+            {importing
+              ? t("confirming")
+              : lotsToImport > 0
+                ? t("confirm", { count: lotsToImport })
+                : t("confirmIncome", { count: plan.income.created })}
           </Button>
         </div>
       ) : (
-        plan.positions.length > 0 && <p className="text-sm text-muted">{t("alreadyImported")}</p>
+        (plan.positions.length > 0 || incomeInFile > 0) && <p className="text-sm text-muted">{t("alreadyImported")}</p>
       )}
     </section>
   );
@@ -179,6 +190,11 @@ export function ResultView({ result, formatQuantity }: { result: ImportResult; f
       <p className="text-sm text-foreground">
         {t("summary", { count: result.totals.lotsCreated, duplicates: result.totals.duplicates })}
       </p>
+      {result.income.created + result.income.duplicates > 0 && (
+        <p className="text-sm text-foreground">
+          {t("incomeSummary", { count: result.income.created, duplicates: result.income.duplicates })}
+        </p>
+      )}
       {result.totals.failedPositions > 0 && (
         <Notice>{t("failedNote", { count: result.totals.failedPositions })}</Notice>
       )}

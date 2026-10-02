@@ -329,14 +329,14 @@ describe('ImportsService (integración con Postgres)', () => {
       userId,
       csv(
         trade('BUY', ETF, '1', '100', 3, { tax: '-0.30' }),
-        trade('BUY', ETF, '1', '100', 4, { type: 'DIVIDEND', shares: '', price: '' }),
-        trade('BUY', ETF, '1', '100', 5, { type: 'DIVIDEND', shares: '', price: '' }),
-        trade('BUY', ETF, '1', '100', 6, { type: 'CARD_TRANSACTION', shares: '', price: '' }),
+        trade('BUY', ETF, '1', '100', 4, { type: 'CARD_TRANSACTION', shares: '', price: '' }),
+        trade('BUY', ETF, '1', '100', 5, { type: 'CARD_TRANSACTION', shares: '', price: '' }),
+        trade('BUY', ETF, '1', '100', 6, { type: 'IPO_SUBSCRIPTION', shares: '', price: '' }),
       ),
     );
     expect(plan.skipped).toEqual([
-      { reason: 'dividend', count: 2 },
-      { reason: 'cash_movement', count: 1 },
+      { reason: 'cash_movement', count: 2 },
+      { reason: 'ipo_subscription', count: 1 },
     ]);
     expect(plan.warnings).toEqual([{ code: 'trade_tax_ignored', count: 1 }]);
   });
@@ -366,6 +366,8 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
   });
   afterEach(() => resetDb(db));
   afterAll(() => close());
+
+  const positionsOf = (userId: string) => db.select().from(positions).where(eq(positions.userId, userId));
 
   const interest = (date: string, amount: string, tax: string) =>
     trade('BUY', ETF, '', '', 1, {
@@ -410,6 +412,27 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
     const again = await service.confirm(userId, file);
     expect(again.income).toEqual({ created: 0, duplicates: 2, reportedToAeat: 0 });
     expect(await db.select().from(incomeEvents)).toHaveLength(2);
+  });
+
+  it('enlaza un dividendo con la posición de Trade Republic de su ISIN, aunque se cree en la misma importación', async () => {
+    const userId = await insertUser(db, 'a@example.com');
+    await service.confirm(
+      userId,
+      csv(
+        trade('BUY', STOCK, '1', '100', 2),
+        trade('BUY', STOCK, '', '', 9, {
+          category: 'CASH',
+          type: 'DIVIDEND',
+          shares: '1',
+          price: '',
+          amount: '1.36',
+          tax: '',
+        }),
+      ),
+    );
+    const [position] = await positionsOf(userId);
+    const [row] = await db.select().from(incomeEvents);
+    expect(row).toMatchObject({ kind: 'dividend', isin: STOCK, positionId: position.id, gross: '1.360000' });
   });
 
   it('los cobros de un usuario no chocan con los mismos ids de otro', async () => {

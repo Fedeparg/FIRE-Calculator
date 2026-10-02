@@ -1419,10 +1419,10 @@
       },
       "scope": {
         "title": "What is imported and what is not",
-        "included": "Buys and sells of stocks, ETFs, funds and derivatives are imported, including savings plan executions. The fee of each trade is stored as a trade cost.",
-        "notYet": "Dividends, interest and cash movements (deposits, withdrawals, card payments) are not imported yet. Neither are cryptocurrencies.",
+        "included": "Purchases and sales of shares, ETFs, funds and derivatives are imported, including savings plan executions, as well as payouts: dividends, interest and rewards (saveback and stockperk). Each trade's fee is stored as a cost of the trade.",
+        "notYet": "Cash movements (deposits, withdrawals, card payments) and crypto are not imported yet.",
         "migrations": "Trade Republic's internal custody migrations are ignored: they do not change what you hold.",
-        "tax": "The taxes shown on some trades are not added to the cost.",
+        "tax": "Taxes shown on some trades are not added to the cost. The saveback withholding is stored with its payout.",
         "derivatives": "Derivatives (knock-outs, warrants and the like) are imported with their transactions, but Sextante does not track their price: they go to a separate section and do not count in the totals."
       },
       "privacy": "The file is processed only for this import and is not stored. Third-party data it contains (counterparties, IBANs, payment references) is discarded as it is read.",
@@ -1470,8 +1470,10 @@
         },
         "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
         "confirming": "Importing…",
-        "alreadyImported": "Every transaction in this file is already imported, or cannot be imported. There is nothing new to add.",
-        "derivativeTag": "Derivative: price not tracked"
+        "alreadyImported": "Everything in this file is already imported or cannot be imported. There is nothing new to add.",
+        "derivativeTag": "Derivative: price not tracked",
+        "income": "New payouts (dividends, interest and rewards): {count}. Of these, {reported} were already reported to the Spanish tax agency by Trade Republic and may be in your draft return.",
+        "confirmIncome": "Import {count, plural, one {# payout} other {# payouts}}"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# transaction carries a tax on its row, which is not added to the cost.} other {# transactions carry a tax on their rows, which is not added to the cost.}}",
@@ -1482,9 +1484,6 @@
         "item": "{reason}: {count}"
       },
       "skipReasons": {
-        "dividend": "Dividends",
-        "interest": "Interest",
-        "benefit": "Perks (saveback, stockperk)",
         "ipo_subscription": "IPO subscriptions",
         "cash_movement": "Cash movements (deposits, withdrawals, card)",
         "migration_pair": "Custody migrations (they cancel each other out)",
@@ -1494,7 +1493,8 @@
         "unsupported_currency": "Transactions in a currency other than the euro",
         "duplicate_row": "Repeated rows",
         "invalid_row": "Invalid rows",
-        "unknown_type": "Unknown transaction types"
+        "unknown_type": "Unknown transaction types",
+        "dividend_reversed": "Provisional dividends reversed by Trade Republic (and their reversal)"
       },
       "result": {
         "title": "Import complete",
@@ -1512,7 +1512,8 @@
           "UNEXPECTED": "Unexpected error. Please try again later."
         },
         "pricesNote": "Prices for the new positions may take a few minutes to appear.",
-        "viewPortfolio": "View my portfolio"
+        "viewPortfolio": "View my portfolio",
+        "incomeSummary": "Payouts imported: {count}. Already imported: {duplicates}."
       },
       "disclaimer": "Indicative information, not financial or tax advice. Check the imported data against your Trade Republic statement."
     },

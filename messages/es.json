@@ -1419,10 +1419,10 @@
       },
       "scope": {
         "title": "Qué se importa y qué no",
-        "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro. La comisión de cada operación se guarda como coste de la operación.",
-        "notYet": "Todavía no se importan los dividendos, los intereses ni los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta). Tampoco las criptomonedas.",
+        "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro, y los cobros: dividendos, intereses y recompensas (saveback y stockperk). La comisión de cada operación se guarda como coste de la operación.",
+        "notYet": "Todavía no se importan los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta) ni las criptomonedas.",
         "migrations": "Los cambios de custodia internos de Trade Republic se ignoran: no cambian lo que tienes.",
-        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste.",
+        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste. La retención del saveback se guarda en su cobro.",
         "derivatives": "Los derivados (knock-outs, warrants y similares) se importan con sus operaciones, pero Sextante no sigue su precio: van a una sección aparte y no suman a los totales."
       },
       "privacy": "El fichero se procesa solo para esta importación y no se guarda. Los datos de terceros que incluye (contrapartes, IBAN, referencias de pago) se descartan al leerlo.",
@@ -1470,8 +1470,10 @@
         },
         "confirm": "Importar {count, plural, one {# operación} other {# operaciones}}",
         "confirming": "Importando…",
-        "alreadyImported": "Todas las operaciones de este fichero ya están importadas, o no se pueden importar. No hay nada nuevo que añadir.",
-        "derivativeTag": "Derivado: sin seguimiento de precio"
+        "alreadyImported": "Todo lo de este fichero ya está importado, o no se puede importar. No hay nada nuevo que añadir.",
+        "derivativeTag": "Derivado: sin seguimiento de precio",
+        "income": "Cobros nuevos (dividendos, intereses y recompensas): {count}. De ellos, {reported} ya los comunicó Trade Republic a Hacienda y pueden estar en tu borrador.",
+        "confirmIncome": "Importar {count, plural, one {# cobro} other {# cobros}}"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# operación trae un impuesto en su fila, que no se suma al coste.} other {# operaciones traen un impuesto en su fila, que no se suma al coste.}}",
@@ -1482,9 +1484,6 @@
         "item": "{reason}: {count}"
       },
       "skipReasons": {
-        "dividend": "Dividendos",
-        "interest": "Intereses",
-        "benefit": "Ventajas (saveback, stockperk)",
         "ipo_subscription": "Suscripciones a salidas a bolsa",
         "cash_movement": "Movimientos de efectivo (ingresos, retiradas, tarjeta)",
         "migration_pair": "Cambios de custodia (se anulan entre sí)",
@@ -1494,7 +1493,8 @@
         "unsupported_currency": "Operaciones en una divisa distinta del euro",
         "duplicate_row": "Filas repetidas",
         "invalid_row": "Filas no válidas",
-        "unknown_type": "Tipos de operación desconocidos"
+        "unknown_type": "Tipos de operación desconocidos",
+        "dividend_reversed": "Dividendos provisionales anulados por Trade Republic (y su anulación)"
       },
       "result": {
         "title": "Importación completada",
@@ -1512,7 +1512,8 @@
           "UNEXPECTED": "Error inesperado. Inténtalo de nuevo más tarde."
         },
         "pricesNote": "Los precios de las posiciones nuevas pueden tardar unos minutos en aparecer.",
-        "viewPortfolio": "Ver mi cartera"
+        "viewPortfolio": "Ver mi cartera",
+        "incomeSummary": "Cobros importados: {count}. Ya estaban importados: {duplicates}."
       },
       "disclaimer": "Información orientativa, no es asesoramiento financiero ni fiscal. Revisa los datos importados contra tu extracto de Trade Republic."
     },

@@ -47,9 +47,8 @@ export type ImportedIncome = {
 };
 
 export type ImportSkipReason =
-  | "dividend"
-  | "interest"
-  | "benefit"
+  /** Dividendo provisional anulado por TR, junto con su anulación. */
+  | "dividend_reversed"
   | "ipo_subscription"
   | "cash_movement"
   | "migration_pair"
