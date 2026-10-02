@@ -114,11 +114,22 @@ realizadas (`realised-gains.ts`), con las mismas reglas.
   comisiones del lote se prorratean entre las participaciones vivas.
 - Valor de transmisión = importe recibido − gastos y comisiones de venta (art. 35.2).
 - Escala del ahorro (`IRPF_AHORRO`) aplicada por tramos.
+- **Ampliaciones liberadas** (art. 37.1.a LIRPF): el coste total de las acciones antiguas se
+  reparte entre antiguas y nuevas, y las nuevas heredan la antigüedad de las antiguas. Una
+  compra a **precio 0 y sin comisiones** se interpreta como acciones totalmente liberadas (así las
+  importa Trade Republic, `BONUS_ISSUE`) y `walkLots` la reparte proporcionalmente entre los lotes
+  vivos en ese momento: cada lote gana títulos, conserva su coste total y su fecha (y su orden
+  FIFO). Con ello la ganancia cuadra con el ejemplo del Manual práctico de Renta 2025 (Parte 1,
+  págs. 885-887: 900 acciones de 2001 + 600 liberadas + 500 parcialmente liberadas de 2011; venta
+  de 1.600 a 10 € → 6.000 + 500 = 6.500 €). Supuestos: las **parcialmente liberadas** (se paga algo)
+  no se distinguen de una compra normal y siguen como compra; sin lotes vivos la compra a precio 0
+  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Fuente: Ley 35/2006,
+  art. 37.1.a, https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 **No modela** (resultado solo orientativo)
 
-- Regla de los dos meses (art. 33.5.f): recomprar el mismo valor en los dos meses
-  anteriores o posteriores impide computar la pérdida en ese ejercicio.
+- Regla de los dos meses en la simulación de venta (`simulateSale` mira la venta aislada); sí la
+  aplica el informe anual, vía `wash-sale.ts`.
 - Compensación con otras ganancias y pérdidas: la simulación mira la venta aislada,
   así que una pérdida da cuota 0 en vez del ahorro fiscal real. (El informe anual sí
   compensa las ventas del mismo ejercicio.)
@@ -172,6 +183,15 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
   exactamente convertir cada operación al tipo de su fecha (lo comprueba un test de
   propiedades). Si el usuario guarda la divisa en una cuenta, la diferencia se imputa cuando
   la cambia (art. 14.2.e LIRPF) y el informe no puede saberlo: lo avisa en pantalla.
+- **Regla de los dos meses** (`wash-sale.ts`): la pérdida diferida no cuenta en el ejercicio de su
+  venta (`deferred`, `eur.deferredLoss`) y sí en el de la venta definitiva de los recomprados
+  (`integrated`, `eur.integratedLoss`); `gains`, `losses`, `net`, `total` y `tax` ya reflejan la regla
+  (`computableGain = gain − deferredLoss + integratedLoss`). La pérdida se convierte a euros con el
+  tipo del día de la venta que la originó y se integra por ese importe, no al tipo de la venta
+  posterior (si esa venta no tiene tipo, se usa el de la que la integra). La diferencia de cambio
+  no es una transmisión de valores y no se difiere. Los derivados (`isDerivative`) quedan fuera
+  (DGT V2172-21) y no se agrupan con una acción del mismo símbolo. Una venta sin tipo del día
+  (`unconverted`) queda fuera de los totales también en lo diferido.
 - **Sin tipo del día de la venta** (divisa que el BCE no publica, serie no disponible), la
   venta va a `unconverted`, en su divisa y fuera de los totales y de la cuota. **Sin tipo de
   alguna compra** (anterior a 1999), la ganancia sí se convierte pero no la diferencia de
@@ -183,9 +203,49 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
   párrafo): un año con pérdida neta da cuota 0 y no se arrastra.
 - Compensación cruzada del 25 % con rendimientos del capital mobiliario (la cartera
   no registra dividendos ni intereses).
-- Regla de los dos meses (art. 33.5.f).
 - Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
   posición, como el resto de importes del lote.
+
+## `wash-sale.ts`
+
+Regla de los dos meses (art. 33.5.f LIRPF): no se computan las pérdidas por transmitir valores
+admitidos a negociación si el contribuyente adquiere valores homogéneos en los dos meses anteriores
+o posteriores; la pérdida se integra a medida que se transmiten, de forma definitiva, los valores
+recomprados. (Para valores no cotizados el plazo es de un año: fuera de alcance, todo se trata como
+cotizado.) `computeWashSales(lots, walk?)` es pura, trabaja en la divisa de la posición y recibe el
+histórico de un valor y su `walkLots(lots, { trackOpenLots: true })`; devuelve, por venta, la
+pérdida diferida (`deferredLoss`, ≤ 0), los títulos bloqueados y lo que se integra (`integratedLoss`,
+con su venta de origen).
+
+**Criterios (interpretaciones)**
+
+- **Ventana «de fecha a fecha»** (art. 5.1 Código Civil), con ambos extremos incluidos: venta 16/07 →
+  del 16/05 al 16/09. Si el mes de destino no tiene ese día, el último del mes (31/12 + 2 meses →
+  28/02). Una compra el día 16/09 bloquea; el 17/09, no. Misma regla hacia atrás (16/05 sí, 15/05 no).
+- **Qué compras bloquean:** las de la ventana cuyos títulos siguen en cartera tras la venta (las
+  anteriores) o que aún no existen (las posteriores). Los títulos vendidos en la propia operación no
+  cuentan. Las ampliaciones liberadas no son compra. Un título comprado bloquea como mucho una vez.
+- **Proporcionalidad:** se analiza cada trozo FIFO de la venta y solo los que dan pérdida; si se
+  recompran menos títulos que los vendidos con pérdida, se difiere `pérdida × recomprados / vendidos
+con pérdida`. Con varias ventas, se atienden por orden cronológico y cada una consume primero las
+  compras más antiguas de su ventana.
+- **Integración:** al vender títulos que bloquean una pérdida se libera la parte proporcional a lo
+  vendido (FIFO). Solo se integra si esa transmisión es «definitiva» (Manual: «Una transmisión se
+  considerará definitiva cuando, en los dos meses anteriores o posteriores a ella, no se adquieran
+  nuevamente valores homogéneos»); si hay otra recompra, la parte proporcional pasa a los nuevos
+  títulos conservando su venta de origen.
+- **Derivados:** no sujetos (DGT V2172-21); el que llama no debe pasarle su histórico
+  (`buildRealisedGainsReport` lo hace con `RealisedGainsPosition.isDerivative`).
+- **Fuentes:** Ley 35/2006, art. 33.5.f,
+  https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 ; AEAT, Manual práctico de Renta 2025,
+  cap. 11 «Pérdidas patrimoniales que no se computan como tales»,
+  https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/irpf-2025/c11-ganancias-perdidas-patrimoniales/ganancias-perdidas-patrimoniales-que-no-bi/perdidas-patrimoniales-que-no-se-tales.html
+  (la caja de texto con las citas del Manual se verificó; el caso práctico T.S.A. (1.000 acciones,
+  16/07/2025, 12.000 € frente a 16.800 €, recompra el 16/08/2025) se reproduce como test tal y
+  como figura en el encargo, sin haber podido localizar su texto en esa página).
+
+**No modela:** valores no cotizados (plazo de un año) ni distinguir valores homogéneos que no
+comparten símbolo y divisa (p. ej. una misma empresa con dos cotizaciones).
 
 ## `income.ts`
 
