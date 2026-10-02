@@ -271,3 +271,74 @@ describe("referenceRatesNeeded", () => {
     expect(referenceRatesNeeded([])).toBeNull();
   });
 });
+
+describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF)", () => {
+  // Caso T.S.A. del Manual práctico de Renta 2025, cap. 11: la pérdida de 4.800 € no se integra.
+  const tsa = [buy("old", 1000, 16.8, "2015-05-25"), sell("s1", 1000, 12, "2025-07-16")];
+  const rebuy = buy("re", 1000, 16.5, "2025-08-16");
+
+  it("caso T.S.A.: la pérdida de 4.800 € no se integra en 2025", () => {
+    const [year] = build([position({ id: "a", lots: [...tsa, rebuy] })]).years;
+
+    expect(year.sales[0].gain).toBeCloseTo(-4800, 6);
+    expect(year.sales[0].deferredLoss).toBeCloseTo(-4800, 6);
+    expect(year.deferred).toBeCloseTo(-4800, 6);
+    expect(year.integrated).toBe(0);
+    expect(year.losses).toBeCloseTo(0, 6);
+    expect(year.net).toBeCloseTo(0, 6);
+    expect(year.total).toBeCloseTo(0, 6);
+    expect(year.rows[0].gain).toBeCloseTo(0, 6);
+  });
+
+  it("sin recompra la pérdida se integra en su ejercicio", () => {
+    const [year] = build([position({ id: "a", lots: tsa })]).years;
+
+    expect(year.deferred).toBe(0);
+    expect(year.net).toBeCloseTo(-4800, 6);
+  });
+
+  it("recompra parcial: solo se difiere la parte proporcional", () => {
+    const [year] = build([position({ id: "a", lots: [...tsa, buy("re", 250, 16.5, "2025-08-16")] })]).years;
+
+    expect(year.deferred).toBeCloseTo(-1200, 6);
+    expect(year.net).toBeCloseTo(-3600, 6);
+  });
+
+  it("la pérdida diferida se integra en el ejercicio en que se venden los recomprados", () => {
+    const report = build([position({ id: "a", lots: [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")] })]);
+    const [y2026, y2025] = report.years;
+
+    expect(y2025.net).toBeCloseTo(0, 6);
+    // Venta de 2026: ganancia propia de 500 € menos los 4.800 € de pérdida que desbloquea.
+    expect(y2026.sales[0].gain).toBeCloseTo(500, 6);
+    expect(y2026.integrated).toBeCloseTo(-4800, 6);
+    expect(y2026.sales[0].integratedFrom.map((p) => p.fromSaleId)).toEqual(["s1"]);
+    expect(y2026.net).toBeCloseTo(-4300, 6);
+  });
+
+  it("la pérdida diferida se integra por su importe en euros del día de la venta original", () => {
+    const rates = usd({ "2015-05-25": 1, "2025-07-16": 1.25, "2025-08-16": 1.1, "2026-09-01": 1.5 });
+    const lots = [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")];
+    const [y2026, y2025] = build([position({ id: "a", currency: "USD", lots })], rates).years;
+
+    // −4.800 USD a 1,25 USD/EUR = −3.840 €, no −3.200 € (tipo de 2026).
+    expect(y2025.deferred).toBeCloseTo(-3840, 6);
+    expect(y2026.integrated).toBeCloseTo(-3840, 6);
+  });
+
+  it("los derivados no están sujetos: la pérdida se integra aunque haya recompra", () => {
+    const [year] = build([position({ id: "a", isDerivative: true, lots: [...tsa, rebuy] })]).years;
+
+    expect(year.deferred).toBe(0);
+    expect(year.net).toBeCloseTo(-4800, 6);
+  });
+
+  it("la recompra en otra posición del mismo valor también bloquea", () => {
+    const [year] = build([
+      position({ id: "a", ticker: "TSA", lots: tsa }),
+      position({ id: "b", ticker: "TSA", lots: [rebuy] }),
+    ]).years;
+
+    expect(year.deferred).toBeCloseTo(-4800, 6);
+  });
+});

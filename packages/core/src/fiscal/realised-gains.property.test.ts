@@ -40,7 +40,7 @@ const dailyRates = fc
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
 
 describe("buildRealisedGainsReport — propiedades", () => {
-  it("ganancia de los valores + diferencia de cambio = convertir cada operación a su fecha", () => {
+  it("ganancia de los valores + diferencia de cambio = convertir cada operación a su fecha, salvo lo diferido por la regla de los dos meses", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
@@ -53,8 +53,44 @@ describe("buildRealisedGainsReport — propiedades", () => {
               sale.matched.reduce((acc, m) => acc + m.acquisitionValue / rateOn(m.tradedAt), 0),
             0,
           );
-          return year.fxIncomplete === 0 && year.unconverted.length === 0 && close(year.total, perOperation);
+          return (
+            year.fxIncomplete === 0 &&
+            year.unconverted.length === 0 &&
+            close(year.total, perOperation - year.deferred + year.integrated)
+          );
         });
+      }),
+      PROPERTY_PARAMS,
+    );
+  });
+
+  it("la regla de los dos meses nunca crea pérdidas: lo integrado no supera a lo diferido y cada venta difiere como mucho su pérdida", () => {
+    fc.assert(
+      fc.property(history, dailyRates, (lots, rates) => {
+        const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
+        const deferred = report.years.reduce((s, y) => s + y.deferred, 0);
+        const integrated = report.years.reduce((s, y) => s + y.integrated, 0);
+        const eachSale = report.years.every((y) =>
+          y.sales.every((sale) => {
+            const lossOfSale = sale.matched.reduce((s, m) => s + Math.min(0, m.gain), 0);
+            return sale.deferredLoss <= 0 && sale.deferredLoss >= lossOfSale - 1e-6 && sale.integratedLoss <= 0;
+          }),
+        );
+        // Solo el signo: en euros lo integrado usa el tipo de la venta de origen y los totales no son comparables.
+        return eachSale && deferred <= 0 && integrated <= 0;
+      }),
+      PROPERTY_PARAMS,
+    );
+  });
+
+  it("los derivados no aplican la regla: sin pérdidas diferidas ni integradas", () => {
+    fc.assert(
+      fc.property(history, dailyRates, (lots, rates) => {
+        const report = buildRealisedGainsReport(
+          [{ id: "p", ticker: "X", name: null, currency: "USD", lots, isDerivative: true }],
+          rates,
+        );
+        return report.years.every((y) => y.deferred === 0 && y.integrated === 0);
       }),
       PROPERTY_PARAMS,
     );
