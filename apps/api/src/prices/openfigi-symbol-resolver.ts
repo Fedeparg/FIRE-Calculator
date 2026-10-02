@@ -19,12 +19,36 @@ const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 /** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
-/**
- * Sufijos de Yahoo a probar, en orden de preferencia para un europeo (EUR primero; Londres, en
- * GBp, al final). Los exchCode de OpenFIGI son códigos Bloomberg que no mapean limpio a Yahoo
- * (hay basura tipo XH/XF): se generan candidatos ticker×sufijo y la fuente decide cuál cotiza.
- */
+/** Sufijos de Yahoo en orden de preferencia para un europeo (EUR primero; Londres, en GBp, al final). */
 const YAHOO_SUFFIXES = ['.AS', '.DE', '.MI', '.PA', '.MC', '.SW', '.L'];
+/**
+ * exchCode de Bloomberg (OpenFIGI) → sufijo de Yahoo; '' = EE. UU., donde Yahoo usa el ticker
+ * sin sufijo. Un ticker solo se prueba con el sufijo de la bolsa en la que OpenFIGI lo lista: el
+ * mismo ticker en otra bolsa puede ser otro producto (`AMZN.AS` es un ETP sobre Amazon a ~7 €,
+ * no la acción). Los códigos que no están aquí (compuestos EO/EU, basura tipo XH/XF) se ignoran.
+ */
+const EXCHANGE_SUFFIXES: ReadonlyMap<string, string> = new Map([
+  ['NA', '.AS'],
+  ['GY', '.DE'],
+  ['GR', '.DE'],
+  ['IM', '.MI'],
+  ['FP', '.PA'],
+  ['SM', '.MC'],
+  ['SQ', '.MC'],
+  ['SW', '.SW'],
+  ['SE', '.SW'],
+  ['LN', '.L'],
+  ['US', ''],
+  ['UN', ''],
+  ['UW', ''],
+  ['UQ', ''],
+  ['UA', ''],
+  ['UR', ''],
+  ['UP', ''],
+  ['UV', ''],
+]);
+/** Orden de prueba de los sufijos: los europeos por preferencia y EE. UU. al final. */
+const SUFFIX_ORDER = [...YAHOO_SUFFIXES, ''];
 /** Tope de candidatos a validar por consulta (acota el tráfico en un fallo de cobertura). */
 const MAX_CANDIDATES = 12;
 /** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
@@ -34,35 +58,41 @@ const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
 
 /** Resultado de consultar OpenFIGI por un ISIN. Distingue el "vacío" real del fallo transitorio. */
 type OpenFigiOutcome =
-  | { kind: 'matches'; tickers: string[] }
+  | { kind: 'matches'; listings: OpenFigiListing[] }
   | { kind: 'empty' } // OpenFIGI respondió pero sin coincidencias → no existe (cachear).
   | { kind: 'error' }; // red / HTTP / parseo → transitorio (NO cachear, reintentar luego).
 
-interface OpenFigiMatch {
-  ticker?: string;
+/** Un listado del instrumento en una bolsa, tal como lo da OpenFIGI. */
+export interface OpenFigiListing {
+  ticker: string;
+  exchCode?: string;
 }
 interface OpenFigiResultItem {
-  data?: OpenFigiMatch[];
+  data?: Partial<OpenFigiListing>[];
   warning?: string;
 }
 
-/** Dedupe de tickers preservando el más frecuente primero (el listado principal repite). */
-function rankTickers(tickers: string[]): string[] {
-  const counts = new Map<string, number>();
-  for (const t of tickers) {
-    const tk = t.trim().toUpperCase();
-    if (tk) counts.set(tk, (counts.get(tk) ?? 0) + 1);
+/**
+ * Candidatos para un ISIN: el ticker de cada listado con el sufijo de SU bolsa, en el orden de
+ * `SUFFIX_ORDER`. Dentro de un mismo sufijo va primero el ticker más repetido (el listado
+ * principal se repite en las sub-bolsas). Pura.
+ */
+export function isinCandidates(listings: readonly OpenFigiListing[]): string[] {
+  const found = new Map<string, { rank: number; count: number }>();
+  for (const { ticker, exchCode } of listings) {
+    const suffix = exchCode ? EXCHANGE_SUFFIXES.get(exchCode.trim().toUpperCase()) : undefined;
+    const tk = ticker.trim().toUpperCase();
+    if (suffix === undefined || !tk) continue;
+    const symbol = tk + suffix;
+    const entry = found.get(symbol) ?? { rank: SUFFIX_ORDER.indexOf(suffix), count: 0 };
+    entry.count += 1;
+    found.set(symbol, entry);
   }
-  return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([tk]) => tk);
-}
-
-/** Candidatos para un ISIN: los tickers de OpenFIGI (top 3) × sufijos preferentes + bare. */
-export function isinCandidates(tickers: string[]): string[] {
-  const top = rankTickers(tickers).slice(0, 3);
-  const out: string[] = [];
-  for (const suffix of YAHOO_SUFFIXES) for (const tk of top) out.push(tk + suffix);
-  for (const tk of top) out.push(tk); // bare al final (menor prioridad: riesgo de falso positivo)
-  return [...new Set(out)].slice(0, MAX_CANDIDATES);
+  // `sort` es estable: a igual sufijo y frecuencia se conserva el orden de OpenFIGI.
+  return [...found.entries()]
+    .sort(([, a], [, b]) => a.rank - b.rank || b.count - a.count)
+    .map(([symbol]) => symbol)
+    .slice(0, MAX_CANDIDATES);
 }
 
 /** Tipos de la búsqueda de Yahoo que pueden ser el instrumento de un ISIN. */
@@ -188,13 +218,13 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
         await this.cache(query, null, 'not_found');
         return null;
       }
-      const symbol = await this.firstThatPrices(isinCandidates(outcome.tickers));
+      const symbol = await this.firstThatPrices(isinCandidates(outcome.listings));
       if (symbol) {
         await this.cache(query, symbol, 'openfigi');
         return symbol;
       }
       // Coincidencias sin cotización: hueco de cobertura o 429. No se cachea; se reintenta.
-      this.logger.warn(`OpenFIGI ${query}: ${outcome.tickers.length} tickers, ninguno cotiza`);
+      this.logger.warn(`OpenFIGI ${query}: ${outcome.listings.length} listados, ninguno cotiza`);
       return null;
     }
 
@@ -259,8 +289,13 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       const item = Array.isArray(body) ? body[0] : undefined;
       const data = item?.data;
       if (!data || data.length === 0) return { kind: 'empty' };
-      const tickers = data.map((d) => d.ticker).filter((t): t is string => Boolean(t));
-      return tickers.length ? { kind: 'matches', tickers } : { kind: 'empty' };
+      // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
+      const listings = data.flatMap(({ ticker, exchCode }) =>
+        typeof ticker === 'string' && ticker
+          ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]
+          : [],
+      );
+      return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
     } catch (error) {
       this.logger.warn(`OpenFIGI ${isin}: ${(error as Error).message}`);
       return { kind: 'error' };
