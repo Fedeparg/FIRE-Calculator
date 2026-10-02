@@ -82,9 +82,7 @@ export type PositionErrorKey = ApiErrorKey | "errorHasSales";
 
 /** Conflicto 409 del alta/edición de posiciones, con lo que la UI necesita para reaccionar. */
 export type PositionConflict =
-  | { kind: "hasSales" }
-  | { kind: "brokerRequired" }
-  | { kind: "duplicate"; existing: Position };
+  { kind: "hasSales" } | { kind: "brokerRequired" } | { kind: "duplicate"; existing: Position };
 
 /**
  * Lee un 409 de `POST/PATCH /api/positions`. DUPLICATE: ya existe ese símbolo+bróker (en alta

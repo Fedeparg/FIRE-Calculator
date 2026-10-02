@@ -17,16 +17,14 @@ const history = fc
     { maxLength: 30 },
   )
   .map((rows) =>
-    rows.map(
-      (row, i): TradeLot => ({
-        id: `lot-${String(i).padStart(3, "0")}`,
-        kind: row.kind,
-        quantity: row.quantity,
-        price: row.price,
-        fees: row.fees,
-        tradedAt: new Date(Date.UTC(2020, 0, 1) + row.day * 86_400_000).toISOString().slice(0, 10),
-      }),
-    ),
+    rows.map((row, i): TradeLot => ({
+      id: `lot-${String(i).padStart(3, "0")}`,
+      kind: row.kind,
+      quantity: row.quantity,
+      price: row.price,
+      fees: row.fees,
+      tradedAt: new Date(Date.UTC(2020, 0, 1) + row.day * 86_400_000).toISOString().slice(0, 10),
+    })),
   );
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));

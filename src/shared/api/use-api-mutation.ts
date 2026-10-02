@@ -5,10 +5,7 @@ import { useCallback, useState } from "react";
 import { apiErrorKey, type ApiErrorKey } from "./client";
 
 export type ApiMutationState =
-  | { status: "idle" }
-  | { status: "pending" }
-  | { status: "success" }
-  | { status: "error"; error: unknown };
+  { status: "idle" } | { status: "pending" } | { status: "success" } | { status: "error"; error: unknown };
 
 export type ApiMutationResult<T> = { ok: true; data: T } | { ok: false; error: unknown };
 
