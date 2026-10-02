@@ -72,7 +72,8 @@ interface PurchaseState {
  * - Cada título comprado bloquea como mucho una vez; varias ventas se atienden por orden
  *   cronológico y cada una consume las compras más antiguas de su ventana primero.
  * - La pérdida se integra, en la proporción en que se vendan, cuando se transmiten esos títulos
- *   (FIFO). Una pérdida ya integrada no vuelve a diferirse.
+ *   (FIFO) «de forma definitiva»: si esa venta tiene a su vez una recompra en su ventana (sea con
+ *   ganancia o con pérdida), la parte proporcional sigue diferida y pasa a los nuevos títulos.
  *
  * Los derivados no están sujetos (DGT V2172-21): no se debe llamar con su histórico.
  */
@@ -108,37 +109,29 @@ export function computeWashSales(lots: readonly TradeLot[], walk?: LotWalk): Map
     };
     result.set(sale.lotId, entry);
 
-    // 1. Se transmiten títulos que bloqueaban pérdidas: se integra la parte proporcional.
-    const integrated = new Map<string, number>();
+    // 1. Se transmiten títulos que bloqueaban pérdidas: la parte proporcional se libera, y solo
+    // se integra si la transmisión es «definitiva» (paso 3).
+    const released = new Map<string, number>();
+    let releasedQuantity = 0;
     for (const piece of sale.matched) {
       const state = states.get(piece.lotId);
-      if (!state || state.tags.length === 0) continue;
+      if (!state || state.tags.every((tag) => tag.loss === 0)) continue;
       const before = piece.quantity + (aliveAfter.get(piece.lotId) ?? 0);
       const sold = Math.min(1, piece.quantity / before);
+      releasedQuantity += piece.quantity;
       for (const tag of state.tags) {
-        const released = tag.loss * sold;
-        tag.loss -= released;
-        integrated.set(tag.saleId, (integrated.get(tag.saleId) ?? 0) + released);
+        const part = tag.loss * sold;
+        tag.loss -= part;
+        released.set(tag.saleId, (released.get(tag.saleId) ?? 0) + part);
       }
     }
-    for (const [fromSaleId, loss] of integrated) {
-      if (loss === 0) continue;
-      entry.integratedFrom.push({ fromSaleId, loss });
-      entry.integratedLoss += loss;
-    }
 
-    // 2. Pérdida propia de esta venta: trozos FIFO con pérdida.
-    const lossPieces = sale.matched.filter((m) => m.gain < 0);
-    const lossQuantity = lossPieces.reduce((sum, m) => sum + m.quantity, 0);
-    if (lossQuantity <= QUANTITY_EPSILON) continue;
-    const loss = lossPieces.reduce((sum, m) => sum + m.gain, 0);
-
+    // Compras de la ventana de esta venta con capacidad libre. `reference` son los títulos sobre
+    // los que se expresa su parte libre: los vivos tras la venta (anteriores) o los comprados
+    // (posteriores).
     const saleOrder = orderOf.get(sale.lotId) ?? Infinity;
     const windowStart = addMonths(sale.tradedAt, -2);
     const windowEnd = addMonths(sale.tradedAt, 2);
-
-    // Compras de la ventana con capacidad libre. `reference` son los títulos sobre los que se
-    // expresa su parte libre: los vivos tras la venta (anteriores) o los comprados (posteriores).
     const candidates: { lotId: string; capacity: number; reference: number }[] = [];
     for (const purchase of purchases) {
       if (purchase.tradedAt < windowStart || purchase.tradedAt > windowEnd) continue;
@@ -147,25 +140,49 @@ export function computeWashSales(lots: readonly TradeLot[], walk?: LotWalk): Map
       const capacity = (states.get(purchase.id)?.free ?? 1) * reference;
       if (capacity > QUANTITY_EPSILON) candidates.push({ lotId: purchase.id, capacity, reference });
     }
+    const freeCapacity = () => candidates.reduce((sum, c) => sum + c.capacity, 0);
 
-    const blocked = Math.min(
-      lossQuantity,
-      candidates.reduce((sum, c) => sum + c.capacity, 0),
-    );
-    if (blocked <= QUANTITY_EPSILON) continue;
+    /** Bloquea `quantity` títulos de las compras de la ventana, repartiendo `losses` entre ellas. */
+    const block = (quantity: number, losses: ReadonlyMap<string, number>): void => {
+      let remaining = quantity;
+      for (const candidate of candidates) {
+        const taken = Math.min(candidate.capacity, remaining);
+        if (taken <= QUANTITY_EPSILON) continue;
+        const state = stateOf(candidate.lotId);
+        state.free = Math.max(0, state.free - taken / candidate.reference);
+        candidate.capacity -= taken;
+        for (const [saleId, loss] of losses) state.tags.push({ saleId, loss: (loss * taken) / quantity });
+        remaining -= taken;
+      }
+    };
 
-    const deferred = (loss * blocked) / lossQuantity;
-    let remaining = blocked;
-    for (const candidate of candidates) {
-      const taken = Math.min(candidate.capacity, remaining);
-      if (taken <= QUANTITY_EPSILON) continue;
-      const state = stateOf(candidate.lotId);
-      state.free = Math.max(0, state.free - taken / candidate.reference);
-      state.tags.push({ saleId: sale.lotId, loss: (deferred * taken) / blocked });
-      remaining -= taken;
+    // 2. Pérdida propia de esta venta: trozos FIFO con pérdida.
+    const lossPieces = sale.matched.filter((m) => m.gain < 0);
+    const lossQuantity = lossPieces.reduce((sum, m) => sum + m.quantity, 0);
+    if (lossQuantity > QUANTITY_EPSILON) {
+      const blocked = Math.min(lossQuantity, freeCapacity());
+      if (blocked > QUANTITY_EPSILON) {
+        const deferred = (lossPieces.reduce((sum, m) => sum + m.gain, 0) * blocked) / lossQuantity;
+        block(blocked, new Map([[sale.lotId, deferred]]));
+        entry.deferredLoss = deferred;
+        entry.deferredQuantity = blocked;
+      }
     }
-    entry.deferredLoss = deferred;
-    entry.deferredQuantity = blocked;
+
+    // 3. Una transmisión es definitiva si en los dos meses anteriores o posteriores no se
+    // adquieren valores homogéneos. Si hay recompra, la parte proporcional de lo liberado vuelve a
+    // quedar diferida (con su venta de origen) en las compras que aún tengan capacidad libre.
+    const redeferred = Math.min(releasedQuantity, freeCapacity());
+    const ratio = redeferred > QUANTITY_EPSILON && releasedQuantity > 0 ? redeferred / releasedQuantity : 0;
+    if (ratio > 0) {
+      block(redeferred, new Map([...released].map(([saleId, loss]) => [saleId, loss * ratio])));
+    }
+    for (const [fromSaleId, loss] of released) {
+      const integrated = loss * (1 - ratio);
+      if (integrated === 0) continue;
+      entry.integratedFrom.push({ fromSaleId, loss: integrated });
+      entry.integratedLoss += integrated;
+    }
   }
 
   return result;

@@ -125,6 +125,21 @@ describe("computeWashSales", () => {
     expect(result.get("s2")?.deferredLoss).toBe(0);
   });
 
+  it("la venta de los recomprados no es definitiva si se vuelve a recomprar: sigue diferida hasta la venta definitiva", () => {
+    const result = computeWashSales([
+      tsaOld,
+      tsaSale,
+      buy("re", "2025-08-16", 1000, 16_500),
+      sell("s2", "2026-03-01", 1000, 20_000),
+      buy("re2", "2026-04-01", 1000, 20_000),
+      sell("s3", "2027-01-01", 1000, 20_000),
+    ]);
+
+    expect(result.get("s2")?.integratedLoss).toBe(0);
+    expect(result.get("s3")?.integratedLoss).toBeCloseTo(-4800, 9);
+    expect(result.get("s3")?.integratedFrom).toEqual([{ fromSaleId: "s1", loss: expect.closeTo(-4800, 9) }]);
+  });
+
   it("la integración es proporcional a los títulos vendidos", () => {
     const result = computeWashSales([
       tsaOld,
