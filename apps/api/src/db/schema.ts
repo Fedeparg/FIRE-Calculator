@@ -226,6 +226,37 @@ export const instrumentPrices = pgTable(
 );
 
 /**
+ * Tipos de cambio de referencia del BCE (los que publica el Banco de España): unidades de la
+ * divisa por 1 euro. Separados de `instrument_prices` porque son otro dato: la referencia oficial
+ * diaria que exige la declaración, no un cierre de mercado. Datos públicos y fijos: caché
+ * permanente compartida (`fx-reference/`).
+ */
+export const fxReferenceRates = pgTable(
+  'fx_reference_rates',
+  {
+    currency: varchar('currency', { length: 3 }).notNull(),
+    // Día publicado; no hay filas en fines de semana ni festivos de TARGET2.
+    date: date('date').notNull(),
+    unitsPerEur: numeric('units_per_eur', { precision: 20, scale: 8 }).notNull(),
+    // Fuente ("ecb").
+    source: varchar('source', { length: 10 }).notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.currency, table.date] })],
+);
+
+/**
+ * Tramo ya descargado de cada divisa. Sin él, una serie vacía (divisa que el BCE no publica) o
+ * un hueco no distinguirían "no existe" de "nunca se pidió", y se volvería a pedir cada vez.
+ */
+export const fxReferenceCoverage = pgTable('fx_reference_coverage', {
+  currency: varchar('currency', { length: 3 }).primaryKey(),
+  fromDate: date('from_date').notNull(),
+  toDate: date('to_date').notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Splits: los cierres vienen ajustados y las cantidades de los lotes son crudas, así que el
  * histórico los necesita para expresar los lotes en acciones de hoy
  * (`@sextante/core/portfolio/history-reconstruction`). `ratio` = nuevas por antigua (10 en un 10:1); `date` =

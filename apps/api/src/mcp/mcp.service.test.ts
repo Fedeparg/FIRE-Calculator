@@ -94,6 +94,14 @@ function makeService() {
       },
     ]),
   };
+  const referenceRates = {
+    getRates: vi.fn().mockResolvedValue({
+      USD: [
+        { date: '2025-01-10', unitsPerEur: 1.03 },
+        { date: '2025-02-10', unitsPerEur: 1.04 },
+      ],
+    }),
+  };
   const service = new McpService(
     { findAllByUser: vi.fn().mockResolvedValue(positions) } as never,
     { findAllByUser: vi.fn().mockResolvedValue(lots) } as never,
@@ -101,6 +109,7 @@ function makeService() {
     {} as never,
     scenarios as never,
     {} as never,
+    referenceRates as never,
     audit as never,
   );
   return { service, audit, valuation, scenarios };
@@ -246,13 +255,15 @@ describe('McpService', () => {
     client = await connect(makeService().service);
 
     const all = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
-      years: { year: number; groups: { currency: string; net: number }[] }[];
+      years: { year: number; net: number; fxDifference: number; unconverted: unknown[] }[];
     };
     expect(all.years.map((y) => y.year)).toEqual([2025]);
-    const groups = all.years[0]?.groups ?? [];
-    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20, sin convertir.
-    expect(groups.find((g) => g.currency === 'EUR')?.net).toBeCloseTo(99, 6);
-    expect(groups.find((g) => g.currency === 'USD')?.net).toBeCloseTo(-20, 6);
+    const [year] = all.years;
+    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20 USD al tipo de la venta.
+    expect(year?.net).toBeCloseTo(99 - 20 / 1.04, 6);
+    // Los 300 USD invertidos valen menos euros al vender que al comprar.
+    expect(year?.fxDifference).toBeCloseTo(300 / 1.04 - 300 / 1.03, 6);
+    expect(year?.unconverted).toEqual([]);
 
     const none = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2024 } }));
     expect(none).toEqual({ years: [] });

@@ -36,6 +36,8 @@ export async function resetDb(db: Database): Promise<void> {
       user_notification_settings,
       positions,
       instrument_prices,
+      fx_reference_rates,
+      fx_reference_coverage,
       instrument_splits,
       instrument_split_checks,
       instruments,

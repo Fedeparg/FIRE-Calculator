@@ -45,6 +45,7 @@ Se lanzan con `pnpm --filter @sextante/api <script>` desde la raíz.
 | `src/positions/` | CRUD de posiciones y de sus lotes (compras/ventas). `lot-aggregate.ts` deriva cantidad y precio medio de los lotes con aritmética decimal exacta. |
 | `src/imports/` | Importación de operaciones desde un bróker (hoy Trade Republic): `preview` (plan sin escribir) y `confirm` (una transacción por posición, idempotente por `position_lots.external_id`). El parser vive en `@sextante/core/imports`. |
 | `src/prices/` | Feed de cotizaciones y tasas FX; resolución ISIN/ticker → símbolo (OpenFIGI); histórico anual al dar de alta un símbolo. |
+| `src/fx-reference/` | Tipos de cambio de referencia del BCE para la fiscalidad (`GET /api/fx/reference-rates`): se descargan por tramos bajo demanda y se guardan para siempre en `fx_reference_rates`. |
 | `src/portfolio/` | Valoración y P&L de la cartera (`valuation.ts`) e histórico diario de valoración (`portfolio-snapshots.service.ts`). |
 | `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |
 | `src/notifications/` | Avisos por email al cruzar el 25/50/75/100 % del objetivo FIRE, con baja en un clic. |

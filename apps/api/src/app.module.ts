@@ -13,6 +13,7 @@ import { DonationsModule } from './donations/donations.module.js';
 import { EmailModule } from './email/email.module.js';
 import { DailyJobsModule } from './jobs/daily-jobs.module.js';
 import { parseEnv } from './config/env.js';
+import { FxReferenceModule } from './fx-reference/fx-reference.module.js';
 import { HealthModule } from './health/health.module.js';
 import { ImportsModule } from './imports/imports.module.js';
 import { McpModule } from './mcp/mcp.module.js';
@@ -41,6 +42,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     PositionsModule,
     ImportsModule,
     PricesModule,
+    FxReferenceModule,
     PortfolioModule,
     ScenariosModule,
     DailyJobsModule,

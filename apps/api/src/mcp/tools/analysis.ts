@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { FIRE_SEARCH_MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
-import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
+import { buildRealisedGainsReport, referenceRatesNeeded } from '@sextante/core/fiscal/realised-gains';
 import {
   computeGoalProgress,
   resolveGoalTarget,
@@ -10,6 +10,7 @@ import {
 } from '@sextante/core/portfolio/goal';
 import { z } from 'zod';
 
+import { ReferenceRatesService } from '../../fx-reference/reference-rates.service.js';
 import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
 import { PositionLotsService } from '../../positions/position-lots.service.js';
 import { PositionsService } from '../../positions/positions.service.js';
@@ -23,6 +24,7 @@ export type AnalysisToolDeps = {
   lots: PositionLotsService;
   valuation: PortfolioValuationService;
   scenarios: SavedScenariosService;
+  referenceRates: ReferenceRatesService;
 };
 
 /** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
@@ -43,14 +45,17 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
       title: 'Plusvalías realizadas por ejercicio (para la Renta)',
       description:
         'Ganancias y pérdidas patrimoniales de las ventas registradas, calculadas por FIFO ' +
-        'como exige la normativa española y agrupadas por ejercicio fiscal y divisa: valor ' +
+        'como exige la normativa española y agrupadas por ejercicio fiscal, en euros: valor ' +
         'de transmisión, valor de adquisición (con comisiones) y resultado de cada venta, ' +
-        'más una estimación de la cuota de la base del ahorro sobre lo vendido en euros. ' +
-        'Las ventas en otra divisa se dan en esa divisa sin convertir (en la declaración se ' +
-        'convierten al tipo de cambio de cada operación). Sirve para preparar las casillas ' +
-        'de ganancias patrimoniales. Compensa las ventas del mismo ejercicio, pero NO ' +
-        'aplica los saldos negativos de los cuatro ejercicios anteriores, la compensación ' +
-        'del 25 % con dividendos e intereses ni la regla de los dos meses. Solo lectura.',
+        'más una estimación de la cuota de la base del ahorro. Las ventas en otra divisa se ' +
+        'calculan en esa divisa y se pasan a euros con el tipo de referencia del BCE del día ' +
+        'de la venta (criterio de la DGT, V0152-26); la diferencia de cambio de la divisa ' +
+        'invertida va aparte (`fxDifference`), suponiendo que el bróker cambia a euros al ' +
+        'comprar y al vender. Las ventas sin tipo publicado van en `unconverted`, fuera de ' +
+        'los totales. Sirve para preparar las casillas de ganancias patrimoniales. Compensa ' +
+        'las ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
+        'ejercicios anteriores, la compensación del 25 % con dividendos e intereses ni la ' +
+        'regla de los dos meses. Solo lectura.',
       inputSchema: {
         year: z
           .number()
@@ -72,15 +77,16 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         for (const lot of lots) {
           lotsByPosition.set(lot.positionId, [...(lotsByPosition.get(lot.positionId) ?? []), lot]);
         }
-        const report = buildRealisedGainsReport(
-          positions.map((p) => ({
-            id: p.id,
-            ticker: p.ticker,
-            name: p.name,
-            currency: p.currency,
-            lots: lotsByPosition.get(p.id) ?? [],
-          })),
-        );
+        const input = positions.map((p) => ({
+          id: p.id,
+          ticker: p.ticker,
+          name: p.name,
+          currency: p.currency,
+          lots: lotsByPosition.get(p.id) ?? [],
+        }));
+        const needed = referenceRatesNeeded(input);
+        const rates = needed ? await deps.referenceRates.getRates(needed.currencies, needed.from) : {};
+        const report = buildRealisedGainsReport(input, rates);
         const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
         return jsonResult({ years });
       }),

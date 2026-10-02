@@ -141,6 +141,13 @@
       "when": 1790943252605,
       "tag": "0019_invalidate_openfigi_instruments",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790975326569,
+      "tag": "0020_secret_loki",
+      "breakpoints": true
     }
   ]
 }
