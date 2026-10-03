@@ -14,7 +14,7 @@ import { stub } from '../../test/factories.js';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };
 
-/** Promesa que se resuelve a mano: permite tener un trabajo "en marcha" dentro del test. */
+/** Manually resolved promise: lets the test keep a job "running". */
 function deferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => (resolve = r));
@@ -55,12 +55,12 @@ function setup(env: Record<string, string> = {}) {
 const created: Map<string, CronJob>[] = [];
 
 afterEach(() => {
-  // Los CronJob reales se arrancan en `onModuleInit`: hay que pararlos para no dejar timers.
+  // The real CronJobs start in `onModuleInit`: stop them so no timers are left behind.
   for (const jobs of created.splice(0)) for (const job of jobs.values()) void job.stop();
 });
 
 describe('DailyJobsScheduler', () => {
-  it('la pasada de arranque corre bajo el cerrojo: un refresco intradía simultáneo se omite', async () => {
+  it('runs the startup pass under the lock: a concurrent intraday refresh is skipped', async () => {
     const { scheduler, prices } = setup();
     let release: () => void = () => undefined;
     prices.ensureHistoryForActivePositions.mockImplementation(
@@ -68,7 +68,7 @@ describe('DailyJobsScheduler', () => {
     );
 
     scheduler.onApplicationBootstrap();
-    await scheduler.runIntraday(); // el arranque aún tiene el cerrojo
+    await scheduler.runIntraday(); // the startup pass still holds the lock
     expect(prices.refreshAll).not.toHaveBeenCalled();
 
     release();
@@ -78,7 +78,7 @@ describe('DailyJobsScheduler', () => {
     });
   });
 
-  it('registra el trabajo nocturno y el intradía con su horario por defecto', () => {
+  it('registers the nightly and intraday jobs with their default schedule', () => {
     const { scheduler, jobs } = setup();
     scheduler.onModuleInit();
 
@@ -86,21 +86,21 @@ describe('DailyJobsScheduler', () => {
     expect(jobs.get('intraday-price-refresh')?.cronTime.source).toBe(DEFAULT_INTRADAY_CRON);
   });
 
-  it('PRICE_INTRADAY_CRON=off desactiva solo el intradía', () => {
+  it('PRICE_INTRADAY_CRON=off disables only the intraday job', () => {
     const { scheduler, jobs } = setup({ PRICE_INTRADAY_CRON: 'off' });
     scheduler.onModuleInit();
 
     expect([...jobs.keys()]).toEqual(['daily-portfolio-jobs']);
   });
 
-  it('una variable vacía cae al horario por defecto', () => {
+  it('falls back to the default schedule when the variable is blank', () => {
     const { scheduler, jobs } = setup({ PRICE_INTRADAY_CRON: '  ' });
     scheduler.onModuleInit();
 
     expect(jobs.get('intraday-price-refresh')?.cronTime.source).toBe(DEFAULT_INTRADAY_CRON);
   });
 
-  it('el intradía solo refresca precios: ni snapshots ni alertas', async () => {
+  it('the intraday job only refreshes prices: no snapshots or alerts', async () => {
     const { scheduler, prices, snapshots, fireAlerts } = setup();
 
     await scheduler.runIntraday();
@@ -111,7 +111,7 @@ describe('DailyJobsScheduler', () => {
     expect(fireAlerts.evaluateAll).not.toHaveBeenCalled();
   });
 
-  it('el nocturno refresca, captura, rellena y evalúa las alertas, en ese orden', async () => {
+  it('the nightly job refreshes, captures, backfills and evaluates alerts, in that order', async () => {
     const { scheduler, prices, snapshots, fireAlerts } = setup();
 
     await scheduler.run();
@@ -122,13 +122,13 @@ describe('DailyJobsScheduler', () => {
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
-  it('las alertas evalúan la fecha de la captura, no una recalculada', async () => {
+  it('the alerts evaluate the capture date, not a recomputed one', async () => {
     const { scheduler, fireAlerts } = setup();
     await scheduler.run();
     expect(fireAlerts.evaluateAll).toHaveBeenCalledWith('2026-09-28');
   });
 
-  it('si hay un trabajo en marcha, el intradía se salta en vez de solaparse', async () => {
+  it('skips the intraday job instead of overlapping a running job', async () => {
     const { scheduler, prices } = setup();
     const gate = deferred();
     prices.refreshAll.mockImplementationOnce(async () => {
@@ -144,7 +144,7 @@ describe('DailyJobsScheduler', () => {
     expect(prices.refreshAll).toHaveBeenCalledTimes(1);
   });
 
-  it('el nocturno NO se descarta si el intradía sigue en marcha: espera y después corre entero', async () => {
+  it('does NOT drop the nightly job while the intraday one is running: it waits and then runs fully', async () => {
     const { scheduler, prices, snapshots } = setup();
     const gate = deferred();
     prices.refreshAll.mockImplementationOnce(async () => {
@@ -155,7 +155,7 @@ describe('DailyJobsScheduler', () => {
     const intraday = scheduler.runIntraday();
     const nightly = scheduler.run();
     await Promise.resolve();
-    // Mientras el intradía (colgado de Yahoo) no acaba, el nocturno no ha empezado.
+    // While the intraday job (stuck on Yahoo) has not finished, the nightly one has not started.
     expect(prices.refreshAll).toHaveBeenCalledTimes(1);
     expect(snapshots.captureAll).not.toHaveBeenCalled();
 
@@ -166,12 +166,12 @@ describe('DailyJobsScheduler', () => {
     expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
   });
 
-  it('el nocturno espera también si el trabajo en marcha falla', async () => {
+  it('the nightly job also waits when the running job fails', async () => {
     const { scheduler, prices, snapshots } = setup();
     const gate = deferred();
     prices.ensureHistoryForActivePositions.mockImplementationOnce(async () => {
       await gate.promise;
-      throw new Error('Yahoo caído');
+      throw new Error('Yahoo down');
     });
 
     scheduler.onApplicationBootstrap();
@@ -182,9 +182,9 @@ describe('DailyJobsScheduler', () => {
     expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
   });
 
-  it('libera el cerrojo aunque el refresco falle', async () => {
+  it('releases the lock even if the refresh fails', async () => {
     const { scheduler, prices } = setup();
-    prices.refreshAll.mockRejectedValueOnce(new Error('Yahoo caído'));
+    prices.refreshAll.mockRejectedValueOnce(new Error('Yahoo down'));
 
     await scheduler.runIntraday();
     await scheduler.runIntraday();

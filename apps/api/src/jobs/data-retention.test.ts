@@ -17,13 +17,13 @@ const DAY = 24 * HOUR;
 const daysAgo = (days: number): Date => new Date(Date.now() - days * DAY);
 const randomHash = (): string => randomBytes(16).toString('hex');
 
-/** Datos mínimos de un cliente DCR (solo nos importa la fila, no su contenido). */
+/** Minimal DCR client data (only the row matters, not its content). */
 const clientData = (clientId: string): OAuthClientInformationFull => ({
   client_id: clientId,
   redirect_uris: ['http://localhost:9999/callback'],
 });
 
-describe('DataRetentionJob (integración con Postgres)', () => {
+describe('DataRetentionJob (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
 
@@ -40,8 +40,8 @@ describe('DataRetentionJob (integración con Postgres)', () => {
   });
 
   /**
-   * Construye el trabajo de limpieza con las variables de entorno indicadas. NO se llama a
-   * `onModuleInit()` en los tests: registraría un CronJob real.
+   * Builds the cleanup job with the given environment variables. Tests do NOT call
+   * `onModuleInit()`: it would register a real CronJob.
    */
   function reaper(env: Record<string, string> = {}): DataRetentionJob {
     return new DataRetentionJob(db, fakeConfig(env), {} as SchedulerRegistry);
@@ -56,12 +56,12 @@ describe('DataRetentionJob (integración con Postgres)', () => {
     });
   }
 
-  describe('códigos y tokens OAuth caducados', () => {
-    it('borra los caducados y conserva los vigentes (aunque estén consumidos)', async () => {
+  describe('expired OAuth codes and tokens', () => {
+    it('deletes the expired ones and keeps the valid ones (even if consumed)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(oauthAuthCodes).values([
         {
-          codeHash: 'expirado',
+          codeHash: 'expired',
           userId,
           clientId: 'c1',
           scopes: ['portfolio:read'],
@@ -70,7 +70,7 @@ describe('DataRetentionJob (integración con Postgres)', () => {
           expiresAt: new Date(Date.now() - HOUR),
         },
         {
-          codeHash: 'vigente',
+          codeHash: 'valid',
           userId,
           clientId: 'c1',
           scopes: ['portfolio:read'],
@@ -81,7 +81,7 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       ]);
       await db.insert(oauthTokens).values([
         {
-          tokenHash: 'access-caducado',
+          tokenHash: 'expired-access',
           type: 'access',
           userId,
           clientId: 'c1',
@@ -90,8 +90,8 @@ describe('DataRetentionJob (integración con Postgres)', () => {
           expiresAt: new Date(Date.now() - HOUR),
         },
         {
-          // Refresh ya rotado pero NO caducado: debe sobrevivir para detectar su reuso.
-          tokenHash: 'refresh-consumido-vigente',
+          // Refresh token already rotated but NOT expired: it must survive so its reuse can be detected.
+          tokenHash: 'consumed-valid-refresh',
           type: 'refresh',
           userId,
           clientId: 'c1',
@@ -108,36 +108,36 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(summary.tokens).toBe(1);
       expect(await db.select().from(oauthAuthCodes)).toHaveLength(1);
       const remaining = await db.select().from(oauthTokens);
-      expect(remaining.map((r) => r.tokenHash)).toEqual(['refresh-consumido-vigente']);
+      expect(remaining.map((r) => r.tokenHash)).toEqual(['consumed-valid-refresh']);
     });
   });
 
   describe('login_tokens', () => {
-    it('borra los antiguos ya inservibles y conserva el resto', async () => {
+    it('deletes the old useless ones and keeps the rest', async () => {
       await db.insert(loginTokens).values([
         {
           email: 'a@example.com',
-          tokenHash: 'antiguo-consumido',
+          tokenHash: 'old-consumed',
           expiresAt: daysAgo(40),
           consumedAt: daysAgo(40),
           createdAt: daysAgo(40),
         },
         {
           email: 'a@example.com',
-          tokenHash: 'antiguo-caducado',
+          tokenHash: 'old-expired',
           expiresAt: daysAgo(40),
           createdAt: daysAgo(40),
         },
         {
           email: 'a@example.com',
-          tokenHash: 'reciente-consumido',
+          tokenHash: 'recent-consumed',
           expiresAt: new Date(Date.now() - HOUR),
           consumedAt: new Date(Date.now() - HOUR),
           createdAt: new Date(Date.now() - HOUR),
         },
         {
           email: 'a@example.com',
-          tokenHash: 'antiguo-pero-vigente',
+          tokenHash: 'old-but-valid',
           expiresAt: new Date(Date.now() + DAY),
           createdAt: daysAgo(40),
         },
@@ -147,13 +147,13 @@ describe('DataRetentionJob (integración con Postgres)', () => {
 
       expect(summary.loginTokens).toBe(2);
       const remaining = await db.select({ hash: loginTokens.tokenHash }).from(loginTokens);
-      expect(remaining.map((r) => r.hash).sort()).toEqual(['antiguo-pero-vigente', 'reciente-consumido']);
+      expect(remaining.map((r) => r.hash).sort()).toEqual(['old-but-valid', 'recent-consumed']);
     });
 
-    it('respeta LOGIN_TOKEN_RETENTION_DAYS', async () => {
+    it('honors LOGIN_TOKEN_RETENTION_DAYS', async () => {
       await db.insert(loginTokens).values({
         email: 'a@example.com',
-        tokenHash: 'de-hace-cinco-dias',
+        tokenHash: 'five-days-old',
         expiresAt: daysAgo(5),
         consumedAt: daysAgo(5),
         createdAt: daysAgo(5),
@@ -165,7 +165,7 @@ describe('DataRetentionJob (integración con Postgres)', () => {
   });
 
   describe('mcp_audit_log', () => {
-    it('borra las entradas más antiguas que la retención (180 días por defecto)', async () => {
+    it('deletes entries older than the retention (180 days by default)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(mcpAuditLog).values([
         { userId, clientId: 'c1', tool: 'list', outcome: 'ok', createdAt: daysAgo(200) },
@@ -178,7 +178,7 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(mcpAuditLog)).toHaveLength(1);
     });
 
-    it('respeta MCP_AUDIT_RETENTION_DAYS', async () => {
+    it('honors MCP_AUDIT_RETENTION_DAYS', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db
         .insert(mcpAuditLog)
@@ -187,7 +187,7 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect((await reaper({ MCP_AUDIT_RETENTION_DAYS: '5' }).run()).auditEntries).toBe(1);
     });
 
-    it('borra por lotes cuando hay más filas que el tamaño de lote', async () => {
+    it('deletes in batches when there are more rows than the batch size', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const total = RETENTION_BATCH_SIZE * 2 + 5;
       await db.execute(sql`
@@ -200,20 +200,20 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(mcpAuditLog)).toHaveLength(0);
     });
 
-    it('ignora una retención inválida y cae al valor por defecto', async () => {
+    it('ignores an invalid retention and falls back to the default', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db
         .insert(mcpAuditLog)
         .values({ userId, clientId: 'c1', tool: 'list', outcome: 'ok', createdAt: daysAgo(10) });
 
-      expect((await reaper({ MCP_AUDIT_RETENTION_DAYS: 'cero' }).run()).auditEntries).toBe(0);
+      expect((await reaper({ MCP_AUDIT_RETENTION_DAYS: 'zero' }).run()).auditEntries).toBe(0);
       expect((await reaper({ MCP_AUDIT_RETENTION_DAYS: '-3' }).run()).auditEntries).toBe(0);
     });
   });
 
-  describe('oauth_clients abandonados', () => {
-    it('borra el cliente antiguo sin grants ni tokens', async () => {
-      await insertClient('abandonado', { createdAt: daysAgo(60) });
+  describe('abandoned oauth_clients', () => {
+    it('deletes an old client with no grants or tokens', async () => {
+      await insertClient('abandoned', { createdAt: daysAgo(60) });
 
       const summary = await reaper().run();
 
@@ -221,10 +221,10 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(oauthClients)).toHaveLength(0);
     });
 
-    it('NUNCA borra un cliente con un consentimiento vivo, por antiguo que sea', async () => {
+    it('NEVER deletes a client with a live consent, however old', async () => {
       const userId = await insertUser(db, 'a@example.com');
-      await insertClient('con-grant', { createdAt: daysAgo(400) });
-      await db.insert(oauthGrants).values({ userId, clientId: 'con-grant', scopes: ['portfolio:read'] });
+      await insertClient('with-grant', { createdAt: daysAgo(400) });
+      await db.insert(oauthGrants).values({ userId, clientId: 'with-grant', scopes: ['portfolio:read'] });
 
       const summary = await reaper().run();
 
@@ -232,14 +232,14 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(oauthClients)).toHaveLength(1);
     });
 
-    it('NUNCA borra un cliente con tokens, aunque el grant se haya borrado', async () => {
+    it('NEVER deletes a client with tokens, even if the grant was deleted', async () => {
       const userId = await insertUser(db, 'a@example.com');
-      await insertClient('con-token', { createdAt: daysAgo(400) });
+      await insertClient('with-token', { createdAt: daysAgo(400) });
       await db.insert(oauthTokens).values({
         tokenHash: randomHash(),
         type: 'refresh',
         userId,
-        clientId: 'con-token',
+        clientId: 'with-token',
         scopes: ['portfolio:read'],
         audience: 'http://localhost:3000/api/mcp',
         expiresAt: new Date(Date.now() + DAY),
@@ -251,9 +251,9 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(oauthClients)).toHaveLength(1);
     });
 
-    it('conserva un cliente reciente y uno usado hace poco', async () => {
-      await insertClient('recien-registrado', { createdAt: daysAgo(2) });
-      await insertClient('usado-ayer', { createdAt: daysAgo(90), lastUsedAt: daysAgo(1) });
+    it('keeps a recent client and a recently used one', async () => {
+      await insertClient('just-registered', { createdAt: daysAgo(2) });
+      await insertClient('used-yesterday', { createdAt: daysAgo(90), lastUsedAt: daysAgo(1) });
 
       const summary = await reaper().run();
 
@@ -261,26 +261,26 @@ describe('DataRetentionJob (integración con Postgres)', () => {
       expect(await db.select().from(oauthClients)).toHaveLength(2);
     });
 
-    it('borra un cliente cuyo último uso quedó fuera de la retención', async () => {
-      await insertClient('viejo-uso', { createdAt: daysAgo(120), lastUsedAt: daysAgo(90) });
-      await insertClient('en-uso', { createdAt: daysAgo(120), lastUsedAt: daysAgo(3) });
+    it('deletes a client whose last use is outside the retention', async () => {
+      await insertClient('old-use', { createdAt: daysAgo(120), lastUsedAt: daysAgo(90) });
+      await insertClient('in-use', { createdAt: daysAgo(120), lastUsedAt: daysAgo(3) });
 
       const summary = await reaper().run();
 
       expect(summary.clients).toBe(1);
       const remaining = await db.select({ id: oauthClients.clientId }).from(oauthClients);
-      expect(remaining.map((r) => r.id)).toEqual(['en-uso']);
+      expect(remaining.map((r) => r.id)).toEqual(['in-use']);
     });
 
-    it('respeta OAUTH_CLIENT_RETENTION_DAYS', async () => {
-      await insertClient('de-hace-cinco-dias', { createdAt: daysAgo(5) });
+    it('honors OAUTH_CLIENT_RETENTION_DAYS', async () => {
+      await insertClient('five-days-old', { createdAt: daysAgo(5) });
 
       expect((await reaper().run()).clients).toBe(0);
       expect((await reaper({ OAUTH_CLIENT_RETENTION_DAYS: '1' }).run()).clients).toBe(1);
     });
   });
 
-  it('no borra nada ni falla con la base de datos vacía', async () => {
+  it('deletes nothing and does not fail on an empty database', async () => {
     const summary = await reaper().run();
 
     expect(summary).toEqual({
@@ -292,9 +292,9 @@ describe('DataRetentionJob (integración con Postgres)', () => {
     });
   });
 
-  it('el borrado en cascada de la cuenta sigue funcionando tras la limpieza', async () => {
-    // Comprobación de que el reaper no interfiere con el RGPD: los tokens de un usuario
-    // borrado desaparecen por FK, no porque los pode el reaper.
+  it('cascading account deletion still works after the cleanup', async () => {
+    // Checks that the reaper does not interfere with GDPR: a deleted user's tokens disappear
+    // through the FK, not because the reaper prunes them.
     const userId = await insertUser(db, 'a@example.com');
     await db.insert(oauthTokens).values({
       tokenHash: randomHash(),

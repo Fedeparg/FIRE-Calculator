@@ -7,7 +7,7 @@ import { PositionsModule } from '../positions/positions.module.js';
 import { PricesModule } from '../prices/prices.module.js';
 import { DailyJobsScheduler } from './daily-jobs.scheduler.js';
 
-/** Orquesta los trabajos nocturnos por encima de `PricesModule` y `PortfolioModule` para evitar un ciclo entre ellos. */
+/** Orchestrates the nightly jobs above `PricesModule` and `PortfolioModule` to avoid a cycle between them. */
 @Module({
   imports: [PricesModule, PortfolioModule, NotificationsModule, IncomeModule, PositionsModule],
   providers: [DailyJobsScheduler],
