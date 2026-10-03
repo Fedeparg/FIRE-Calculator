@@ -10,17 +10,17 @@ export const DRIZZLE = Symbol('DRIZZLE');
 
 export type Database = PostgresJsDatabase<typeof schema>;
 
-/** La base de datos o una transacción abierta sobre ella: lo que acepta un paso que puede ir dentro de otra. */
+/** The database or an open transaction on it: what a step that may run inside another one accepts. */
 export type DatabaseOrTransaction = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
 
-/** Cliente `postgres` crudo, para cerrarlo al apagar. */
+/** Raw `postgres` client, so it can be closed on shutdown. */
 const PG_CLIENT = Symbol('PG_CLIENT');
 
 /**
- * Cliente `postgres` del pool de la API. Sin timeouts, una conexión colgada o una consulta
- * descontrolada retendrían un hueco del pool (son 10) indefinidamente. `statement_timeout` lo
- * aplica Postgres por sesión y cuenta también la espera de un cerrojo, así que su valor por
- * defecto (30 s) está muy por encima de cualquier consulta normal.
+ * `postgres` client for the API pool. Without timeouts, a hung connection or a runaway query
+ * would hold one of the pool's slots (there are 10) indefinitely. Postgres applies
+ * `statement_timeout` per session and it also counts time spent waiting for a lock, so its
+ * default (30 s) is well above any normal query.
  */
 export function createPgClient(config: ConfigService<Env, true>): ReturnType<typeof postgres> {
   const url = config.getOrThrow('DATABASE_URL', { infer: true });
@@ -33,7 +33,7 @@ export function createPgClient(config: ConfigService<Env, true>): ReturnType<typ
   });
 }
 
-/** Módulo global que expone el cliente Drizzle (`DRIZZLE`); no hay `@nestjs/drizzle` oficial, así que es un proveedor propio. */
+/** Global module exposing the Drizzle client (`DRIZZLE`); there is no official `@nestjs/drizzle`, so it is a custom provider. */
 @Global()
 @Module({
   imports: [ConfigModule],
