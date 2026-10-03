@@ -106,6 +106,6 @@ describe("buildPositionRows", () => {
       base({ positions: [b], prices: { BBB: price({ symbol: "BBB", currency: "EUR" }) }, rates: { USD: 1 } }),
     );
     expect(row.sortable.marketValue).toBeNull();
-    expect(row.sortable.avgPrice).toBeNull();
+    expect(row.sortable.invested).toBeNull();
   });
 });

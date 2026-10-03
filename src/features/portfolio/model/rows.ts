@@ -78,9 +78,6 @@ export function buildPositionRows(input: BuildRowsInput): PositionRow[] {
       sortable: {
         ticker: position.ticker,
         name: position.name ?? position.ticker,
-        broker: position.broker,
-        quantity: position.quantity,
-        avgPrice: toBase(position.avgPrice, position.currency, rates),
         invested: toBase(valuation.invested, position.currency, rates),
         marketValue: toBase(valuation.marketValue, position.currency, rates),
         pnl: toBase(gain?.abs ?? null, position.currency, rates),
