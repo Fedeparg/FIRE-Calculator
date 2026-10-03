@@ -8,9 +8,9 @@ import { SessionService } from './session.service.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 /**
- * Firma y valida la sesión (`SessionService`): registra `JwtModule` una sola vez con el secreto
- * de auth. Cualquier módulo con controllers protegidos por `JwtAuthGuard` lo importa. No depende
- * de ningún otro módulo de la app, así que no crea ciclos (`AuthModule` importa a casi todos).
+ * Signs and validates the session (`SessionService`): registers `JwtModule` once with the auth
+ * secret. Any module with controllers protected by `JwtAuthGuard` imports it. It depends on no
+ * other app module, so it creates no cycles (`AuthModule` imports almost all of them).
  */
 @Module({
   imports: [
