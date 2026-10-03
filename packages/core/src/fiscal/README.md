@@ -125,12 +125,15 @@ realizadas (`realised-gains.ts`), con las mismas reglas.
   reparte entre antiguas y nuevas, y las nuevas heredan la antigüedad de las antiguas. Una
   compra a **precio 0 y sin comisiones** se interpreta como acciones totalmente liberadas (así las
   importa Trade Republic, `BONUS_ISSUE`) y `walkLots` la reparte proporcionalmente entre los lotes
-  vivos en ese momento: cada lote gana títulos, conserva su coste total y su fecha (y su orden
+  vivos en ese momento (solo si el precio es un 0 de verdad: un precio no numérico, que se sanea
+  a 0, queda como compra propia): cada lote gana títulos, conserva su coste total y su fecha (y su orden
   FIFO). Con ello la ganancia cuadra con el ejemplo del Manual práctico de Renta 2025 (Parte 1,
   págs. 885-887: 900 acciones de 2001 + 600 liberadas + 500 parcialmente liberadas de 2011; venta
   de 1.600 a 10 € → 6.000 + 500 = 6.500 €). Supuestos: las **parcialmente liberadas** (se paga algo)
   no se distinguen de una compra normal y siguen como compra; sin lotes vivos la compra a precio 0
-  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Fuente: Ley 35/2006,
+  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Pendiente de la revisión
+  del asesor fiscal: una compra manual a 0 (regalo, error de tecleo) también se reparte; la solución
+  completa es un flag explícito de ampliación que escriba el importador. Fuente: Ley 35/2006,
   art. 37.1.a, https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 **No modela** (resultado solo orientativo)

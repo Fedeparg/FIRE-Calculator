@@ -219,7 +219,11 @@ export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {
     const price = finiteOr(lot.price, 0);
 
     if (lot.kind === "buy") {
-      if (price === 0 && cleanFees(lot.fees) === 0 && open.some((l) => l.quantity > QUANTITY_EPSILON)) {
+      // Ampliación liberada: precio 0 DE VERDAD (no un precio no numérico saneado a 0), sin
+      // comisiones y con lotes vivos. Ver README, "Ampliaciones liberadas".
+      const isBonusIssue =
+        lot.price === 0 && cleanFees(lot.fees) === 0 && open.some((l) => l.quantity > QUANTITY_EPSILON);
+      if (isBonusIssue) {
         applyBonusIssue(open, lot.quantity);
         bonusIssueIds.push(lot.id);
         continue;

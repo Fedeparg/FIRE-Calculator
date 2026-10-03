@@ -419,4 +419,16 @@ describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
     expect(buildOpenLots([lot({ id: "a", price: 10 }), lot({ id: "x", price: 0, fees: 1 })])).toHaveLength(2);
     expect(buildOpenLots([lot({ id: "x", quantity: 5, price: 0 })])).toHaveLength(1);
   });
+
+  it("un precio no numérico no es una ampliación: queda como compra propia (a coste 0) y no reparte", () => {
+    for (const price of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      const walk = walkLots([lot({ id: "a", quantity: 10, price: 10 }), lot({ id: "x", quantity: 5, price })]);
+
+      expect(walk.bonusIssueIds).toEqual([]);
+      expect(walk.open.map((o) => [o.lotId, o.quantity, o.price])).toEqual([
+        ["a", 10, 10],
+        ["x", 5, 0],
+      ]);
+    }
+  });
 });
