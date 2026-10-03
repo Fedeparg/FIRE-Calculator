@@ -23,30 +23,30 @@ const SIMPLE: Bracket[] = [
 ];
 
 describe("applyProgressiveBrackets", () => {
-  it("base 0 → cuota 0", () => {
+  it("base 0 → tax 0", () => {
     expect(applyProgressiveBrackets(0, SIMPLE)).toBe(0);
   });
 
-  it("grava solo el primer tramo", () => {
+  it("taxes only the first bracket", () => {
     expect(applyProgressiveBrackets(100, SIMPLE)).toBeCloseTo(10, 6);
   });
 
-  it("reparte la base entre tramos (no todo al tipo máximo)", () => {
+  it("splits the base across brackets (not all at the top rate)", () => {
     // 100×10% + 100×20% + 50×30% = 10 + 20 + 15 = 45
     expect(applyProgressiveBrackets(250, SIMPLE)).toBeCloseTo(45, 6);
   });
 
-  it("entrada negativa se trata como 0", () => {
+  it("treats negative input as 0", () => {
     expect(applyProgressiveBrackets(-50, SIMPLE)).toBe(0);
   });
 
-  it("escala del ahorro: 10.000 € → 19%×6000 + 21%×4000", () => {
+  it("savings scale: €10,000 → 19%×6000 + 21%×4000", () => {
     expect(applyProgressiveBrackets(10000, IRPF_SAVINGS_SCALE)).toBeCloseTo(1140 + 840, 6);
   });
 });
 
 describe("marginalRate", () => {
-  it("devuelve el tipo del tramo donde cae la base", () => {
+  it("returns the rate of the bracket the base falls in", () => {
     expect(marginalRate(150, SIMPLE)).toBe(20);
     expect(marginalRate(5000, IRPF_GENERAL_SCALE)).toBe(19);
     expect(marginalRate(40000, IRPF_GENERAL_SCALE)).toBe(37);
@@ -58,7 +58,7 @@ describe("effectiveRate", () => {
     expect(effectiveRate(0, SIMPLE)).toBe(0);
   });
 
-  it("siempre menor o igual que el marginal", () => {
+  it("is always less than or equal to the marginal rate", () => {
     expect(effectiveRate(250, SIMPLE)).toBeLessThan(marginalRate(250, SIMPLE));
   });
 });
@@ -70,9 +70,9 @@ describe.each([
   ["IRPF_SAVINGS_SCALE", IRPF_SAVINGS_SCALE],
   ["WEALTH_TAX_STATE_SCALE", WEALTH_TAX_STATE_SCALE],
   ["GIFT_TAX_STATE_SCALE", GIFT_TAX_STATE_SCALE],
-] as const)("límites de tramo de %s", (_name, scale) => {
+] as const)("bracket boundaries of %s", (_name, scale) => {
   const CENT = 0.01;
-  // Cuota acumulada esperada en cada límite superior, sumada tramo a tramo con los tipos de la escala.
+  // Expected cumulative tax at each upper boundary, summed bracket by bracket with the scale's rates.
   let lower = 0;
   let cumulative = 0;
   const limits = scale.flatMap((bracket, i) => {
@@ -82,17 +82,20 @@ describe.each([
     return [{ upTo: bracket.upTo, rate: bracket.rate, nextRate: itemAt(scale, i + 1).rate, tax: cumulative }];
   });
 
-  it("la escala termina en un tramo abierto y sus límites son crecientes", () => {
+  it("the scale ends in an open-ended bracket and its boundaries are increasing", () => {
     expect(scale.at(-1)?.upTo).toBeNull();
     limits.forEach((l, i) => i > 0 && expect(l.upTo).toBeGreaterThan(itemAt(limits, i - 1).upTo));
   });
 
-  it.each(limits)("en $upTo la cuota es la acumulada del tramo y el límite pertenece al tramo inferior", (l) => {
-    expect(applyProgressiveBrackets(l.upTo, scale)).toBeCloseTo(l.tax, 6);
-    expect(marginalRate(l.upTo, scale)).toBe(l.rate);
-  });
+  it.each(limits)(
+    "at $upTo the tax is the bracket's cumulative one and the boundary belongs to the lower bracket",
+    (l) => {
+      expect(applyProgressiveBrackets(l.upTo, scale)).toBeCloseTo(l.tax, 6);
+      expect(marginalRate(l.upTo, scale)).toBe(l.rate);
+    },
+  );
 
-  it.each(limits)("es continua en $upTo: ±0,01 € mueve la cuota solo 0,01 × tipo del tramo", (l) => {
+  it.each(limits)("is continuous at $upTo: ±€0.01 moves the tax by only 0.01 × the bracket rate", (l) => {
     const below = applyProgressiveBrackets(l.upTo - CENT, scale);
     const above = applyProgressiveBrackets(l.upTo + CENT, scale);
     expect(l.tax - below).toBeCloseTo((CENT * l.rate) / 100, 6);
@@ -100,18 +103,18 @@ describe.each([
     expect(marginalRate(l.upTo + CENT, scale)).toBe(l.nextRate);
   });
 
-  it("la cuota es monótona creciente cruzando todos los límites", () => {
+  it("the tax is monotonically increasing across every boundary", () => {
     const bases = limits.flatMap((l) => [l.upTo - CENT, l.upTo, l.upTo + CENT]);
     const taxes = bases.map((b) => applyProgressiveBrackets(b, scale));
     taxes.forEach((t, i) => i > 0 && expect(t).toBeGreaterThanOrEqual(itemAt(taxes, i - 1)));
   });
 });
 
-describe("recordatorio de revisión fiscal", () => {
-  it("las cifras de FISCAL_YEAR siguen vigentes (si falla, toca revisar escalas, mínimos y retenciones)", () => {
+describe("tax review reminder", () => {
+  it("the FISCAL_YEAR figures are still current (if this fails, review scales, allowances and withholdings)", () => {
     expect(
       todayUtc() < FISCAL_REVIEW_BY,
-      `Desde ${FISCAL_REVIEW_BY} hay que revisar las cifras de ${FISCAL_YEAR}: ver FISCAL_REVIEW_BY en brackets.ts`,
+      `Since ${FISCAL_REVIEW_BY} the ${FISCAL_YEAR} figures must be reviewed: see FISCAL_REVIEW_BY in brackets.ts`,
     ).toBe(true);
   });
 });

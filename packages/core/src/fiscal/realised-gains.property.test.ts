@@ -10,7 +10,7 @@ import { itemAt } from "../arrays.js";
 const DAYS = 3 * 365;
 const dateOf = (day: number) => new Date(Date.UTC(2022, 0, 1) + day * 86_400_000).toISOString().slice(0, 10);
 
-/** Histórico en USD de 2022-2024, en cualquier orden. */
+/** USD history for 2022-2024, in any order. */
 const history = fc
   .array(
     fc.record({
@@ -33,15 +33,15 @@ const history = fc
     })),
   );
 
-/** Un tipo USD por día (sin huecos): todas las operaciones se pueden convertir. */
+/** One USD rate per day (no gaps): every trade can be converted. */
 const dailyRates = fc
   .array(fc.double({ min: 0.8, max: 1.4, noNaN: true }), { minLength: DAYS, maxLength: DAYS })
   .map((values): ReferenceRates => ({ USD: values.map((unitsPerEur, day) => ({ date: dateOf(day), unitsPerEur })) }));
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("buildRealisedGainsReport — propiedades", () => {
-  it("ganancia de los valores + diferencia de cambio = convertir cada operación a su fecha, salvo lo diferido por la regla de los dos meses", () => {
+describe("buildRealisedGainsReport — properties", () => {
+  it("securities gain + FX difference = converting each trade at its own date, except what the two-month rule defers", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
@@ -65,7 +65,7 @@ describe("buildRealisedGainsReport — propiedades", () => {
     );
   });
 
-  it("la regla de los dos meses nunca crea pérdidas: lo integrado no supera a lo diferido y cada venta difiere como mucho su pérdida", () => {
+  it("the two-month rule never creates losses: the included amount never exceeds the deferred one and each sale defers at most its own loss", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
@@ -77,14 +77,15 @@ describe("buildRealisedGainsReport — propiedades", () => {
             return sale.deferredLoss <= 0 && sale.deferredLoss >= lossOfSale - 1e-6 && sale.integratedLoss <= 0;
           }),
         );
-        // Solo el signo: en euros lo integrado usa el tipo de la venta de origen y los totales no son comparables.
+        // Only the sign: in euros the included amount uses the originating sale's rate, so the totals
+        // are not comparable.
         return eachSale && deferred <= 0 && integrated <= 0;
       }),
       PROPERTY_PARAMS,
     );
   });
 
-  it("la suma de las filas es el saldo del ejercicio", () => {
+  it("the rows add up to the tax year's net balance", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
@@ -104,7 +105,7 @@ describe("buildRealisedGainsReport — propiedades", () => {
     );
   });
 
-  it("no depende del orden en que llegan las operaciones", () => {
+  it("does not depend on the order in which the trades arrive", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const position = (l: TradeLot[]) => [{ id: "p", ticker: "X", name: null, currency: "USD", lots: l }];

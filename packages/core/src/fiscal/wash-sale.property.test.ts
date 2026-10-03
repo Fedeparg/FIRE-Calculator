@@ -5,7 +5,7 @@ import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { walkLots, type TradeLot } from "./plusvalias.js";
 import { computeWashSales } from "./wash-sale.js";
 
-/** Histórico arbitrario en un par de años, en cualquier orden (incluye ampliaciones liberadas por precio 0). */
+/** Arbitrary history over a couple of years, in any order (includes bonus issues via price 0). */
 const history = fc
   .array(
     fc.record({
@@ -30,8 +30,8 @@ const history = fc
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("computeWashSales — propiedades", () => {
-  it("cada venta difiere entre 0 y su pérdida, y solo difiere pérdidas", () => {
+describe("computeWashSales — properties", () => {
+  it("each sale defers between 0 and its loss, and only defers losses", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const walk = walkLots(lots, { trackOpenLots: true });
@@ -53,20 +53,20 @@ describe("computeWashSales — propiedades", () => {
     );
   });
 
-  it("nada se integra sin haberse diferido: lo integrado no supera a lo diferido", () => {
+  it("nothing is included without having been deferred: the included amount never exceeds the deferred one", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const entries = [...computeWashSales(lots).values()];
         const deferred = entries.reduce((s, e) => s + e.deferredLoss, 0);
         const integrated = entries.reduce((s, e) => s + e.integratedLoss, 0);
-        // Ambos ≤ 0: integrado (en valor absoluto) ≤ diferido.
+        // Both ≤ 0: included (in absolute value) ≤ deferred.
         return integrated >= deferred - 1e-6 * Math.max(1, Math.abs(deferred));
       }),
       PROPERTY_PARAMS,
     );
   });
 
-  it("cada integración procede de una venta anterior y el desglose suma lo integrado", () => {
+  it("each inclusion comes from an earlier sale and the breakdown adds up to the included amount", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const result = computeWashSales(lots);
@@ -87,7 +87,7 @@ describe("computeWashSales — propiedades", () => {
     );
   });
 
-  it("no depende del orden en que lleguen las operaciones", () => {
+  it("does not depend on the order in which the trades arrive", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const forward = [...computeWashSales(lots).values()];

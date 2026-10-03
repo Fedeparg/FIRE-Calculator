@@ -34,7 +34,7 @@ function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "pai
 }
 
 describe("incomeCategoryOf", () => {
-  it("las recompensas del bróker van con los intereses", () => {
+  it("groups broker rewards with interest", () => {
     expect(incomeCategoryOf("interest")).toBe("interest");
     expect(incomeCategoryOf("benefit")).toBe("interest");
     expect(incomeCategoryOf("dividend")).toBe("dividend");
@@ -42,11 +42,11 @@ describe("incomeCategoryOf", () => {
 });
 
 describe("buildIncomeReport", () => {
-  it("sin cobros no hay ejercicios", () => {
+  it("has no tax years without payments", () => {
     expect(buildIncomeReport([], {}).years).toEqual([]);
   });
 
-  it("agrupa por ejercicio y separa intereses de dividendos", () => {
+  it("groups by tax year and separates interest from dividends", () => {
     const report = buildIncomeReport(
       [
         event({ kind: "interest", paidAt: "2025-07-01", gross: 10, withholdingSpain: 1.9 }),
@@ -78,7 +78,7 @@ describe("buildIncomeReport", () => {
     expect(y2025.dividend.byCountry.map((c) => c.country)).toEqual(["NL"]);
   });
 
-  it("cuenta aparte lo que el pagador ya comunicó a la AEAT", () => {
+  it("counts separately what the payer already reported to the AEAT", () => {
     const year = firstItem(
       buildIncomeReport(
         [
@@ -94,7 +94,7 @@ describe("buildIncomeReport", () => {
     expect(year.interest.total.gross).toBeCloseTo(21.78, 10);
   });
 
-  it("convierte los cobros en divisa con el tipo del BCE del día de cobro", () => {
+  it("converts foreign-currency payments at the ECB rate of the payment date", () => {
     const year = firstItem(
       buildIncomeReport(
         [
@@ -115,7 +115,7 @@ describe("buildIncomeReport", () => {
     expect(year.unconverted).toEqual([]);
   });
 
-  it("deja fuera los cobros sin tipo y avisa de los dividendos extranjeros sin retención en origen conocida", () => {
+  it("leaves out payments without a rate and flags foreign dividends with no known withholding at source", () => {
     const year = firstItem(
       buildIncomeReport(
         [
@@ -131,7 +131,7 @@ describe("buildIncomeReport", () => {
     expect(year.originUnknown).toBe(1);
   });
 
-  it("cuenta aparte los dividendos con la retención en origen estimada", () => {
+  it("counts separately the dividends whose withholding at source is estimated", () => {
     const year = firstItem(
       buildIncomeReport(
         [
@@ -159,7 +159,7 @@ describe("buildIncomeReport", () => {
     expect(year.originUnknown).toBe(0);
   });
 
-  it("una anulación del bróker (íntegro negativo) resta", () => {
+  it("a broker reversal (negative gross) is subtracted", () => {
     const year = firstItem(
       buildIncomeReport(
         [
@@ -175,7 +175,7 @@ describe("buildIncomeReport", () => {
 });
 
 describe("incomeRatesNeeded", () => {
-  it("pide las divisas distintas del euro desde el cobro más antiguo", () => {
+  it("requests the non-euro currencies from the oldest payment onwards", () => {
     expect(
       incomeRatesNeeded([
         event({ kind: "dividend", paidAt: "2025-02-13", gross: 1, currency: "USD" }),
@@ -188,20 +188,20 @@ describe("incomeRatesNeeded", () => {
 });
 
 describe("withholdingsFitGross", () => {
-  it("acepta retenciones que suman exactamente el íntegro aunque en coma flotante no cuadre", () => {
+  it("accepts withholdings that add up exactly to the gross even when floating point does not match", () => {
     // 0.1 + 0.2 === 0.30000000000000004 > 0.3; 0.4 + 0.2 === 0.6000000000000001 > 0.6.
     expect(withholdingsFitGross(0.3, 0.1, 0.2)).toBe(true);
     expect(withholdingsFitGross(0.6, 0.4, 0.2)).toBe(true);
-    // El 15 % en origen de 7,33 (1,0995) más el resto retenido en España: justo el íntegro.
+    // 15% withheld at source on 7.33 (1.0995) plus the rest withheld in Spain: exactly the gross.
     expect(withholdingsFitGross(7.33, 7.33 * 0.15, 6.2305)).toBe(true);
   });
 
-  it("rechaza retenciones que superan el íntegro, aunque sea por una micro-unidad", () => {
+  it("rejects withholdings that exceed the gross, even by a micro-unit", () => {
     expect(withholdingsFitGross(10, 5, 5.000001)).toBe(false);
     expect(withholdingsFitGross(1, 1.5, 0)).toBe(false);
   });
 
-  it("trata las retenciones ausentes como 0", () => {
+  it("treats missing withholdings as 0", () => {
     expect(withholdingsFitGross(10, null, undefined)).toBe(true);
     expect(withholdingsFitGross(10, undefined, 10)).toBe(true);
   });

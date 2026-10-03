@@ -15,10 +15,10 @@ const pendingItem = fc.record({
 const sum = (xs: readonly { amount: number }[]) => xs.reduce((s, x) => s + x.amount, 0);
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("computeSavingsBase — propiedades", () => {
+describe("computeSavingsBase — properties", () => {
   const inputs = fc.record({ gains: balance, capital: balance, pending: fc.array(pendingItem, { maxLength: 8 }) });
 
-  it("la base liquidable nunca es negativa", () => {
+  it("the taxable base (base liquidable) is never negative", () => {
     fc.assert(
       fc.property(
         inputs,
@@ -29,7 +29,7 @@ describe("computeSavingsBase — propiedades", () => {
     );
   });
 
-  it("compensado + pendiente + caducado = suma de negativos de entrada", () => {
+  it("offset + pending + expired = sum of the input negatives", () => {
     fc.assert(
       fc.property(inputs, ({ gains, capital, pending }) => {
         const r = computeSavingsBase({ year: YEAR, gainsBalance: gains, capitalIncomeBalance: capital, pending });
@@ -40,7 +40,7 @@ describe("computeSavingsBase — propiedades", () => {
     );
   });
 
-  it("la compensación cruzada a un grupo nunca supera el 25 % de su saldo positivo", () => {
+  it("the cross offset into a group never exceeds 25% of its positive balance", () => {
     fc.assert(
       fc.property(inputs, ({ gains, capital, pending }) => {
         const r = computeSavingsBase({ year: YEAR, gainsBalance: gains, capitalIncomeBalance: capital, pending });
@@ -52,7 +52,7 @@ describe("computeSavingsBase — propiedades", () => {
     );
   });
 
-  it("no usa pendientes caducados", () => {
+  it("does not use expired pending items", () => {
     fc.assert(
       fc.property(inputs, ({ gains, capital, pending }) => {
         const r = computeSavingsBase({ year: YEAR, gainsBalance: gains, capitalIncomeBalance: capital, pending });
@@ -63,7 +63,7 @@ describe("computeSavingsBase — propiedades", () => {
   });
 });
 
-describe("computeDoubleTaxationDeduction — propiedades", () => {
+describe("computeDoubleTaxationDeduction — properties", () => {
   const countries = [...Object.keys(TREATY_DIVIDEND_RATES), "ZZ"];
   const incomes = fc.array(
     fc.record({
@@ -74,7 +74,7 @@ describe("computeDoubleTaxationDeduction — propiedades", () => {
     { maxLength: 10 },
   );
 
-  it("la deducción no supera ni lo acreditable ni el límite del tipo medio", () => {
+  it("the deduction exceeds neither the creditable amount nor the average-rate limit", () => {
     fc.assert(
       fc.property(incomes, fc.double({ min: 0, max: 30, noNaN: true }), (list, rate) => {
         const r = computeDoubleTaxationDeduction(list, rate);
@@ -84,7 +84,7 @@ describe("computeDoubleTaxationDeduction — propiedades", () => {
     );
   });
 
-  it("acreditable + exceso ≤ retención conocida, país a país", () => {
+  it("creditable + excess ≤ known withholding, country by country", () => {
     fc.assert(
       fc.property(incomes, (list) =>
         computeDoubleTaxationDeduction(list, 19).countries.every(

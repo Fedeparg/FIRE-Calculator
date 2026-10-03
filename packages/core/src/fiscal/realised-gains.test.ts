@@ -20,11 +20,11 @@ const buy = (id: string, quantity: number, price: number, tradedAt: string) => l
 const sell = (id: string, quantity: number, price: number, tradedAt: string) =>
   lot({ id, kind: "sell", quantity, price, tradedAt });
 
-/** Informe sin tipos de referencia: basta para todo lo que es en euros. */
+/** Report without reference rates: enough for everything in euros. */
 const build = (positions: RealisedGainsPosition[], rates: ReferenceRates = {}) =>
   buildRealisedGainsReport(positions, rates);
 
-/** 1 EUR = `unitsPerEur` USD en cada fecha dada. */
+/** 1 EUR = `unitsPerEur` USD on each given date. */
 const usd = (points: Record<string, number>): ReferenceRates => ({
   USD: Object.entries(points)
     .sort(([a], [b]) => (a < b ? -1 : 1))
@@ -32,12 +32,12 @@ const usd = (points: Record<string, number>): ReferenceRates => ({
 });
 
 describe("buildRealisedGainsReport", () => {
-  it("sin ventas, el informe está vacío", () => {
+  it("without sales, the report is empty", () => {
     expect(build([position({ id: "a", lots: [buy("1", 10, 5, "2024-01-01")] })]).years).toEqual([]);
     expect(build([]).years).toEqual([]);
   });
 
-  it("agrupa por ejercicio, del más reciente al más antiguo", () => {
+  it("groups by tax year, newest first", () => {
     const report = build([
       position({
         id: "a",
@@ -50,7 +50,7 @@ describe("buildRealisedGainsReport", () => {
     expect(itemAt(report.years, 1).net).toBe(10);
   });
 
-  it("compensa ganancias y pérdidas del mismo ejercicio y estima la cuota sobre el saldo", () => {
+  it("offsets gains and losses within the same tax year and estimates the tax on the net balance", () => {
     const report = build([
       position({ id: "win", lots: [buy("1", 10, 10, "2024-01-01"), sell("2", 10, 20, "2024-06-01")] }),
       position({ id: "lose", lots: [buy("3", 10, 10, "2024-01-01"), sell("4", 10, 7, "2024-07-01")] }),
@@ -67,7 +67,7 @@ describe("buildRealisedGainsReport", () => {
     ]);
   });
 
-  it("un ejercicio con pérdida neta da cuota 0 (no se arrastra)", () => {
+  it("a tax year with a net loss yields zero tax (not carried forward)", () => {
     const report = build([
       position({ id: "a", lots: [buy("1", 10, 10, "2024-01-01"), sell("2", 10, 5, "2024-06-01")] }),
     ]);
@@ -76,7 +76,7 @@ describe("buildRealisedGainsReport", () => {
     expect(itemAt(report.years, 0).tax?.tax).toBe(0);
   });
 
-  it("deja fuera de los totales las ventas en divisa sin tipo del día de la venta", () => {
+  it("leaves out of the totals foreign-currency sales with no rate for the sale date", () => {
     const report = build([
       position({ id: "usd", currency: "USD", lots: [buy("1", 1, 100, "2024-01-01"), sell("2", 1, 300, "2024-02-01")] }),
       position({ id: "eur", lots: [buy("3", 1, 100, "2024-01-01"), sell("4", 1, 110, "2024-02-01")] }),
@@ -93,9 +93,9 @@ describe("buildRealisedGainsReport", () => {
     expect(year.tax).toEqual(estimateSavingsTax(10));
   });
 
-  it("calcula la ganancia en divisa y la convierte al tipo del día de la venta (criterio DGT)", () => {
-    // Ejemplo del plan: 10 acciones compradas por 1.500 USD + 1 USD de comisión con 1 EUR = 1,07 USD
-    // y vendidas por 2.100 USD − 1 USD con 1 EUR = 1,0885 USD.
+  it("computes the gain in the foreign currency and converts it at the sale-date rate (DGT criterion)", () => {
+    // Example from the plan: 10 shares bought for USD 1,500 + USD 1 fee at 1 EUR = 1.07 USD
+    // and sold for USD 2,100 − USD 1 at 1 EUR = 1.0885 USD.
     const report = build(
       [
         position({
@@ -112,21 +112,21 @@ describe("buildRealisedGainsReport", () => {
 
     const year = firstItem(report.years);
     const sale = firstItem(year.sales);
-    // Ganancia en USD: 2.099 − 1.501 = 598, a 1,0885.
+    // Gain in USD: 2,099 − 1,501 = 598, at 1.0885.
     expect(sale.gain).toBeCloseTo(598, 9);
     expect(sale.eur?.gain).toBeCloseTo(598 / 1.0885, 9);
     expect(sale.eur?.transferValue).toBeCloseTo(2099 / 1.0885, 9);
     expect(sale.eur?.acquisitionValue).toBeCloseTo(1501 / 1.0885, 9);
-    // Diferencia de cambio de los 1.501 USD invertidos: valen menos euros al vender.
+    // FX difference on the USD 1,501 invested: they are worth fewer euros at the sale.
     expect(sale.eur?.fxDifference).toBeCloseTo(1501 / 1.0885 - 1501 / 1.07, 9);
     expect(sale.eur?.sellRate).toEqual({ currency: "USD", unitsPerEur: 1.0885, date: "2025-03-14" });
     expect(sale.eur?.buyRates).toEqual([{ currency: "USD", unitsPerEur: 1.07, date: "2023-10-03" }]);
-    // Juntas suman lo mismo que convertir cada operación a su fecha.
+    // Together they add up to the same as converting each trade at its own date.
     expect(year.total).toBeCloseTo(2099 / 1.0885 - 1501 / 1.07, 9);
     expect(year.tax).toEqual(estimateSavingsTax(year.total));
   });
 
-  it("sin el tipo de alguna compra, convierte la ganancia pero no la diferencia de cambio", () => {
+  it("without the rate for some purchase, converts the gain but not the FX difference", () => {
     const report = build(
       [
         position({
@@ -147,7 +147,7 @@ describe("buildRealisedGainsReport", () => {
     expect(year.total).toBeCloseTo(year.net, 9);
   });
 
-  it("en euros no hay diferencia de cambio ni hace falta serie", () => {
+  it("in euros there is no FX difference and no rate series is needed", () => {
     const report = build([
       position({ id: "a", lots: [buy("1", 2, 10, "2024-01-01"), sell("2", 2, 12, "2024-03-01")] }),
     ]);
@@ -156,7 +156,7 @@ describe("buildRealisedGainsReport", () => {
     expect(itemAt(report.years, 0).fxIncomplete).toBe(0);
   });
 
-  it("usa el último tipo publicado si la venta cae en fin de semana", () => {
+  it("uses the last published rate when the sale falls on a weekend", () => {
     const report = build(
       [
         position({
@@ -165,13 +165,13 @@ describe("buildRealisedGainsReport", () => {
           lots: [buy("1", 1, 100, "2024-01-02"), sell("2", 1, 120, "2024-06-08")],
         }),
       ],
-      // 2024-06-08 es sábado: vale el del viernes 7.
+      // 2024-06-08 is a Saturday: Friday the 7th's rate applies.
       usd({ "2024-01-02": 1.1, "2024-06-07": 1.08, "2024-06-10": 1.5 }),
     );
     expect(itemAt(itemAt(report.years, 0).sales, 0).eur?.sellRate.date).toBe("2024-06-07");
   });
 
-  it("suma varias ventas de la misma posición en una fila y conserva cada venta para el CSV", () => {
+  it("adds several sales of the same position into one row and keeps each sale for the CSV", () => {
     const report = build([
       position({
         id: "a",
@@ -189,14 +189,14 @@ describe("buildRealisedGainsReport", () => {
     ]);
   });
 
-  it("una posición vendida del todo sigue contando", () => {
+  it("a fully sold position still counts", () => {
     const report = build([
       position({ id: "a", lots: [buy("1", 5, 10, "2024-01-01"), sell("2", 5, 30, "2024-12-31")] }),
     ]);
     expect(itemAt(report.years, 0).net).toBe(100);
   });
 
-  it("la venta del 31 de diciembre y la del 1 de enero van a ejercicios distintos", () => {
+  it("a sale on 31 December and one on 1 January go to different tax years", () => {
     const report = build([
       position({
         id: "a",
@@ -206,9 +206,9 @@ describe("buildRealisedGainsReport", () => {
     expect(report.years.map((y) => y.year)).toEqual([2024, 2023]);
   });
 
-  it("aplica el FIFO al valor entero, aunque esté repartido en dos brókers", () => {
-    // Compra en un bróker en 2020 a 50 y en otro en 2023 a 90; se vende en el segundo. Para
-    // Hacienda sale primero la compra de 2020, esté donde esté.
+  it("applies FIFO to the whole security, even when it is split across two brokers", () => {
+    // Bought at one broker in 2020 at 50 and at another in 2023 at 90; sold at the second. For the
+    // tax authority (Hacienda) the 2020 purchase goes out first, wherever it is held.
     const report = build([
       position({ id: "degiro", ticker: "IWDA", lots: [buy("1", 10, 50, "2020-01-01")] }),
       position({
@@ -220,11 +220,11 @@ describe("buildRealisedGainsReport", () => {
 
     const year = firstItem(report.years);
     expect(year.net).toBe(250);
-    // La venta se atribuye a la posición donde se registró.
+    // The sale is attributed to the position where it was recorded.
     expect(year.rows.map((r) => r.positionId)).toEqual(["myinvestor"]);
   });
 
-  it("no empareja el mismo símbolo en divisas distintas", () => {
+  it("does not match the same symbol across different currencies", () => {
     const report = build([
       position({ id: "eur", ticker: "X", lots: [buy("1", 1, 10, "2020-01-01")] }),
       position({
@@ -239,7 +239,7 @@ describe("buildRealisedGainsReport", () => {
 });
 
 describe("referenceRatesNeeded", () => {
-  it("pide las divisas con ventas desde su operación más antigua", () => {
+  it("requests the currencies with sales from their oldest trade onwards", () => {
     expect(
       referenceRatesNeeded([
         position({ id: "eur", lots: [buy("1", 1, 1, "2010-01-01"), sell("2", 1, 1, "2011-01-01")] }),
@@ -250,7 +250,7 @@ describe("referenceRatesNeeded", () => {
     ).toEqual({ currencies: ["GBP", "USD"], from: "2019-05-02" });
   });
 
-  it("incluye la compra antigua del mismo valor en otro bróker, que el FIFO puede emparejar", () => {
+  it("includes the old purchase of the same security at another broker, which FIFO may match", () => {
     expect(
       referenceRatesNeeded([
         position({ id: "a", ticker: "AAPL", currency: "USD", lots: [buy("1", 1, 1, "2019-03-01")] }),
@@ -264,7 +264,7 @@ describe("referenceRatesNeeded", () => {
     ).toEqual({ currencies: ["USD"], from: "2019-03-01" });
   });
 
-  it("sin ventas en divisa no hace falta ningún tipo", () => {
+  it("needs no rate without foreign-currency sales", () => {
     expect(
       referenceRatesNeeded([
         position({ id: "eur", lots: [buy("1", 1, 1, "2010-01-01"), sell("2", 1, 1, "2011-01-01")] }),
@@ -274,12 +274,12 @@ describe("referenceRatesNeeded", () => {
   });
 });
 
-describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF)", () => {
-  // Caso T.S.A. del Manual práctico de Renta 2025, cap. 11: la pérdida de 4.800 € no se integra.
+describe("buildRealisedGainsReport — two-month rule (art. 33.5.f LIRPF)", () => {
+  // Case T.S.A. from the Manual práctico de Renta 2025, ch. 11: the €4,800 loss is not included.
   const tsa = [buy("old", 1000, 16.8, "2015-05-25"), sell("s1", 1000, 12, "2025-07-16")];
   const rebuy = buy("re", 1000, 16.5, "2025-08-16");
 
-  it("caso T.S.A.: la pérdida de 4.800 € no se integra en 2025", () => {
+  it("case T.S.A.: the €4,800 loss is not included in 2025", () => {
     const year = firstItem(build([position({ id: "a", lots: [...tsa, rebuy] })]).years);
 
     expect(itemAt(year.sales, 0).gain).toBeCloseTo(-4800, 6);
@@ -292,50 +292,50 @@ describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF
     expect(itemAt(year.rows, 0).gain).toBeCloseTo(0, 6);
   });
 
-  it("sin recompra la pérdida se integra en su ejercicio", () => {
+  it("without a repurchase the loss is included in its own tax year", () => {
     const year = firstItem(build([position({ id: "a", lots: tsa })]).years);
 
     expect(year.deferred).toBe(0);
     expect(year.net).toBeCloseTo(-4800, 6);
   });
 
-  it("recompra parcial: solo se difiere la parte proporcional", () => {
+  it("partial repurchase: only the proportional part is deferred", () => {
     const year = firstItem(build([position({ id: "a", lots: [...tsa, buy("re", 250, 16.5, "2025-08-16")] })]).years);
 
     expect(year.deferred).toBeCloseTo(-1200, 6);
     expect(year.net).toBeCloseTo(-3600, 6);
   });
 
-  it("la pérdida diferida se integra en el ejercicio en que se venden los recomprados", () => {
+  it("the deferred loss is included in the tax year in which the repurchased shares are sold", () => {
     const report = build([position({ id: "a", lots: [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")] })]);
     const [y2026, y2025] = takeItems(report.years, 2);
 
     expect(y2025.net).toBeCloseTo(0, 6);
-    // Venta de 2026: ganancia propia de 500 € menos los 4.800 € de pérdida que desbloquea.
+    // 2026 sale: its own €500 gain minus the €4,800 loss it unlocks.
     expect(itemAt(y2026.sales, 0).gain).toBeCloseTo(500, 6);
     expect(y2026.integrated).toBeCloseTo(-4800, 6);
     expect(itemAt(y2026.sales, 0).integratedFrom.map((p) => p.fromSaleId)).toEqual(["s1"]);
     expect(y2026.net).toBeCloseTo(-4300, 6);
   });
 
-  it("la pérdida diferida se integra por su importe en euros del día de la venta original", () => {
+  it("the deferred loss is included at its euro amount as of the original sale date", () => {
     const rates = usd({ "2015-05-25": 1, "2025-07-16": 1.25, "2025-08-16": 1.1, "2026-09-01": 1.5 });
     const lots = [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")];
     const [y2026, y2025] = takeItems(build([position({ id: "a", currency: "USD", lots })], rates).years, 2);
 
-    // −4.800 USD a 1,25 USD/EUR = −3.840 €, no −3.200 € (tipo de 2026).
+    // USD −4,800 at 1.25 USD/EUR = €−3,840, not €−3,200 (the 2026 rate).
     expect(y2025.deferred).toBeCloseTo(-3840, 6);
     expect(y2026.integrated).toBeCloseTo(-3840, 6);
   });
 
-  it("los warrants y certificados (derivados con ISIN) también están sujetos: son valores negociables", () => {
-    // V2172-21 y V3755-16 solo excluyen contratos (opciones, futuros); V1790-07 trata los warrants como valores.
+  it("warrants and certificates (derivatives with an ISIN) are also covered: they are tradable securities", () => {
+    // V2172-21 and V3755-16 only exclude contracts (options, futures); V1790-07 treats warrants as securities.
     const year = firstItem(build([position({ id: "a", isDerivative: true, lots: [...tsa, rebuy] })]).years);
 
     expect(year.deferred).toBeCloseTo(-4800, 6);
   });
 
-  it("la recompra en otra posición del mismo valor también bloquea", () => {
+  it("a repurchase in another position of the same security also blocks", () => {
     const year = firstItem(
       build([position({ id: "a", ticker: "TSA", lots: tsa }), position({ id: "b", ticker: "TSA", lots: [rebuy] })])
         .years,
