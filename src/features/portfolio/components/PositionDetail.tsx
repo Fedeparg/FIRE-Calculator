@@ -14,6 +14,7 @@ import SaleSimulator from "./SaleSimulator";
 import { positionHasSales } from "../model/lots";
 import { usePositionIncome } from "@/features/portfolio/use-position-income";
 import { usePositionLots } from "@/features/portfolio/use-position-lots";
+import { useEditableCollection } from "@/shared/ui/use-editable-collection";
 
 export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
 
@@ -58,22 +59,11 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const { lots, loadState, errorKey, submitting, save, remove } = usePositionLots(position.id, onMutated);
   const incomeState = usePositionIncome(position.id);
   const [view, setView] = useState<View>("lots");
-  const [editingLot, setEditingLot] = useState<PositionLot | null>(null);
-  const [confirmingLotId, setConfirmingLotId] = useState<string | null>(null);
+  const lotRows = useEditableCollection<PositionLot, LotPayload>({ save, remove });
 
   // Los lotes ya se cargan aquí: no hace falta otra consulta para saber si hay ventas. Mientras
   // cargan o si fallan vale `null` ("no se sabe"), y el aviso fuerte de borrado se muestra igual.
   const hasSales = positionHasSales(loadState, lots);
-
-  async function handleSubmitLot(payload: LotPayload) {
-    if (await save(editingLot?.id ?? null, payload)) setEditingLot(null);
-  }
-
-  async function handleDeleteLot(lotId: string) {
-    const ok = await remove(lotId);
-    setConfirmingLotId(null);
-    if (ok && editingLot?.id === lotId) setEditingLot(null);
-  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -108,13 +98,13 @@ export default function PositionDetail({ position, price, rates, pricePending, o
             lots={lots}
             ticker={position.ticker}
             currency={position.currency}
-            editingId={editingLot?.id ?? null}
-            confirmingId={confirmingLotId}
+            editingId={lotRows.editing?.id ?? null}
+            confirmingId={lotRows.confirmingId}
             submitting={submitting}
-            onEdit={setEditingLot}
-            onAskDelete={setConfirmingLotId}
-            onCancelDelete={() => setConfirmingLotId(null)}
-            onConfirmDelete={(lotId) => void handleDeleteLot(lotId)}
+            onEdit={lotRows.startEdit}
+            onAskDelete={lotRows.askDelete}
+            onCancelDelete={lotRows.cancelDelete}
+            onConfirmDelete={(lotId) => void lotRows.confirmDelete(lotId)}
           />
 
           {errorKey && (
@@ -125,12 +115,12 @@ export default function PositionDetail({ position, price, rates, pricePending, o
 
           {/* El `key` fuerza un remount al cambiar de lote editado (o volver al alta). */}
           <PositionLotForm
-            key={editingLot?.id ?? "add"}
-            editing={editingLot}
+            key={lotRows.editing?.id ?? "add"}
+            editing={lotRows.editing}
             currency={position.currency}
             submitting={submitting}
-            onSubmit={handleSubmitLot}
-            onCancelEdit={() => setEditingLot(null)}
+            onSubmit={(payload) => void lotRows.submit(payload)}
+            onCancelEdit={lotRows.cancelEdit}
           />
         </div>
       )}

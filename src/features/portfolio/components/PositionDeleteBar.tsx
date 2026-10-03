@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { deletePosition } from "@/features/portfolio/api";
@@ -26,6 +26,19 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
   const [confirming, setConfirming] = useState(false);
+  // Foco (como en `RowActions`): al pedir el borrado pasa a "Confirmar"; al cancelar vuelve a
+  // "Eliminar". El botón pulsado desaparece al cambiar de modo y el foco caería en `<body>`.
+  const confirmRef = useRef<HTMLButtonElement>(null);
+  const deleteRef = useRef<HTMLButtonElement>(null);
+  const returnFocus = useRef(false);
+  useEffect(() => {
+    if (confirming) {
+      confirmRef.current?.focus();
+    } else if (returnFocus.current) {
+      returnFocus.current = false;
+      deleteRef.current?.focus();
+    }
+  }, [confirming]);
   const deletion = useApiMutation();
   const deleting = deletion.status === "pending";
 
@@ -49,12 +62,21 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
             </p>
           )}
           <div className="flex gap-2">
-            <Button variant="warning" onClick={() => void handleDelete()} disabled={deleting} className="flex-1 h-11">
+            <Button
+              ref={confirmRef}
+              variant="warning"
+              onClick={() => void handleDelete()}
+              disabled={deleting}
+              className="flex-1 h-11"
+            >
               {deleting ? tList("deleting") : tList("confirm")}
             </Button>
             <Button
               variant="secondary"
-              onClick={() => setConfirming(false)}
+              onClick={() => {
+                returnFocus.current = true;
+                setConfirming(false);
+              }}
               disabled={deleting}
               className="flex-1 h-11"
             >
@@ -68,6 +90,7 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
             {tDetail("editPosition")}
           </Button>
           <button
+            ref={deleteRef}
             type="button"
             onClick={() => setConfirming(true)}
             className="h-11 rounded-lg px-3 text-sm font-medium text-danger hover:bg-danger-soft"

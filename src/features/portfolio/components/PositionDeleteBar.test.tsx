@@ -36,4 +36,15 @@ describe("PositionDeleteBar", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: es.portfolio.list.confirm })).toBeInTheDocument();
   });
+
+  it("lleva el foco a confirmar y, al cancelar, lo devuelve a eliminar", async () => {
+    const user = userEvent.setup();
+    renderWithIntl(<PositionDeleteBar positionId="p1" hasSales={false} onEdit={vi.fn()} onDeleted={vi.fn()} />);
+
+    await user.click(screen.getByRole("button", { name: es.portfolio.detail.deletePosition }));
+    expect(screen.getByRole("button", { name: es.portfolio.list.confirm })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: es.portfolio.list.cancel }));
+    expect(screen.getByRole("button", { name: es.portfolio.detail.deletePosition })).toHaveFocus();
+  });
 });
