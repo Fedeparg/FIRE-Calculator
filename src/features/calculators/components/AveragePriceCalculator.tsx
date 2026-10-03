@@ -82,7 +82,7 @@ export default function AveragePriceCalculator() {
                 disabled={rows.length <= 1}
                 className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </li>
           ))}

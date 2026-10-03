@@ -117,6 +117,22 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Texto visible SIEMPRE traducido: un texto JSX con letras en un componente de feature es una
+  // cadena de UI escrita a mano (ver "Todo el texto visible va traducido" en CLAUDE.md). Va por
+  // `next-intl` (`t("…")`) o, si es un importe, por `useFormat`. Símbolos sin letras (·, /, →) pasan.
+  {
+    files: ["src/features/**/components/**/*.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXText[value=/\\p{L}/u]",
+          message: "Texto de UI hardcodeado: usa una clave de i18n (`t(...)`) en es.json y en.json.",
+        },
+      ],
+    },
+  },
   // Tamaño de componente: por encima de ~300 líneas efectivas conviene extraer un
   // hook o un subcomponente.
   {

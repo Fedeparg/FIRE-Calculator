@@ -7,7 +7,8 @@
     "home": "Calculadoras",
     "learn": "Aprende",
     "primary": "Navegación principal",
-    "theme": "Tema oscuro"
+    "theme": "Tema oscuro",
+    "breadcrumb": "Ruta de navegación"
   },
   "landing": {
     "meta": {
@@ -1040,6 +1041,7 @@
       "title": "Test de salud financiera",
       "intro": "Responde ocho preguntas y obtén una puntuación de 0 a 100 sobre el estado de tus finanzas, con consejos.",
       "score": "Tu puntuación",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "¿Cuánto tienes ahorrado para imprevistos?",

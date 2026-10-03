@@ -57,7 +57,7 @@ export default function FinancialHealthQuiz() {
         <div className="rounded-xl border border-brand bg-brand-soft p-6 text-center text-brand">
           <div className="text-sm font-medium opacity-80">{t("score")}</div>
           <div className="mt-1 text-5xl font-bold">{result.score}</div>
-          <div className="text-sm opacity-80">/ 100</div>
+          <div className="text-sm opacity-80">{t("scoreMax", { max: 100 })}</div>
         </div>
 
         <div className={`rounded-xl border p-4 ${CATEGORY_STYLES[result.category]}`}>

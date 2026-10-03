@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 
 import { trackEvent } from "@/shared/analytics/track";
 import { apiJson } from "@/shared/api/client";
+import { useFormat } from "@/shared/format/use-format";
 import { DONATION_MAX_EUR, DONATION_MIN_EUR, DONATION_PRESETS } from "../config";
 import Button from "@/shared/ui/Button";
 
@@ -18,6 +19,7 @@ type Status = "idle" | "loading" | "error";
 export default function DonationWidget() {
   const t = useTranslations("donations");
   const locale = useLocale();
+  const { formatEUR, currencySymbol } = useFormat();
   const [amount, setAmount] = useState<number>(DONATION_PRESETS[1]);
   const [status, setStatus] = useState<Status>("idle");
 
@@ -57,7 +59,7 @@ export default function DonationWidget() {
                   : "border-border bg-background text-foreground hover:border-brand"
               }`}
             >
-              {preset} €
+              {formatEUR(preset)}
             </button>
           );
         })}
@@ -75,7 +77,7 @@ export default function DonationWidget() {
             aria-label={t("widget.customLabel")}
           />
           <span aria-hidden className="text-muted">
-            €
+            {currencySymbol("EUR")}
           </span>
         </label>
       </div>

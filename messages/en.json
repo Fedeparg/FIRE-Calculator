@@ -7,7 +7,8 @@
     "home": "Calculators",
     "learn": "Learn",
     "primary": "Primary navigation",
-    "theme": "Dark theme"
+    "theme": "Dark theme",
+    "breadcrumb": "Breadcrumb"
   },
   "landing": {
     "meta": {
@@ -1040,6 +1041,7 @@
       "title": "Financial health test",
       "intro": "Answer eight questions and get a 0-100 score on the state of your finances, with tailored tips.",
       "score": "Your score",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "How much have you saved for emergencies?",

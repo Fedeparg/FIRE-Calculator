@@ -1,4 +1,4 @@
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import { asLocale } from "@/i18n/types";
@@ -12,10 +12,11 @@ import JsonLd from "./JsonLd";
  */
 export default function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   const locale = asLocale(useLocale());
+  const t = useTranslations("nav");
 
   return (
     <>
-      <nav aria-label="Breadcrumb">
+      <nav aria-label={t("breadcrumb")}>
         <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
           {items.map((item, index) => {
             const isLast = index === items.length - 1;
