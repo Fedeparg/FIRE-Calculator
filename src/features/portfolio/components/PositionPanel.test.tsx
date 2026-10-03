@@ -65,11 +65,11 @@ describe("PositionPanel", () => {
     const outside = screen.getByRole("link", { name: "fuera" });
 
     await user.click(screen.getByRole("button", { name: "abrir" }));
-    expect(outside.inert).toBe(true);
+    expect(outside).toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("hidden");
 
     await user.keyboard("{Escape}");
-    expect(outside.inert).toBe(false);
+    expect(outside).not.toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("");
   });
 
@@ -79,8 +79,7 @@ describe("PositionPanel", () => {
     renderWithIntl(<Page />);
 
     await user.click(screen.getByRole("button", { name: "abrir" }));
-    // jsdom no implementa `inert` (queda `undefined` si nadie lo fija): basta con que no sea `true`.
-    expect(screen.getByRole("link", { name: "fuera" }).inert).toBeFalsy();
+    expect(screen.getByRole("link", { name: "fuera" })).not.toHaveAttribute("inert");
     expect(document.body.style.overflow).toBe("");
   });
 });

@@ -54,11 +54,13 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
   useEffect(() => {
     const panel = panelRef.current;
     if (!isSheet || !panel) return;
-    const inerted: HTMLElement[] = [];
+    const inerted: Element[] = [];
     for (let node: HTMLElement = panel; node !== document.body && node.parentElement; node = node.parentElement) {
       for (const sibling of node.parentElement.children) {
-        if (sibling !== node && sibling !== scrimRef.current && sibling instanceof HTMLElement && !sibling.inert) {
-          sibling.inert = true;
+        if (sibling !== node && sibling !== scrimRef.current && !sibling.hasAttribute("inert")) {
+          // Atributo y no la propiedad `inert`: es lo mismo para el navegador, y el compilador
+          // de React no admite asignar propiedades a valores que salen de una ref.
+          sibling.setAttribute("inert", "");
           inerted.push(sibling);
         }
       }
@@ -66,7 +68,7 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
     const { overflow } = document.body.style;
     document.body.style.overflow = "hidden";
     return () => {
-      for (const element of inerted) element.inert = false;
+      for (const element of inerted) element.removeAttribute("inert");
       document.body.style.overflow = overflow;
     };
   }, [isSheet]);
