@@ -18,6 +18,7 @@ import { PriceReadService } from '../prices/price-read.service.js';
 import type { SymbolResolver } from '../prices/symbol-resolver.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
+import { SnapshotRepository } from './snapshot.repository.js';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
@@ -60,6 +61,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       prices,
       priceHistory,
       positions,
+      new SnapshotRepository(db),
     );
   });
 
