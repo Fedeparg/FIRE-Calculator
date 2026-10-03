@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -96,6 +96,26 @@ describe('PositionsService (integración con Postgres)', () => {
       await expect(service.create(user, dto({ ticker: 'IWDA', broker: 'degiro' }))).rejects.toMatchObject({
         response: { code: 'DUPLICATE' },
       });
+    });
+
+    it('dos altas simultáneas del mismo (símbolo, bróker): una entra y la otra es 409 DUPLICATE, no 500', async () => {
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const { positions: parallel } = buildPositionsStack(concurrent.db);
+        const user = await insertUser(db, 'a@example.com');
+
+        const results = await Promise.allSettled([
+          parallel.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' })),
+          parallel.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' })),
+        ]);
+
+        expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+        const [rejected] = results.filter((r) => r.status === 'rejected');
+        expect(rejected.reason).toBeInstanceOf(ConflictException);
+        expect(rejected.reason).toMatchObject({ response: { code: 'DUPLICATE', existing: { ticker: 'IWDA' } } });
+      } finally {
+        await concurrent.close();
+      }
     });
 
     it('permite el mismo símbolo en brókers distintos', async () => {

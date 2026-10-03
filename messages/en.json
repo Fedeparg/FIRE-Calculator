@@ -1552,6 +1552,7 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Sales exceed purchases: earlier history is missing.",
           "OVERFLOW": "The resulting quantity is too large.",
+          "CONFLICT": "Another import of the same file ran at the same time. Import it again to complete it.",
           "UNEXPECTED": "Unexpected error. Please try again later."
         },
         "pricesNote": "Prices for the new positions may take a few minutes to appear.",

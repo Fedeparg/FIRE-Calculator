@@ -1552,6 +1552,7 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Las ventas superan lo comprado: falta historial anterior.",
           "OVERFLOW": "La cantidad resultante es demasiado grande.",
+          "CONFLICT": "Otra importación del mismo fichero se hizo a la vez. Vuelve a importarlo para completarla.",
           "UNEXPECTED": "Error inesperado. Inténtalo de nuevo más tarde."
         },
         "pricesNote": "Los precios de las posiciones nuevas pueden tardar unos minutos en aparecer.",

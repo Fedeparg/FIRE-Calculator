@@ -18,6 +18,7 @@ import {
   type PositionCreatedEvent,
 } from './position-events.js';
 import { isoDate, todayUtc } from '../common/dates.js';
+import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../common/pg-error.js';
 
 /** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
 export type PositionResponse = {
@@ -87,8 +88,14 @@ export class PositionsService {
     } catch (error) {
       // La única FK es `userId → users.id`: JWT válido pero usuario inexistente (cuenta
       // borrada, BD reiniciada en dev) es sesión muerta → 401, no 500.
-      if (isForeignKeyViolation(error)) {
+      if (isPgError(error, PG_FOREIGN_KEY_VIOLATION)) {
         throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');
+      }
+      // Alta concurrente del mismo (símbolo, bróker): la comprobación previa no vio la otra fila
+      // (aún sin confirmar) y el índice único la ha parado. Se responde como si la hubiera visto:
+      // 409 DUPLICATE con la existente (o BROKER_REQUIRED), para ofrecer combinar.
+      if (isPgError(error, PG_UNIQUE_VIOLATION)) {
+        await this.assertCanUseTickerBroker(userId, ticker, broker);
       }
       throw error;
     }
@@ -284,19 +291,4 @@ export class PositionsService {
       createdAt: row.createdAt.toISOString(),
     };
   }
-}
-
-/** SQLSTATE de violación de clave foránea. */
-const PG_FOREIGN_KEY_VIOLATION = '23503';
-
-/** Drizzle envuelve el error del driver: el `code` SQLSTATE está en algún `cause` de la cadena. */
-function isForeignKeyViolation(error: unknown): boolean {
-  let current: unknown = error;
-  while (typeof current === 'object' && current !== null) {
-    if ((current as { code?: unknown }).code === PG_FOREIGN_KEY_VIOLATION) {
-      return true;
-    }
-    current = (current as { cause?: unknown }).cause;
-  }
-  return false;
 }

@@ -21,6 +21,7 @@ import type {
   SkippedSummary,
 } from '@sextante/core/imports/types';
 
+import { isPgError, PG_UNIQUE_VIOLATION } from '../common/pg-error.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type Position, type PositionLot } from '../db/schema.js';
 import { DividendResolutionService } from '../income/dividend-resolution.service.js';
@@ -494,6 +495,9 @@ function failureOf(error: unknown): ImportFailureCode {
     if (code === 'NEGATIVE_QUANTITY') return 'NEGATIVE_QUANTITY';
     if (code === 'OVERFLOW') return 'OVERFLOW';
   }
+  // Un lote con el mismo `external_id` lo insertó a la vez otra importación del mismo fichero:
+  // no es un fallo inesperado, basta con volver a importar (la deduplicación lo completará).
+  if (isPgError(error, PG_UNIQUE_VIOLATION)) return 'CONFLICT';
   return 'UNEXPECTED';
 }
 

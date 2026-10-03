@@ -92,7 +92,7 @@ export type ImportParseResult = {
   warnings: ImportWarning[];
 };
 
-export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "UNEXPECTED";
+export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "CONFLICT" | "UNEXPECTED";
 
 /** Filas descartadas por motivo; solo recuentos. */
 export type SkippedSummary = { reason: ImportSkipReason; count: number };
