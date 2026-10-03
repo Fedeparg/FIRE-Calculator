@@ -1,36 +1,37 @@
-// Tipos compartidos de la importación de operaciones. Genéricos a propósito: cada parser de bróker
-// produce `ImportedTrade` y el resto (plan en la API, vista previa en la UI) no sabe de qué bróker viene.
+// Shared types of the trade import. Generic on purpose: each broker parser produces
+// `ImportedTrade` and everything else (plan in the API, preview in the UI) does not know which
+// broker it came from.
 
 import type { ValueSource } from "../fiscal/income.js";
 import type { AssetClass } from "../portfolio/types.js";
 
-/** Clase de activo normalizada (la misma de la cartera); `other` cubre lo vacío o lo no clasificado. */
+/** Normalized asset class (the portfolio's own); `other` covers empty or unclassified values. */
 export type ImportedAssetClass = AssetClass;
 
 /**
- * Compra o venta normalizada. Los importes van como `string` decimal para no pasar por coma flotante
- * hasta `numeric(18,6)`, ya redondeados a 6 decimales. `fees` es siempre positivo.
+ * Normalized buy or sell. Amounts travel as decimal `string`s so they never go through floating
+ * point on their way to `numeric(18,6)`, already rounded to 6 decimals. `fees` is always positive.
  */
 export type ImportedTrade = {
-  /** Id de la operación en el bróker; clave de deduplicación al reimportar. */
+  /** Broker's id for the trade; the deduplication key on re-import. */
   externalId: string;
   isin: string;
   name: string;
   assetClass: ImportedAssetClass;
   kind: "buy" | "sell";
-  /** Siempre positivo; el sentido lo da `kind`. */
+  /** Always positive; `kind` gives the direction. */
   quantity: string;
   price: string;
   fees: string;
   tradedAt: string;
-  /** Instante UTC con 6 decimales de segundo, para que ordenar como texto sea fiable. */
+  /** UTC instant with 6 decimal places of seconds, so that sorting as text is reliable. */
   executedAt: string;
 };
 
 /**
- * Cobro normalizado (interés, recompensa o dividendo). Importes en `string` decimal, en euros, ya
- * redondeados a 6 decimales. `reportedToAeat`: el bróker ya lo comunicó a la AEAT (sucursal
- * española), así que puede estar en el borrador.
+ * Normalized payout (interest, reward or dividend). Amounts as decimal `string`s, in euros, already
+ * rounded to 6 decimals. `reportedToAeat`: the broker already reported it to the AEAT (Spanish
+ * branch), so it may appear in the draft return (borrador).
  */
 export type ImportedIncome = {
   externalId: string;
@@ -38,27 +39,27 @@ export type ImportedIncome = {
   paidAt: string;
   isin: string | null;
   name: string | null;
-  /** País de la fuente (ISO 3166-1 alfa-2). */
+  /** Source country (ISO 3166-1 alpha-2). */
   country: string | null;
   currency: "EUR";
-  /** Íntegro; negativo en una anulación. */
+  /** Gross; negative in a reversal. */
   gross: string;
-  /** `null` si no se puede saber. */
+  /** `null` if it cannot be known. */
   withholdingOrigin: string | null;
   withholdingSpain: string;
   reportedToAeat: boolean;
-  /** Procedencia de cada cifra (ver `ValueSource` en `fiscal/income`). */
+  /** Provenance of each figure (see `ValueSource` in `fiscal/income`). */
   grossSource: ValueSource;
   withholdingOriginSource: ValueSource | null;
-  /** Acciones con derecho al dividendo, como las da el bróker. */
+  /** Shares entitled to the dividend, as reported by the broker. */
   quantity: string | null;
-  /** Abonado en la divisa de pago, si no era el euro. */
+  /** Amount paid in the payment currency, if it was not the euro. */
   originalAmount: string | null;
   originalCurrency: string | null;
 };
 
 export type ImportSkipReason =
-  /** Dividendo provisional anulado por TR, junto con su anulación. */
+  /** Provisional dividend reversed by TR, together with its reversal. */
   | "dividend_reversed"
   | "ipo_subscription"
   | "cash_movement"
@@ -71,7 +72,7 @@ export type ImportSkipReason =
   | "invalid_row"
   | "unknown_type";
 
-/** Fila descartada: solo lleva el tipo del bróker y la línea, nunca datos de la fila. */
+/** Skipped row: carries only the broker's type and the line, never the row's data. */
 export type ImportSkippedRow = {
   line: number;
   type: string;
@@ -79,15 +80,15 @@ export type ImportSkippedRow = {
 };
 
 export type ImportWarning =
-  /** Operaciones con impuesto en su fila: no se suma al coste. */
+  /** Trades with tax on their row: it is not added to the cost. */
   | { code: "trade_tax_ignored"; count: number }
-  /** Migración de custodia sin pareja: puede faltar historial. */
+  /** Unpaired custody migration: history may be missing. */
   | { code: "unbalanced_migration"; isin: string; line: number };
 
 export type ImportParseResult = {
-  /** Ordenadas por `executedAt` y por línea ante empate. */
+  /** Sorted by `executedAt`, then by line on ties. */
   trades: ImportedTrade[];
-  /** Cobros, en orden de fecha y de línea. */
+  /** Payouts, in date and line order. */
   income: ImportedIncome[];
   skipped: ImportSkippedRow[];
   warnings: ImportWarning[];
@@ -95,38 +96,38 @@ export type ImportParseResult = {
 
 export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "CONFLICT" | "UNEXPECTED";
 
-/** Filas descartadas por motivo; solo recuentos. */
+/** Skipped rows by reason; counts only. */
 export type SkippedSummary = { reason: ImportSkipReason; count: number };
 
 export type ImportPlanPosition = {
   isin: string;
   name: string;
   assetClass: ImportedAssetClass;
-  /** `create`: no existe aún; `extend`: se añaden lotes a la existente. */
+  /** `create`: does not exist yet; `extend`: lots are added to the existing one. */
   action: "create" | "extend";
   newBuys: number;
   newSells: number;
-  /** Operaciones del fichero ya importadas (por `external_id`). */
+  /** Trades in the file already imported (by `external_id`). */
   duplicates: number;
   currentQuantity: number;
-  /** Cantidad tras importar; `null` si la secuencia sería inválida. */
+  /** Quantity after importing; `null` if the sequence would be invalid. */
   resultingQuantity: number | null;
-  /** Precio medio de coste tras importar, con precios de ejecución del fichero; `null` si queda cerrada o es inválida. */
+  /** Average cost price after importing, using the file's execution prices; `null` if closed or invalid. */
   resultingAvgPrice: number | null;
-  /** Presente si la posición no se podrá importar. */
+  /** Present if the position cannot be imported. */
   blockedBy: ImportFailureCode | null;
-  /** Derivado: se registra pero no se sigue su precio ni suma a los totales. No bloquea. */
+  /** Derivative: recorded, but its price is not tracked and it does not add to totals. Not blocking. */
   isDerivative: boolean;
 };
 
-/** Cobros del fichero: nuevos, ya importados y cuántos de los nuevos ya comunicó el bróker a la AEAT. */
+/** Payouts in the file: new, already imported, and how many new ones the broker already reported to the AEAT. */
 export type ImportIncomeSummary = { created: number; duplicates: number; reportedToAeat: number };
 
 export type ImportPlan = {
   broker: string;
   positions: ImportPlanPosition[];
   totals: { newLots: number; duplicates: number };
-  /** En la vista previa, `created` son los que se crearían. */
+  /** In the preview, `created` are the ones that would be created. */
   income: ImportIncomeSummary;
   skipped: SkippedSummary[];
   warnings: ImportWarning[];

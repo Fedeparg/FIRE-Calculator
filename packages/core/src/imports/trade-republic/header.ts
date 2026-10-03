@@ -1,11 +1,11 @@
-// Cabecera y validación del fichero entero del export de Trade Republic: lo que hace que no se
-// pueda importar NADA (distinto de una fila concreta inválida, que se descarta con motivo).
+// Header and whole-file validation of the Trade Republic export: what makes NOTHING importable
+// (as opposed to a single invalid row, which is skipped with a reason).
 
 import { firstItem, itemAt } from "../../arrays.js";
 import { CsvSyntaxError, parseCsv, type CsvRecord } from "../csv.js";
 import { MAX_IMPORT_ROWS } from "../limits.js";
 
-/** Cabecera exacta del export (23 columnas). Si cambia, preferimos fallar a adivinar. */
+/** Exact header of the export (23 columns). If it changes, we would rather fail than guess. */
 export const TRADE_REPUBLIC_HEADER = [
   "datetime",
   "date",
@@ -35,15 +35,15 @@ export const TRADE_REPUBLIC_HEADER = [
 export type TradeRepublicColumn = (typeof TRADE_REPUBLIC_HEADER)[number];
 
 export type TradeRepublicParseErrorCode =
-  /** Vacío o sin ninguna fila de datos. */
+  /** Empty or without any data row. */
   | "EMPTY_FILE"
-  /** No es un CSV bien formado. */
+  /** Not a well-formed CSV. */
   | "MALFORMED_CSV"
-  /** La cabecera no es la del export de Trade Republic. */
+  /** The header is not the Trade Republic export's. */
   | "NOT_TRADE_REPUBLIC"
   | "TOO_MANY_ROWS";
 
-/** El fichero no se puede importar en absoluto (distinto de una fila concreta inválida). */
+/** The file cannot be imported at all (as opposed to a single invalid row). */
 export class TradeRepublicParseError extends Error {
   constructor(
     readonly code: TradeRepublicParseErrorCode,
@@ -55,10 +55,10 @@ export class TradeRepublicParseError extends Error {
 }
 
 /**
- * Parsea el CSV, comprueba que es el export de Trade Republic y devuelve sus filas de datos (sin
- * la cabecera).
+ * Parses the CSV, checks that it is the Trade Republic export and returns its data rows (without
+ * the header).
  *
- * @throws {TradeRepublicParseError} si el fichero entero no es utilizable.
+ * @throws {TradeRepublicParseError} if the file as a whole is unusable.
  */
 export function readDataRecords(text: string): CsvRecord[] {
   let records: CsvRecord[];

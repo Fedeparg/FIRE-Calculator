@@ -1,10 +1,10 @@
-// Decimales de coma fija sobre `bigint`, para importar importes y cantidades sin pasar por `number`.
+// Fixed-point decimals on `bigint`, to import amounts and quantities without going through `number`.
 
 const PLAIN_DECIMAL = /^(-)?(\d+)(?:\.(\d+))?$/;
 
 /**
- * Decimal plano → entero de coma fija con `scale` decimales (half-up sobre el valor absoluto).
- * Devuelve `null` si no es un decimal plano (nada de exponentes, miles ni espacios).
+ * Plain decimal → fixed-point integer with `scale` decimals (half-up on the absolute value).
+ * Returns `null` if it is not a plain decimal (no exponents, thousands separators or spaces).
  */
 export function parseUnits(raw: string, scale: number): bigint | null {
   const match = PLAIN_DECIMAL.exec(raw);
@@ -16,7 +16,7 @@ export function parseUnits(raw: string, scale: number): bigint | null {
   return sign ? -units : units;
 }
 
-/** Inverso de `parseUnits`, sin ceros decimales sobrantes ("1.50" → "1.5", "2.000" → "2"). */
+/** Inverse of `parseUnits`, without trailing decimal zeros ("1.50" → "1.5", "2.000" → "2"). */
 export function formatUnits(units: bigint, scale: number): string {
   const negative = units < 0n;
   const digits = (negative ? -units : units).toString().padStart(scale + 1, "0");
@@ -25,7 +25,7 @@ export function formatUnits(units: bigint, scale: number): string {
   return `${negative ? "-" : ""}${intPart}${fracPart ? `.${fracPart}` : ""}`;
 }
 
-/** Valor absoluto de un entero de coma fija. */
+/** Absolute value of a fixed-point integer. */
 export function absUnits(units: bigint): bigint {
   return units < 0n ? -units : units;
 }

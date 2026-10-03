@@ -1,4 +1,4 @@
-// Ampliaciones liberadas (`BONUS_ISSUE`) y sus cancelaciones (`BONUS_ISSUE_CANCELLED`).
+// Bonus issues (`BONUS_ISSUE`, ampliaciones liberadas) and their cancellations (`BONUS_ISSUE_CANCELLED`).
 
 import { firstItem } from "../../arrays.js";
 import { compareStrings } from "../../compare.js";
@@ -16,16 +16,16 @@ import {
 import type { ParsedTrade } from "./trades.js";
 
 /**
- * Ampliaciones liberadas → compras a precio 0.
+ * Bonus issues → buys at price 0.
  *
- * Fiscalmente (art. 37.1.a LIRPF) las acciones liberadas no tienen coste: el de las antiguas
- * se reparte entre todas. Una compra a precio 0 da exactamente ese coste medio, que es lo que
- * usa la cartera. En el informe de plusvalías (FIFO) la venta total da la misma ganancia; una
- * venta parcial la reparte algo distinto, porque Hacienda asigna a las nuevas la antigüedad de
- * las antiguas y aquí llevan la fecha de la emisión.
+ * For tax purposes (art. 37.1.a LIRPF) bonus shares have no cost: the cost of the old shares is
+ * spread across all of them. A buy at price 0 gives exactly that average cost, which is what the
+ * portfolio uses. In the capital gains report (FIFO) a full sale gives the same gain; a partial
+ * sale splits it somewhat differently, because the tax agency (Hacienda) gives the new shares the
+ * holding period of the old ones, whereas here they carry the issue date.
  *
- * Cada `BONUS_ISSUE_CANCELLED` anula la emisión más reciente anterior a ella con el mismo ISIN
- * y cantidad; las dos se descartan. Una cancelación sin emisión que anular no resta nada.
+ * Each `BONUS_ISSUE_CANCELLED` voids the most recent earlier issue with the same ISIN and
+ * quantity; both are skipped. A cancellation with no issue to void subtracts nothing.
  */
 export function resolveBonusIssues(rows: readonly Row[], context: ImportContext): ParsedTrade[] {
   type Valid = { row: Row; shares: bigint; executedAt: string };
