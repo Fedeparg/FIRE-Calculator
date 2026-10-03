@@ -108,12 +108,14 @@ jobs:
           NEXT_PUBLIC_ANALYTICS_WEBSITE_ID: ${{ vars.NEXT_PUBLIC_ANALYTICS_WEBSITE_ID }}
         run: |
           umask 077
+          # The heredoc is unquoted so the values expand: never use backticks or `$(` in
+          # its comment lines, or bash runs them as commands.
           # Heredoc WITHOUT -x: values are expanded from the step's environment
           # (not interpolated into the command line, so they do not end up in the logs).
           cat > .env <<EOF
           NODE_ENV=production
           APP_URL=https://sextante.fpardo.net
-          # Canonical public URL: baked in by the `web` build (SEO, sitemap, robots).
+          # Canonical public URL: baked in by the web build (SEO, sitemap, robots).
           NEXT_PUBLIC_SITE_URL=https://sextante.fpardo.net
           COOKIE_SECURE=true
           EMAIL_TRANSPORT=resend
