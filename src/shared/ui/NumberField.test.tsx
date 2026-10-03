@@ -55,6 +55,41 @@ describe("NumberField", () => {
     expect(field).toHaveValue("12");
   });
 
+  it("resincroniza el texto cuando el valor cambia desde fuera, sin remontar", async () => {
+    const user = userEvent.setup();
+    function External() {
+      const [value, setValue] = useState(10);
+      return (
+        <>
+          <NumberField label="Tipo" value={value} onChange={setValue} />
+          <button type="button" onClick={() => setValue(42.5)}>
+            externo
+          </button>
+        </>
+      );
+    }
+    renderWithIntl(<External />);
+    const field = screen.getByRole("spinbutton", { name: "Tipo" });
+
+    await user.click(screen.getByRole("button", { name: "externo" }));
+
+    expect(field).toHaveValue("42,5");
+    // Es el mismo nodo: no se ha remontado.
+    expect(screen.getByRole("spinbutton", { name: "Tipo" })).toBe(field);
+  });
+
+  it("no pisa lo que se está tecleando cuando el valor es su propio eco", async () => {
+    const user = userEvent.setup();
+    renderWithIntl(<Controlled />);
+    const field = screen.getByRole("spinbutton", { name: "Tipo" });
+
+    await user.clear(field);
+    await user.type(field, "3,");
+
+    expect(field).toHaveValue("3,");
+    expect(screen.getByLabelText("valor")).toHaveTextContent("3");
+  });
+
   it("las flechas suben y bajan el paso, sin bajar del mínimo", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled initial={0.5} />);
