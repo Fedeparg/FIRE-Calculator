@@ -99,7 +99,7 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
         role="dialog"
         aria-labelledby={labelledBy}
         tabIndex={-1}
-        className="@container fixed inset-x-0 bottom-0 z-40 flex max-h-[88vh] flex-col overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 pt-3 shadow-xl outline-none lg:sticky lg:inset-auto lg:top-6 lg:z-auto lg:max-h-[calc(100vh-3rem)] lg:rounded-2xl lg:p-6 lg:shadow-md"
+        className="@container fixed inset-x-0 bottom-0 z-40 flex max-h-[88vh] flex-col overflow-y-auto rounded-t-3xl border border-border bg-surface p-5 pt-3 shadow-xl outline-hidden lg:sticky lg:inset-auto lg:top-6 lg:z-auto lg:max-h-[calc(100vh-3rem)] lg:rounded-2xl lg:p-6 lg:shadow-md"
       >
         <span aria-hidden="true" className="mx-auto mb-3 h-1.5 w-10 shrink-0 rounded-full bg-border lg:hidden" />
         <button

@@ -109,6 +109,20 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* Movimiento reducido: quien lo pide en el sistema no ve animaciones ni transiciones (los
+   desplazamientos, el panel que sube, los hover con `transition`). Se acortan a casi cero en vez
+   de quitarlas para que los eventos `transitionend`/`animationend` sigan llegando. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Recharts: quitar el contorno de foco al hacer clic/arrastrar en gráficas y
    sectores (el "cuadrado de selección" queda feo) y evitar selección de texto. */
 .recharts-wrapper,

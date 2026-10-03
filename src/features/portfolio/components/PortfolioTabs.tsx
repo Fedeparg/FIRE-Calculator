@@ -80,7 +80,7 @@ export default function PortfolioTabs() {
           <select
             value={display}
             onChange={(e) => setDisplay(e.target.value)}
-            className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+            className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30"
           >
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>

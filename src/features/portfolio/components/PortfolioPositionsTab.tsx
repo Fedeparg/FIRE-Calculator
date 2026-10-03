@@ -124,7 +124,7 @@ export default function PortfolioPositionsTab() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("positions.searchPlaceholder")}
-                    className="h-11 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 sm:w-72"
+                    className="h-11 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30 sm:w-72"
                   />
                 </label>
                 <ToggleGroup

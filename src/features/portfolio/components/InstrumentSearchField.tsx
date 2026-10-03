@@ -175,34 +175,41 @@ export default function InstrumentSearchField({
           className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-surface shadow-lg"
         >
           {loading && results.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-muted">{t("searching")}</li>
+            // Fila de estado, no seleccionable: un listbox solo admite opciones como hijos.
+            <li role="option" aria-disabled="true" aria-selected={false} className="px-3 py-2 text-sm text-muted">
+              {t("searching")}
+            </li>
           ) : (
             results.map((r, i) => (
-              <li key={`${r.symbol}-${i}`} id={`${listboxId}-opt-${i}`} role="option" aria-selected={i === activeIndex}>
-                <button
-                  type="button"
-                  // `onMouseDown` (no `onClick`): se dispara antes del blur del input, así
-                  // la selección no se pierde por el cierre del desplegable.
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    pick(r);
-                  }}
-                  onMouseEnter={() => setActiveIndex(i)}
-                  className={`flex w-full items-center gap-3 px-3 py-2 text-left transition ${
-                    i === activeIndex ? "bg-surface-2" : "hover:bg-surface-2"
-                  }`}
-                >
-                  <span aria-hidden className="w-5 shrink-0 text-center text-muted">
-                    {TYPE_ICON[r.type]}
+              // La opción ES el `li`: un `button` dentro de un `role="option"` anidaría un control
+              // interactivo en otro y el lector de pantalla anunciaría dos cosas. El teclado no
+              // llega aquí (lo gestiona el combobox con `aria-activedescendant`); el ratón sí.
+              <li
+                key={`${r.symbol}-${i}`}
+                id={`${listboxId}-opt-${i}`}
+                role="option"
+                aria-selected={i === activeIndex}
+                // `onMouseDown` (no `onClick`): se dispara antes del blur del input, así
+                // la selección no se pierde por el cierre del desplegable.
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  pick(r);
+                }}
+                onMouseEnter={() => setActiveIndex(i)}
+                className={`flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition ${
+                  i === activeIndex ? "bg-surface-2" : "hover:bg-surface-2"
+                }`}
+              >
+                <span aria-hidden className="w-5 shrink-0 text-center text-muted">
+                  {TYPE_ICON[r.type]}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm text-foreground">{r.name}</span>
+                  <span className="block truncate text-xs text-muted">
+                    {r.symbol}
+                    {r.exchange ? ` · ${r.exchange}` : ""} · {t(`type.${r.type}`)}
                   </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-foreground">{r.name}</span>
-                    <span className="block truncate text-xs text-muted">
-                      {r.symbol}
-                      {r.exchange ? ` · ${r.exchange}` : ""} · {t(`type.${r.type}`)}
-                    </span>
-                  </span>
-                </button>
+                </span>
               </li>
             ))
           )}

@@ -61,4 +61,16 @@ describe("InstrumentSearchField dentro de PositionPanel", () => {
 
     expect(screen.getByRole("combobox")).toHaveValue("AAPL");
   });
+
+  it("la opción es el propio elemento seleccionable: sin botones anidados, y se elige con el ratón", async () => {
+    const user = userEvent.setup();
+    renderWithIntl(<SearchInPanel onClose={vi.fn()} />);
+
+    await user.type(screen.getByRole("combobox"), "apple");
+    const option = await screen.findByRole("option", { name: /Apple Inc\./ });
+    expect(option.querySelector("button")).toBeNull();
+
+    await user.click(option);
+    expect(screen.getByRole("combobox")).toHaveValue("AAPL");
+  });
 });

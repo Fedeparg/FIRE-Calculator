@@ -71,7 +71,7 @@ export default function DonationWidget() {
             step={1}
             value={Number.isNaN(amount) ? "" : amount}
             onChange={(e) => setAmount(Math.floor(Number(e.target.value)))}
-            className="w-16 bg-transparent text-foreground outline-none"
+            className="w-16 bg-transparent text-foreground outline-hidden"
             aria-label={t("widget.customLabel")}
           />
           <span aria-hidden className="text-muted">

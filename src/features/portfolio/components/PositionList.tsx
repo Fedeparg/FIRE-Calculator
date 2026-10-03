@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/shared/format/format";
@@ -73,6 +73,7 @@ export default function PositionList({
   panelId,
 }: Props) {
   const t = useTranslations("portfolio.list");
+  const sortId = useId();
   const { formatCurrency, formatPercent, formatSignedCurrency, formatSignedPercent } = useFormat();
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
@@ -110,11 +111,11 @@ export default function PositionList({
         />
         {/* Móvil: no hay cabeceras de columna, así que se ordena con un selector. */}
         <div className="flex items-center gap-2 md:hidden">
-          <label htmlFor="positions-sort" className="text-xs text-muted">
+          <label htmlFor={sortId} className="text-xs text-muted">
             {t("sortLabel")}
           </label>
           <select
-            id="positions-sort"
+            id={sortId}
             value={sortKey}
             onChange={(e) => {
               const key = e.target.value as SortKey;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { MAX_SCENARIOS_PER_USER, SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
@@ -32,6 +32,7 @@ const inputClassSm = `${inputClass} text-sm`;
  */
 export default function ScenarioPanel() {
   const t = useTranslations("calculator.scenarios");
+  const nameId = useId();
   const state = useCalculatorState();
   const slug = state?.slug;
 
@@ -102,11 +103,11 @@ export default function ScenarioPanel() {
 
       <form onSubmit={handleSave} className="flex flex-wrap items-end gap-2">
         <div className="min-w-48 flex-1">
-          <label htmlFor="scenario-name" className="text-xs font-medium text-muted">
+          <label htmlFor={nameId} className="text-xs font-medium text-muted">
             {t("nameLabel")}
           </label>
           <input
-            id="scenario-name"
+            id={nameId}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -50,7 +50,7 @@ export default function Selector({ items, categories }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("searchPlaceholder")}
         aria-label={t("searchPlaceholder")}
-        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground outline-none transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20"
+        className="w-full rounded-xl border border-border bg-surface px-4 py-3 text-foreground outline-hidden transition-colors focus:border-brand focus:ring-2 focus:ring-brand/20"
       />
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -81,6 +81,8 @@ function CategoryChip({ active, onClick, label }: { active: boolean; onClick: ()
   return (
     <button
       type="button"
+      // Filtro de alternancia: el lector de pantalla anuncia cuál está activo (antes solo lo decía el color).
+      aria-pressed={active}
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-sm transition-colors ${
         active ? "border-brand bg-brand text-brand-fg" : "border-border bg-surface text-muted hover:text-foreground"

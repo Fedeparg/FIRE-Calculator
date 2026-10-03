@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/navigation";
@@ -28,6 +28,7 @@ type Props = {
  */
 export default function AccountDangerZone({ email }: Props) {
   const t = useTranslations("account");
+  const confirmId = useId();
   const router = useRouter();
 
   // Exportación.
@@ -90,18 +91,18 @@ export default function AccountDangerZone({ email }: Props) {
         <p className="text-sm text-muted">{t("delete.description")}</p>
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="confirm-email" className="text-sm font-medium text-foreground">
+          <label htmlFor={confirmId} className="text-sm font-medium text-foreground">
             {t("delete.confirmLabel", { email })}
           </label>
           <input
-            id="confirm-email"
+            id={confirmId}
             type="email"
             autoComplete="off"
             value={confirmEmail}
             onChange={(e) => setConfirmEmail(e.target.value)}
             placeholder={t("delete.placeholder")}
             disabled={deletion.status === "success"}
-            className="w-full max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-danger focus:ring-2 focus:ring-danger/30"
+            className="w-full max-w-sm rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-hidden focus:border-danger focus:ring-2 focus:ring-danger/30"
           />
         </div>
 

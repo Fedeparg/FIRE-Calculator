@@ -100,7 +100,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
             const next = HISTORY_RANGES.find(({ key }) => key === event.target.value);
             if (next) setRange(next.key);
           }}
-          className="min-h-9 rounded-lg border border-border bg-surface px-2.5 py-1 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className="min-h-9 rounded-lg border border-border bg-surface px-2.5 py-1 text-sm text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30"
         >
           {HISTORY_RANGES.map(({ key }) => (
             <option key={key} value={key}>

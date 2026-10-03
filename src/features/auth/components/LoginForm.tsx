@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import { trackEvent } from "@/shared/analytics/track";
@@ -12,6 +12,7 @@ import Button from "@/shared/ui/Button";
 /** Formulario de login por magic link: pide el email y solicita el enlace. */
 export default function LoginForm() {
   const t = useTranslations("auth.login");
+  const emailId = useId();
   // El email y la página del enlace salen en el idioma de esta página.
   const locale = useLocale();
   const [email, setEmail] = useState("");
@@ -38,18 +39,18 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-medium text-foreground">
+        <label htmlFor={emailId} className="text-sm font-medium text-foreground">
           {t("emailLabel")}
         </label>
         <input
-          id="email"
+          id={emailId}
           type="email"
           required
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder={t("emailPlaceholder")}
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30"
         />
       </div>
 
