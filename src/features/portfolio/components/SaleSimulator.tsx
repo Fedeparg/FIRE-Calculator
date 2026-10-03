@@ -10,11 +10,12 @@ import { simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { estimateSavingsTax } from "@sextante/core/fiscal/savings-tax";
 import { formatIsoDate } from "@/shared/format/format";
 import { convertCurrency } from "@sextante/core/fx";
-import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
-import { inputClass } from "@/shared/ui/field-classes";
+import DecimalField, { useDecimalText } from "@/shared/ui/DecimalField";
+import FormField from "@/shared/ui/FormField";
 
 type Props = {
   position: Position;
@@ -53,7 +54,9 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
     [price, currency, rates],
   );
 
-  const [quantity, setQuantity] = useState(() => String(position.quantity));
+  // `useDecimalText` y no `String(n)`: este daría "1e-7" (que el saneado leería como 17) y el
+  // punto decimal en castellano.
+  const [quantity, setQuantity] = useDecimalText(position.quantity);
   // `null` = el usuario todavía no ha escrito nada, así que manda la sugerencia. Se deriva en
   // lugar de sincronizarse con un efecto: la cotización llega de forma asíncrona y un efecto
   // que escribiera el campo provocaría un render en cascada (y pisaría lo tecleado si el
@@ -119,59 +122,26 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 @md:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-quantity" className="text-sm font-medium text-foreground">
-            {t("quantity")}
-          </label>
-          <input
-            id="sale-quantity"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={quantity}
-            onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
-            className={inputClass}
-          />
-          <p className="text-xs text-muted">{t("available", { quantity: formatQuantity(position.quantity) })}</p>
-        </div>
+        <FormField label={t("quantity")} hint={t("available", { quantity: formatQuantity(position.quantity) })}>
+          {(control) => <DecimalField {...control} value={quantity} onChange={setQuantity} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-price" className="text-sm font-medium text-foreground">
-            {t("price", { currency })}
-          </label>
-          <input
-            id="sale-price"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={priceText}
-            onChange={(e) => setTypedPrice(sanitizeDecimalInput(e.target.value))}
-            className={inputClass}
-          />
-          <p className="text-xs text-muted">
-            {price === undefined
+        <FormField
+          label={t("price", { currency })}
+          hint={
+            price === undefined
               ? t("noPrice")
               : suggestedPrice === null
                 ? t("priceNotConvertible", { from: price.currency, to: currency })
-                : t("priceFrom", { date: formatIsoDate(price.date) })}
-          </p>
-        </div>
+                : t("priceFrom", { date: formatIsoDate(price.date) })
+          }
+        >
+          {(control) => <DecimalField {...control} value={priceText} onChange={setTypedPrice} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-fees" className="text-sm font-medium text-foreground">
-            {t("fees", { currency })}
-          </label>
-          <input
-            id="sale-fees"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={fees}
-            onChange={(e) => setFees(sanitizeDecimalInput(e.target.value))}
-            placeholder="0"
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("fees", { currency })}>
+          {(control) => <DecimalField {...control} value={fees} onChange={setFees} />}
+        </FormField>
       </div>
 
       {simulation === null && <p className="text-sm text-muted">{t("incomplete")}</p>}

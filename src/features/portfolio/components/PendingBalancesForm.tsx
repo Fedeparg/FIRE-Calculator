@@ -7,9 +7,11 @@ import { useTranslations } from "next-intl";
 import type { PendingNegative, SavingsGroup } from "@sextante/core/fiscal/savings-base";
 import { savePendingBalances } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
-import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { validatePendingBalances } from "@/features/portfolio/model/form-validation";
+import { formatDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
+import DecimalField from "@/shared/ui/DecimalField";
 import { inputClass } from "@/shared/ui/field-classes";
 
 type Row = { key: number; originYear: number; kind: SavingsGroup; amount: string };
@@ -48,9 +50,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   const busy = save.status === "pending" || refreshing;
   const [saved, setSaved] = useState(false);
 
-  const parsed = rows.map((row) => ({ ...row, value: parseDecimalInput(row.amount) ?? Number.NaN }));
-  const duplicated = new Set(rows.map((r) => `${r.originYear}:${r.kind}`)).size !== rows.length;
-  const isValid = !duplicated && parsed.every((row) => Number.isFinite(row.value) && row.value > 0);
+  const { duplicated, amounts } = validatePendingBalances(rows);
 
   function update(key: number, patch: Partial<Row>) {
     setSaved(false);
@@ -58,9 +58,9 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   }
 
   async function handleSave() {
-    if (!isValid) return;
+    if (!amounts) return;
     const result = await save.run(() =>
-      savePendingBalances(parsed.map(({ originYear, kind, value }) => ({ originYear, kind, amount: value }))),
+      savePendingBalances(rows.map(({ originYear, kind }, i) => ({ originYear, kind, amount: amounts[i] }))),
     );
     if (!result.ok) return;
     setSaved(true);
@@ -108,15 +108,10 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-muted">
                   {t("amount")}
-                  <input
+                  <DecimalField
                     id={`${uid}-amount-${row.key}`}
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
                     value={row.amount}
-                    onChange={(e) => update(row.key, { amount: sanitizeDecimalInput(e.target.value) })}
-                    placeholder="0"
-                    className={inputClass}
+                    onChange={(amount) => update(row.key, { amount })}
                   />
                 </label>
                 <Button
@@ -153,7 +148,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
           >
             {t("add")}
           </Button>
-          <Button disabled={!isValid || busy} onClick={() => void handleSave()}>
+          <Button disabled={!amounts || busy} onClick={() => void handleSave()}>
             {busy ? t("saving") : t("save")}
           </Button>
           {saved && !refreshing && <span className="text-sm text-success">{t("saved")}</span>}

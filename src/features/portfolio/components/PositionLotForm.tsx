@@ -1,14 +1,15 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
-import { useFormat } from "@/shared/format/use-format";
 import { todayUtc } from "@sextante/core/dates";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
-import { inputClass } from "@/shared/ui/field-classes";
+import { validateLotForm } from "@/features/portfolio/model/form-validation";
 import Button from "@/shared/ui/Button";
+import DecimalField, { useDecimalText } from "@/shared/ui/DecimalField";
+import { inputClass } from "@/shared/ui/field-classes";
+import FormField from "@/shared/ui/FormField";
 
 type Props = {
   /** Lote en edición, o `null` para dar de alta uno nuevo. */
@@ -30,44 +31,20 @@ type Props = {
  */
 export default function PositionLotForm({ editing, currency, submitting, onSubmit, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.lots");
-  // Un id por instancia para poder etiquetar cada campo sin colisionar con el resto de la
-  // página (hay otro formulario de posición debajo).
-  const uid = useId();
-  const { decimalSeparator } = useFormat();
-  // `formatDecimalInput` y no `String(n)`: este daría "1e-7", que el saneado leería como 17.
-  const asText = (value: number) => formatDecimalInput(value, decimalSeparator);
-
   const [kind, setKind] = useState<PositionLotKind>(editing?.kind ?? "buy");
   const [tradedAt, setTradedAt] = useState(() => editing?.tradedAt ?? todayUtc());
-  const [quantity, setQuantity] = useState(editing ? asText(editing.quantity) : "");
-  const [price, setPrice] = useState(editing ? asText(editing.price) : "");
-  const [fees, setFees] = useState(editing && editing.fees ? asText(editing.fees) : "");
+  const [quantity, setQuantity] = useDecimalText(editing?.quantity);
+  const [price, setPrice] = useDecimalText(editing?.price);
+  // Sin comisiones, el campo empieza vacío (no "0"): vacío también vale 0.
+  const [fees, setFees] = useDecimalText(editing?.fees || null);
   const [note, setNote] = useState(editing?.note ?? "");
 
-  const quantityNum = parseDecimalInput(quantity) ?? Number.NaN;
-  const priceNum = parseDecimalInput(price) ?? Number.NaN;
-  const feesNum = fees.trim() === "" ? 0 : (parseDecimalInput(fees) ?? Number.NaN);
-
-  const isValid =
-    Number.isFinite(quantityNum) &&
-    quantityNum > 0 &&
-    Number.isFinite(priceNum) &&
-    priceNum >= 0 &&
-    Number.isFinite(feesNum) &&
-    feesNum >= 0 &&
-    /^\d{4}-\d{2}-\d{2}$/.test(tradedAt);
+  const amounts = validateLotForm({ quantity, price, fees, tradedAt });
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!isValid) return;
-    onSubmit({
-      kind,
-      quantity: quantityNum,
-      price: priceNum,
-      fees: feesNum,
-      tradedAt,
-      note: note.trim() || undefined,
-    });
+    if (!amounts) return;
+    onSubmit({ kind, ...amounts, tradedAt, note: note.trim() || undefined });
   }
 
   return (
@@ -75,104 +52,62 @@ export default function PositionLotForm({ editing, currency, submitting, onSubmi
       <h4 className="text-sm font-semibold text-foreground">{editing ? t("formEditTitle") : t("formAddTitle")}</h4>
 
       <div className="grid grid-cols-1 gap-3 @xs:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-kind`} className="text-sm font-medium text-foreground">
-            {t("kind")}
-          </label>
-          <select
-            id={`${uid}-kind`}
-            value={kind}
-            onChange={(e) => setKind(e.target.value as PositionLotKind)}
-            className={inputClass}
-          >
-            <option value="buy">{t("kindBuy")}</option>
-            <option value="sell">{t("kindSell")}</option>
-          </select>
-        </div>
+        <FormField label={t("kind")}>
+          {(control) => (
+            <select
+              {...control}
+              value={kind}
+              onChange={(e) => setKind(e.target.value as PositionLotKind)}
+              className={inputClass}
+            >
+              <option value="buy">{t("kindBuy")}</option>
+              <option value="sell">{t("kindSell")}</option>
+            </select>
+          )}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-date`} className="text-sm font-medium text-foreground">
-            {t("tradedAt")}
-          </label>
-          <input
-            id={`${uid}-date`}
-            type="date"
-            required
-            value={tradedAt}
-            onChange={(e) => setTradedAt(e.target.value)}
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("tradedAt")}>
+          {(control) => (
+            <input
+              {...control}
+              type="date"
+              required
+              value={tradedAt}
+              onChange={(e) => setTradedAt(e.target.value)}
+              className={inputClass}
+            />
+          )}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-quantity`} className="text-sm font-medium text-foreground">
-            {t("quantity")}
-          </label>
-          <input
-            id={`${uid}-quantity`}
-            type="text"
-            required
-            inputMode="decimal"
-            autoComplete="off"
-            value={quantity}
-            onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
-            placeholder="0"
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("quantity")}>
+          {(control) => <DecimalField {...control} required value={quantity} onChange={setQuantity} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-price`} className="text-sm font-medium text-foreground">
-            {t("price", { currency })}
-          </label>
-          <input
-            id={`${uid}-price`}
-            type="text"
-            required
-            inputMode="decimal"
-            autoComplete="off"
-            value={price}
-            onChange={(e) => setPrice(sanitizeDecimalInput(e.target.value))}
-            placeholder="0"
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("price", { currency })}>
+          {(control) => <DecimalField {...control} required value={price} onChange={setPrice} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-fees`} className="text-sm font-medium text-foreground">
-            {t("fees", { currency })}
-          </label>
-          <input
-            id={`${uid}-fees`}
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={fees}
-            onChange={(e) => setFees(sanitizeDecimalInput(e.target.value))}
-            placeholder="0"
-            className={inputClass}
-          />
-          <p className="text-xs text-muted">{t("feesHint")}</p>
-        </div>
+        <FormField label={t("fees", { currency })} hint={t("feesHint")}>
+          {(control) => <DecimalField {...control} value={fees} onChange={setFees} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${uid}-note`} className="text-sm font-medium text-foreground">
-            {t("note")}
-          </label>
-          <input
-            id={`${uid}-note`}
-            type="text"
-            maxLength={200}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t("notePlaceholder")}
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("note")}>
+          {(control) => (
+            <input
+              {...control}
+              type="text"
+              maxLength={200}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={t("notePlaceholder")}
+              className={inputClass}
+            />
+          )}
+        </FormField>
       </div>
 
       <div className="flex items-center gap-3">
-        <Button type="submit" disabled={submitting || !isValid}>
+        <Button type="submit" disabled={submitting || !amounts}>
           {submitting ? t("saving") : editing ? t("save") : t("add")}
         </Button>
         {editing && (

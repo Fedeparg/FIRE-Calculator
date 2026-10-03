@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { trackEvent } from "@/shared/analytics/track";
-import { formatDecimalInput, parseDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput } from "@/shared/format/number-input";
+import { validatePositionForm } from "@/features/portfolio/model/form-validation";
 import { useFormat } from "@/shared/format/use-format";
 import { Link } from "@/i18n/navigation";
 import { type Position } from "@sextante/core/portfolio/types";
@@ -99,15 +100,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const submitting = save.status === "pending";
   const combining = combine.status === "pending";
 
-  const quantityNum = parseDecimalInput(quantity) ?? NaN;
-  const avgPriceNum = parseDecimalInput(avgPrice) ?? NaN;
   // El bróker es opcional al añadir; la API lo exige solo si el símbolo ya existe.
-  const isValid =
-    ticker.trim().length > 0 &&
-    Number.isFinite(quantityNum) &&
-    quantityNum > 0 &&
-    Number.isFinite(avgPriceNum) &&
-    avgPriceNum >= 0;
+  const amounts = validatePositionForm({ ticker, quantity, avgPrice });
 
   function resetForm() {
     setValues({ ticker: "", name: "", quantity: "", avgPrice: "", broker: "", currency: "EUR" });
@@ -116,23 +110,13 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     combine.reset();
   }
 
-  const payload = () => ({
-    ticker: ticker.trim(),
-    name: name.trim() || undefined,
-    quantity: quantityNum,
-    avgPrice: avgPriceNum,
-    broker: broker.trim() || undefined,
-    currency,
-    assetClass,
-  });
-
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setBrokerEmptied(false);
     combine.reset();
     // El botón está deshabilitado mientras no es válido (y sin botón activo no hay envío
     // implícito con Enter): esto solo estrecha los tipos.
-    if (!isValid) return;
+    if (!amounts) return;
     // No se puede vaciar el bróker de una posición que ya lo tenía (el alta sí permite
     // crearla sin bróker; quitarlo después haría ambiguo el modelo de duplicados).
     if (isEditing && Boolean(editing?.broker) && broker.trim() === "") {
@@ -140,7 +124,15 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       setBrokerEmptied(true);
       return;
     }
-    const result = await save.run(() => savePosition(editing?.id ?? null, payload()));
+    const payload = {
+      ticker: ticker.trim(),
+      name: name.trim() || undefined,
+      ...amounts,
+      broker: broker.trim() || undefined,
+      currency,
+      assetClass,
+    };
+    const result = await save.run(() => savePosition(editing?.id ?? null, payload));
     if (!result.ok) return;
     if (editing) {
       onSaved(result.data);
@@ -153,10 +145,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
   /** Combina la compra actual con la posición existente que colisiona (media ponderada). */
   async function handleCombine() {
-    if (!duplicate) return;
-    const result = await combine.run(() =>
-      combinePosition(duplicate.id, { quantity: quantityNum, avgPrice: avgPriceNum, currency }),
-    );
+    if (!duplicate || !amounts) return;
+    const result = await combine.run(() => combinePosition(duplicate.id, { ...amounts, currency }));
     if (!result.ok) return;
     onSaved(result.data);
     resetForm();
@@ -202,7 +192,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       )}
 
       <div className="flex items-center gap-3">
-        <Button size="lg" type="submit" disabled={submitting || combining || !isValid}>
+        <Button size="lg" type="submit" disabled={submitting || combining || !amounts}>
           {isEditing ? (submitting ? t("saving") : t("save")) : submitting ? t("submitting") : t("submit")}
         </Button>
         {isEditing && (
