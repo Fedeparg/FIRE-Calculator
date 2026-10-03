@@ -13,16 +13,16 @@ import { fxReferenceCoverage, fxReferenceRates } from '../db/schema.js';
 import { ECB_FIRST_DATE } from './constants.js';
 import { REFERENCE_RATES_PROVIDER, type EcbRate, type ReferenceRatesProvider } from './ecb-reference-rates.provider.js';
 
-/** Cada cuánto se vuelve a mirar el final de la serie, como mucho. */
+/** How often, at most, the tail of the series is checked again. */
 const TAIL_REFRESH_MS = 6 * 3_600_000;
 
 const CURRENCY = /^[A-Z]{3}$/;
 const INSERT_CHUNK = 1_000;
 
 /**
- * Tipos de referencia del BCE con caché permanente en BD: las publicaciones pasadas no cambian,
- * así que cada tramo se descarga una sola vez. Solo el final de la serie se vuelve a pedir, como
- * mucho cada `TAIL_REFRESH_MS`, para recoger las publicaciones nuevas.
+ * ECB reference rates with a permanent DB cache: past publications never change, so each range is
+ * downloaded only once. Only the tail of the series is requested again, at most every
+ * `TAIL_REFRESH_MS`, to pick up new publications.
  */
 @Injectable()
 export class ReferenceRatesService {
@@ -34,9 +34,9 @@ export class ReferenceRatesService {
   ) {}
 
   /**
-   * Series de `currencies` desde `from` hasta hoy, listas para `referenceRateOn`. Incluye las
-   * publicaciones de los días anteriores a `from` que hagan falta para una operación en festivo.
-   * Si la fuente falla, devuelve lo que haya en caché: el informe marca lo que no pueda convertir.
+   * Series for `currencies` from `from` to today, ready for `referenceRateOn`. It includes the
+   * publications from the days before `from` needed for a transaction on a holiday. If the source
+   * fails, it returns whatever is cached: the report flags what it cannot convert.
    */
   async getRates(currencies: readonly string[], from: string): Promise<ReferenceRates> {
     const wanted = [...new Set(currencies)].filter((c) => c !== TAX_CURRENCY && CURRENCY.test(c));
@@ -58,12 +58,12 @@ export class ReferenceRatesService {
       .orderBy(asc(fxReferenceRates.currency), asc(fxReferenceRates.date));
 
     const series: Record<string, ReferenceRatePoint[]> = Object.fromEntries(wanted.map((c) => [c, []]));
-    // La consulta filtra por `wanted`, así que cada fila tiene ya su serie.
+    // The query filters by `wanted`, so every row already has its series.
     for (const row of rows) series[row.currency]?.push({ date: row.date, unitsPerEur: Number(row.unitsPerEur) });
     return series;
   }
 
-  /** Descarga los tramos que falten de cada divisa y anota lo cubierto. */
+  /** Downloads each currency's missing ranges and records what is covered. */
   private async ensureCoverage(currencies: string[], start: string, end: string): Promise<void> {
     const coverage = new Map(
       (await this.db.select().from(fxReferenceCoverage).where(inArray(fxReferenceCoverage.currency, currencies))).map(
@@ -80,7 +80,7 @@ export class ReferenceRatesService {
       } else {
         if (start < known.fromDate) ranges.push([start, addDays(known.fromDate, -1)]);
         const stale = now - known.checkedAt.getTime() > TAIL_REFRESH_MS;
-        // Se repite la última semana por si la publicación de aquel día aún no había salido.
+        // The last week is repeated in case that day's publication had not come out yet.
         if (known.toDate < end && stale) ranges.push([addDays(known.toDate, -MAX_RATE_GAP_DAYS), end]);
       }
 
@@ -91,8 +91,8 @@ export class ReferenceRatesService {
         try {
           await this.store(await this.provider.getRates([currency], rangeFrom, rangeTo));
         } catch (error) {
-          // Sin anotar la cobertura: el tramo se reintentará en la próxima petición.
-          this.logger.warn(`No se pudieron descargar los tipos ${currency} ${rangeFrom}..${rangeTo}: ${String(error)}`);
+          // Coverage is not recorded: the range will be retried on the next request.
+          this.logger.warn(`Could not download the ${currency} rates ${rangeFrom}..${rangeTo}: ${String(error)}`);
           continue;
         }
         fetched = true;
@@ -111,7 +111,7 @@ export class ReferenceRatesService {
     }
   }
 
-  /** Inserta por bloques: una serie desde 1999 son ~7.000 filas y Postgres limita los parámetros por sentencia. */
+  /** Inserts in chunks: a series since 1999 is ~7,000 rows and Postgres limits the parameters per statement. */
   private async store(rates: EcbRate[]): Promise<void> {
     for (let i = 0; i < rates.length; i += INSERT_CHUNK) {
       await this.db

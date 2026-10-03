@@ -28,7 +28,7 @@ const CLIENT: OAuthClientInformationFull = {
 const hash = (value: string): string => createHash('sha256').update(value).digest('hex');
 const randomToken = (): string => randomBytes(32).toString('base64url');
 
-describe('SextanteOAuthProvider (integración con Postgres)', () => {
+describe('SextanteOAuthProvider (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let urls: OAuthUrls;
@@ -51,7 +51,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
     await close();
   });
 
-  /** Inserta un token (access/refresh) ya hasheado y devuelve su valor en claro. */
+  /** Inserts an already hashed token (access/refresh) and returns its plain value. */
   async function seedToken(opts: {
     type: 'access' | 'refresh';
     userId: string;
@@ -74,7 +74,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
   }
 
   describe('authorize', () => {
-    /** Llama a `authorize` con la cookie de sesión dada y devuelve a dónde redirige. */
+    /** Calls `authorize` with the given session cookie and returns where it redirects to. */
     async function authorizeWith(session: string, scopes: string[]): Promise<URL> {
       let redirectedTo = '';
       const res = {
@@ -93,7 +93,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       return new URL(redirectedTo);
     }
 
-    it('un cliente que pide solo portfolio:write ve también portfolio:read en el consentimiento', async () => {
+    it('a client requesting only portfolio:write also sees portfolio:read on the consent screen', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
 
@@ -103,7 +103,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(consent.searchParams.get('scope')).toBe(`${SCOPE_PORTFOLIO_READ} ${SCOPE_PORTFOLIO_WRITE}`);
     });
 
-    it('una sesión de una cuenta ya borrada no autoriza: manda al login', async () => {
+    it('a session of a deleted account does not authorize: it sends to the login', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
       await db.delete(users).where(eq(users.id, userId));
@@ -115,7 +115,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
   });
 
   describe('verifyAccessToken — audience binding (RFC 8707)', () => {
-    it('acepta un access token con la audiencia canónica y expone el userId', async () => {
+    it('accepts an access token with the canonical audience and exposes the userId', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const token = await seedToken({ type: 'access', userId });
 
@@ -125,18 +125,18 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(info.resource?.href).toBe(urls.audience);
     });
 
-    it('rechaza un token emitido para OTRA audiencia', async () => {
+    it('rejects a token issued for ANOTHER audience', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const token = await seedToken({
         type: 'access',
         userId,
-        audience: 'http://localhost:3000/api/otro-recurso',
+        audience: 'http://localhost:3000/api/other-resource',
       });
 
       await expect(provider.verifyAccessToken(token)).rejects.toThrow(/audience/i);
     });
 
-    it('rechaza un token expirado', async () => {
+    it('rejects an expired token', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const token = await seedToken({
         type: 'access',
@@ -147,13 +147,13 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       await expect(provider.verifyAccessToken(token)).rejects.toThrow(/expired/i);
     });
 
-    it('rechaza un token inexistente', async () => {
+    it('rejects a non-existent token', async () => {
       await expect(provider.verifyAccessToken(randomToken())).rejects.toThrow(/not found/i);
     });
   });
 
-  describe('exchangeRefreshToken — rotación y detección de reuso', () => {
-    it('rota el refresh token y consume el anterior', async () => {
+  describe('exchangeRefreshToken — rotation and reuse detection', () => {
+    it('rotates the refresh token and consumes the previous one', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const refresh = await seedToken({
         type: 'refresh',
@@ -166,7 +166,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(typeof tokens.refresh_token).toBe('string');
       expect(tokens.refresh_token).not.toBe(refresh);
 
-      // El refresh original queda consumido.
+      // The original refresh token is consumed.
       const old = firstItem(
         await db
           .select({ consumedAt: oauthTokens.consumedAt })
@@ -176,7 +176,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(old.consumedAt).not.toBeNull();
     });
 
-    it('detecta el reuso de un refresh ya rotado y revoca toda la cadena', async () => {
+    it('detects reuse of an already rotated refresh token and revokes the whole chain', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const refresh = await seedToken({
         type: 'refresh',
@@ -184,13 +184,13 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
       });
 
-      // Primer canje: válido.
+      // First exchange: valid.
       await provider.exchangeRefreshToken(CLIENT, refresh);
 
-      // Reuso del mismo refresh: robo potencial → error + revocación de la cadena.
+      // Reuse of the same refresh token: potential theft → error + chain revocation.
       await expect(provider.exchangeRefreshToken(CLIENT, refresh)).rejects.toThrow(/reuse/i);
 
-      // Tras la revocación no queda NINGÚN token del cliente para ese usuario.
+      // After revocation, NO token of the client remains for that user.
       const remaining = await db
         .select({ tokenHash: oauthTokens.tokenHash })
         .from(oauthTokens)
@@ -198,14 +198,14 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(remaining).toHaveLength(0);
     });
 
-    it('si la emisión falla, el refresh NO queda consumido (el cliente puede reintentar)', async () => {
+    it('if issuance fails, the refresh token is NOT consumed (the client can retry)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const refresh = await seedToken({
         type: 'refresh',
         userId,
         expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
       });
-      // Access y refresh con el mismo valor: el segundo INSERT viola el único de `token_hash`.
+      // Access and refresh with the same value: the second INSERT violates the `token_hash` unique index.
       const spy = vi
         .spyOn(provider as unknown as { newToken: () => string }, 'newToken')
         .mockReturnValue('mismo-valor');
@@ -220,11 +220,11 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
           .where(eq(oauthTokens.tokenHash, hash(refresh))),
       );
       expect(row.consumedAt).toBeNull();
-      // Y el reintento funciona, sin tomarse por reuso.
+      // And the retry works, without being taken for reuse.
       await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
     });
 
-    it('pedir más scopes de los concedidos no gasta el refresh', async () => {
+    it('requesting more scopes than granted does not spend the refresh token', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const refresh = await seedToken({ type: 'refresh', userId });
 
@@ -232,7 +232,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
     });
 
-    it('rechaza un refresh token de otro cliente', async () => {
+    it('rejects a refresh token from another client', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const refresh = await seedToken({ type: 'refresh', userId });
 

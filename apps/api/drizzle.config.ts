@@ -1,8 +1,8 @@
 import { defineConfig } from 'drizzle-kit';
 
 /**
- * Configuración de drizzle-kit (generación y aplicación de migraciones).
- * Las migraciones son versionadas y viven en `./drizzle`.
+ * drizzle-kit configuration (generating and applying migrations).
+ * Migrations are versioned and live in `./drizzle`.
  */
 export default defineConfig({
   dialect: 'postgresql',

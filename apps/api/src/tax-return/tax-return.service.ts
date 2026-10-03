@@ -17,39 +17,39 @@ import { PendingBalancesService } from './pending-balances.service.js';
 import { errorMessage } from '../common/errors.js';
 
 /**
- * Base del ahorro de un ejercicio, montada en el servidor con las mismas funciones del core que
- * usa la web. La procedencia de cada cifra viaja dentro:
- * - ventas: `gains.sales[].eur` lleva el tipo del BCE aplicado a la venta (`sellRate`) y a cada
- *   compra (`buyRates`), con la fecha de la publicación usada;
- * - cobros: `incomeEvents[]` lleva `grossSource` y `withholdingOriginSource`
+ * A tax year's base del ahorro (savings tax base), built on the server with the same core
+ * functions the web app uses. The provenance of every figure travels with it:
+ * - sales: `gains.sales[].eur` carries the ECB rate applied to the sale (`sellRate`) and to each
+ *   purchase (`buyRates`), with the date of the publication used;
+ * - income payments: `incomeEvents[]` carries `grossSource` and `withholdingOriginSource`
  *   (`broker` | `derived` | `market` | `estimate` | `manual`).
  */
 export interface TaxReturnReport {
-  /** Ejercicio del informe; `null` solo si no se pidió ninguno y el usuario no tiene datos. */
+  /** The report's tax year; `null` only if none was requested and the user has no data. */
   year: number | null;
-  /** Ejercicios con ventas o cobros, del más reciente al más antiguo. */
+  /** Tax years with sales or income payments, most recent first. */
   availableYears: number[];
-  /** Ventas del ejercicio (con su detalle y tipos aplicados), o `null` si no hubo. */
+  /** The year's sales (with their breakdown and applied rates), or `null` if there were none. */
   gains: RealisedGainsYear | null;
-  /** Resumen de cobros del ejercicio, o `null` si no hubo. */
+  /** Summary of the year's income payments, or `null` if there were none. */
   income: IncomeYear | null;
-  /** Cobros del ejercicio uno a uno, con la procedencia de cada importe. */
+  /** The year's income payments one by one, with the provenance of each amount. */
   incomeEvents: IncomeEvent[];
-  /** Base del ahorro del ejercicio (compensaciones, cuota, doble imposición), o `null` si no hay datos. */
+  /** The year's savings base (offsets, tax due, double taxation), or `null` if there is no data. */
   savings: SavingsReturn | null;
-  /** `false` si hacían falta tipos del BCE y no se pudieron cargar: lo en divisa queda sin convertir. */
+  /** `false` if ECB rates were needed and could not be loaded: foreign-currency amounts stay unconverted. */
   ratesLoaded: boolean;
 }
 
-/** Plusvalías realizadas de todos los ejercicios (o de uno), para `get_realised_gains` del MCP. */
+/** Realised gains of every tax year (or of one), for the MCP `get_realised_gains` tool. */
 export interface RealisedGainsByYear {
-  /** Ejercicios con ventas, del más reciente al más antiguo; solo el pedido si se indicó uno. */
+  /** Tax years with sales, most recent first; only the requested one if one was given. */
   years: RealisedGainsYear[];
-  /** `false` si hacían falta tipos del BCE y no se pudieron cargar: lo en divisa queda sin convertir. */
+  /** `false` if ECB rates were needed and could not be loaded: foreign-currency amounts stay unconverted. */
   ratesLoaded: boolean;
 }
 
-/** Todo lo que se calcula de una vez para un usuario: cada ejercicio, ya compuesto. */
+/** Everything computed in one go for a user: every tax year, already composed. */
 interface ComposedReturns {
   gains: RealisedGainsYear[];
   income: IncomeYear[];
@@ -59,12 +59,12 @@ interface ComposedReturns {
 }
 
 /**
- * Punto de entrada del informe de la Renta en el SERVIDOR: lo usan REST (`build`) y las dos tools
- * del MCP (`build` y `realisedGains`), que componen el informe en un único sitio (`compose`). La
- * web lo recompone en el cliente con las mismas funciones del core (`@sextante/core/fiscal/
- * report-inputs` y los `build*Report`) para cambiar de ejercicio sin otra petición. Si algún día
- * se cobra por el informe, la comprobación del derecho de acceso va en `compose`, y así cubre REST
- * y MCP (la web lee sus datos de la API, que también tendría que comprobarlo).
+ * SERVER entry point of the Renta (income tax return) report: used by REST (`build`) and the two
+ * MCP tools (`build` and `realisedGains`), which compose the report in a single place (`compose`).
+ * The web app recomposes it on the client with the same core functions (`@sextante/core/fiscal/
+ * report-inputs` and the `build*Report`s) to switch tax years without another request. If the
+ * report is ever charged for, the entitlement check goes in `compose`, so it covers both REST and
+ * MCP (the web app reads its data from the API, which would also have to check it).
  */
 @Injectable()
 export class TaxReturnService {
@@ -78,7 +78,7 @@ export class TaxReturnService {
     private readonly referenceRates: ReferenceRatesService,
   ) {}
 
-  /** Informe del ejercicio `year`; sin él, el último ejercicio con datos. */
+  /** Report for tax year `year`; without it, the latest year with data. */
   async build(userId: string, year?: number): Promise<TaxReturnReport> {
     const { gains, income, incomeEvents, returns, ratesLoaded } = await this.compose(userId);
 
@@ -89,7 +89,7 @@ export class TaxReturnService {
       availableYears,
       gains: gains.find((y) => y.year === selected) ?? null,
       income: income.find((y) => y.year === selected) ?? null,
-      // Sin ejercicio seleccionado no hay cobros: `String(null)` compararía con "null".
+      // Without a selected year there are no payments: `String(null)` would compare against "null".
       incomeEvents: incomeEvents.filter((e) => selected !== null && Number(e.paidAt.slice(0, 4)) === selected),
       savings: returns.find((r) => r.year === selected) ?? null,
       ratesLoaded,
@@ -97,15 +97,15 @@ export class TaxReturnService {
   }
 
   /**
-   * Plusvalías realizadas de todos los ejercicios con ventas, o solo de `year`. Mismo cálculo que
-   * `build` (y que la web): si cae el BCE, degrada con `ratesLoaded: false` en vez de fallar.
+   * Realised gains of every tax year with sales, or only of `year`. Same computation as `build`
+   * (and as the web app): if the ECB is down, it degrades with `ratesLoaded: false` instead of failing.
    */
   async realisedGains(userId: string, year?: number): Promise<RealisedGainsByYear> {
     const { gains, ratesLoaded } = await this.compose(userId);
     return { years: year === undefined ? gains : gains.filter((y) => y.year === year), ratesLoaded };
   }
 
-  /** Lee los datos del usuario y compone todos los ejercicios con las funciones del core. */
+  /** Reads the user's data and composes every tax year with the core functions. */
   private async compose(userId: string): Promise<ComposedReturns> {
     const [positions, lots, incomeEvents, manualPending] = await Promise.all([
       this.positions.findAllByUser(userId),
@@ -122,7 +122,7 @@ export class TaxReturnService {
     return { gains, income, incomeEvents, returns, ratesLoaded };
   }
 
-  /** Tipos del BCE de las divisas de ventas y cobros; sin ellos el informe sale y marca lo no convertido. */
+  /** ECB rates for the currencies of sales and payments; without them the report still renders and flags what is unconverted. */
   private async loadRates(
     positions: readonly RealisedGainsPosition[],
     events: readonly IncomeEvent[],
@@ -132,7 +132,7 @@ export class TaxReturnService {
     try {
       return { rates: await this.referenceRates.getRates(needed.currencies, needed.from), ratesLoaded: true };
     } catch (error) {
-      this.logger.warn(`No se pudieron cargar los tipos del BCE: ${errorMessage(error)}`);
+      this.logger.warn(`Could not load the ECB rates: ${errorMessage(error)}`);
       return { rates: {}, ratesLoaded: false };
     }
   }

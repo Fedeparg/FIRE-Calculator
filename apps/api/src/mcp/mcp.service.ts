@@ -19,11 +19,11 @@ import { registerWriteTools } from './tools/write.js';
 export type { McpContext } from './tools/tool-runner.js';
 
 /**
- * Construye, por petición, el servidor MCP con las tools de Sextante. Se crea fresco con el
- * contexto del usuario autenticado para que las tools cierren sobre SU `userId` y nunca
- * puedan acceder a datos de otro. Las tools (en `tools/`, una por grupo) reutilizan los
- * servicios existentes (sin duplicar lógica de negocio) y, en escritura, los MISMOS DTOs que
- * la API REST (sin drift de validación).
+ * Builds, per request, the MCP server with Sextante's tools. It is created fresh with the
+ * authenticated user's context so the tools close over THEIR `userId` and can never reach
+ * anyone else's data. The tools (in `tools/`, one file per group) reuse the existing services
+ * (no duplicated business logic) and, for writes, the SAME DTOs as the REST API (no validation
+ * drift).
  */
 @Injectable()
 export class McpService {

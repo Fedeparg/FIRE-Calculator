@@ -5,7 +5,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { replacePendingBalancesSchema } from './dto/pending-balances.dto.js';
 import { PendingBalancesService } from './pending-balances.service.js';
 
-describe('PendingBalancesService (integración con Postgres)', () => {
+describe('PendingBalancesService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: PendingBalancesService;
@@ -17,7 +17,7 @@ describe('PendingBalancesService (integración con Postgres)', () => {
   afterEach(() => resetDb(db));
   afterAll(() => close());
 
-  it('sustituye la lista entera y la devuelve ordenada', async () => {
+  it('replaces the whole list and returns it sorted', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.replace(userId, { balances: [{ originYear: 2022, kind: 'gains', amount: 2100 }] });
     const saved = await service.replace(userId, {
@@ -35,14 +35,14 @@ describe('PendingBalancesService (integración con Postgres)', () => {
     expect(await service.replace(userId, { balances: [] })).toEqual([]);
   });
 
-  it('cada usuario solo ve los suyos', async () => {
+  it('each user only sees their own', async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     await service.replace(a, { balances: [{ originYear: 2022, kind: 'gains', amount: 100 }] });
     expect(await service.list(b)).toEqual([]);
   });
 
-  it('rechaza importes no positivos y ejercicios repetidos', () => {
+  it('rejects non-positive amounts and repeated tax years', () => {
     const one = { originYear: 2022, kind: 'gains', amount: 100 };
     expect(replacePendingBalancesSchema.safeParse({ balances: [{ ...one, amount: 0 }] }).success).toBe(false);
     expect(replacePendingBalancesSchema.safeParse({ balances: [one, one] }).success).toBe(false);

@@ -7,9 +7,9 @@ import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/
 import { PriceHistoryService } from '../prices/price-history.service.js';
 
 /**
- * Trabajo posterior a una importación que no hace esperar la respuesta: precios e histórico de
- * las posiciones nuevas y resolución de dividendos con datos de mercado. Un fallo aquí no afecta a
- * la importación ya confirmada; el refresco diario repara lo que falte.
+ * Post-import work that does not hold up the response: prices and history for the new positions
+ * and dividend resolution with market data. A failure here does not affect the already confirmed
+ * import; the daily refresh repairs whatever is missing.
  */
 @Injectable()
 export class PostImportTasks {
@@ -22,8 +22,8 @@ export class PostImportTasks {
   ) {}
 
   /**
-   * Lanza en segundo plano lo que toca tras confirmar: con posiciones nuevas, sus precios (los
-   * derivados no se valoran) y después los dividendos; sin ellas, solo los dividendos.
+   * Starts in the background whatever follows a confirm: with new positions, their prices
+   * (derivatives are not valued) and then the dividends; without them, only the dividends.
    */
   schedule(userId: string, created: readonly Position[]): void {
     if (created.length > 0) {
@@ -36,7 +36,7 @@ export class PostImportTasks {
     }
   }
 
-  /** Secuencial, una llamada por ISIN, para no ráfagear Yahoo. */
+  /** Sequential, one call per ISIN, so as not to burst Yahoo. */
   private async primeThenResolve(userId: string, created: readonly Position[]): Promise<void> {
     try {
       for (const position of created) {
@@ -45,19 +45,17 @@ export class PostImportTasks {
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
       await this.resolveDividends(userId);
     } catch (error) {
-      this.logger.warn(
-        `Refresco de precios tras importar falló: ${error instanceof Error ? error.name : 'error desconocido'}`,
-      );
+      this.logger.warn(`Post-import price refresh failed: ${error instanceof Error ? error.name : 'unknown error'}`);
     }
   }
 
-  /** Completa los dividendos con los datos de mercado ya cacheados. */
+  /** Completes the dividends with the market data already cached. */
   private async resolveDividends(userId: string): Promise<void> {
     try {
       await this.dividends.resolvePending(userId);
     } catch (error) {
       this.logger.warn(
-        `Resolución de dividendos tras importar falló: ${error instanceof Error ? error.name : 'error desconocido'}`,
+        `Post-import dividend resolution failed: ${error instanceof Error ? error.name : 'unknown error'}`,
       );
     }
   }

@@ -19,24 +19,24 @@ import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-j
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 /**
- * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
- * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ * `AppModule` is imported lazily: `ConfigModule.forRoot({ validate })` validates the environment when
+ * the module is evaluated, and these tests set theirs in `beforeAll`, i.e. after the imports.
  */
 const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
-const SECRET = 'test-secret-para-el-controller-de-auth';
+const SECRET = 'test-secret-for-the-auth-controller';
 const APP_URL = 'https://sextante.example.test';
 
 const sha256 = (value: string): string => createHash('sha256').update(value).digest('hex');
 
-/** Arranca la app completa (misma configuración que `main.ts`, sin MCP) en un puerto libre. */
+/** Boots the full app (same setup as `main.ts`, without MCP) on a free port. */
 async function bootApp(): Promise<{ app: NestExpressApplication; baseUrl: string }> {
   const app = await NestFactory.create<NestExpressApplication>(await loadAppModule(), {
     abortOnError: false,
     logger: false,
   });
-  // Como en producción: se confía en el primer proxy, así `X-Forwarded-For` fija la IP del
-  // cliente. Los tests lo usan para no compartir el cupo de throttling de `/auth/request`.
+  // As in production: the first proxy is trusted, so `X-Forwarded-For` sets the client IP.
+  // The tests rely on it so they do not share the `/auth/request` throttling quota.
   app.set('trust proxy', 1);
   app.use(cookieParser());
   app.setGlobalPrefix('api');
@@ -46,7 +46,7 @@ async function bootApp(): Promise<{ app: NestExpressApplication; baseUrl: string
 
 let nextClientIp = 1;
 
-/** POST JSON desde una IP de cliente "nueva" (o la indicada), vía `X-Forwarded-For`. */
+/** POSTs JSON from a "fresh" client IP (or the given one), via `X-Forwarded-For`. */
 function postJson(url: string, body: unknown, clientIp = `10.0.0.${nextClientIp++}`): Promise<Response> {
   return fetch(url, {
     method: 'POST',
@@ -55,12 +55,12 @@ function postJson(url: string, body: unknown, clientIp = `10.0.0.${nextClientIp+
   });
 }
 
-/** Cabecera `Set-Cookie` de la cookie de sesión (o undefined si la respuesta no la toca). */
+/** `Set-Cookie` header of the session cookie (or undefined if the response does not touch it). */
 function sessionSetCookie(res: Response): string | undefined {
   return res.headers.getSetCookie().find((cookie) => cookie.startsWith(`${SESSION_COOKIE}=`));
 }
 
-/** Valor de la cookie de sesión de una cabecera `Set-Cookie`. */
+/** Session cookie value from a `Set-Cookie` header. */
 function cookieValue(setCookie: string): string {
   return itemAt(setCookie.split(';'), 0).slice(SESSION_COOKIE.length + 1);
 }
@@ -71,19 +71,19 @@ describe('AuthController (HTTP)', () => {
   let baseUrl: string;
   let db: Database;
   let closeDb: () => Promise<void>;
-  /** Enlaces mágicos "enviados": el transporte de dev se sustituye para capturarlos. */
+  /** "Sent" magic links: the dev transport is stubbed to capture them. */
   let sentLinks: { to: string; link: string; locale: string }[];
 
-  /** Token en claro del último enlace enviado (el que llegaría al buzón del usuario). */
+  /** Plain token of the last link sent (the one that would reach the user's inbox). */
   const lastToken = (): string => {
     const link = sentLinks.at(-1)?.link;
-    if (!link) throw new Error('No se envió ningún enlace');
+    if (!link) throw new Error('No link was sent');
     return new URL(link).searchParams.get('token') ?? '';
   };
 
   /**
-   * Cambia `COOKIE_SECURE` con la app ya arrancada. La configuración validada se congela al
-   * importar `AppModule`, así que tocar `process.env` ya no surte efecto: se intercepta la lectura.
+   * Changes `COOKIE_SECURE` with the app already running. The validated config is frozen when
+   * `AppModule` is imported, so touching `process.env` no longer has any effect: the read is intercepted.
    */
   const stubCookieSecure = (secure: boolean): void => {
     const config = app.get<ConfigService<Env, true>>(ConfigService);
@@ -92,7 +92,7 @@ describe('AuthController (HTTP)', () => {
       key === 'COOKIE_SECURE' ? secure : realGet(key, ...rest)) as typeof config.get);
   };
 
-  /** Pide un enlace por la ruta real y devuelve su token en claro. */
+  /** Requests a link through the real route and returns its plain token. */
   const requestToken = async (email: string): Promise<string> => {
     const res = await postJson(`${baseUrl}/request`, { email });
     expect(res.status).toBe(202);
@@ -105,7 +105,7 @@ describe('AuthController (HTTP)', () => {
     process.env.EMAIL_TRANSPORT = 'dev';
     process.env.EMAIL_FROM = 'Sextante <no-reply@example.test>';
     process.env.APP_URL = APP_URL;
-    // Los crons no deben interbloquearse con el TRUNCATE de `resetDb` (ver imports.controller.test).
+    // The crons must not deadlock with the TRUNCATE in `resetDb` (see imports.controller.test).
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
     process.env.PRICE_INTRADAY_CRON = 'off';
     delete process.env.COOKIE_SECURE;
@@ -137,42 +137,42 @@ describe('AuthController (HTTP)', () => {
   });
 
   describe('POST /auth/request', () => {
-    it('responde 202 con el mismo cuerpo exista o no el email (sin enumeración de usuarios)', async () => {
-      await insertUser(db, 'existe@example.com');
+    it('responds 202 with the same body whether or not the email exists (no user enumeration)', async () => {
+      await insertUser(db, 'existing@example.com');
 
-      const known = await postJson(`${baseUrl}/request`, { email: 'existe@example.com' });
-      const unknown = await postJson(`${baseUrl}/request`, { email: 'nuevo@example.com' });
+      const known = await postJson(`${baseUrl}/request`, { email: 'existing@example.com' });
+      const unknown = await postJson(`${baseUrl}/request`, { email: 'new@example.com' });
 
       expect(known.status).toBe(202);
       expect(unknown.status).toBe(202);
       expect(await known.json()).toEqual({ ok: true });
       expect(await unknown.json()).toEqual({ ok: true });
-      // Ambos reciben enlace: la respuesta no distingue entre cuenta nueva y existente.
-      expect(sentLinks.map((s) => s.to)).toEqual(['existe@example.com', 'nuevo@example.com']);
+      // Both get a link: the response does not distinguish a new account from an existing one.
+      expect(sentLinks.map((s) => s.to)).toEqual(['existing@example.com', 'new@example.com']);
     });
 
-    it('limita los enlaces por email aunque cambie la IP: el 4º en 15 min es 202 pero no se envía', async () => {
+    it('limits links per email even when the IP changes: the 4th within 15 min is 202 but not sent', async () => {
       const statuses: number[] = [];
       for (let i = 0; i < 4; i++) {
-        // Cada petición desde una IP distinta: el límite por IP no actúa, el de email sí.
-        statuses.push((await postJson(`${baseUrl}/request`, { email: 'victima@example.com' })).status);
+        // Each request from a different IP: the per-IP limit does not apply, the per-email one does.
+        statuses.push((await postJson(`${baseUrl}/request`, { email: 'victim@example.com' })).status);
       }
 
       expect(statuses).toEqual([202, 202, 202, 202]);
       expect(sentLinks).toHaveLength(3);
       expect(await db.select().from(loginTokens)).toHaveLength(3);
-      // Otra dirección no comparte el cupo.
-      await postJson(`${baseUrl}/request`, { email: 'otra@example.com' });
+      // Another address does not share the quota.
+      await postJson(`${baseUrl}/request`, { email: 'other@example.com' });
       expect(sentLinks).toHaveLength(4);
     });
 
-    it('no crea el usuario al pedir el enlace: se crea al verificarlo', async () => {
-      await postJson(`${baseUrl}/request`, { email: 'nuevo@example.com' });
+    it('does not create the user when the link is requested: it is created on verification', async () => {
+      await postJson(`${baseUrl}/request`, { email: 'new@example.com' });
 
       expect(await db.select().from(users)).toHaveLength(0);
     });
 
-    it('guarda solo el hash del token, con caducidad de 15 minutos', async () => {
+    it('stores only the token hash, with a 15-minute expiry', async () => {
       const before = Date.now();
       const token = await requestToken('a@example.com');
 
@@ -183,11 +183,11 @@ describe('AuthController (HTTP)', () => {
       const ttl = row.expiresAt.getTime() - before;
       expect(ttl).toBeGreaterThan(14 * 60_000);
       expect(ttl).toBeLessThanOrEqual(15 * 60_000 + 5_000);
-      // El enlace apunta al frontend público.
+      // The link points to the public frontend.
       expect(itemAt(sentLinks, 0).link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
     });
 
-    it('normaliza el email a minúsculas antes de guardarlo y enviarlo', async () => {
+    it('lower-cases the email before storing and sending it', async () => {
       await postJson(`${baseUrl}/request`, { email: 'A@Example.COM' });
 
       expect(itemAt(sentLinks, 0).to).toBe('a@example.com');
@@ -195,7 +195,7 @@ describe('AuthController (HTTP)', () => {
       expect(row.email).toBe('a@example.com');
     });
 
-    it('envía el enlace en el idioma pedido (castellano por defecto), apuntando a la web en ese idioma', async () => {
+    it('sends the link in the requested language (Spanish by default), pointing to that locale', async () => {
       await postJson(`${baseUrl}/request`, { email: 'a@example.com' });
       await postJson(`${baseUrl}/request`, { email: 'b@example.com', locale: 'en' });
 
@@ -204,21 +204,21 @@ describe('AuthController (HTTP)', () => {
       expect(itemAt(sentLinks, 1).link.startsWith(`${APP_URL}/en/auth/verify?token=`)).toBe(true);
     });
 
-    it('rechaza un idioma no soportado con 400', async () => {
+    it('rejects an unsupported language with 400', async () => {
       const res = await postJson(`${baseUrl}/request`, { email: 'a@example.com', locale: 'fr' });
 
       expect(res.status).toBe(400);
       expect(sentLinks).toHaveLength(0);
     });
 
-    it('rechaza un email no válido con 400 y no envía nada', async () => {
-      const res = await postJson(`${baseUrl}/request`, { email: 'no-es-un-email' });
+    it('rejects an invalid email with 400 and sends nothing', async () => {
+      const res = await postJson(`${baseUrl}/request`, { email: 'not-an-email' });
 
       expect(res.status).toBe(400);
       expect(sentLinks).toHaveLength(0);
     });
 
-    it('genera un token distinto en cada petición', async () => {
+    it('generates a different token on every request', async () => {
       const first = await requestToken('a@example.com');
       const second = await requestToken('a@example.com');
 
@@ -227,19 +227,19 @@ describe('AuthController (HTTP)', () => {
   });
 
   describe('POST /auth/verify', () => {
-    it('crea el usuario en el primer login y abre sesión con una cookie', async () => {
-      const token = await requestToken('Nuevo@Example.com');
+    it('creates the user on first login and opens a session with a cookie', async () => {
+      const token = await requestToken('New@Example.com');
 
       const res = await postJson(`${baseUrl}/verify`, { token });
 
       expect(res.status).toBe(200);
       const user = firstItem(await db.select().from(users));
-      expect(user.email).toBe('nuevo@example.com');
-      expect(await res.json()).toEqual({ id: user.id, email: 'nuevo@example.com' });
+      expect(user.email).toBe('new@example.com');
+      expect(await res.json()).toEqual({ id: user.id, email: 'new@example.com' });
       expect(sessionSetCookie(res)).toBeDefined();
     });
 
-    it('reutiliza el usuario existente en logins posteriores (no duplica)', async () => {
+    it('reuses the existing user on later logins (no duplicate)', async () => {
       const id = await insertUser(db, 'a@example.com');
       const token = await requestToken('a@example.com');
 
@@ -249,7 +249,7 @@ describe('AuthController (HTTP)', () => {
       expect(await db.select().from(users)).toHaveLength(1);
     });
 
-    it('el token es de un solo uso: reutilizarlo devuelve 401 y no abre sesión', async () => {
+    it('the token is single-use: reusing it returns 401 and opens no session', async () => {
       const token = await requestToken('a@example.com');
       expect((await postJson(`${baseUrl}/verify`, { token })).status).toBe(200);
 
@@ -259,7 +259,7 @@ describe('AuthController (HTTP)', () => {
       expect(sessionSetCookie(again)).toBeUndefined();
     });
 
-    it('dos canjes simultáneos del mismo token: solo uno gana', async () => {
+    it('two concurrent redemptions of the same token: only one wins', async () => {
       const token = await requestToken('a@example.com');
 
       const results = await Promise.all([
@@ -270,7 +270,7 @@ describe('AuthController (HTTP)', () => {
       expect(results.map((r) => r.status).sort()).toEqual([200, 401]);
     });
 
-    it('un token caducado devuelve 401 y no crea el usuario', async () => {
+    it('an expired token returns 401 and does not create the user', async () => {
       const token = await requestToken('a@example.com');
       await db
         .update(loginTokens)
@@ -283,18 +283,18 @@ describe('AuthController (HTTP)', () => {
       expect(await db.select().from(users)).toHaveLength(0);
     });
 
-    it('un token inexistente (bien formado) devuelve 401', async () => {
+    it('an unknown (well-formed) token returns 401', async () => {
       const res = await postJson(`${baseUrl}/verify`, { token: 'x'.repeat(43) });
 
       expect(res.status).toBe(401);
     });
 
-    it('un token mal formado (demasiado corto o ausente) devuelve 400', async () => {
-      expect((await postJson(`${baseUrl}/verify`, { token: 'corto' })).status).toBe(400);
+    it('a malformed token (too short or missing) returns 400', async () => {
+      expect((await postJson(`${baseUrl}/verify`, { token: 'short' })).status).toBe(400);
       expect((await postJson(`${baseUrl}/verify`, {})).status).toBe(400);
     });
 
-    it('el usuario creado es el del enlace canjeado, no el de otro enlace pendiente', async () => {
+    it('the created user is the one of the redeemed link, not of another pending link', async () => {
       const tokenA = await requestToken('a@example.com');
       await requestToken('b@example.com');
 
@@ -304,8 +304,8 @@ describe('AuthController (HTTP)', () => {
     });
   });
 
-  describe('cookie de sesión y JWT', () => {
-    it('la cookie es HttpOnly, SameSite=Lax, de path / y dura 7 días', async () => {
+  describe('session cookie and JWT', () => {
+    it('the cookie is HttpOnly, SameSite=Lax, path / and lasts 7 days', async () => {
       const token = await requestToken('a@example.com');
 
       const setCookie = sessionSetCookie(await postJson(`${baseUrl}/verify`, { token }));
@@ -317,7 +317,7 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).toContain(`Max-Age=${SESSION_TTL_SECONDS}`);
     });
 
-    it('no es Secure por defecto (permite servir a un frontend en http://localhost)', async () => {
+    it('is not Secure by default (allows serving a frontend on http://localhost)', async () => {
       const token = await requestToken('a@example.com');
 
       const setCookie = sessionSetCookie(await postJson(`${baseUrl}/verify`, { token }));
@@ -325,7 +325,7 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).not.toMatch(/;\s*Secure/i);
     });
 
-    it('es Secure cuando COOKIE_SECURE=true', async () => {
+    it('is Secure when COOKIE_SECURE=true', async () => {
       stubCookieSecure(true);
       const token = await requestToken('a@example.com');
 
@@ -334,7 +334,7 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).toMatch(/;\s*Secure/i);
     });
 
-    it('no es Secure con COOKIE_SECURE=false', async () => {
+    it('is not Secure with COOKIE_SECURE=false', async () => {
       stubCookieSecure(false);
       const token = await requestToken('a@example.com');
 
@@ -343,7 +343,7 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).not.toMatch(/;\s*Secure/i);
     });
 
-    it('el JWT lleva sub y email, está firmado con JWT_SECRET y caduca a los 7 días', async () => {
+    it('the JWT carries sub and email, is signed with JWT_SECRET and expires after 7 days', async () => {
       const token = await requestToken('a@example.com');
       const res = await postJson(`${baseUrl}/verify`, { token });
       const user = (await res.json()) as { id: string; email: string };
@@ -358,15 +358,15 @@ describe('AuthController (HTTP)', () => {
 
       expect(payload.sub).toBe(user.id);
       expect(payload.email).toBe('a@example.com');
-      // Versión de sesión del usuario al firmar (0 para un usuario recién creado).
+      // The user's session version at signing time (0 for a newly created user).
       expect(payload).toHaveProperty('ver', 0);
       expect(payload.exp - payload.iat).toBe(SESSION_TTL_SECONDS);
-      await expect(new JwtService({ secret: 'otro-secreto' }).verifyAsync(jwt)).rejects.toThrow();
+      await expect(new JwtService({ secret: 'other-secret' }).verifyAsync(jwt)).rejects.toThrow();
     });
   });
 
   describe('GET /auth/me', () => {
-    it('devuelve el usuario con una sesión obtenida por el flujo real', async () => {
+    it('returns the user with a session obtained through the real flow', async () => {
       const token = await requestToken('a@example.com');
       const login = await postJson(`${baseUrl}/verify`, { token });
       const user = (await login.json()) as { id: string; email: string };
@@ -378,20 +378,20 @@ describe('AuthController (HTTP)', () => {
       expect(await res.json()).toEqual(user);
     });
 
-    it('devuelve 401 sin cookie', async () => {
+    it('returns 401 without a cookie', async () => {
       expect((await fetch(`${baseUrl}/me`)).status).toBe(401);
     });
 
-    it('devuelve 401 con un JWT firmado con otro secreto', async () => {
+    it('returns 401 with a JWT signed with another secret', async () => {
       const id = await insertUser(db, 'a@example.com');
-      const forged = await new JwtService({ secret: 'otro-secreto' }).signAsync({ sub: id, email: 'a@example.com' });
+      const forged = await new JwtService({ secret: 'other-secret' }).signAsync({ sub: id, email: 'a@example.com' });
 
       const res = await fetch(`${baseUrl}/me`, { headers: { Cookie: `${SESSION_COOKIE}=${forged}` } });
 
       expect(res.status).toBe(401);
     });
 
-    it('devuelve 401 con un JWT caducado', async () => {
+    it('returns 401 with an expired JWT', async () => {
       const id = await insertUser(db, 'a@example.com');
       const expired = await new JwtService({ secret: SECRET }).signAsync(
         { sub: id, email: 'a@example.com' },
@@ -403,7 +403,7 @@ describe('AuthController (HTTP)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('devuelve 401 con un JWT manipulado', async () => {
+    it('returns 401 with a tampered JWT', async () => {
       const id = await insertUser(db, 'a@example.com');
       const valid = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
       const tampered = `${valid.slice(0, -4)}AAAA`;
@@ -415,12 +415,12 @@ describe('AuthController (HTTP)', () => {
   });
 
   describe('GET /auth/account/export', () => {
-    // La lógica vive en `account/`, pero la ruta es contrato público (la consume el frontend).
-    it('exige sesión', async () => {
+    // The logic lives in `account/`, but the route is a public contract (the frontend consumes it).
+    it('requires a session', async () => {
       expect((await fetch(`${baseUrl}/account/export`)).status).toBe(401);
     });
 
-    it('descarga los datos del usuario como adjunto JSON', async () => {
+    it('downloads the user data as a JSON attachment', async () => {
       const id = await insertUser(db, 'a@example.com');
       const jwt = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
 
@@ -441,7 +441,7 @@ describe('AuthController (HTTP)', () => {
   });
 
   describe('POST /auth/logout', () => {
-    it('borra la cookie de sesión (caducada y vacía, con los mismos atributos)', async () => {
+    it('clears the session cookie (expired and empty, with the same attributes)', async () => {
       const res = await postJson(`${baseUrl}/logout`, {});
 
       expect(res.status).toBe(200);
@@ -455,8 +455,8 @@ describe('AuthController (HTTP)', () => {
     });
   });
 
-  describe('revocación de sesiones', () => {
-    /** Abre sesión por el flujo real y devuelve el JWT de la cookie. */
+  describe('session revocation', () => {
+    /** Logs in through the real flow and returns the cookie's JWT. */
     const login = async (email: string): Promise<string> => {
       const token = await requestToken(email);
       const res = await postJson(`${baseUrl}/verify`, { token });
@@ -471,7 +471,7 @@ describe('AuthController (HTTP)', () => {
         body: '{}',
       });
 
-    it('tras cerrar sesión, el JWT anterior deja de valer aunque no haya caducado', async () => {
+    it('after logout, the previous JWT stops working even though it has not expired', async () => {
       const jwt = await login('a@example.com');
       expect((await me(jwt)).status).toBe(200);
 
@@ -480,7 +480,7 @@ describe('AuthController (HTTP)', () => {
       expect((await me(jwt)).status).toBe(401);
     });
 
-    it('cerrar sesión invalida también las otras sesiones del usuario, no las de otros', async () => {
+    it('logout also invalidates the other sessions of the same user, not those of other users', async () => {
       const laptop = await login('a@example.com');
       const phone = await login('a@example.com');
       const other = await login('b@example.com');
@@ -491,13 +491,13 @@ describe('AuthController (HTTP)', () => {
       expect((await me(other)).status).toBe(200);
     });
 
-    it('un nuevo login tras cerrar sesión funciona', async () => {
+    it('a new login after logout works', async () => {
       await postWithSession('logout', await login('a@example.com'));
 
       expect((await me(await login('a@example.com'))).status).toBe(200);
     });
 
-    it('POST /auth/sessions/revoke cierra todas las sesiones y borra la cookie', async () => {
+    it('POST /auth/sessions/revoke closes every session and clears the cookie', async () => {
       const laptop = await login('a@example.com');
       const phone = await login('a@example.com');
 
@@ -509,11 +509,11 @@ describe('AuthController (HTTP)', () => {
       expect((await me(phone)).status).toBe(401);
     });
 
-    it('POST /auth/sessions/revoke exige sesión', async () => {
+    it('POST /auth/sessions/revoke requires a session', async () => {
       expect((await postJson(`${baseUrl}/sessions/revoke`, {})).status).toBe(401);
     });
 
-    it('un JWT emitido antes de la versión de sesión (sin `ver`) sigue valiendo mientras no se cierre', async () => {
+    it('a JWT issued before session versions existed (no `ver`) stays valid until logout', async () => {
       const id = await insertUser(db, 'a@example.com');
       const legacy = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
 
@@ -522,7 +522,7 @@ describe('AuthController (HTTP)', () => {
       expect((await me(legacy)).status).toBe(401);
     });
 
-    it('borrar la cuenta deja sin valor sus sesiones', async () => {
+    it('deleting the account invalidates its sessions', async () => {
       const jwt = await login('a@example.com');
 
       const res = await fetch(`${baseUrl}/account`, {
@@ -535,8 +535,8 @@ describe('AuthController (HTTP)', () => {
     });
   });
 
-  describe('throttling de /auth/request', () => {
-    it('permite 5 peticiones por minuto desde la misma IP y rechaza la sexta con 429', async () => {
+  describe('/auth/request throttling', () => {
+    it('allows 5 requests per minute from the same IP and rejects the sixth with 429', async () => {
       const ip = '192.0.2.50';
       for (let i = 0; i < 5; i += 1) {
         expect((await postJson(`${baseUrl}/request`, { email: 'a@example.com' }, ip)).status).toBe(202);
@@ -545,7 +545,7 @@ describe('AuthController (HTTP)', () => {
       const sixth = await postJson(`${baseUrl}/request`, { email: 'a@example.com' }, ip);
 
       expect(sixth.status).toBe(429);
-      // Otra IP no comparte el cupo.
+      // Another IP does not share the quota.
       expect((await postJson(`${baseUrl}/request`, { email: 'a@example.com' }, '192.0.2.51')).status).toBe(202);
     });
   });

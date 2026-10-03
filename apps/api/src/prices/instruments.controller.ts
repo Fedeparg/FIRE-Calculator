@@ -7,10 +7,10 @@ import { instrumentSearchQuerySchema, type InstrumentSearchQueryDto } from './dt
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider, type InstrumentSearchResult } from './instrument-search.js';
 
 /**
- * Búsqueda de instrumentos para el alta. A diferencia de `/prices`, consulta la fuente externa en
- * vivo (buscador interactivo); el proveedor cachea unos minutos las consultas repetidas y aquí se
- * limita el ritmo por cliente para que no sea un proxy abierto hacia Yahoo. El frontend hace
- * debounce y degrada un error a "sin resultados".
+ * Instrument search for adding a position. Unlike `/prices`, it queries the external source live
+ * (interactive search box); the provider caches repeated queries for a few minutes and this
+ * endpoint is rate limited per client so it is not an open proxy to Yahoo. The frontend debounces
+ * and degrades an error to "no results".
  */
 @Controller('instruments')
 @UseGuards(JwtAuthGuard)

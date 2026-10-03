@@ -1,8 +1,8 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
-/** Resultado de tool MCP como texto JSON. Los no finitos salen como `null` (`JSON.stringify`); las descripciones de las tools lo explican. */
+/** MCP tool result as JSON text. Non-finite numbers come out as `null` (`JSON.stringify`); the tool descriptions say so. */
 export function jsonResult(value: unknown, options: { compact?: boolean } = {}): CallToolResult {
-  // `compact`: catálogos grandes (el de calculadoras ronda los 40 KB).
+  // `compact`: large catalogues (the calculator one is around 40 KB).
   return { content: [{ type: 'text', text: JSON.stringify(value, null, options.compact ? undefined : 2) }] };
 }
 

@@ -15,7 +15,7 @@ import {
 import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
-/** Preferencias de notificación del usuario autenticado (`userId` siempre del JWT). */
+/** Notification preferences of the authenticated user (`userId` always comes from the JWT). */
 @Controller('account/notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationSettingsController {
@@ -36,13 +36,13 @@ export class NotificationSettingsController {
 }
 
 /**
- * Baja de las alertas desde el email, sin sesión: la identidad la da el token firmado del
- * enlace. Solo POST, a propósito: los escáneres de enlaces del correo (antivirus, vistas
- * previas) abren con GET todo lo que ven, y un GET que diera de baja desactivaría las alertas
- * sin que nadie lo pidiera. El email enlaza a una página que confirma con este POST, y la
- * cabecera `List-Unsubscribe-Post` hace que los clientes compatibles lo llamen en un clic.
+ * Unsubscribe from the alerts from the email, without a session: identity comes from the link's
+ * signed token. POST only, on purpose: mail link scanners (antivirus, previews) open everything
+ * they see with GET, and a GET that unsubscribed would disable the alerts without anyone asking.
+ * The email links to a page that confirms with this POST, and the `List-Unsubscribe-Post` header
+ * makes compatible clients call it in one click.
  *
- * Siempre 204, también con un token inválido: no revela si un usuario existe.
+ * Always 204, also with an invalid token: it does not reveal whether a user exists.
  */
 @Controller('notifications')
 export class UnsubscribeController {

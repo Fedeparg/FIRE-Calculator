@@ -9,9 +9,9 @@ import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@se
 const UNKNOWN_BROKER_LABEL = 'Sin bróker';
 
 /**
- * Valoración de una posición con su P&L en divisa nativa. Como la tabla de la UI
- * (`PositionList`): solo se calcula con precio en la misma divisa que la posición; la
- * conversión vive en el agregado.
+ * Valuation of one position with its P&L in its native currency. Like the UI table
+ * (`PositionList`): it is only computed with a price in the position's own currency;
+ * conversion lives in the aggregate.
  */
 export interface PositionValuation {
   id: string;
@@ -21,50 +21,50 @@ export interface PositionValuation {
   avgPrice: number;
   broker: string | null;
   currency: string;
-  /** Derivado: Sextante no sigue su precio y queda fuera del agregado. */
+  /** Derivative: Sextante does not track its price and it stays out of the aggregate. */
   isDerivative: boolean;
-  /** Coste (cantidad · precio medio), en la divisa de la posición. */
+  /** Cost (quantity · average price), in the position's currency. */
   invested: number;
-  /** Último precio de mercado en la divisa de la posición, o null si no es valorable. */
+  /** Latest market price in the position's currency, or null if it cannot be valued. */
   currentPrice: number | null;
-  /** Divisa del precio cacheado (puede no coincidir con la de la posición). */
+  /** Currency of the cached price (may differ from the position's). */
   priceCurrency: string | null;
-  /** Fecha (YYYY-MM-DD) del último precio, o null. */
+  /** Date (YYYY-MM-DD) of the latest price, or null. */
   priceDate: string | null;
-  /** Valor actual (cantidad · precio), en la divisa de la posición, o null. */
+  /** Current value (quantity · price), in the position's currency, or null. */
   marketValue: number | null;
-  /** Ganancia/pérdida absoluta (valor − invertido), o null. */
+  /** Absolute gain/loss (value − invested), or null. */
   pnlAbs: number | null;
-  /** Rentabilidad en %, o null. */
+  /** Return in %, or null. */
   pnlPct: number | null;
-  /** ¿Se pudo valorar (hay precio en la misma divisa)? */
+  /** Whether it could be valued (there is a price in the same currency). */
   priced: boolean;
-  /** Por qué no se valoró, si procede. */
+  /** Why it was not valued, if applicable. */
   unpricedReason?: 'no_price' | 'currency_mismatch';
 }
 
 /**
- * Precios (por ticker) y tasas FX ya leídos de la caché. La captura nocturna los lee UNA vez para
- * todas las carteras en vez de una por usuario; un ticker sin precio simplemente no está.
+ * Prices (by ticker) and FX rates already read from the cache. The nightly capture reads them ONCE
+ * for all portfolios instead of once per user; a ticker without a price is simply absent.
  */
 export interface MarketData {
   prices: ReadonlyMap<string, PriceInfo>;
   fx: FxRates;
 }
 
-/** Valoración completa de la cartera: agregado (con FX) + desglose por posición (nativo). */
+/** Full portfolio valuation: aggregate (with FX) + per-position breakdown (native). */
 export interface PortfolioValuation {
   display: string;
   aggregate: PortfolioAggregate;
-  /** Fecha de las tasas FX usadas para el agregado, o null. */
+  /** Date of the FX rates used for the aggregate, or null. */
   fxAsOf: string | null;
   positions: PositionValuation[];
 }
 
 /**
- * Valor de mercado y P&L de la cartera sobre `PositionsService` (scoping por usuario) y
- * `PriceReadService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
- * a las tools MCP de lectura (`_local/mcp-integracion.md`).
+ * Portfolio market value and P&L on top of `PositionsService` (per-user scoping) and
+ * `PriceReadService` (cached prices and FX), with the same `aggregatePortfolio` as the UI. Serves
+ * the read-only MCP tools (`_local/mcp-integracion.md`).
  */
 @Injectable()
 export class PortfolioValuationService {
@@ -73,7 +73,7 @@ export class PortfolioValuationService {
     private readonly prices: PriceReadService,
   ) {}
 
-  /** `market`: precios y FX ya leídos (ver `MarketData`); sin él, se leen para este usuario. */
+  /** `market`: prices and FX already read (see `MarketData`); without it, they are read for this user. */
   async valuate(userId: string, display: string, market?: MarketData): Promise<PortfolioValuation> {
     const { owned, priceMap, pricesRecord, fx } = await this.loadUserMarketData(userId, market);
 
@@ -98,7 +98,7 @@ export class PortfolioValuationService {
     };
   }
 
-  /** Reparto del valor por activo, bróker o divisa en `display` (el `buildBreakdown` del donut de la UI). */
+  /** Value breakdown by asset, broker or currency in `display` (the UI donut's `buildBreakdown`). */
   async breakdown(
     userId: string,
     display: string,
@@ -106,7 +106,7 @@ export class PortfolioValuationService {
   ): Promise<BreakdownResult & { display: string; fxAsOf: string | null }> {
     const { owned, pricesRecord, fx } = await this.loadUserMarketData(userId);
     const result = buildBreakdown({
-      // Como la web: los derivados no tienen precio fiable y no entran en el reparto.
+      // As on the web: derivatives have no reliable price and are left out of the breakdown.
       positions: owned.filter((p) => !p.isDerivative),
       prices: pricesRecord,
       rates: fx.rates,
@@ -117,7 +117,7 @@ export class PortfolioValuationService {
     return { ...result, display, fxAsOf: fx.asOf };
   }
 
-  /** Precios de los tickers indicados y tasas FX, leídos de la caché en dos consultas. */
+  /** Prices of the given tickers and FX rates, read from the cache in two queries. */
   async loadMarketData(tickers: readonly string[]): Promise<MarketData> {
     const prices = await this.prices.getPrices([...new Set(tickers)]);
     const fx = await this.prices.getFxRates();
@@ -140,7 +140,7 @@ export class PortfolioValuationService {
     return { owned, priceMap, pricesRecord, fx };
   }
 
-  /** Valora una posición por id; `findAllByUser` ya scopea por usuario, así que un id ajeno da 404. */
+  /** Values one position by id; `findAllByUser` already scopes by user, so another user's id gives a 404. */
   async valuateOne(userId: string, id: string): Promise<PositionValuation> {
     const owned = await this.positions.findAllByUser(userId);
     const position = owned.find((p) => p.id === id);
@@ -153,7 +153,7 @@ export class PortfolioValuationService {
 
   private valuateRow(p: PositionResponse, price?: PriceInfo): PositionValuation {
     const invested = p.quantity * p.avgPrice;
-    // El P&L exige precio en la misma divisa que la posición.
+    // P&L requires a price in the position's own currency.
     const priced = price !== undefined && price.currency === p.currency;
 
     let currentPrice: number | null = null;

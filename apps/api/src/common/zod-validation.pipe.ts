@@ -2,12 +2,12 @@ import { BadRequestException, type PipeTransform } from '@nestjs/common';
 import type { z } from 'zod';
 
 /**
- * Valida (y transforma: trim, coerción de query params) la entrada de un `@Body()` o `@Query()`
- * con un esquema zod. Es la única vía de validación de la API: los mismos esquemas los reutilizan
- * las tools de escritura de MCP, de modo que REST y MCP no pueden aceptar cosas distintas.
+ * Validates (and transforms: trim, query param coercion) the input of a `@Body()` or `@Query()`
+ * with a zod schema. It is the API's only validation path: the MCP write tools reuse the same
+ * schemas, so REST and MCP cannot accept different things.
  *
- * Responde 400 con la forma de siempre de Nest (`{ statusCode, error, message: string[] }`); cada
- * mensaje lleva la ruta del campo. El front solo mira el estado, así que el texto es para depurar.
+ * Responds 400 with Nest's usual shape (`{ statusCode, error, message: string[] }`); each message
+ * carries the field path. The frontend only looks at the status, so the text is for debugging.
  */
 export class ZodValidationPipe<S extends z.ZodType> implements PipeTransform<unknown, z.output<S>> {
   constructor(private readonly schema: S) {}
@@ -19,7 +19,7 @@ export class ZodValidationPipe<S extends z.ZodType> implements PipeTransform<unk
   }
 }
 
-/** Un mensaje por incidencia, con la ruta del campo si la hay (`quantity: ...`). */
+/** One message per issue, prefixed with the field path if there is one (`quantity: ...`). */
 export function describeIssues(error: z.ZodError): string[] {
   return error.issues.map((issue) =>
     issue.path.length > 0 ? `${issue.path.join('.')}: ${issue.message}` : issue.message,

@@ -1,19 +1,19 @@
 import { BadRequestException, type HttpException } from '@nestjs/common';
 
 /**
- * Error de una regla de dominio que el CLIENTE puede corregir (p. ej. vender más de lo que se
- * tiene). Lo lanza la lógica sin saber nada de HTTP, con un `code` estable y un mensaje legible
- * para el usuario; la traducción a respuesta se hace en un solo sitio, en el borde: el filtro
- * global para REST (`ErrorTranslationFilter`) y `ToolRunner` para MCP. Así quien lo captura
- * (p. ej. la importación) comprueba `instanceof` en vez de reinterpretar el cuerpo de un 400.
+ * Error from a domain rule that the CLIENT can fix (e.g. selling more than is held). The logic
+ * throws it without knowing anything about HTTP, with a stable `code` and a user-readable message;
+ * the translation into a response happens in a single place, at the edge: the global filter for
+ * REST (`ErrorTranslationFilter`) and `ToolRunner` for MCP. That way whoever catches it (e.g. the
+ * import) checks `instanceof` instead of reinterpreting the body of a 400.
  *
- * Su mensaje llega al usuario tal cual: no debe llevar datos internos.
+ * Its message reaches the user verbatim: it must not carry internal data.
  */
 export abstract class DomainError extends Error {
   abstract readonly code: string;
 }
 
-/** Un error de dominio es una petición inválida: 400 con `{ code, message }`. */
+/** A domain error is an invalid request: 400 with `{ code, message }`. */
 export function domainErrorToHttp(error: DomainError): HttpException {
   return new BadRequestException({ code: error.code, message: error.message });
 }

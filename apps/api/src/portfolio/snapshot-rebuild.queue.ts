@@ -1,27 +1,27 @@
-/** Trabajo pendiente de un usuario: posiciones cuyos lotes cambiaron y la fecha más antigua a invalidar. */
+/** A user's pending work: positions whose lots changed and the earliest date to invalidate. */
 type Pending = { positions: Set<string>; invalidateFrom: string | null };
 
-/** Una tanda de reconstrucción: las posiciones anotadas y desde qué fecha invalidar (`null` = sin borrados). */
+/** One rebuild batch: the recorded positions and the date to invalidate from (`null` = no deletions). */
 export type RebuildBatch = { positionIds: string[]; invalidateFrom: string | null };
 
 const earliest = (a: string | null, b: string | null | undefined): string | null =>
   b !== null && b !== undefined && (a === null || b < a) ? b : a;
 
 /**
- * Coalescencia de las reconstrucciones del histórico por usuario. Una ráfaga de ediciones de
- * lotes dispararía una reconstrucción por evento, cada una con una conexión esperando el cerrojo
- * del usuario, y más de ~10 agotarían el pool. Con la cola, si ya hay una en curso solo se anota
- * la posición (y la fecha más antigua a invalidar); al terminar se repite UNA vez cubriendo todo
- * lo anotado, hasta que no quede nada. En memoria y por proceso, como el cerrojo de los jobs.
+ * Per-user coalescing of history rebuilds. A burst of lot edits would trigger one rebuild per
+ * event, each holding a connection while it waits for the user's lock, and more than ~10 would
+ * exhaust the pool. With the queue, if a rebuild is already running only the position (and the
+ * earliest date to invalidate) is recorded; when it finishes it runs ONCE more covering everything
+ * recorded, until nothing is left. In memory and per process, like the jobs' lock.
  */
 export class SnapshotRebuildQueue {
   private readonly running = new Map<string, Pending>();
 
   /**
-   * Anota el cambio y, si no hay otra reconstrucción en curso para el usuario, ejecuta `rebuild`
-   * por tandas hasta vaciar lo pendiente. Un `rebuild` que lanza no detiene las tandas siguientes:
-   * el error se entrega a `onError`. Resuelve cuando la reconstrucción que inició termina, o al
-   * instante si solo ha anotado.
+   * Records the change and, if no other rebuild is running for the user, runs `rebuild` in
+   * batches until nothing is pending. A `rebuild` that throws does not stop the following batches:
+   * the error is passed to `onError`. Resolves when the rebuild it started finishes, or
+   * immediately if it only recorded the change.
    */
   async enqueue(
     userId: string,

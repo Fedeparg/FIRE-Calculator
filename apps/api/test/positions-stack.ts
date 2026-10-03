@@ -6,21 +6,21 @@ import { PositionsService } from '../src/positions/positions.service.js';
 import type { PriceHistoryService } from '../src/prices/price-history.service.js';
 import { stub } from './factories.js';
 
-/** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
+/** `primeSymbol` only refreshes the price on the fly; in tests it is a no-op. */
 export const pricesStub = stub<PriceHistoryService>({ primeSymbol: async () => {} });
 
 export type PositionsStackOverrides = {
   prices?: PriceHistoryService;
-  /** Emisor de `PositionsService` (p. ej. para capturar `LOT_CHANGED_EVENT` al editar). */
+  /** Emitter of `PositionsService` (e.g. to capture `LOT_CHANGED_EVENT` on edit). */
   positionsEvents?: EventEmitter2;
-  /** Emisor de `PositionLotsService`. Separado del anterior a propósito: cada test captura uno. */
+  /** Emitter of `PositionLotsService`. Kept separate from the previous one on purpose: each test captures one. */
   lotsEvents?: EventEmitter2;
 };
 
 /**
- * Grafo `PositionsService` → `PositionLotsService` tal y como lo cablea Nest, con emisores de
- * eventos propios y precios en no-op salvo que el test los sustituya. Devuelve también los
- * emisores para poder observarlos.
+ * The `PositionsService` → `PositionLotsService` graph as Nest wires it, with their own event
+ * emitters and no-op prices unless the test replaces them. Also returns the emitters so they can
+ * be observed.
  */
 export function buildPositionsStack(db: Database, overrides: PositionsStackOverrides = {}) {
   const { prices = pricesStub, positionsEvents = new EventEmitter2(), lotsEvents = new EventEmitter2() } = overrides;

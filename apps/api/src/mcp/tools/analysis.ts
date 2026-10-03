@@ -24,7 +24,7 @@ export type AnalysisToolDeps = {
   taxReturn: TaxReturnService;
 };
 
-/** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
+/** Message sent to the MCP client for each `resolveGoalTarget` error. */
 const GOAL_TARGET_ERRORS: Record<GoalTargetError, string> = {
   amountIncomplete: 'el modo cantidad necesita targetAmount y targetYears',
   mixedModes: 'usa annualExpenses/withdrawalRate (modo FIRE) o targetAmount/targetYears (modo cantidad), no ambos',
@@ -32,8 +32,8 @@ const GOAL_TARGET_ERRORS: Record<GoalTargetError, string> = {
 };
 
 /**
- * Tools de análisis de la cartera (scope `portfolio:read`): lo que la web calcula sobre los
- * datos del usuario, con las mismas funciones de `@sextante/core`.
+ * Portfolio analysis tools (scope `portfolio:read`): what the web app computes over the user's
+ * data, with the same `@sextante/core` functions.
  */
 export function registerAnalysisTools(server: McpServer, runner: ToolRunner, deps: AnalysisToolDeps): void {
   server.registerTool(
@@ -66,7 +66,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
     },
     ({ year }) =>
       runner.run('get_realised_gains', async () =>
-        // Mismo cálculo que `get_tax_return_report` y la API REST (`TaxReturnService`).
+        // Same computation as `get_tax_return_report` and the REST API (`TaxReturnService`).
         jsonResult(await deps.taxReturn.realisedGains(runner.userId, year)),
       ),
   );
@@ -207,7 +207,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         const outcome = computeGoalProgress(resolved.target, progress);
         const header = {
           display: currency,
-          // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
+          // How many positions count towards the current value: those without a price do not.
           valuedPositions: aggregate.valued,
           totalPositions: aggregate.total,
         };
@@ -215,7 +215,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
           resolved.target.mode === 'fire' && volatility !== undefined && retirementYears !== undefined
             ? simulatePortfolioGoal({ ...progress, ...resolved.target, volatility, retirementYears })
             : undefined;
-        // `mode` va primero a propósito: es el orden de claves que ve el cliente.
+        // `mode` goes first on purpose: it is the key order the client sees.
         const { mode, ...result } = outcome;
         return jsonResult({ mode, ...header, ...result, ...(simulation ? { simulation } : {}) });
       }),

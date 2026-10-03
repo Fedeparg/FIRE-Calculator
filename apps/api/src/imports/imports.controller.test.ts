@@ -14,15 +14,15 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 
 /**
- * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
- * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ * `AppModule` is imported lazily: `ConfigModule.forRoot({ validate })` validates the environment
+ * when the module is evaluated, and these tests set theirs in `beforeAll`, i.e. after the imports.
  */
 const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
-const SECRET = 'test-secret-para-el-controller-de-imports';
+const SECRET = 'test-secret-for-the-imports-controller';
 const HEADER = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(',');
 
-/** Un export mínimo y sintético con una sola compra. */
+/** A minimal, synthetic export with a single buy. */
 const ONE_BUY = `${HEADER}\n${TRADE_REPUBLIC_HEADER.map((column) => {
   const values: Record<string, string> = {
     datetime: '2025-03-03T10:00:00.123456Z',
@@ -40,9 +40,8 @@ const ONE_BUY = `${HEADER}\n${TRADE_REPUBLIC_HEADER.map((column) => {
 }).join(',')}\n`;
 
 /**
- * Prueba la capa HTTP real (guard, límite de tamaño, tipo de contenido, throttling) contra la
- * aplicación completa: es lo único que los tests del servicio, que lo instancian a mano, no
- * pueden ver.
+ * Exercises the real HTTP layer (guard, size limit, content type, throttling) against the full
+ * application: the one thing the service tests, which instantiate it by hand, cannot see.
  */
 describe('ImportsController (HTTP)', () => {
   const original = { ...process.env };
@@ -61,11 +60,11 @@ describe('ImportsController (HTTP)', () => {
     process.env.EMAIL_FROM = 'Sextante <no-reply@example.test>';
     process.env.APP_URL = 'https://sextante.example.test';
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
-    // El intradía salta a cada media hora: coincidiendo con un test, su lectura se interbloqueaba
-    // con el TRUNCATE de `resetDb` (fallo que dependía de la hora a la que corría la suite).
+    // The intraday job fires every half hour: when it overlapped a test, its read deadlocked with
+    // the `resetDb` TRUNCATE (a failure that depended on the time the suite ran).
     process.env.PRICE_INTRADAY_CRON = 'off';
-    // Sin red: el arranque y el refresco de precios tras importar llamarían a Yahoo.
-    global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
+    // No network: startup and the post-import price refresh would call Yahoo.
+    global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in this test'));
 
     ({ db, close: closeDb } = createTestDb());
     disableStartupBackfill();
@@ -74,10 +73,10 @@ describe('ImportsController (HTTP)', () => {
     app.use(cookieParser());
     app.setGlobalPrefix('api');
     await app.listen(0, '127.0.0.1');
-    // Sin esto el primer TRUNCATE podía interbloquearse con la pasada de arranque en segundo plano.
+    // Without this, the first TRUNCATE could deadlock with the background startup pass.
     await waitForStartupJobs(app);
     baseUrl = `${await app.getUrl()}/api/imports/trade-republic`;
-    // Se llama a la API por `127.0.0.1` con el `fetch` real, no con el stub de arriba.
+    // The API is called on `127.0.0.1` with the real `fetch`, not the stub above.
     global.fetch = realFetch;
   });
 
@@ -90,7 +89,7 @@ describe('ImportsController (HTTP)', () => {
 
   afterAll(async () => {
     await app.close();
-    // Los ficheros de test comparten BD: no dejar el usuario de este para el siguiente.
+    // Test files share the database: do not leave this file's user behind for the next one.
     await resetDb(db);
     await closeDb();
     process.env = original;
@@ -107,22 +106,22 @@ describe('ImportsController (HTTP)', () => {
     });
   }
 
-  it('exige sesión en preview y confirm (401) y no escribe nada', async () => {
+  it('requires a session on preview and confirm (401) and writes nothing', async () => {
     expect((await post('preview', { cookie: null })).status).toBe(401);
     expect((await post('confirm', { cookie: null })).status).toBe(401);
     expect(await db.select().from(positions)).toEqual([]);
   });
 
-  it('rechaza un tipo de contenido que no es text/csv (415)', async () => {
+  it('rejects a content type other than text/csv (415)', async () => {
     expect((await post('preview', { type: 'application/json', body: '{}' })).status).toBe(415);
   });
 
-  it('rechaza un cuerpo por encima de 2 MB (413)', async () => {
+  it('rejects a body over 2 MB (413)', async () => {
     const response = await post('preview', { body: 'x'.repeat(MAX_IMPORT_BYTES + 1) });
     expect(response.status).toBe(413);
   });
 
-  it('rechaza un cuerpo vacío y un fichero ajeno con 400 y código', async () => {
+  it('rejects an empty body and a foreign file with 400 and a code', async () => {
     const empty = await post('preview', { body: '' });
     expect(empty.status).toBe(400);
     const foreign = await post('preview', { body: 'a,b\n1,2\n' });
@@ -130,7 +129,7 @@ describe('ImportsController (HTTP)', () => {
     expect(await foreign.json()).toMatchObject({ code: 'NOT_TRADE_REPUBLIC' });
   });
 
-  it('preview devuelve el plan sin escribir y confirm lo aplica de forma idempotente', async () => {
+  it('preview returns the plan without writing and confirm applies it idempotently', async () => {
     const preview = await post('preview', {});
     expect(preview.status).toBe(200);
     expect(await preview.json()).toMatchObject({
@@ -148,7 +147,7 @@ describe('ImportsController (HTTP)', () => {
     expect(await second.json()).toMatchObject({ totals: { lotsCreated: 0, duplicates: 1 } });
   });
 
-  it('limita las peticiones por minuto (429)', async () => {
+  it('rate-limits requests per minute (429)', async () => {
     const statuses: number[] = [];
     for (let i = 0; i < 12; i++) {
       statuses.push((await post('preview', { body: 'a,b\n1,2\n' })).status);

@@ -13,7 +13,7 @@ describe('fetchJson / fetchText', () => {
     vi.unstubAllGlobals();
   });
 
-  it('devuelve el cuerpo y no reintenta lo que ha ido bien', async () => {
+  it('returns the body and does not retry what succeeded', async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(200, '{"a":1}'));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -25,7 +25,7 @@ describe('fetchJson / fetchText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('reintenta 429/5xx según la política y se rinde con el último status', async () => {
+  it('retries 429/5xx according to the policy and gives up with the last status', async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(respond(503)).mockResolvedValueOnce(respond(200, '[1]'));
     vi.stubGlobal('fetch', fetchMock);
     await expect(fetchJson('https://x.test', { timeoutMs: 1000, retry: RETRY })).resolves.toMatchObject({
@@ -43,7 +43,7 @@ describe('fetchJson / fetchText', () => {
     expect(always429).toHaveBeenCalledTimes(3);
   });
 
-  it('no reintenta un 4xx que la política no contempla', async () => {
+  it('does not retry a 4xx the policy does not cover', async () => {
     const fetchMock = vi.fn().mockResolvedValue(respond(404));
     vi.stubGlobal('fetch', fetchMock);
 
@@ -54,7 +54,7 @@ describe('fetchJson / fetchText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('con política, reintenta también los fallos de red; sin ella, un solo intento', async () => {
+  it('with a policy, also retries network failures; without one, a single attempt', async () => {
     const flaky = vi.fn().mockRejectedValueOnce(new TypeError('fetch failed')).mockResolvedValueOnce(respond(200));
     vi.stubGlobal('fetch', flaky);
     await expect(fetchJson('https://x.test', { timeoutMs: 1000, retry: RETRY })).resolves.toMatchObject({ ok: true });
@@ -68,15 +68,15 @@ describe('fetchJson / fetchText', () => {
     expect(broken).toHaveBeenCalledTimes(1);
   });
 
-  it('un cuerpo que no es JSON es un fallo sin status, no una excepción', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(200, 'no es json')));
+  it('a non-JSON body is a failure without status, not an exception', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(respond(200, 'not json')));
 
     const result = await fetchJson('https://x.test', { timeoutMs: 1000 });
     expect(result.ok).toBe(false);
     expect(result).not.toHaveProperty('status');
   });
 
-  it('aplica el timeout a cada intento', async () => {
+  it('applies the timeout to each attempt', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn((_url: string, init: RequestInit) => {
@@ -91,7 +91,7 @@ describe('fetchJson / fetchText', () => {
     expect(result.ok ? '' : result.error).toMatch(/timeout|aborted/i);
   });
 
-  it('un presupuesto externo agotado aborta el intento en curso y no reintenta', async () => {
+  it('an exhausted external budget aborts the current attempt and does not retry', async () => {
     const fetchMock = vi.fn((_url: string, init: RequestInit) => {
       return new Promise<Response>((_resolve, reject) => {
         init.signal?.addEventListener('abort', () => reject(init.signal?.reason as Error));
@@ -109,17 +109,17 @@ describe('fetchJson / fetchText', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('con el presupuesto ya agotado no llega a pedir nada', async () => {
+  it('with the budget already exhausted it does not request anything', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
     const result = await fetchJson('https://x.test', { timeoutMs: 1000, signal: AbortSignal.abort() });
 
-    expect(result).toEqual({ ok: false, error: 'presupuesto de tiempo agotado' });
+    expect(result).toEqual({ ok: false, error: 'time budget exhausted' });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('fetchText devuelve el cuerpo como texto y envía método, cabeceras y cuerpo', async () => {
+  it('fetchText returns the body as text and sends method, headers and body', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('a,b\n1,2', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
 

@@ -2,7 +2,7 @@ import type { AssetClass } from '@sextante/core/portfolio/types';
 
 import type { Position, PositionLot } from '../db/schema.js';
 
-/** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
+/** Position for the frontend: `numeric` columns (strings in Drizzle) are exposed as `number` because the view is read-only. */
 export type PositionResponse = {
   id: string;
   ticker: string;
@@ -11,13 +11,13 @@ export type PositionResponse = {
   avgPrice: number;
   broker: string | null;
   currency: string;
-  /** Derivado: se registra pero no se valora ni entra en los totales. */
+  /** Derivative: recorded but neither valued nor included in totals. */
   isDerivative: boolean;
   assetClass: AssetClass | null;
   createdAt: string;
 };
 
-/** Lote para el frontend: `numeric` como `number` (solo lectura; los cálculos internos no pasan por aquí). */
+/** Lot for the frontend: `numeric` as `number` (read-only; internal calculations do not go through here). */
 export type PositionLotResponse = {
   id: string;
   positionId: string;
@@ -31,8 +31,8 @@ export type PositionLotResponse = {
 };
 
 /**
- * Mapeadores fila → respuesta de posiciones y lotes. Viven fuera de los servicios para que los
- * reutilicen igual REST, el MCP y el export RGPD.
+ * Row → response mappers for positions and lots. They live outside the services so REST, MCP and
+ * the GDPR (RGPD) export reuse them alike.
  */
 export function toPositionResponse(row: Position): PositionResponse {
   return {

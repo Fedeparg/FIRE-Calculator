@@ -16,16 +16,16 @@ import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.j
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
 import { fetchJson, sleep } from '../common/http.js';
 
-/** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
+/** OpenFIGI v3 endpoint (v2 EOL 2026-07-01). POST with a JSON body. */
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
-/** Sufijos de Yahoo en orden de preferencia para un europeo (EUR primero; Londres, en GBp, al final). */
+/** Yahoo suffixes in order of preference for a European investor (EUR first; London, in GBp, last). */
 const YAHOO_SUFFIXES = ['.AS', '.DE', '.MI', '.PA', '.MC', '.SW', '.L'];
 /**
- * exchCode de Bloomberg (OpenFIGI) → sufijo de Yahoo; '' = EE. UU., donde Yahoo usa el ticker
- * sin sufijo. Un ticker solo se prueba con el sufijo de la bolsa en la que OpenFIGI lo lista: el
- * mismo ticker en otra bolsa puede ser otro producto (`AMZN.AS` es un ETP sobre Amazon a ~7 €,
- * no la acción). Los códigos que no están aquí (compuestos EO/EU, basura tipo XH/XF) se ignoran.
+ * Bloomberg exchCode (OpenFIGI) → Yahoo suffix; '' = US, where Yahoo uses the bare ticker. A
+ * ticker is only tried with the suffix of the exchange where OpenFIGI lists it: the same ticker on
+ * another exchange can be another product (`AMZN.AS` is an ETP on Amazon at ~€7, not the stock).
+ * Codes not listed here (EO/EU composites, junk like XH/XF) are ignored.
  */
 const EXCHANGE_SUFFIXES: ReadonlyMap<string, string> = new Map([
   ['NA', '.AS'],
@@ -47,22 +47,22 @@ const EXCHANGE_SUFFIXES: ReadonlyMap<string, string> = new Map([
   ['UP', ''],
   ['UV', ''],
 ]);
-/** Orden de prueba de los sufijos: los europeos por preferencia y EE. UU. al final. */
+/** Order in which suffixes are tried: European ones by preference, US last. */
 const SUFFIX_ORDER = [...YAHOO_SUFFIXES, ''];
-/** Tope de candidatos a validar por consulta (acota el tráfico en un fallo de cobertura). */
+/** Cap on candidates validated per query (bounds traffic on a coverage gap). */
 const MAX_CANDIDATES = 12;
-/** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
+/** Pause between validations: avoids bursts that trigger Yahoo's 429. */
 const VALIDATION_DELAY_MS = 400;
 /**
- * Caché negativa en memoria de las consultas que no se resolvieron SIN dejar fila en
- * `instruments` (fallo transitorio, hueco de cobertura, ticker sin cotización). Sin ella, el
- * refresco horario las reintentaba contra OpenFIGI y Yahoo cada hora para siempre. Espera
- * exponencial: 1 h, 2 h, 4 h… hasta 24 h; se olvida al resolver. Se pierde al reiniciar, que es
- * aceptable: lo peor es un reintento de más.
+ * In-memory negative cache of queries that failed to resolve WITHOUT leaving a row in
+ * `instruments` (transient failure, coverage gap, ticker without a quote). Without it, the hourly
+ * refresh retried them against OpenFIGI and Yahoo every hour forever. Exponential backoff: 1 h,
+ * 2 h, 4 h… up to 24 h; forgotten once resolved. It is lost on restart, which is acceptable: the
+ * worst case is one extra retry.
  */
 const NEGATIVE_BACKOFF_BASE_MS = 60 * 60_000;
 const NEGATIVE_BACKOFF_MAX_MS = 24 * 60 * 60_000;
-/** Tope de entradas para que una avalancha de consultas basura no haga crecer la memoria. */
+/** Entry cap so a flood of junk queries does not grow memory. */
 const NEGATIVE_CACHE_MAX_ENTRIES = 1_000;
 
 interface NegativeEntry {
@@ -70,13 +70,13 @@ interface NegativeEntry {
   nextTryAt: number;
 }
 
-/** Resultado de consultar OpenFIGI por un ISIN. Distingue el "vacío" real del fallo transitorio. */
+/** Result of querying OpenFIGI for an ISIN. Tells a genuine "empty" apart from a transient failure. */
 type OpenFigiOutcome =
   | { kind: 'matches'; listings: OpenFigiListing[] }
-  | { kind: 'empty' } // OpenFIGI respondió pero sin coincidencias → no existe (cachear).
-  | { kind: 'error' }; // red / HTTP / parseo → transitorio (NO cachear, reintentar luego).
+  | { kind: 'empty' } // OpenFIGI answered with no matches → it does not exist (cache it).
+  | { kind: 'error' }; // network / HTTP / parsing → transient (do NOT cache, retry later).
 
-/** Un listado del instrumento en una bolsa, tal como lo da OpenFIGI. */
+/** A listing of the instrument on an exchange, as OpenFIGI reports it. */
 export interface OpenFigiListing {
   ticker: string;
   exchCode?: string;
@@ -87,9 +87,9 @@ interface OpenFigiResultItem {
 }
 
 /**
- * Candidatos para un ISIN: el ticker de cada listado con el sufijo de SU bolsa, en el orden de
- * `SUFFIX_ORDER`. Dentro de un mismo sufijo va primero el ticker más repetido (el listado
- * principal se repite en las sub-bolsas). Pura.
+ * Candidates for an ISIN: each listing's ticker with ITS exchange's suffix, in `SUFFIX_ORDER`
+ * order. Within the same suffix the most repeated ticker goes first (the primary listing repeats
+ * across sub-exchanges). Pure.
  */
 export function isinCandidates(listings: readonly OpenFigiListing[]): string[] {
   const found = new Map<string, { rank: number; count: number }>();
@@ -102,23 +102,22 @@ export function isinCandidates(listings: readonly OpenFigiListing[]): string[] {
     entry.count += 1;
     found.set(symbol, entry);
   }
-  // `sort` es estable: a igual sufijo y frecuencia se conserva el orden de OpenFIGI.
+  // `sort` is stable: for equal suffix and frequency, OpenFIGI's order is kept.
   return [...found.entries()]
     .sort(([, a], [, b]) => a.rank - b.rank || b.count - a.count)
     .map(([symbol]) => symbol)
     .slice(0, MAX_CANDIDATES);
 }
 
-/** Tipos de la búsqueda de Yahoo que pueden ser el instrumento de un ISIN. */
+/** Yahoo search types that can be the instrument behind an ISIN. */
 const SEARCH_TYPES = new Set<InstrumentType>(['equity', 'etf', 'fund']);
-/** Tope de resultados de la búsqueda que se validan contra la fuente. */
+/** Cap on search results validated against the source. */
 const MAX_SEARCH_CANDIDATES = 5;
 
 /**
- * Candidatos para un ISIN desde la búsqueda de Yahoo (acepta el ISIN y devuelve las
- * cotizaciones de ese instrumento): primero los mercados en euros, en el orden de
- * `YAHOO_SUFFIXES` (evita convertir divisas), luego el resto en el orden de Yahoo, que cubre
- * valores no europeos (p. ej. `.HK`). Pura.
+ * Candidates for an ISIN from Yahoo search (which accepts the ISIN and returns that instrument's
+ * listings): euro markets first, in `YAHOO_SUFFIXES` order (avoids currency conversion), then the
+ * rest in Yahoo's order, which covers non-European securities (e.g. `.HK`). Pure.
  */
 export function searchCandidates(results: readonly InstrumentSearchResult[]): string[] {
   const symbols = [
@@ -128,15 +127,15 @@ export function searchCandidates(results: readonly InstrumentSearchResult[]): st
     const index = YAHOO_SUFFIXES.findIndex((suffix) => symbol.endsWith(suffix));
     return index === -1 ? YAHOO_SUFFIXES.length : index;
   };
-  // `sort` es estable: a igual rango se conserva el orden de Yahoo.
+  // `sort` is stable: for equal rank, Yahoo's order is kept.
   return symbols.sort((a, b) => rank(a) - rank(b)).slice(0, MAX_SEARCH_CANDIDATES);
 }
 
 /**
- * Cripto que en Yahoo es un par "<T>-USD" pero cuyo ticker suelto colisiona con un valor real
- * (p. ej. "BTC" es el ETF Grayscale Bitcoin Mini Trust, ~26 US$, no Bitcoin). Red de seguridad
- * para tickers sueltos que llegan sin pasar por el buscador (datos antiguos, API/MCP): fuerza
- * el par y no cae al bare.
+ * Crypto that is a "<T>-USD" pair on Yahoo but whose bare ticker collides with a real security
+ * (e.g. "BTC" is the Grayscale Bitcoin Mini Trust ETF, ~US$26, not Bitcoin). Safety net for bare
+ * tickers that arrive without going through the search box (old data, API/MCP): it forces the pair
+ * and does not fall back to the bare ticker.
  */
 export const CRYPTO_TICKERS = new Set([
   'BTC',
@@ -171,24 +170,23 @@ export const CRYPTO_TICKERS = new Set([
   'UNI',
 ]);
 
-/** Candidatos para un ticker suelto: bare primero (US/símbolo ya completo), luego sufijos. */
+/** Candidates for a bare ticker: bare first (US/already complete symbol), then suffixes. */
 export function tickerCandidates(query: string): string[] {
-  // Si ya parece un símbolo de Yahoo (EUNL.DE, BTC-USD), no se inventan sufijos.
+  // If it already looks like a Yahoo symbol (EUNL.DE, BTC-USD), no suffixes are invented.
   if (query.includes('.') || query.includes('-')) return [query];
-  // Cripto conocida: solo el par "-USD"; mejor no resolver que cachear el instrumento equivocado.
+  // Known crypto: only the "-USD" pair; better not to resolve than to cache the wrong instrument.
   if (CRYPTO_TICKERS.has(query)) return [`${query}-USD`];
   const out = [query, ...YAHOO_SUFFIXES.map((s) => query + s)];
   return out.slice(0, MAX_CANDIDATES);
 }
 
 /**
- * Resolver ISIN/ticker → símbolo de Yahoo. Para un ISIN prueba primero la búsqueda de Yahoo y
- * luego OpenFIGI; un candidato gana solo si cotiza de verdad. La búsqueda va primero porque
- * OpenFIGI devuelve todos los listados (con tickers que Yahoo no conoce, como "VAPUUSD") y solo
- * se probaban sufijos europeos, dejando sin precio a ETFs con ticker por mercado y a valores
- * asiáticos. Cachea en `instruments` las resoluciones y los "no encontrado" reales; los fallos
- * transitorios no, para no bloquear un símbolo válido por un rate-limit. Ver
- * `_local/datos-inversiones-api.md`.
+ * ISIN/ticker → Yahoo symbol resolver. For an ISIN it tries Yahoo search first and then OpenFIGI;
+ * a candidate wins only if it actually has a quote. Search goes first because OpenFIGI returns
+ * every listing (with tickers Yahoo does not know, such as "VAPUUSD") and only European suffixes
+ * were tried, leaving ETFs with per-market tickers and Asian securities without a price. It caches
+ * resolutions and genuine "not found" results in `instruments`; transient failures are not cached,
+ * so a rate limit does not block a valid symbol. See `_local/datos-inversiones-api.md`.
  */
 @Injectable()
 export class OpenFigiSymbolResolver implements SymbolResolver {
@@ -228,7 +226,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     if (!query) return null;
 
     const cached = await this.lookup(query);
-    if (cached !== undefined) return cached; // hit: símbolo resuelto o null (no encontrado).
+    if (cached !== undefined) return cached; // hit: resolved symbol or null (not found).
 
     const backoff = this.negative.get(query);
     if (backoff && Date.now() < backoff.nextTryAt) return null;
@@ -239,11 +237,11 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     return symbol;
   }
 
-  /** Apunta un fallo sin fila en caché y aplaza el siguiente intento (espera exponencial). */
+  /** Records a failure with no cache row and postpones the next attempt (exponential backoff). */
   private recordFailure(query: string): void {
     const failures = (this.negative.get(query)?.failures ?? 0) + 1;
     const waitMs = Math.min(NEGATIVE_BACKOFF_BASE_MS * 2 ** (failures - 1), NEGATIVE_BACKOFF_MAX_MS);
-    // Reinsertar la mueve al final: el `Map` conserva el orden, así que la primera es la más antigua.
+    // Reinserting moves it to the end: `Map` keeps insertion order, so the first entry is the oldest.
     this.negative.delete(query);
     this.negative.set(query, { failures, nextTryAt: Date.now() + waitMs });
     if (this.negative.size > NEGATIVE_CACHE_MAX_ENTRIES) {
@@ -252,10 +250,10 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     }
   }
 
-  /** Resolución contra las fuentes externas de una consulta sin fila en caché. */
+  /** Resolution against the external sources of a query with no cache row. */
   private async resolveUncached(query: string): Promise<string | null> {
     if (isIsin(query)) {
-      // La búsqueda nunca lanza: ante un fallo devuelve [] y se sigue con OpenFIGI.
+      // Search never throws: on failure it returns [] and we move on to OpenFIGI.
       const searched = await this.firstThatPrices(searchCandidates(await this.search.search(query)));
       if (searched) {
         await this.cache(query, searched, 'yahoo_search');
@@ -263,7 +261,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       }
 
       const outcome = await this.mapIsin(query);
-      if (outcome.kind === 'error') return null; // transitorio: no cachear, reintentar.
+      if (outcome.kind === 'error') return null; // transient: do not cache, retry.
       if (outcome.kind === 'empty') {
         await this.cache(query, null, 'not_found');
         return null;
@@ -273,21 +271,21 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
         await this.cache(query, symbol, 'openfigi');
         return symbol;
       }
-      // Coincidencias sin cotización: hueco de cobertura o 429. No se cachea; se reintenta.
-      this.logger.warn(`OpenFIGI ${query}: ${outcome.listings.length} listados, ninguno cotiza`);
+      // Matches without a quote: coverage gap or 429. Not cached; retried.
+      this.logger.warn(`OpenFIGI ${query}: ${outcome.listings.length} listings, none has a quote`);
       return null;
     }
 
-    // Ticker suelto: lo normal es que ya sea un símbolo de Yahoo.
+    // Bare ticker: usually it is already a Yahoo symbol.
     const symbol = await this.firstThatPrices(tickerCandidates(query));
     if (symbol) {
       await this.cache(query, symbol, 'identity');
       return symbol;
     }
-    return null; // sin cotización: no se cachea (typo o transitorio).
+    return null; // no quote: not cached (typo or transient).
   }
 
-  /** Primer candidato que cotiza en la fuente (el orden es la prioridad), o null. */
+  /** First candidate with a quote at the source (order is priority), or null. */
   private async firstThatPrices(candidates: string[]): Promise<string | null> {
     for (const [i, candidate] of candidates.entries()) {
       if (i > 0) await sleep(VALIDATION_DELAY_MS);
@@ -297,7 +295,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     return null;
   }
 
-  /** Lee la caché. `undefined` = no hay fila (miss); `null` = no encontrado; string = símbolo. */
+  /** Reads the cache. `undefined` = no row (miss); `null` = not found; string = symbol. */
   private async lookup(query: string): Promise<string | null | undefined> {
     const rows = await this.db
       .select({ symbol: instruments.symbol })
@@ -307,7 +305,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     return rows[0]?.symbol;
   }
 
-  /** Upsert de la resolución (permanente). `symbol` null cachea un "no encontrado" real. */
+  /** Upsert of the resolution (permanent). A null `symbol` caches a genuine "not found". */
   private async cache(query: string, symbol: string | null, source: string): Promise<void> {
     await this.db
       .insert(instruments)
@@ -318,7 +316,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       });
   }
 
-  /** Consulta OpenFIGI v3 por ISIN. Separa "sin coincidencias" (cachear) de "fallo" (reintentar). */
+  /** Queries OpenFIGI v3 by ISIN. Separates "no matches" (cache) from "failure" (retry). */
   private async mapIsin(isin: string): Promise<OpenFigiOutcome> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.apiKey) headers['X-OPENFIGI-APIKEY'] = this.apiKey;
@@ -336,7 +334,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     const item = Array.isArray(body) ? body[0] : undefined;
     const data = item?.data;
     if (!data || data.length === 0) return { kind: 'empty' };
-    // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
+    // OpenFIGI sends `null` for fields it lacks: normalized to absent.
     const listings = data.flatMap(({ ticker, exchCode }) =>
       typeof ticker === 'string' && ticker
         ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]

@@ -9,12 +9,12 @@ import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 
 /**
- * Endpoints que respaldan la pantalla de consentimiento OAuth (la UI vive en Next:
- * `/oauth/consent`). El provider redirige el navegador a esa página; al aprobar, la página
- * registra el consentimiento aquí (sesión obligatoria) y reanuda el flujo de `/authorize`.
+ * Endpoints backing the OAuth consent screen (the UI lives in Next: `/oauth/consent`). The
+ * provider redirects the browser to that page; on approval, the page records the consent here
+ * (session required) and resumes the `/authorize` flow.
  *
- * Todo exige sesión iniciada (JwtAuthGuard) y el `userId` se lee siempre del JWT: un usuario
- * no puede conceder consentimiento en nombre de otro.
+ * Everything requires a signed-in session (JwtAuthGuard) and the `userId` is always read from the
+ * JWT: a user cannot grant consent on behalf of someone else.
  */
 @Controller('oauth/consent')
 @UseGuards(JwtAuthGuard)
@@ -25,9 +25,9 @@ export class ConsentController {
   ) {}
 
   /**
-   * Datos del cliente para la pantalla: nombre legible, URL y sus `redirect_uris` registradas.
-   * La pantalla solo devuelve el control (al denegar) a una de esas URIs: la query de
-   * `/oauth/consent` la controla quien envía el enlace y no es de fiar.
+   * Client data for the screen: readable name, URL and its registered `redirect_uris`. The
+   * screen only hands control back (on denial) to one of those URIs: the `/oauth/consent` query is
+   * controlled by whoever sends the link and cannot be trusted.
    */
   @Get('client/:clientId')
   async clientInfo(
@@ -45,9 +45,9 @@ export class ConsentController {
   }
 
   /**
-   * Registra el consentimiento del usuario para el cliente y los scopes indicados. 404 si el
-   * cliente no está registrado: `oauth_grants.client_id` no tiene FK, y sin esta comprobación se
-   * guardarían consentimientos huérfanos para ids inventados.
+   * Records the user's consent for the given client and scopes. 404 if the client is not
+   * registered: `oauth_grants.client_id` has no FK, and without this check orphan consents would be
+   * stored for made-up ids.
    */
   @Post()
   @HttpCode(HttpStatus.OK)

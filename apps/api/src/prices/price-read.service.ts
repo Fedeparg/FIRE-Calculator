@@ -14,33 +14,33 @@ import type { DatabaseOrTransaction } from '../positions/position-access.js';
 import { FX_CURRENCY_BY_SYMBOL, FX_QUOTE } from './fx-symbols.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 
-/** Precio de un instrumento tal y como lo consume el frontend (lectura desde nuestra DB). */
+/** Price of an instrument as the frontend consumes it (read from our DB). */
 export interface PriceInfo {
   symbol: string;
   close: number;
   currency: string;
   date: string;
-  /** Instante (ISO) de la lectura: el refresco intradía reescribe la fila del día. */
+  /** Instant (ISO) of the fetch: the intraday refresh rewrites the day's row. */
   fetchedAt: string;
-  /** Cierre anterior a `date` (`null` si es el primer dato), para la variación del día. */
+  /** Close before `date` (`null` for the first data point), for the day's change. */
   previousClose: number | null;
 }
 
 /**
- * Tasas de cambio para el total agregado de la cartera. `rates[CCY]` = USD por unidad de
- * esa divisa (USD = 1), de modo que convertir A→B es `importe * rates[A] / rates[B]`.
+ * Exchange rates for the aggregated portfolio total. `rates[CCY]` = USD per unit of that
+ * currency (USD = 1), so converting A→B is `amount * rates[A] / rates[B]`.
  */
 export interface FxRates {
   rates: Record<string, number>;
-  /** Fecha (YYYY-MM-DD) del dato más reciente entre las tasas, o null si no hay ninguna. */
+  /** Date (YYYY-MM-DD) of the most recent rate, or null if there are none. */
   asOf: string | null;
 }
 
 /**
- * LECTURAS de la caché de precios (`instrument_prices`, `instrument_splits`): último cierre, tasas
- * FX y series para reconstruir el histórico. Nunca llama a la fuente externa ni resuelve símbolos
- * nuevos (solo la caché del resolutor): es la ruta caliente de la valoración, los snapshots y las
- * alertas. Lo que trae datos de fuera vive en `PriceHistoryService`.
+ * READS from the price cache (`instrument_prices`, `instrument_splits`): latest close, FX rates
+ * and series to rebuild the history. It never calls the external source nor resolves new symbols
+ * (only the resolver's cache): it is the hot path of valuation, snapshots and alerts. Whatever
+ * fetches external data lives in `PriceHistoryService`.
  */
 @Injectable()
 export class PriceReadService {
@@ -49,7 +49,7 @@ export class PriceReadService {
     @Inject(SYMBOL_RESOLVER) private readonly resolver: SymbolResolver,
   ) {}
 
-  /** Último precio cacheado de cada ticker pedido, indexado por el ticker original. */
+  /** Latest cached price of each requested ticker, keyed by the original ticker. */
   async getPrices(tickers: string[]): Promise<Map<string, PriceInfo>> {
     const tickerToSymbol = await this.resolveCachedTickers(tickers);
     const latest = await this.latestBySymbol([...new Set(tickerToSymbol.values())]);
@@ -62,7 +62,7 @@ export class PriceReadService {
     return out;
   }
 
-  /** Tasas FX cacheadas (USD por unidad, USD = 1); una divisa sin tasa no aparece y el frontend excluye esas posiciones. */
+  /** Cached FX rates (USD per unit, USD = 1); a currency without a rate is absent and the frontend excludes those positions. */
   async getFxRates(): Promise<FxRates> {
     const rates: Record<string, number> = { [FX_QUOTE]: 1 };
     let asOf: string | null = null;
@@ -78,7 +78,7 @@ export class PriceReadService {
     return { rates, asOf };
   }
 
-  /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa), en una consulta. */
+  /** Ticker → resolved symbol, from the cache only (never triggers OpenFIGI or the external source), in one query. */
   async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
     const resolved = await this.resolver.resolveManyCached(tickers);
     const out = new Map<string, string>();
@@ -89,9 +89,9 @@ export class PriceReadService {
   }
 
   /**
-   * Series de cierres, FX y splits desde `from` para `backfillUser`. `tickerToSymbol` llega ya
-   * resuelto para no pedir otra conexión dentro de una transacción. Se leen
-   * `MAX_CARRY_FORWARD_DAYS` días de más para que el primer día arrastre el cierre anterior.
+   * Close, FX and split series since `from` for `backfillUser`. `tickerToSymbol` arrives already
+   * resolved so no other connection is requested inside a transaction. `MAX_CARRY_FORWARD_DAYS`
+   * extra days are read so the first day can carry forward the previous close.
    */
   async getSeriesSince(
     tickerToSymbol: ReadonlyMap<string, string>,
@@ -134,8 +134,8 @@ export class PriceReadService {
       if (series) fx[currency] = series.map(({ date, close }) => ({ date, rate: close }));
     }
 
-    // Los splits se leen enteros, no desde `from`: un lote anterior a la ventana puede ser
-    // anterior a un split de dentro. Son pocas filas por símbolo.
+    // Splits are read in full, not from `from`: a lot before the window can predate a split
+    // inside it. There are few rows per symbol.
     const splitRows =
       tickerToSymbol.size === 0
         ? []
@@ -159,10 +159,10 @@ export class PriceReadService {
   }
 
   /**
-   * Último cierre conocido por símbolo (y el anterior, para `previousClose`). Es la ruta caliente
-   * (precios, FX, valoración, snapshots, alertas): `ROW_NUMBER()` por símbolo deja que Postgres
-   * lea solo las DOS filas más recientes de cada uno por la PK `(symbol, date)`, en vez de traer
-   * años de histórico para quedarse con dos.
+   * Latest known close per symbol (and the previous one, for `previousClose`). This is the hot
+   * path (prices, FX, valuation, snapshots, alerts): `ROW_NUMBER()` per symbol lets Postgres read
+   * only the TWO most recent rows of each through the PK `(symbol, date)`, instead of fetching
+   * years of history to keep two.
    */
   private async latestBySymbol(symbols: string[]): Promise<Map<string, PriceInfo>> {
     const out = new Map<string, PriceInfo>();
@@ -184,8 +184,8 @@ export class PriceReadService {
       .as('ranked');
     const rows = await this.db.select().from(ranked).where(lte(ranked.rank, 2)).orderBy(ranked.symbol, ranked.rank);
 
-    // Por símbolo y de más reciente a más antigua: la primera fila es el precio vigente y la
-    // segunda (si la hay), el cierre anterior. La PK impide dos filas con la misma fecha.
+    // Per symbol, newest to oldest: the first row is the current price and the second (if any)
+    // the previous close. The PK rules out two rows with the same date.
     for (const row of rows) {
       const current = out.get(row.symbol);
       if (!current) {

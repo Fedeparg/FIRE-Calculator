@@ -4,7 +4,7 @@ import { NOTIFICATION_LOCALES } from '@sextante/core/contracts';
 
 export const updateNotificationSettingsSchema = z.strictObject({
   fireAlertsEnabled: z.boolean(),
-  /** Idioma de los emails: el de la interfaz desde la que se activan. */
+  /** Email language: that of the UI the alerts were enabled from. */
   locale: z.enum(NOTIFICATION_LOCALES),
 });
 

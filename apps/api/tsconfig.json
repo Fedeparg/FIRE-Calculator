@@ -17,14 +17,14 @@
     "strict": true,
     "strictNullChecks": true,
     "noImplicitAny": true,
-    // `lista[i]` se tipa `T | undefined`. Un INSERT … RETURNING o un COUNT siempre devuelven una
-    // fila: ahí se usa `firstItem` de `@sextante/core/arrays`, que lanza si la invariante se rompe.
+    // `list[i]` is typed `T | undefined`. An INSERT … RETURNING or a COUNT always returns a row:
+    // there we use `firstItem` from `@sextante/core/arrays`, which throws if the invariant breaks.
     "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true
   },
-  // `tsc --noEmit` (typecheck) cubre TODO, incluidos los tests y sus utilidades.
-  // El build de producción usa `tsconfig.build.json`, que excluye los tests.
+  // `tsc --noEmit` (typecheck) covers EVERYTHING, including the tests and their helpers.
+  // The production build uses `tsconfig.build.json`, which excludes the tests.
   "include": ["src/**/*.ts", "test/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

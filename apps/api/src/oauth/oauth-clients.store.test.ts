@@ -13,7 +13,7 @@ const CLIENT: OAuthClientInformationFull = {
   redirect_uris: ['http://localhost:9999/callback'],
 };
 
-describe('OAuthClientsStore (integración con Postgres)', () => {
+describe('OAuthClientsStore (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let store: OAuthClientsStore;
@@ -34,7 +34,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
   const readClient = async (clientId: string) =>
     firstItem(await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)));
 
-  it('registra un cliente nuevo con lastUsedAt a null', async () => {
+  it('registers a new client with lastUsedAt set to null', async () => {
     await store.registerClient(CLIENT);
 
     const row = await readClient(CLIENT.client_id);
@@ -42,7 +42,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
     expect(row.lastUsedAt).toBeNull();
   });
 
-  it('touch escribe lastUsedAt (es de lo que depende el reaper para no purgar clientes vivos)', async () => {
+  it('touch writes lastUsedAt (what the reaper relies on to avoid purging live clients)', async () => {
     await store.registerClient(CLIENT);
     const before = Date.now();
 
@@ -53,11 +53,11 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
     expect(row.lastUsedAt?.getTime()).toBeGreaterThanOrEqual(before - 1_000);
   });
 
-  it('touch de un cliente inexistente no lanza (se invoca fire-and-forget)', async () => {
+  it('touch on a missing client does not throw (it is called fire-and-forget)', async () => {
     await expect(store.touch('no-existe')).resolves.toBeUndefined();
   });
 
-  it('el re-registro actualiza los datos sin borrar la fila', async () => {
+  it('re-registration updates the data without deleting the row', async () => {
     await store.registerClient(CLIENT);
     await store.touch(CLIENT.client_id);
 

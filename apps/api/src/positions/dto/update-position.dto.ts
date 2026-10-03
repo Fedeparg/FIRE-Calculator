@@ -8,7 +8,7 @@ import {
   trimmedText,
 } from '../../common/dto/primitives.js';
 
-/** Cuerpo de PATCH /api/positions/:id: campos opcionales, validados como en el alta (`ticker` y `broker` no pueden quedar vacíos). */
+/** Body of PATCH /api/positions/:id: optional fields, validated as on creation (`ticker` and `broker` cannot be left empty). */
 export const updatePositionSchema = z.strictObject({
   ticker: trimmedText(20).min(1).optional(),
   name: trimmedText(100).optional(),

@@ -1,12 +1,12 @@
 /**
- * Traduce lo tecleado (símbolo o ISIN) al símbolo de la fuente de precios. `resolve` llama
- * a OpenFIGI (refresco diario); `resolveCached` y `resolveManyCached` solo miran la caché,
- * para que cargar la cartera no genere tráfico externo.
+ * Maps what the user typed (symbol or ISIN) to the price source's symbol. `resolve` calls
+ * OpenFIGI (daily refresh); `resolveCached` and `resolveManyCached` only read the cache, so that
+ * loading the portfolio generates no external traffic.
  */
 export interface SymbolResolver {
   resolve(tickerOrIsin: string): Promise<string | null>;
   resolveCached(tickerOrIsin: string): Promise<string | null>;
-  /** Lo mismo que `resolveCached` para muchos a la vez, en UNA consulta: entrada → símbolo (o null). */
+  /** Same as `resolveCached` for many at once, in ONE query: input → symbol (or null). */
   resolveManyCached(tickersOrIsins: readonly string[]): Promise<Map<string, string | null>>;
 }
 

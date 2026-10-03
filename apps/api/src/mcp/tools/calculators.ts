@@ -7,9 +7,9 @@ import { jsonResult } from '../mcp-results.js';
 import type { ToolRunner } from './tool-runner.js';
 
 /**
- * Calculadoras: dos tools genéricas sobre el registro de `calculator-tools.ts`. Son puras (sin
- * datos del usuario) y de solo lectura. Cada ejecución se audita como `calculate:<slug>`
- * (solo si el slug existe: la columna es de longitud fija y el slug lo escribe el cliente).
+ * Calculators: two generic tools over the `calculator-tools.ts` registry. They are pure (no user
+ * data) and read-only. Each run is audited as `calculate:<slug>` (only if the slug exists: the
+ * column has a fixed length and the client writes the slug).
  */
 export function registerCalculatorTools(server: McpServer, runner: ToolRunner): void {
   server.registerTool(

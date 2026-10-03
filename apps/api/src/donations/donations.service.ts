@@ -6,13 +6,13 @@ import type { Env } from '../config/env.js';
 import { STRIPE_CLIENT } from './donations.constants.js';
 
 /**
- * Donaciones ("invítame a un café") vía Stripe Checkout.
+ * Donations ("buy me a coffee") via Stripe Checkout.
  *
- * Flujo: el cliente pide una sesión de Checkout con un importe; devolvemos la `url`
- * alojada de Stripe y el navegador redirige allí. No se persiste nada (no hay tabla
- * de donaciones): el pago no otorga acceso ni desbloquea features, así que no hace
- * falta webhook. Cuando se quiera registrar donaciones, el sitio natural para el
- * webhook `checkout.session.completed` es aquí.
+ * Flow: the client requests a Checkout session for an amount; we return Stripe's hosted
+ * `url` and the browser redirects there. Nothing is persisted (there is no donations
+ * table): paying grants no access and unlocks no features, so no webhook is needed. If
+ * donations ever need to be recorded, this is the natural home for the
+ * `checkout.session.completed` webhook.
  */
 @Injectable()
 export class DonationsService {
@@ -21,14 +21,14 @@ export class DonationsService {
     private readonly config: ConfigService<Env, true>,
   ) {}
 
-  /** True si Stripe está configurado (hay STRIPE_SECRET_KEY). */
+  /** True when Stripe is configured (STRIPE_SECRET_KEY is set). */
   get enabled(): boolean {
     return this.stripe !== null;
   }
 
   /**
-   * Crea una sesión de Checkout de pago único por `amountEur` euros y devuelve la URL
-   * alojada de Stripe a la que redirigir.
+   * Creates a one-off payment Checkout session for `amountEur` euros and returns the
+   * Stripe-hosted URL to redirect to.
    */
   async createCheckoutUrl(amountEur: number, locale: 'es' | 'en'): Promise<string> {
     if (!this.stripe) {
@@ -36,7 +36,7 @@ export class DonationsService {
     }
 
     const appUrl = this.config.getOrThrow('APP_URL', { infer: true });
-    // El locale por defecto (es) no lleva prefijo en la URL; en lleva /en.
+    // The default locale (es) has no URL prefix; en uses /en.
     const base = locale === 'en' ? `${appUrl}/en` : appUrl;
 
     const session = await this.stripe.checkout.sessions.create({

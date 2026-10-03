@@ -5,17 +5,17 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
 
-// `provide` publica valores serializables a los workers (que los leen con
-// `inject`). Se tipa inline en vez de importar `TestProject` de `vitest/node`
-// porque aquí se desestructura el método: tiparlo como la clase invitaría a
-// pasarlo suelto y perder el `this`.
+// `provide` publishes serialisable values to the workers (which read them with
+// `inject`). It is typed inline instead of importing `TestProject` from `vitest/node`
+// because the method is destructured here: typing it as the class would invite
+// passing it around detached and losing `this`.
 type Provide = (key: 'databaseUrl', value: string) => void;
 
 /**
- * Levanta un PostgreSQL efímero (misma versión mayor que producción) una sola vez
- * para toda la suite, aplica las migraciones reales de `./drizzle` y publica la
- * URL de conexión a los tests con `provide` (los workers la leen con `inject`).
- * Al terminar, para y elimina el contenedor.
+ * Starts an ephemeral PostgreSQL (same major version as production) once for the
+ * whole suite, applies the real migrations from `./drizzle` and publishes the
+ * connection URL to the tests with `provide` (the workers read it with `inject`).
+ * At the end, it stops and removes the container.
  */
 export default async function setup({ provide }: { provide: Provide }) {
   const container = await new PostgreSqlContainer('postgres:17-alpine').start();

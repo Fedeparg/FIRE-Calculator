@@ -25,22 +25,22 @@ import {
   type InstrumentGroup,
 } from './trade-republic-import.model.js';
 
-/** Tope de ISINs distintos: un export real tiene decenas; evita un `IN (...)` descomunal desde un fichero malicioso. */
+/** Cap on distinct ISINs: a real export has dozens; prevents a huge `IN (...)` from a malicious file. */
 const MAX_INSTRUMENTS = 2_000;
-/** Por lotes: un export grande no debe generar un IN de miles de parámetros. */
+/** In batches: a large export must not produce an IN with thousands of parameters. */
 const ID_BATCH_SIZE = 500;
 
-/** Instrumentos del fichero ya separados en nuevo/duplicado, con su posición de Trade Republic si existe. */
+/** The file's instruments, already split into new/duplicate, with their Trade Republic position if any. */
 export type LoadedInstruments = {
   groups: InstrumentGroup[];
-  /** Posición existente por ISIN. */
+  /** Existing position by ISIN. */
   existing: Map<string, Position>;
 };
 
 /**
- * Lado de LECTURA de la importación de Trade Republic: agrupa las operaciones por ISIN, separa lo
- * ya importado y calcula la vista previa (qué haría la confirmación) sin escribir nada. La
- * confirmación reutiliza `loadInstruments` para partir exactamente del mismo reparto.
+ * READ side of the Trade Republic import: groups the trades by ISIN, separates what was already
+ * imported and computes the preview (what the confirm would do) without writing anything. The
+ * confirm reuses `loadInstruments` to start from exactly the same split.
  */
 @Injectable()
 export class TradeRepublicImportPlanner {
@@ -49,7 +49,7 @@ export class TradeRepublicImportPlanner {
     private readonly income: IncomeService,
   ) {}
 
-  /** Plan de importación: qué posiciones se crean o amplían, con qué resultado y qué cobros entran. */
+  /** Import plan: which positions are created or extended, with what result, and which payments go in. */
   async plan(userId: string, parsed: ImportParseResult): Promise<ImportPlan> {
     const { groups, existing } = await this.loadInstruments(userId, parsed.trades);
     const lotsByPosition = await this.selectLotsByPosition([...existing.values()]);
@@ -90,15 +90,15 @@ export class TradeRepublicImportPlanner {
   }
 
   /**
-   * Agrupa las operaciones por ISIN (separando lo ya importado) y carga en una sola consulta las
-   * posiciones de Trade Republic de esos ISIN, en vez de una (o dos) por instrumento.
+   * Groups the trades by ISIN (separating what was already imported) and loads the Trade Republic
+   * positions of those ISINs in a single query, instead of one (or two) per instrument.
    */
   async loadInstruments(userId: string, trades: readonly ImportedTrade[]): Promise<LoadedInstruments> {
     const groups = await this.groupByInstrument(userId, trades);
     return { groups, existing: await this.findExistingPositions(userId, groups) };
   }
 
-  /** Qué cobros del fichero se crearían. */
+  /** Which income payments from the file would be created. */
   private async planIncome(userId: string, items: readonly ImportedIncome[]): Promise<ImportIncomeSummary> {
     const known = await this.income.findImportedIds(userId, items.map(incomeExternalIdOf));
     const fresh = items.filter((item) => !known.has(incomeExternalIdOf(item)));
@@ -109,7 +109,7 @@ export class TradeRepublicImportPlanner {
     };
   }
 
-  /** Agrupa por ISIN y separa lo ya importado de lo nuevo. */
+  /** Groups by ISIN and separates what was already imported from what is new. */
   private async groupByInstrument(userId: string, trades: readonly ImportedTrade[]): Promise<InstrumentGroup[]> {
     const isins = new Set(trades.map((trade) => trade.isin));
     if (isins.size > MAX_INSTRUMENTS) {
@@ -129,7 +129,7 @@ export class TradeRepublicImportPlanner {
         fresh: [],
         duplicates: 0,
       };
-      // Las operaciones llegan ordenadas: el nombre y la clase de la ÚLTIMA son los vigentes.
+      // Trades arrive sorted: the name and class of the LAST one are the current ones.
       group.name = trade.name || group.name;
       group.assetClass = trade.assetClass;
       if (known.has(externalIdOf(trade))) group.duplicates++;
@@ -139,7 +139,7 @@ export class TradeRepublicImportPlanner {
     return [...groups.values()];
   }
 
-  /** `external_id` de las operaciones del fichero que el usuario ya tiene importadas. */
+  /** `external_id`s of the file's trades that the user has already imported. */
   private async findImportedIds(userId: string, trades: readonly ImportedTrade[]): Promise<Set<string>> {
     const known = new Set<string>();
     const ids = trades.map(externalIdOf);
@@ -196,7 +196,7 @@ export class TradeRepublicImportPlanner {
   }
 }
 
-/** Simula la confirmación con el mismo agregado que el recálculo real, para que vista previa y resultado no discrepen. */
+/** Simulates the confirm with the same aggregate as the real recompute, so preview and result never disagree. */
 function simulate(
   currentLots: readonly PositionLot[],
   fresh: readonly ImportedTrade[],
@@ -223,7 +223,7 @@ function simulate(
   }
 }
 
-/** Filas descartadas del fichero, agrupadas por motivo (la más frecuente primero). */
+/** Rows skipped from the file, grouped by reason (most frequent first). */
 export function summarizeSkipped(parsed: ImportParseResult): SkippedSummary[] {
   const counts = new Map<ImportSkipReason, number>();
   for (const row of parsed.skipped) counts.set(row.reason, (counts.get(row.reason) ?? 0) + 1);

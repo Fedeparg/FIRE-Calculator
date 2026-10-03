@@ -4,13 +4,13 @@ import type { Request } from 'express';
 import type { SessionUser } from './auth.service.js';
 import { SessionService } from './session.service.js';
 
-/** Petición con el usuario autenticado adjunto. */
+/** Request with the authenticated user attached. */
 export type AuthedRequest = Request & { user: SessionUser };
 
 /**
- * Protege rutas exigiendo una cookie de sesión válida (ver `SessionService.resolve`: firma,
- * caducidad y usuario que sigue existiendo). Adjunta el usuario a `request.user`. La
- * autorización se decide siempre en el servidor.
+ * Protects routes by requiring a valid session cookie (see `SessionService.resolve`: signature,
+ * expiry and a user that still exists). Attaches the user to `request.user`. Authorisation is
+ * always decided on the server.
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {

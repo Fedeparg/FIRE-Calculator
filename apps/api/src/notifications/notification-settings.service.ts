@@ -9,7 +9,7 @@ import { savedScenarios, userNotificationSettings } from '../db/schema.js';
 const asLocale = (value: string): NotificationLocale => (value === 'en' ? 'en' : 'es');
 
 /**
- * Preferencias de notificación por email. Sin fila, todo desactivado: las alertas son opt-in.
+ * Email notification preferences. Without a row, everything is off: alerts are opt-in.
  */
 @Injectable()
 export class NotificationSettingsService {
@@ -29,9 +29,9 @@ export class NotificationSettingsService {
   }
 
   /**
-   * Activa o desactiva las alertas y fija el idioma. Al ACTIVARLAS (si antes no lo estaban) se
-   * borra el último hito avisado: la siguiente evaluación toma el progreso de ese momento como
-   * referencia sin enviar nada, en vez de avisar de un hito que se había pasado hace tiempo.
+   * Enables or disables the alerts and sets the language. When ENABLING them (if they were off)
+   * the last notified milestone is cleared: the next evaluation takes the progress at that moment as
+   * the reference without sending anything, instead of notifying a milestone passed long ago.
    */
   async update(
     userId: string,
@@ -46,14 +46,14 @@ export class NotificationSettingsService {
           fireAlertsEnabled: input.fireAlertsEnabled,
           locale: input.locale,
           updatedAt: new Date(),
-          // Solo se conserva el hito si ya estaban activadas; si no, se vuelve a tomar referencia.
+          // The milestone is only kept if alerts were already on; otherwise the reference is taken again.
           lastFireMilestone: sql`CASE WHEN ${userNotificationSettings.fireAlertsEnabled} THEN ${userNotificationSettings.lastFireMilestone} ELSE NULL END`,
         },
       });
     return this.get(userId);
   }
 
-  /** Baja desde el enlace del email. Idempotente; sin fila no hay nada que desactivar. */
+  /** Unsubscribe from the email link. Idempotent; without a row there is nothing to disable. */
   async unsubscribe(userId: string): Promise<void> {
     await this.db
       .update(userNotificationSettings)
@@ -61,7 +61,7 @@ export class NotificationSettingsService {
       .where(eq(userNotificationSettings.userId, userId));
   }
 
-  /** Escenario FIRE más reciente del usuario (el objetivo que vigilan las alertas). */
+  /** The user's most recent FIRE scenario (the goal the alerts watch). */
   async latestGoalInputs(
     userId: string,
   ): Promise<{ id: string; name: string; updatedAt: Date; inputs: Record<string, unknown> } | null> {

@@ -4,31 +4,31 @@ import type { Database } from '../src/db/database.module.js';
 import { positions, type incomeEvents, type positionLots } from '../src/db/schema.js';
 
 /**
- * Fábricas de datos y dobles para los tests de la API. Las `make*` devuelven la fila a insertar
- * con valores por defecto razonables (cada test sobrescribe solo lo que le importa); las `seed*`
- * además la insertan y devuelven la fila guardada.
+ * Data factories and test doubles for the API tests. The `make*` helpers return the row to insert
+ * with sensible defaults (each test overrides only what it cares about); the `seed*` helpers also
+ * insert it and return the stored row.
  */
 
 type NewPosition = typeof positions.$inferInsert;
 type NewLot = typeof positionLots.$inferInsert;
 type NewIncome = typeof incomeEvents.$inferInsert;
 
-/** Posición vacía de `userId` (la foto real la recalculan los lotes). */
+/** Empty position for `userId` (the lots recompute the real state). */
 export function makePosition(userId: string, overrides: Partial<NewPosition> = {}): NewPosition {
   return { userId, ticker: 'IWDA', quantity: '0', avgPrice: '0', ...overrides };
 }
 
-/** Compra de una unidad a 100 el 2 de enero de 2026. */
+/** Purchase of one unit at 100 on 2 January 2026. */
 export function makeLot(userId: string, positionId: string, overrides: Partial<NewLot> = {}): NewLot {
   return { userId, positionId, kind: 'buy', quantity: '1', price: '100', tradedAt: '2026-01-02', ...overrides };
 }
 
-/** Dividendo manual en euros de 1 € íntegro, sin retenciones. */
+/** Manual dividend in euros of €1 gross, with no withholding. */
 export function makeIncome(userId: string, overrides: Partial<NewIncome> = {}): NewIncome {
   return { userId, kind: 'dividend', paidAt: '2025-08-06', gross: '1', source: 'manual', ...overrides };
 }
 
-/** Inserta una posición (ver `makePosition`) y devuelve la fila guardada. */
+/** Inserts a position (see `makePosition`) and returns the stored row. */
 export async function seedPosition(
   db: Database,
   userId: string,
@@ -38,8 +38,8 @@ export async function seedPosition(
 }
 
 /**
- * Doble de prueba: un objeto que implementa solo lo que usa el test, tipado como la dependencia
- * real. Es el ÚNICO sitio con ese cast: así se ve qué tests trabajan con dobles parciales.
+ * Test double: an object implementing only what the test uses, typed as the real dependency.
+ * It is the ONLY place with that cast, which makes it visible which tests use partial doubles.
  */
 export function stub<T>(implementation: object): T {
   return implementation as T;

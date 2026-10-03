@@ -5,9 +5,9 @@ import { SavedScenariosService } from './saved-scenarios.service.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
- * Escenarios guardados de calculadora en la cuenta del usuario. Importa `SessionModule`
- * para que `JwtAuthGuard` valide la cookie de sesión. Se exporta el
- * servicio para la exportación RGPD (`GET /api/auth/account/export`).
+ * Saved calculator scenarios in the user's account. Imports `SessionModule` so that
+ * `JwtAuthGuard` validates the session cookie. The service is exported for the GDPR export
+ * (`GET /api/auth/account/export`).
  */
 @Module({
   imports: [SessionModule],

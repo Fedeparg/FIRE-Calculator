@@ -25,7 +25,7 @@ export type ReadToolDeps = {
   income: IncomeService;
 };
 
-/** Tools de solo lectura (scope `portfolio:read`). */
+/** Read-only tools (scope `portfolio:read`). */
 export function registerReadTools(server: McpServer, runner: ToolRunner, deps: ReadToolDeps): void {
   server.registerTool(
     'list_positions',
@@ -102,8 +102,8 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
     },
     ({ query }) =>
       runner.run('search_instruments', async () => {
-        // Mismo proveedor que usa `GET /api/instruments/search`: el LLM y la UI ven
-        // exactamente los mismos resultados.
+        // Same provider as `GET /api/instruments/search`: the LLM and the UI see exactly the
+        // same results.
         const results = await deps.instruments.search(query);
         return jsonResult({ results });
       }),

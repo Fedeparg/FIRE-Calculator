@@ -13,9 +13,9 @@ import { YahooInstrumentSearchProvider } from './yahoo-search.provider.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
- * Módulo de precios: fuente, resolver y buscador se inyectan por token, así que cambiar de
- * proveedor es sustituir la clase aquí. El cron diario vive en `jobs/DailyJobsModule` porque
- * encadena precios y snapshots.
+ * Prices module: source, resolver and search are injected by token, so switching providers means
+ * swapping the class here. The daily cron lives in `jobs/DailyJobsModule` because it chains prices
+ * and snapshots.
  */
 @Module({
   imports: [SessionModule],
@@ -27,7 +27,8 @@ import { SessionModule } from '../auth/session.module.js';
     { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
     { provide: INSTRUMENT_SEARCH, useClass: YahooInstrumentSearchProvider },
   ],
-  // Lecturas para la valoración y los snapshots; el histórico para altas, importación y cron. Reutilizados por las tools MCP (`search_instruments` usa el mismo buscador que el alta).
+  // Reads for valuation and snapshots; history for new positions, imports and the cron. Reused by the MCP tools
+  // (`search_instruments` uses the same search as adding a position).
   exports: [PriceReadService, PriceHistoryService, INSTRUMENT_SEARCH],
 })
 export class PricesModule {}

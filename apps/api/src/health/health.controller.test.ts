@@ -7,7 +7,7 @@ import { HealthController } from './health.controller.js';
 
 const HOUR = 3_600_000;
 
-describe('HealthController (integración con Postgres)', () => {
+describe('HealthController (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let controller: HealthController;
@@ -25,7 +25,7 @@ describe('HealthController (integración con Postgres)', () => {
     await close();
   });
 
-  /** Inserta un cierre con la antigüedad de obtención indicada. */
+  /** Inserts a close fetched the given number of hours ago. */
   async function insertPrice(opts: { date: string; fetchedHoursAgo: number }): Promise<void> {
     await db.insert(instrumentPrices).values({
       symbol: 'EUNL.DE',
@@ -37,7 +37,7 @@ describe('HealthController (integración con Postgres)', () => {
     });
   }
 
-  it('informa de versión y uptime', async () => {
+  it('reports version and uptime', async () => {
     const health = await controller.check();
 
     expect(health.version).toMatch(/^\d+\.\d+\.\d+/);
@@ -47,7 +47,7 @@ describe('HealthController (integración con Postgres)', () => {
     expect(() => new Date(health.timestamp).toISOString()).not.toThrow();
   });
 
-  it('sin cotizaciones todavía: ok, sin edad y sin marcar rancio', async () => {
+  it('with no quotes yet: ok, no age and not flagged stale', async () => {
     const health = await controller.check();
 
     expect(health.status).toBe('ok');
@@ -59,7 +59,7 @@ describe('HealthController (integración con Postgres)', () => {
     });
   });
 
-  it('con un refresco reciente: ok, con la fecha del dato y la edad en horas', async () => {
+  it('with a recent refresh: ok, with the data date and the age in hours', async () => {
     await insertPrice({ date: '2026-09-01', fetchedHoursAgo: 2 });
 
     const health = await controller.check();
@@ -71,7 +71,7 @@ describe('HealthController (integración con Postgres)', () => {
     expect(health.prices.lastFetchedAt).not.toBeNull();
   });
 
-  it('marca degraded cuando el último refresco supera el umbral', async () => {
+  it('reports degraded when the last refresh exceeds the threshold', async () => {
     await insertPrice({ date: '2026-08-01', fetchedHoursAgo: 48 });
 
     const health = await controller.check();
@@ -79,11 +79,11 @@ describe('HealthController (integración con Postgres)', () => {
     expect(health.status).toBe('degraded');
     expect(health.prices.stale).toBe(true);
     expect(health.prices.ageHours).toBeCloseTo(48, 1);
-    // Degradado, pero SIN excepción: el healthcheck de Docker debe seguir viendo un 200.
+    // Degraded, but WITHOUT an exception: the Docker healthcheck must still see a 200.
     expect(health.database).toBe('up');
   });
 
-  it('toma el dato más reciente cuando hay varios símbolos y fechas', async () => {
+  it('takes the most recent data point across several symbols and dates', async () => {
     await insertPrice({ date: '2026-08-20', fetchedHoursAgo: 100 });
     await db.insert(instrumentPrices).values({
       symbol: 'AAPL',

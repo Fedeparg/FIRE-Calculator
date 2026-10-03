@@ -12,11 +12,11 @@ const results: Record<string, InstrumentSearchResult[]> = {
     { symbol: 'AAPL.MX', name: 'Apple', type: 'equity', exchange: 'MEX' },
     { symbol: 'AAPL', name: 'Apple', type: 'equity', exchange: 'NMS' },
   ],
-  XYZ: [{ symbol: 'XYZW', name: 'Otra cosa', type: 'equity', exchange: null }],
+  XYZ: [{ symbol: 'XYZW', name: 'Something else', type: 'equity', exchange: null }],
 };
 const search: InstrumentSearchProvider = { search: (q) => Promise.resolve(results[q] ?? []) };
 
-describe('AssetClassBackfillService (integración con Postgres)', () => {
+describe('AssetClassBackfillService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: AssetClassBackfillService;
@@ -28,7 +28,7 @@ describe('AssetClassBackfillService (integración con Postgres)', () => {
   afterEach(() => resetDb(db));
   afterAll(() => close());
 
-  it('clasifica por ISIN con el primer resultado y por símbolo solo si coincide, sin tocar las clasificadas', async () => {
+  it('classifies by ISIN with the first result and by symbol only on an exact match, leaving classified ones untouched', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await db.insert(positions).values([
       { userId, ticker: 'IE00BK5BQT80', quantity: '1', avgPrice: '1' },

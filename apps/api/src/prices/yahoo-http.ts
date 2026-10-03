@@ -1,6 +1,6 @@
 /**
- * User-Agent mínimo para las APIs no oficiales de Yahoo (precios y búsqueda). Se comprobó
- * empíricamente que Yahoo rate-limita (429) los UA que imitan un navegador o `curl` desde IPs de
- * datacenter, pero deja pasar uno mínimo.
+ * Minimal User-Agent for Yahoo's unofficial APIs (prices and search). Empirically, Yahoo
+ * rate-limits (429) UAs that mimic a browser or `curl` from datacenter IPs, but lets a minimal one
+ * through.
  */
 export const YAHOO_USER_AGENT = 'Mozilla/5.0';

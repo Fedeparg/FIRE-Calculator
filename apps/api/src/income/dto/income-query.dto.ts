@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { fiscalYearParamSchema } from '../../common/dto/fiscal-year.js';
 
-/** Query de GET /api/income: filtros opcionales por ejercicio y por posición. */
+/** Query of GET /api/income: optional filters by tax year and by position. */
 export const incomeQuerySchema = z.strictObject({
   year: fiscalYearParamSchema.optional(),
   positionId: z.uuid().optional(),

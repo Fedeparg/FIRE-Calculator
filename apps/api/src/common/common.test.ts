@@ -13,12 +13,12 @@ import { stub } from '../../test/factories.js';
 describe('dates', () => {
   afterEach(() => vi.useRealTimers());
 
-  it('isoDate devuelve el día UTC, no el local', () => {
+  it('isoDate returns the UTC day, not the local one', () => {
     expect(isoDate(new Date('2026-03-31T23:59:59.999Z'))).toBe('2026-03-31');
     expect(isoDate(new Date('2026-04-01T00:00:00.000Z'))).toBe('2026-04-01');
   });
 
-  it('todayUtc usa el reloj actual', () => {
+  it('todayUtc uses the current clock', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-01T23:30:00Z'));
     expect(todayUtc()).toBe('2026-10-01');
@@ -26,12 +26,12 @@ describe('dates', () => {
 });
 
 describe('crypto', () => {
-  it('sha256Hex coincide con el vector conocido (los hashes ya guardados deben seguir casando)', () => {
+  it('sha256Hex matches the known test vector (stored hashes must keep matching)', () => {
     expect(sha256Hex('abc')).toBe('ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
     expect(sha256Hex('')).toBe('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
   });
 
-  it('randomToken son 256 bits en base64url y no se repite', () => {
+  it('randomToken is 256 bits in base64url and does not repeat', () => {
     const token = randomToken();
     expect(token).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(randomToken()).not.toBe(token);
@@ -52,7 +52,7 @@ describe('scheduleFromEnv', () => {
     return { registry, asRegistry: stub<SchedulerRegistry>(registry) };
   }
 
-  it('usa el valor por defecto si la variable falta o está vacía', () => {
+  it('uses the default when the variable is missing or empty', () => {
     const { registry, asRegistry } = setup();
     for (const cronTime of [undefined, '', '   ']) {
       expect(scheduleFromEnv(asRegistry, { name: 'job', cronTime, defaultCron: '0 0 3 * * *', handler: vi.fn() })).toBe(
@@ -62,7 +62,7 @@ describe('scheduleFromEnv', () => {
     expect(registry.addCronJob).toHaveBeenCalledTimes(3);
   });
 
-  it('respeta una expresión personalizada, con espacios recortados, y arranca el job', () => {
+  it('honours a custom expression, trimmed, and starts the job', () => {
     const { registry, asRegistry } = setup();
     const scheduled = scheduleFromEnv(asRegistry, {
       name: 'custom',
@@ -77,14 +77,14 @@ describe('scheduleFromEnv', () => {
     expect(String(job.cronTime.timeZone)).toBe('Europe/Madrid');
   });
 
-  it('con `off` (sin distinguir mayúsculas) no registra nada y devuelve undefined', () => {
+  it('with `off` (case-insensitive) registers nothing and returns undefined', () => {
     const { registry, asRegistry } = setup();
     const options = { name: 'job', defaultCron: '0 0 3 * * *', handler: vi.fn(), off: 'off' };
     expect(scheduleFromEnv(asRegistry, { ...options, cronTime: 'OFF' })).toBeUndefined();
     expect(registry.addCronJob).not.toHaveBeenCalled();
   });
 
-  it('sin `off` configurado, "off" no es un valor especial (y una expresión inválida lanza)', () => {
+  it('without `off` configured, "off" is not a special value (and an invalid expression throws)', () => {
     const { asRegistry } = setup();
     expect(() =>
       scheduleFromEnv(asRegistry, { name: 'job', cronTime: 'off', defaultCron: '0 0 3 * * *', handler: vi.fn() }),
@@ -93,16 +93,16 @@ describe('scheduleFromEnv', () => {
 });
 
 describe('errorMessage', () => {
-  it('usa el message de un Error y convierte a texto lo que no lo es', () => {
-    expect(errorMessage(new Error('fallo'))).toBe('fallo');
-    expect(errorMessage('texto lanzado')).toBe('texto lanzado');
+  it('uses the message of an Error and stringifies anything else', () => {
+    expect(errorMessage(new Error('failure'))).toBe('failure');
+    expect(errorMessage('thrown text')).toBe('thrown text');
     expect(errorMessage(42)).toBe('42');
     expect(errorMessage(undefined)).toBe('undefined');
   });
 });
 
 describe('numberOrNull', () => {
-  it('convierte el numeric de Drizzle y conserva el null', () => {
+  it('converts the Drizzle numeric and keeps null', () => {
     expect(numberOrNull('12.500000')).toBe(12.5);
     expect(numberOrNull('0')).toBe(0);
     expect(numberOrNull(null)).toBeNull();

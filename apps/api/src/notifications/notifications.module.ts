@@ -7,10 +7,10 @@ import { NotificationSettingsService } from './notification-settings.service.js'
 import { SessionModule } from '../auth/session.module.js';
 
 /**
- * Alertas por email (opt-in): preferencias del usuario, baja desde el enlace y la evaluación
- * de hitos del objetivo FIRE, que lanza el trabajo nocturno (`DailyJobsModule`). Importa
- * `SessionModule` para que `JwtAuthGuard` valide la cookie de sesión. Lo importan
- * `DailyJobsModule` (alertas) y `AccountModule` (preferencias en la exportación RGPD).
+ * Email alerts (opt-in): user preferences, unsubscribe from the link and the FIRE goal milestone
+ * evaluation, triggered by the nightly job (`DailyJobsModule`). It imports `SessionModule` so that
+ * `JwtAuthGuard` validates the session cookie. Imported by `DailyJobsModule` (alerts) and
+ * `AccountModule` (preferences in the GDPR export).
  */
 @Module({
   imports: [EmailModule, SessionModule],

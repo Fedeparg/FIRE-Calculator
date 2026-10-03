@@ -1,4 +1,4 @@
-/** Primera publicación del BCE (el euro nace el 1 de enero de 1999). */
+/** First ECB publication (the euro was born on 1 January 1999). */
 export const ECB_FIRST_DATE = '1999-01-04';
-/** Tope de divisas por petición: una cartera real tiene unas pocas. */
+/** Maximum currencies per request: a real portfolio has only a few. */
 export const MAX_REFERENCE_CURRENCIES = 10;

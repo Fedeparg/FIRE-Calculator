@@ -7,9 +7,9 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { AccountExportService, type AccountExport } from './account-export.service.js';
 
 /**
- * RGPD — derecho de acceso/portabilidad. La ruta sigue siendo `/api/auth/account/export` (la
- * consume el frontend y es parte del contrato público), aunque la lógica viva en `account/`
- * para que `AuthModule` no dependa de los módulos de datos. El `userId` se lee del JWT.
+ * GDPR — right of access/portability. The route is still `/api/auth/account/export` (the
+ * frontend consumes it and it is part of the public contract), even though the logic lives in
+ * `account/` so that `AuthModule` does not depend on the data modules. The `userId` is read from the JWT.
  */
 @Controller('auth/account/export')
 @UseGuards(JwtAuthGuard)
@@ -17,8 +17,8 @@ export class AccountExportController {
   constructor(private readonly accountExport: AccountExportService) {}
 
   /**
-   * Descarga un JSON con todos los datos personales del usuario; la cabecera fuerza la descarga.
-   * Es la lectura más cara de la API (todo el histórico): pocas por minuto bastan.
+   * Downloads a JSON with all of the user's personal data; the header forces the download.
+   * It is the most expensive read in the API (the whole history): a few per minute are enough.
    */
   @Get()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })

@@ -7,7 +7,7 @@ import { createPositionLotSchema } from '../positions/dto/create-position-lot.dt
 import { savedScenariosQuerySchema } from '../scenarios/dto/saved-scenarios-query.dto.js';
 import { ZodValidationPipe } from './zod-validation.pipe.js';
 
-/** Mensajes del 400 que produce el pipe, o `null` si la entrada es válida. */
+/** Messages of the 400 the pipe produces, or `null` if the input is valid. */
 function rejection(pipe: PipeTransform, input: unknown): string[] | null {
   try {
     pipe.transform(input, { type: 'body' });
@@ -23,48 +23,48 @@ const position = { ticker: 'IWDA', quantity: 10, avgPrice: 80 };
 describe('ZodValidationPipe', () => {
   const pipe = new ZodValidationPipe(createPositionSchema);
 
-  it('devuelve el valor transformado: recorta los textos', () => {
+  it('returns the transformed value: trims text fields', () => {
     expect(pipe.transform({ ...position, ticker: '  IWDA ', broker: ' DEGIRO ' })).toEqual({
       ...position,
       broker: 'DEGIRO',
     });
   });
 
-  it('rechaza con 400 y un mensaje por campo inválido', () => {
+  it('rejects with 400 and one message per invalid field', () => {
     const messages = rejection(pipe, { ticker: '   ', quantity: -1, avgPrice: 80 });
     expect(messages).toHaveLength(2);
     expect(messages?.join('|')).toMatch(/ticker/);
     expect(messages?.join('|')).toMatch(/quantity/);
   });
 
-  it('rechaza claves desconocidas en vez de ignorarlas', () => {
-    expect(rejection(pipe, { ...position, userId: 'otro' })).not.toBeNull();
+  it('rejects unknown keys instead of ignoring them', () => {
+    expect(rejection(pipe, { ...position, userId: 'other' })).not.toBeNull();
   });
 
-  it('acota los decimales a 6 y el tope de numeric(18,6)', () => {
+  it('caps decimals at 6 and values at the numeric(18,6) limit', () => {
     expect(rejection(pipe, { ...position, quantity: 1.1234567 })).not.toBeNull();
     expect(rejection(pipe, { ...position, quantity: 1.123456 })).toBeNull();
     expect(rejection(pipe, { ...position, avgPrice: 1_000_000_000_000 })).not.toBeNull();
   });
 
-  it('no coacciona textos a número en el cuerpo', () => {
+  it('does not coerce text to numbers in the body', () => {
     expect(rejection(pipe, { ...position, quantity: '10' })).not.toBeNull();
   });
 });
 
-describe('esquemas de lotes', () => {
+describe('lot schemas', () => {
   const pipe = new ZodValidationPipe(createPositionLotSchema);
   const lot = { kind: 'buy', quantity: 1, price: 10, tradedAt: '2026-03-15' };
 
-  it('exige una fecha real con formato YYYY-MM-DD', () => {
+  it('requires a real date in YYYY-MM-DD format', () => {
     expect(rejection(pipe, lot)).toBeNull();
     expect(rejection(pipe, { ...lot, tradedAt: '2026-02-30' })).not.toBeNull();
     expect(rejection(pipe, { ...lot, tradedAt: '2026-03-15T10:00:00Z' })).not.toBeNull();
   });
 });
 
-describe('esquemas de query', () => {
-  it('coacciona `days` de texto a entero y rechaza lo no numérico o desconocido', () => {
+describe('query schemas', () => {
+  it('coerces `days` from text to an integer and rejects non-numeric or unknown input', () => {
     const pipe = new ZodValidationPipe(portfolioHistoryQuerySchema);
     expect(pipe.transform({ days: '30', display: 'USD' })).toEqual({ days: 30, display: 'USD' });
     expect(pipe.transform({})).toEqual({});
@@ -74,10 +74,10 @@ describe('esquemas de query', () => {
     expect(rejection(pipe, { other: '1' })).not.toBeNull();
   });
 
-  it('el filtro de escenarios solo admite `slug` con formato de identificador', () => {
+  it('the scenarios filter only accepts a `slug` shaped like an identifier', () => {
     const pipe = new ZodValidationPipe(savedScenariosQuerySchema);
     expect(pipe.transform({ slug: ' fire-basico ' })).toEqual({ slug: 'fire-basico' });
-    expect(rejection(pipe, { slug: 'No Valido' })).not.toBeNull();
-    expect(rejection(pipe, { nombre: 'x' })).not.toBeNull();
+    expect(rejection(pipe, { slug: 'Not Valid' })).not.toBeNull();
+    expect(rejection(pipe, { unknown: 'x' })).not.toBeNull();
   });
 });

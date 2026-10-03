@@ -9,15 +9,15 @@ import { AssetClassBackfillService } from './asset-class-backfill.service.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
- * Posiciones (la foto que lee toda la app) y sus lotes (de los que se recalcula). Importa
- * `SessionModule` para `JwtAuthGuard` y `PricesModule` para el
- * precio en caliente de una posición nueva o editada.
+ * Positions (the snapshot the whole app reads) and their lots (from which it is recomputed).
+ * Imports `SessionModule` for `JwtAuthGuard` and `PricesModule` for the on-the-fly price of a
+ * new or edited position.
  */
 @Module({
   imports: [PricesModule, SessionModule],
   controllers: [PositionsController, PositionLotsController],
   providers: [PositionsService, PositionLotsService, AssetClassBackfillService],
-  // Reutilizados por la exportación RGPD (GET /auth/account/export) y las tools MCP de lotes.
+  // Reused by the GDPR export (GET /auth/account/export) and the MCP lot tools.
   exports: [PositionsService, PositionLotsService, AssetClassBackfillService],
 })
 export class PositionsModule {}

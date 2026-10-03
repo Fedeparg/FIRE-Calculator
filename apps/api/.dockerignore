@@ -1,6 +1,6 @@
 node_modules
 dist
-# Excluir el caché incremental de TS: si entra obsoleto, tsc no re-emite dist.
+# Exclude the TS incremental cache: if a stale one gets in, tsc does not re-emit dist.
 *.tsbuildinfo
 .env
 .env.*

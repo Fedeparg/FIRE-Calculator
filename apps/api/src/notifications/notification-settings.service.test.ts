@@ -7,7 +7,7 @@ import { savedScenarios, userNotificationSettings, users } from '../db/schema.js
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { NotificationSettingsService } from './notification-settings.service.js';
 
-describe('NotificationSettingsService (integración con Postgres)', () => {
+describe('NotificationSettingsService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: NotificationSettingsService;
@@ -25,7 +25,7 @@ describe('NotificationSettingsService (integración con Postgres)', () => {
     await close();
   });
 
-  it('sin fila, todo desactivado y en español', async () => {
+  it('without a row, everything is off and in Spanish', async () => {
     const userId = await insertUser(db, 'a@example.com');
     expect(await service.get(userId)).toEqual({
       fireAlertsEnabled: false,
@@ -35,7 +35,7 @@ describe('NotificationSettingsService (integración con Postgres)', () => {
     });
   });
 
-  it('activar guarda idioma y reinicia la referencia; reactivar vuelve a tomarla', async () => {
+  it('enabling stores the language and resets the reference; re-enabling takes it again', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.update(userId, { fireAlertsEnabled: true, locale: 'en' });
     await db
@@ -43,26 +43,26 @@ describe('NotificationSettingsService (integración con Postgres)', () => {
       .set({ lastFireMilestone: 50 })
       .where(eq(userNotificationSettings.userId, userId));
 
-    // Cambiar solo el idioma con las alertas activas conserva el hito.
+    // Changing only the language while alerts are on keeps the milestone.
     expect((await service.update(userId, { fireAlertsEnabled: true, locale: 'es' })).lastFireMilestone).toBe(50);
-    // Desactivar y volver a activar lo reinicia.
+    // Disabling and enabling again resets it.
     await service.update(userId, { fireAlertsEnabled: false, locale: 'es' });
     const reenabled = await service.update(userId, { fireAlertsEnabled: true, locale: 'es' });
     expect(reenabled).toMatchObject({ fireAlertsEnabled: true, lastFireMilestone: null });
   });
 
-  it('el objetivo es el escenario FIRE actualizado más recientemente', async () => {
+  it('the goal is the most recently updated FIRE scenario', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await db.insert(savedScenarios).values([
-      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'Viejo', inputs: {}, updatedAt: new Date('2026-01-01') },
-      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'Nuevo', inputs: {}, updatedAt: new Date('2026-06-01') },
-      { userId, slug: 'interes-compuesto', name: 'Otro', inputs: {}, updatedAt: new Date('2026-09-01') },
+      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'Old', inputs: {}, updatedAt: new Date('2026-01-01') },
+      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'New', inputs: {}, updatedAt: new Date('2026-06-01') },
+      { userId, slug: 'interes-compuesto', name: 'Other', inputs: {}, updatedAt: new Date('2026-09-01') },
     ]);
 
-    expect((await service.get(userId)).goal?.name).toBe('Nuevo');
+    expect((await service.get(userId)).goal?.name).toBe('New');
   });
 
-  it('la baja desactiva y es idempotente; sin fila no hace nada', async () => {
+  it('unsubscribing disables alerts and is idempotent; without a row it does nothing', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.unsubscribe(userId);
     expect((await service.get(userId)).fireAlertsEnabled).toBe(false);
@@ -73,7 +73,7 @@ describe('NotificationSettingsService (integración con Postgres)', () => {
     expect((await service.get(userId)).fireAlertsEnabled).toBe(false);
   });
 
-  it('borrar la cuenta borra las preferencias (cascada)', async () => {
+  it('deleting the account deletes the preferences (cascade)', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.update(userId, { fireAlertsEnabled: true, locale: 'es' });
     await db.delete(users).where(eq(users.id, userId));
