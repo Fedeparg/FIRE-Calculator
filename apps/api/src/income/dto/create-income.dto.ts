@@ -4,7 +4,7 @@ import { INCOME_KINDS, withholdingsFitGross } from '@sextante/core/fiscal/income
 import { ISIN_PATTERN } from '@sextante/core/portfolio/isin';
 import { amountSchema, currencySchema, trimmedText } from '../../common/dto/primitives.js';
 
-/** Campos de un cobro, sin las reglas que cruzan campos (las comparte la actualización parcial). */
+/** A payment's fields, without the cross-field rules (shared with the partial update). */
 export const incomeFieldsSchema = z.strictObject({
   kind: z.enum(INCOME_KINDS).describe('dividend (dividendo), interest (intereses) o benefit (recompensa del bróker).'),
   paidAt: z.iso
@@ -38,7 +38,7 @@ export const incomeFieldsSchema = z.strictObject({
   reportedToAeat: z.boolean().optional().describe('El pagador ya lo comunicó a Hacienda (sale en el borrador).'),
 });
 
-/** Las retenciones no pueden superar el íntegro (comparado en micro-unidades, ver `withholdingsFitGross`). */
+/** Withholdings cannot exceed the gross amount (compared in micro-units, see `withholdingsFitGross`). */
 export function withholdingsWithinGross(value: {
   gross?: number;
   withholdingOrigin?: number | null;
@@ -48,7 +48,7 @@ export function withholdingsWithinGross(value: {
   return withholdingsFitGross(value.gross, value.withholdingOrigin, value.withholdingSpain);
 }
 
-/** Cuerpo de POST /api/income. */
+/** Body of POST /api/income. */
 export const createIncomeSchema = incomeFieldsSchema.refine(withholdingsWithinGross, {
   error: 'las retenciones no pueden superar el íntegro',
   path: ['gross'],

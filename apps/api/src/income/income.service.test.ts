@@ -10,7 +10,7 @@ import { createIncomeSchema } from './dto/create-income.dto.js';
 import { updateIncomeSchema } from './dto/update-income.dto.js';
 import { IncomeService } from './income.service.js';
 
-describe('IncomeService (integración con Postgres)', () => {
+describe('IncomeService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: IncomeService;
@@ -42,7 +42,7 @@ describe('IncomeService (integración con Postgres)', () => {
     withholdingSpain: 0.04,
   };
 
-  it('crea, lista por ejercicio y por posición, actualiza y borra', async () => {
+  it('creates, lists by tax year and by position, updates and deletes', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const positionId = await positionFor(userId);
 
@@ -69,7 +69,7 @@ describe('IncomeService (integración con Postgres)', () => {
     expect(await service.list(userId, { year: 2025 })).toEqual([]);
   });
 
-  it('un cobro o una posición de otro usuario dan 404', async () => {
+  it("another user's payment or position yields 404", async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     const created = await service.create(a, dividend);
@@ -83,7 +83,7 @@ describe('IncomeService (integración con Postgres)', () => {
     expect(await service.list(b)).toEqual([]);
   });
 
-  it('rechaza retenciones mayores que el íntegro, también al actualizar parcialmente', async () => {
+  it('rejects withholdings above the gross amount, also on a partial update', async () => {
     expect(createIncomeSchema.safeParse({ ...dividend, withholdingSpain: 0.3 }).success).toBe(false);
     expect(createIncomeSchema.safeParse({ ...dividend, gross: 0 }).success).toBe(false);
     expect(updateIncomeSchema.safeParse({}).success).toBe(false);
@@ -93,7 +93,7 @@ describe('IncomeService (integración con Postgres)', () => {
     await expect(service.update(userId, created.id, { gross: 0.05 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('acepta retenciones que suman exactamente el íntegro aunque en coma flotante no cuadre (0,1 + 0,2 = 0,3)', async () => {
+  it('accepts withholdings that add up exactly to the gross even when floating point does not (0.1 + 0.2 = 0.3)', async () => {
     const exact = { ...dividend, gross: 0.3, withholdingOrigin: 0.1, withholdingSpain: 0.2 };
     expect(createIncomeSchema.safeParse(exact).success).toBe(true);
 
@@ -104,7 +104,7 @@ describe('IncomeService (integración con Postgres)', () => {
     });
   });
 
-  it('borrar la posición deja el cobro sin posición, no lo borra', async () => {
+  it('deleting the position detaches the payment instead of deleting it', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const positionId = await positionFor(userId);
     const created = await service.create(userId, { ...dividend, positionId });

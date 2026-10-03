@@ -15,19 +15,19 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
 import { PriceReadService } from '../prices/price-read.service.js';
 
-/** Margen máximo entre la fecha ex-dividendo y la de pago. */
+/** Maximum gap between the ex-dividend date and the payment date. */
 const MAX_EX_TO_PAY_DAYS = 100;
 
-/** Dividendo por acción de mercado de un símbolo, ya sin el ajuste por splits posteriores. */
+/** A symbol's market dividend per share, with the adjustment for later splits already undone. */
 type MarketDividend = { exDate: string; amount: number; currency: string };
 
 /**
- * Completa los dividendos cuya retención en origen no se sabe, o solo se estima
- * (`@sextante/core/fiscal/dividend-resolution`): primero con el dividendo por acción de mercado
- * (`instrument_dividends`, de Yahoo) × las acciones que da el bróker (capa 2) y, si no hay dato de
- * mercado, con el tipo legal del país marcado como estimación (capa 3). Solo lee datos ya
- * cacheados: no llama a ninguna fuente externa, así que se puede repetir sin coste cuando llegan
- * datos nuevos (tras importar, tras el refresco de precios).
+ * Completes the dividends whose withholding at source is unknown, or only estimated
+ * (`@sextante/core/fiscal/dividend-resolution`): first with the market dividend per share
+ * (`instrument_dividends`, from Yahoo) × the shares reported by the broker (layer 2) and, if there
+ * is no market data, with the country's statutory rate flagged as an estimate (layer 3). It only
+ * reads already cached data: it calls no external source, so it can be rerun at no cost when new
+ * data arrives (after an import, after the price refresh).
  */
 @Injectable()
 export class DividendResolutionService {
@@ -38,7 +38,7 @@ export class DividendResolutionService {
     private readonly prices: PriceReadService,
   ) {}
 
-  /** Resuelve los dividendos pendientes de un usuario (o de todos). Devuelve cuántos ha completado. */
+  /** Resolves the pending dividends of one user (or of all). Returns how many it completed. */
   async resolvePending(userId?: string): Promise<number> {
     const pending = await this.db
       .select({ event: incomeEvents, ticker: positions.ticker })
@@ -63,7 +63,7 @@ export class DividendResolutionService {
     });
     if (updates.length === 0) return 0;
 
-    // Todas en una transacción: una sola ida y vuelta de commit en vez de una por cobro.
+    // All in one transaction: a single commit round trip instead of one per payment.
     await this.db.transaction(async (tx) => {
       for (const { id, result } of updates) {
         await tx
@@ -78,11 +78,11 @@ export class DividendResolutionService {
           .where(eq(incomeEvents.id, id));
       }
     });
-    this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${updates.length}`);
+    this.logger.log(`Dividends completed with market data or an estimate: ${updates.length}`);
     return updates.length;
   }
 
-  /** Capa 2 (mercado) y, si no hay dato, capa 3 (tipo legal); `null` si no cambia nada. */
+  /** Layer 2 (market) and, without data, layer 3 (statutory rate); `null` if nothing changes. */
   private resolve(
     event: IncomeEventRow,
     symbol: string | undefined,
@@ -94,13 +94,13 @@ export class DividendResolutionService {
       const result = resolveWithMarket(facts, Number(event.quantity) * dividend.amount);
       if (result?.originSource === 'market') return result;
     }
-    // Una estimación ya hecha no se repite; solo se estima lo que no se sabe.
+    // An existing estimate is not redone; only what is unknown gets estimated.
     if (event.withholdingOrigin !== null) return null;
     const statutory = STATUTORY_DIVIDEND_WITHHOLDING[facts.country];
     return statutory ? estimateWithStatutoryRate(facts, statutory.rate) : null;
   }
 
-  /** Dividendos por acción de cada símbolo, sin el ajuste por los splits posteriores a su fecha ex. */
+  /** Dividends per share of each symbol, without the adjustment for splits after their ex-date. */
   private async marketDividends(symbols: readonly string[]): Promise<Map<string, MarketDividend[]>> {
     const out = new Map<string, MarketDividend[]>();
     if (symbols.length === 0) return out;
@@ -122,7 +122,7 @@ export class DividendResolutionService {
       splitsBySymbol.set(split.symbol, list);
     }
     for (const row of dividends) {
-      // Yahoo divide el dividendo por cada split posterior (como los cierres): se deshace.
+      // Yahoo divides the dividend by every later split (like the closes): undo it.
       const factor = (splitsBySymbol.get(row.symbol) ?? [])
         .filter((split) => split.date > row.exDate)
         .reduce((product, split) => product * Number(split.ratio), 1);
@@ -135,8 +135,9 @@ export class DividendResolutionService {
 }
 
 /**
- * Lo que dijo el bróker, reconstruido de lo guardado. Solo se resuelven cobros sin origen (lo
- * abonado es el íntegro guardado) o con un origen estimado (lo abonado es íntegro − origen).
+ * What the broker reported, rebuilt from what is stored. Only payments without an origin
+ * withholding (the amount paid out is the stored gross) or with an estimated one (the amount paid
+ * out is gross − origin) are resolved.
  */
 function factsOf(event: IncomeEventRow): DividendFacts {
   const gross = Number(event.gross);
@@ -151,9 +152,9 @@ function factsOf(event: IncomeEventRow): DividendFacts {
 }
 
 /**
- * Último dividendo de mercado con fecha ex anterior al cobro (dentro de `MAX_EX_TO_PAY_DAYS`) y
- * en la divisa en la que se pagó. Una cotización en otra divisa (p. ej. una acción de EE. UU. en
- * Xetra) no sirve: compararía importes de divisas distintas.
+ * Latest market dividend with an ex-date before the payment (within `MAX_EX_TO_PAY_DAYS`) and in
+ * the currency it was paid in. A listing in another currency (e.g. a US stock on Xetra) is no use:
+ * it would compare amounts in different currencies.
  */
 function matchDividend(dividends: readonly MarketDividend[], event: IncomeEventRow): MarketDividend | null {
   const currency = event.originalCurrency ?? 'EUR';

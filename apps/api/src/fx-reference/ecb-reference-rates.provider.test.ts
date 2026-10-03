@@ -5,7 +5,7 @@ import { parseEcbCsv } from './ecb-reference-rates.provider.js';
 const HEADER = 'KEY,FREQ,CURRENCY,CURRENCY_DENOM,EXR_TYPE,EXR_SUFFIX,TIME_PERIOD,OBS_VALUE';
 
 describe('parseEcbCsv', () => {
-  it('lee divisa, fecha y valor por el nombre de la columna', () => {
+  it('reads currency, date and value by column name', () => {
     const csv = [
       HEADER,
       'EXR.D.USD.EUR.SP00.A,D,USD,EUR,SP00,A,2026-10-01,1.1298',
@@ -18,12 +18,12 @@ describe('parseEcbCsv', () => {
     ]);
   });
 
-  it('no depende del orden de las columnas', () => {
+  it('does not depend on the column order', () => {
     const csv = ['TIME_PERIOD,OBS_VALUE,CURRENCY', '2026-10-01,1.1298,USD'].join('\n');
     expect(parseEcbCsv(csv)).toEqual([{ currency: 'USD', date: '2026-10-01', unitsPerEur: 1.1298 }]);
   });
 
-  it('descarta filas con valor vacío, no numérico o no positivo y fechas o divisas inválidas', () => {
+  it('drops rows with an empty, non-numeric or non-positive value and invalid dates or currencies', () => {
     const csv = [
       HEADER,
       'EXR.D.USD.EUR.SP00.A,D,USD,EUR,SP00,A,2026-10-01,',
@@ -35,7 +35,7 @@ describe('parseEcbCsv', () => {
     expect(parseEcbCsv(csv)).toEqual([]);
   });
 
-  it('un cuerpo vacío o sin las columnas esperadas no da filas', () => {
+  it('an empty body or one without the expected columns yields no rows', () => {
     expect(parseEcbCsv('')).toEqual([]);
     expect(parseEcbCsv('<html>error</html>')).toEqual([]);
   });

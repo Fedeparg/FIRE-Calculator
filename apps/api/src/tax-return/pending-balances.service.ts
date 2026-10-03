@@ -6,7 +6,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { savingsPendingBalances } from '../db/schema.js';
 import type { ReplacePendingBalancesDto } from './dto/pending-balances.dto.js';
 
-/** Saldos negativos pendientes que introduce el usuario, de los ejercicios que Sextante no calcula. */
+/** Pending negative balances entered by the user, from tax years Sextante does not compute. */
 @Injectable()
 export class PendingBalancesService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
@@ -20,7 +20,7 @@ export class PendingBalancesService {
     return rows.map((row) => ({ originYear: row.originYear, kind: row.kind, amount: Number(row.amount) }));
   }
 
-  /** Sustituye la lista entera en una transacción: el formulario envía siempre todo. */
+  /** Replaces the whole list in one transaction: the form always sends everything. */
   async replace(userId: string, dto: ReplacePendingBalancesDto): Promise<PendingNegative[]> {
     await this.db.transaction(async (tx) => {
       await tx.delete(savingsPendingBalances).where(eq(savingsPendingBalances.userId, userId));

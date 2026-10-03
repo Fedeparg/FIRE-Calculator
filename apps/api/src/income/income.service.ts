@@ -12,18 +12,18 @@ import type { IncomeQueryDto } from './dto/income-query.dto.js';
 import type { UpdateIncomeDto } from './dto/update-income.dto.js';
 import { toIncomeEvent } from './income.mapper.js';
 
-/** Cobro importado listo para guardar: el del parser con su `external_id` ya prefijado y su posición. */
+/** Imported payment ready to store: the parser's one with its `external_id` already prefixed and its position. */
 export type ImportedIncomeInput = ImportedIncome & { positionId: string | null };
 
-/** Tope de ids por `IN (...)` al buscar duplicados. */
+/** Maximum ids per `IN (...)` when looking for duplicates. */
 const ID_BATCH_SIZE = 500;
 
-/** `numeric` acepta texto: se guarda el número tal cual, ya validado (6 decimales como mucho). */
+/** `numeric` accepts text: the number is stored as is, already validated (6 decimals at most). */
 const decimal = (value: number) => String(value);
 
 /**
- * Cobros del usuario (dividendos, intereses, recompensas). Aislamiento como en las posiciones:
- * todo filtra por `userId` y un cobro o una posición ajenos dan 404.
+ * The user's income payments (dividends, interest, rewards). Isolation as with positions:
+ * everything filters by `userId` and another user's payment or position yields 404.
  */
 @Injectable()
 export class IncomeService {
@@ -44,7 +44,7 @@ export class IncomeService {
   }
 
   async create(userId: string, dto: CreateIncomeDto): Promise<IncomeEvent> {
-    // También aquí: la tool MCP valida con `.shape`, que no lleva la regla que cruza campos.
+    // Here too: the MCP tool validates with `.shape`, which lacks the cross-field rule.
     if (!withholdingsWithinGross(dto)) {
       throw new BadRequestException(['gross: las retenciones no pueden superar el íntegro']);
     }
@@ -78,7 +78,7 @@ export class IncomeService {
     const current = await this.findOwned(this.db, userId, id);
     if (dto.positionId) await findOwnedPosition(this.db, userId, dto.positionId);
 
-    // La regla que cruza campos se comprueba con el resultado final, no solo con lo enviado.
+    // The cross-field rule is checked against the final result, not just what was sent.
     const merged = {
       gross: dto.gross ?? Number(current.gross),
       withholdingOrigin:
@@ -103,7 +103,7 @@ export class IncomeService {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.country !== undefined && { country: dto.country }),
         ...(dto.currency !== undefined && { currency: dto.currency }),
-        // Lo que toca el usuario pasa a ser suyo: deja de ser del bróker, deducido o estimado.
+        // Whatever the user edits becomes theirs: it stops being the broker's, derived or estimated.
         ...(dto.gross !== undefined && { gross: decimal(dto.gross), grossSource: 'manual' as const }),
         ...(dto.withholdingOrigin !== undefined && {
           withholdingOrigin: dto.withholdingOrigin === null ? null : decimal(dto.withholdingOrigin),
@@ -114,7 +114,7 @@ export class IncomeService {
       })
       .where(and(eq(incomeEvents.id, id), eq(incomeEvents.userId, userId)))
       .returning();
-    // Solo falta si se borró entre `findOwned` y el UPDATE.
+    // Only missing if it was deleted between `findOwned` and the UPDATE.
     if (!row) throw new NotFoundException('Cobro no encontrado');
     return toIncomeEvent(row);
   }
@@ -124,7 +124,7 @@ export class IncomeService {
     await this.db.delete(incomeEvents).where(and(eq(incomeEvents.id, id), eq(incomeEvents.userId, userId)));
   }
 
-  /** `external_id` de los cobros dados que el usuario ya tiene importados. */
+  /** `external_id`s, among the given ones, that the user has already imported. */
   async findImportedIds(userId: string, externalIds: readonly string[]): Promise<Set<string>> {
     const known = new Set<string>();
     for (let i = 0; i < externalIds.length; i += ID_BATCH_SIZE) {
@@ -142,7 +142,7 @@ export class IncomeService {
     return known;
   }
 
-  /** Guarda cobros importados; idempotente por `external_id` (los ya importados se ignoran). Devuelve cuántos entraron. */
+  /** Stores imported payments; idempotent by `external_id` (already imported ones are ignored). Returns how many went in. */
   async appendImported(
     db: DatabaseOrTransaction,
     userId: string,

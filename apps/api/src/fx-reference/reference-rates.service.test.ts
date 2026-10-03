@@ -10,7 +10,7 @@ import { ReferenceRatesService } from './reference-rates.service.js';
 const today = new Date().toISOString().slice(0, 10);
 const daysAgo = (days: number): string => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
 
-/** Fuente simulada: sirve una serie fija, apunta cada tramo pedido y puede fallar a voluntad. */
+/** Stub source: serves a fixed series, records every requested range and can fail on demand. */
 class StubProvider implements ReferenceRatesProvider {
   readonly name = 'stub';
   rates: EcbRate[] = [];
@@ -24,7 +24,7 @@ class StubProvider implements ReferenceRatesProvider {
   }
 }
 
-describe('ReferenceRatesService (integración con Postgres)', () => {
+describe('ReferenceRatesService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let provider: StubProvider;
@@ -47,9 +47,9 @@ describe('ReferenceRatesService (integración con Postgres)', () => {
     service = new ReferenceRatesService(db, provider);
   });
 
-  it('descarga el tramo una vez, lo guarda y luego lo sirve desde la BD', async () => {
+  it('downloads the range once, stores it and then serves it from the DB', async () => {
     const first = await service.getRates(['USD'], '2024-03-28');
-    // Incluye los días previos que puede necesitar una operación en festivo.
+    // Includes the previous days a transaction on a holiday may need.
     expect(first.USD?.map((p) => p.date)).toEqual(['2024-03-27', '2024-03-28', '2024-04-02', daysAgo(1)]);
     expect(first.USD?.[0]?.unitsPerEur).toBeCloseTo(1.0816, 8);
     expect(provider.calls).toEqual([{ currencies: ['USD'], from: '2024-03-21', to: today }]);
@@ -59,20 +59,20 @@ describe('ReferenceRatesService (integración con Postgres)', () => {
     expect(provider.calls).toHaveLength(1);
   });
 
-  it('pide solo lo que falta por delante de lo ya cubierto', async () => {
+  it('requests only the missing range before what is already covered', async () => {
     await service.getRates(['USD'], '2024-04-01');
     await service.getRates(['USD'], '2024-03-28');
     expect(provider.calls.slice(1)).toEqual([{ currencies: ['USD'], from: '2024-03-21', to: '2024-03-24' }]);
   });
 
-  it('una divisa sin serie queda anotada y no se vuelve a pedir', async () => {
+  it('a currency without a series is recorded and not requested again', async () => {
     const rates = await service.getRates(['XAU'], '2024-04-01');
     expect(rates).toEqual({ XAU: [] });
     await service.getRates(['XAU'], '2024-04-01');
     expect(provider.calls).toHaveLength(1);
   });
 
-  it('si la fuente falla no anota cobertura y reintenta en la siguiente petición', async () => {
+  it('if the source fails it records no coverage and retries on the next request', async () => {
     provider.fail = true;
     expect(await service.getRates(['USD'], '2024-04-01')).toEqual({ USD: [] });
     expect(await db.select().from(fxReferenceCoverage).where(eq(fxReferenceCoverage.currency, 'USD'))).toEqual([]);
@@ -82,7 +82,7 @@ describe('ReferenceRatesService (integración con Postgres)', () => {
     expect(provider.calls).toHaveLength(2);
   });
 
-  it('vuelve a mirar el final de la serie cuando la comprobación es antigua', async () => {
+  it('checks the tail of the series again when the last check is stale', async () => {
     await service.getRates(['USD'], '2024-04-01');
     await db
       .update(fxReferenceCoverage)
@@ -93,7 +93,7 @@ describe('ReferenceRatesService (integración con Postgres)', () => {
     expect(provider.calls.at(-1)).toEqual({ currencies: ['USD'], from: daysAgo(10), to: today });
   });
 
-  it('ignora el euro y los códigos inválidos y separa las divisas', async () => {
+  it('ignores the euro and invalid codes and splits the currencies', async () => {
     const rates = await service.getRates(['EUR', 'usd', 'CHF', 'USD'], '2024-04-02');
     expect(Object.keys(rates).sort()).toEqual(['CHF', 'USD']);
     expect(rates.CHF).toEqual([{ date: '2024-04-02', unitsPerEur: 0.9767 }]);

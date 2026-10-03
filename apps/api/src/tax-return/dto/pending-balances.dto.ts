@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
 import { amountSchema } from '../../common/dto/primitives.js';
 
-/** Un saldo negativo pendiente de un ejercicio que Sextante no calcula. */
+/** A pending negative balance from a tax year Sextante does not compute. */
 export const pendingBalanceSchema = z.strictObject({
   originYear: fiscalYearSchema.describe('Ejercicio en que se generó el saldo negativo.'),
   kind: z
@@ -12,7 +12,7 @@ export const pendingBalanceSchema = z.strictObject({
   amount: amountSchema.positive().describe('Importe pendiente de compensar, en euros (positivo).'),
 });
 
-/** Cuerpo de PUT /api/tax-return/pending-balances: la lista completa, que sustituye a la anterior. */
+/** Body of PUT /api/tax-return/pending-balances: the full list, which replaces the previous one. */
 export const replacePendingBalancesSchema = z.strictObject({
   balances: z
     .array(pendingBalanceSchema)

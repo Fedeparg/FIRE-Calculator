@@ -24,7 +24,7 @@ import { updateIncomeSchema, type UpdateIncomeDto } from './dto/update-income.dt
 import { DividendResolutionService } from './dividend-resolution.service.js';
 import { IncomeService } from './income.service.js';
 
-/** Dividendos, intereses y recompensas del usuario del JWT. Un id ajeno da 404. */
+/** Dividends, interest and rewards of the JWT user. Another user's id yields 404. */
 @Controller('income')
 @UseGuards(JwtAuthGuard)
 export class IncomeController {
@@ -41,7 +41,7 @@ export class IncomeController {
     return this.income.list(user.id, query);
   }
 
-  /** Completa los dividendos pendientes con el dato de mercado ya cacheado (sin llamadas externas). */
+  /** Completes pending dividends with the already cached market data (no external calls). */
   @Post('resolve-dividends')
   @HttpCode(HttpStatus.OK)
   async resolveDividends(@CurrentUser() user: SessionUser): Promise<{ resolved: number }> {
