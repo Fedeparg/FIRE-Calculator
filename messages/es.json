@@ -262,7 +262,8 @@
     "interest": "Intereses",
     "axisYear": "Año",
     "imageLabel": "Gráfica: {title}",
-    "dataTableCaption": "Datos de la gráfica: {title}"
+    "dataTableCaption": "Datos de la gráfica: {title}",
+    "showData": "Ver los datos de la gráfica: {title}"
   },
   "calc": {
     "interes-compuesto": {

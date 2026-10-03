@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -18,6 +18,8 @@ import { useFormat } from "@/shared/format/use-format";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
 import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
+import { fitYDomain } from "./fit-y-domain";
+import { useRangeSelection } from "./use-range-selection";
 
 export type SeriesDef = {
   key: string;
@@ -118,11 +120,12 @@ type Props = {
   yAxis?: "always" | "fromSm";
 };
 
-/** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
-const FIT_DOMAIN_PADDING_RATIO = 0.01;
-
-type Selection = { start: number; end: number } | null;
-type RechartsState = { activeLabel?: string | number } | null;
+// Valores por defecto de las props opcionales como constantes de módulo: un `= []` en la firma
+// crea un array nuevo en cada render, y los `useMemo` que dependen de él se recalcularían siempre.
+const NO_SERIES: SeriesDef[] = [];
+const NO_BANDS: BandDef[] = [];
+const NO_RANGES: NonNullable<Props["shadedRanges"]> = [];
+const NO_COLUMNS: ChartTableColumn<DataRow>[] = [];
 
 const toNum = (v: string | number | boolean | undefined) => (v === undefined ? 0 : Number(v));
 
@@ -131,8 +134,8 @@ export default function TimeSeriesChart({
   data,
   xKey,
   stack,
-  lines = [],
-  bands = [],
+  lines = NO_SERIES,
+  bands = NO_BANDS,
   valueKey,
   contributedKey,
   interestKey,
@@ -144,8 +147,8 @@ export default function TimeSeriesChart({
   showTotal = true,
   xMinTickGap = 5,
   xInterval = "preserveEnd",
-  shadedRanges = [],
-  extraColumns = [],
+  shadedRanges = NO_RANGES,
+  extraColumns = NO_COLUMNS,
   yDomain = "zero",
   hideTitle = false,
   showLegend = true,
@@ -165,35 +168,22 @@ export default function TimeSeriesChart({
   // que se leen del namespace compartido `chart` en lugar de repetirlas en cada calculadora.
   const tc = useTranslations("chart");
   const axisX = xLabel ?? tc("axisYear");
-  const [selection, setSelection] = useState<Selection>(null);
+  // El tramo se enseña con el mismo formato que el eje (sin `xFormat`, tal cual: años).
+  const formatRangeX = xFormat ?? String;
+  const { selection, handlers: selectionHandlers } = useRangeSelection(selectable);
 
-  // Recharts calcula el dominio de un `Area` apilado forzando el mínimo a 0 (el baseline del
-  // relleno) antes de que un `domain` en forma de función pueda tocarlo, así que un 1% de
-  // margen aplicado ahí nunca se nota. Con `yDomain="fit"` se calcula el rango a mano a partir
-  // de los propios datos (el total apilado de cada fila y las líneas superpuestas) para poder
-  // ajustar el eje al valor real en vez de al que Recharts asume para el relleno.
-  const fitYDomain = useMemo<[number, number] | undefined>(() => {
-    if (yDomain !== "fit") return undefined;
-    let min = Infinity;
-    let max = -Infinity;
-    for (const row of data) {
-      const stackTotal = stack.reduce((sum, s) => sum + toNum(row[s.key]), 0);
-      min = Math.min(min, stackTotal);
-      max = Math.max(max, stackTotal);
-      for (const key of [...lines.map((l) => l.key), ...bands.flatMap((b) => [b.lowKey, b.highKey])]) {
-        const v = toNum(row[key]);
-        min = Math.min(min, v);
-        max = Math.max(max, v);
-      }
-    }
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined;
-    if (min === max) {
-      const pad = Math.abs(max) * FIT_DOMAIN_PADDING_RATIO || 1;
-      return [min - pad, max + pad];
-    }
-    return [min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO, max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO];
-  }, [data, stack, lines, bands, yDomain]);
-  const [dragging, setDragging] = useState(false);
+  // Con `yDomain="fit"` el eje se ajusta al rango real de los datos (ver `fitYDomain`).
+  const fittedYDomain = useMemo(
+    () =>
+      yDomain === "fit"
+        ? fitYDomain(
+            data,
+            stack.map((s) => s.key),
+            [...lines.map((l) => l.key), ...bands.flatMap((b) => [b.lowKey, b.highKey])],
+          )
+        : undefined,
+    [data, stack, lines, bands, yDomain],
+  );
 
   const totalKeys = stack.map((s) => s.key);
 
@@ -245,7 +235,7 @@ export default function TimeSeriesChart({
         {summary && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
             <span className="text-muted">
-              {tc("selectionTitle")} ({summary.from}–{summary.to})
+              {tc("selectionTitle")} ({formatRangeX(summary.from)}–{formatRangeX(summary.to)})
             </span>
             <span className="font-semibold text-foreground">
               {tc("growth")}: {formatValue(summary.growth)}
@@ -260,7 +250,9 @@ export default function TimeSeriesChart({
       </div>
 
       <div
-        style={{ width: "100%", height }}
+        // `pan-y`: en móvil el arrastre horizontal selecciona un tramo y el vertical sigue
+        // desplazando la página.
+        style={{ width: "100%", height, touchAction: selectable ? "pan-y" : undefined }}
         className="select-none"
         role="img"
         aria-label={tc("imageLabel", { title })}
@@ -269,25 +261,7 @@ export default function TimeSeriesChart({
           <AreaChart
             data={data}
             margin={{ top: 8, right: showYAxis ? 8 : 2, bottom: 0, left: showYAxis ? 8 : 2 }}
-            onMouseDown={(s: RechartsState) => {
-              if (!selectable || s?.activeLabel === undefined) return;
-              const x = toNum(s.activeLabel);
-              setDragging(true);
-              setSelection({ start: x, end: x });
-            }}
-            onMouseMove={(s: RechartsState) => {
-              if (!selectable || !dragging || s?.activeLabel === undefined) return;
-              setSelection((prev) => (prev ? { ...prev, end: toNum(s.activeLabel) } : prev));
-            }}
-            onMouseUp={() => {
-              // Se resetea al soltar el ratón.
-              setDragging(false);
-              setSelection(null);
-            }}
-            onMouseLeave={() => {
-              setDragging(false);
-              setSelection(null);
-            }}
+            {...selectionHandlers}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis
@@ -308,7 +282,7 @@ export default function TimeSeriesChart({
               tick={{ fontSize: 12, fill: "var(--muted)" }}
               tickFormatter={formatAxisValue}
               width={70}
-              domain={yDomain === "fit" && fitYDomain ? fitYDomain : [0, "auto"]}
+              domain={fittedYDomain ?? [0, "auto"]}
               // Sin esto Recharts extiende el dominio para incluir el baseline (0) que usa
               // internamente para rellenar el área apilada, y el ajuste a 1% no se nota.
               allowDataOverflow={yDomain === "fit"}
