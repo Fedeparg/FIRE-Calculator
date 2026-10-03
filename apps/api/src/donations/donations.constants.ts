@@ -1,4 +1,4 @@
-/** Cliente de Stripe, o `null` si no está configurado. */
+/** Stripe client, or `null` when it is not configured. */
 export const STRIPE_CLIENT = Symbol('STRIPE_CLIENT');
 
 export const DONATION_MIN_EUR = 1;

@@ -13,10 +13,10 @@ import { AccountExportService } from './account-export.service.js';
 import { ConnectionsController } from './connections.controller.js';
 
 /**
- * Gestión de cuenta del usuario más allá de auth: "Aplicaciones conectadas" (listar/revocar
- * accesos OAuth/MCP) y la exportación RGPD. La exportación debe incluir todo dato personal,
- * por eso importa los módulos de datos (posiciones, cartera, escenarios, OAuth, avisos). Importa
- * `SessionModule` para que `JwtAuthGuard` valide la cookie de sesión.
+ * User account management beyond auth: "Connected applications" (list/revoke OAuth/MCP access)
+ * and the GDPR export. The export must include every piece of personal data, which is why it
+ * imports the data modules (positions, portfolio, scenarios, OAuth, alerts). It imports
+ * `SessionModule` so that `JwtAuthGuard` validates the session cookie.
  */
 @Module({
   imports: [

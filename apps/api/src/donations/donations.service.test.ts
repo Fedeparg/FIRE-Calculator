@@ -9,7 +9,7 @@ import { stub } from '../../test/factories.js';
 
 const APP_URL = 'https://sextante.test';
 
-/** Cliente de Stripe falso: solo la frontera que usa el servicio (`checkout.sessions.create`). */
+/** Fake Stripe client: only the boundary the service uses (`checkout.sessions.create`). */
 function setup(session: { url: string | null } = { url: 'https://checkout.stripe.test/s/1' }) {
   const create = vi.fn<(params: Stripe.Checkout.SessionCreateParams) => Promise<{ url: string | null }>>(() =>
     Promise.resolve(session),
@@ -19,18 +19,18 @@ function setup(session: { url: string | null } = { url: 'https://checkout.stripe
 }
 
 describe('DonationsService', () => {
-  it('sin cliente de Stripe está deshabilitado y createCheckoutUrl responde 503', async () => {
+  it('is disabled without a Stripe client and createCheckoutUrl responds 503', async () => {
     const service = new DonationsService(null, fakeConfig({ APP_URL }));
 
     expect(service.enabled).toBe(false);
     await expect(service.createCheckoutUrl(5, 'es')).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
-  it('con Stripe configurado está habilitado', () => {
+  it('is enabled when Stripe is configured', () => {
     expect(setup().service.enabled).toBe(true);
   });
 
-  it('crea una sesión de pago único en euros (importe en céntimos) y devuelve su URL', async () => {
+  it('creates a one-off payment session in euros (amount in cents) and returns its URL', async () => {
     const { service, create } = setup();
 
     await expect(service.createCheckoutUrl(5, 'es')).resolves.toBe('https://checkout.stripe.test/s/1');
@@ -45,7 +45,7 @@ describe('DonationsService', () => {
     expect(params.line_items?.[0]?.price_data?.unit_amount).toBe(500);
   });
 
-  it('en castellano las URLs de retorno no llevan prefijo de idioma', async () => {
+  it('in Spanish the return URLs have no locale prefix', async () => {
     const { service, create } = setup();
     await service.createCheckoutUrl(10, 'es');
 
@@ -54,7 +54,7 @@ describe('DonationsService', () => {
     expect(params.cancel_url).toBe(`${APP_URL}/sobre-mi`);
   });
 
-  it('en inglés usa el prefijo /en y los textos en inglés', async () => {
+  it('in English it uses the /en prefix and English copy', async () => {
     const { service, create } = setup();
     await service.createCheckoutUrl(10, 'en');
 
@@ -65,13 +65,13 @@ describe('DonationsService', () => {
     expect(params.line_items?.[0]?.price_data?.product_data?.name).toBe('Support Sextante');
   });
 
-  it('si Stripe no devuelve URL falla con 503 en vez de redirigir a null', async () => {
+  it('fails with 503 instead of redirecting to null when Stripe returns no URL', async () => {
     const { service } = setup({ url: null });
 
     await expect(service.createCheckoutUrl(5, 'es')).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
-  it('propaga los errores de Stripe', async () => {
+  it('propagates Stripe errors', async () => {
     const { service, create } = setup();
     create.mockRejectedValueOnce(new Error('card_declined'));
 

@@ -7,12 +7,12 @@ import { sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instrumentPrices } from '../db/schema.js';
 
-/** El cron es diario: 36 h dan margen a un fallo + reintento sin falsos positivos por findes o arranque tardío. */
+/** The cron is daily: 36 h leave room for a failure + retry without false positives on weekends or late starts. */
 const STALE_PRICES_AFTER_HOURS = 36;
 
 /**
- * Versión leída del `package.json` (no importada: `rootDir: ./src` lo impide). La ruta relativa
- * sirve en `dist/health/` y en `src/health/` bajo Vitest. Un fallo no debe romper la salud.
+ * Version read from `package.json` (not imported: `rootDir: ./src` forbids it). The relative path
+ * works from `dist/health/` and from `src/health/` under Vitest. A failure must not break the health check.
  */
 const VERSION: string = readVersion();
 
@@ -36,7 +36,7 @@ interface PricesHealth {
 }
 
 interface HealthResponse {
-  /** `degraded` = la API funciona, pero algo va mal (hoy: precios rancios). */
+  /** `degraded` = the API works, but something is wrong (today: stale prices). */
   status: 'ok' | 'degraded';
   database: 'up';
   version: string;
@@ -46,10 +46,10 @@ interface HealthResponse {
 }
 
 /**
- * Readiness check (consulta real a Postgres) con versión, uptime y frescura de precios.
- * Devuelve 200 aunque esté `degraded`: el healthcheck de Compose usa `res.ok` y unos precios
- * rancios no justifican reiniciar el contenedor; solo la BD caída da 503.
- * No expone configuración ni datos de usuario, solo agregados de la caché pública de cotizaciones.
+ * Readiness check (a real query to Postgres) with version, uptime and price freshness.
+ * Returns 200 even when `degraded`: the Compose healthcheck uses `res.ok` and stale prices do not
+ * justify restarting the container; only a database outage returns 503.
+ * Exposes no configuration or user data, only aggregates of the public quote cache.
  */
 @Controller('health')
 export class HealthController {
@@ -74,7 +74,7 @@ export class HealthController {
     };
   }
 
-  /** Consulta agregada que además prueba la BD. Seq scan sin índice a propósito: la tabla es diminuta. */
+  /** Aggregate query that also probes the database. Seq scan without an index on purpose: the table is tiny. */
   private async pricesHealth(): Promise<PricesHealth> {
     const [row] = await this.db
       .select({
@@ -85,7 +85,7 @@ export class HealthController {
 
     const fetchedAt = row?.lastFetchedAt ? new Date(row.lastFetchedAt) : null;
     if (!fetchedAt || Number.isNaN(fetchedAt.getTime())) {
-      // Sin cotizaciones aún no hay nada rancio.
+      // With no quotes yet, nothing can be stale.
       return { lastDate: row?.lastDate ?? null, lastFetchedAt: null, ageHours: null, stale: false };
     }
 
