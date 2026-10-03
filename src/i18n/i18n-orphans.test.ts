@@ -45,6 +45,8 @@ const DYNAMIC_PREFIXES: readonly string[] = [
   "portfolio.income.kinds.",
   "portfolio.realisedGains.blocks.",
   "portfolio.realisedGains.assetClasses.",
+  // Cabeceras del CSV: `realisedGainsCsvHeaders` las compone con t(`csv.${column}`).
+  "portfolio.realisedGains.csv.",
   "portfolio.form.assetClasses.",
   "portfolio.income.sources.",
   "account.notifications.languages.",

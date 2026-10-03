@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";
-import { UTF8_BOM } from "@/shared/format/csv";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
 import { buildIncomeReport, type IncomeEvent } from "@sextante/core/fiscal/income";
 import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
@@ -14,10 +13,12 @@ import { taxBoxesFor } from "@sextante/core/fiscal/tax-boxes";
 import type { AssetClass } from "@sextante/core/portfolio/types";
 import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
 import { buildRealisedGainsReport, type RealisedGainsPosition } from "@sextante/core/fiscal/realised-gains";
-import { buildIncomeCsv } from "@/features/portfolio/model/income-csv";
-import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
+import { buildIncomeCsv, incomeCsvTexts } from "@/features/portfolio/model/income-csv";
+import { buildRealisedGainsCsv, realisedGainsCsvHeaders } from "@/features/portfolio/model/realised-gains-csv";
+import { taxYears } from "@/features/portfolio/model/tax-year";
+import { useTaxYear } from "@/features/portfolio/use-tax-year";
 import { asLocale } from "@/i18n/types";
-import { downloadBlob } from "@/shared/format/download";
+import { useCsvDownload } from "@/shared/format/use-csv-download";
 import { useFormat } from "@/shared/format/use-format";
 import { trackEvent } from "@/shared/analytics/track";
 import Button from "@/shared/ui/Button";
@@ -66,24 +67,17 @@ export default function RealisedGainsReport({
   const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
   const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
   // Ejercicios con ventas o con cobros; sin ninguno, el actual (para poder anotar el primer cobro).
-  const years = useMemo(() => {
-    const all = new Set([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)]);
-    if (all.size === 0) all.add(currentYear);
-    return [...all].sort((a, b) => b - a);
-  }, [report, incomeReport, currentYear]);
-
-  // Por defecto, el ejercicio que se declara ahora (el año pasado), si tiene datos: el actual
-  // aún no ha terminado.
-  const [selected, setSelected] = useState<string>(() => {
-    const lastClosed = currentYear - 1;
-    return String(years.includes(lastClosed) ? lastClosed : years[0]);
-  });
-  const [failed, setFailed] = useState(false);
+  const years = useMemo(
+    () => taxYears([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)], currentYear),
+    [report, incomeReport, currentYear],
+  );
+  const [selectedYear, setSelectedYear] = useTaxYear(years, currentYear);
+  const csv = useCsvDownload();
   // Se mide si el informe se usa (sin cifras): decide si merece la pena seguir invirtiendo en él.
   useEffect(() => trackEvent({ name: "tax-report-viewed" }), []);
 
   function changeYear(value: string) {
-    setSelected(value);
+    setSelectedYear(Number(value));
     trackEvent({ name: "tax-report-year-changed" });
   }
 
@@ -91,7 +85,6 @@ export default function RealisedGainsReport({
     trackEvent({ name: "tax-report-exported", data: { format: "print" } });
     window.print();
   }
-  const selectedYear = years.find((y) => String(y) === selected) ?? years[0];
   const year = report.years.find((y) => y.year === selectedYear);
   const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
   const incomeSummary = incomeReport.years.find((y) => y.year === selectedYear);
@@ -115,78 +108,20 @@ export default function RealisedGainsReport({
 
   function handleDownload() {
     if (!year) return;
-    setFailed(false);
-    try {
-      const csv = buildRealisedGainsCsv(
-        year,
-        {
-          date: t("csv.date"),
-          ticker: t("csv.ticker"),
-          name: t("csv.name"),
-          currency: t("csv.currency"),
-          quantity: t("csv.quantity"),
-          price: t("csv.price"),
-          fees: t("csv.fees"),
-          transferValue: t("csv.transferValue"),
-          acquisitionValue: t("csv.acquisitionValue"),
-          gain: t("csv.gain"),
-          exchangeRate: t("csv.exchangeRate"),
-          transferValueEur: t("csv.transferValueEur"),
-          acquisitionValueEur: t("csv.acquisitionValueEur"),
-          gainEur: t("csv.gainEur"),
-          fxDifferenceEur: t("csv.fxDifferenceEur"),
-          deferredLossEur: t("csv.deferredLossEur"),
-          integratedLossEur: t("csv.integratedLossEur"),
-          computableGainEur: t("csv.computableGainEur"),
-        },
-        locale,
-      );
-      trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
-      downloadBlob(
-        new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }),
-        `sextante-plusvalias-${year.year}.csv`,
-      );
-    } catch {
-      // Solo puede fallar el navegador (memoria, descargas bloqueadas): se avisa.
-      setFailed(true);
-    }
+    const done = csv.download(
+      () => buildRealisedGainsCsv(year, realisedGainsCsvHeaders(t), locale),
+      `sextante-plusvalias-${year.year}.csv`,
+    );
+    if (done) trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
   }
 
   function handleDownloadIncome() {
-    setFailed(false);
-    try {
-      const csv = buildIncomeCsv(
-        incomeEvents,
-        {
-          date: tIncome("csv.date"),
-          kind: tIncome("kind"),
-          name: tIncome("name"),
-          isin: "ISIN",
-          country: tIncome("country"),
-          currency: tIncome("currency"),
-          gross: tIncome("gross"),
-          withholdingOrigin: tIncome("withholdingOrigin"),
-          withholdingSpain: tIncome("withholdingSpain"),
-          reportedToAeat: tIncome("csv.reportedToAeat"),
-          grossSource: tIncome("csv.grossSource"),
-          withholdingOriginSource: tIncome("csv.withholdingOriginSource"),
-        },
-        {
-          kind: (kind) => tIncome(`kinds.${kind}`),
-          source: (source) => tIncome(`sources.${source}`),
-          yes: tIncome("csv.yes"),
-          no: tIncome("csv.no"),
-        },
-        locale,
-      );
-      trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
-      downloadBlob(
-        new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }),
-        `sextante-cobros-${selectedYear}.csv`,
-      );
-    } catch {
-      setFailed(true);
-    }
+    const { headers, labels } = incomeCsvTexts(tIncome);
+    const done = csv.download(
+      () => buildIncomeCsv(incomeEvents, headers, labels, locale),
+      `sextante-cobros-${selectedYear}.csv`,
+    );
+    if (done) trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
   }
 
   return (
@@ -219,7 +154,7 @@ export default function RealisedGainsReport({
               </Button>
             )}
           </div>
-          {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
+          {csv.failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
         </div>
       </div>
 

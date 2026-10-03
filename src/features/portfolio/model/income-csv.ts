@@ -25,8 +25,41 @@ export const INCOME_CSV_COLUMNS = [
   "withholdingOriginSource",
 ] as const;
 
+type IncomeCsvColumn = (typeof INCOME_CSV_COLUMNS)[number];
+
 /** Cabeceras ya traducidas. */
-export type IncomeCsvHeaders = Readonly<Record<(typeof INCOME_CSV_COLUMNS)[number], string>>;
+export type IncomeCsvHeaders = Readonly<Record<IncomeCsvColumn, string>>;
+
+/** Clave de cada cabecera en el namespace `portfolio.income`: las del formulario, o `csv.*` si no hay campo. */
+const INCOME_CSV_HEADER_KEYS: Readonly<Record<IncomeCsvColumn, string>> = {
+  date: "csv.date",
+  kind: "kind",
+  name: "name",
+  isin: "isin",
+  country: "country",
+  currency: "currency",
+  gross: "gross",
+  withholdingOrigin: "withholdingOrigin",
+  withholdingSpain: "withholdingSpain",
+  reportedToAeat: "csv.reportedToAeat",
+  grossSource: "csv.grossSource",
+  withholdingOriginSource: "csv.withholdingOriginSource",
+};
+
+/** Cabeceras y textos del CSV de cobros con el `t` del namespace `portfolio.income`. */
+export function incomeCsvTexts(t: (key: string) => string): { headers: IncomeCsvHeaders; labels: IncomeCsvLabels } {
+  const headers = {} as Record<IncomeCsvColumn, string>;
+  for (const column of INCOME_CSV_COLUMNS) headers[column] = t(INCOME_CSV_HEADER_KEYS[column]);
+  return {
+    headers,
+    labels: {
+      kind: (kind) => t(`kinds.${kind}`),
+      source: (source) => t(`sources.${source}`),
+      yes: t("csv.yes"),
+      no: t("csv.no"),
+    },
+  };
+}
 
 /** Textos traducidos de los valores que no son números (tipo, procedencia, sí/no). */
 export type IncomeCsvLabels = {

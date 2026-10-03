@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { buildRealisedGainsReport } from "@sextante/core/fiscal/realised-gains";
-import { buildRealisedGainsCsv, REALISED_GAINS_CSV_COLUMNS, type RealisedGainsCsvHeaders } from "./realised-gains-csv";
+import {
+  buildRealisedGainsCsv,
+  REALISED_GAINS_CSV_COLUMNS,
+  realisedGainsCsvHeaders,
+  type RealisedGainsCsvHeaders,
+} from "./realised-gains-csv";
 
 const HEADERS = Object.fromEntries(REALISED_GAINS_CSV_COLUMNS.map((c) => [c, c])) as RealisedGainsCsvHeaders;
 
@@ -58,5 +63,14 @@ describe("buildRealisedGainsCsv", () => {
     expect(buildRealisedGainsCsv(missing, HEADERS, "en").split("\r\n")[1]).toBe(
       "2024-06-03,AAPL,,USD,1,120,0,120,100,20,,,,,,,,",
     );
+  });
+});
+
+describe("realisedGainsCsvHeaders", () => {
+  it("traduce cada columna con su clave csv.<columna>, en orden", () => {
+    const headers = realisedGainsCsvHeaders((key) => `[${key}]`);
+
+    expect(Object.keys(headers)).toEqual([...REALISED_GAINS_CSV_COLUMNS]);
+    expect(headers.gainEur).toBe("[csv.gainEur]");
   });
 });

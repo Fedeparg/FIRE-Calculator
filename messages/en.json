@@ -1660,6 +1660,7 @@
       "country": "Source country",
       "countryHint": "Two-letter code (US, NL, ES…). Needed for double taxation relief.",
       "name": "Security or account",
+      "isin": "ISIN",
       "reportedToAeat": "The payer already reported it to the Spanish tax agency (it is in my draft return)",
       "reportedBadge": "In the draft",
       "invalid": "Withholdings cannot exceed the gross amount and the country must be a two-letter code.",

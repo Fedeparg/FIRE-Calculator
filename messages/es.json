@@ -1660,6 +1660,7 @@
       "country": "País de la fuente",
       "countryHint": "Código de dos letras (US, NL, ES…). Hace falta para la doble imposición.",
       "name": "Valor o cuenta",
+      "isin": "ISIN",
       "reportedToAeat": "El pagador ya lo comunicó a Hacienda (sale en mi borrador)",
       "reportedBadge": "En el borrador",
       "invalid": "Las retenciones no pueden superar el íntegro y el país debe ser un código de dos letras.",

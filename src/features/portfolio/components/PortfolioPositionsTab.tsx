@@ -12,6 +12,7 @@ import {
   type PositionFilter,
 } from "@sextante/core/portfolio/positions";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import type { Position } from "@sextante/core/portfolio/types";
 import { ADD_POSITION_PARAM } from "../add-position";
 import DerivativesNotice from "./DerivativesNotice";
@@ -124,23 +125,20 @@ export default function PortfolioPositionsTab() {
                     className="h-11 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 sm:w-72"
                   />
                 </label>
-                <div role="group" aria-label={t("positions.filterLabel")} className="flex rounded-xl bg-surface-2 p-1">
-                  {POSITION_FILTERS.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setFilter(option)}
-                      aria-pressed={filter === option}
-                      className={`h-9 flex-1 whitespace-nowrap rounded-lg px-3 text-sm transition sm:flex-none ${
-                        filter === option
-                          ? "bg-surface font-semibold text-foreground shadow-sm"
-                          : "text-muted hover:text-foreground"
-                      }`}
-                    >
-                      {t(`positions.filter.${option}`)} <span className="tabular-nums">{counts[option]}</span>
-                    </button>
-                  ))}
-                </div>
+                <ToggleGroup
+                  label={t("positions.filterLabel")}
+                  value={filter}
+                  options={POSITION_FILTERS.map((option) => ({
+                    value: option,
+                    label: (
+                      <>
+                        {t(`positions.filter.${option}`)} <span className="tabular-nums">{counts[option]}</span>
+                      </>
+                    ),
+                  }))}
+                  onChange={setFilter}
+                  layout="fillOnMobile"
+                />
               </div>
               <PortfolioExport positions={positions} prices={prices} rates={rates} display={display} />
             </div>

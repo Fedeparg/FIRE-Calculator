@@ -33,8 +33,20 @@ export const REALISED_GAINS_CSV_COLUMNS = [
   "computableGainEur",
 ] as const;
 
-/** Cabeceras YA traducidas por quien llama. */
-export type RealisedGainsCsvHeaders = Readonly<Record<(typeof REALISED_GAINS_CSV_COLUMNS)[number], string>>;
+type RealisedGainsCsvColumn = (typeof REALISED_GAINS_CSV_COLUMNS)[number];
+
+/** Cabeceras YA traducidas. */
+export type RealisedGainsCsvHeaders = Readonly<Record<RealisedGainsCsvColumn, string>>;
+
+/**
+ * Cabeceras traducidas con el `t` del namespace `portfolio.realisedGains`: cada columna es la
+ * clave `csv.<columna>`. Viven junto al CSV para que una columna nueva no se olvide en la UI.
+ */
+export function realisedGainsCsvHeaders(t: (key: `csv.${RealisedGainsCsvColumn}`) => string): RealisedGainsCsvHeaders {
+  const headers = {} as Record<RealisedGainsCsvColumn, string>;
+  for (const column of REALISED_GAINS_CSV_COLUMNS) headers[column] = t(`csv.${column}`);
+  return headers;
+}
 
 export function buildRealisedGainsCsv(
   year: RealisedGainsYear,
