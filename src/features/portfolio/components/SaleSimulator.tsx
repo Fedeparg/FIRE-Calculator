@@ -102,7 +102,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
     [tradeLots, quantityNum, priceNum, feesNum],
   );
 
-  // Ganancia llevada a euros para poder aplicar `IRPF_AHORRO`. `null` = no convertible.
+  // Ganancia llevada a euros para poder aplicar `IRPF_SAVINGS_SCALE`. `null` = no convertible.
   const gainInEur =
     simulation && !simulation.insufficient ? convertCurrency(simulation.gain, currency, TAX_CURRENCY, rates) : null;
   const tax = gainInEur !== null ? estimateSavingsTax(gainInEur) : null;

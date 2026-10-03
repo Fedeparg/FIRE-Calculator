@@ -1,9 +1,9 @@
-// Cuota de la escala del ahorro (art. 66 y 76 LIRPF, `IRPF_AHORRO`): la única implementación,
+// Cuota de la escala del ahorro (art. 66 y 76 LIRPF, `IRPF_SAVINGS_SCALE`): la única implementación,
 // que usan la base del ahorro del informe de la Renta (`savingsTax`) y la estimación de una
 // ganancia aislada (`estimateSavingsTax`: simulador de venta y resumen de plusvalías). Core puro.
 
 import { nonNegative } from "../inputs.js";
-import { applyProgressiveBrackets, IRPF_AHORRO, marginalRate } from "./brackets.js";
+import { applyProgressiveBrackets, IRPF_SAVINGS_SCALE, marginalRate } from "./brackets.js";
 
 export interface SavingsTax {
   /** Cuota íntegra de la escala del ahorro. */
@@ -12,11 +12,11 @@ export interface SavingsTax {
   readonly averageRatePct: number | null;
 }
 
-/** Aplica la escala del ahorro (`IRPF_AHORRO`) a la base liquidable. */
+/** Aplica la escala del ahorro (`IRPF_SAVINGS_SCALE`) a la base liquidable. */
 export function savingsTax(base: number): SavingsTax {
   const b = nonNegative(base);
   if (b === 0) return { tax: 0, averageRatePct: null };
-  const tax = applyProgressiveBrackets(b, IRPF_AHORRO);
+  const tax = applyProgressiveBrackets(b, IRPF_SAVINGS_SCALE);
   return { tax, averageRatePct: (tax / b) * 100 };
 }
 
@@ -24,7 +24,7 @@ export function savingsTax(base: number): SavingsTax {
 export interface SavingsTaxEstimate {
   /** Base del ahorro considerada: la ganancia, o 0 si la operación da pérdida. */
   base: number;
-  /** Cuota estimada aplicando `IRPF_AHORRO` por tramos. */
+  /** Cuota estimada aplicando `IRPF_SAVINGS_SCALE` por tramos. */
   tax: number;
   /** Ganancia después de impuestos (`gain − tax`). Con pérdida, la propia pérdida. */
   net: number;
@@ -41,5 +41,11 @@ export function estimateSavingsTax(gain: number): SavingsTaxEstimate {
   }
   const base = Math.max(0, gain);
   const { tax, averageRatePct } = savingsTax(base);
-  return { base, tax, net: gain - tax, effectiveRate: averageRatePct, marginal: marginalRate(base, IRPF_AHORRO) };
+  return {
+    base,
+    tax,
+    net: gain - tax,
+    effectiveRate: averageRatePct,
+    marginal: marginalRate(base, IRPF_SAVINGS_SCALE),
+  };
 }

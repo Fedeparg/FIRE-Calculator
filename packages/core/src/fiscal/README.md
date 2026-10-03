@@ -26,7 +26,7 @@ progresivos. Es la única fuente de verdad de los tipos impositivos.
   vez del 47 % real). Desde 2011 no hay supletoriedad real: rige solo para Ceuta y
   Melilla (DA 32ª LIRPF) y residentes en el extranjero, y es la que se usa si no
   se indica comunidad.
-- **Escala general** `IRPF_GENERAL` = estatal + supletoria tramo a tramo (el 47 %
+- **Escala general** `IRPF_GENERAL_SCALE` = estatal + supletoria tramo a tramo (el 47 %
   final sale de 24,50 + 22,50).
 - **Ahorro, Patrimonio (Ley 19/1991, art. 30) y Sucesiones (Ley 29/1987, art. 21)**:
   escalas estatales; las CCAA pueden aprobar la suya.
@@ -49,7 +49,7 @@ Rendimiento del trabajo para las calculadoras de salario bruto→neto, retenció
 planes de pensiones e IRPF de autónomos. Aproxima el cálculo de la AEAT por el
 método de doble escala: cuota(base) − cuota(mínimo personal y familiar).
 
-- **Sin comunidad**: escala conjunta `IRPF_GENERAL` y mínimo estatal (comportamiento
+- **Sin comunidad**: escala conjunta `IRPF_GENERAL_SCALE` y mínimo estatal (comportamiento
   de Ceuta y Melilla).
 - **Con comunidad**: cuota estatal (escala y mínimo estatales) + cuota autonómica
   (escala de la comunidad y su mínimo propio si lo tiene), cada una acotada a cero
@@ -377,7 +377,7 @@ Integración y compensación de la base imponible del ahorro. Puro y sin texto: 
 
 ## `savings-tax.ts`
 
-La única implementación de la cuota de la escala del ahorro (`IRPF_AHORRO`, arts. 66 y 76 LIRPF).
+La única implementación de la cuota de la escala del ahorro (`IRPF_SAVINGS_SCALE`, arts. 66 y 76 LIRPF).
 
 - `savingsTax(base)`: cuota íntegra y tipo medio efectivo en % (`null` con base 0). La usa la
   base del ahorro del informe de la Renta (`savings-return.ts`).

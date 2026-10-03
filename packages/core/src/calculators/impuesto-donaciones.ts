@@ -7,7 +7,7 @@ import { nonNegative } from "../inputs.js";
 import {
   GIFT_TAX_KINSHIP_COEFFICIENTS,
   GIFT_TAX_WEALTH_TIERS,
-  ISD_ESTATAL,
+  GIFT_TAX_STATE_SCALE,
   applyProgressiveBrackets,
 } from "../fiscal/brackets.js";
 
@@ -52,7 +52,7 @@ export function computeGiftTax(input: GiftTaxInput): GiftTaxResult {
   const rebate = Math.min(100, Math.max(0, input.regionalRebate || 0));
 
   const taxableBase = Math.max(0, amount - reduction);
-  const grossTax = applyProgressiveBrackets(taxableBase, ISD_ESTATAL);
+  const grossTax = applyProgressiveBrackets(taxableBase, GIFT_TAX_STATE_SCALE);
   const adjustedTax = grossTax * coefficient;
   const tax = adjustedTax * (1 - rebate / 100);
 

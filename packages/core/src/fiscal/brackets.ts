@@ -61,7 +61,7 @@ export function effectiveRate(base: number, brackets: readonly Bracket[]): numbe
  * tal cual, sin factor 0,5: la ley ya la da dividida por dos. Fuente: AEAT, Manual
  * práctico de Renta 2025.
  */
-export const IRPF_ESTATAL_GENERAL: readonly Bracket[] = [
+export const IRPF_STATE_SCALE: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
   { upTo: 20200, rate: 12 },
   { upTo: 35200, rate: 15 },
@@ -76,7 +76,7 @@ export const IRPF_ESTATAL_GENERAL: readonly Bracket[] = [
  * (confundirlas daría 49 % en vez de 47 %). Rige para Ceuta y Melilla (DA 32ª LIRPF)
  * y no residentes, y es la que se usa sin comunidad (ver `regions.ts`).
  */
-export const IRPF_AUTONOMICA_SUPLETORIA: readonly Bracket[] = [
+export const IRPF_DEFAULT_REGIONAL_SCALE: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
   { upTo: 20200, rate: 12 },
   { upTo: 35200, rate: 15 },
@@ -88,7 +88,7 @@ export const IRPF_AUTONOMICA_SUPLETORIA: readonly Bracket[] = [
  * IRPF — escala general: suma tramo a tramo de la estatal y la supletoria (47 % =
  * 24,50 + 22,50). Se aplica sin comunidad; cada comunidad tiene la suya. Fuente: AEAT 2026.
  */
-export const IRPF_GENERAL: readonly Bracket[] = [
+export const IRPF_GENERAL_SCALE: readonly Bracket[] = [
   { upTo: 12450, rate: 19 },
   { upTo: 20200, rate: 24 },
   { upTo: 35200, rate: 30 },
@@ -98,7 +98,7 @@ export const IRPF_GENERAL: readonly Bracket[] = [
 ];
 
 /** IRPF — escala del ahorro (intereses, dividendos, ganancias patrimoniales). Fuente: AEAT 2026. */
-export const IRPF_AHORRO: readonly Bracket[] = [
+export const IRPF_SAVINGS_SCALE: readonly Bracket[] = [
   { upTo: 6000, rate: 19 },
   { upTo: 50000, rate: 21 },
   { upTo: 200000, rate: 23 },
@@ -107,7 +107,7 @@ export const IRPF_AHORRO: readonly Bracket[] = [
 ];
 
 /** Impuesto sobre el Patrimonio — escala estatal (supletoria de las CCAA). Ley 19/1991, art. 30. */
-export const PATRIMONIO_ESTATAL: readonly Bracket[] = [
+export const WEALTH_TAX_STATE_SCALE: readonly Bracket[] = [
   { upTo: 167129.45, rate: 0.2 },
   { upTo: 334252.88, rate: 0.3 },
   { upTo: 668499.75, rate: 0.5 },
@@ -125,7 +125,7 @@ export const WEALTH_TAX_EXEMPT_MINIMUM = 700000;
 export const WEALTH_TAX_PRIMARY_RESIDENCE_EXEMPTION = 300000;
 
 /** Sucesiones y Donaciones — tarifa estatal (supletoria de las CCAA). Ley 29/1987, art. 21. */
-export const ISD_ESTATAL: readonly Bracket[] = [
+export const GIFT_TAX_STATE_SCALE: readonly Bracket[] = [
   { upTo: 7993.46, rate: 7.65 },
   { upTo: 15980.91, rate: 8.5 },
   { upTo: 23968.36, rate: 9.35 },
@@ -160,25 +160,25 @@ export const SS_MAX_BASE_ANNUAL = 61214.4;
 export const WORK_OTHER_EXPENSES = 2000;
 
 /** Mínimo personal del contribuyente (general, < 65 años). Art. 57 LIRPF. */
-export const MINIMO_PERSONAL = 5550;
+export const PERSONAL_MINIMUM = 5550;
 
-export const MINIMO_PERSONAL_65 = 6700;
+export const PERSONAL_MINIMUM_65 = 6700;
 
-export const MINIMO_PERSONAL_75 = 8100;
+export const PERSONAL_MINIMUM_75 = 8100;
 
 /**
  * Mínimo por descendientes (art. 58 LIRPF) por orden de hijo (1.º, 2.º, 3.º, 4.º y
  * siguientes). Se asume que el contribuyente computa el 100 % (compartido, la mitad).
  */
-export const MINIMO_DESCENDIENTES = [2400, 2700, 4000, 4500] as const;
+export const DESCENDANT_MINIMUMS = [2400, 2700, 4000, 4500] as const;
 
 /** Incremento del mínimo por cada descendiente menor de 3 años. */
-export const MINIMO_DESCENDIENTE_MENOR_3 = 2800;
+export const DESCENDANT_UNDER_3_MINIMUM = 2800;
 
-export const MINIMO_ASCENDIENTES = 1150;
+export const ASCENDANT_MINIMUM = 1150;
 
-export const MINIMO_DISCAPACIDAD_33 = 3000;
-export const MINIMO_DISCAPACIDAD_65 = 9000;
+export const DISABILITY_MINIMUM_33 = 3000;
+export const DISABILITY_MINIMUM_65 = 9000;
 
 /**
  * Sucesiones y Donaciones — umbrales (€) de patrimonio preexistente de los cuatro tramos del
@@ -198,7 +198,7 @@ export const GIFT_TAX_KINSHIP_COEFFICIENTS = {
 } as const;
 
 /** Reducción en la base por tributación conjunta (unidad familiar biparental). */
-export const REDUCCION_TRIBUTACION_CONJUNTA = 3400;
+export const JOINT_RETURN_REDUCTION = 3400;
 
 /** Límite anual de aportación individual a planes de pensiones con reducción. Art. 52 LIRPF. */
 export const PENSION_INDIVIDUAL_LIMIT = 1500;

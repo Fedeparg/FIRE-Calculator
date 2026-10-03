@@ -2,7 +2,7 @@
 // Core puro. Orientativo: muchas CCAA bonifican o modifican la escala.
 
 import {
-  PATRIMONIO_ESTATAL,
+  WEALTH_TAX_STATE_SCALE,
   WEALTH_TAX_EXEMPT_MINIMUM,
   WEALTH_TAX_PRIMARY_RESIDENCE_EXEMPTION,
   applyProgressiveBrackets,
@@ -33,7 +33,7 @@ export function computeWealthTax(input: WealthTaxInput): WealthTaxResult {
 
   const residenceExemption = Math.min(residence, WEALTH_TAX_PRIMARY_RESIDENCE_EXEMPTION);
   const taxableBase = Math.max(0, totalWealth - residenceExemption - exemptMinimum);
-  const grossTax = applyProgressiveBrackets(taxableBase, PATRIMONIO_ESTATAL);
+  const grossTax = applyProgressiveBrackets(taxableBase, WEALTH_TAX_STATE_SCALE);
   const tax = grossTax * (1 - rebate / 100);
 
   return {

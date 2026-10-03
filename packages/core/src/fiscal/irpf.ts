@@ -5,10 +5,10 @@
 import { itemAt } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
 import {
-  IRPF_ESTATAL_GENERAL,
-  IRPF_GENERAL,
-  MINIMO_PERSONAL,
-  REDUCCION_TRIBUTACION_CONJUNTA,
+  IRPF_STATE_SCALE,
+  IRPF_GENERAL_SCALE,
+  PERSONAL_MINIMUM,
+  JOINT_RETURN_REDUCTION,
   SS_EMPLOYEE_RATE,
   SS_EMPLOYEE_RATE_TEMPORAL,
   SS_MAX_BASE_ANNUAL,
@@ -135,20 +135,20 @@ export interface GeneralIncomeTaxOptions {
 
 /**
  * Cuota íntegra del IRPF sobre la base liquidable general (doble escala:
- * cuota(base) − cuota(mínimo)), nunca negativa. Sin comunidad usa `IRPF_GENERAL`; con
+ * cuota(base) − cuota(mínimo)), nunca negativa. Sin comunidad usa `IRPF_GENERAL_SCALE`; con
  * comunidad suma cuota estatal y autonómica, cada una acotada a cero por separado.
  */
 export function generalIncomeTax(
   taxableBase: number,
-  minimum: number = MINIMO_PERSONAL,
+  minimum: number = PERSONAL_MINIMUM,
   options: GeneralIncomeTaxOptions = {},
 ): number {
   const base = nonNegative(taxableBase);
   const stateMinimum = Math.max(0, minimum);
 
   if (options.region === undefined) {
-    const onBase = applyProgressiveBrackets(base, IRPF_GENERAL);
-    const onMinimum = applyProgressiveBrackets(stateMinimum, IRPF_GENERAL);
+    const onBase = applyProgressiveBrackets(base, IRPF_GENERAL_SCALE);
+    const onMinimum = applyProgressiveBrackets(stateMinimum, IRPF_GENERAL_SCALE);
     return Math.max(0, onBase - onMinimum);
   }
 
@@ -157,7 +157,7 @@ export function generalIncomeTax(
 
   const stateQuota = Math.max(
     0,
-    applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL) - applyProgressiveBrackets(stateMinimum, IRPF_ESTATAL_GENERAL),
+    applyProgressiveBrackets(base, IRPF_STATE_SCALE) - applyProgressiveBrackets(stateMinimum, IRPF_STATE_SCALE),
   );
   const regionalQuota = Math.max(
     0,
@@ -169,8 +169,8 @@ export function generalIncomeTax(
 
 /** Tipo marginal (%) del IRPF general, estatal + autonómico (supletoria sin comunidad). */
 export function generalMarginalRate(taxableBase: number, region?: RegionCode): number {
-  if (region === undefined) return marginalRate(taxableBase, IRPF_GENERAL);
-  return marginalRate(taxableBase, IRPF_ESTATAL_GENERAL) + marginalRate(taxableBase, regionalScale(region));
+  if (region === undefined) return marginalRate(taxableBase, IRPF_GENERAL_SCALE);
+  return marginalRate(taxableBase, IRPF_STATE_SCALE) + marginalRate(taxableBase, regionalScale(region));
 }
 
 export interface NetSalaryInput extends PersonalCircumstances {
@@ -218,7 +218,7 @@ export function estimateNetSalary(input: NetSalaryInput): NetSalaryResult {
   const reduction = workIncomeReduction(netBeforeReduction);
   const netWorkIncome = Math.max(0, netBeforeReduction - reduction);
 
-  const jointReduction = input.jointReturn ? REDUCCION_TRIBUTACION_CONJUNTA : 0;
+  const jointReduction = input.jointReturn ? JOINT_RETURN_REDUCTION : 0;
   const taxableBase = Math.max(0, netWorkIncome - pension - jointReduction);
 
   const personalMinimum = personalAndFamilyMinimum(input);

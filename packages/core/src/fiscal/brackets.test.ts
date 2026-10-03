@@ -3,12 +3,12 @@ import { todayUtc } from "../dates.js";
 import {
   FISCAL_REVIEW_BY,
   FISCAL_YEAR,
-  IRPF_AHORRO,
-  IRPF_AUTONOMICA_SUPLETORIA,
-  IRPF_ESTATAL_GENERAL,
-  IRPF_GENERAL,
-  ISD_ESTATAL,
-  PATRIMONIO_ESTATAL,
+  IRPF_SAVINGS_SCALE,
+  IRPF_DEFAULT_REGIONAL_SCALE,
+  IRPF_STATE_SCALE,
+  IRPF_GENERAL_SCALE,
+  GIFT_TAX_STATE_SCALE,
+  WEALTH_TAX_STATE_SCALE,
   applyProgressiveBrackets,
   effectiveRate,
   marginalRate,
@@ -41,15 +41,15 @@ describe("applyProgressiveBrackets", () => {
   });
 
   it("escala del ahorro: 10.000 € → 19%×6000 + 21%×4000", () => {
-    expect(applyProgressiveBrackets(10000, IRPF_AHORRO)).toBeCloseTo(1140 + 840, 6);
+    expect(applyProgressiveBrackets(10000, IRPF_SAVINGS_SCALE)).toBeCloseTo(1140 + 840, 6);
   });
 });
 
 describe("marginalRate", () => {
   it("devuelve el tipo del tramo donde cae la base", () => {
     expect(marginalRate(150, SIMPLE)).toBe(20);
-    expect(marginalRate(5000, IRPF_GENERAL)).toBe(19);
-    expect(marginalRate(40000, IRPF_GENERAL)).toBe(37);
+    expect(marginalRate(5000, IRPF_GENERAL_SCALE)).toBe(19);
+    expect(marginalRate(40000, IRPF_GENERAL_SCALE)).toBe(37);
   });
 });
 
@@ -64,12 +64,12 @@ describe("effectiveRate", () => {
 });
 
 describe.each([
-  ["IRPF_GENERAL", IRPF_GENERAL],
-  ["IRPF_ESTATAL_GENERAL", IRPF_ESTATAL_GENERAL],
-  ["IRPF_AUTONOMICA_SUPLETORIA", IRPF_AUTONOMICA_SUPLETORIA],
-  ["IRPF_AHORRO", IRPF_AHORRO],
-  ["PATRIMONIO_ESTATAL", PATRIMONIO_ESTATAL],
-  ["ISD_ESTATAL", ISD_ESTATAL],
+  ["IRPF_GENERAL_SCALE", IRPF_GENERAL_SCALE],
+  ["IRPF_STATE_SCALE", IRPF_STATE_SCALE],
+  ["IRPF_DEFAULT_REGIONAL_SCALE", IRPF_DEFAULT_REGIONAL_SCALE],
+  ["IRPF_SAVINGS_SCALE", IRPF_SAVINGS_SCALE],
+  ["WEALTH_TAX_STATE_SCALE", WEALTH_TAX_STATE_SCALE],
+  ["GIFT_TAX_STATE_SCALE", GIFT_TAX_STATE_SCALE],
 ] as const)("límites de tramo de %s", (_name, scale) => {
   const CENT = 0.01;
   // Cuota acumulada esperada en cada límite superior, sumada tramo a tramo con los tipos de la escala.

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  IRPF_AUTONOMICA_SUPLETORIA,
-  IRPF_ESTATAL_GENERAL,
-  IRPF_GENERAL,
+  IRPF_DEFAULT_REGIONAL_SCALE,
+  IRPF_STATE_SCALE,
+  IRPF_GENERAL_SCALE,
   applyProgressiveBrackets,
   marginalRate,
 } from "./brackets.js";
@@ -34,12 +34,12 @@ describe("escala estatal (art. 63.1.1º LIRPF)", () => {
     [60000, 8950.75],
     [300000, 62950.75],
   ])("cuota íntegra acumulada en %d € = %d €", (base, expected) => {
-    expect(applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL)).toBeCloseTo(expected, 6);
+    expect(applyProgressiveBrackets(base, IRPF_STATE_SCALE)).toBeCloseTo(expected, 6);
   });
 
   it("se aplica verbatim: NO lleva factor 0,5", () => {
     // 12.450 € al 9,50 %. Con un 0,5 espurio saldría la mitad.
-    expect(applyProgressiveBrackets(12450, IRPF_ESTATAL_GENERAL)).toBeCloseTo(1182.75, 6);
+    expect(applyProgressiveBrackets(12450, IRPF_STATE_SCALE)).toBeCloseTo(1182.75, 6);
   });
 });
 
@@ -47,17 +47,16 @@ describe("escala autonómica supletoria (art. 65 LIRPF)", () => {
   it("estatal + supletoria reproduce la escala conjunta 19/24/30/37/45/47", () => {
     for (const base of SAMPLE_BASES) {
       const split =
-        applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL) +
-        applyProgressiveBrackets(base, IRPF_AUTONOMICA_SUPLETORIA);
-      expect(split).toBeCloseTo(applyProgressiveBrackets(base, IRPF_GENERAL), 6);
+        applyProgressiveBrackets(base, IRPF_STATE_SCALE) + applyProgressiveBrackets(base, IRPF_DEFAULT_REGIONAL_SCALE);
+      expect(split).toBeCloseTo(applyProgressiveBrackets(base, IRPF_GENERAL_SCALE), 6);
     }
   });
 
   it("su último tramo es 22,50 % plano, no 24,50 % como el estatal", () => {
     // Por encima de 300.000 € el marginal conjunto es 47 % (24,5 + 22,5), no 49 %.
-    expect(marginalRate(400000, IRPF_AUTONOMICA_SUPLETORIA)).toBe(22.5);
-    expect(marginalRate(400000, IRPF_ESTATAL_GENERAL)).toBe(24.5);
-    expect(marginalRate(400000, IRPF_GENERAL)).toBe(47);
+    expect(marginalRate(400000, IRPF_DEFAULT_REGIONAL_SCALE)).toBe(22.5);
+    expect(marginalRate(400000, IRPF_STATE_SCALE)).toBe(24.5);
+    expect(marginalRate(400000, IRPF_GENERAL_SCALE)).toBe(47);
   });
 });
 
@@ -154,9 +153,9 @@ describe("Castilla-La Mancha", () => {
   it("su escala es idéntica a la supletoria, así que reproduce la conjunta 19/24/30/37/45/47", () => {
     for (const base of SAMPLE_BASES) {
       const combined =
-        applyProgressiveBrackets(base, IRPF_ESTATAL_GENERAL) +
+        applyProgressiveBrackets(base, IRPF_STATE_SCALE) +
         applyProgressiveBrackets(base, regionalScale("castilla-la-mancha"));
-      expect(combined).toBeCloseTo(applyProgressiveBrackets(base, IRPF_GENERAL), 6);
+      expect(combined).toBeCloseTo(applyProgressiveBrackets(base, IRPF_GENERAL_SCALE), 6);
     }
   });
 });

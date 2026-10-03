@@ -3,15 +3,15 @@
 // Alcance y supuestos: ver ./README.md. Cifras orientativas, sin deducciones autonómicas.
 
 import {
-  IRPF_AUTONOMICA_SUPLETORIA,
-  MINIMO_ASCENDIENTES,
-  MINIMO_DESCENDIENTES,
-  MINIMO_DESCENDIENTE_MENOR_3,
-  MINIMO_DISCAPACIDAD_33,
-  MINIMO_DISCAPACIDAD_65,
-  MINIMO_PERSONAL,
-  MINIMO_PERSONAL_65,
-  MINIMO_PERSONAL_75,
+  IRPF_DEFAULT_REGIONAL_SCALE,
+  ASCENDANT_MINIMUM,
+  DESCENDANT_MINIMUMS,
+  DESCENDANT_UNDER_3_MINIMUM,
+  DISABILITY_MINIMUM_33,
+  DISABILITY_MINIMUM_65,
+  PERSONAL_MINIMUM,
+  PERSONAL_MINIMUM_65,
+  PERSONAL_MINIMUM_75,
   type Bracket,
 } from "./brackets.js";
 
@@ -20,7 +20,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Andalucía — art. 23 Ley 5/2021, de 20 de octubre, de Tributos Cedidos. */
-const IRPF_AUT_ANDALUCIA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_ANDALUCIA: readonly Bracket[] = [
   { upTo: 13000, rate: 9.5 },
   { upTo: 21100, rate: 12 },
   { upTo: 35200, rate: 15 },
@@ -29,7 +29,7 @@ const IRPF_AUT_ANDALUCIA: readonly Bracket[] = [
 ];
 
 /** Aragón — art. 110-1 TR tributos cedidos (Decreto Legislativo 1/2005, de 26 de septiembre). */
-const IRPF_AUT_ARAGON: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_ARAGON: readonly Bracket[] = [
   { upTo: 13072.5, rate: 9.5 },
   { upTo: 21210, rate: 12 },
   { upTo: 36960, rate: 15 },
@@ -46,7 +46,7 @@ const IRPF_AUT_ARAGON: readonly Bracket[] = [
  * en la redacción dada por el art. Único.Uno de la Ley 3/2025, de 19 de noviembre
  * (BOPA 2-12-2025), que modificó la escala con efectos en el propio 2025.
  */
-const IRPF_AUT_ASTURIAS: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_ASTURIAS: readonly Bracket[] = [
   { upTo: 12450, rate: 9 },
   { upTo: 17707.2, rate: 12 },
   { upTo: 33007.2, rate: 14 },
@@ -58,7 +58,7 @@ const IRPF_AUT_ASTURIAS: readonly Bracket[] = [
 ];
 
 /** Illes Balears — art. 1 TR Decreto Legislativo 1/2014, de 6 de junio. */
-const IRPF_AUT_BALEARES: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_BALEARES: readonly Bracket[] = [
   { upTo: 10000, rate: 9 },
   { upTo: 18000, rate: 11.25 },
   { upTo: 30000, rate: 14.25 },
@@ -76,7 +76,7 @@ const IRPF_AUT_BALEARES: readonly Bracket[] = [
  * efectos desde el 1-1-2025. El último tramo es 123.745 €, no los 121.200 € del
  * Anexo I de Hacienda (texto anterior a la deflactación; ver README).
  */
-const IRPF_AUT_CANARIAS: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_CANARIAS: readonly Bracket[] = [
   { upTo: 13748, rate: 9 },
   { upTo: 19422, rate: 11.5 },
   { upTo: 35924, rate: 14 },
@@ -87,7 +87,7 @@ const IRPF_AUT_CANARIAS: readonly Bracket[] = [
 ];
 
 /** Cantabria — art. 1 TR Decreto Legislativo 62/2008, de 19 de junio. */
-const IRPF_AUT_CANTABRIA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_CANTABRIA: readonly Bracket[] = [
   { upTo: 13000, rate: 8.5 },
   { upTo: 21000, rate: 11 },
   { upTo: 35200, rate: 14.5 },
@@ -101,10 +101,10 @@ const IRPF_AUT_CANTABRIA: readonly Bracket[] = [
  * idéntica a la supletoria del art. 65 LIRPF (suma 19 / 24 / 30 / 37 / 45 / 47): se
  * referencia en vez de copiarla. Si la comunidad la cambia, aquí va su propia tabla.
  */
-const IRPF_AUT_CASTILLA_LA_MANCHA: readonly Bracket[] = IRPF_AUTONOMICA_SUPLETORIA;
+const IRPF_REGIONAL_SCALE_CASTILLA_LA_MANCHA: readonly Bracket[] = IRPF_DEFAULT_REGIONAL_SCALE;
 
 /** Castilla y León — art. 1 TR Decreto Legislativo 1/2013, de 12 de septiembre. */
-const IRPF_AUT_CASTILLA_Y_LEON: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_CASTILLA_Y_LEON: readonly Bracket[] = [
   { upTo: 12450, rate: 9 },
   { upTo: 20200, rate: 12 },
   { upTo: 35200, rate: 14 },
@@ -116,7 +116,7 @@ const IRPF_AUT_CASTILLA_Y_LEON: readonly Bracket[] = [
  * Cataluña — art. 611-1 Decreto Legislativo 1/2024, de 12 de marzo (libro sexto
  * del código tributario de Catalunya).
  */
-const IRPF_AUT_CATALUNA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_CATALUNA: readonly Bracket[] = [
   { upTo: 12500, rate: 9.5 },
   { upTo: 22000, rate: 12.5 },
   { upTo: 33000, rate: 16 },
@@ -128,7 +128,7 @@ const IRPF_AUT_CATALUNA: readonly Bracket[] = [
 ];
 
 /** Extremadura — art. 1 TR Decreto Legislativo 1/2018, de 10 de abril. */
-const IRPF_AUT_EXTREMADURA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_EXTREMADURA: readonly Bracket[] = [
   { upTo: 12450, rate: 8 },
   { upTo: 20200, rate: 10 },
   { upTo: 24200, rate: 16 },
@@ -141,7 +141,7 @@ const IRPF_AUT_EXTREMADURA: readonly Bracket[] = [
 ];
 
 /** Galicia — art. 4 TR Decreto Legislativo 1/2011, de 28 de julio. */
-const IRPF_AUT_GALICIA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_GALICIA: readonly Bracket[] = [
   { upTo: 12985.35, rate: 9 },
   { upTo: 21068.6, rate: 11.65 },
   { upTo: 35200, rate: 14.9 },
@@ -150,7 +150,7 @@ const IRPF_AUT_GALICIA: readonly Bracket[] = [
 ];
 
 /** Comunidad de Madrid — art. 1 TR Decreto Legislativo 1/2010, de 21 de octubre. */
-const IRPF_AUT_MADRID: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_MADRID: readonly Bracket[] = [
   { upTo: 13362.22, rate: 8.5 },
   { upTo: 19004.63, rate: 10.7 },
   { upTo: 35425.68, rate: 12.8 },
@@ -159,7 +159,7 @@ const IRPF_AUT_MADRID: readonly Bracket[] = [
 ];
 
 /** Región de Murcia — art. 2 TR Decreto Legislativo 1/2010, de 5 de noviembre. */
-const IRPF_AUT_MURCIA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_MURCIA: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
   { upTo: 20200, rate: 11.2 },
   { upTo: 34000, rate: 13.3 },
@@ -168,7 +168,7 @@ const IRPF_AUT_MURCIA: readonly Bracket[] = [
 ];
 
 /** La Rioja — art. 31 Ley 10/2017, de 27 de octubre. */
-const IRPF_AUT_LA_RIOJA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_LA_RIOJA: readonly Bracket[] = [
   { upTo: 12450, rate: 8 },
   { upTo: 20200, rate: 10.6 },
   { upTo: 35200, rate: 13.6 },
@@ -180,7 +180,7 @@ const IRPF_AUT_LA_RIOJA: readonly Bracket[] = [
 ];
 
 /** Comunitat Valenciana — art. 2 Ley 13/1997, de 23 de diciembre. */
-const IRPF_AUT_VALENCIANA: readonly Bracket[] = [
+const IRPF_REGIONAL_SCALE_VALENCIANA: readonly Bracket[] = [
   { upTo: 12000, rate: 9 },
   { upTo: 22000, rate: 12 },
   { upTo: 32000, rate: 15 },
@@ -226,14 +226,14 @@ export interface PersonalMinimumSchedule {
  * autonómico solo la autonómica (art. 46.1.a Ley 22/2009).
  */
 export const STATE_PERSONAL_MINIMUM: PersonalMinimumSchedule = {
-  taxpayer: MINIMO_PERSONAL,
-  taxpayer65: MINIMO_PERSONAL_65,
-  taxpayer75: MINIMO_PERSONAL_75,
-  descendants: MINIMO_DESCENDIENTES,
-  descendantUnder3: MINIMO_DESCENDIENTE_MENOR_3,
-  ascendant65: MINIMO_ASCENDIENTES,
-  disability33: MINIMO_DISCAPACIDAD_33,
-  disability65: MINIMO_DISCAPACIDAD_65,
+  taxpayer: PERSONAL_MINIMUM,
+  taxpayer65: PERSONAL_MINIMUM_65,
+  taxpayer75: PERSONAL_MINIMUM_75,
+  descendants: DESCENDANT_MINIMUMS,
+  descendantUnder3: DESCENDANT_UNDER_3_MINIMUM,
+  ascendant65: ASCENDANT_MINIMUM,
+  disability33: DISABILITY_MINIMUM_33,
+  disability65: DISABILITY_MINIMUM_65,
 };
 
 // Importes del ejercicio 2025 (AEAT, Manual de Renta 2025, cuadro comparativo de
@@ -331,23 +331,23 @@ export interface RegionDefinition {
 }
 
 export const REGIONS: Record<RegionCode, RegionDefinition> = {
-  andalucia: { scale: IRPF_AUT_ANDALUCIA, minimum: MINIMUM_ANDALUCIA },
-  aragon: { scale: IRPF_AUT_ARAGON },
-  asturias: { scale: IRPF_AUT_ASTURIAS, minimum: MINIMUM_ASTURIAS },
+  andalucia: { scale: IRPF_REGIONAL_SCALE_ANDALUCIA, minimum: MINIMUM_ANDALUCIA },
+  aragon: { scale: IRPF_REGIONAL_SCALE_ARAGON },
+  asturias: { scale: IRPF_REGIONAL_SCALE_ASTURIAS, minimum: MINIMUM_ASTURIAS },
   // Baleares sin mínimo propio a propósito: el cuadro de la AEAT es ambiguo (ver README).
-  baleares: { scale: IRPF_AUT_BALEARES },
-  canarias: { scale: IRPF_AUT_CANARIAS, minimum: MINIMUM_CANARIAS },
-  cantabria: { scale: IRPF_AUT_CANTABRIA },
-  "castilla-la-mancha": { scale: IRPF_AUT_CASTILLA_LA_MANCHA },
-  "castilla-y-leon": { scale: IRPF_AUT_CASTILLA_Y_LEON },
-  cataluna: { scale: IRPF_AUT_CATALUNA },
-  extremadura: { scale: IRPF_AUT_EXTREMADURA },
-  galicia: { scale: IRPF_AUT_GALICIA, minimum: MINIMUM_GALICIA },
-  madrid: { scale: IRPF_AUT_MADRID, minimum: MINIMUM_MADRID },
-  murcia: { scale: IRPF_AUT_MURCIA },
+  baleares: { scale: IRPF_REGIONAL_SCALE_BALEARES },
+  canarias: { scale: IRPF_REGIONAL_SCALE_CANARIAS, minimum: MINIMUM_CANARIAS },
+  cantabria: { scale: IRPF_REGIONAL_SCALE_CANTABRIA },
+  "castilla-la-mancha": { scale: IRPF_REGIONAL_SCALE_CASTILLA_LA_MANCHA },
+  "castilla-y-leon": { scale: IRPF_REGIONAL_SCALE_CASTILLA_Y_LEON },
+  cataluna: { scale: IRPF_REGIONAL_SCALE_CATALUNA },
+  extremadura: { scale: IRPF_REGIONAL_SCALE_EXTREMADURA },
+  galicia: { scale: IRPF_REGIONAL_SCALE_GALICIA, minimum: MINIMUM_GALICIA },
+  madrid: { scale: IRPF_REGIONAL_SCALE_MADRID, minimum: MINIMUM_MADRID },
+  murcia: { scale: IRPF_REGIONAL_SCALE_MURCIA },
   // La Rioja solo difiere en la discapacidad de descendientes, que no se modela.
-  "la-rioja": { scale: IRPF_AUT_LA_RIOJA },
-  valencia: { scale: IRPF_AUT_VALENCIANA, minimum: MINIMUM_VALENCIANA },
+  "la-rioja": { scale: IRPF_REGIONAL_SCALE_LA_RIOJA },
+  valencia: { scale: IRPF_REGIONAL_SCALE_VALENCIANA, minimum: MINIMUM_VALENCIANA },
 };
 
 /** Comunidades soportadas, en el orden en que se muestran en el selector. */
