@@ -178,6 +178,41 @@ export function useOptionField<T extends string>(
 }
 
 /**
+ * Varios campos de opción con los mismos valores permitidos (p. ej. las preguntas de un
+ * cuestionario), cuando su número sale de datos y no se puede llamar a `useOptionField` una vez
+ * por campo (los hooks no pueden ir en un bucle). `keys` y `allowed` deben ser constantes de
+ * módulo: su identidad gobierna el registro.
+ */
+export function useOptionFields<T extends string>(
+  keys: readonly string[],
+  defaultValue: T,
+  allowed: readonly T[],
+): [T[], (index: number, value: T) => void] {
+  const { values, registerField, setValue } = useRequiredCalculatorState();
+  // Ver `useNumberField`.
+  useLayoutEffect(() => {
+    for (const key of keys) registerField(key, { kind: "option", defaultValue, allowed });
+  }, [registerField, keys, defaultValue, allowed]);
+
+  const current = useMemo(
+    () =>
+      keys.map((key) => {
+        const raw = values[key];
+        return typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : defaultValue;
+      }),
+    [values, keys, defaultValue, allowed],
+  );
+  const set = useCallback(
+    (index: number, next: T) => {
+      if (index >= 0 && index < keys.length) setValue(keys[index], next);
+    },
+    [setValue, keys],
+  );
+
+  return [current, set];
+}
+
+/**
  * Campo enlazado: su clave de URL (que es también la clave de su etiqueta, por convención), su
  * valor y su setter en un solo objeto. Lo consumen `<NumField>` (etiqueta y ayuda derivadas de la
  * clave) y `useInputs` (entradas del cálculo), para no repetir cada campo en tres sitios.
