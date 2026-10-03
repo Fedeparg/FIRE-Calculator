@@ -8,6 +8,9 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
+    // `lista[i]` se tipa `T | undefined`: cada índice que puede faltar se decide a la vista
+    // (guarda, valor por defecto o `itemAt` de `arrays.ts` si el rango es una invariante).
+    "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,

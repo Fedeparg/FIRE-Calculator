@@ -5,6 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { mcpAuditLog, oauthTokens, positions } from '../db/schema.js';
@@ -280,16 +281,18 @@ describe('mountMcp (HTTP)', () => {
     });
 
     it('un token de solo lectura no puede usar tools de escritura: isError, denied_scope y sin efecto', async () => {
-      const [position] = await db
-        .insert(positions)
-        .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '100', broker: '' })
-        .returning({ id: positions.id });
+      const position = firstItem(
+        await db
+          .insert(positions)
+          .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '100', broker: '' })
+          .returning({ id: positions.id }),
+      );
       const token = await issueAccessToken({ scopes: [SCOPE_PORTFOLIO_READ] });
 
       const result = await callTool(token, 'delete_position', { id: position.id });
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('portfolio:write');
+      expect(itemAt(result.content, 0).text).toContain('portfolio:write');
       expect(await auditRows()).toEqual([{ tool: 'delete_position', outcome: 'denied_scope', clientId: CLIENT_ID }]);
       // La posición sigue ahí: el rechazo ocurre antes de ejecutar nada.
       expect(await db.select().from(positions).where(eq(positions.id, position.id))).toHaveLength(1);
@@ -311,21 +314,23 @@ describe('mountMcp (HTTP)', () => {
       const result = await callTool(token, 'list_positions');
 
       expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('portfolio:read');
+      expect(itemAt(result.content, 0).text).toContain('portfolio:read');
       expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'denied_scope', clientId: CLIENT_ID }]);
     });
 
     it('un token con portfolio:write sí puede usar tools de escritura', async () => {
-      const [position] = await db
-        .insert(positions)
-        .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '100', broker: '' })
-        .returning({ id: positions.id });
+      const position = firstItem(
+        await db
+          .insert(positions)
+          .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '100', broker: '' })
+          .returning({ id: positions.id }),
+      );
       const token = await issueAccessToken({ scopes: [SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE] });
 
       const result = await callTool(token, 'delete_position', { id: position.id });
 
       expect(result.isError).toBeFalsy();
-      expect(JSON.parse(result.content[0].text)).toEqual({ deleted: true, id: position.id });
+      expect(JSON.parse(itemAt(result.content, 0).text)).toEqual({ deleted: true, id: position.id });
       expect(await auditRows()).toEqual([{ tool: 'delete_position', outcome: 'ok', clientId: CLIENT_ID }]);
       expect(await db.select().from(positions).where(eq(positions.id, position.id))).toHaveLength(0);
     });

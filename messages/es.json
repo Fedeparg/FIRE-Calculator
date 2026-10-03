@@ -7,7 +7,8 @@
     "home": "Calculadoras",
     "learn": "Aprende",
     "primary": "Navegación principal",
-    "theme": "Cambiar entre tema claro y oscuro"
+    "theme": "Tema oscuro",
+    "breadcrumb": "Ruta de navegación"
   },
   "landing": {
     "meta": {
@@ -89,10 +90,129 @@
     "open": "Abrir",
     "resultsCount": "{count, plural, =0 {Sin resultados} =1 {1 calculadora} other {# calculadoras}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Interés compuesto",
+      "description": "Proyecta el crecimiento de tus inversiones con aportaciones periódicas."
+    },
+    "independencia-financiera": {
+      "name": "Independencia financiera (FIRE)",
+      "description": "Calcula tu número FIRE y en cuántos años puedes vivir de tus rentas."
+    },
+    "simulador-montecarlo": {
+      "name": "Simulador FIRE Monte Carlo",
+      "description": "Probabilidad de alcanzar FIRE y de que tu dinero dure toda la jubilación, en miles de escenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Hipoteca a tipo fijo",
+      "description": "Cuota mensual, intereses totales y cuadro de amortización."
+    },
+    "interes-simple": {
+      "name": "Interés simple",
+      "description": "Cálculo básico de interés simple."
+    },
+    "promediar-acciones": {
+      "name": "Promediar acciones (DCA)",
+      "description": "Precio medio ponderado de tus compras."
+    },
+    "dividendos": {
+      "name": "Dividendos de acciones",
+      "description": "Ingresos por dividendos y retención."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Retorno de la inversión."
+    },
+    "staking": {
+      "name": "Intereses de staking (cripto)",
+      "description": "Rendimiento de staking en criptoactivos."
+    },
+    "ahorro-jubilacion": {
+      "name": "Ahorro para la jubilación",
+      "description": "Cuánto necesitas ahorrar para tu jubilación."
+    },
+    "presupuesto-mensual": {
+      "name": "Presupuesto mensual",
+      "description": "Organiza ingresos y gastos (regla 50/30/20)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "¿Qué hipoteca me puedo permitir?",
+      "description": "Importe máximo según tus ingresos."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Hipoteca vs alquiler",
+      "description": "Comprar o alquilar: comparativa."
+    },
+    "amortizacion-anticipada": {
+      "name": "Amortización anticipada",
+      "description": "Reducir cuota o plazo amortizando antes."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rentabilidad de alquiler",
+      "description": "Rentabilidad bruta y neta de un inmueble."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Rentabilidad alquiler vacacional",
+      "description": "Rentabilidad de un alquiler turístico."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Depósito a plazo fijo",
+      "description": "Intereses de un depósito bancario."
+    },
+    "cuenta-remunerada": {
+      "name": "Cuenta remunerada",
+      "description": "Rentabilidad de una cuenta remunerada."
+    },
+    "impuesto-donaciones": {
+      "name": "Impuesto de donaciones",
+      "description": "Estimación por CCAA y parentesco."
+    },
+    "impuesto-patrimonio": {
+      "name": "Impuesto sobre el patrimonio",
+      "description": "Estimación según patrimonio y CCAA."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Desgravación plan de pensiones",
+      "description": "Ahorro fiscal por aportar a un plan."
+    },
+    "salario-bruto-neto": {
+      "name": "Salario bruto a neto",
+      "description": "De salario bruto a neto mensual."
+    },
+    "irpf-nomina": {
+      "name": "IRPF nómina",
+      "description": "Retención de IRPF en nómina."
+    },
+    "irpf-autonomos": {
+      "name": "IRPF autónomos",
+      "description": "IRPF para autónomos."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Intereses de tarjeta de crédito",
+      "description": "Coste de la deuda revolving."
+    },
+    "inflacion": {
+      "name": "Inflación (IPC)",
+      "description": "Poder adquisitivo a lo largo del tiempo."
+    },
+    "salud-financiera": {
+      "name": "Test de salud financiera",
+      "description": "Cuestionario sobre tus finanzas."
+    }
+  },
   "common": {
     "back": "Volver a las calculadoras",
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
-    "moreInfo": "Más información"
+    "moreInfo": "Más información",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyLabel": "Copiar {label}",
+    "apiError": {
+      "network": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "server": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "session": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "generic": "No se pudo completar la operación. Inténtalo de nuevo."
+    }
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -149,7 +269,8 @@
     "interest": "Intereses",
     "axisYear": "Año",
     "imageLabel": "Gráfica: {title}",
-    "dataTableCaption": "Datos de la gráfica: {title}"
+    "dataTableCaption": "Datos de la gráfica: {title}",
+    "showData": "Ver los datos de la gráfica: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -257,7 +378,8 @@
       "sensitivityCaption": "Probabilidad de éxito según la tasa de retiro, con el resto de datos iguales y los mismos escenarios de mercado.",
       "sensitivityRate": "Tasa de retiro",
       "sensitivityTarget": "Número FIRE",
-      "historicalSource": "Datos históricos: Robert J. Shiller, «U.S. Stock Markets 1871-Present», rentabilidades reales de {from} a {to}. Es el mercado de EE. UU., uno de los que mejor han ido del mundo: el pasado no garantiza el futuro."
+      "historicalSource": "Datos históricos: Robert J. Shiller, «U.S. Stock Markets 1871-Present», rentabilidades reales de {from} a {to}. Es el mercado de EE. UU., uno de los que mejor han ido del mundo: el pasado no garantiza el futuro.",
+      "recalculating": "Recalculando…"
     },
     "hipoteca-fija": {
       "title": "Calculadora de hipoteca a tipo fijo",
@@ -925,6 +1047,7 @@
       "title": "Test de salud financiera",
       "intro": "Responde ocho preguntas y obtén una puntuación de 0 a 100 sobre el estado de tus finanzas, con consejos.",
       "score": "Tu puntuación",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "¿Cuánto tienes ahorrado para imprevistos?",
@@ -1025,12 +1148,8 @@
       "confirmDelete": "Confirmar",
       "deleting": "Borrando…",
       "quotaReached": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el nombre del escenario: no puede estar vacío.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "errorTooLarge": "Este cálculo ocupa demasiado para guardarlo.",
       "errorQuota": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro."
     }
@@ -1223,12 +1342,8 @@
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "cancel": "Cancelar",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el formulario: hay algún campo con un valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "duplicate": "Ya tienes {ticker} en {broker}.",
       "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
       "combine": "Combinar con la existente",
@@ -1246,7 +1361,16 @@
           "other": "Otro"
         }
       },
-      "errorHasSales": "Esta posición tiene ventas registradas. Para cambiar la cantidad o el precio medio, edita sus operaciones: así no se pierde el histórico de ventas."
+      "errorHasSales": "Esta posición tiene ventas registradas. Para cambiar la cantidad o el precio medio, edita sus operaciones: así no se pierde el histórico de ventas.",
+      "assetClass": "Clase de activo",
+      "assetClassUnknown": "Sin clasificar",
+      "assetClassHint": "Decide en qué bloque de la declaración van sus ventas. Si la dejas sin clasificar, Sextante intenta deducirla.",
+      "assetClasses": {
+        "stock": "Acción",
+        "fund": "Fondo o ETF",
+        "derivative": "Derivado",
+        "other": "Otro"
+      }
     },
     "history": {
       "title": "Evolución",
@@ -1307,6 +1431,9 @@
       "edit": "Editar",
       "delete": "Eliminar",
       "confirmDelete": "Sí, eliminar",
+      "editItem": "Editar {item}",
+      "deleteItem": "Eliminar {item}",
+      "confirmDeleteItem": "Sí, eliminar {item}",
       "cancel": "Cancelar",
       "formAddTitle": "Añadir operación",
       "formEditTitle": "Editar operación",
@@ -1316,14 +1443,10 @@
       "add": "Añadir operación",
       "save": "Guardar cambios",
       "saving": "Guardando…",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
       "errorNotFound": "Esta operación ya no existe. Recarga la página para ver el histórico actualizado.",
       "errorNegative": "Esa venta dejaría la posición en negativo: no puedes vender más participaciones de las que tienes en esa fecha.",
       "errorOverflow": "El resultado de las operaciones excede el máximo que admite una posición.",
-      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido."
     },
     "sale": {
       "title": "¿Qué pasaría si vendo?",
@@ -1356,31 +1479,18 @@
       "disclaimerFx": "Además, tu posición está en {currency}: la ganancia se convierte a euros con el tipo de cambio de hoy, no con el que hubiera el día de una venta real."
     },
     "realisedGains": {
-      "title": "Ganancias y pérdidas realizadas",
-      "subtitle": "Las ventas que has registrado, emparejadas con sus compras por FIFO y agrupadas por ejercicio, para preparar la declaración de la renta.",
-      "empty": "Aún no has registrado ninguna venta. Cuando anotes una en las operaciones de una posición, aparecerá aquí con su ganancia o pérdida.",
       "yearLabel": "Ejercicio",
-      "download": "Descargar CSV de {year}",
+      "download": "CSV de ventas de {year}",
       "downloadError": "No se pudo generar el fichero. Inténtalo de nuevo.",
-      "groupTitle": "Ventas en {currency}",
       "gains": "Ganancias",
       "losses": "Pérdidas",
       "net": "Saldo del ejercicio",
-      "tableCaption": "Ventas por posición, importes en {currency}. Valor de transmisión = precio de venta − comisiones; valor de adquisición = coste de los lotes vendidos + sus comisiones.",
       "position": "Posición",
-      "sales": "Ventas",
       "quantity": "Participaciones",
       "transferValue": "Valor de transmisión",
       "acquisitionValue": "Valor de adquisición",
       "gain": "Ganancia/pérdida",
-      "taxTitle": "Cuota estimada del ejercicio {year} (ventas en euros)",
-      "taxBase": "Saldo positivo sujeto",
-      "tax": "Cuota estimada",
-      "marginal": "Tipo marginal",
-      "taxScale": "Estimación con la escala del ahorro de {scaleYear}. Si el ejercicio es anterior, la escala pudo ser distinta.",
-      "noEurSales": "Este ejercicio no tiene ventas en euros, así que no se estima la cuota.",
-      "foreignCurrency": "Las ventas en {currencies} se muestran en su divisa. Para la declaración hay que convertir cada compra y cada venta a euros con el tipo de cambio oficial de su fecha, y Sextante no guarda ese histórico: no las sumes a las de euros tal cual.",
-      "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio y aplica el FIFO a cada valor entero, aunque lo tengas en varios brókers. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
+      "scope": "Es una ayuda para preparar y revisar tu declaración, no un borrador fiscal ni asesoramiento. Cada cifra indica de dónde sale; contrasta las estimaciones y las casillas con el manual de la AEAT y con tu borrador.",
       "csv": {
         "date": "Fecha de venta",
         "ticker": "Símbolo",
@@ -1389,12 +1499,64 @@
         "quantity": "Participaciones",
         "price": "Precio de venta",
         "fees": "Comisiones de venta",
-        "transferValue": "Valor de transmisión",
-        "acquisitionValue": "Valor de adquisición",
-        "gain": "Ganancia/pérdida"
+        "transferValue": "Valor de transmisión (divisa)",
+        "acquisitionValue": "Valor de adquisición (divisa)",
+        "gain": "Ganancia/pérdida (divisa)",
+        "exchangeRate": "Tipo BCE (divisa por euro)",
+        "transferValueEur": "Valor de transmisión (EUR)",
+        "acquisitionValueEur": "Valor de adquisición (EUR)",
+        "gainEur": "Ganancia/pérdida (EUR)",
+        "fxDifferenceEur": "Diferencia de cambio (EUR)",
+        "deferredLossEur": "Pérdida diferida, regla de los dos meses (EUR)",
+        "integratedLossEur": "Pérdida diferida que se integra (EUR)",
+        "computableGainEur": "Ganancia/pérdida computable (EUR)"
       },
-      "loadError": "No se pudieron cargar tus operaciones. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas.",
-      "learnMore": "Cómo se calculan las plusvalías."
+      "salesTitle": "Ventas del ejercicio",
+      "fxDifference": "Diferencias de cambio",
+      "ratesUnavailable": "No se pudieron cargar los tipos de cambio del BCE. Las ventas en otra divisa quedan fuera de los totales; recarga la página en unos momentos.",
+      "unconverted": "Ventas en {currencies} sin tipo de cambio del BCE para el día de la venta: {count}. Quedan fuera de los totales y de la cuota; el CSV las incluye en su divisa.",
+      "fxIncomplete": "Ventas en las que falta el tipo del BCE de alguna compra (anterior a 1999 o de una divisa que el BCE no publica): {count}. Su diferencia de cambio no se ha calculado.",
+      "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender; se declaran como transmisión de otros elementos patrimoniales (la casilla no la fija ninguna fuente oficial). Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias.",
+      "noSalesThisYear": "No hay ventas registradas en este ejercicio.",
+      "deferred": "Regla de los dos meses: {amount} de pérdidas de este ejercicio no se computan porque recompraste valores homogéneos en los dos meses anteriores o posteriores a la venta. Se integrarán cuando vendas los recomprados.",
+      "integrated": "Se integran en este ejercicio {amount} de pérdidas que la regla de los dos meses había diferido, porque has vendido los valores recomprados.",
+      "box": "casilla {box}",
+      "noBoxes": "Las casillas del modelo 100 de {year} no están verificadas: se muestran las cifras sin número de casilla.",
+      "salesCount": "{count} ventas",
+      "blocks": {
+        "shares": {
+          "title": "Acciones admitidas a negociación",
+          "note": "Se declaran por entidad emisora con el importe global de sus ventas: casillas {shares} (entidad, valor de transmisión, valor de adquisición)."
+        },
+        "funds": {
+          "title": "Fondos y ETF",
+          "note": "ETF y fondos de inversión cotizados (IIC del art. 75.3.j del Reglamento): casillas {funds} (valor de transmisión y de adquisición), aunque tu bróker haya retenido al vender. Los fondos no cotizados que se reembolsan con retención van en el bloque 0310-0325."
+        },
+        "other": {
+          "title": "Derivados y otros elementos patrimoniales",
+          "note": "Otros elementos patrimoniales (casillas {other}). El modelo no nombra los derivados: se incluyen aquí por exclusión, como hace Trade Republic en su informe. Confírmalo antes de declarar."
+        },
+        "unclassified": {
+          "title": "Sin clasificar",
+          "note": "No sabemos si son acciones, fondos o derivados, y cada uno va en un bloque distinto."
+        }
+      },
+      "unclassifiedNotice": "Indica qué es cada posición para ponerla en su bloque. Se guarda en la posición.",
+      "classifyLabel": "Clase de activo de {ticker}",
+      "classifyPlaceholder": "¿Qué es?",
+      "classifyError": "No se pudo guardar. Inténtalo de nuevo.",
+      "assetClasses": {
+        "stock": "Acción",
+        "fund": "Fondo o ETF",
+        "derivative": "Derivado",
+        "other": "Otro"
+      },
+      "print": "Imprimir o guardar en PDF",
+      "model720": "Modelo 720: si a 31 de diciembre tus cuentas, valores o inmuebles en el extranjero superan 50.000 € en alguno de esos bloques, tienes que informar de ellos (no es un impuesto). Sextante no lo calcula porque no sabe qué brókers cuentan como extranjeros: con Trade Republic y su IBAN español, la DGT dice que la cuenta de efectivo ya no lo es (consulta V2475-25).",
+      "rowDeferred": "Pérdida no computable este año (regla de los dos meses): {amount}",
+      "rowIntegrated": "Incluye {amount} de pérdidas diferidas de antes",
+      "yearInProgress": "{year} (en curso)",
+      "downloadIncome": "CSV de cobros de {year}"
     },
     "import": {
       "link": "Importar de Trade Republic",
@@ -1411,10 +1573,10 @@
       },
       "scope": {
         "title": "Qué se importa y qué no",
-        "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro. La comisión de cada operación se guarda como coste de la operación.",
-        "notYet": "Todavía no se importan los dividendos, los intereses ni los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta). Tampoco las criptomonedas.",
+        "included": "Se importan las compras y ventas de acciones, ETF, fondos y derivados, incluidas las ejecuciones de planes de ahorro, y los cobros: dividendos, intereses y recompensas (saveback y stockperk). La comisión de cada operación se guarda como coste de la operación.",
+        "notYet": "Todavía no se importan los movimientos de efectivo (ingresos, retiradas, pagos con tarjeta) ni las criptomonedas.",
         "migrations": "Los cambios de custodia internos de Trade Republic se ignoran: no cambian lo que tienes.",
-        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste.",
+        "tax": "Los impuestos que aparecen en algunas operaciones no se suman al coste. La retención del saveback se guarda en su cobro.",
         "derivatives": "Los derivados (knock-outs, warrants y similares) se importan con sus operaciones, pero Sextante no sigue su precio: van a una sección aparte y no suman a los totales."
       },
       "privacy": "El fichero se procesa solo para esta importación y no se guarda. Los datos de terceros que incluye (contrapartes, IBAN, referencias de pago) se descartan al leerlo.",
@@ -1429,10 +1591,7 @@
       "errorEmpty": "El fichero no contiene operaciones.",
       "errorMalformed": "El fichero no es un CSV válido.",
       "errorTooManyRows": "El fichero tiene demasiadas filas (el máximo es 20.000).",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
       "errorRateLimit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
-      "errorNetwork": "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "Ha habido un problema en el servidor. Inténtalo de nuevo en unos minutos.",
       "errorGeneric": "No se pudo procesar el fichero. Inténtalo de nuevo.",
       "preview": {
         "title": "Esto es lo que se importará",
@@ -1462,8 +1621,10 @@
         },
         "confirm": "Importar {count, plural, one {# operación} other {# operaciones}}",
         "confirming": "Importando…",
-        "alreadyImported": "Todas las operaciones de este fichero ya están importadas, o no se pueden importar. No hay nada nuevo que añadir.",
-        "derivativeTag": "Derivado: sin seguimiento de precio"
+        "alreadyImported": "Todo lo de este fichero ya está importado, o no se puede importar. No hay nada nuevo que añadir.",
+        "derivativeTag": "Derivado: sin seguimiento de precio",
+        "income": "Cobros nuevos (dividendos, intereses y recompensas): {count}. De ellos, {reported} ya los comunicó Trade Republic a Hacienda y pueden estar en tu borrador.",
+        "confirmIncome": "Importar {count, plural, one {# cobro} other {# cobros}}"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# operación trae un impuesto en su fila, que no se suma al coste.} other {# operaciones traen un impuesto en su fila, que no se suma al coste.}}",
@@ -1474,9 +1635,6 @@
         "item": "{reason}: {count}"
       },
       "skipReasons": {
-        "dividend": "Dividendos",
-        "interest": "Intereses",
-        "benefit": "Ventajas (saveback, stockperk)",
         "ipo_subscription": "Suscripciones a salidas a bolsa",
         "cash_movement": "Movimientos de efectivo (ingresos, retiradas, tarjeta)",
         "migration_pair": "Cambios de custodia (se anulan entre sí)",
@@ -1486,7 +1644,8 @@
         "unsupported_currency": "Operaciones en una divisa distinta del euro",
         "duplicate_row": "Filas repetidas",
         "invalid_row": "Filas no válidas",
-        "unknown_type": "Tipos de operación desconocidos"
+        "unknown_type": "Tipos de operación desconocidos",
+        "dividend_reversed": "Dividendos provisionales anulados por Trade Republic (y su anulación)"
       },
       "result": {
         "title": "Importación completada",
@@ -1501,10 +1660,12 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Las ventas superan lo comprado: falta historial anterior.",
           "OVERFLOW": "La cantidad resultante es demasiado grande.",
+          "CONFLICT": "Otra importación del mismo fichero se hizo a la vez. Vuelve a importarlo para completarla.",
           "UNEXPECTED": "Error inesperado. Inténtalo de nuevo más tarde."
         },
         "pricesNote": "Los precios de las posiciones nuevas pueden tardar unos minutos en aparecer.",
-        "viewPortfolio": "Ver mi cartera"
+        "viewPortfolio": "Ver mi cartera",
+        "incomeSummary": "Cobros importados: {count}. Ya estaban importados: {duplicates}."
       },
       "disclaimer": "Información orientativa, no es asesoramiento financiero ni fiscal. Revisa los datos importados contra tu extracto de Trade Republic."
     },
@@ -1517,13 +1678,13 @@
       "label": "Secciones de la cartera",
       "summary": "Resumen",
       "positions": "Posiciones",
-      "gains": "Plusvalías",
       "goal": "Objetivo FIRE",
       "addPosition": "Añadir posición",
       "addFirst": "Añade tu primera posición",
       "summaryTitle": "Tu cartera",
       "positionsTitle": "Posiciones de tu cartera",
-      "goalTitle": "Tu objetivo FIRE"
+      "goalTitle": "Tu objetivo FIRE",
+      "taxReturn": "Declaración"
     },
     "panel": {
       "close": "Cerrar panel"
@@ -1536,7 +1697,10 @@
       "viewSale": "Simular venta",
       "editPosition": "Editar posición",
       "deletePosition": "Eliminar",
-      "deleteError": "No se pudo eliminar la posición. Inténtalo de nuevo."
+      "deleteError": "No se pudo eliminar la posición. Inténtalo de nuevo.",
+      "viewIncome": "Cobros",
+      "incomeLoading": "Cargando los cobros…",
+      "incomeLoadError": "No se han podido cargar los cobros. Inténtalo de nuevo en unos momentos."
     },
     "positions": {
       "searchLabel": "Buscar posiciones",
@@ -1569,6 +1733,118 @@
       "title": "Mayores movimientos de la última sesión:",
       "none": "Aún no hay dos sesiones de precios para comparar.",
       "seeAll": "{count, plural, one {Ver la posición →} other {Ver las # posiciones →}}"
+    },
+    "income": {
+      "sectionTitle": "Dividendos e intereses de {year}",
+      "sectionSubtitle": "Rendimientos del capital mobiliario: tributan en la base del ahorro. Lo que el pagador ya comunicó a Hacienda puede salir en tu borrador; el resto hay que añadirlo a mano.",
+      "categoryInterest": "Intereses y recompensas",
+      "categoryDividend": "Dividendos",
+      "noneThisYear": "No hay cobros registrados en este ejercicio.",
+      "reported": "Ya en el borrador (comunicado por el pagador): {count}",
+      "pending": "A añadir a mano: {count}",
+      "unconverted": "Cobros en {currencies} sin tipo de cambio del BCE para su fecha: {count}. Quedan fuera de los totales.",
+      "originUnknown": "Dividendos extranjeros sin la retención en origen: {count}. Sin ella no se puede calcular la deducción por doble imposición; complétala con el certificado o el informe fiscal de tu bróker.",
+      "manageTitle": "Ver y editar los cobros del ejercicio ({count})",
+      "listLabel": "Cobros",
+      "empty": "Todavía no hay cobros. Se importan con el fichero de Trade Republic o se añaden aquí a mano.",
+      "kinds": {
+        "dividend": "Dividendo",
+        "interest": "Intereses",
+        "benefit": "Recompensa del bróker"
+      },
+      "kind": "Tipo",
+      "paidAt": "Fecha de cobro",
+      "gross": "Íntegro",
+      "currency": "Divisa",
+      "withholdingOrigin": "Retención en origen",
+      "withholdingOriginHint": "Lo que retuvo el país de la fuente. Déjalo vacío si no lo sabes.",
+      "withholdingSpain": "Retención en España",
+      "withholdingOriginShort": "Origen",
+      "withholdingSpainShort": "España",
+      "unknown": "sin saber",
+      "country": "País de la fuente",
+      "countryHint": "Código de dos letras (US, NL, ES…). Hace falta para la doble imposición.",
+      "name": "Valor o cuenta",
+      "isin": "ISIN",
+      "reportedToAeat": "El pagador ya lo comunicó a Hacienda (sale en mi borrador)",
+      "reportedBadge": "En el borrador",
+      "invalid": "Las retenciones no pueden superar el íntegro y el país debe ser un código de dos letras.",
+      "formAddTitle": "Añadir cobro",
+      "formEditTitle": "Editar cobro",
+      "add": "Añadir cobro",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "edit": "Editar",
+      "delete": "Eliminar",
+      "confirmDelete": "Sí, eliminar",
+      "editItem": "Editar {item}",
+      "deleteItem": "Eliminar {item}",
+      "confirmDeleteItem": "Sí, eliminar {item}",
+      "cancel": "Cancelar",
+      "errorInvalid": "Revisa los datos: alguno no es válido.",
+      "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo.",
+      "grossShort": "Íntegro",
+      "sources": {
+        "broker": "del bróker",
+        "derived": "deducida",
+        "market": "dato de mercado",
+        "estimate": "estimación",
+        "manual": "manual"
+      },
+      "originEstimated": "Dividendos con la retención en origen estimada con el tipo legal del país: {count}. Contrástala con el certificado o el informe fiscal de tu bróker antes de declarar.",
+      "box": "casilla {box}",
+      "csv": {
+        "date": "Fecha de cobro",
+        "reportedToAeat": "Ya en el borrador",
+        "grossSource": "Procedencia del íntegro",
+        "withholdingOriginSource": "Procedencia de la retención en origen",
+        "yes": "sí",
+        "no": "no"
+      }
+    },
+    "savingsReturn": {
+      "title": "Base del ahorro de {year}",
+      "subtitle": "Ventas y rendimientos juntos, compensados como manda el art. 49 de la Ley del IRPF, con la deducción por doble imposición internacional y las retenciones españolas.",
+      "gainsBalance": "Saldo de ganancias y pérdidas por ventas",
+      "capitalIncome": "Rendimientos del capital mobiliario",
+      "compensated": "Compensaciones aplicadas",
+      "base": "Base liquidable del ahorro",
+      "tax": "Cuota íntegra del ahorro",
+      "doubleTaxation": "Deducción por doble imposición internacional",
+      "netTax": "Cuota tras la deducción",
+      "withholdingSpain": "Retenciones españolas",
+      "resultPay": "Aporta a pagar",
+      "resultRefund": "Aporta a devolver",
+      "incomplete": "La cifra no está completa: hay ventas o cobros sin tipo de cambio, o dividendos extranjeros sin retención en origen. Revisa los avisos de arriba.",
+      "excessWithholding": "{country}: te retuvieron {amount} por encima del convenio. Hacienda no los deduce; se reclaman a la administración de ese país.",
+      "noTreatyRate": "{country}: no tenemos el tipo del convenio, así que su retención ({amount}) no se ha deducido.",
+      "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye gastos de custodia. Orientativo, no es asesoramiento.",
+      "pendingAfter": "Quedan pendientes para años siguientes: {amount}.",
+      "box": "casilla {box}",
+      "provisional": "provisional: el ejercicio no ha terminado"
+    },
+    "pendingBalances": {
+      "title": "Pérdidas de años anteriores pendientes de compensar ({count})",
+      "help": "Si en declaraciones anteriores a {firstYear} te quedaron saldos negativos en la base del ahorro, cópialos aquí del anexo C.3 de tu última declaración (lo pendiente al empezar {firstYear}). Los de los años que Sextante ya calcula se arrastran solos durante cuatro años.",
+      "originYear": "Ejercicio de origen",
+      "kind": "Tipo",
+      "kindGains": "Ganancias y pérdidas patrimoniales",
+      "kindCapitalIncome": "Rendimientos del capital mobiliario",
+      "amount": "Pendiente (€)",
+      "add": "Añadir saldo",
+      "remove": "Quitar",
+      "save": "Guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "duplicated": "Cada ejercicio y tipo solo puede aparecer una vez.",
+      "errorInvalid": "Revisa los datos: alguno no es válido.",
+      "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
+    },
+    "taxReturn": {
+      "title": "Declaración de la Renta",
+      "subtitle": "Lo que tus inversiones aportan a la base del ahorro de cada ejercicio: ventas, dividendos, intereses, compensaciones y doble imposición, con la casilla de cada cifra y de dónde sale. Orientativo: contrástalo con tu borrador.",
+      "learnMore": "Cómo declarar las inversiones de un bróker extranjero.",
+      "loadError": "No se pudieron cargar tus datos. Recarga la página en unos momentos; no se muestra ningún informe para no darte cifras incompletas."
     }
   },
   "account": {
@@ -1607,6 +1883,13 @@
       "step3": "Listo: pídele que analice tu cartera. Puedes revocar el acceso desde aquí cuando quieras.",
       "howToNote": "ChatGPT también admite conectores MCP, pero su soporte es más limitado según el plan; Claude es hoy el camino más completo."
     },
+    "sessions": {
+      "title": "Sesiones abiertas",
+      "description": "Cierra la sesión en todos los dispositivos donde hayas entrado, este incluido. Úsalo si has iniciado sesión en un equipo ajeno o crees que alguien puede estar usando tu cuenta.",
+      "button": "Cerrar todas las sesiones",
+      "revoking": "Cerrando sesiones…",
+      "error": "No se pudieron cerrar las sesiones. Inténtalo de nuevo."
+    },
     "danger": {
       "title": "Zona de peligro"
     },
@@ -1619,11 +1902,7 @@
       "deleting": "Borrando…",
       "success": "Tu cuenta ha sido borrada. Te llevamos al inicio…"
     },
-    "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-    "errorSession": "Tu sesión ha caducado.",
     "errorSessionLink": "Vuelve a iniciar sesión",
-    "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
     "notifications": {
       "title": "Avisos por email",
       "intro": "Te escribimos cuando tu cartera cruza el 25, 50, 75 y 100 % de tu objetivo de independencia financiera. Un aviso por hito, nunca repetido, calculado cada noche con los precios del cierre.",

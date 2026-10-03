@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
-import { CALCULATORS } from "@/features/calculators/registry";
-import { CATEGORIES, type CategoryId } from "@/features/calculators/types";
-import type { Locale } from "@/i18n/types";
+import { CALCULATORS, getUsedCategories } from "@/features/calculators/registry";
+import { CATEGORIES } from "@/features/calculators/types";
+import { asLocale } from "@/i18n/types";
 import { buildMetadata } from "@/shared/seo/seo";
 import Hero from "@/features/landing/components/Hero";
 import Pillars from "@/features/landing/components/Pillars";
@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     locale,
     path: "/",
+    og: { kind: "page", page: "home" },
     title: t("title"),
     description: t("description"),
     // El título de la home ya incluye la marca; no la dupliques con la plantilla.
@@ -30,11 +31,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Landing({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const l = locale as Locale;
+  const l = asLocale(locale);
 
   // Categorías reales del registro, con el nº de calculadoras de cada una.
-  const usedCategories = [...new Set(CALCULATORS.map((c) => c.category))] as CategoryId[];
-  const categories: LandingCategory[] = usedCategories.map((id) => ({
+  const categories: LandingCategory[] = getUsedCategories().map((id) => ({
     id,
     label: CATEGORIES[id][l],
     count: CALCULATORS.filter((c) => c.category === id).length,

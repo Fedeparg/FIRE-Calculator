@@ -33,6 +33,26 @@ describe("formatCurrency", () => {
     expect(es.formatCurrency(Number.NaN, "EUR")).toBe("—");
     expect(en.formatCurrency(Number.POSITIVE_INFINITY, "USD")).toBe("—");
   });
+
+  it("degrada a importe + código ISO con una divisa que Intl no conoce, sin lanzar", () => {
+    expect(es.formatCurrency(12.5, "EURO")).toBe("12,50 EURO");
+    expect(es.formatCompactCurrency(1_200_000, "EURO")).toMatch(/^1,2\sM EURO$/u);
+    expect(es.currencySymbol("EURO")).toBe("EURO");
+  });
+});
+
+describe("formatEUR", () => {
+  it("no escribe '-0 €' al redondear un negativo pequeño", () => {
+    expect(es.formatEUR(-0.4)).toMatch(/^0\s?€$/u);
+    expect(es.formatEUR(-0.6)).toMatch(/^-1\s?€$/u);
+  });
+});
+
+describe("formatCompactEUR", () => {
+  it("coloca el símbolo según el idioma", () => {
+    expect(es.formatCompactEUR(1_200_000)).toMatch(/^1,2\sM\s€$/u);
+    expect(en.formatCompactEUR(1_200_000)).toMatch(/^€1\.2[mM]$/u);
+  });
 });
 
 describe("formatQuantity", () => {
@@ -138,5 +158,36 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(ago(-3600), now, "es")).toBe("ahora");
     expect(formatRelativeTime("no es una fecha", now, "es")).toBe("—");
     expect(formatRelativeTime(ago(10), Number.NaN, "es")).toBe("—");
+  });
+});
+
+describe("formatSignedCurrency / formatSignedPercent", () => {
+  const es = getFormatters("es");
+  const en = getFormatters("en");
+
+  it("pone + en las ganancias y deja el resto como formatCurrency", () => {
+    expect(es.formatSignedCurrency(1234.5, "EUR")).toBe(`+${es.formatCurrency(1234.5, "EUR")}`);
+    expect(en.formatSignedCurrency(12, "USD")).toBe(`+${en.formatCurrency(12, "USD")}`);
+    expect(es.formatSignedCurrency(-3, "EUR")).toBe(es.formatCurrency(-3, "EUR"));
+  });
+
+  it("el cero, el -0 y lo que redondea a cero van sin signo", () => {
+    const zero = es.formatCurrency(0, "EUR");
+    expect(es.formatSignedCurrency(0, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(-0, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(0.001, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(-0.001, "EUR")).toBe(zero);
+  });
+
+  it("no rompe con una divisa desconocida ni con no finitos", () => {
+    expect(es.formatSignedCurrency(5, "XX1")).toBe(`+${es.formatCurrency(5, "XX1")}`);
+    expect(es.formatSignedCurrency(Number.NaN, "EUR")).toBe("—");
+  });
+
+  it("porcentajes con signo y la misma regla del cero", () => {
+    expect(es.formatSignedPercent(5.2)).toBe(`+${es.formatPercent(5.2)}`);
+    expect(es.formatSignedPercent(-5.2, { minDecimals: 2 })).toBe(es.formatPercent(-5.2, { minDecimals: 2 }));
+    expect(es.formatSignedPercent(-0)).toBe(es.formatPercent(0));
+    expect(es.formatSignedPercent(Infinity)).toBe("—");
   });
 });

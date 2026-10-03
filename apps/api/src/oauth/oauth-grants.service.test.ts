@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
@@ -80,8 +81,29 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
       const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
       expect(rows).toHaveLength(1);
-      expect([...rows[0].scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
-      expect(rows[0].lastUsedAt).not.toBeNull();
+      // Orden de concesión, sin duplicados.
+      expect(itemAt(rows, 0).scopes).toEqual(['portfolio:read', 'portfolio:write']);
+      expect(itemAt(rows, 0).lastUsedAt).not.toBeNull();
+    });
+
+    it('dos aprobaciones simultáneas dejan UNA fila con la unión de ambas, sin error', async () => {
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const parallel = new OAuthGrantsService(concurrent.db);
+        const userId = await insertUser(db, 'a@example.com');
+        await insertClient('c1');
+
+        await Promise.all([
+          parallel.recordConsent(userId, 'c1', ['portfolio:read']),
+          parallel.recordConsent(userId, 'c1', ['portfolio:write']),
+        ]);
+
+        const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
+        expect(rows).toHaveLength(1);
+        expect([...itemAt(rows, 0).scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
+      } finally {
+        await concurrent.close();
+      }
     });
   });
 
@@ -97,8 +119,8 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
       await service.touch(userA, 'c1');
 
-      const [a] = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userA));
-      const [b] = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userB));
+      const a = firstItem(await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userA)));
+      const b = firstItem(await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userB)));
       expect(a.lastUsedAt?.getTime()).toBeGreaterThan(longAgo.getTime());
       expect(b.lastUsedAt?.getTime()).toBe(longAgo.getTime());
     });
@@ -151,7 +173,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
     });
   });
 
-  describe('listForUser', () => {
+  describe('listWithClients', () => {
     it('solo lista los consentimientos del usuario, los usados más recientemente primero', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
@@ -164,16 +186,31 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
         .set({ lastUsedAt: new Date('2020-01-01T00:00:00Z') })
         .where(eq(oauthGrants.clientId, 'old'));
 
-      const list = await service.listForUser(userA);
+      const list = await service.listWithClients(userA);
 
       expect(list.map((g) => g.clientId)).toEqual(['recent', 'old']);
-      expect(list[0].scopes).toEqual(['portfolio:read']);
+      expect(itemAt(list, 0).scopes).toEqual(['portfolio:read']);
+    });
+
+    it('trae el nombre y la URL del cliente en la misma consulta, y null si el cliente ya no existe', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      await db.insert(oauthClients).values({
+        clientId: 'claude',
+        data: { client_id: 'claude', client_name: 'Claude', client_uri: 'https://claude.ai', redirect_uris: [] },
+      });
+      await service.recordConsent(userId, 'claude', ['portfolio:read']);
+      await service.recordConsent(userId, 'borrado', ['portfolio:read']);
+
+      const byId = new Map((await service.listWithClients(userId)).map((g) => [g.clientId, g]));
+
+      expect(byId.get('claude')).toMatchObject({ clientName: 'Claude', clientUri: 'https://claude.ai' });
+      expect(byId.get('borrado')).toMatchObject({ clientName: null, clientUri: null });
     });
 
     it('un usuario sin consentimientos recibe una lista vacía', async () => {
       const userId = await insertUser(db, 'a@example.com');
 
-      expect(await service.listForUser(userId)).toEqual([]);
+      expect(await service.listWithClients(userId)).toEqual([]);
     });
   });
 });

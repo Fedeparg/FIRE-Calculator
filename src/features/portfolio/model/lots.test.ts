@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/shared/api/client";
-import { lotErrorKey } from "./lots";
+import type { PositionLot } from "@sextante/core/portfolio/types";
+import { lotErrorKey, positionHasSales } from "./lots";
 
 describe("lotErrorKey", () => {
   it("traduce los códigos de dominio de la agregación", () => {
@@ -30,5 +31,29 @@ describe("lotErrorKey", () => {
   it("cualquier otro estado cae en el mensaje genérico", () => {
     expect(lotErrorKey(new ApiError(429))).toBe("errorGeneric");
     expect(lotErrorKey(new ApiError(418))).toBe("errorGeneric");
+  });
+});
+
+describe("positionHasSales", () => {
+  const lot = (kind: PositionLot["kind"]): PositionLot => ({
+    id: kind,
+    positionId: "p",
+    kind,
+    quantity: 1,
+    price: 1,
+    fees: 0,
+    tradedAt: "2025-01-01",
+    note: null,
+    createdAt: "2025-01-01T00:00:00.000Z",
+  });
+
+  it("con los lotes cargados, dice si hay alguna venta", () => {
+    expect(positionHasSales("ready", [lot("buy"), lot("sell")])).toBe(true);
+    expect(positionHasSales("ready", [lot("buy")])).toBe(false);
+  });
+
+  it("mientras cargan o si fallan, no lo sabe (null): el aviso fuerte no puede perderse", () => {
+    expect(positionHasSales("loading", [])).toBeNull();
+    expect(positionHasSales("error", [])).toBeNull();
   });
 });

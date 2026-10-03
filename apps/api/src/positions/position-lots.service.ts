@@ -1,35 +1,17 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, type SQL } from 'drizzle-orm';
+import { firstItem } from '@sextante/core/arrays';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type PositionLot } from '../db/schema.js';
 import type { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
 import type { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
-import {
-  aggregateLots,
-  AMOUNT_SCALE,
-  LotAggregateError,
-  parseDecimal,
-  type AggregatableLot,
-  type LotAggregate,
-} from './lot-aggregate.js';
+import { aggregateLots, AMOUNT_SCALE, LotAggregateError, parseDecimal, type LotAggregate } from './lot-aggregate.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import { toPositionLotResponse, type PositionLotResponse } from './position.mapper.js';
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 import { todayUtc } from '../common/dates.js';
-
-/** Lote para el frontend: `numeric` como `number` (solo lectura; los cálculos internos no pasan por aquí). */
-export type PositionLotResponse = {
-  id: string;
-  positionId: string;
-  kind: 'buy' | 'sell';
-  quantity: number;
-  price: number;
-  fees: number;
-  tradedAt: string;
-  note: string | null;
-  createdAt: string;
-};
 
 /** Lote importado de un bróker (importes en decimal `string`). */
 export type ImportedLotInput = {
@@ -40,8 +22,6 @@ export type ImportedLotInput = {
   fees: string;
   tradedAt: string;
 };
-
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usan `instrument_prices`. */
 
 /**
  * CRUD de lotes y recálculo de `positions.quantity/avgPrice` a partir de ellos. Cada mutación
@@ -68,7 +48,7 @@ export class PositionLotsService {
   async listByPosition(userId: string, positionId: string): Promise<PositionLotResponse[]> {
     await findOwnedPosition(this.db, userId, positionId);
     const rows = await this.selectLots(this.db, positionId);
-    return rows.map((row) => toResponse(row));
+    return rows.map((row) => toPositionLotResponse(row));
   }
 
   /** Todos los lotes del usuario (por `userId` desnormalizado, sin join); los usan la exportación RGPD y la tool MCP de operaciones. */
@@ -79,7 +59,7 @@ export class PositionLotsService {
       .where(eq(positionLots.userId, userId))
       .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
 
-    return rows.map((row) => toResponse(row));
+    return rows.map((row) => toPositionLotResponse(row));
   }
 
   /** Añade un lote y reagrega en una transacción: una secuencia inválida (venta en negativo) lo revierte. */
@@ -87,22 +67,24 @@ export class PositionLotsService {
     const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
 
-      const [row] = await tx
-        .insert(positionLots)
-        .values({
-          positionId,
-          userId,
-          kind: dto.kind,
-          quantity: dto.quantity.toString(),
-          price: dto.price.toString(),
-          fees: (dto.fees ?? 0).toString(),
-          tradedAt: dto.tradedAt,
-          note: dto.note || null,
-        })
-        .returning();
+      const row = firstItem(
+        await tx
+          .insert(positionLots)
+          .values({
+            positionId,
+            userId,
+            kind: dto.kind,
+            quantity: dto.quantity.toString(),
+            price: dto.price.toString(),
+            fees: (dto.fees ?? 0).toString(),
+            tradedAt: dto.tradedAt,
+            note: dto.note || null,
+          })
+          .returning(),
+      );
 
       await this.recompute(tx, positionId);
-      return toResponse(row);
+      return toPositionLotResponse(row);
     });
     this.emitLotChanged(userId, positionId);
     return created;
@@ -143,7 +125,7 @@ export class PositionLotsService {
         next.note === current.note
       ) {
         changed = false;
-        return toResponse(current);
+        return toPositionLotResponse(current);
       }
 
       const [row] = await tx
@@ -157,11 +139,12 @@ export class PositionLotsService {
           note: dto.note !== undefined ? dto.note || null : current.note,
           updatedAt: new Date(),
         })
-        .where(eq(positionLots.id, lotId))
+        .where(this.ownedLot(userId, positionId, lotId))
         .returning();
+      if (!row) throw lotNotFound();
 
       await this.recompute(tx, positionId);
-      return toResponse(row);
+      return toPositionLotResponse(row);
     });
     if (changed) this.emitLotChanged(userId, positionId, previousDate);
     return updated;
@@ -173,7 +156,11 @@ export class PositionLotsService {
     const removedDate = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const lot = await this.findLot(tx, positionId, lotId);
-      await tx.delete(positionLots).where(eq(positionLots.id, lotId));
+      const deleted = await tx
+        .delete(positionLots)
+        .where(this.ownedLot(userId, positionId, lotId))
+        .returning({ id: positionLots.id });
+      if (deleted.length === 0) throw lotNotFound();
       await this.recompute(tx, positionId);
       return lot.tradedAt;
     });
@@ -259,7 +246,7 @@ export class PositionLotsService {
     const existing = await this.selectLots(tx, input.positionId);
 
     if (existing.some((lot) => lot.kind === 'sell')) {
-      const current = this.aggregate(existing);
+      const current = aggregateLots(existing);
       if (sameAmount(current.quantity, input.quantity) && sameAmount(current.avgPrice, input.price)) {
         return;
       }
@@ -271,7 +258,7 @@ export class PositionLotsService {
     }
 
     if (existing.length === 1) {
-      const [only] = existing;
+      const only = firstItem(existing);
       // Declarar lo que ya hay no toca el lote (ver `staleSnapshotDates`).
       if (only.kind === 'buy' && sameAmount(only.quantity, input.quantity) && sameAmount(only.price, input.price)) {
         return;
@@ -300,8 +287,15 @@ export class PositionLotsService {
 
   /** Reagrega los lotes y escribe el resultado en `positions`: único sitio que lo sincroniza; llamar dentro de la transacción de la mutación. */
   async recompute(tx: DatabaseOrTransaction, positionId: string): Promise<LotAggregate> {
+    // Bloquea la fila de la posición antes de releer los lotes: sin esto, dos mutaciones
+    // simultáneas (web + MCP, importación + edición) leen cada una los lotes sin el INSERT de la
+    // otra y la última `UPDATE` gana (lost update). Con el bloqueo, la segunda espera y, en READ
+    // COMMITTED, su `SELECT` siguiente ya ve lo que confirmó la primera. `NO KEY UPDATE` y no
+    // `UPDATE`: el INSERT del lote ya tiene un `KEY SHARE` sobre la posición (por la FK), que
+    // `FOR UPDATE` no admite (interbloqueo entre las dos); `NO KEY UPDATE` sí.
+    await tx.select({ id: positions.id }).from(positions).where(eq(positions.id, positionId)).for('no key update');
     const lots = await this.selectLots(tx, positionId);
-    const aggregate = this.aggregate(lots);
+    const aggregate = aggregateLots(lots);
 
     await tx
       .update(positions)
@@ -313,18 +307,6 @@ export class PositionLotsService {
       .where(eq(positions.id, positionId));
 
     return aggregate;
-  }
-
-  /** Traduce los errores de la lógica pura a 400. */
-  private aggregate(lots: readonly AggregatableLot[]): LotAggregate {
-    try {
-      return aggregateLots(lots);
-    } catch (error) {
-      if (error instanceof LotAggregateError) {
-        throw new BadRequestException({ code: error.code, message: error.message });
-      }
-      throw error;
-    }
   }
 
   /** Lotes de una posición en el orden canónico `(tradedAt, createdAt, id)`. */
@@ -343,10 +325,26 @@ export class PositionLotsService {
       .from(positionLots)
       .where(and(eq(positionLots.id, lotId), eq(positionLots.positionId, positionId)));
     if (!row) {
-      throw new NotFoundException('Lote no encontrado');
+      throw lotNotFound();
     }
     return row;
   }
+
+  /**
+   * Condición "el lote `lotId`, de la posición `positionId`, es de `userId`". Las escrituras la
+   * usan además de `findOwnedPosition`/`findLot`: defensa en profundidad (ver `ownedPosition`).
+   */
+  private ownedLot(userId: string, positionId: string, lotId: string): SQL {
+    return and(
+      eq(positionLots.id, lotId),
+      eq(positionLots.positionId, positionId),
+      eq(positionLots.userId, userId),
+    ) as SQL;
+  }
+}
+
+function lotNotFound(): NotFoundException {
+  return new NotFoundException('Lote no encontrado');
 }
 
 /** ¿Mismo importe a la escala de la columna? Compara en coma fija; un valor ilegible (p. ej. exponencial) cuenta como distinto. */
@@ -357,18 +355,4 @@ export function sameAmount(a: string, b: string): boolean {
     if (error instanceof LotAggregateError) return false;
     throw error;
   }
-}
-
-function toResponse(row: PositionLot): PositionLotResponse {
-  return {
-    id: row.id,
-    positionId: row.positionId,
-    kind: row.kind,
-    quantity: Number(row.quantity),
-    price: Number(row.price),
-    fees: Number(row.fees),
-    tradedAt: row.tradedAt,
-    note: row.note,
-    createdAt: row.createdAt.toISOString(),
-  };
 }

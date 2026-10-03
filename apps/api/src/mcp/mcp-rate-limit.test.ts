@@ -11,6 +11,7 @@ import {
   mcpIpRateLimitKey,
   mcpTokenRateLimitKey,
 } from './mcp-rate-limit.js';
+import { stub } from '../../test/factories.js';
 
 /** Petición mínima con lo único que miran los limitadores (cabeceras, IP resuelta por Express y `auth`). */
 function request(opts: { authorization?: string; ip?: string; token?: string }): Request {
@@ -47,7 +48,7 @@ async function pass(limiter: RateLimitRequestHandler, req: Request): Promise<num
   await new Promise<void>((resolve, reject) => {
     const next: NextFunction = (error?: unknown) =>
       error ? reject(new Error('El limitador llamó a next() con un error', { cause: error })) : resolve();
-    void Promise.resolve(limiter(req, res as unknown as Response, next)).then(() => resolve(), reject);
+    void Promise.resolve(limiter(req, stub<Response>(res), next)).then(() => resolve(), reject);
   });
   return status;
 }

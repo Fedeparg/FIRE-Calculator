@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { HISTORICAL_RETURNS } from "./shiller-returns.js";
+import { itemAt } from "../arrays.js";
 
 describe("HISTORICAL_RETURNS (Shiller)", () => {
   it("cubre años consecutivos desde 1871, sin huecos", () => {
-    expect(HISTORICAL_RETURNS[0].year).toBe(1871);
+    expect(itemAt(HISTORICAL_RETURNS, 0).year).toBe(1871);
     expect(HISTORICAL_RETURNS.length).toBeGreaterThanOrEqual(150);
     HISTORICAL_RETURNS.forEach((row, i) => expect(row.year).toBe(1871 + i));
   });

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { asLocale, LOCALES, type Locale } from "@/i18n/types";
+import { asLocale, DEFAULT_LOCALE, LOCALES, type Locale } from "@/i18n/types";
 import { SITE_NAME } from "./site";
 
 /**
@@ -14,12 +14,12 @@ import { SITE_NAME } from "./site";
 
 /**
  * Ruta pública de una página para un idioma, respetando `localePrefix: as-needed`
- * (es sin prefijo, en con `/en`). `path` debe empezar por `/` y no incluir el
+ * (el idioma por defecto sin prefijo, el resto con `/<locale>`). `path` debe empezar por `/` y no incluir el
  * prefijo de idioma; usa `/` para la home.
  */
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path === "/" ? "" : path;
-  return locale === "es" ? clean || "/" : `/en${clean}`;
+  return locale === DEFAULT_LOCALE ? clean || "/" : `/${locale}${clean}`;
 }
 
 /** Mapa hreflang completo (es, en y x-default → es) para `alternates.languages`. */
@@ -30,14 +30,37 @@ function languageAlternates(path: string): Record<string, string> {
   }
   // x-default apunta al idioma por defecto (castellano): es la versión que se
   // sirve cuando el navegador no coincide con ningún idioma declarado.
-  languages["x-default"] = localizedPath("es", path);
+  languages["x-default"] = localizedPath(DEFAULT_LOCALE, path);
   return languages;
 }
 
+/** Metadata de una página privada (cartera, cuenta, importación): su título y nada que indexar ni seguir. */
+export function privateMetadata(title: string): Metadata {
+  return { title, robots: { index: false, follow: false } };
+}
+
+/** Páginas fijas con tarjeta Open Graph propia (la ruta `/og` sabe de dónde sale su título). */
+export const OG_PAGES = ["home", "learn", "calculators", "changelog", "about"] as const;
+export type OgPage = (typeof OG_PAGES)[number];
+
+/**
+ * Qué tarjeta Open Graph lleva una página. NO es texto libre: `/og` resuelve el título (y el
+ * subtítulo) a partir del slug, de modo que nadie puede generar imágenes con la marca de
+ * Sextante y un texto arbitrario, y cada URL de imagen es estable y cacheable.
+ */
+export type OgCard =
+  | { kind: "page"; page: OgPage }
+  | { kind: "calculator"; slug: string }
+  | { kind: "article"; slug: string }
+  | { kind: "legal"; slug: string };
+
+/** Nombre del parámetro de `/og` para cada tipo de tarjeta. */
+export const OG_CARD_PARAM = { page: "page", calculator: "calc", article: "article", legal: "legal" } as const;
+
 /** Construye la ruta relativa a la imagen Open Graph generada en `/og`. */
-function ogImagePath(title: string, locale: Locale, subtitle?: string): string {
-  const params = new URLSearchParams({ title, locale });
-  if (subtitle) params.set("subtitle", subtitle);
+export function ogImagePath(card: OgCard, locale: Locale): string {
+  const value = card.kind === "page" ? card.page : card.slug;
+  const params = new URLSearchParams({ [OG_CARD_PARAM[card.kind]]: value, locale });
   return `/og?${params.toString()}`;
 }
 
@@ -53,8 +76,8 @@ export interface BuildMetadataOptions {
    * `%s | Sextante` la duplique. El OG sigue usando el título tal cual.
    */
   titleAbsolute?: boolean;
-  /** Subtítulo opcional para la imagen OG (p. ej. la categoría). */
-  ogSubtitle?: string;
+  /** Tarjeta Open Graph de la página (ver `OgCard`). */
+  og: OgCard;
   /** `website` (por defecto) o `article` para contenido de la wiki. */
   ogType?: "website" | "article";
   /** Excluye la página de los índices (login, callbacks, gracias…). */
@@ -66,10 +89,10 @@ export interface BuildMetadataOptions {
  * Cada `generateMetadata` la fusiona con su `title`/`description` ya traducidos.
  */
 export function buildMetadata(options: BuildMetadataOptions): Metadata {
-  const { path, title, description, titleAbsolute, ogSubtitle, ogType = "website", noindex } = options;
+  const { path, title, description, titleAbsolute, og, ogType = "website", noindex } = options;
   const locale = asLocale(options.locale);
   const canonical = localizedPath(locale, path);
-  const image = ogImagePath(title, locale, ogSubtitle);
+  const image = ogImagePath(og, locale);
 
   return {
     title: titleAbsolute ? { absolute: title } : title,

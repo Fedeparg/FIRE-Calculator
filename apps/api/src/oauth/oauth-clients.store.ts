@@ -30,7 +30,7 @@ export class OAuthClientsStore implements OAuthRegisteredClientsStore {
 
   /**
    * Marca el cliente como vivo. Se llama al canjear un token, no en `getClient` (que también
-   * corre en un `/authorize` que acaba en login): así el reaper distingue un registro DCR
+   * corre en un `/authorize` que acaba en login): así la poda de `jobs/data-retention.ts` distingue un registro DCR
    * abandonado de uno activo.
    */
   async touch(clientId: string): Promise<void> {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { useTranslations } from "next-intl";
 
 import { SCENARIO_NAME_MAX_LENGTH } from "@sextante/core/contracts";
@@ -18,6 +19,7 @@ type Props = {
 /** Guardar el objetivo como plan (escenario de la calculadora FIRE): actualizar el cargado o crear uno nuevo. */
 export default function PortfolioGoalPlanForm({ name, onNameChange, updating, quotaReached, saving, onSubmit }: Props) {
   const t = useTranslations("portfolio.goal");
+  const nameId = useId();
   const ts = useTranslations("calculator.scenarios");
 
   return (
@@ -29,18 +31,18 @@ export default function PortfolioGoalPlanForm({ name, onNameChange, updating, qu
 
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-2">
         <div className="min-w-48 flex-1">
-          <label htmlFor="goal-name" className="text-xs font-medium text-muted">
+          <label htmlFor={nameId} className="text-xs font-medium text-muted">
             {ts("nameLabel")}
           </label>
           <input
-            id="goal-name"
+            id={nameId}
             type="text"
             value={name}
             onChange={(e) => onNameChange(e.target.value)}
             maxLength={SCENARIO_NAME_MAX_LENGTH}
             placeholder={ts("namePlaceholder")}
             autoComplete="off"
-            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+            className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30"
           />
         </div>
         <Button type="submit" disabled={saving || (!updating && quotaReached)}>

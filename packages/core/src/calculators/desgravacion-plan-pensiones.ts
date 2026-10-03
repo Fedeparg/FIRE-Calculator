@@ -3,7 +3,12 @@
 // se imputa como rendimiento en especie y se reduce de la base por el mismo importe (efecto neto ≈ 0);
 // aquí solo entra en el límite conjunto (10.000 €).
 
-import { PENSION_EMPLOYER_LIMIT, PENSION_INDIVIDUAL_LIMIT, PENSION_JOINT_LIMIT } from "../fiscal/brackets.js";
+import {
+  PENSION_EMPLOYER_LIMIT,
+  PENSION_INDIVIDUAL_LIMIT,
+  PENSION_JOINT_LIMIT,
+  PENSION_NET_INCOME_CAP_RATE,
+} from "../fiscal/brackets.js";
 import {
   estimateNetSalary,
   generalIncomeTax,
@@ -38,7 +43,7 @@ export function computePensionRelief(input: PensionReliefInput): PensionReliefRe
 
   const base = estimateNetSalary({ grossAnnual, region: input.region });
   // El 30 % del rendimiento neto del trabajo limita el conjunto de aportaciones.
-  const thirtyPercentCap = base.netWorkIncome * 0.3;
+  const thirtyPercentCap = base.netWorkIncome * (PENSION_NET_INCOME_CAP_RATE / 100);
 
   // Individual: menor entre 1.500 € y el 30 %.
   const individualCap = Math.min(PENSION_INDIVIDUAL_LIMIT, thirtyPercentCap);

@@ -7,6 +7,8 @@
  * recomienda nada ni juzga (Sextante no asesora, ver ROADMAP).
  */
 
+import { escapeHtml } from './html.js';
+
 export type EmailLocale = 'es' | 'en';
 
 export interface FireMilestoneEmail {
@@ -59,15 +61,6 @@ const COPY = {
     unsubscribe: 'Stop receiving these notices',
   },
 } as const;
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 function money(amount: number, currency: string, locale: EmailLocale): string {
   try {

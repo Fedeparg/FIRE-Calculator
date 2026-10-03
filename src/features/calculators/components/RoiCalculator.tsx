@@ -2,29 +2,29 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeRoi } from "@sextante/core/calculators/roi";
 import { useFormat } from "@/shared/format/use-format";
-import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
-import { useNumberField } from "./CalculatorState";
+import { useBoundNumberField } from "./CalculatorState";
+import NumField from "./NumField";
+import { useInputs } from "./use-inputs";
 import StatGrid from "@/shared/ui/StatGrid";
 
 export default function RoiCalculator() {
   const t = useTranslations("calc.roi");
   const { formatEUR, formatPercent } = useFormat();
-  const [initial, setInitial] = useNumberField("initial", 1000);
-  const [final, setFinal] = useNumberField("final", 1500);
-  const [years, setYears] = useNumberField("years", 5);
-  const [costs, setCosts] = useNumberField("costs", 20);
-  const [income, setIncome] = useNumberField("income", 50);
-  const [taxRate, setTaxRate] = useNumberField("taxRate", 19);
+  const initial = useBoundNumberField("initial", 1000);
+  const final = useBoundNumberField("final", 1500);
+  const years = useBoundNumberField("years", 5);
+  const costs = useBoundNumberField("costs", 20);
+  const income = useBoundNumberField("income", 50);
+  const taxRate = useBoundNumberField("taxRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
 
-  const result = useMemo(
-    () => computeRoi({ initial, final, years: years > 0 ? years : undefined, costs, income, taxRate }),
-    [initial, final, years, costs, income, taxRate],
-  );
+  const inputs = useInputs({ initial, final, years, costs, income, taxRate });
+  const result = useMemo(() => computeRoi({ ...inputs, years: inputs.years > 0 ? inputs.years : undefined }), [inputs]);
 
   return (
     <CalculatorLayout
@@ -32,19 +32,12 @@ export default function RoiCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField label={t("initial")} value={initial} onChange={setInitial} step={100} help={t("help.initial")} />
-          <NumberField label={t("final")} value={final} onChange={setFinal} step={100} help={t("help.final")} />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={80} help={t("help.years")} />
-          <NumberField label={t("costs")} value={costs} onChange={setCosts} step={10} help={t("help.costs")} />
-          <NumberField label={t("income")} value={income} onChange={setIncome} step={10} help={t("help.income")} />
-          <NumberField
-            label={t("taxRate")}
-            value={taxRate}
-            onChange={setTaxRate}
-            step={1}
-            max={100}
-            help={t("help.taxRate")}
-          />
+          <NumField field={initial} step={100} />
+          <NumField field={final} step={100} />
+          <NumField field={years} step={1} max={80} />
+          <NumField field={costs} step={10} />
+          <NumField field={income} step={10} />
+          <NumField field={taxRate} step={1} max={100} />
         </>
       }
       results={

@@ -3,13 +3,14 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Database } from '../src/db/database.module.js';
 import { PositionLotsService } from '../src/positions/position-lots.service.js';
 import { PositionsService } from '../src/positions/positions.service.js';
-import type { PricesService } from '../src/prices/prices.service.js';
+import type { PriceHistoryService } from '../src/prices/price-history.service.js';
+import { stub } from './factories.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
-export const pricesStub = { primeSymbol: async () => {} } as unknown as PricesService;
+export const pricesStub = stub<PriceHistoryService>({ primeSymbol: async () => {} });
 
 export type PositionsStackOverrides = {
-  prices?: PricesService;
+  prices?: PriceHistoryService;
   /** Emisor de `PositionsService` (p. ej. para capturar `LOT_CHANGED_EVENT` al editar). */
   positionsEvents?: EventEmitter2;
   /** Emisor de `PositionLotsService`. Separado del anterior a propósito: cada test captura uno. */

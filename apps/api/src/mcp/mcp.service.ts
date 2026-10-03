@@ -1,12 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
+import { IncomeService } from '../income/income.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider } from '../prices/instrument-search.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
+import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpAuditService } from './mcp-audit.service.js';
 import { registerAnalysisTools } from './tools/analysis.js';
 import { registerCalculatorTools } from './tools/calculators.js';
@@ -32,6 +34,8 @@ export class McpService {
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly scenarios: SavedScenariosService,
     @Inject(INSTRUMENT_SEARCH) private readonly instruments: InstrumentSearchProvider,
+    private readonly income: IncomeService,
+    private readonly taxReturn: TaxReturnService,
     private readonly audit: McpAuditService,
   ) {}
 
@@ -50,7 +54,10 @@ export class McpService {
           '`{ calculator: <slug>, inputs: {...} }`. Los porcentajes van en base 100. ' +
           '(2) Cartera: leer, analizar y (con permiso de ' +
           'escritura) modificar las posiciones del usuario autenticado, incluidas las ' +
-          'plusvalías realizadas por ejercicio para la declaración de la Renta, el reparto por ' +
+          'plusvalías realizadas por ejercicio para la declaración de la Renta, los dividendos e ' +
+          'intereses cobrados (`list_income`), el informe de la base del ahorro de un ejercicio para ' +
+          'rellenar la Renta WEB (`get_tax_return_report`: ventas, cobros, compensaciones, cuota y ' +
+          'procedencia de cada cifra), el reparto por ' +
           'activo/bróker/divisa y el progreso hacia su objetivo FIRE. Los escenarios que el ' +
           'usuario guardó en las calculadoras están en `list_saved_scenarios`. Todo es ' +
           'orientativo y no constituye asesoramiento. Los importes de cada posición están en su ' +
@@ -70,6 +77,8 @@ export class McpService {
       snapshots: this.snapshots,
       scenarios: this.scenarios,
       instruments: this.instruments,
+      income: this.income,
+      taxReturn: this.taxReturn,
     };
     registerReadTools(server, runner, deps);
     registerAnalysisTools(server, runner, deps);

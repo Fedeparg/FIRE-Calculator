@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { COMPOUNDING_FREQUENCIES, FREQUENCIES, PERIODS_PER_YEAR, project } from "./projection.js";
+import { itemAt } from "./arrays.js";
 
 const relClose = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
@@ -48,7 +49,7 @@ describe("project (motor genérico)", () => {
             (frequency) =>
               project({ initial: 10000, contribution: 0, frequency, compounding, annualRate, years: 1 }).finalValue,
           );
-          for (const v of values) expect(relClose(v, values[0])).toBe(true);
+          for (const v of values) expect(relClose(v, itemAt(values, 0))).toBe(true);
         }
       }
     });
@@ -68,8 +69,8 @@ describe("project (motor genérico)", () => {
           }),
         );
         for (const r of results) {
-          expect(relClose(r.finalValue, results[0].finalValue)).toBe(true);
-          expect(relClose(r.finalRealValue, results[0].finalRealValue)).toBe(true);
+          expect(relClose(r.finalValue, itemAt(results, 0).finalValue)).toBe(true);
+          expect(relClose(r.finalRealValue, itemAt(results, 0).finalRealValue)).toBe(true);
         }
       }
     });

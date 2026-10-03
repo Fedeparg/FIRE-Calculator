@@ -8,6 +8,7 @@ import {
 } from "./fire-montecarlo.js";
 import { HISTORICAL_RETURNS } from "../data/shiller-returns.js";
 import { mulberry32, normalGenerator } from "../random.js";
+import { firstItem, itemAt } from "../arrays.js";
 
 // Valores por defecto de la UI (MonteCarloCalculator).
 const base: MonteCarloInput = {
@@ -247,11 +248,11 @@ describe("simulateFire — modelo histórico", () => {
       { ...historical(100), annualExpenses: 1e12, currentSavings: 1, monthlySavings: 0, retirementYears: 0 },
       { paths: 1 },
     );
-    const returns = result.series.slice(1).map((p, i) => p.p50 / result.series[i].p50 - 1);
-    const index = HISTORICAL_RETURNS.findIndex((y) => Math.abs(y.stocks - returns[0]) < 1e-12);
+    const returns = result.series.slice(1).map((p, i) => p.p50 / itemAt(result.series, i).p50 - 1);
+    const index = HISTORICAL_RETURNS.findIndex((y) => Math.abs(y.stocks - itemAt(returns, 0)) < 1e-12);
     expect(index).toBeGreaterThanOrEqual(0);
     for (let k = 1; k < HISTORICAL_BLOCK_YEARS; k++) {
-      const expected = HISTORICAL_RETURNS[(index + k) % HISTORICAL_RETURNS.length].stocks;
+      const expected = itemAt(HISTORICAL_RETURNS, (index + k) % HISTORICAL_RETURNS.length).stocks;
       expect(returns[k]).toBeCloseTo(expected, 12);
     }
   });
@@ -270,19 +271,19 @@ describe("withdrawalSensitivity", () => {
   it("devuelve una fila por tasa, con su número FIRE", () => {
     const rows = withdrawalSensitivity(base, [3, 4, 5], fast);
     expect(rows.map((r) => r.rate)).toEqual([3, 4, 5]);
-    expect(rows[0].fireNumber).toBeCloseTo(800_000);
-    expect(rows[1].fireNumber).toBeCloseTo(600_000);
+    expect(itemAt(rows, 0).fireNumber).toBeCloseTo(800_000);
+    expect(itemAt(rows, 1).fireNumber).toBeCloseTo(600_000);
   });
 
   it("cada fila coincide con simular esa tasa por separado", () => {
-    const [row] = withdrawalSensitivity(base, [3.5], fast);
+    const row = firstItem(withdrawalSensitivity(base, [3.5], fast));
     expect(row.successRate).toBe(simulateFire({ ...base, withdrawalRate: 3.5 }, fast).successRate);
   });
 
   it("con un retiro largo, retirar más reduce la probabilidad de éxito", () => {
     const rows = withdrawalSensitivity({ ...base, retirementYears: 50 }, [3, 4, 5, 6], fast);
     for (let i = 1; i < rows.length; i++) {
-      expect(rows[i].successRate).toBeLessThanOrEqual(rows[i - 1].successRate);
+      expect(itemAt(rows, i).successRate).toBeLessThanOrEqual(itemAt(rows, i - 1).successRate);
     }
   });
 

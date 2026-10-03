@@ -75,7 +75,7 @@ export default function HelpTooltip({ text }: { text: string }) {
         onClick={() => setOpen((prev) => !prev)}
         onFocus={handleFocus}
         onBlur={() => setOpen(false)}
-        className="relative grid h-4 w-4 cursor-pointer place-items-center rounded-full after:absolute after:-inset-2 after:content-[''] border border-border text-[10px] font-bold leading-none text-muted transition-colors hover:border-brand hover:text-brand focus-visible:border-brand focus-visible:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+        className="relative grid h-4 w-4 cursor-pointer place-items-center rounded-full after:absolute after:-inset-2 after:content-[''] border border-border text-[10px] font-bold leading-none text-muted transition-colors hover:border-brand hover:text-brand focus-visible:border-brand focus-visible:text-brand focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/30"
       >
         ?
       </button>

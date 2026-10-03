@@ -7,7 +7,8 @@
     "home": "Calculators",
     "learn": "Learn",
     "primary": "Primary navigation",
-    "theme": "Switch between light and dark theme"
+    "theme": "Dark theme",
+    "breadcrumb": "Breadcrumb"
   },
   "landing": {
     "meta": {
@@ -89,10 +90,129 @@
     "open": "Open",
     "resultsCount": "{count, plural, =0 {No results} =1 {1 calculator} other {# calculators}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Compound interest",
+      "description": "Project your investment growth with regular contributions."
+    },
+    "independencia-financiera": {
+      "name": "Financial independence (FIRE)",
+      "description": "Work out your FIRE number and how many years until you can live off your assets."
+    },
+    "simulador-montecarlo": {
+      "name": "FIRE Monte Carlo simulator",
+      "description": "Probability of reaching FIRE and of your money lasting through retirement, across thousands of scenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Fixed-rate mortgage",
+      "description": "Monthly payment, total interest and amortization schedule."
+    },
+    "interes-simple": {
+      "name": "Simple interest",
+      "description": "Basic simple-interest calculation."
+    },
+    "promediar-acciones": {
+      "name": "Average down (DCA)",
+      "description": "Weighted average price of your purchases."
+    },
+    "dividendos": {
+      "name": "Stock dividends",
+      "description": "Dividend income and withholding."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Return on investment."
+    },
+    "staking": {
+      "name": "Staking interest (crypto)",
+      "description": "Yield from crypto staking."
+    },
+    "ahorro-jubilacion": {
+      "name": "Retirement savings",
+      "description": "How much to save for retirement."
+    },
+    "presupuesto-mensual": {
+      "name": "Monthly budget",
+      "description": "Organize income and expenses (50/30/20 rule)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "How much mortgage can I afford?",
+      "description": "Maximum amount based on your income."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Buy vs rent",
+      "description": "Buying or renting: a comparison."
+    },
+    "amortizacion-anticipada": {
+      "name": "Early repayment",
+      "description": "Reduce payment or term by repaying early."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rental yield",
+      "description": "Gross and net yield of a property."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Holiday rental yield",
+      "description": "Yield of a holiday let."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Fixed-term deposit",
+      "description": "Interest on a bank deposit."
+    },
+    "cuenta-remunerada": {
+      "name": "High-yield account",
+      "description": "Return of a high-yield savings account."
+    },
+    "impuesto-donaciones": {
+      "name": "Gift tax",
+      "description": "Estimate by region and kinship."
+    },
+    "impuesto-patrimonio": {
+      "name": "Wealth tax",
+      "description": "Estimate by wealth and region."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Pension plan tax relief",
+      "description": "Tax savings from pension contributions."
+    },
+    "salario-bruto-neto": {
+      "name": "Gross to net salary",
+      "description": "From gross to net monthly salary."
+    },
+    "irpf-nomina": {
+      "name": "Payroll income tax",
+      "description": "Income-tax withholding on payroll."
+    },
+    "irpf-autonomos": {
+      "name": "Self-employed income tax",
+      "description": "Income tax for the self-employed."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Credit card interest",
+      "description": "Cost of revolving debt."
+    },
+    "inflacion": {
+      "name": "Inflation (CPI)",
+      "description": "Purchasing power over time."
+    },
+    "salud-financiera": {
+      "name": "Financial health test",
+      "description": "A quiz about your finances."
+    }
+  },
   "common": {
     "back": "Back to calculators",
     "disclaimerShort": "Information, not tax or financial advice.",
-    "moreInfo": "More information"
+    "moreInfo": "More information",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyLabel": "Copy {label}",
+    "apiError": {
+      "network": "Could not reach the server. Check your connection and try again.",
+      "server": "A server error occurred. Please try again in a moment.",
+      "session": "Your session has expired. Sign in again to continue.",
+      "generic": "The operation could not be completed. Please try again."
+    }
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
@@ -149,7 +269,8 @@
     "interest": "Interest",
     "axisYear": "Year",
     "imageLabel": "Chart: {title}",
-    "dataTableCaption": "Chart data: {title}"
+    "dataTableCaption": "Chart data: {title}",
+    "showData": "Show the chart data: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -257,7 +378,8 @@
       "sensitivityCaption": "Probability of success by withdrawal rate, with everything else unchanged and the same market scenarios.",
       "sensitivityRate": "Withdrawal rate",
       "sensitivityTarget": "FIRE number",
-      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future."
+      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future.",
+      "recalculating": "Recalculating…"
     },
     "hipoteca-fija": {
       "title": "Fixed-rate mortgage calculator",
@@ -925,6 +1047,7 @@
       "title": "Financial health test",
       "intro": "Answer eight questions and get a 0-100 score on the state of your finances, with tailored tips.",
       "score": "Your score",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "How much have you saved for emergencies?",
@@ -1025,12 +1148,8 @@
       "confirmDelete": "Confirm",
       "deleting": "Deleting…",
       "quotaReached": "You've reached the maximum number of saved scenarios. Delete one to save another.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the scenario name: it cannot be empty.",
-      "errorServer": "A server error occurred. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again.",
       "errorTooLarge": "This calculation is too large to save.",
       "errorQuota": "You've reached the maximum number of saved scenarios. Delete one to save another."
     }
@@ -1223,12 +1342,8 @@
       "save": "Save changes",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "errorNetwork": "Couldn't reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the form: a field has an invalid value.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "Couldn't complete the operation. Please try again.",
       "duplicate": "You already have {ticker} at {broker}.",
       "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
       "combine": "Combine with existing",
@@ -1246,7 +1361,16 @@
           "other": "Other"
         }
       },
-      "errorHasSales": "This position has recorded sales. To change the quantity or average price, edit its transactions instead, so the sale history is kept."
+      "errorHasSales": "This position has recorded sales. To change the quantity or average price, edit its transactions instead, so the sale history is kept.",
+      "assetClass": "Asset class",
+      "assetClassUnknown": "Unclassified",
+      "assetClassHint": "Decides which tax return block its sales go in. If left unclassified, Sextante tries to work it out.",
+      "assetClasses": {
+        "stock": "Share",
+        "fund": "Fund or ETF",
+        "derivative": "Derivative",
+        "other": "Other"
+      }
     },
     "history": {
       "title": "Performance",
@@ -1307,6 +1431,9 @@
       "edit": "Edit",
       "delete": "Delete",
       "confirmDelete": "Yes, delete",
+      "editItem": "Edit {item}",
+      "deleteItem": "Delete {item}",
+      "confirmDeleteItem": "Yes, delete {item}",
       "cancel": "Cancel",
       "formAddTitle": "Add trade",
       "formEditTitle": "Edit trade",
@@ -1316,14 +1443,10 @@
       "add": "Add trade",
       "save": "Save changes",
       "saving": "Saving…",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired. Sign in again to continue.",
       "errorNotFound": "This trade no longer exists. Reload the page to see the current history.",
       "errorNegative": "That sell would leave the position negative: you cannot sell more units than you hold on that date.",
       "errorOverflow": "The result of these trades exceeds the maximum a position can hold.",
-      "errorInvalid": "Check the trade details: some value is not valid.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again."
+      "errorInvalid": "Check the trade details: some value is not valid."
     },
     "sale": {
       "title": "What if I sell?",
@@ -1356,31 +1479,18 @@
       "disclaimerFx": "On top of that, your position is in {currency}: the gain is converted to euros at today's exchange rate, not the one that would apply on the day of a real sale."
     },
     "realisedGains": {
-      "title": "Realised gains and losses",
-      "subtitle": "The sales you have recorded, matched against their purchases FIFO and grouped by tax year, to help with your Spanish tax return.",
-      "empty": "You have not recorded any sales yet. Once you add one to a position's transactions, it will show up here with its gain or loss.",
       "yearLabel": "Tax year",
-      "download": "Download {year} CSV",
+      "download": "{year} sales CSV",
       "downloadError": "The file could not be generated. Please try again.",
-      "groupTitle": "Sales in {currency}",
       "gains": "Gains",
       "losses": "Losses",
       "net": "Net for the year",
-      "tableCaption": "Sales by position, amounts in {currency}. Transfer value = sale price − fees; acquisition value = cost of the lots sold + their fees.",
       "position": "Position",
-      "sales": "Sales",
       "quantity": "Units",
       "transferValue": "Transfer value",
       "acquisitionValue": "Acquisition value",
       "gain": "Gain/loss",
-      "taxTitle": "Estimated tax for {year} (sales in euros)",
-      "taxBase": "Taxable positive net",
-      "tax": "Estimated tax",
-      "marginal": "Marginal rate",
-      "taxScale": "Estimated with the {scaleYear} savings scale. For earlier years the scale may have been different.",
-      "noEurSales": "This year has no sales in euros, so no tax is estimated.",
-      "foreignCurrency": "Sales in {currencies} are shown in their own currency. For the tax return, every purchase and sale must be converted to euros at the official exchange rate of its date, and Sextante does not keep that history: do not add them to the euro figures as they are.",
-      "scope": "Nets the gains and losses of sales within the same tax year and applies FIFO to each security as a whole, even if you hold it with several brokers. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
+      "scope": "It is an aid to prepare and review your tax return, not a tax draft or advice. Each figure says where it comes from; check estimates and boxes against the AEAT manual and your draft return.",
       "csv": {
         "date": "Sale date",
         "ticker": "Symbol",
@@ -1389,12 +1499,64 @@
         "quantity": "Units",
         "price": "Sale price",
         "fees": "Sale fees",
-        "transferValue": "Transfer value",
-        "acquisitionValue": "Acquisition value",
-        "gain": "Gain/loss"
+        "transferValue": "Transfer value (currency)",
+        "acquisitionValue": "Acquisition value (currency)",
+        "gain": "Gain/loss (currency)",
+        "exchangeRate": "ECB rate (currency per euro)",
+        "transferValueEur": "Transfer value (EUR)",
+        "acquisitionValueEur": "Acquisition value (EUR)",
+        "gainEur": "Gain/loss (EUR)",
+        "fxDifferenceEur": "Exchange difference (EUR)",
+        "deferredLossEur": "Deferred loss, two-month rule (EUR)",
+        "integratedLossEur": "Deferred loss now counted (EUR)",
+        "computableGainEur": "Computable gain/loss (EUR)"
       },
-      "loadError": "Your transactions could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures.",
-      "learnMore": "How capital gains are calculated."
+      "salesTitle": "Sales in the year",
+      "fxDifference": "Exchange differences",
+      "ratesUnavailable": "The ECB exchange rates could not be loaded. Sales in other currencies are left out of the totals; reload the page in a moment.",
+      "unconverted": "Sales in {currencies} without an ECB exchange rate for the sale date: {count}. They are left out of the totals and the tax; the CSV lists them in their own currency.",
+      "fxIncomplete": "Sales missing the ECB rate of a purchase (before 1999 or in a currency the ECB does not publish): {count}. Their exchange difference has not been calculated.",
+      "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell; it is declared as a transfer of other assets (no official source sets the box). If you keep the currency in an account, that difference is not declared until you convert it.",
+      "noSalesThisYear": "No sales recorded for this tax year.",
+      "deferred": "Two-month rule: {amount} of losses from this year do not count because you bought back the same securities within two months before or after the sale. They will count when you sell the repurchased ones.",
+      "integrated": "This year includes {amount} of losses the two-month rule had deferred, because you sold the repurchased securities.",
+      "box": "box {box}",
+      "noBoxes": "The {year} tax form boxes are not verified: figures are shown without box numbers.",
+      "salesCount": "{count} sales",
+      "blocks": {
+        "shares": {
+          "title": "Listed shares",
+          "note": "Declared per issuer with the total of its sales: boxes {shares} (issuer, transfer value, acquisition value)."
+        },
+        "funds": {
+          "title": "Funds and ETFs",
+          "note": "Listed ETFs and funds (IIC under article 75.3.j of the Regulation): boxes {funds} (transfer and acquisition value), even if your broker withheld tax when you sold. Unlisted funds redeemed with withholding go in the 0310-0325 block."
+        },
+        "other": {
+          "title": "Derivatives and other assets",
+          "note": "Other assets (boxes {other}). The form does not name derivatives: they are placed here by exclusion, as Trade Republic does in its tax report. Confirm it before filing."
+        },
+        "unclassified": {
+          "title": "Unclassified",
+          "note": "We do not know whether these are shares, funds or derivatives, and each goes in a different block."
+        }
+      },
+      "unclassifiedNotice": "Say what each position is to put it in its block. It is saved on the position.",
+      "classifyLabel": "Asset class of {ticker}",
+      "classifyPlaceholder": "What is it?",
+      "classifyError": "It could not be saved. Try again.",
+      "assetClasses": {
+        "stock": "Share",
+        "fund": "Fund or ETF",
+        "derivative": "Derivative",
+        "other": "Other"
+      },
+      "print": "Print or save as PDF",
+      "model720": "Form 720: if on 31 December your accounts, securities or property abroad exceed €50,000 in any of those blocks, you must report them (it is not a tax). Sextante does not calculate it because it does not know which brokers count as foreign: for Trade Republic with its Spanish IBAN, the tax authority says the cash account no longer does (ruling V2475-25).",
+      "rowDeferred": "Loss not counted this year (two-month rule): {amount}",
+      "rowIntegrated": "Includes {amount} of earlier deferred losses",
+      "yearInProgress": "{year} (in progress)",
+      "downloadIncome": "{year} payouts CSV"
     },
     "import": {
       "link": "Import from Trade Republic",
@@ -1411,10 +1573,10 @@
       },
       "scope": {
         "title": "What is imported and what is not",
-        "included": "Buys and sells of stocks, ETFs, funds and derivatives are imported, including savings plan executions. The fee of each trade is stored as a trade cost.",
-        "notYet": "Dividends, interest and cash movements (deposits, withdrawals, card payments) are not imported yet. Neither are cryptocurrencies.",
+        "included": "Purchases and sales of shares, ETFs, funds and derivatives are imported, including savings plan executions, as well as payouts: dividends, interest and rewards (saveback and stockperk). Each trade's fee is stored as a cost of the trade.",
+        "notYet": "Cash movements (deposits, withdrawals, card payments) and crypto are not imported yet.",
         "migrations": "Trade Republic's internal custody migrations are ignored: they do not change what you hold.",
-        "tax": "The taxes shown on some trades are not added to the cost.",
+        "tax": "Taxes shown on some trades are not added to the cost. The saveback withholding is stored with its payout.",
         "derivatives": "Derivatives (knock-outs, warrants and the like) are imported with their transactions, but Sextante does not track their price: they go to a separate section and do not count in the totals."
       },
       "privacy": "The file is processed only for this import and is not stored. Third-party data it contains (counterparties, IBANs, payment references) is discarded as it is read.",
@@ -1429,10 +1591,7 @@
       "errorEmpty": "The file contains no transactions.",
       "errorMalformed": "The file is not a valid CSV.",
       "errorTooManyRows": "The file has too many rows (the maximum is 20,000).",
-      "errorSession": "Your session has expired. Please sign in again.",
       "errorRateLimit": "Too many attempts in a row. Wait a minute and try again.",
-      "errorNetwork": "Could not connect. Check your connection and try again.",
-      "errorServer": "There was a problem on the server. Please try again in a few minutes.",
       "errorGeneric": "The file could not be processed. Please try again.",
       "preview": {
         "title": "This is what will be imported",
@@ -1462,8 +1621,10 @@
         },
         "confirm": "Import {count, plural, one {# transaction} other {# transactions}}",
         "confirming": "Importing…",
-        "alreadyImported": "Every transaction in this file is already imported, or cannot be imported. There is nothing new to add.",
-        "derivativeTag": "Derivative: price not tracked"
+        "alreadyImported": "Everything in this file is already imported or cannot be imported. There is nothing new to add.",
+        "derivativeTag": "Derivative: price not tracked",
+        "income": "New payouts (dividends, interest and rewards): {count}. Of these, {reported} were already reported to the Spanish tax agency by Trade Republic and may be in your draft return.",
+        "confirmIncome": "Import {count, plural, one {# payout} other {# payouts}}"
       },
       "warnings": {
         "tradeTax": "{count, plural, one {# transaction carries a tax on its row, which is not added to the cost.} other {# transactions carry a tax on their rows, which is not added to the cost.}}",
@@ -1474,9 +1635,6 @@
         "item": "{reason}: {count}"
       },
       "skipReasons": {
-        "dividend": "Dividends",
-        "interest": "Interest",
-        "benefit": "Perks (saveback, stockperk)",
         "ipo_subscription": "IPO subscriptions",
         "cash_movement": "Cash movements (deposits, withdrawals, card)",
         "migration_pair": "Custody migrations (they cancel each other out)",
@@ -1486,7 +1644,8 @@
         "unsupported_currency": "Transactions in a currency other than the euro",
         "duplicate_row": "Repeated rows",
         "invalid_row": "Invalid rows",
-        "unknown_type": "Unknown transaction types"
+        "unknown_type": "Unknown transaction types",
+        "dividend_reversed": "Provisional dividends reversed by Trade Republic (and their reversal)"
       },
       "result": {
         "title": "Import complete",
@@ -1501,10 +1660,12 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Sales exceed purchases: earlier history is missing.",
           "OVERFLOW": "The resulting quantity is too large.",
+          "CONFLICT": "Another import of the same file ran at the same time. Import it again to complete it.",
           "UNEXPECTED": "Unexpected error. Please try again later."
         },
         "pricesNote": "Prices for the new positions may take a few minutes to appear.",
-        "viewPortfolio": "View my portfolio"
+        "viewPortfolio": "View my portfolio",
+        "incomeSummary": "Payouts imported: {count}. Already imported: {duplicates}."
       },
       "disclaimer": "Indicative information, not financial or tax advice. Check the imported data against your Trade Republic statement."
     },
@@ -1517,13 +1678,13 @@
       "label": "Portfolio sections",
       "summary": "Summary",
       "positions": "Positions",
-      "gains": "Capital gains",
       "goal": "FIRE goal",
       "addPosition": "Add position",
       "addFirst": "Add your first position",
       "summaryTitle": "Your portfolio",
       "positionsTitle": "Your portfolio positions",
-      "goalTitle": "Your FIRE goal"
+      "goalTitle": "Your FIRE goal",
+      "taxReturn": "Tax return"
     },
     "panel": {
       "close": "Close panel"
@@ -1536,7 +1697,10 @@
       "viewSale": "Simulate a sale",
       "editPosition": "Edit position",
       "deletePosition": "Delete",
-      "deleteError": "The position could not be deleted. Please try again."
+      "deleteError": "The position could not be deleted. Please try again.",
+      "viewIncome": "Payouts",
+      "incomeLoading": "Loading payouts…",
+      "incomeLoadError": "Payouts could not be loaded. Try again in a moment."
     },
     "positions": {
       "searchLabel": "Search positions",
@@ -1569,6 +1733,118 @@
       "title": "Biggest moves in the last session:",
       "none": "There aren't two sessions of prices to compare yet.",
       "seeAll": "{count, plural, one {See the position →} other {See all # positions →}}"
+    },
+    "income": {
+      "sectionTitle": "Dividends and interest for {year}",
+      "sectionSubtitle": "Investment income: taxed in the savings base. What the payer already reported to the Spanish tax agency may appear in your draft return; the rest must be added by hand.",
+      "categoryInterest": "Interest and rewards",
+      "categoryDividend": "Dividends",
+      "noneThisYear": "No payouts recorded for this tax year.",
+      "reported": "Already in the draft (reported by the payer): {count}",
+      "pending": "To add by hand: {count}",
+      "unconverted": "Payouts in {currencies} without an ECB exchange rate for their date: {count}. They are left out of the totals.",
+      "originUnknown": "Foreign dividends without the withholding at source: {count}. Without it the double taxation relief cannot be calculated; fill it in from your broker's certificate or tax report.",
+      "manageTitle": "View and edit the year's payouts ({count})",
+      "listLabel": "Payouts",
+      "empty": "No payouts yet. They are imported with the Trade Republic file or added here by hand.",
+      "kinds": {
+        "dividend": "Dividend",
+        "interest": "Interest",
+        "benefit": "Broker reward"
+      },
+      "kind": "Type",
+      "paidAt": "Payment date",
+      "gross": "Gross",
+      "currency": "Currency",
+      "withholdingOrigin": "Withholding at source",
+      "withholdingOriginHint": "What the source country withheld. Leave it empty if you do not know.",
+      "withholdingSpain": "Spanish withholding",
+      "withholdingOriginShort": "Source",
+      "withholdingSpainShort": "Spain",
+      "unknown": "unknown",
+      "country": "Source country",
+      "countryHint": "Two-letter code (US, NL, ES…). Needed for double taxation relief.",
+      "name": "Security or account",
+      "isin": "ISIN",
+      "reportedToAeat": "The payer already reported it to the Spanish tax agency (it is in my draft return)",
+      "reportedBadge": "In the draft",
+      "invalid": "Withholdings cannot exceed the gross amount and the country must be a two-letter code.",
+      "formAddTitle": "Add payout",
+      "formEditTitle": "Edit payout",
+      "add": "Add payout",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "edit": "Edit",
+      "delete": "Delete",
+      "confirmDelete": "Yes, delete",
+      "editItem": "Edit {item}",
+      "deleteItem": "Delete {item}",
+      "confirmDeleteItem": "Yes, delete {item}",
+      "cancel": "Cancel",
+      "errorInvalid": "Check the data: something is not valid.",
+      "errorGeneric": "It could not be saved. Try again.",
+      "grossShort": "Gross",
+      "sources": {
+        "broker": "from the broker",
+        "derived": "derived",
+        "market": "market data",
+        "estimate": "estimate",
+        "manual": "manual"
+      },
+      "originEstimated": "Dividends whose withholding at source is estimated with the country's statutory rate: {count}. Check it against your broker's certificate or tax report before filing.",
+      "box": "box {box}",
+      "csv": {
+        "date": "Payment date",
+        "reportedToAeat": "Already in the draft",
+        "grossSource": "Source of the gross",
+        "withholdingOriginSource": "Source of the withholding at source",
+        "yes": "yes",
+        "no": "no"
+      }
+    },
+    "savingsReturn": {
+      "title": "Savings base for {year}",
+      "subtitle": "Sales and investment income together, offset as article 49 of the Spanish income tax law requires, with the international double taxation relief and the Spanish withholdings.",
+      "gainsBalance": "Net gains and losses from sales",
+      "capitalIncome": "Investment income",
+      "compensated": "Offsets applied",
+      "base": "Taxable savings base",
+      "tax": "Gross savings tax",
+      "doubleTaxation": "International double taxation relief",
+      "netTax": "Tax after relief",
+      "withholdingSpain": "Spanish withholdings",
+      "resultPay": "Adds to pay",
+      "resultRefund": "Adds to refund",
+      "incomplete": "This figure is incomplete: some sales or payouts have no exchange rate, or foreign dividends lack the withholding at source. Check the notices above.",
+      "excessWithholding": "{country}: {amount} was withheld above the treaty rate. The Spanish tax agency does not credit it; it is reclaimed from that country.",
+      "noTreatyRate": "{country}: we do not have the treaty rate, so its withholding ({amount}) has not been credited.",
+      "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Custody fees are not included. Indicative, not advice.",
+      "pendingAfter": "Pending for later years: {amount}.",
+      "box": "box {box}",
+      "provisional": "provisional: the year is not over"
+    },
+    "pendingBalances": {
+      "title": "Losses from previous years pending offset ({count})",
+      "help": "If returns before {firstYear} left negative balances in your savings base, copy them here from appendix C.3 of your last return (what was pending at the start of {firstYear}). Balances from years Sextante already calculates carry forward on their own for four years.",
+      "originYear": "Year of origin",
+      "kind": "Type",
+      "kindGains": "Capital gains and losses",
+      "kindCapitalIncome": "Investment income",
+      "amount": "Pending (€)",
+      "add": "Add balance",
+      "remove": "Remove",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "duplicated": "Each year and type can only appear once.",
+      "errorInvalid": "Check the data: something is not valid.",
+      "errorGeneric": "It could not be saved. Try again."
+    },
+    "taxReturn": {
+      "title": "Tax return",
+      "subtitle": "What your investments add to each year's savings base: sales, dividends, interest, offsets and double taxation relief, with the box of every figure and where it comes from. Indicative: check it against your draft return.",
+      "learnMore": "How to declare investments held with a foreign broker.",
+      "loadError": "Your data could not be loaded. Reload the page in a moment; no report is shown so you don't get incomplete figures."
     }
   },
   "account": {
@@ -1607,6 +1883,13 @@
       "step3": "Done: ask it to analyse your portfolio. You can revoke access here at any time.",
       "howToNote": "ChatGPT also supports MCP connectors, but support is more limited depending on your plan; Claude is currently the most complete option."
     },
+    "sessions": {
+      "title": "Open sessions",
+      "description": "Sign out on every device where you have signed in, including this one. Use it if you signed in on someone else's computer or think someone may be using your account.",
+      "button": "Sign out everywhere",
+      "revoking": "Signing out…",
+      "error": "Couldn't sign out your sessions. Please try again."
+    },
     "danger": {
       "title": "Danger zone"
     },
@@ -1619,11 +1902,7 @@
       "deleting": "Deleting…",
       "success": "Your account has been deleted. Taking you home…"
     },
-    "errorNetwork": "We couldn't reach the server. Check your connection and try again.",
-    "errorSession": "Your session has expired.",
     "errorSessionLink": "Sign in again",
-    "errorServer": "A server error occurred. Please try again in a few moments.",
-    "errorGeneric": "We couldn't complete the operation. Please try again.",
     "notifications": {
       "title": "Email notices",
       "intro": "We email you when your portfolio crosses 25, 50, 75 and 100% of your financial independence goal. One notice per milestone, never repeated, calculated every night with closing prices.",

@@ -1,6 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import {
@@ -13,10 +14,12 @@ import {
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import type { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
 import type { SymbolResolver } from '../prices/symbol-resolver.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
+import { SnapshotRepository } from './snapshot.repository.js';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
@@ -27,13 +30,14 @@ import { PortfolioValuationService } from './portfolio-valuation.service.js';
 const identityResolver: SymbolResolver = {
   resolve: (ticker) => Promise.resolve(ticker),
   resolveCached: (ticker) => Promise.resolve(ticker),
+  resolveManyCached: (tickers) => Promise.resolve(new Map(tickers.map((ticker) => [ticker, ticker]))),
 };
 
 /** Proveedor mudo: los snapshots leen precios de NUESTRA base de datos, nunca de la fuente. */
 const silentProvider: PriceProvider = {
   name: 'test',
   getQuotes: () => Promise.resolve(new Map()),
-  getHistory: () => Promise.resolve({ quotes: [], splits: [] }),
+  getHistory: () => Promise.resolve({ quotes: [], splits: [], dividends: [] }),
 };
 
 /** Fecha de hoy en UTC, la que usa la captura (con el reloj congelado: ver `beforeEach`). */
@@ -44,12 +48,22 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   let close: () => Promise<void>;
   let snapshots: PortfolioSnapshotsService;
   let positions: PositionsService;
+  let prices: PriceReadService;
+  let priceHistory: PriceHistoryService;
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    const prices = new PricesService(db, silentProvider, identityResolver);
-    positions = buildPositionsStack(db, { prices }).positions;
-    snapshots = new PortfolioSnapshotsService(db, new PortfolioValuationService(positions, prices), prices, positions);
+    prices = new PriceReadService(db, identityResolver);
+    priceHistory = new PriceHistoryService(db, silentProvider, identityResolver, prices);
+    positions = buildPositionsStack(db, { prices: priceHistory }).positions;
+    snapshots = new PortfolioSnapshotsService(
+      db,
+      new PortfolioValuationService(positions, prices),
+      prices,
+      priceHistory,
+      positions,
+      new SnapshotRepository(db),
+    );
   });
 
   // Reloj congelado (solo `Date`): una ejecución que cruce la medianoche UTC no debe cambiar el
@@ -89,7 +103,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
     await snapshots.captureUser(userId);
 
-    const [row] = await db.select().from(portfolioSnapshots);
+    const row = firstItem(await db.select().from(portfolioSnapshots));
     expect(row).toMatchObject({
       userId,
       date: today(),
@@ -113,8 +127,31 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
     const rows = await db.select().from(portfolioSnapshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0].marketValue).toBe('1300.00000000');
+    expect(itemAt(rows, 0).marketValue).toBe('1300.00000000');
     expect(summary).toMatchObject({ users: 1, captured: 1, failed: 0 });
+  });
+
+  it('lee precios y FX UNA vez por pasada, no por usuario, y valora a cada uno con los suyos', async () => {
+    const ana = await insertUser(db, 'ana@example.com');
+    const bea = await insertUser(db, 'bea@example.com');
+    await positions.create(ana, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+    await positions.create(bea, { ticker: 'AAPL', quantity: 2, avgPrice: 150, currency: 'USD' });
+    await cachePrice('IWDA', '120', 'EUR');
+    await cachePrice('AAPL', '200', 'USD');
+    await cachePrice('EURUSD=X', '1.25', 'USD');
+    const getPrices = vi.spyOn(prices, 'getPrices');
+    const getFxRates = vi.spyOn(prices, 'getFxRates');
+
+    await snapshots.captureAll();
+
+    expect(getPrices).toHaveBeenCalledTimes(1);
+    expect(getFxRates).toHaveBeenCalledTimes(1);
+    const rows = await db.select().from(portfolioSnapshots);
+    expect(rows.find((row) => row.userId === ana)?.marketValue).toBe('1200.00000000');
+    // 2 × 200 USD a 1,25 USD/EUR = 320 EUR.
+    expect(rows.find((row) => row.userId === bea)?.marketValue).toBe('320.00000000');
+    getPrices.mockRestore();
+    getFxRates.mockRestore();
   });
 
   it('omite a los usuarios sin posiciones (no ensucia la serie con filas a cero)', async () => {
@@ -144,7 +181,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     expect(summary).toMatchObject({ users: 2, captured: 1, failed: 1 });
     const rows = await db.select().from(portfolioSnapshots);
     expect(rows).toHaveLength(1);
-    expect(rows[0].userId).toBe(ok);
+    expect(itemAt(rows, 0).userId).toBe(ok);
   });
 
   describe('backfillUser / backfillAll', () => {
@@ -257,8 +294,8 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       const rows = await rowsOf(userId);
       expect(rows.map((r) => r.date)).toEqual([daysAgo(2), daysAgo(1)]);
-      expect(Number(rows[0].marketValue)).toBeCloseTo(160, 6); // 200 USD / 1,25
-      expect(rows[0].fxRates).toMatchObject({ USD: 1, EUR: 1.25 });
+      expect(Number(itemAt(rows, 0).marketValue)).toBeCloseTo(160, 6); // 200 USD / 1,25
+      expect(itemAt(rows, 0).fxRates).toMatchObject({ USD: 1, EUR: 1.25 });
     });
 
     it('nunca escribe una fila para HOY: es responsabilidad exclusiva de la captura real', async () => {
@@ -293,7 +330,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       await snapshots.backfillUser(userId);
 
-      const [row] = (await rowsOf(userId)).filter((r) => r.date === daysAgo(1));
+      const row = firstItem((await rowsOf(userId)).filter((r) => r.date === daysAgo(1)));
       expect(row.marketValue).toBe('999.00000000');
       expect(row.estimated).toBe(false);
     });
@@ -362,7 +399,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
         }
         // Sin escalón: el coste solo sube el día del lote y nunca baja.
         const series = rows.map((r) => Number(r.invested));
-        expect(series.every((v, i) => i === 0 || v >= series[i - 1])).toBe(true);
+        expect(series.every((v, i) => i === 0 || v >= itemAt(series, i - 1))).toBe(true);
       });
 
       it('es idempotente: una segunda pasada no vuelve a escribir las ya reparadas', async () => {
@@ -425,8 +462,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
         const events = new EventEmitter2();
         const emitted: unknown[] = [];
         events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-        const prices = new PricesService(db, silentProvider, identityResolver);
-        const editor = buildPositionsStack(db, { prices, positionsEvents: events }).positions;
+        const editor = buildPositionsStack(db, { prices: priceHistory, positionsEvents: events }).positions;
 
         // Mismos importes que ya tiene la posición, como hace `PositionForm`.
         await editor.update(userId, id, { name: 'Renamed', broker: 'Other', quantity: 10, avgPrice: 100 });
@@ -511,7 +547,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
           await snapshots.backfillUser(userId);
 
           const rows = await rowsOf(userId);
-          expect(rows[0].date).toBe(daysAgo(30));
+          expect(itemAt(rows, 0).date).toBe(daysAgo(30));
           for (const row of rows) expect(row.estimated, row.date).toBe(row.date < daysAgo(20));
         });
 
@@ -613,7 +649,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       await snapshots.backfillUser(userId);
 
-      const [row] = await rowsOf(userId);
+      const row = firstItem(await rowsOf(userId));
       expect(row.marketValue).toBe('1500.00000000');
       expect(row.estimated).toBe(true);
     });
@@ -705,7 +741,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
 
       const rows = await rowsOf(userId);
       expect(rows).toHaveLength(450);
-      expect(rows[0].date).toBe(daysAgo(450));
+      expect(itemAt(rows, 0).date).toBe(daysAgo(450));
       expect(rows.at(-1)?.date).toBe(daysAgo(1));
     });
 
@@ -760,8 +796,9 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       await snapshots.backfillUser(userId);
       const before = await rowsOf(userId);
 
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      vi.setSystemTime(new Date(Date.now() + 60_000)); // `updatedAt` cambiaría si se reescribiese
+      // `Date` es falso en este fichero: adelantar el reloj basta para que una reescritura cambiase
+      // `updatedAt` (lo pone la aplicación con `new Date()`), sin esperar tiempo real.
+      vi.setSystemTime(new Date(Date.now() + 60_000));
       await snapshots.backfillUser(userId);
 
       expect((await rowsOf(userId)).map((r) => r.updatedAt)).toEqual(before.map((r) => r.updatedAt));
@@ -955,7 +992,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       const history = await snapshots.history(userId, 7);
 
       expect(history.points).toHaveLength(1);
-      expect(history.points[0].date).toBe(daysAgo(2));
+      expect(itemAt(history.points, 0).date).toBe(daysAgo(2));
     });
 
     it('solo devuelve la serie del propio usuario', async () => {

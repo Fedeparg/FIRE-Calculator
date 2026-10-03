@@ -8,7 +8,7 @@ type Props = {
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40";
+  "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-brand/40";
 
 const variants = {
   primary: "bg-brand text-brand-fg hover:opacity-90",

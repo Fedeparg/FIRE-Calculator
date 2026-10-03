@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeInflation } from "./inflacion.js";
+import { itemAt } from "../arrays.js";
 
 describe("computeInflation", () => {
   it("calcula el nominal necesario y la pérdida de poder adquisitivo", () => {
@@ -30,7 +31,7 @@ describe("computeInflation", () => {
   it("el poder adquisitivo decrece con inflación positiva", () => {
     const r = computeInflation({ amount: 1000, annualRate: 4, years: 10 });
     for (let k = 1; k < r.series.length; k++) {
-      expect(r.series[k].realValue).toBeLessThan(r.series[k - 1].realValue);
+      expect(itemAt(r.series, k).realValue).toBeLessThan(itemAt(r.series, k - 1).realValue);
     }
   });
 
@@ -56,5 +57,10 @@ describe("computeInflation", () => {
     const r = computeInflation({ amount: 1000, annualRate: 2, years: 30, nominalReturn: 6 });
     expect(r.realReturn).toBeGreaterThan(0);
     expect(r.realValueInvested).toBeGreaterThan(1000);
+  });
+
+  it("con una inflación del −100 % la rentabilidad real queda en la nominal, no en Infinity", () => {
+    const r = computeInflation({ amount: 1000, annualRate: -100, years: 5, nominalReturn: 6 });
+    expect(r.realReturn).toBeCloseTo(6, 10);
   });
 });

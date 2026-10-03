@@ -4,10 +4,11 @@ import { JwtModule } from '@nestjs/jwt';
 
 import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { SessionService } from './session.service.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
 
 /**
- * Valida (y, en `AuthService`, firma) la sesión: registra `JwtModule` una sola vez con el secreto
+ * Firma y valida la sesión (`SessionService`): registra `JwtModule` una sola vez con el secreto
  * de auth. Cualquier módulo con controllers protegidos por `JwtAuthGuard` lo importa. No depende
  * de ningún otro módulo de la app, así que no crea ciclos (`AuthModule` importa a casi todos).
  */
@@ -22,7 +23,7 @@ import { SESSION_TTL_SECONDS } from './session.constants.js';
       }),
     }),
   ],
-  providers: [JwtAuthGuard],
-  exports: [JwtModule, JwtAuthGuard],
+  providers: [SessionService, JwtAuthGuard],
+  exports: [SessionService, JwtAuthGuard],
 })
 export class SessionModule {}

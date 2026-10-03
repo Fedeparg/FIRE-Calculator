@@ -27,6 +27,8 @@ const FEATURE_EXCEPTIONS = {
   portfolio: ["scenarios"],
   // La landing compone el widget de donaciones.
   landing: ["donations"],
+  // El mapa calculadora → artículos de la wiki se indexa por el slug tipado del catálogo.
+  wiki: ["calculators"],
 };
 
 const NEXT_LINK = {
@@ -115,6 +117,37 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // Texto visible SIEMPRE traducido: un texto JSX con letras en un componente de feature es una
+  // cadena de UI escrita a mano (ver "Todo el texto visible va traducido" en CLAUDE.md). Va por
+  // `next-intl` (`t("…")`) o, si es un importe, por `useFormat`. Símbolos sin letras (·, /, →) pasan.
+  {
+    files: ["src/features/**/components/**/*.tsx"],
+    ignores: ["**/*.test.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXText[value=/\\p{L}/u]",
+          message: "Texto de UI hardcodeado: usa una clave de i18n (`t(...)`) en es.json y en.json.",
+        },
+      ],
+    },
+  },
+  // Reglas sintácticas (sin información de tipos, para no alargar el lint de CI):
+  // - `consistent-type-imports`: los imports solo de tipos se marcan `import type`, así el bundler
+  //   los descarta sin depender de la heurística y se ve a la vista qué es runtime.
+  // - `no-non-null-assertion`: un `!` silencia al compilador sin comprobar nada; con
+  //   `noUncheckedIndexedAccess` se usan guardas o `itemAt`/`firstItem` de `@sextante/core/arrays`.
+  // - `eqeqeq`: siempre `===`, salvo el modismo `x == null` (null o undefined a la vez).
+  {
+    files: ["src/**/*.{ts,tsx}", "packages/**/*.ts"],
+    rules: {
+      // `import()` en anotaciones se permite: es el patrón de `vi.mock(…, importOriginal<typeof import(…)>)`.
+      "@typescript-eslint/consistent-type-imports": ["error", { disallowTypeAnnotations: false }],
+      "@typescript-eslint/no-non-null-assertion": "error",
+      eqeqeq: ["error", "always", { null: "ignore" }],
+    },
+  },
   // Tamaño de componente: por encima de ~300 líneas efectivas conviene extraer un
   // hook o un subcomponente.
   {
@@ -122,6 +155,22 @@ const eslintConfig = defineConfig([
     ignores: ["**/*.test.tsx"],
     rules: {
       "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+    },
+  },
+  // Tamaño de módulo `.ts`: por encima de ~400 líneas efectivas un módulo suele mezclar
+  // responsabilidades (el mayor de lógica, `fiscal/realised-gains.ts`, ronda las 260). Fuera quedan
+  // los tests (un `describe` largo no es un problema de diseño), las tablas de datos y el registro
+  // declarativo de esquemas de calculadoras, que crecen con el producto y no con la lógica.
+  {
+    files: ["src/**/*.ts", "packages/**/*.ts"],
+    ignores: [
+      "**/*.test.ts",
+      "**/test-support/**",
+      "packages/core/src/data/**",
+      "packages/core/src/calculators/schemas.ts",
+    ],
+    rules: {
+      "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
     },
   },
   // Override default ignores of eslint-config-next.

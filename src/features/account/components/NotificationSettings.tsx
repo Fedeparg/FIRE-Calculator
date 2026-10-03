@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { NotificationSettingsResponse } from "@sextante/core/contracts";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -21,6 +21,7 @@ const NOTIFICATIONS_PATH = "/api/account/notifications";
  */
 export default function NotificationSettings() {
   const t = useTranslations("account.notifications");
+  const alertsId = useId();
   const locale = useLocale() === "en" ? "en" : "es";
   const query = useApiQuery<NotificationSettingsResponse>(NOTIFICATIONS_PATH, { init: NO_STORE });
   // Lo guardado (respuesta del PATCH) manda sobre la carga inicial.
@@ -52,14 +53,14 @@ export default function NotificationSettings() {
         <>
           <div className="flex items-start gap-2">
             <input
-              id="fire-alerts"
+              id={alertsId}
               type="checkbox"
               checked={settings.fireAlertsEnabled}
               disabled={save.status === "pending"}
               onChange={(e) => void toggle(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
             />
-            <label htmlFor="fire-alerts" className="text-sm text-foreground">
+            <label htmlFor={alertsId} className="text-sm text-foreground">
               {t("fireAlerts")}
             </label>
           </div>

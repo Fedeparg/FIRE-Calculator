@@ -92,7 +92,7 @@ estimación del impuesto. No registra nada: es una prueba.
 
 ## 6. El informe de plusvalías
 
-El botón **Plusvalías**, en la cabecera de la cartera, abre el resumen de tus ventas
+La pestaña **Declaración**, en la cabecera de la cartera, abre el resumen de tus ventas
 **por ejercicio**: ganancias y pérdidas compensadas, la cuota estimada y un **CSV con
 una fila por venta** para la declaración de la renta. Qué calcula y qué no, en
 [plusvalías al vender](/aprende/plusvalias-al-vender).

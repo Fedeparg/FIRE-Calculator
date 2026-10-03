@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "sideEffects": false,
   "description": "Lógica pura de Sextante (calculadoras, motor de proyección, motor fiscal español, divisas) compartida por el frontend y la API.",
   "license": "UNLICENSED",
   "exports": {

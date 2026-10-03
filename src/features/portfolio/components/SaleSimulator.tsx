@@ -5,14 +5,18 @@ import { useTranslations } from "next-intl";
 
 import Notice from "@/shared/ui/Notice";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
-import { estimateSavingsTax, simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
+import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
+import { simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
+import { estimateSavingsTax } from "@sextante/core/fiscal/savings-tax";
 import { formatIsoDate } from "@/shared/format/format";
 import { convertCurrency } from "@sextante/core/fx";
-import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput } from "@/shared/format/number-input";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
-import { inputClass } from "@/shared/ui/field-classes";
+import DecimalField, { useDecimalText } from "@/shared/ui/DecimalField";
+import FormField from "@/shared/ui/FormField";
 
 type Props = {
   position: Position;
@@ -23,9 +27,6 @@ type Props = {
   /** Tasas FX (USD por unidad de divisa). */
   rates: Record<string, number>;
 };
-
-/** Divisa en la que está expresada la escala del ahorro del IRPF. */
-const TAX_CURRENCY = "EUR";
 
 /**
  * "¿Qué pasaría si vendo X participaciones a Y precio?": empareja la venta con los lotes por
@@ -44,7 +45,7 @@ const TAX_CURRENCY = "EUR";
  */
 export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const t = useTranslations("portfolio.sale");
-  const { formatCurrency, formatPercent, formatQuantity, decimalSeparator } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatPercent, formatQuantity, decimalSeparator } = useFormat();
 
   const currency = position.currency;
 
@@ -54,7 +55,9 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
     [price, currency, rates],
   );
 
-  const [quantity, setQuantity] = useState(() => String(position.quantity));
+  // `useDecimalText` y no `String(n)`: este daría "1e-7" (que el saneado leería como 17) y el
+  // punto decimal en castellano.
+  const [quantity, setQuantity] = useDecimalText(position.quantity);
   // `null` = el usuario todavía no ha escrito nada, así que manda la sugerencia. Se deriva en
   // lugar de sincronizarse con un efecto: la cotización llega de forma asíncrona y un efecto
   // que escribiera el campo provocaría un render en cascada (y pisaría lo tecleado si el
@@ -99,18 +102,12 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
     [tradeLots, quantityNum, priceNum, feesNum],
   );
 
-  // Ganancia llevada a euros para poder aplicar `IRPF_AHORRO`. `null` = no convertible.
+  // Ganancia llevada a euros para poder aplicar `IRPF_SAVINGS_SCALE`. `null` = no convertible.
   const gainInEur =
     simulation && !simulation.insufficient ? convertCurrency(simulation.gain, currency, TAX_CURRENCY, rates) : null;
   const tax = gainInEur !== null ? estimateSavingsTax(gainInEur) : null;
 
   const showResults = simulation !== null && !simulation.insufficient;
-  const gainColor =
-    simulation && simulation.gain > 0
-      ? "text-success"
-      : simulation && simulation.gain < 0
-        ? "text-danger"
-        : "text-foreground";
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
@@ -120,59 +117,26 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
       </div>
 
       <div className="grid grid-cols-1 gap-3 @md:grid-cols-3">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-quantity" className="text-sm font-medium text-foreground">
-            {t("quantity")}
-          </label>
-          <input
-            id="sale-quantity"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={quantity}
-            onChange={(e) => setQuantity(sanitizeDecimalInput(e.target.value))}
-            className={inputClass}
-          />
-          <p className="text-xs text-muted">{t("available", { quantity: formatQuantity(position.quantity) })}</p>
-        </div>
+        <FormField label={t("quantity")} hint={t("available", { quantity: formatQuantity(position.quantity) })}>
+          {(control) => <DecimalField {...control} value={quantity} onChange={setQuantity} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-price" className="text-sm font-medium text-foreground">
-            {t("price", { currency })}
-          </label>
-          <input
-            id="sale-price"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={priceText}
-            onChange={(e) => setTypedPrice(sanitizeDecimalInput(e.target.value))}
-            className={inputClass}
-          />
-          <p className="text-xs text-muted">
-            {price === undefined
+        <FormField
+          label={t("price", { currency })}
+          hint={
+            price === undefined
               ? t("noPrice")
               : suggestedPrice === null
                 ? t("priceNotConvertible", { from: price.currency, to: currency })
-                : t("priceFrom", { date: formatIsoDate(price.date) })}
-          </p>
-        </div>
+                : t("priceFrom", { date: formatIsoDate(price.date) })
+          }
+        >
+          {(control) => <DecimalField {...control} value={priceText} onChange={setTypedPrice} />}
+        </FormField>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="sale-fees" className="text-sm font-medium text-foreground">
-            {t("fees", { currency })}
-          </label>
-          <input
-            id="sale-fees"
-            type="text"
-            inputMode="decimal"
-            autoComplete="off"
-            value={fees}
-            onChange={(e) => setFees(sanitizeDecimalInput(e.target.value))}
-            placeholder="0"
-            className={inputClass}
-          />
-        </div>
+        <FormField label={t("fees", { currency })}>
+          {(control) => <DecimalField {...control} value={fees} onChange={setFees} />}
+        </FormField>
       </div>
 
       {simulation === null && <p className="text-sm text-muted">{t("incomplete")}</p>}
@@ -200,9 +164,8 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted">{simulation.gain < 0 ? t("loss") : t("gain")}</dt>
-              <dd className={`text-lg font-semibold tabular-nums ${gainColor}`}>
-                {simulation.gain > 0 ? "+" : ""}
-                {formatCurrency(simulation.gain, currency)}
+              <dd className={`text-lg font-semibold tabular-nums ${signedTone(simulation.gain)}`}>
+                {formatSignedCurrency(simulation.gain, currency)}
               </dd>
             </div>
           </dl>

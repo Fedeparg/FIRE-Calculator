@@ -51,7 +51,9 @@ export async function listLocalizedFiles(dir: string, slugPattern: string = SAFE
   for (const entry of entries) {
     if (!entry.isFile()) continue;
     const match = fileRe.exec(entry.name);
-    if (match) files.push({ slug: match[1], locale: match[2], fileName: entry.name });
+    const [, slug, locale] = match ?? [];
+    // Los dos grupos son obligatorios en `fileRe`: si hay `match`, están.
+    if (slug !== undefined && locale !== undefined) files.push({ slug, locale, fileName: entry.name });
   }
   return files;
 }

@@ -13,7 +13,12 @@
  * estimación para la gráfica, no un dato contable.
  */
 
-import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "../fx.js";
+import { itemAt } from "../arrays.js";
+import type { TradeLot } from "../fiscal/plusvalias.js";
+import { QUANTITY_EPSILON } from "../inputs.js";
+import { compareStrings } from "../compare.js";
+import { addDays, daysBetween } from "../dates.js";
+import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "./aggregate.js";
 
 /**
  * Días máximos que se arrastra el último cierre/tasa cuando un día no tiene dato propio. Pasado el
@@ -21,17 +26,8 @@ import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from
  */
 export const MAX_CARRY_FORWARD_DAYS = 10;
 
-/** Por debajo de esto una cantidad es cero (ruido de redondeo). */
-const QUANTITY_EPSILON = 1e-9;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-export interface HistoryLot {
-  kind: "buy" | "sell";
-  quantity: number;
-  price: number;
-  tradedAt: string;
-}
+/** Lo que la reconstrucción usa de cada operación. */
+export type HistoryLot = Pick<TradeLot, "kind" | "quantity" | "price" | "tradedAt">;
 
 export interface HistoryPosition {
   ticker: string;
@@ -77,25 +73,17 @@ export interface HistoryDay {
   rates: Record<string, number>;
 }
 
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
-}
-
-function nextDay(day: string): string {
-  return new Date(Date.parse(`${day}T00:00:00Z`) + MS_PER_DAY).toISOString().slice(0, 10);
-}
-
 class SeriesCursor<T extends { date: string }> {
   private index = -1;
 
   constructor(private readonly series: readonly T[]) {}
 
   at(day: string): T | null {
-    while (this.index + 1 < this.series.length && this.series[this.index + 1].date <= day) {
+    while (this.index + 1 < this.series.length && itemAt(this.series, this.index + 1).date <= day) {
       this.index += 1;
     }
     if (this.index < 0) return null;
-    const point = this.series[this.index];
+    const point = itemAt(this.series, this.index);
     return daysBetween(point.date, day) <= MAX_CARRY_FORWARD_DAYS ? point : null;
   }
 }
@@ -104,6 +92,8 @@ interface Holding {
   quantity: number;
   cost: number;
 }
+
+const emptyHolding = (): Holding => ({ quantity: 0, cost: 0 });
 
 function applyLot(holding: Holding, lot: HistoryLot): void {
   if (lot.kind === "buy") {
@@ -158,10 +148,10 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
     position,
     // orden estable: los lotes del mismo día conservan el recibido
     lots: adjustForSplits(position.lots, splits[position.ticker] ?? []).sort((a, b) =>
-      a.tradedAt < b.tradedAt ? -1 : a.tradedAt > b.tradedAt ? 1 : 0,
+      compareStrings(a.tradedAt, b.tradedAt),
     ),
     next: 0,
-    holding: { quantity: 0, cost: 0 } as Holding,
+    holding: emptyHolding(),
     price: new SeriesCursor(prices[position.ticker] ?? []),
   }));
   const fxCursors = Object.entries(fx).map(([currency, series]) => ({
@@ -170,7 +160,7 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
   }));
 
   const days: HistoryDay[] = [];
-  for (let day = from; day <= to; day = nextDay(day)) {
+  for (let day = from; day <= to; day = addDays(day, 1)) {
     const rates: Record<string, number> = { USD: 1 };
     for (const { currency, cursor } of fxCursors) {
       const point = cursor.at(day);
@@ -180,8 +170,8 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
     const held: AggregateInput["positions"] = [];
     const dayPrices: AggregateInput["prices"] = {};
     for (const entry of state) {
-      while (entry.next < entry.lots.length && entry.lots[entry.next].tradedAt <= day) {
-        applyLot(entry.holding, entry.lots[entry.next]);
+      while (entry.next < entry.lots.length && itemAt(entry.lots, entry.next).tradedAt <= day) {
+        applyLot(entry.holding, itemAt(entry.lots, entry.next));
         entry.next += 1;
       }
       if (entry.holding.quantity <= QUANTITY_EPSILON) continue; // aún sin comprar, o ya vendida

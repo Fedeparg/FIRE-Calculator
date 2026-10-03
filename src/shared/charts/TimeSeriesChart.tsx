@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -18,9 +18,17 @@ import { useFormat } from "@/shared/format/use-format";
 import { useMediaQuery } from "@/shared/ui/use-media-query";
 import ChartDataTable, { type ChartTableColumn } from "./ChartDataTable";
 import ChartTooltip from "./ChartTooltip";
+import { fitYDomain } from "./fit-y-domain";
+import { useRangeSelection } from "./use-range-selection";
 
-export type SeriesDef = {
-  key: string;
+/**
+ * Clave de una fila de datos `T`: las series, las bandas y los ejes se refieren a columnas que
+ * existen de verdad en el tipo de punto (una errata como `"valu"` no compila).
+ */
+type DataKey<T> = keyof T & string;
+
+export type SeriesDef<T> = {
+  key: DataKey<T>;
   name: string;
   color: string;
   /** Solo para `lines`: trazo discontinuo (por defecto) o continuo. */
@@ -31,29 +39,29 @@ export type SeriesDef = {
  * Banda entre dos series (p. ej. los percentiles 10 y 90 de una simulación). Se pinta como un
  * área rellena entre `lowKey` y `highKey`, sin apilar sobre el resto.
  */
-export type BandDef = { lowKey: string; highKey: string; name: string; color: string };
+export type BandDef<T> = { lowKey: DataKey<T>; highKey: DataKey<T>; name: string; color: string };
 
 /**
- * Una fila de datos. El eje X admite texto (una fecha ISO) además de número; las series
- * siempre son numéricas, pero la firma de índice no puede distinguirlas. `boolean` se admite
- * además para columnas extra de la tabla accesible (p.ej. "estimado") que no se pintan en el
- * propio gráfico.
+ * Fila de datos genérica, para quien construye sus puntos al vuelo (la cartera). El eje X admite
+ * texto (una fecha ISO) además de número; `boolean` se admite para columnas extra de la tabla
+ * accesible (p. ej. "estimado") que no se pintan en el propio gráfico. Las calculadoras pasan sus
+ * tipos de punto de core, sin firma de índice.
  */
 export type DataRow = Record<string, number | string | boolean>;
 
-type Props = {
+type Props<T extends object> = {
   title: string;
-  data: DataRow[];
-  xKey: string;
+  data: readonly T[];
+  xKey: DataKey<T>;
   /** Series apiladas (p.ej. aportado + intereses). */
-  stack: SeriesDef[];
+  stack: readonly SeriesDef<T>[];
   /** Líneas superpuestas opcionales (p.ej. objetivo FIRE). */
-  lines?: SeriesDef[];
+  lines?: readonly SeriesDef<T>[];
   /** Bandas opcionales entre dos series (p.ej. un abanico de percentiles). */
-  bands?: BandDef[];
-  valueKey: string;
-  contributedKey?: string;
-  interestKey?: string;
+  bands?: readonly BandDef<T>[];
+  valueKey: DataKey<T>;
+  contributedKey?: DataKey<T>;
+  interestKey?: DataKey<T>;
   /** Nombre del eje X (cabecera de la tabla accesible y prefijo del tooltip). Por defecto, "Año". */
   xLabel?: string;
   height?: number;
@@ -91,12 +99,12 @@ type Props = {
    * significa un tramo, solo lo pinta — para que cualquier calculadora lo reutilice; hoy lo
    * usa la cartera para marcar los puntos `estimated` del histórico.
    */
-  shadedRanges?: { from: string | number; to: string | number; label?: string }[];
+  shadedRanges?: readonly { from: string | number; to: string | number; label?: string }[];
   /**
    * Columnas extra de la tabla accesible, además del eje X y las series (`stack`/`lines`).
    * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
    */
-  extraColumns?: ChartTableColumn<DataRow>[];
+  extraColumns?: readonly ChartTableColumn<T>[];
   /**
    * Dominio del eje de valores. `"zero"` (por defecto) es el de siempre: arranca en 0, que es
    * lo correcto para una proyección que crece desde cero. `"fit"` ajusta el eje al rango real
@@ -118,21 +126,32 @@ type Props = {
   yAxis?: "always" | "fromSm";
 };
 
-/** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
-const FIT_DOMAIN_PADDING_RATIO = 0.01;
+// Valores por defecto de las props opcionales como constantes de módulo: un `= []` en la firma
+// crea un array nuevo en cada render, y los `useMemo` que dependen de él se recalcularían siempre.
+// Un array vacío y congelado vale para cualquier `T`.
+const NO_ITEMS: readonly never[] = Object.freeze([]);
 
-type Selection = { start: number; end: number } | null;
-type RechartsState = { activeLabel?: string | number } | null;
+/**
+ * Tipo de fila con el que se instancian los componentes de Recharts que reciben una clave como
+ * texto. Su `TypedDataKey<T>` es un tipo condicional que TypeScript no puede resolver mientras `T`
+ * sea genérico; la clave ya está comprobada contra `T` en las props de este componente.
+ */
+type RechartsRow = Record<string, unknown>;
 
-const toNum = (v: string | number | boolean | undefined) => (v === undefined ? 0 : Number(v));
+const toNum = (v: unknown) => (v === undefined ? 0 : Number(v));
 
-export default function TimeSeriesChart({
+/** Valor del eje X de una fila: número (años) o texto (fecha ISO). */
+function xValueOf(value: unknown): string | number {
+  return typeof value === "number" || typeof value === "string" ? value : String(value);
+}
+
+export default function TimeSeriesChart<T extends object>({
   title,
   data,
   xKey,
   stack,
-  lines = [],
-  bands = [],
+  lines = NO_ITEMS,
+  bands = NO_ITEMS,
   valueKey,
   contributedKey,
   interestKey,
@@ -144,13 +163,13 @@ export default function TimeSeriesChart({
   showTotal = true,
   xMinTickGap = 5,
   xInterval = "preserveEnd",
-  shadedRanges = [],
-  extraColumns = [],
+  shadedRanges = NO_ITEMS,
+  extraColumns = NO_ITEMS,
   yDomain = "zero",
   hideTitle = false,
   showLegend = true,
   yAxis = "always",
-}: Props) {
+}: Props<T>) {
   const isSmUp = useMediaQuery("(min-width: 640px)", true);
   const showYAxis = yAxis === "always" || isSmUp;
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } = useFormat();
@@ -165,40 +184,27 @@ export default function TimeSeriesChart({
   // que se leen del namespace compartido `chart` en lugar de repetirlas en cada calculadora.
   const tc = useTranslations("chart");
   const axisX = xLabel ?? tc("axisYear");
-  const [selection, setSelection] = useState<Selection>(null);
+  // El tramo se enseña con el mismo formato que el eje (sin `xFormat`, tal cual: años).
+  const formatRangeX = xFormat ?? String;
+  const { selection, handlers: selectionHandlers } = useRangeSelection(selectable);
 
-  // Recharts calcula el dominio de un `Area` apilado forzando el mínimo a 0 (el baseline del
-  // relleno) antes de que un `domain` en forma de función pueda tocarlo, así que un 1% de
-  // margen aplicado ahí nunca se nota. Con `yDomain="fit"` se calcula el rango a mano a partir
-  // de los propios datos (el total apilado de cada fila y las líneas superpuestas) para poder
-  // ajustar el eje al valor real en vez de al que Recharts asume para el relleno.
-  const fitYDomain = useMemo<[number, number] | undefined>(() => {
-    if (yDomain !== "fit") return undefined;
-    let min = Infinity;
-    let max = -Infinity;
-    for (const row of data) {
-      const stackTotal = stack.reduce((sum, s) => sum + toNum(row[s.key]), 0);
-      min = Math.min(min, stackTotal);
-      max = Math.max(max, stackTotal);
-      for (const key of [...lines.map((l) => l.key), ...bands.flatMap((b) => [b.lowKey, b.highKey])]) {
-        const v = toNum(row[key]);
-        min = Math.min(min, v);
-        max = Math.max(max, v);
-      }
-    }
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined;
-    if (min === max) {
-      const pad = Math.abs(max) * FIT_DOMAIN_PADDING_RATIO || 1;
-      return [min - pad, max + pad];
-    }
-    return [min - Math.abs(min) * FIT_DOMAIN_PADDING_RATIO, max + Math.abs(max) * FIT_DOMAIN_PADDING_RATIO];
-  }, [data, stack, lines, bands, yDomain]);
-  const [dragging, setDragging] = useState(false);
+  // Con `yDomain="fit"` el eje se ajusta al rango real de los datos (ver `fitYDomain`).
+  const fittedYDomain = useMemo(
+    () =>
+      yDomain === "fit"
+        ? fitYDomain(
+            data,
+            stack.map((s) => s.key),
+            [...lines.map((l) => l.key), ...bands.flatMap((b) => [b.lowKey, b.highKey])],
+          )
+        : undefined,
+    [data, stack, lines, bands, yDomain],
+  );
 
   const totalKeys = stack.map((s) => s.key);
 
-  function pointAt(x: number): DataRow | undefined {
-    return data.find((d) => d[xKey] === x);
+  function pointAt(x: number): T | undefined {
+    return data.find((d) => xValueOf(d[xKey]) === x);
   }
 
   const summary = (() => {
@@ -217,15 +223,15 @@ export default function TimeSeriesChart({
     };
   })();
 
-  const tableColumns: ChartTableColumn<DataRow>[] = [
-    { label: axisX, value: (row) => formatX(row[xKey] as string | number) },
+  const tableColumns: ChartTableColumn<T>[] = [
+    { label: axisX, value: (row) => formatX(xValueOf(row[xKey])) },
     ...[...stack, ...lines].map((series) => ({
       label: series.name,
-      value: (row: DataRow) => formatValue(Number(row[series.key])),
+      value: (row: T) => formatValue(Number(row[series.key])),
     })),
     ...bands.map((band) => ({
       label: band.name,
-      value: (row: DataRow) => `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
+      value: (row: T) => `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
     })),
     ...extraColumns,
   ];
@@ -245,13 +251,13 @@ export default function TimeSeriesChart({
         {summary && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
             <span className="text-muted">
-              {tc("selectionTitle")} ({summary.from}–{summary.to})
+              {tc("selectionTitle")} ({formatRangeX(summary.from)}–{formatRangeX(summary.to)})
             </span>
             <span className="font-semibold text-foreground">
               {tc("growth")}: {formatValue(summary.growth)}
             </span>
             {summary.interest !== null && (
-              <span className="font-medium" style={{ color: "var(--accent)" }}>
+              <span className="font-medium text-accent-text">
                 {tc("interest")}: {formatValue(summary.interest)}
               </span>
             )}
@@ -260,7 +266,9 @@ export default function TimeSeriesChart({
       </div>
 
       <div
-        style={{ width: "100%", height }}
+        // `pan-y`: en móvil el arrastre horizontal selecciona un tramo y el vertical sigue
+        // desplazando la página.
+        style={{ width: "100%", height, touchAction: selectable ? "pan-y" : undefined }}
         className="select-none"
         role="img"
         aria-label={tc("imageLabel", { title })}
@@ -269,28 +277,10 @@ export default function TimeSeriesChart({
           <AreaChart
             data={data}
             margin={{ top: 8, right: showYAxis ? 8 : 2, bottom: 0, left: showYAxis ? 8 : 2 }}
-            onMouseDown={(s: RechartsState) => {
-              if (!selectable || s?.activeLabel === undefined) return;
-              const x = toNum(s.activeLabel);
-              setDragging(true);
-              setSelection({ start: x, end: x });
-            }}
-            onMouseMove={(s: RechartsState) => {
-              if (!selectable || !dragging || s?.activeLabel === undefined) return;
-              setSelection((prev) => (prev ? { ...prev, end: toNum(s.activeLabel) } : prev));
-            }}
-            onMouseUp={() => {
-              // Se resetea al soltar el ratón.
-              setDragging(false);
-              setSelection(null);
-            }}
-            onMouseLeave={() => {
-              setDragging(false);
-              setSelection(null);
-            }}
+            {...selectionHandlers}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
+            <XAxis<RechartsRow>
               dataKey={xKey}
               // En el modo compacto tampoco hay eje X: quien lo pide enseña el rango de fechas
               // encima, y así la gráfica ocupa todo el ancho sin etiquetas cortadas.
@@ -308,7 +298,7 @@ export default function TimeSeriesChart({
               tick={{ fontSize: 12, fill: "var(--muted)" }}
               tickFormatter={formatAxisValue}
               width={70}
-              domain={yDomain === "fit" && fitYDomain ? fitYDomain : [0, "auto"]}
+              domain={fittedYDomain ?? [0, "auto"]}
               // Sin esto Recharts extiende el dominio para incluir el baseline (0) que usa
               // internamente para rellenar el área apilada, y el ajuste a 1% no se nota.
               allowDataOverflow={yDomain === "fit"}
@@ -326,7 +316,7 @@ export default function TimeSeriesChart({
             />
             {showLegend && <Legend />}
             {stack.map((s) => (
-              <Area
+              <Area<RechartsRow>
                 key={s.key}
                 type="monotone"
                 dataKey={s.key}
@@ -343,7 +333,7 @@ export default function TimeSeriesChart({
                 key={`${b.lowKey}-${b.highKey}`}
                 type="monotone"
                 // Recharts pinta un área de rango cuando `dataKey` devuelve [mínimo, máximo].
-                dataKey={(row: DataRow) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
+                dataKey={(row: T) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
                 name={b.name}
                 stroke="none"
                 fill={b.color}

@@ -2,15 +2,17 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { JwtService } from '@nestjs/jwt';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
+import { firstItem } from '@sextante/core/arrays';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { and, eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { oauthTokens } from '../db/schema.js';
+import { oauthTokens, users } from '../db/schema.js';
 import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
+import { SessionService } from '../auth/session.service.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';
@@ -38,7 +40,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
     ({ db, close } = createTestDb());
     urls = new OAuthUrls(fakeConfig({ APP_URL }));
     grants = new OAuthGrantsService(db);
-    provider = new SextanteOAuthProvider(db, jwt, urls, new OAuthClientsStore(db), grants);
+    provider = new SextanteOAuthProvider(db, new SessionService(jwt, db), urls, new OAuthClientsStore(db), grants);
   });
 
   afterEach(async () => {
@@ -71,10 +73,9 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
     return plain;
   }
 
-  describe('authorize — scopes', () => {
-    it('un cliente que pide solo portfolio:write ve también portfolio:read en el consentimiento', async () => {
-      const userId = await insertUser(db, 'a@example.com');
-      const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
+  describe('authorize', () => {
+    /** Llama a `authorize` con la cookie de sesión dada y devuelve a dónde redirige. */
+    async function authorizeWith(session: string, scopes: string[]): Promise<URL> {
       let redirectedTo = '';
       const res = {
         req: { cookies: { [SESSION_COOKIE]: session }, originalUrl: '/authorize?client_id=client-1' },
@@ -86,17 +87,30 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
 
       await provider.authorize(
         CLIENT,
-        {
-          scopes: [SCOPE_PORTFOLIO_WRITE],
-          redirectUri: CLIENT.redirect_uris[0],
-          codeChallenge: 'challenge',
-        },
+        { scopes, redirectUri: firstItem(CLIENT.redirect_uris), codeChallenge: 'challenge' },
         res,
       );
+      return new URL(redirectedTo);
+    }
 
-      const consent = new URL(redirectedTo);
+    it('un cliente que pide solo portfolio:write ve también portfolio:read en el consentimiento', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
+
+      const consent = await authorizeWith(session, [SCOPE_PORTFOLIO_WRITE]);
+
       expect(consent.pathname).toBe('/oauth/consent');
       expect(consent.searchParams.get('scope')).toBe(`${SCOPE_PORTFOLIO_READ} ${SCOPE_PORTFOLIO_WRITE}`);
+    });
+
+    it('una sesión de una cuenta ya borrada no autoriza: manda al login', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
+      await db.delete(users).where(eq(users.id, userId));
+
+      const target = await authorizeWith(session, [SCOPE_PORTFOLIO_READ]);
+
+      expect(target.pathname).toBe('/entrar');
     });
   });
 
@@ -153,10 +167,12 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(tokens.refresh_token).not.toBe(refresh);
 
       // El refresh original queda consumido.
-      const [old] = await db
-        .select({ consumedAt: oauthTokens.consumedAt })
-        .from(oauthTokens)
-        .where(eq(oauthTokens.tokenHash, hash(refresh)));
+      const old = firstItem(
+        await db
+          .select({ consumedAt: oauthTokens.consumedAt })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.tokenHash, hash(refresh))),
+      );
       expect(old.consumedAt).not.toBeNull();
     });
 
@@ -180,6 +196,40 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
         .from(oauthTokens)
         .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, CLIENT.client_id)));
       expect(remaining).toHaveLength(0);
+    });
+
+    it('si la emisión falla, el refresh NO queda consumido (el cliente puede reintentar)', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const refresh = await seedToken({
+        type: 'refresh',
+        userId,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+      });
+      // Access y refresh con el mismo valor: el segundo INSERT viola el único de `token_hash`.
+      const spy = vi
+        .spyOn(provider as unknown as { newToken: () => string }, 'newToken')
+        .mockReturnValue('mismo-valor');
+
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).rejects.toThrow();
+      spy.mockRestore();
+
+      const row = firstItem(
+        await db
+          .select({ consumedAt: oauthTokens.consumedAt })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.tokenHash, hash(refresh))),
+      );
+      expect(row.consumedAt).toBeNull();
+      // Y el reintento funciona, sin tomarse por reuso.
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
+    });
+
+    it('pedir más scopes de los concedidos no gasta el refresh', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const refresh = await seedToken({ type: 'refresh', userId });
+
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh, ['portfolio:write'])).rejects.toThrow(/exceed/i);
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
     });
 
     it('rechaza un refresh token de otro cliente', async () => {

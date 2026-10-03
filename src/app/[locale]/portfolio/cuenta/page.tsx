@@ -1,24 +1,28 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { redirect } from "next/navigation";
-import { routing } from "@/i18n/routing";
-import { getSessionUser } from "@/shared/api/session";
+
+import { privateMetadata } from "@/shared/seo/seo";
+import { requireSessionUser } from "@/shared/api/session";
 import { Link } from "@/i18n/navigation";
 import AccountDangerZone from "@/features/account/components/AccountDangerZone";
+import AccountSessions from "@/features/account/components/AccountSessions";
 import ConnectedApps from "@/features/account/components/ConnectedApps";
 import NotificationSettings from "@/features/account/components/NotificationSettings";
 
 type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "account" });
+  return privateMetadata(t("title"));
+}
 
 export default async function AccountPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
   // Protección server-side: sin sesión válida, al login (con prefijo de locale).
-  const user = await getSessionUser();
-  if (!user) {
-    const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
-    redirect(`${prefix}/entrar`);
-  }
+  const user = await requireSessionUser(locale);
 
   const t = await getTranslations("account");
 
@@ -33,6 +37,7 @@ export default async function AccountPage({ params }: Props) {
       </div>
       <NotificationSettings />
       <ConnectedApps />
+      <AccountSessions />
       <AccountDangerZone email={user.email} />
     </div>
   );

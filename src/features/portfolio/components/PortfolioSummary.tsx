@@ -2,15 +2,18 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import type { PortfolioAggregate } from "@sextante/core/fx";
+import type { PortfolioAggregate } from "@sextante/core/portfolio/aggregate";
 import { formatIsoDate, formatRelativeTime } from "@/shared/format/format";
 import { gainSince } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { asLocale } from "@/i18n/types";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import { historyPath } from "@/features/portfolio/api";
 import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
+import { daysBetween, yearOf } from "@sextante/core/dates";
 
 type Props = {
   /** Total agregado (lo calcula el proveedor de datos, el mismo para todas las pestañas). */
@@ -24,16 +27,10 @@ type Props = {
   display: string;
 };
 
-/** 1 de enero del año en curso (UTC) y los días que han pasado desde entonces, hoy incluido. */
-function startOfYear(now: Date): { from: string; days: number } {
-  const from = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const days = Math.floor((now.getTime() - from.getTime()) / 86_400_000) + 1;
-  return { from: from.toISOString().slice(0, 10), days };
-}
-
-/** Clase de color de una ganancia o pérdida. */
-function pnlClass(value: number): string {
-  return value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
+/** 1 de enero del año de `today` y los días que han pasado desde entonces, hoy incluido. */
+function startOfYear(today: string): { from: string; days: number } {
+  const from = `${yearOf(today)}-01-01`;
+  return { from, days: daysBetween(from, today) + 1 };
 }
 
 /**
@@ -44,11 +41,11 @@ function pnlClass(value: number): string {
 export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesCheckedAt, display }: Props) {
   const t = useTranslations("portfolio.summary");
   const locale = asLocale(useLocale());
-  const { formatCurrency, formatPercent } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatSignedPercent } = useFormat();
 
   // La ganancia del año sale del histórico diario: se pide solo lo que va de año. Es un dato de
   // apoyo: sin histórico (error o aún cargando) simplemente no se enseña.
-  const { from, days } = startOfYear(new Date());
+  const { from, days } = startOfYear(useTodayUtc());
   const history = useApiQuery<PortfolioHistoryDto>(historyPath(days, display), { init: NO_STORE });
   const gain = history.status === "ready" ? gainSince(history.data.points, from) : null;
 
@@ -63,7 +60,6 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
   }
 
   const excluded = agg.total - agg.valued;
-  const sign = agg.pnlAbs > 0 ? "+" : "";
 
   return (
     <section className="flex min-w-0 flex-col gap-5 rounded-2xl border border-border bg-surface p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
@@ -72,12 +68,12 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
         <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums sm:text-5xl">
           {formatCurrency(agg.marketValue, display)}
         </p>
-        <p className={`text-sm font-medium tabular-nums ${pnlClass(agg.pnlAbs)}`}>
+        <p className={`text-sm font-medium tabular-nums ${signedTone(agg.pnlAbs)}`}>
           {agg.pnlPct === null
-            ? t("sincePurchaseAmount", { amount: `${sign}${formatCurrency(agg.pnlAbs, display)}` })
+            ? t("sincePurchaseAmount", { amount: formatSignedCurrency(agg.pnlAbs, display) })
             : t("sincePurchase", {
-                amount: `${sign}${formatCurrency(agg.pnlAbs, display)}`,
-                percent: `${sign}${formatPercent(agg.pnlPct, { minDecimals: 2 })}`,
+                amount: formatSignedCurrency(agg.pnlAbs, display),
+                percent: formatSignedPercent(agg.pnlPct, { minDecimals: 2 }),
               })}
         </p>
       </div>
@@ -97,9 +93,8 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
                   ? t("thisYear")
                   : t("thisYearSince", { date: formatIsoDate(gain.since) })}
               </dt>
-              <dd className={`text-xl font-semibold tabular-nums ${pnlClass(gain.gain)}`}>
-                {gain.gain > 0 ? "+" : ""}
-                {formatCurrency(gain.gain, display)}
+              <dd className={`text-xl font-semibold tabular-nums ${signedTone(gain.gain)}`}>
+                {formatSignedCurrency(gain.gain, display)}
                 {gain.estimated && <span className="sr-only"> {t("thisYearEstimated")}</span>}
               </dd>
             </div>

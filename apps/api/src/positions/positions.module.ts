@@ -5,6 +5,7 @@ import { PositionLotsController } from './position-lots.controller.js';
 import { PositionLotsService } from './position-lots.service.js';
 import { PositionsController } from './positions.controller.js';
 import { PositionsService } from './positions.service.js';
+import { AssetClassBackfillService } from './asset-class-backfill.service.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
@@ -15,8 +16,8 @@ import { SessionModule } from '../auth/session.module.js';
 @Module({
   imports: [PricesModule, SessionModule],
   controllers: [PositionsController, PositionLotsController],
-  providers: [PositionsService, PositionLotsService],
+  providers: [PositionsService, PositionLotsService, AssetClassBackfillService],
   // Reutilizados por la exportación RGPD (GET /auth/account/export) y las tools MCP de lotes.
-  exports: [PositionsService, PositionLotsService],
+  exports: [PositionsService, PositionLotsService, AssetClassBackfillService],
 })
 export class PositionsModule {}

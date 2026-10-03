@@ -3,11 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 import type { EmailService } from './email.service.js';
-import { renderFireMilestoneEmail, type FireMilestoneEmail } from './templates/fire-milestone.js';
+import { renderFireMilestoneEmail, type EmailLocale, type FireMilestoneEmail } from './templates/fire-milestone.js';
+import { renderMagicLinkEmail } from './templates/magic-link.js';
 import type { Env } from '../config/env.js';
-import { LOGIN_LINK_TTL_MINUTES } from '../auth/session.constants.js';
-
-const SUBJECT = 'Tu enlace de acceso a Sextante';
 
 /**
  * Transporte de email de producción vía Resend. Se activa con `EMAIL_TRANSPORT=resend`.
@@ -36,13 +34,14 @@ export class ResendEmailService implements EmailService {
     this.appUrl = config.getOrThrow('APP_URL', { infer: true });
   }
 
-  async sendMagicLink(to: string, link: string): Promise<void> {
+  async sendMagicLink(to: string, link: string, locale: EmailLocale): Promise<void> {
+    const rendered = renderMagicLinkEmail(locale, link, `${this.appUrl}/email-logo.png`);
     const { error } = await this.resend.emails.send({
       from: this.from,
       to,
-      subject: SUBJECT,
-      text: this.buildText(link),
-      html: this.buildHtml(link),
+      subject: rendered.subject,
+      text: rendered.text,
+      html: rendered.html,
     });
 
     if (error) {
@@ -71,89 +70,5 @@ export class ResendEmailService implements EmailService {
       this.logger.error(`Error enviando aviso de hito a ${to}: ${error.message}`);
       throw new Error('No se pudo enviar el email');
     }
-  }
-
-  /** Versión en texto plano (fallback para clientes sin HTML). */
-  private buildText(link: string): string {
-    return [
-      'Sextante',
-      '',
-      'Has solicitado iniciar sesión en Sextante. Abre este enlace para entrar:',
-      '',
-      link,
-      '',
-      `El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.`,
-      '',
-      'Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu',
-      'cuenta sin abrir el enlace.',
-    ].join('\n');
-  }
-
-  /** Versión HTML con estilos en línea (los clientes de correo no aplican CSS externo). */
-  private buildHtml(link: string): string {
-    const safeLink = this.escapeHtml(link);
-    const logoUrl = `${this.appUrl}/email-logo.png`;
-    return `<!doctype html>
-<html lang="es">
-  <body style="margin:0;padding:0;background-color:#f4f5f7;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;">
-      <tr>
-        <td align="center" style="padding:32px 16px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background-color:#ffffff;border-radius:12px;border:1px solid #e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-            <tr>
-              <td style="padding:32px 32px 8px 32px;">
-                <p style="margin:0;font-size:20px;font-weight:700;color:#0f172a;">
-                  <img src="${logoUrl}" width="42" height="40" alt="" style="vertical-align:middle;margin-right:10px;border:0;" />Sextante
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:8px 32px 0 32px;">
-                <p style="margin:0 0 16px 0;font-size:15px;line-height:1.6;color:#334155;">
-                  Has solicitado iniciar sesión en Sextante. Pulsa el botón para entrar:
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td align="center" style="padding:8px 32px 24px 32px;">
-                <a href="${safeLink}" style="display:inline-block;padding:12px 28px;background-color:#0f172a;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">
-                  Entrar en Sextante
-                </a>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 32px 8px 32px;">
-                <p style="margin:0 0 8px 0;font-size:13px;line-height:1.6;color:#64748b;">
-                  Si el botón no funciona, copia y pega esta dirección en tu navegador:
-                </p>
-                <p style="margin:0 0 16px 0;font-size:13px;line-height:1.6;word-break:break-all;">
-                  <a href="${safeLink}" style="color:#2563eb;text-decoration:underline;">${safeLink}</a>
-                </p>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding:0 32px 32px 32px;border-top:1px solid #e5e7eb;">
-                <p style="margin:16px 0 0 0;font-size:13px;line-height:1.6;color:#64748b;">
-                  El enlace caduca en ${LOGIN_LINK_TTL_MINUTES} minutos y solo puede usarse una vez.
-                  Si no has solicitado este acceso, ignora este correo: nadie podrá entrar en tu
-                  cuenta sin abrir el enlace.
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
-</html>`;
-  }
-
-  private escapeHtml(value: string): string {
-    return value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
   }
 }

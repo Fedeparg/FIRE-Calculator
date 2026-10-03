@@ -28,6 +28,14 @@ export type InstrumentSearchResult = {
   exchange: string | null;
 };
 
+/**
+ * Clase de activo, para saber en qué bloque de la declaración van sus ventas: acciones (casillas
+ * de acciones admitidas a negociación), fondos y ETF (instituciones de inversión colectiva),
+ * derivados (otros elementos patrimoniales) u otros. `null` mientras no se sepa.
+ */
+export const ASSET_CLASSES = ["stock", "fund", "derivative", "other"] as const;
+export type AssetClass = (typeof ASSET_CLASSES)[number];
+
 export type Position = {
   id: string;
   ticker: string;
@@ -38,6 +46,7 @@ export type Position = {
   currency: string;
   /** Derivado: se registra pero no se valora ni entra en los totales. */
   isDerivative: boolean;
+  assetClass: AssetClass | null;
   createdAt: string;
 };
 
@@ -51,12 +60,16 @@ export type PositionLot = {
   id: string;
   positionId: string;
   kind: PositionLotKind;
+  /** Participaciones; siempre > 0 (el signo lo da `kind`). */
   quantity: number;
+  /** Precio unitario de la operación. */
   price: number;
   /** Comisiones y gastos: no entran en el precio medio, sí en la fiscalidad. */
   fees: number;
+  /** Fecha de la operación (`YYYY-MM-DD`). */
   tradedAt: string;
   note: string | null;
+  /** Instante de alta en la BD (ISO); desempata operaciones del mismo día. */
   createdAt: string;
 };
 
@@ -76,6 +89,7 @@ export type PositionPayload = {
   avgPrice: number;
   broker?: string;
   currency: string;
+  assetClass?: AssetClass;
 };
 
 export interface HistoryPointDto {

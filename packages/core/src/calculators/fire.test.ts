@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeFire } from "./fire.js";
+import { defined } from "../assert.js";
 
 const base = {
   annualExpenses: 24000,
@@ -34,10 +35,10 @@ describe("computeFire", () => {
   it("calcula años hasta FIRE y el patrimonio alcanza el objetivo en ese punto", () => {
     const r = computeFire(base);
     expect(r.yearsToFire).not.toBeNull();
-    expect(r.yearsToFire!).toBeGreaterThan(0);
+    expect(r.yearsToFire).toBeGreaterThan(0);
 
-    const reached = r.series.find((p) => p.year >= Math.ceil(r.yearsToFire!));
-    expect(reached!.value).toBeGreaterThanOrEqual(r.fireNumber);
+    const reached = r.series.find((p) => p.year >= Math.ceil(defined(r.yearsToFire, "años hasta FIRE")));
+    expect(reached?.value).toBeGreaterThanOrEqual(r.fireNumber);
   });
 
   it("devuelve null si no se alcanza en el horizonte de 60 años", () => {

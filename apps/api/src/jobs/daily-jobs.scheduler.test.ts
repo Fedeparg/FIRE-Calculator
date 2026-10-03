@@ -1,12 +1,16 @@
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { fakeConfig } from '../../test/config.js';
+import type { AssetClassBackfillService } from '../positions/asset-class-backfill.service.js';
+import type { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
-import type { PricesService, RefreshSummary } from '../prices/prices.service.js';
+import type { PriceHistoryService, RefreshSummary } from '../prices/price-history.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
+import { stub } from '../../test/factories.js';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };
 
@@ -19,9 +23,9 @@ function deferred() {
 
 function setup(env: Record<string, string> = {}) {
   const jobs = new Map<string, CronJob>();
-  const registry = {
+  const registry = stub<SchedulerRegistry>({
     addCronJob: (name: string, job: CronJob) => jobs.set(name, job),
-  } as unknown as SchedulerRegistry;
+  });
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
     refreshStaleSplits: vi.fn(() => Promise.resolve()),
@@ -34,10 +38,13 @@ function setup(env: Record<string, string> = {}) {
   const fireAlerts = {
     evaluateAll: vi.fn(() => Promise.resolve({ users: 0, sent: 0, failed: 0 })),
   };
+  const dividends = { resolvePending: vi.fn(() => Promise.resolve(0)) };
   const scheduler = new DailyJobsScheduler(
-    prices as unknown as PricesService,
-    snapshots as unknown as PortfolioSnapshotsService,
-    fireAlerts as unknown as FireAlertsService,
+    stub<PriceHistoryService>(prices),
+    stub<PortfolioSnapshotsService>(snapshots),
+    stub<FireAlertsService>(fireAlerts),
+    stub<DividendResolutionService>(dividends),
+    stub<AssetClassBackfillService>({ classifyMissing: vi.fn(() => Promise.resolve(0)) }),
     fakeConfig(env),
     registry,
   );
@@ -109,8 +116,8 @@ describe('DailyJobsScheduler', () => {
 
     await scheduler.run();
 
-    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll, fireAlerts.evaluateAll].map(
-      (fn) => fn.mock.invocationCallOrder[0],
+    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll, fireAlerts.evaluateAll].map((fn) =>
+      firstItem(fn.mock.invocationCallOrder),
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
@@ -121,7 +128,7 @@ describe('DailyJobsScheduler', () => {
     expect(fireAlerts.evaluateAll).toHaveBeenCalledWith('2026-09-28');
   });
 
-  it('si hay un trabajo en marcha, el otro se salta en vez de solaparse', async () => {
+  it('si hay un trabajo en marcha, el intradía se salta en vez de solaparse', async () => {
     const { scheduler, prices } = setup();
     const gate = deferred();
     prices.refreshAll.mockImplementationOnce(async () => {
@@ -135,6 +142,44 @@ describe('DailyJobsScheduler', () => {
     await nightly;
 
     expect(prices.refreshAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('el nocturno NO se descarta si el intradía sigue en marcha: espera y después corre entero', async () => {
+    const { scheduler, prices, snapshots } = setup();
+    const gate = deferred();
+    prices.refreshAll.mockImplementationOnce(async () => {
+      await gate.promise;
+      return SUMMARY;
+    });
+
+    const intraday = scheduler.runIntraday();
+    const nightly = scheduler.run();
+    await Promise.resolve();
+    // Mientras el intradía (colgado de Yahoo) no acaba, el nocturno no ha empezado.
+    expect(prices.refreshAll).toHaveBeenCalledTimes(1);
+    expect(snapshots.captureAll).not.toHaveBeenCalled();
+
+    gate.resolve();
+    await Promise.all([intraday, nightly]);
+
+    expect(prices.refreshAll).toHaveBeenCalledTimes(2);
+    expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('el nocturno espera también si el trabajo en marcha falla', async () => {
+    const { scheduler, prices, snapshots } = setup();
+    const gate = deferred();
+    prices.ensureHistoryForActivePositions.mockImplementationOnce(async () => {
+      await gate.promise;
+      throw new Error('Yahoo caído');
+    });
+
+    scheduler.onApplicationBootstrap();
+    const nightly = scheduler.run();
+    gate.resolve();
+    await nightly;
+
+    expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
   });
 
   it('libera el cerrojo aunque el refresco falle', async () => {

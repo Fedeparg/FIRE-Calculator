@@ -56,6 +56,15 @@ export default function NumberField({
   // forzar un "0" que dejaría ceros feos a la izquierda) y conserva el separador
   // tal y como lo escribe el usuario.
   const [text, setText] = useState(() => formatDecimalInput(value, decimalSeparator));
+  // Último `value` visto. Si cambia desde FUERA (un enlace compartido, un escenario cargado), el
+  // texto se resincroniza; si es el eco de lo que se acaba de teclear ("3," ya vale 3), se
+  // respeta lo escrito. Es el patrón de React para ajustar estado cuando cambia una prop:
+  // comparar durante el render, sin un efecto que pintaría primero el texto viejo.
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (!Object.is(value, syncedValue)) {
+    setSyncedValue(value);
+    if (!Object.is(parseDecimalInput(text) ?? 0, value)) setText(formatDecimalInput(value, decimalSeparator));
+  }
 
   function handleChange(raw: string) {
     const next = stripLeadingZeros(sanitizeDecimalInput(raw));

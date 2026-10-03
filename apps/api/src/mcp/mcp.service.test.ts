@@ -4,9 +4,14 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { NotFoundException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { defined } from '@sextante/core/assert';
 import { CALCULATORS } from '@sextante/core/calculators/schemas';
 
-import { SCOPE_PORTFOLIO_READ } from '../oauth/oauth.constants.js';
+import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
+import { createIncomeSchema } from '../income/dto/create-income.dto.js';
+import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
+import { LotAggregateError } from '../positions/lot-aggregate.js';
+import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
 
 /**
@@ -95,16 +100,41 @@ function makeService() {
       },
     ]),
   };
+  const referenceRates = {
+    getRates: vi.fn().mockResolvedValue({
+      USD: [
+        { date: '2025-01-10', unitsPerEur: 1.03 },
+        { date: '2025-02-10', unitsPerEur: 1.04 },
+      ],
+    }),
+  };
+  const income = {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue({ id: 'i1' }),
+    update: vi.fn().mockResolvedValue({ id: 'i1' }),
+  };
+  const positionsService = { findAllByUser: vi.fn().mockResolvedValue(positions) };
+  const lotsService = { findAllByUser: vi.fn().mockResolvedValue(lots) };
+  // El informe de verdad sobre los mismos dobles: `get_realised_gains` lo compone `TaxReturnService`.
+  const taxReturn = new TaxReturnService(
+    positionsService as never,
+    lotsService as never,
+    income as never,
+    { list: vi.fn().mockResolvedValue([]) } as never,
+    referenceRates as never,
+  );
   const service = new McpService(
-    { findAllByUser: vi.fn().mockResolvedValue(positions) } as never,
-    { findAllByUser: vi.fn().mockResolvedValue(lots) } as never,
+    positionsService as never,
+    lotsService as never,
     valuation as never,
     {} as never,
     scenarios as never,
     {} as never,
+    income as never,
+    taxReturn,
     audit as never,
   );
-  return { service, audit, valuation, scenarios };
+  return { service, audit, valuation, scenarios, taxReturn, income, referenceRates };
 }
 
 async function connect(service: McpService, scopes: string[] = [SCOPE_PORTFOLIO_READ]): Promise<Client> {
@@ -138,7 +168,12 @@ describe('McpService', () => {
     expect(names).toEqual(
       expect.arrayContaining([
         'list_positions',
+        'list_income',
+        'add_income',
+        'update_income',
+        'delete_income',
         'get_realised_gains',
+        'get_tax_return_report',
         'get_portfolio_breakdown',
         'get_fire_goal_progress',
         'list_saved_scenarios',
@@ -221,7 +256,7 @@ describe('McpService', () => {
     const { service, audit } = makeService();
     client = await connect(service);
     const call = async (calculator: string, inputs: Record<string, unknown>) =>
-      (await client!.callTool({ name: 'calculate', arguments: { calculator, inputs } })) as CallToolResult;
+      (await defined(client).callTool({ name: 'calculate', arguments: { calculator, inputs } })) as CallToolResult;
 
     const montecarlo = {
       annualExpenses: 1,
@@ -247,16 +282,72 @@ describe('McpService', () => {
     client = await connect(makeService().service);
 
     const all = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
-      years: { year: number; groups: { currency: string; net: number }[] }[];
+      years: { year: number; net: number; fxDifference: number; unconverted: unknown[] }[];
     };
     expect(all.years.map((y) => y.year)).toEqual([2025]);
-    const groups = all.years[0]?.groups ?? [];
-    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20, sin convertir.
-    expect(groups.find((g) => g.currency === 'EUR')?.net).toBeCloseTo(99, 6);
-    expect(groups.find((g) => g.currency === 'USD')?.net).toBeCloseTo(-20, 6);
+    const [year] = all.years;
+    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20 USD al tipo de la venta.
+    expect(year?.net).toBeCloseTo(99 - 20 / 1.04, 6);
+    // Los 300 USD invertidos valen menos euros al vender que al comprar.
+    expect(year?.fxDifference).toBeCloseTo(300 / 1.04 - 300 / 1.03, 6);
+    expect(year?.unconverted).toEqual([]);
 
     const none = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2024 } }));
-    expect(none).toEqual({ years: [] });
+    expect(none).toEqual({ years: [], ratesLoaded: true });
+  });
+
+  it('get_realised_gains da las mismas cifras que el informe de la Renta (un único cálculo)', async () => {
+    const { service, taxReturn } = makeService();
+    client = await connect(service);
+
+    const tool = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2025 } }));
+    const report = await taxReturn.build(USER, 2025);
+
+    expect(tool).toEqual({ years: [report.gains], ratesLoaded: true });
+  });
+
+  it('get_realised_gains degrada si cae el BCE: ventas en divisa sin convertir y ratesLoaded false', async () => {
+    const { service, referenceRates, audit } = makeService();
+    referenceRates.getRates.mockRejectedValueOnce(new Error('ECB request failed: timeout'));
+    client = await connect(service);
+
+    const result = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
+      ratesLoaded: boolean;
+      years: { year: number; net: number; unconverted: unknown[] }[];
+    };
+
+    expect(result.ratesLoaded).toBe(false);
+    const [year] = result.years;
+    // La venta en euros sigue calculada; la de USD queda fuera de los totales.
+    expect(year?.net).toBeCloseTo(99, 6);
+    // USD: 2 × 140 − 2 × 150 = −20 USD.
+    expect(year?.unconverted).toEqual([{ currency: 'USD', sales: 1, gain: -20 }]);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_realised_gains', 'ok');
+  });
+
+  it('sirve el informe de la Renta del ejercicio pedido o, sin él, el del último con datos', async () => {
+    const { service, taxReturn, audit } = makeService();
+    const build = vi.spyOn(taxReturn, 'build').mockResolvedValue({
+      year: 2025,
+      availableYears: [2025],
+      savings: null,
+    } as Partial<Awaited<ReturnType<TaxReturnService['build']>>> as Awaited<ReturnType<TaxReturnService['build']>>);
+    client = await connect(service);
+    const { tools } = await client.listTools();
+    expect(tools.find((t) => t.name === 'get_tax_return_report')?.annotations).toMatchObject({ readOnlyHint: true });
+
+    expect(parse(await client.callTool({ name: 'get_tax_return_report', arguments: { year: 2025 } }))).toEqual({
+      year: 2025,
+      availableYears: [2025],
+      savings: null,
+    });
+    expect(build).toHaveBeenLastCalledWith(USER, 2025);
+    parse(await client.callTool({ name: 'get_tax_return_report', arguments: {} }));
+    expect(build).toHaveBeenLastCalledWith(USER, undefined);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_tax_return_report', 'ok');
+
+    const invalid = await client.callTool({ name: 'get_tax_return_report', arguments: { year: 1800 } });
+    expect(invalid.isError).toBe(true);
   });
 
   it('mide el objetivo FIRE con el valor de mercado real de la cartera', async () => {
@@ -388,6 +479,51 @@ describe('McpService', () => {
 
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result.content)).toContain('Posición no encontrada (POSITION_NOT_FOUND)');
+  });
+
+  it('valida las escrituras con el esquema REST completo, refinamientos incluidos (paridad REST/MCP)', async () => {
+    const { service, income } = makeService();
+    client = await connect(service, [SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE]);
+    const call = async (name: string, args: Record<string, unknown>) =>
+      (await defined(client).callTool({ name, arguments: args })) as CallToolResult;
+
+    // "Al menos un campo" de PATCH /api/income/:id: REST lo rechaza y MCP también.
+    expect(updateIncomeSchema.safeParse({}).success).toBe(false);
+    const empty = await call('update_income', { id: 'i1' });
+    expect(empty.isError).toBe(true);
+    expect(JSON.stringify(empty.content)).toContain('no hay ningún campo que actualizar');
+
+    // "Las retenciones no superan el íntegro" de POST /api/income.
+    const tooMuch = { kind: 'dividend', paidAt: '2025-05-01', gross: 1, withholdingSpain: 2 };
+    expect(createIncomeSchema.safeParse(tooMuch).success).toBe(false);
+    const rejected = await call('add_income', tooMuch);
+    expect(rejected.isError).toBe(true);
+    expect(JSON.stringify(rejected.content)).toContain('las retenciones no pueden superar el íntegro');
+
+    expect(income.update).not.toHaveBeenCalled();
+    expect(income.create).not.toHaveBeenCalled();
+
+    // Lo válido sí llega al servicio, ya normalizado por el esquema.
+    expect((await call('update_income', { id: 'i1', gross: 10 })).isError).toBeFalsy();
+    expect(income.update).toHaveBeenCalledWith(USER, 'i1', { gross: 10 });
+  });
+
+  it('reenvía los errores de dominio con su código, igual que REST', async () => {
+    const { service, valuation } = makeService();
+    valuation.breakdown.mockRejectedValueOnce(
+      new LotAggregateError('NEGATIVE_QUANTITY', 'La cantidad de la posición quedaría en negativo'),
+    );
+    client = await connect(service);
+
+    const result = (await client.callTool({
+      name: 'get_portfolio_breakdown',
+      arguments: { groupBy: 'broker' },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain(
+      'La cantidad de la posición quedaría en negativo (NEGATIVE_QUANTITY)',
+    );
   });
 
   it('exige portfolio:read para las tools de lectura y audita el rechazo', async () => {

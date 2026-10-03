@@ -2,7 +2,8 @@
 // Mismo criterio que `aggregatePortfolio`; las posiciones excluidas se cuentan para poder decirlo en
 // la UI en vez de repartir un total incompleto como si fuera el bueno.
 
-import { convertCurrency } from "../fx.js";
+import { compareStrings } from "../compare.js";
+import { canConvert, convertCurrency } from "../fx.js";
 
 export type BreakdownGroupBy = "asset" | "broker" | "currency";
 
@@ -65,7 +66,7 @@ export function buildBreakdown({
     const value = convertCurrency(position.quantity * price.close, price.currency, display, rates);
     if (value === null || !Number.isFinite(value) || value < 0) continue;
     // como `aggregatePortfolio`, exige convertir la divisa de la posición: si no, los pesos no cuadrarían con el total
-    if (convertCurrency(1, position.currency, display, rates) === null) continue;
+    if (!canConvert(position.currency, display, rates)) continue;
 
     const { key, label } =
       groupBy === "asset"
@@ -91,7 +92,7 @@ export function buildBreakdown({
 
   const slices = [...groups.values()]
     .map((slice) => ({ ...slice, share: total > 0 ? (slice.value / total) * 100 : 0 }))
-    .sort((a, b) => b.value - a.value || (a.label < b.label ? -1 : a.label > b.label ? 1 : 0));
+    .sort((a, b) => b.value - a.value || compareStrings(a.label, b.label));
 
   return { slices, total, included, excluded: positions.length - included };
 }

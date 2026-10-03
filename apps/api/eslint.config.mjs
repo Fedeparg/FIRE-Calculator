@@ -29,6 +29,11 @@ export default tseslint.config(
       '@typescript-eslint/no-extraneous-class': 'off',
       // Promesas "fire-and-forget" deliberadas se marcan con `void`; el resto, error.
       '@typescript-eslint/no-floating-promises': 'error',
+      // Mismo trío que la raíz. `consistent-type-imports` no reporta en ficheros con decoradores
+      // (con `emitDecoratorMetadata`, la inyección de Nest necesita el import en runtime).
+      '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
     },
   },
 );

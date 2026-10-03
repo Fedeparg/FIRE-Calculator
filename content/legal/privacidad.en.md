@@ -28,13 +28,15 @@ need to register to use them.
 
 If you choose to use the **portfolio** feature, you create an account with your
 **email address** (passwordless magic-link sign-in) and we store on our servers
-the **positions** you record (symbol, quantity, average price, broker and
-currency). This data is necessary to provide the portfolio-tracking service.
+the **positions** you record (symbol, quantity, average price, broker, currency
+and asset class), the **payouts** you record or import and, if you enter them, the
+negative balances from earlier returns still pending offset. This data is necessary to provide the portfolio-tracking service.
 
 - **Legal basis:** **performance of the service** you request by registering.
 - If you **import transactions from a broker** (for example, the Trade Republic
   transaction export), we store only your buys and sells (instrument, date,
-  quantity, price and fee). The file is **not kept**, and any third-party data it
+  quantity, price and fee) and your payouts (dividends, interest and rewards:
+  date, amount, withholdings and source country). The file is **not kept**, and any third-party data it
   may contain (counterparties, IBANs, payment references) is discarded when it is
   read.
 - You can **export** all your data (JSON) and **delete your account** at any time
@@ -86,7 +88,8 @@ third party.
   (country, region and city) derived from the IP address at the time of the visit.
   Also a few **actions**, with no amounts or personal data: copying a calculation
   link, saving a scenario, requesting a sign-in link, adding a position,
-  importing transactions from a broker and starting a donation.
+  importing transactions from a broker, opening the tax return report, changing
+  its year, downloading or printing it and starting a donation.
 - **What is not recorded:** your IP address, your email, or the values in the
   calculators or your portfolio. **No cookies are used**: visits on the same day are
   grouped under an irreversible code that **changes every day**, so you cannot be

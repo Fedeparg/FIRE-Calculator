@@ -2,12 +2,17 @@ import { readFile } from "node:fs/promises";
 
 import { ImageResponse } from "next/og";
 
+import type { Locale } from "@/i18n/types";
 import { SITE_NAME } from "@/shared/seo/site";
+
+import { resolveOgCard } from "./og-card";
 
 /**
  * Generador de imágenes Open Graph (1200×630) para tarjetas sociales. Vive fuera
  * de `/api` (proxeado a la API) y fuera del routing por idioma (excluido en
- * `proxy.ts`). Toma `title` y `subtitle` por query y pinta una tarjeta de marca.
+ * `proxy.ts`). Recibe QUÉ tarjeta pintar por slug (`?calc=`, `?article=`, `?legal=` o
+ * `?page=`; ver `OgCard`) y resuelve su título en `og-card.ts`: no acepta texto libre, así que
+ * nadie puede generar imágenes con la marca y un mensaje arbitrario.
  *
  * Es dinámica (lee la query por petición). Las fuentes se leen del disco con
  * `fs.readFile(new URL(..., import.meta.url))`: ese patrón hace que Next/Turbopack
@@ -23,10 +28,27 @@ const MAX_SUBTITLE = 90;
  * vive fuera del routing por idioma), así que se resuelve con el parámetro
  * `locale` que añade `buildMetadata`.
  */
-const TAGLINE: Record<string, string> = {
+const TAGLINE: Record<Locale, string> = {
   es: "Calculadoras y guías de finanzas personales · España",
   en: "Personal finance calculators and guides · Spain",
 };
+
+/**
+ * Las dos fuentes, leídas UNA vez por proceso (la primera petición) en vez de en cada imagen.
+ * Si la lectura falla, se olvida la promesa para reintentar en la siguiente petición.
+ */
+let fontsPromise: Promise<[Buffer, Buffer]> | null = null;
+
+function loadFonts(): Promise<[Buffer, Buffer]> {
+  fontsPromise ??= Promise.all([
+    readFile(new URL("./Inter-Regular.woff", import.meta.url)),
+    readFile(new URL("./Inter-Bold.woff", import.meta.url)),
+  ]).catch((error: unknown) => {
+    fontsPromise = null;
+    throw error;
+  });
+  return fontsPromise;
+}
 
 function clamp(value: string, max: number): string {
   const trimmed = value.trim();
@@ -34,16 +56,12 @@ function clamp(value: string, max: number): string {
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const title = clamp(searchParams.get("title") || SITE_NAME, MAX_TITLE);
-  const subtitleRaw = searchParams.get("subtitle");
-  const subtitle = subtitleRaw ? clamp(subtitleRaw, MAX_SUBTITLE) : null;
-  const tagline = TAGLINE[searchParams.get("locale") ?? "es"] ?? TAGLINE.es;
+  const card = await resolveOgCard(new URL(request.url).searchParams);
+  const title = clamp(card.title, MAX_TITLE);
+  const subtitle = card.subtitle ? clamp(card.subtitle, MAX_SUBTITLE) : null;
+  const tagline = TAGLINE[card.locale];
 
-  const [regular, bold] = await Promise.all([
-    readFile(new URL("./Inter-Regular.woff", import.meta.url)),
-    readFile(new URL("./Inter-Bold.woff", import.meta.url)),
-  ]);
+  const [regular, bold] = await loadFonts();
 
   return new ImageResponse(
     <div
@@ -115,11 +133,11 @@ export async function GET(request: Request) {
         { name: "Inter", data: bold, weight: 700, style: "normal" },
       ],
       headers: {
-        // La imagen es función pura de la query (título, subtítulo, idioma), así que
-        // el mismo enlace da siempre el mismo PNG. Sin esta cabecera la ruta se
-        // servía sin caché y cada vista previa de Twitter, WhatsApp o LinkedIn
-        // obligaba a re-renderizar la tarjeta entera con sus fuentes.
-        "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+        // La imagen es función de la query (qué tarjeta y en qué idioma), así que el mismo
+        // enlace da siempre el mismo PNG: se cachea un año sin revalidar. Si cambia el título
+        // de una página, su vista previa en redes tardará en cambiar; es el precio de no
+        // re-renderizar la tarjeta con sus fuentes en cada vista previa.
+        "Cache-Control": "public, max-age=31536000, immutable",
       },
     },
   );

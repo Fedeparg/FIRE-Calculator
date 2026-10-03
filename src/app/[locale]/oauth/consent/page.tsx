@@ -1,7 +1,7 @@
-import { SESSION_COOKIE } from "@sextante/core/contracts";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 import { redirect } from "@/i18n/navigation";
+import { serverApiFetch } from "@/shared/api/api.server";
 import { getSessionUser } from "@/shared/api/session";
 import ConsentClient from "@/features/oauth/components/ConsentClient";
 import RouteMessages from "@/i18n/RouteMessages";
@@ -14,9 +14,6 @@ type Props = {
     authorize_params?: string;
   }>;
 };
-
-/** Base de la API para llamadas server-side (Next server -> NestJS directo). */
-const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
 /**
  * Pantalla de consentimiento OAuth: el servidor MCP redirige aquí cuando un cliente LLM pide
@@ -53,22 +50,11 @@ export default async function ConsentPage({ params, searchParams }: Props) {
 
   // Nombre legible de la aplicación (best-effort; si falla, intro genérica) y sus
   // `redirect_uris` registradas (sin ellas, "Denegar" vuelve a la portada).
-  let clientName: string | null = null;
-  let redirectUris: string[] = [];
-  try {
-    const res = await fetch(`${API_URL}/api/oauth/consent/client/${encodeURIComponent(clientId)}`, {
-      headers: { cookie: `${SESSION_COOKIE}=${await sessionToken()}` },
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const info = (await res.json()) as { clientName: string | null; redirectUris?: string[] };
-      clientName = info.clientName;
-      redirectUris = info.redirectUris ?? [];
-    }
-  } catch {
-    clientName = null;
-    redirectUris = [];
-  }
+  const client = await serverApiFetch<{ clientName: string | null; redirectUris?: string[] }>(
+    `/api/oauth/consent/client/${encodeURIComponent(clientId)}`,
+  );
+  const clientName = client?.clientName ?? null;
+  const redirectUris = client?.redirectUris ?? [];
 
   const scopes = scope.split(" ").filter(Boolean);
 
@@ -90,10 +76,4 @@ export default async function ConsentPage({ params, searchParams }: Props) {
       </div>
     </RouteMessages>
   );
-}
-
-/** Lee la cookie de sesión para reenviarla a la API server-side. */
-async function sessionToken(): Promise<string> {
-  const { cookies } = await import("next/headers");
-  return (await cookies()).get(SESSION_COOKIE)?.value ?? "";
 }

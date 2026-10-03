@@ -1,10 +1,14 @@
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { randomToken, sha256Hex } from './crypto.js';
 import { isoDate, todayUtc } from './dates.js';
+import { errorMessage } from './errors.js';
+import { numberOrNull } from './numeric.js';
 import { scheduleFromEnv } from './schedule.js';
+import { stub } from '../../test/factories.js';
 
 describe('dates', () => {
   afterEach(() => vi.useRealTimers());
@@ -45,7 +49,7 @@ describe('scheduleFromEnv', () => {
     const registry = {
       addCronJob: vi.fn((_name: string, job: CronJob) => started.push(job)),
     };
-    return { registry, asRegistry: registry as unknown as SchedulerRegistry };
+    return { registry, asRegistry: stub<SchedulerRegistry>(registry) };
   }
 
   it('usa el valor por defecto si la variable falta o está vacía', () => {
@@ -67,7 +71,7 @@ describe('scheduleFromEnv', () => {
       handler: vi.fn(),
     });
     expect(scheduled).toBe('0 */5 * * * *');
-    const [name, job] = registry.addCronJob.mock.calls[0];
+    const [name, job] = firstItem(registry.addCronJob.mock.calls);
     expect(name).toBe('custom');
     expect(job.isActive).toBe(true);
     expect(String(job.cronTime.timeZone)).toBe('Europe/Madrid');
@@ -85,5 +89,22 @@ describe('scheduleFromEnv', () => {
     expect(() =>
       scheduleFromEnv(asRegistry, { name: 'job', cronTime: 'off', defaultCron: '0 0 3 * * *', handler: vi.fn() }),
     ).toThrow();
+  });
+});
+
+describe('errorMessage', () => {
+  it('usa el message de un Error y convierte a texto lo que no lo es', () => {
+    expect(errorMessage(new Error('fallo'))).toBe('fallo');
+    expect(errorMessage('texto lanzado')).toBe('texto lanzado');
+    expect(errorMessage(42)).toBe('42');
+    expect(errorMessage(undefined)).toBe('undefined');
+  });
+});
+
+describe('numberOrNull', () => {
+  it('convierte el numeric de Drizzle y conserva el null', () => {
+    expect(numberOrNull('12.500000')).toBe(12.5);
+    expect(numberOrNull('0')).toBe(0);
+    expect(numberOrNull(null)).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   completeValues,
@@ -46,21 +46,24 @@ type Props = {
  *
  * - Se lee de `window.location.search` tras el montaje, no con `useSearchParams`: la página
  *   es estática (ISR), así que el primer render usa los valores por defecto para casar con
- *   la hidratación y la ruta no se vuelve dinámica.
+ *   la hidratación y la ruta no se vuelve dinámica. La lectura va en un `useLayoutEffect`
+ *   (corre tras montar y ANTES de que el navegador pinte, y después de los de los hijos, que
+ *   ya han registrado sus campos): los valores del enlace se ven en el primer pintado del
+ *   cliente, sin un fotograma intermedio con los de por defecto.
  * - Se escribe con `history.replaceState`, no con `router.replace`, que sería una navegación
  *   de App Router (pide de nuevo el payload RSC); `replaceState` no recarga ni apila entradas.
+ *
+ * Los valores externos (URL o escenario) se aplican cambiando el estado, sin remontar los
+ * campos: cada `NumberField` resincroniza su texto cuando su `value` cambia desde fuera.
  */
 export default function CalculatorStateProvider({ slug, children }: Props) {
-  // Ref porque se rellena durante el render de los hijos (cada hook se registra al
-  // renderizarse); actualizar estado ahí provocaría un bucle de renders.
+  // Ref y no estado: las specs son configuración (no se pintan) y se registran desde los
+  // efectos de cada campo; guardarlas en estado provocaría renders inútiles.
   const specsRef = useRef<Record<string, FieldSpec>>({});
   const [values, setValues] = useState<FieldValues>({});
   const [hasFields, setHasFields] = useState(false);
   // Hasta leer la URL no se puede escribir en ella (se borraría).
   const [hydrated, setHydrated] = useState(false);
-  // `key` del subárbol: `NumberField` guarda el texto tecleado en un estado que solo se
-  // inicializa al montar, así que sin remontar seguiría mostrando el valor anterior.
-  const [version, setVersion] = useState(0);
 
   const registerField = useCallback((key: string, spec: FieldSpec) => {
     specsRef.current[key] = spec;
@@ -70,19 +73,11 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
     setValues((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }));
   }, []);
 
-  // Único camino de entrada de valores externos (URL o escenario). Reemplaza el estado en
-  // vez de mezclarlo: lo que no venga vuelve a su valor por defecto.
-  const applyValues = useCallback((next: FieldValues) => {
-    setValues(next);
-    setVersion((current) => current + 1);
+  // Entrada de valores externos de un escenario. Reemplaza el estado en vez de mezclarlo: lo
+  // que no venga vuelve a su valor por defecto.
+  const applyInputs = useCallback((inputs: unknown) => {
+    setValues(decodeCalculatorInputs(inputs, specsRef.current));
   }, []);
-
-  const applyInputs = useCallback(
-    (inputs: unknown) => {
-      applyValues(decodeCalculatorInputs(inputs, specsRef.current));
-    },
-    [applyValues],
-  );
 
   const getInputs = useCallback(() => completeValues(values, specsRef.current), [values]);
 
@@ -97,13 +92,14 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
     return `${origin}${pathname}${search}${hash}`;
   }, [values]);
 
-  useEffect(() => {
+  // Un `setState` dentro de `useLayoutEffect` se aplica de forma síncrona antes de pintar.
+  useLayoutEffect(() => {
     const specs = specsRef.current;
     setHasFields(Object.keys(specs).length > 0);
     const fromUrl = decodeCalculatorState(window.location.search, specs);
-    if (Object.keys(fromUrl).length > 0) applyValues(fromUrl);
+    if (Object.keys(fromUrl).length > 0) setValues(fromUrl);
     setHydrated(true);
-  }, [applyValues]);
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -118,9 +114,7 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
 
   return (
     <CalculatorStateContext.Provider value={context}>
-      {/* La `key` remonta el subárbol al cargar un escenario. */}
-      <Fragment key={version}>{children}</Fragment>
-      {/* Fuera de la `key` a propósito: la barra conserva su estado al cargar un escenario. */}
+      {children}
       <CalculatorActions />
     </CalculatorStateContext.Provider>
   );
@@ -129,6 +123,11 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
 /** `null` fuera de un proveedor (páginas que no son calculadoras). */
 export function useCalculatorState(): CalculatorStateContextValue | null {
   return useContext(CalculatorStateContext);
+}
+
+/** Slug de la calculadora en curso (su namespace de mensajes es `calc.<slug>`). */
+export function useCalculatorSlug(): string {
+  return useRequiredCalculatorState().slug;
 }
 
 function useRequiredCalculatorState(): CalculatorStateContextValue {
@@ -145,7 +144,12 @@ function useRequiredCalculatorState(): CalculatorStateContextValue {
  */
 export function useNumberField(key: string, defaultValue: number): [number, (value: number) => void] {
   const { values, registerField, setValue } = useRequiredCalculatorState();
-  registerField(key, { kind: "number", defaultValue });
+  // En un efecto y no durante el render: el render debe ser puro (React puede repetirlo o
+  // descartarlo en modo estricto o concurrente). `useLayoutEffect` de un hijo corre antes que el
+  // del proveedor, así que la spec ya está registrada cuando este lee la URL.
+  useLayoutEffect(() => {
+    registerField(key, { kind: "number", defaultValue });
+  }, [registerField, key, defaultValue]);
 
   const raw = values[key];
   const value = typeof raw === "number" ? raw : defaultValue;
@@ -161,11 +165,80 @@ export function useOptionField<T extends string>(
   allowed: readonly T[],
 ): [T, (value: T) => void] {
   const { values, registerField, setValue } = useRequiredCalculatorState();
-  registerField(key, { kind: "option", defaultValue, allowed });
+  // Ver `useNumberField`.
+  useLayoutEffect(() => {
+    registerField(key, { kind: "option", defaultValue, allowed });
+  }, [registerField, key, defaultValue, allowed]);
 
   const raw = values[key];
   const value = typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : defaultValue;
   const set = useCallback((next: T) => setValue(key, next), [setValue, key]);
 
   return [value, set];
+}
+
+/**
+ * Varios campos de opción con los mismos valores permitidos (p. ej. las preguntas de un
+ * cuestionario), cuando su número sale de datos y no se puede llamar a `useOptionField` una vez
+ * por campo (los hooks no pueden ir en un bucle). `keys` y `allowed` deben ser constantes de
+ * módulo: su identidad gobierna el registro.
+ */
+export function useOptionFields<T extends string>(
+  keys: readonly string[],
+  defaultValue: T,
+  allowed: readonly T[],
+): [T[], (index: number, value: T) => void] {
+  const { values, registerField, setValue } = useRequiredCalculatorState();
+  // Ver `useNumberField`.
+  useLayoutEffect(() => {
+    for (const key of keys) registerField(key, { kind: "option", defaultValue, allowed });
+  }, [registerField, keys, defaultValue, allowed]);
+
+  const current = useMemo(
+    () =>
+      keys.map((key) => {
+        const raw = values[key];
+        return typeof raw === "string" && (allowed as readonly string[]).includes(raw) ? (raw as T) : defaultValue;
+      }),
+    [values, keys, defaultValue, allowed],
+  );
+  const set = useCallback(
+    (index: number, next: T) => {
+      const key = keys[index];
+      if (key !== undefined) setValue(key, next);
+    },
+    [setValue, keys],
+  );
+
+  return [current, set];
+}
+
+/**
+ * Campo enlazado: su clave de URL (que es también la clave de su etiqueta, por convención), su
+ * valor y su setter en un solo objeto. Lo consumen `<NumField>` (etiqueta y ayuda derivadas de la
+ * clave) y `useInputs` (entradas del cálculo), para no repetir cada campo en tres sitios.
+ */
+export type FieldBinding<T> = {
+  key: string;
+  value: T;
+  set: (value: T) => void;
+};
+
+/**
+ * `useNumberField` que devuelve el campo enlazado en vez de la tupla. El objeto se memoiza: solo
+ * cambia de identidad cuando cambia su valor, así puede ir en dependencias de `useMemo`.
+ */
+export function useBoundNumberField(key: string, defaultValue: number): FieldBinding<number> {
+  const [value, set] = useNumberField(key, defaultValue);
+  return useMemo(() => ({ key, value, set }), [key, value, set]);
+}
+
+/** `useOptionField` que devuelve el campo enlazado (ver `useBoundNumberField`). */
+export function useBoundOptionField<T extends string>(
+  key: string,
+  defaultValue: T,
+  allowed: readonly T[],
+): FieldBinding<T> {
+  const [value, set] = useOptionField(key, defaultValue, allowed);
+  return useMemo(() => ({ key, value, set }), [key, value, set]);
 }

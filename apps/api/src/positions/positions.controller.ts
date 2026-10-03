@@ -18,9 +18,10 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { combinePositionSchema, type CombinePositionDto } from './dto/combine-position.dto.js';
 import { createPositionSchema, type CreatePositionDto } from './dto/create-position.dto.js';
-import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
+import { PositionLotsService } from './position-lots.service.js';
+import type { PositionLotResponse, PositionResponse } from './position.mapper.js';
 import { updatePositionSchema, type UpdatePositionDto } from './dto/update-position.dto.js';
-import { PositionsService, type PositionResponse } from './positions.service.js';
+import { PositionsService } from './positions.service.js';
 
 /**
  * Cartera del usuario. Todos los endpoints exigen sesión y el `userId` sale del JWT

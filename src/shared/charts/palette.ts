@@ -12,5 +12,6 @@ export const CHART_PALETTE = [
 
 /** Color estable por índice; cicla (con tantos grupos la leyenda es lo que identifica). */
 export function paletteColor(index: number): string {
-  return CHART_PALETTE[index % CHART_PALETTE.length];
+  // Con un índice negativo o no entero el módulo no da una posición: se usa el primer color.
+  return CHART_PALETTE[index % CHART_PALETTE.length] ?? CHART_PALETTE[0];
 }

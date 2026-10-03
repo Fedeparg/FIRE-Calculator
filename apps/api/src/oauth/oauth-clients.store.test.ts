@@ -1,6 +1,7 @@
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { oauthClients } from '../db/schema.js';
@@ -31,7 +32,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
   });
 
   const readClient = async (clientId: string) =>
-    (await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)))[0];
+    firstItem(await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)));
 
   it('registra un cliente nuevo con lastUsedAt a null', async () => {
     await store.registerClient(CLIENT);
@@ -49,7 +50,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
 
     const row = await readClient(CLIENT.client_id);
     expect(row.lastUsedAt).not.toBeNull();
-    expect(row.lastUsedAt!.getTime()).toBeGreaterThanOrEqual(before - 1_000);
+    expect(row.lastUsedAt?.getTime()).toBeGreaterThanOrEqual(before - 1_000);
   });
 
   it('touch de un cliente inexistente no lanza (se invoca fire-and-forget)', async () => {

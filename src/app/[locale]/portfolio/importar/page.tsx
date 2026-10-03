@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { redirect } from "next/navigation";
-import { routing } from "@/i18n/routing";
-import { getSessionUser } from "@/shared/api/session";
+
+import { privateMetadata } from "@/shared/seo/seo";
+import { requireSessionUser } from "@/shared/api/session";
 import { Link } from "@/i18n/navigation";
 import TradeRepublicImport from "@/features/portfolio/components/TradeRepublicImport";
 
@@ -11,8 +11,7 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "portfolio.import" });
-  // Página privada: nada que indexar.
-  return { title: t("title"), robots: { index: false, follow: false } };
+  return privateMetadata(t("title"));
 }
 
 export default async function ImportPage({ params }: Props) {
@@ -20,11 +19,7 @@ export default async function ImportPage({ params }: Props) {
   setRequestLocale(locale);
 
   // Protección server-side: sin sesión válida, al login (con prefijo de locale).
-  const user = await getSessionUser();
-  if (!user) {
-    const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
-    redirect(`${prefix}/entrar`);
-  }
+  await requireSessionUser(locale);
 
   const t = await getTranslations("portfolio.import");
 

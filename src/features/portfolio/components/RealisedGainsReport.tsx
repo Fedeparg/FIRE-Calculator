@@ -1,104 +1,128 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { lastItem } from "@sextante/core/arrays";
 
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";
-import { UTF8_BOM } from "@/shared/format/csv";
-import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
-import {
-  buildRealisedGainsReport,
-  TAX_CURRENCY,
-  type RealisedGainsCurrencyGroup,
-} from "@sextante/core/fiscal/realised-gains";
-import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
+import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
+import { buildIncomeReport, type IncomeEvent } from "@sextante/core/fiscal/income";
+import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
+import { buildSavingsReturns } from "@sextante/core/fiscal/savings-return";
+import { taxBoxesFor } from "@sextante/core/fiscal/tax-boxes";
+import type { AssetClass } from "@sextante/core/portfolio/types";
+import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
+import { buildRealisedGainsReport, type RealisedGainsPosition } from "@sextante/core/fiscal/realised-gains";
+import { buildIncomeCsv, incomeCsvTexts } from "@/features/portfolio/model/income-csv";
+import { buildRealisedGainsCsv, realisedGainsCsvHeaders } from "@/features/portfolio/model/realised-gains-csv";
+import { taxYears } from "@/features/portfolio/model/tax-year";
+import { useTaxYear } from "@/features/portfolio/use-tax-year";
 import { asLocale } from "@/i18n/types";
-import { downloadBlob } from "@/shared/format/download";
+import { useCsvDownload } from "@/shared/format/use-csv-download";
 import { useFormat } from "@/shared/format/use-format";
-import type { Position, PositionLot } from "@sextante/core/portfolio/types";
+import { trackEvent } from "@/shared/analytics/track";
 import Button from "@/shared/ui/Button";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
+import IncomeSection from "./IncomeSection";
+import SalesBlocks from "./SalesBlocks";
+import PendingBalancesForm from "./PendingBalancesForm";
+import SavingsReturnSection from "./SavingsReturnSection";
+import { yearOf } from "@sextante/core/dates";
 
 type Props = {
-  positions: Position[];
-  /** Todas las operaciones del usuario (`GET /api/positions/lots`). */
-  lots: PositionLot[];
+  positions: RealisedGainsPosition[];
+  /** Dividendos, intereses y recompensas. */
+  income: IncomeEvent[];
+  /** Saldos negativos pendientes de años que Sextante no calcula. */
+  pendingBalances: PendingNegative[];
+  /** Clase de activo de cada posición: decide el bloque de la declaración de sus ventas. */
+  assetClasses: Record<string, AssetClass | null>;
+  /** Tipos de referencia del BCE de las divisas con ventas. */
+  rates: ReferenceRates;
+  /** `false` si hacían falta tipos y no se pudieron cargar. */
+  ratesLoaded: boolean;
 };
-
-/** Color del importe según su signo, con los tokens del tema. */
-function signColor(value: number): string {
-  return value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
-}
 
 /**
  * Informe anual de ganancias y pérdidas REALIZADAS: las ventas registradas en la cartera,
- * emparejadas por FIFO y compensadas dentro de cada ejercicio.
+ * emparejadas por FIFO, pasadas a euros y compensadas dentro de cada ejercicio.
  *
  * El cálculo es `buildRealisedGainsReport` (core puro y testeado); aquí solo se elige el
- * ejercicio, se pinta y se exporta. Todo sale de los datos que ya se han cargado: no hay un
- * segundo cálculo en el servidor que pudiera dar otra cifra.
+ * ejercicio, se pinta y se exporta. Los tipos del BCE llegan ya cargados del servidor.
  */
-export default function RealisedGainsReport({ positions, lots }: Props) {
+export default function RealisedGainsReport({
+  positions,
+  income,
+  pendingBalances,
+  assetClasses,
+  rates,
+  ratesLoaded,
+}: Props) {
   const t = useTranslations("portfolio.realisedGains");
+  const tIncome = useTranslations("portfolio.income");
   const locale = asLocale(useLocale());
-  const { formatCurrency, formatPercent } = useFormat();
+  const { formatCurrency } = useFormat();
+  const currentYear = yearOf(useTodayUtc());
 
-  const report = useMemo(() => {
-    const byPosition = new Map<string, PositionLot[]>();
-    for (const lot of lots) {
-      const list = byPosition.get(lot.positionId) ?? [];
-      list.push(lot);
-      byPosition.set(lot.positionId, list);
-    }
-    return buildRealisedGainsReport(
-      positions.map((p) => ({
-        id: p.id,
-        ticker: p.ticker,
-        name: p.name,
-        currency: p.currency,
-        lots: byPosition.get(p.id) ?? [],
-      })),
-    );
-  }, [positions, lots]);
+  const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
+  const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
+  // Ejercicios con ventas o con cobros; sin ninguno, el actual (para poder anotar el primer cobro).
+  const years = useMemo(
+    () => taxYears([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)], currentYear),
+    [report, incomeReport, currentYear],
+  );
+  const [selectedYear, setSelectedYear] = useTaxYear(years, currentYear);
+  const csv = useCsvDownload();
+  // Se mide si el informe se usa (sin cifras): decide si merece la pena seguir invirtiendo en él.
+  useEffect(() => trackEvent({ name: "tax-report-viewed" }), []);
 
-  const [selected, setSelected] = useState<string>(() => String(report.years[0]?.year ?? ""));
-  const [failed, setFailed] = useState(false);
-  const year = report.years.find((y) => String(y.year) === selected) ?? report.years[0];
-
-  if (!year) {
-    return <Notice variant="info">{t("empty")}</Notice>;
+  function changeYear(value: string) {
+    setSelectedYear(Number(value));
+    trackEvent({ name: "tax-report-year-changed" });
   }
 
-  const foreign = year.groups.filter((g) => g.currency !== TAX_CURRENCY).map((g) => g.currency);
+  function handlePrint() {
+    trackEvent({ name: "tax-report-exported", data: { format: "print" } });
+    window.print();
+  }
+  const year = report.years.find((y) => y.year === selectedYear);
+  const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
+  const incomeSummary = incomeReport.years.find((y) => y.year === selectedYear);
+  // Todos los ejercicios encadenados: los saldos negativos pasan de uno a otro (art. 49 LIRPF).
+  const savingsReturns = useMemo(
+    () =>
+      buildSavingsReturns({
+        gains: report.years,
+        income: incomeReport.years,
+        incomeEvents: income,
+        rates,
+        manualPending: pendingBalances,
+      }),
+    [report, incomeReport, income, rates, pendingBalances],
+  );
+  const savingsReturn = savingsReturns.find((r) => r.year === selectedYear);
+  const boxes = taxBoxesFor(selectedYear);
+
+  const hasForeign = year?.sales.some((sale) => sale.currency !== TAX_CURRENCY) ?? false;
+  const eurFormat = (value: number) => formatCurrency(value, TAX_CURRENCY);
 
   function handleDownload() {
     if (!year) return;
-    setFailed(false);
-    try {
-      const csv = buildRealisedGainsCsv(
-        year,
-        {
-          date: t("csv.date"),
-          ticker: t("csv.ticker"),
-          name: t("csv.name"),
-          currency: t("csv.currency"),
-          quantity: t("csv.quantity"),
-          price: t("csv.price"),
-          fees: t("csv.fees"),
-          transferValue: t("csv.transferValue"),
-          acquisitionValue: t("csv.acquisitionValue"),
-          gain: t("csv.gain"),
-        },
-        locale,
-      );
-      downloadBlob(
-        new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }),
-        `sextante-plusvalias-${year.year}.csv`,
-      );
-    } catch {
-      // Solo puede fallar el navegador (memoria, descargas bloqueadas): se avisa.
-      setFailed(true);
-    }
+    const done = csv.download(
+      () => buildRealisedGainsCsv(year, realisedGainsCsvHeaders(t), locale),
+      `sextante-plusvalias-${year.year}.csv`,
+    );
+    if (done) trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
+  }
+
+  function handleDownloadIncome() {
+    const { headers, labels } = incomeCsvTexts(tIncome);
+    const done = csv.download(
+      () => buildIncomeCsv(incomeEvents, headers, labels, locale),
+      `sextante-cobros-${selectedYear}.csv`,
+    );
+    if (done) trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
   }
 
   return (
@@ -107,140 +131,72 @@ export default function RealisedGainsReport({ positions, lots }: Props) {
         <div className="w-40">
           <SelectField
             label={t("yearLabel")}
-            value={String(year.year)}
-            onChange={setSelected}
-            options={report.years.map((y) => ({ value: String(y.year), label: String(y.year) }))}
+            value={String(selectedYear)}
+            onChange={changeYear}
+            options={years.map((y) => ({
+              value: String(y),
+              label: y === currentYear ? t("yearInProgress", { year: y }) : String(y),
+            }))}
           />
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Button variant="secondary" onClick={handleDownload}>
-            {t("download", { year: year.year })}
-          </Button>
-          {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
+          <div className="flex flex-wrap justify-end gap-2 print:hidden">
+            <Button variant="secondary" onClick={handlePrint}>
+              {t("print")}
+            </Button>
+            {year && (
+              <Button variant="secondary" onClick={handleDownload}>
+                {t("download", { year: year.year })}
+              </Button>
+            )}
+            {incomeEvents.length > 0 && (
+              <Button variant="secondary" onClick={handleDownloadIncome}>
+                {t("downloadIncome", { year: selectedYear })}
+              </Button>
+            )}
+          </div>
+          {csv.failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
         </div>
       </div>
 
-      {year.groups.map((group) => (
-        <CurrencyGroup key={group.currency} group={group} />
-      ))}
+      {!ratesLoaded && <Notice variant="warning">{t("ratesUnavailable")}</Notice>}
 
-      {year.tax ? (
-        <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
-          <h2 className="text-lg font-semibold text-foreground">{t("taxTitle", { year: year.year })}</h2>
-          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("taxBase")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCurrency(year.tax.base, TAX_CURRENCY)}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("tax")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">
-                {formatCurrency(year.tax.tax, TAX_CURRENCY)}
-                {year.tax.effectiveRate !== null && (
-                  <span className="ml-1.5 text-sm font-medium text-muted">
-                    ({formatPercent(year.tax.effectiveRate)})
-                  </span>
-                )}
-              </dd>
-            </div>
-            <div className="flex flex-col gap-1">
-              <dt className="text-sm text-muted">{t("marginal")}</dt>
-              <dd className="text-lg font-semibold tabular-nums text-foreground">{formatPercent(year.tax.marginal)}</dd>
-            </div>
-          </dl>
-          <p className="text-xs text-muted">{t("taxScale", { scaleYear: FISCAL_YEAR_LABEL })}</p>
-        </section>
+      {year ? (
+        <SalesBlocks year={year} showFx={hasForeign} assetClasses={assetClasses} boxes={boxes} />
       ) : (
-        <Notice variant="info">{t("noEurSales")}</Notice>
+        <Notice variant="info">{t("noSalesThisYear")}</Notice>
       )}
 
-      {foreign.length > 0 && (
-        <Notice variant="warning">{t("foreignCurrency", { currencies: foreign.join(", ") })}</Notice>
+      {year && year.unconverted.length > 0 && (
+        <Notice variant="warning">
+          {t("unconverted", {
+            currencies: year.unconverted.map((u) => u.currency).join(", "),
+            count: year.unconverted.reduce((sum, u) => sum + u.sales, 0),
+          })}
+        </Notice>
       )}
+      {year && year.deferred < 0 && (
+        <Notice variant="info">{t("deferred", { amount: eurFormat(-year.deferred) })}</Notice>
+      )}
+      {year && year.integrated < 0 && (
+        <Notice variant="info">{t("integrated", { amount: eurFormat(-year.integrated) })}</Notice>
+      )}
+      {year && year.fxIncomplete > 0 && (
+        <Notice variant="warning">{t("fxIncomplete", { count: year.fxIncomplete })}</Notice>
+      )}
+      {hasForeign && <Notice variant="info">{t("fxCriterion")}</Notice>}
+
+      <IncomeSection year={selectedYear} boxes={boxes} summary={incomeSummary} events={incomeEvents} />
+
+      {savingsReturn && (
+        <SavingsReturnSection result={savingsReturn} boxes={boxes} inProgress={selectedYear >= currentYear} />
+      )}
+
+      <PendingBalancesForm balances={pendingBalances} firstYear={lastItem(years)} />
+
+      <Notice variant="info">{t("model720")}</Notice>
 
       <Notice variant="info">{t("scope")}</Notice>
     </div>
-  );
-}
-
-/** Ventas de un ejercicio en una divisa: resumen compensado y desglose por posición. */
-function CurrencyGroup({ group }: { group: RealisedGainsCurrencyGroup }) {
-  const t = useTranslations("portfolio.realisedGains");
-  const { formatCurrency, formatQuantity } = useFormat();
-  const { currency } = group;
-  return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
-      <h2 className="text-lg font-semibold text-foreground">{t("groupTitle", { currency })}</h2>
-
-      <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1">
-          <dt className="text-sm text-muted">{t("gains")}</dt>
-          <dd className="text-lg font-semibold tabular-nums text-success">{formatCurrency(group.gains, currency)}</dd>
-        </div>
-        <div className="flex flex-col gap-1">
-          <dt className="text-sm text-muted">{t("losses")}</dt>
-          <dd className="text-lg font-semibold tabular-nums text-danger">{formatCurrency(group.losses, currency)}</dd>
-        </div>
-        <div className="flex flex-col gap-1">
-          <dt className="text-sm text-muted">{t("net")}</dt>
-          <dd className={`text-lg font-semibold tabular-nums ${signColor(group.net)}`}>
-            {group.net > 0 ? "+" : ""}
-            {formatCurrency(group.net, currency)}
-          </dd>
-        </div>
-      </dl>
-
-      <div className="overflow-x-auto rounded-lg border border-border">
-        <table className="w-full min-w-[40rem] text-left text-sm">
-          <caption className="px-3 pt-3 text-left text-xs text-muted">{t("tableCaption", { currency })}</caption>
-          <thead>
-            <tr className="border-b border-border text-muted">
-              <th scope="col" className="px-3 py-2 font-medium">
-                {t("position")}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                {t("sales")}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                {t("quantity")}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                {t("transferValue")}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                {t("acquisitionValue")}
-              </th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">
-                {t("gain")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {group.rows.map((row) => (
-              <tr key={row.positionId} className="border-b border-border last:border-0">
-                <th scope="row" className="px-3 py-2 font-normal">
-                  <span className="font-medium text-foreground">{row.ticker}</span>
-                  {row.name && <span className="block text-xs text-muted">{row.name}</span>}
-                </th>
-                <td className="px-3 py-2 text-right tabular-nums text-foreground">{row.sales}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-foreground">{formatQuantity(row.quantity)}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                  {formatCurrency(row.transferValue, currency)}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                  {formatCurrency(row.acquisitionValue, currency)}
-                </td>
-                <td className={`px-3 py-2 text-right tabular-nums ${signColor(row.gain)}`}>
-                  {row.gain > 0 ? "+" : ""}
-                  {formatCurrency(row.gain, currency)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
   );
 }

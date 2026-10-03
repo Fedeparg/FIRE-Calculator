@@ -1,3 +1,5 @@
+import { itemAt } from "../arrays.js";
+import { compareStrings } from "../compare.js";
 /**
  * Capturas reales del histórico de la cartera que han quedado obsoletas. Core puro.
  *
@@ -29,7 +31,7 @@ export interface StalenessInput {
   invalidateFrom?: string | null;
 }
 
-const byDate = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+const byDate = (a: string, b: string): number => compareStrings(a, b);
 
 /** Fechas (YYYY-MM-DD) de las capturas obsoletas, en O(n log n). */
 export function staleSnapshotDates(input: StalenessInput): Set<string> {
@@ -43,8 +45,8 @@ export function staleSnapshotDates(input: StalenessInput): Set<string> {
   let latestChange = Number.NEGATIVE_INFINITY;
   let next = 0;
   for (const snapshot of snapshotsByDate) {
-    while (next < lotsByDate.length && lotsByDate[next].tradedAt <= snapshot.date) {
-      latestChange = Math.max(latestChange, lotsByDate[next].changedAt);
+    while (next < lotsByDate.length && itemAt(lotsByDate, next).tradedAt <= snapshot.date) {
+      latestChange = Math.max(latestChange, itemAt(lotsByDate, next).changedAt);
       next += 1;
     }
     if (latestChange > snapshot.writtenAt || (invalidateFrom !== null && snapshot.date >= invalidateFrom)) {
@@ -52,4 +54,81 @@ export function staleSnapshotDates(input: StalenessInput): Set<string> {
     }
   }
   return stale;
+}
+
+/** Valores de un día del histórico, tal como se guardan (`numeric` como texto, tasas FX del día). */
+export interface SnapshotValues {
+  /** Fecha, YYYY-MM-DD. */
+  date: string;
+  invested: string;
+  marketValue: string;
+  valuedPositions: number;
+  totalPositions: number;
+  fxRates: Record<string, number>;
+}
+
+/** Fila ya guardada: los valores y si es una estimación (reconstruida) o una captura real. */
+export interface StoredSnapshot extends SnapshotValues {
+  estimated: boolean;
+}
+
+export interface SnapshotWritePlanInput<Row extends SnapshotValues> {
+  /** Días que sale de la reconstrucción, sin la marca `estimated` (la pone el plan). */
+  rows: readonly Row[];
+  /** Lo que ya hay guardado del usuario. */
+  existing: readonly StoredSnapshot[];
+  /** Capturas reales obsoletas (`staleSnapshotDates`): las únicas reales que se pueden pisar. */
+  staleReal: ReadonlySet<string>;
+  /** Inicio del seguimiento en Sextante (YYYY-MM-DD): antes, cada día es una estimación. */
+  trackingSince: string;
+}
+
+export interface SnapshotWritePlan<Row extends SnapshotValues> {
+  /** Filas a escribir (upsert), ya con `estimated = date < trackingSince`. */
+  changed: (Row & { estimated: boolean })[];
+  /** Fechas de estimaciones guardadas que ya no salen de la reconstrucción: se retiran. */
+  stale: string[];
+}
+
+/** Igualdad de tasas FX (un `jsonb` no conserva el orden de las claves). */
+function sameRates(a: Record<string, number>, b: Record<string, number>): boolean {
+  const keys = Object.keys(a);
+  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
+}
+
+/**
+ * Qué escribir tras reconstruir el histórico de un usuario: solo la diferencia con lo guardado
+ * (reescribir ~1.800 filas idénticas cada noche no aporta nada). Core puro.
+ *
+ * - Un día sin fila guardada se escribe.
+ * - Una captura REAL solo se sustituye si está obsoleta (`staleReal`).
+ * - Una ESTIMACIÓN se reescribe si cambia algún valor o si su `estimated` ya no cumple la regla
+ *   (reparación automática).
+ * - Las estimaciones guardadas que ya no salen de la reconstrucción (operación borrada...) se
+ *   retiran; las reales nunca.
+ */
+export function planSnapshotWrites<Row extends SnapshotValues>(
+  input: SnapshotWritePlanInput<Row>,
+): SnapshotWritePlan<Row> {
+  const { rows, existing, staleReal, trackingSince } = input;
+  const existingByDate = new Map(existing.map((row) => [row.date, row]));
+  const newDates = new Set(rows.map((row) => row.date));
+
+  const changed = rows
+    .map((row) => ({ ...row, estimated: row.date < trackingSince }))
+    .filter((row) => {
+      const current = existingByDate.get(row.date);
+      if (!current) return true;
+      if (!current.estimated) return staleReal.has(row.date);
+      return !(
+        current.estimated === row.estimated &&
+        current.invested === row.invested &&
+        current.marketValue === row.marketValue &&
+        current.valuedPositions === row.valuedPositions &&
+        current.totalPositions === row.totalPositions &&
+        sameRates(current.fxRates, row.fxRates)
+      );
+    });
+  const stale = existing.filter((row) => row.estimated && !newDates.has(row.date)).map((row) => row.date);
+  return { changed, stale };
 }

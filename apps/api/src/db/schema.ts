@@ -14,9 +14,33 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  check,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
+import type { IncomeKind, IncomeSource, ValueSource } from '@sextante/core/fiscal/income';
+import type { SavingsGroup } from '@sextante/core/fiscal/savings-base';
+import type { AssetClass } from '@sextante/core/portfolio/types';
+
+/**
+ * Valores admitidos por las columnas de texto con una unión cerrada. Repiten los de
+ * `@sextante/core` como literales porque drizzle-kit carga este fichero sin resolver el paquete
+ * compartido; `schema-checks.test.ts` comprueba que coinciden con las constantes de core.
+ */
+export const DB_ENUM_VALUES = {
+  lotKind: ['buy', 'sell'] satisfies PositionLotKind[],
+  assetClass: ['stock', 'fund', 'derivative', 'other'] satisfies AssetClass[],
+  incomeKind: ['dividend', 'interest', 'benefit'] satisfies IncomeKind[],
+  incomeSource: ['manual', 'trade_republic'] satisfies IncomeSource[],
+  valueSource: ['broker', 'derived', 'market', 'estimate', 'manual'] satisfies ValueSource[],
+  savingsGroup: ['gains', 'capitalIncome'] satisfies SavingsGroup[],
+} as const;
+
+/** `columna IN ('a', 'b')` para un `CHECK`: el DDL no admite parámetros y los valores son constantes nuestras. */
+function oneOf(column: AnyPgColumn, values: readonly string[]) {
+  return sql`${column} in (${sql.raw(values.map((value) => `'${value}'`).join(', '))})`;
+}
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -25,6 +49,9 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
+  // Versión de sesión: va en el JWT (`ver`) y subirla invalida todos los JWT ya emitidos
+  // (cerrar sesión, "cerrar todas las sesiones"). Ver `SessionService`.
+  sessionVersion: integer('session_version').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -34,15 +61,24 @@ export type User = typeof users.$inferSelect;
 /**
  * Tokens de magic link. Solo se guarda el hash (SHA-256): el enlace lleva el token en claro y
  * al verificar se busca por hash. De un solo uso (`consumedAt`) y con caducidad (`expiresAt`).
+ * El índice `(email, created_at)` sirve al límite de enlaces por email (`AuthService.requestLink`).
  */
-export const loginTokens = pgTable('login_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').notNull(),
-  tokenHash: text('token_hash').notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const loginTokens = pgTable(
+  'login_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index('login_tokens_email_created_at_idx').on(table.email, table.createdAt),
+    // La poda horaria de `jobs/data-retention.ts` borra por antigüedad: sin él, un seq scan cada hora.
+    index('login_tokens_created_at_idx').on(table.createdAt),
+  ],
+);
 
 /**
  * Posiciones tecleadas por el usuario (sin conexión a bancos). `userId` con cascada (RGPD);
@@ -69,18 +105,24 @@ export const positions = pgTable(
     currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
     // Derivado (knock-out, warrant…): cuenta para plusvalías pero no se valora ni entra en los totales.
     isDerivative: boolean('is_derivative').notNull().default(false),
+    // Clase de activo (`AssetClass`): decide el bloque de la declaración. NULL = sin clasificar.
+    assetClass: varchar('asset_class', { length: 12 }).$type<AssetClass>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
+  // Sin índice propio de `user_id`: el único `(user_id, ticker, …)` ya sirve a las búsquedas por usuario.
   (table) => [
-    index('positions_user_id_idx').on(table.userId),
     uniqueIndex('positions_user_ticker_broker_idx').on(
       table.userId,
       table.ticker,
       sql`lower(coalesce(${table.broker}, ''))`,
+    ),
+    check(
+      'positions_asset_class_check',
+      sql`${table.assetClass} is null or ${oneOf(table.assetClass, DB_ENUM_VALUES.assetClass)}`,
     ),
   ],
 );
@@ -122,14 +164,107 @@ export const positionLots = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [
-    index('position_lots_position_id_idx').on(table.positionId),
+    // El orden canónico de los lotes de una posición (`compareLots`): lectura ya ordenada por índice.
+    index('position_lots_position_order_idx').on(table.positionId, table.tradedAt, table.createdAt, table.id),
     // Único por usuario: dos usuarios pueden importar el mismo id sin colisionar, y un id no
     // puede acabar en dos posiciones del mismo usuario. Parcial: los manuales (NULL) no entran.
     uniqueIndex('position_lots_user_external_id_idx')
       .on(table.userId, table.externalId)
       .where(sql`${table.externalId} is not null`),
     index('position_lots_user_id_idx').on(table.userId),
-    index('position_lots_traded_at_idx').on(table.tradedAt),
+    // Un `kind` distinto de 'buy' se trataría como venta: la base de datos no lo deja entrar.
+    check('position_lots_kind_check', oneOf(table.kind, DB_ENUM_VALUES.lotKind)),
+    check('position_lots_quantity_check', sql`${table.quantity} > 0`),
+    check('position_lots_price_check', sql`${table.price} >= 0`),
+    check('position_lots_fees_check', sql`${table.fees} >= 0`),
+  ],
+);
+
+/**
+ * Cobros que tributan como rendimientos del capital mobiliario: dividendos, intereses y
+ * recompensas del bróker (`@sextante/core/fiscal/income`). Van aparte de los lotes porque no
+ * mueven la cantidad de ninguna posición; `positionId` es opcional (un interés de cuenta no tiene
+ * posición) y se pone a NULL si la posición se borra: el cobro sigue siendo del ejercicio.
+ */
+export const incomeEvents = pgTable(
+  'income_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    positionId: uuid('position_id').references(() => positions.id, { onDelete: 'set null' }),
+    kind: varchar('kind', { length: 10 }).$type<IncomeKind>().notNull(),
+    paidAt: date('paid_at').notNull(),
+    isin: varchar('isin', { length: 12 }),
+    name: varchar('name', { length: 100 }),
+    // País de la fuente (ISO 3166-1 alfa-2), para la doble imposición.
+    country: varchar('country', { length: 2 }),
+    currency: varchar('currency', { length: 3 }).notNull().default('EUR'),
+    // Íntegro; negativo solo en la anulación de un cobro importado.
+    gross: numeric('gross', { precision: 18, scale: 6 }).notNull(),
+    // NULL = no se sabe (no es lo mismo que 0).
+    withholdingOrigin: numeric('withholding_origin', { precision: 18, scale: 6 }),
+    withholdingSpain: numeric('withholding_spain', { precision: 18, scale: 6 }).notNull().default('0'),
+    // El pagador ya lo comunicó a la AEAT: puede estar en el borrador.
+    reportedToAeat: boolean('reported_to_aeat').notNull().default(false),
+    source: varchar('source', { length: 20 }).$type<IncomeSource>().notNull(),
+    // De dónde sale cada cifra (`ValueSource`): bróker, deducida, dato de mercado, estimación o manual.
+    grossSource: varchar('gross_source', { length: 10 }).$type<ValueSource>().notNull().default('manual'),
+    // NULL mientras la retención en origen sea desconocida.
+    withholdingOriginSource: varchar('withholding_origin_source', { length: 10 }).$type<ValueSource>(),
+    // Datos del bróker que permiten volver a resolver el cobro con datos de mercado más tarde.
+    quantity: numeric('quantity', { precision: 18, scale: 6 }),
+    originalAmount: numeric('original_amount', { precision: 18, scale: 6 }),
+    originalCurrency: varchar('original_currency', { length: 3 }),
+    // Como en `position_lots`: "trade-republic:<uuid>", NULL si es manual.
+    externalId: varchar('external_id', { length: 100 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    index('income_events_user_paid_at_idx').on(table.userId, table.paidAt),
+    index('income_events_position_id_idx').on(table.positionId),
+    uniqueIndex('income_events_user_external_id_idx')
+      .on(table.userId, table.externalId)
+      .where(sql`${table.externalId} is not null`),
+    check('income_events_kind_check', oneOf(table.kind, DB_ENUM_VALUES.incomeKind)),
+    check('income_events_source_check', oneOf(table.source, DB_ENUM_VALUES.incomeSource)),
+    check('income_events_gross_source_check', oneOf(table.grossSource, DB_ENUM_VALUES.valueSource)),
+    check(
+      'income_events_withholding_origin_source_check',
+      sql`${table.withholdingOriginSource} is null or ${oneOf(table.withholdingOriginSource, DB_ENUM_VALUES.valueSource)}`,
+    ),
+  ],
+);
+
+export type IncomeEventRow = typeof incomeEvents.$inferSelect;
+
+/**
+ * Saldos negativos de la base del ahorro pendientes de compensar que vienen de ejercicios que
+ * Sextante no calcula (los copia el usuario de su última declaración, anexo C.3). Los de los
+ * ejercicios que sí calcula se arrastran solos (`@sextante/core/fiscal/savings-return`).
+ * `amount` es lo pendiente al empezar el primer ejercicio que calcula Sextante.
+ */
+export const savingsPendingBalances = pgTable(
+  'savings_pending_balances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    originYear: integer('origin_year').notNull(),
+    // "gains" (ganancias y pérdidas patrimoniales) o "capitalIncome" (capital mobiliario).
+    kind: varchar('kind', { length: 16 }).$type<SavingsGroup>().notNull(),
+    amount: numeric('amount', { precision: 18, scale: 2 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('savings_pending_balances_user_year_kind_idx').on(table.userId, table.originYear, table.kind),
+    check('savings_pending_balances_kind_check', oneOf(table.kind, DB_ENUM_VALUES.savingsGroup)),
   ],
 );
 
@@ -197,10 +332,8 @@ export const savedScenarios = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => [
-    index('saved_scenarios_user_id_idx').on(table.userId),
-    index('saved_scenarios_user_slug_idx').on(table.userId, table.slug),
-  ],
+  // `(user_id, slug)` sirve también a las búsquedas solo por usuario.
+  (table) => [index('saved_scenarios_user_slug_idx').on(table.userId, table.slug)],
 );
 
 export type SavedScenario = typeof savedScenarios.$inferSelect;
@@ -226,6 +359,37 @@ export const instrumentPrices = pgTable(
 );
 
 /**
+ * Tipos de cambio de referencia del BCE (los que publica el Banco de España): unidades de la
+ * divisa por 1 euro. Separados de `instrument_prices` porque son otro dato: la referencia oficial
+ * diaria que exige la declaración, no un cierre de mercado. Datos públicos y fijos: caché
+ * permanente compartida (`fx-reference/`).
+ */
+export const fxReferenceRates = pgTable(
+  'fx_reference_rates',
+  {
+    currency: varchar('currency', { length: 3 }).notNull(),
+    // Día publicado; no hay filas en fines de semana ni festivos de TARGET2.
+    date: date('date').notNull(),
+    unitsPerEur: numeric('units_per_eur', { precision: 20, scale: 8 }).notNull(),
+    // Fuente ("ecb").
+    source: varchar('source', { length: 10 }).notNull(),
+    fetchedAt: timestamp('fetched_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.currency, table.date] })],
+);
+
+/**
+ * Tramo ya descargado de cada divisa. Sin él, una serie vacía (divisa que el BCE no publica) o
+ * un hueco no distinguirían "no existe" de "nunca se pidió", y se volvería a pedir cada vez.
+ */
+export const fxReferenceCoverage = pgTable('fx_reference_coverage', {
+  currency: varchar('currency', { length: 3 }).primaryKey(),
+  fromDate: date('from_date').notNull(),
+  toDate: date('to_date').notNull(),
+  checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
  * Splits: los cierres vienen ajustados y las cantidades de los lotes son crudas, así que el
  * histórico los necesita para expresar los lotes en acciones de hoy
  * (`@sextante/core/portfolio/history-reconstruction`). `ratio` = nuevas por antigua (10 en un 10:1); `date` =
@@ -239,6 +403,24 @@ export const instrumentSplits = pgTable(
     ratio: numeric('ratio', { precision: 20, scale: 8 }).notNull(),
   },
   (table) => [primaryKey({ columns: [table.symbol, table.date] })],
+);
+
+/**
+ * Dividendo por acción de cada pago, según la fuente de precios (Yahoo `events=div`), en la divisa
+ * de cotización del símbolo y AJUSTADO por splits posteriores (como lo da Yahoo): se deshace con
+ * `instrument_splits`. Contraste independiente del íntegro que declara el bróker
+ * (`@sextante/core/fiscal/dividend-resolution`). Se refresca con los splits.
+ */
+export const instrumentDividends = pgTable(
+  'instrument_dividends',
+  {
+    symbol: varchar('symbol', { length: 40 }).notNull(),
+    // Fecha ex-dividendo (UTC), la que da Yahoo.
+    exDate: date('ex_date').notNull(),
+    amount: numeric('amount', { precision: 20, scale: 8 }).notNull(),
+    currency: varchar('currency', { length: 8 }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.symbol, table.exDate] })],
 );
 
 /** Marca de "splits consultados": una `instrument_splits` vacía no distingue "sin splits" de "nunca consultado", ni vería un split posterior al priming. */
@@ -306,21 +488,26 @@ export const oauthGrants = pgTable(
  * cambió entre `/authorize` y `/token`. El SDK valida el `code_verifier`; nosotros lo demás y
  * el single-use atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
  */
-export const oauthAuthCodes = pgTable('oauth_auth_codes', {
-  codeHash: text('code_hash').primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  clientId: text('client_id').notNull(),
-  scopes: jsonb('scopes').$type<string[]>().notNull(),
-  codeChallenge: text('code_challenge').notNull(),
-  redirectUri: text('redirect_uri').notNull(),
-  // URI canónico del recurso (RFC 8707) pedido en `/authorize`; se propaga al token.
-  resource: text('resource'),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const oauthAuthCodes = pgTable(
+  'oauth_auth_codes',
+  {
+    codeHash: text('code_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+    codeChallenge: text('code_challenge').notNull(),
+    redirectUri: text('redirect_uri').notNull(),
+    // URI canónico del recurso (RFC 8707) pedido en `/authorize`; se propaga al token.
+    resource: text('resource'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // La poda horaria de `jobs/data-retention.ts` borra los caducados.
+  (table) => [index('oauth_auth_codes_expires_at_idx').on(table.expiresAt)],
+);
 
 /**
  * Access y refresh tokens, solo hasheados. `verifyAccessToken` resuelve el Bearer a `userId` y
@@ -349,6 +536,8 @@ export const oauthTokens = pgTable(
   (table) => [
     index('oauth_tokens_user_id_idx').on(table.userId),
     index('oauth_tokens_user_client_idx').on(table.userId, table.clientId),
+    // La poda horaria de `jobs/data-retention.ts` borra los caducados.
+    index('oauth_tokens_expires_at_idx').on(table.expiresAt),
   ],
 );
 
@@ -368,7 +557,7 @@ export const mcpAuditLog = pgTable(
   },
   (table) => [
     index('mcp_audit_log_user_id_idx').on(table.userId),
-    // La tabla crece sin límite y el reaper de retención la poda por fecha: sin este índice
+    // La tabla crece sin límite y `jobs/data-retention.ts` la poda por fecha: sin este índice
     // esa purga y las consultas por rango harían seq scan. Descendente: se consulta lo reciente.
     index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
   ],

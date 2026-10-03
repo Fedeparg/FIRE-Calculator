@@ -1,8 +1,11 @@
 // Tipos compartidos de la importación de operaciones. Genéricos a propósito: cada parser de bróker
 // produce `ImportedTrade` y el resto (plan en la API, vista previa en la UI) no sabe de qué bróker viene.
 
-/** Clase de activo normalizada; `other` cubre lo vacío o lo no clasificado. */
-export type ImportedAssetClass = "fund" | "stock" | "derivative" | "other";
+import type { ValueSource } from "../fiscal/income.js";
+import type { AssetClass } from "../portfolio/types.js";
+
+/** Clase de activo normalizada (la misma de la cartera); `other` cubre lo vacío o lo no clasificado. */
+export type ImportedAssetClass = AssetClass;
 
 /**
  * Compra o venta normalizada. Los importes van como `string` decimal para no pasar por coma flotante
@@ -24,10 +27,39 @@ export type ImportedTrade = {
   executedAt: string;
 };
 
+/**
+ * Cobro normalizado (interés, recompensa o dividendo). Importes en `string` decimal, en euros, ya
+ * redondeados a 6 decimales. `reportedToAeat`: el bróker ya lo comunicó a la AEAT (sucursal
+ * española), así que puede estar en el borrador.
+ */
+export type ImportedIncome = {
+  externalId: string;
+  kind: "dividend" | "interest" | "benefit";
+  paidAt: string;
+  isin: string | null;
+  name: string | null;
+  /** País de la fuente (ISO 3166-1 alfa-2). */
+  country: string | null;
+  currency: "EUR";
+  /** Íntegro; negativo en una anulación. */
+  gross: string;
+  /** `null` si no se puede saber. */
+  withholdingOrigin: string | null;
+  withholdingSpain: string;
+  reportedToAeat: boolean;
+  /** Procedencia de cada cifra (ver `ValueSource` en `fiscal/income`). */
+  grossSource: ValueSource;
+  withholdingOriginSource: ValueSource | null;
+  /** Acciones con derecho al dividendo, como las da el bróker. */
+  quantity: string | null;
+  /** Abonado en la divisa de pago, si no era el euro. */
+  originalAmount: string | null;
+  originalCurrency: string | null;
+};
+
 export type ImportSkipReason =
-  | "dividend"
-  | "interest"
-  | "benefit"
+  /** Dividendo provisional anulado por TR, junto con su anulación. */
+  | "dividend_reversed"
   | "ipo_subscription"
   | "cash_movement"
   | "migration_pair"
@@ -55,11 +87,13 @@ export type ImportWarning =
 export type ImportParseResult = {
   /** Ordenadas por `executedAt` y por línea ante empate. */
   trades: ImportedTrade[];
+  /** Cobros, en orden de fecha y de línea. */
+  income: ImportedIncome[];
   skipped: ImportSkippedRow[];
   warnings: ImportWarning[];
 };
 
-export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "UNEXPECTED";
+export type ImportFailureCode = "NEGATIVE_QUANTITY" | "OVERFLOW" | "CONFLICT" | "UNEXPECTED";
 
 /** Filas descartadas por motivo; solo recuentos. */
 export type SkippedSummary = { reason: ImportSkipReason; count: number };
@@ -85,10 +119,15 @@ export type ImportPlanPosition = {
   isDerivative: boolean;
 };
 
+/** Cobros del fichero: nuevos, ya importados y cuántos de los nuevos ya comunicó el bróker a la AEAT. */
+export type ImportIncomeSummary = { created: number; duplicates: number; reportedToAeat: number };
+
 export type ImportPlan = {
   broker: string;
   positions: ImportPlanPosition[];
   totals: { newLots: number; duplicates: number };
+  /** En la vista previa, `created` son los que se crearían. */
+  income: ImportIncomeSummary;
   skipped: SkippedSummary[];
   warnings: ImportWarning[];
 };
@@ -107,6 +146,7 @@ export type ImportResult = {
   broker: string;
   positions: ImportResultPosition[];
   totals: { lotsCreated: number; duplicates: number; failedPositions: number };
+  income: ImportIncomeSummary;
   skipped: SkippedSummary[];
   warnings: ImportWarning[];
 };

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { buildOpenLots, estimateSavingsTax, simulateSale, walkLots, type TradeLot } from "./plusvalias.js";
+import { buildOpenLots, simulateSale, walkLots, type TradeLot } from "./plusvalias.js";
+import { estimateSavingsTax } from "./savings-tax.js";
+import { firstItem, itemAt } from "../arrays.js";
+import { defined } from "../assert.js";
 
 /** Constructor breve de lotes: los tests solo fijan lo que les importa. */
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
@@ -54,7 +57,7 @@ describe("buildOpenLots", () => {
   });
 
   it("prorratea las comisiones de compra por participación", () => {
-    const [open] = buildOpenLots([lot({ id: "a", quantity: 4, price: 25, fees: 10 })]);
+    const open = firstItem(buildOpenLots([lot({ id: "a", quantity: 4, price: 25, fees: 10 })]));
     expect(open.feesPerUnit).toBe(2.5);
   });
 
@@ -87,21 +90,23 @@ describe("simulateSale", () => {
     });
 
     expect(sim).not.toBeNull();
-    expect(sim!.quantitySold).toBe(4);
-    expect(sim!.grossProceeds).toBe(600);
-    expect(sim!.acquisitionValue).toBe(400);
-    expect(sim!.gain).toBe(200);
-    expect(sim!.remainingQuantity).toBe(6);
-    expect(sim!.remainingAvgPrice).toBe(100);
-    expect(sim!.insufficient).toBe(false);
+    expect(sim?.quantitySold).toBe(4);
+    expect(sim?.grossProceeds).toBe(600);
+    expect(sim?.acquisitionValue).toBe(400);
+    expect(sim?.gain).toBe(200);
+    expect(sim?.remainingQuantity).toBe(6);
+    expect(sim?.remainingAvgPrice).toBe(100);
+    expect(sim?.insufficient).toBe(false);
   });
 
   it("venta total deja la posición a cero", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100 })],
-      quantity: 10,
-      price: 120,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100 })],
+        quantity: 10,
+        price: 120,
+      }),
+    );
 
     expect(sim.quantitySold).toBe(10);
     expect(sim.gain).toBe(200);
@@ -110,14 +115,16 @@ describe("simulateSale", () => {
   });
 
   it("consume varios lotes por FIFO y recalcula el precio medio de lo que queda", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
-      ],
-      quantity: 15,
-      price: 250,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
+        ],
+        quantity: 15,
+        price: 250,
+      }),
+    );
 
     // FIFO: 10 de "a" a 100 + 5 de "b" a 200 = 2.000 de coste.
     expect(sim.acquisitionValue).toBe(2000);
@@ -133,38 +140,44 @@ describe("simulateSale", () => {
   });
 
   it("el desglose por lote suma exactamente la ganancia total", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 3, price: 33.33, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 4, price: 41.17, tradedAt: "2024-02-01" }),
-      ],
-      quantity: 6,
-      price: 77.77,
-      fees: 3.21,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 3, price: 33.33, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 4, price: 41.17, tradedAt: "2024-02-01" }),
+        ],
+        quantity: 6,
+        price: 77.77,
+        fees: 3.21,
+      }),
+    );
 
     const sum = sim.matched.reduce((acc, m) => acc + m.gain, 0);
     expect(sum).toBeCloseTo(sim.gain, 10);
   });
 
   it("una venta por debajo del precio de compra da pérdida", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100 })],
-      quantity: 10,
-      price: 60,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100 })],
+        quantity: 10,
+        price: 60,
+      }),
+    );
 
     expect(sim.gain).toBe(-400);
     expect(estimateSavingsTax(sim.gain).tax).toBe(0);
   });
 
   it("las comisiones de compra suben el coste y las de venta bajan el ingreso", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
-      quantity: 10,
-      price: 150,
-      fees: 30,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
+        quantity: 10,
+        price: 150,
+        fees: 30,
+      }),
+    );
 
     // Adquisición 1.000 + 20; transmisión 1.500 − 30 → ganancia 450 (no 500).
     expect(sim.acquisitionValue).toBe(1020);
@@ -173,11 +186,13 @@ describe("simulateSale", () => {
   });
 
   it("prorratea las comisiones de compra en una venta parcial", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
-      quantity: 4,
-      price: 100,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
+        quantity: 4,
+        price: 100,
+      }),
+    );
 
     // Solo 4/10 de la comisión de compra entra en el coste → pérdida de 8.
     expect(sim.acquisitionValue).toBeCloseTo(408, 10);
@@ -185,11 +200,13 @@ describe("simulateSale", () => {
   });
 
   it("admite cantidades fraccionarias (cripto, fondos)", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 0.5, price: 20000 })],
-      quantity: 0.125,
-      price: 40000,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 0.5, price: 20000 })],
+        quantity: 0.125,
+        price: 40000,
+      }),
+    );
 
     expect(sim.grossProceeds).toBeCloseTo(5000, 10);
     expect(sim.acquisitionValue).toBeCloseTo(2500, 10);
@@ -198,15 +215,17 @@ describe("simulateSale", () => {
   });
 
   it("tiene en cuenta las ventas ya registradas en el histórico", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
-        lot({ id: "s", kind: "sell", quantity: 10, price: 150, tradedAt: "2024-03-01" }),
-      ],
-      quantity: 5,
-      price: 300,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
+          lot({ id: "s", kind: "sell", quantity: 10, price: 150, tradedAt: "2024-03-01" }),
+        ],
+        quantity: 5,
+        price: 300,
+      }),
+    );
 
     // La venta previa se comió el lote "a": lo que se vende ahora sale de "b" a 200.
     expect(sim.availableQuantity).toBe(10);
@@ -216,11 +235,13 @@ describe("simulateSale", () => {
   });
 
   it("marca insufficient si se piden vender más participaciones de las que hay", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 3, price: 100 })],
-      quantity: 10,
-      price: 120,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 3, price: 100 })],
+        quantity: 10,
+        price: 120,
+      }),
+    );
 
     expect(sim.insufficient).toBe(true);
     expect(sim.availableQuantity).toBe(3);
@@ -228,7 +249,7 @@ describe("simulateSale", () => {
   });
 
   it("sin lotes vivos no hay nada que vender", () => {
-    const sim = simulateSale({ lots: [], quantity: 1, price: 100 })!;
+    const sim = defined(simulateSale({ lots: [], quantity: 1, price: 100 }));
 
     expect(sim.availableQuantity).toBe(0);
     expect(sim.quantitySold).toBe(0);
@@ -238,11 +259,13 @@ describe("simulateSale", () => {
   });
 
   it("una venta a precio cero es válida y da una pérdida igual al coste", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 2, price: 50 })],
-      quantity: 2,
-      price: 0,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 2, price: 50 })],
+        quantity: 2,
+        price: 0,
+      }),
+    );
 
     expect(sim.gain).toBe(-100);
   });
@@ -254,57 +277,6 @@ describe("simulateSale", () => {
     expect(simulateSale({ lots, quantity: Number.NaN, price: 100 })).toBeNull();
     expect(simulateSale({ lots, quantity: 1, price: -5 })).toBeNull();
     expect(simulateSale({ lots, quantity: 1, price: Number.POSITIVE_INFINITY })).toBeNull();
-  });
-});
-
-describe("estimateSavingsTax", () => {
-  it("no grava una pérdida ni una ganancia nula", () => {
-    for (const gain of [-1000, 0]) {
-      const est = estimateSavingsTax(gain);
-      expect(est.tax).toBe(0);
-      expect(est.base).toBe(0);
-      expect(est.effectiveRate).toBeNull();
-      expect(est.net).toBe(gain);
-    }
-  });
-
-  it("aplica el primer tramo al 19 %", () => {
-    const est = estimateSavingsTax(1000);
-    expect(est.tax).toBeCloseTo(190, 10);
-    expect(est.effectiveRate).toBeCloseTo(19, 10);
-    expect(est.marginal).toBe(19);
-    expect(est.net).toBeCloseTo(810, 10);
-  });
-
-  it("borde exacto del primer tramo (6.000 €)", () => {
-    expect(estimateSavingsTax(6000).tax).toBeCloseTo(1140, 10);
-  });
-
-  it("borde exacto del segundo tramo (50.000 €)", () => {
-    // 6.000 al 19 % + 44.000 al 21 %.
-    expect(estimateSavingsTax(50000).tax).toBeCloseTo(1140 + 9240, 10);
-  });
-
-  it("borde exacto del tercer tramo (200.000 €)", () => {
-    // … + 150.000 al 23 %.
-    expect(estimateSavingsTax(200000).tax).toBeCloseTo(1140 + 9240 + 34500, 10);
-  });
-
-  it("borde exacto del cuarto tramo (300.000 €)", () => {
-    // … + 100.000 al 27 %.
-    expect(estimateSavingsTax(300000).tax).toBeCloseTo(1140 + 9240 + 34500 + 27000, 10);
-  });
-
-  it("el último tramo es marginal al 30 %", () => {
-    const est = estimateSavingsTax(400000);
-    expect(est.marginal).toBe(30);
-    expect(est.tax).toBeCloseTo(1140 + 9240 + 34500 + 27000 + 30000, 10);
-  });
-
-  it("una ganancia no finita no produce un número inventado", () => {
-    const est = estimateSavingsTax(Number.POSITIVE_INFINITY);
-    expect(Number.isNaN(est.tax)).toBe(true);
-    expect(est.effectiveRate).toBeNull();
   });
 });
 
@@ -323,7 +295,7 @@ describe("walkLots", () => {
     ]);
 
     expect(sales).toHaveLength(1);
-    const [sale] = sales;
+    const sale = firstItem(sales);
     expect(sale.lotId).toBe("s");
     expect(sale.tradedAt).toBe("2024-06-01");
     expect(sale.quantity).toBe(4);
@@ -344,7 +316,7 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 5, price: 15, tradedAt: "2024-03-01" }),
     ]);
 
-    const [sale] = sales;
+    const sale = firstItem(sales);
     expect(sale.matched.map((m) => [m.lotId, m.quantity])).toEqual([
       ["a", 3],
       ["b", 2],
@@ -382,7 +354,7 @@ describe("walkLots", () => {
     ]);
 
     expect(sales).toHaveLength(1);
-    expect(sales[0].gain).toBe(50);
+    expect(itemAt(sales, 0).gain).toBe(50);
   });
 
   it("una venta que excede lo disponible solo empareja lo que hay", () => {
@@ -391,8 +363,8 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 5, price: 20, tradedAt: "2024-02-01" }),
     ]);
 
-    expect(sales[0].quantity).toBe(2);
-    expect(sales[0].gain).toBe(20);
+    expect(itemAt(sales, 0).quantity).toBe(2);
+    expect(itemAt(sales, 0).gain).toBe(20);
     expect(open).toEqual([]);
   });
 
@@ -407,8 +379,8 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 9, price: 25, fees: 2, tradedAt: "2024-03-01" }),
     ]);
 
-    expect(sales[0].gain).toBe(simulated?.gain);
-    expect(sales[0].matched).toEqual(simulated?.matched);
+    expect(itemAt(sales, 0).gain).toBe(simulated?.gain);
+    expect(itemAt(sales, 0).matched).toEqual(simulated?.matched);
   });
 
   it("una venta sin existencias no imputa sus comisiones como pérdida", () => {
@@ -416,5 +388,72 @@ describe("walkLots", () => {
     // comisión no corresponde a ninguna participación vendida.
     const { sales } = walkLots([lot({ id: "s", kind: "sell", quantity: 1, price: 10, fees: 2 })]);
     expect(sales[0]).toMatchObject({ quantity: 0, sellFees: 0, transferValue: 0, gain: 0 });
+  });
+});
+
+describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
+  // Ejemplo del Manual práctico de Renta 2025 (Parte 1, págs. 885-887).
+  const manualHistory: TradeLot[] = [
+    lot({ id: "buy-2001", quantity: 900, price: 10, tradedAt: "2001-03-05" }),
+    lot({ id: "bonus-2007", quantity: 600, price: 0, tradedAt: "2007-05-11" }),
+    // Parcialmente liberadas: se pagan 5 €/acción, así que cuentan como compra normal.
+    lot({ id: "buy-2011", quantity: 500, price: 5, tradedAt: "2011-09-14" }),
+  ];
+
+  it("reproduce el ejemplo del Manual de Renta 2025: 6.000 + 500 = 6.500 €", () => {
+    const sim = simulateSale({ lots: manualHistory, quantity: 1600, price: 10 });
+
+    expect(sim?.gain).toBeCloseTo(6500, 6);
+    expect(sim?.matched.map((m) => [m.lotId, m.tradedAt, Math.round(m.quantity), Math.round(m.gain)])).toEqual([
+      ["buy-2001", "2001-03-05", 1500, 6000],
+      ["buy-2011", "2011-09-14", 100, 500],
+    ]);
+    expect(sim?.matched[0]?.price).toBeCloseTo(6, 9);
+  });
+
+  it("la ampliación no crea lote propio: conserva el coste total y la fecha", () => {
+    const walk = walkLots(manualHistory);
+
+    expect(walk.bonusIssueIds).toEqual(["bonus-2007"]);
+    expect(walk.open.map((o) => o.lotId)).toEqual(["buy-2001", "buy-2011"]);
+    expect(itemAt(walk.open, 0).quantity).toBeCloseTo(1500, 9);
+    expect(itemAt(walk.open, 0).quantity * itemAt(walk.open, 0).price).toBeCloseTo(9000, 6);
+  });
+
+  it("reparte proporcionalmente entre varios lotes vivos y respeta lo ya vendido", () => {
+    const open = buildOpenLots([
+      lot({ id: "a", quantity: 100, price: 10, fees: 10, tradedAt: "2020-01-01" }),
+      lot({ id: "b", quantity: 100, price: 20, tradedAt: "2020-02-01" }),
+      lot({ id: "s", kind: "sell", quantity: 50, price: 15, tradedAt: "2020-03-01" }),
+      lot({ id: "bonus", quantity: 75, price: 0, tradedAt: "2020-04-01" }),
+    ]);
+
+    // Vivos antes: a=50, b=100 (total 150) → factor 1,5.
+    expect(open.map((o) => [o.lotId, o.quantity])).toEqual([
+      ["a", 75],
+      ["b", 150],
+    ]);
+    expect(itemAt(open, 0).quantity * (itemAt(open, 0).price + itemAt(open, 0).feesPerUnit)).toBeCloseTo(
+      50 * (10 + 0.1),
+      6,
+    );
+    expect(itemAt(open, 1).quantity * itemAt(open, 1).price).toBeCloseTo(2000, 6);
+  });
+
+  it("una compra a precio 0 con comisiones, o sin lotes vivos, sigue siendo compra normal", () => {
+    expect(buildOpenLots([lot({ id: "a", price: 10 }), lot({ id: "x", price: 0, fees: 1 })])).toHaveLength(2);
+    expect(buildOpenLots([lot({ id: "x", quantity: 5, price: 0 })])).toHaveLength(1);
+  });
+
+  it("un precio no numérico no es una ampliación: queda como compra propia (a coste 0) y no reparte", () => {
+    for (const price of [Number.NaN, Number.POSITIVE_INFINITY]) {
+      const walk = walkLots([lot({ id: "a", quantity: 10, price: 10 }), lot({ id: "x", quantity: 5, price })]);
+
+      expect(walk.bonusIssueIds).toEqual([]);
+      expect(walk.open.map((o) => [o.lotId, o.quantity, o.price])).toEqual([
+        ["a", 10, 10],
+        ["x", 5, 0],
+      ]);
+    }
   });
 });

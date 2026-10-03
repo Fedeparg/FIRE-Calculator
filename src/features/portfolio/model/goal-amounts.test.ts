@@ -4,7 +4,6 @@ import {
   buildGoalInputs,
   computeGoal,
   showAmounts,
-  toCents,
   type GoalAmounts,
   type GoalParams,
   type ShownAmounts,
@@ -22,15 +21,6 @@ const params: GoalParams = {
 };
 // USD por unidad: 1 EUR = 2 USD, para que las cuentas sean exactas.
 const rates = { USD: 1, EUR: 2 };
-
-describe("toCents", () => {
-  it("rounds to two decimals", () => {
-    expect(toCents(1.239)).toBe(1.24);
-    expect(toCents(0.1 + 0.2)).toBe(0.3);
-    expect(toCents(10)).toBe(10);
-    expect(toCents(0)).toBe(0);
-  });
-});
 
 describe("showAmounts", () => {
   it("returns the amounts untouched when the currency matches", () => {

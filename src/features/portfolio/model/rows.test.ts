@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { firstItem, itemAt } from "@sextante/core/arrays";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import { buildPositionRows, toBase, type BuildRowsInput } from "./rows";
 
@@ -10,6 +11,7 @@ const position = (over: Partial<Position> & { id: string; ticker: string }): Pos
   broker: null,
   currency: "USD",
   isDerivative: false,
+  assetClass: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   ...over,
 });
@@ -53,7 +55,9 @@ describe("buildPositionRows", () => {
   const b = position({ id: "b", ticker: "BBB", currency: "EUR", name: "Beta" });
 
   it("values each row and weights it against the total in the display currency", () => {
-    const [row] = buildPositionRows(base({ positions: [a], prices: { AAA: price({ symbol: "AAA" }) }, total: 2200 }));
+    const row = firstItem(
+      buildPositionRows(base({ positions: [a], prices: { AAA: price({ symbol: "AAA" }) }, total: 2200 })),
+    );
     expect(row.marketValue).toBe(1100);
     expect(row.pnlAbs).toBe(100);
     expect(row.weight).toBe(50);
@@ -62,7 +66,7 @@ describe("buildPositionRows", () => {
   });
 
   it("leaves unpriced rows without value, weight or gain, and flags the pending ones", () => {
-    const [row] = buildPositionRows(base({ positions: [a], total: 1000, pendingIds: new Set(["a"]) }));
+    const row = firstItem(buildPositionRows(base({ positions: [a], total: 1000, pendingIds: new Set(["a"]) })));
     expect(row.marketValue).toBeNull();
     expect(row.weight).toBeNull();
     expect(row.gain).toBeNull();
@@ -70,24 +74,30 @@ describe("buildPositionRows", () => {
   });
 
   it("has no weight when the total is zero", () => {
-    const [row] = buildPositionRows(base({ positions: [a], prices: { AAA: price({ symbol: "AAA" }) }, total: 0 }));
+    const row = firstItem(
+      buildPositionRows(base({ positions: [a], prices: { AAA: price({ symbol: "AAA" }) }, total: 0 })),
+    );
     expect(row.weight).toBeNull();
   });
 
   it("uses the daily gain in today mode", () => {
-    const [row] = buildPositionRows(
-      base({
-        positions: [a],
-        prices: { AAA: price({ symbol: "AAA", close: 110, previousClose: 105 }) },
-        gainMode: "today",
-      }),
+    const row = firstItem(
+      buildPositionRows(
+        base({
+          positions: [a],
+          prices: { AAA: price({ symbol: "AAA", close: 110, previousClose: 105 }) },
+          gainMode: "today",
+        }),
+      ),
     );
     expect(row.gain?.abs).toBe(50);
   });
 
   it("marks a price older than the latest one as stale", () => {
-    const [row] = buildPositionRows(
-      base({ positions: [a], prices: { AAA: price({ symbol: "AAA", date: "2026-09-25" }) }, total: 1 }),
+    const row = firstItem(
+      buildPositionRows(
+        base({ positions: [a], prices: { AAA: price({ symbol: "AAA", date: "2026-09-25" }) }, total: 1 }),
+      ),
     );
     expect(row.stale).toBe(true);
   });
@@ -96,15 +106,17 @@ describe("buildPositionRows", () => {
     const rows = buildPositionRows(
       base({ positions: [b], prices: { BBB: price({ symbol: "BBB", currency: "EUR", close: 100 }) }, total: 1 }),
     );
-    expect(rows[0].sortable.marketValue).toBe(2000);
-    expect(rows[0].sortable.name).toBe("Beta");
+    expect(itemAt(rows, 0).sortable.marketValue).toBe(2000);
+    expect(itemAt(rows, 0).sortable.name).toBe("Beta");
   });
 
   it("sorts rows without a rate to the end (null) instead of inventing a value", () => {
-    const [row] = buildPositionRows(
-      base({ positions: [b], prices: { BBB: price({ symbol: "BBB", currency: "EUR" }) }, rates: { USD: 1 } }),
+    const row = firstItem(
+      buildPositionRows(
+        base({ positions: [b], prices: { BBB: price({ symbol: "BBB", currency: "EUR" }) }, rates: { USD: 1 } }),
+      ),
     );
     expect(row.sortable.marketValue).toBeNull();
-    expect(row.sortable.avgPrice).toBeNull();
+    expect(row.sortable.invested).toBeNull();
   });
 });

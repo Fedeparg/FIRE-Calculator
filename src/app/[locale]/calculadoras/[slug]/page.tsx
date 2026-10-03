@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CALCULATORS } from "@/features/calculators/registry";
+import { CALCULATORS, isCalculatorSlug } from "@/features/calculators/registry";
 import { calculatorMetadata } from "@/features/calculators/seo";
 import CalculatorShell from "@/features/calculators/components/CalculatorShell";
 import CalculatorBody from "@/features/calculators/components/CalculatorBody";
@@ -11,8 +11,6 @@ import { calculatorNamespace } from "@/i18n/route-namespaces";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-const SLUGS = CALCULATORS.map((c) => c.slug);
-
 // ISR: la calculadora es estática, pero el explainer de la wiki se lee de Markdown en runtime;
 // revalidar permite actualizarlo sin redeploy.
 export const revalidate = 3600;
@@ -21,7 +19,7 @@ export const revalidate = 3600;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return SLUGS.map((slug) => ({ slug }));
+  return CALCULATORS.map(({ slug }) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -32,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { locale, slug } = await params;
-  if (!SLUGS.includes(slug)) notFound();
+  if (!isCalculatorSlug(slug)) notFound();
   setRequestLocale(locale);
   const t = await getTranslations(`calc.${slug}`);
 

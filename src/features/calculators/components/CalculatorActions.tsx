@@ -66,7 +66,7 @@ export default function CalculatorActions() {
         <p
           role="status"
           aria-live="polite"
-          className={`text-sm ${copyStatus === "error" ? "text-warning" : "text-accent"}`}
+          className={`text-sm ${copyStatus === "error" ? "text-warning" : "text-accent-text"}`}
         >
           {copyStatus === "copied" ? t("copied") : copyStatus === "error" ? t("copyError") : ""}
         </p>

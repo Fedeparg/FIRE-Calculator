@@ -14,7 +14,7 @@ type Props = {
   /** Importes ya expresados en `display`. */
   shown: ShownAmounts;
   params: GoalParams;
-  /** Escribir un importe lo fija en la divisa que se está viendo (ver `PortfolioGoal`). */
+  /** Escribir un importe lo fija en la divisa que se está viendo (ver `useGoalPlan`). */
   onAmountsChange: (next: Partial<Omit<GoalAmounts, "currency">>) => void;
   onParamsChange: (patch: Partial<GoalParams>) => void;
 };

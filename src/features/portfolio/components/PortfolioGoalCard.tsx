@@ -6,7 +6,9 @@ import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio/goal";
 import { goalProgress, goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/shared/format/use-format";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
+import { yearOf } from "@sextante/core/dates";
 
 type Props = {
   /** Valor de mercado de la cartera en `display` (el mismo total que el resto del Resumen). */
@@ -24,6 +26,7 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
   const t = useTranslations("portfolio.goalCard");
   const tGoal = useTranslations("portfolio.goal");
   const { formatCurrency, formatPercent } = useFormat();
+  const currentYear = yearOf(useTodayUtc());
   // Cualquier fallo (sin sesión, red, servidor) se trata como "sin plan guardado".
   const { status, active } = useSavedScenarios(FIRE_CALCULATOR_SLUG);
   const settings = active ? goalSettingsFromInputs(active.inputs) : null;
@@ -64,7 +67,7 @@ export default function PortfolioGoalCard({ marketValue, display, rates }: Props
               : progress.mode === "amount"
                 ? t("summaryAmount", {
                     target: formatCurrency(progress.target, display),
-                    year: new Date().getFullYear() + progress.deadlineYears,
+                    year: currentYear + progress.deadlineYears,
                     onTrack: String(progress.onTrack),
                     required:
                       progress.requiredContribution === null

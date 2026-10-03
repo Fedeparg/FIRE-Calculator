@@ -3,8 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { HttpException, Logger } from '@nestjs/common';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
+import { DomainError, domainErrorToHttp } from '../../common/domain-error.js';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../../oauth/oauth.constants.js';
-import { McpAuditService } from '../mcp-audit.service.js';
+import type { McpAuditService } from '../mcp-audit.service.js';
 import { errorResult } from '../mcp-results.js';
 import { InvalidToolInputError, ToolUserError } from '../tool-errors.js';
 
@@ -86,8 +87,9 @@ export class ToolRunner {
 
   /**
    * Convierte un error en un mensaje para el host MCP, que lo pasa al LLM y al usuario. Solo
-   * se reenvía el texto de los errores PENSADOS para el usuario: los de entrada de las tools y
-   * las `HttpException` de Nest (detalle en `response`: string u objeto con `message`/`code`).
+   * se reenvía el texto de los errores PENSADOS para el usuario: los de entrada de las tools, las
+   * `HttpException` de Nest (detalle en `response`: string u objeto con `message`/`code`) y los de
+   * dominio (`DomainError`), con la misma traducción que REST.
    * Cualquier otro error (una consulta de Drizzle con su SQL y parámetros, un fallo de red, un
    * bug) se registra aquí con una referencia y al host solo le llega esa referencia.
    */
@@ -98,8 +100,9 @@ export class ToolRunner {
     if (error instanceof ToolUserError) {
       return error.message;
     }
-    if (error instanceof HttpException) {
-      const message = httpExceptionMessage(error);
+    const http = error instanceof DomainError ? domainErrorToHttp(error) : error;
+    if (http instanceof HttpException) {
+      const message = httpExceptionMessage(http);
       if (message) return message;
     }
     const reference = randomUUID();

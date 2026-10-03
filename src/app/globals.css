@@ -16,6 +16,10 @@
   --brand-soft: #e6e8fd;
   --accent: #10b981;
   --accent-soft: #d6f5e7;
+  /* Acento para TEXTO: el verde de --accent sobre blanco o --accent-soft se queda en ~2,5:1 y no
+     llega a AA (4,5:1); este da 5,5:1 sobre blanco y 4,7:1 sobre --accent-soft. --accent sigue
+     para rellenos, bordes y gráficas. */
+  --accent-text: #047857;
   --warning: #b45309;
   --warning-soft: #fef3e2;
   --warning-border: #f5d9a8;
@@ -52,6 +56,8 @@
   --brand-soft: #1f2a4d;
   --accent: #34d399;
   --accent-soft: #123726;
+  /* En oscuro el verde claro ya contrasta (≥ 6,8:1 sobre superficie y --accent-soft). */
+  --accent-text: #34d399;
   --warning: #fbbf24;
   --warning-soft: #2a2110;
   --warning-border: #4a3a17;
@@ -84,6 +90,7 @@
   --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-warning-border: var(--warning-border);
@@ -102,6 +109,20 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* Movimiento reducido: quien lo pide en el sistema no ve animaciones ni transiciones (los
+   desplazamientos, el panel que sube, los hover con `transition`). Se acortan a casi cero en vez
+   de quitarlas para que los eventos `transitionend`/`animationend` sigan llegando. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Recharts: quitar el contorno de foco al hacer clic/arrastrar en gráficas y
    sectores (el "cuadrado de selección" queda feo) y evitar selección de texto. */
 .recharts-wrapper,
@@ -117,4 +138,45 @@ body {
 .recharts-layer:focus,
 .recharts-wrapper :focus-visible {
   outline: none;
+}
+
+/* Impresión (informe de la declaración): sin navegación ni formularios, y siempre con los colores
+   del tema claro, que es lo que se lee en papel o en PDF. */
+@media print {
+  header,
+  footer,
+  nav,
+  details {
+    display: none !important;
+  }
+  .dark {
+    --background: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f1f3f9;
+    --foreground: #0f1729;
+    --muted: #5b6478;
+    --border: #e4e7ef;
+    --brand: #4f46e5;
+    --brand-fg: #ffffff;
+    --brand-soft: #e6e8fd;
+    --accent: #10b981;
+    --accent-soft: #d6f5e7;
+    --accent-text: #047857;
+    --warning: #b45309;
+    --warning-soft: #fef3e2;
+    --warning-border: #f5d9a8;
+    --success: #15803d;
+    --danger: #b91c1c;
+    --danger-fg: #ffffff;
+    --danger-soft: #fef2f2;
+    --danger-border: #f3c4c4;
+    --chart-1: #4f46e5;
+    --chart-2: #10b981;
+    --chart-3: #f59e0b;
+    --chart-4: #db2777;
+    --chart-5: #0891b2;
+    --chart-6: #7c3aed;
+    --chart-7: #65a30d;
+    --chart-8: #ea580c;
+  }
 }

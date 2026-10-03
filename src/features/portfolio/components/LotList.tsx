@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { formatIsoDate } from "@/shared/format/format";
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot } from "@sextante/core/portfolio/types";
-import Button from "@/shared/ui/Button";
+import RowActions from "@/shared/ui/RowActions";
 
 type Props = {
   lots: readonly PositionLot[];
@@ -42,6 +42,16 @@ export default function LotList({
 
   if (lots.length === 0) return <p className="text-sm text-muted">{t("empty")}</p>;
 
+  const rowLabels = (item: string) => ({
+    edit: t("edit"),
+    delete: t("delete"),
+    confirm: t("confirmDelete"),
+    cancel: t("cancel"),
+    editLabel: t("editItem", { item }),
+    deleteLabel: t("deleteItem", { item }),
+    confirmLabel: t("confirmDeleteItem", { item }),
+  });
+
   return (
     <ul aria-label={t("tableCaption", { ticker })} className="flex flex-col">
       {lots.map((lot) => (
@@ -68,33 +78,17 @@ export default function LotList({
                 .filter(Boolean)
                 .join(" · ")}
             </span>
-            {confirmingId === lot.id ? (
-              <span className="flex shrink-0 gap-2">
-                <Button variant="warning" size="xs" onClick={() => onConfirmDelete(lot.id)} disabled={submitting}>
-                  {t("confirmDelete")}
-                </Button>
-                <Button variant="secondary" size="xs" onClick={onCancelDelete} disabled={submitting}>
-                  {t("cancel")}
-                </Button>
-              </span>
-            ) : (
-              <span className="flex shrink-0 gap-1">
-                <button
-                  type="button"
-                  onClick={() => onEdit(lot)}
-                  className="rounded-md px-2 py-1.5 font-medium hover:bg-surface-2 hover:text-foreground"
-                >
-                  {t("edit")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onAskDelete(lot.id)}
-                  className="rounded-md px-2 py-1.5 font-medium hover:bg-surface-2 hover:text-foreground"
-                >
-                  {t("delete")}
-                </button>
-              </span>
-            )}
+            <RowActions
+              labels={rowLabels(
+                `${lot.kind === "buy" ? t("kindBuy") : t("kindSell")} · ${formatIsoDate(lot.tradedAt)}`,
+              )}
+              confirming={confirmingId === lot.id}
+              busy={submitting}
+              onEdit={() => onEdit(lot)}
+              onAskDelete={() => onAskDelete(lot.id)}
+              onCancelDelete={onCancelDelete}
+              onConfirmDelete={() => onConfirmDelete(lot.id)}
+            />
           </div>
         </li>
       ))}

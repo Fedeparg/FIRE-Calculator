@@ -44,13 +44,20 @@ export class ConsentController {
     };
   }
 
-  /** Registra el consentimiento del usuario para el cliente y los scopes indicados. */
+  /**
+   * Registra el consentimiento del usuario para el cliente y los scopes indicados. 404 si el
+   * cliente no está registrado: `oauth_grants.client_id` no tiene FK, y sin esta comprobación se
+   * guardarían consentimientos huérfanos para ids inventados.
+   */
   @Post()
   @HttpCode(HttpStatus.OK)
   async approve(
     @CurrentUser() user: SessionUser,
     @Body(new ZodValidationPipe(consentSchema)) dto: ConsentDto,
   ): Promise<{ ok: true }> {
+    if (!(await this.clients.getClient(dto.clientId))) {
+      throw new NotFoundException('Cliente no encontrado');
+    }
     await this.grants.recordConsent(user.id, dto.clientId, dto.scopes);
     return { ok: true };
   }

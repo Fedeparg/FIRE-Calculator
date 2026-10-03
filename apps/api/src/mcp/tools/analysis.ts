@@ -1,7 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { FIRE_SEARCH_MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
-import { buildRealisedGainsReport } from '@sextante/core/fiscal/realised-gains';
 import {
   computeGoalProgress,
   resolveGoalTarget,
@@ -10,20 +9,19 @@ import {
 } from '@sextante/core/portfolio/goal';
 import { z } from 'zod';
 
-import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
-import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
+import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
+import type { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
+import type { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
+import type { TaxReturnService } from '../../tax-return/tax-return.service.js';
 import { jsonResult } from '../mcp-results.js';
 import { InvalidToolInputError } from '../tool-errors.js';
 import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-schemas.js';
 import type { ToolRunner } from './tool-runner.js';
 
 export type AnalysisToolDeps = {
-  positions: PositionsService;
-  lots: PositionLotsService;
   valuation: PortfolioValuationService;
   scenarios: SavedScenariosService;
+  taxReturn: TaxReturnService;
 };
 
 /** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
@@ -44,47 +42,70 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
       title: 'Plusvalías realizadas por ejercicio (para la Renta)',
       description:
         'Ganancias y pérdidas patrimoniales de las ventas registradas, calculadas por FIFO ' +
-        'como exige la normativa española y agrupadas por ejercicio fiscal y divisa: valor ' +
+        'como exige la normativa española y agrupadas por ejercicio fiscal, en euros: valor ' +
         'de transmisión, valor de adquisición (con comisiones) y resultado de cada venta, ' +
-        'más una estimación de la cuota de la base del ahorro sobre lo vendido en euros. ' +
-        'Las ventas en otra divisa se dan en esa divisa sin convertir (en la declaración se ' +
-        'convierten al tipo de cambio de cada operación). Sirve para preparar las casillas ' +
-        'de ganancias patrimoniales. Compensa las ventas del mismo ejercicio, pero NO ' +
-        'aplica los saldos negativos de los cuatro ejercicios anteriores, la compensación ' +
-        'del 25 % con dividendos e intereses ni la regla de los dos meses. Solo lectura.',
+        'más una estimación de la cuota de la base del ahorro. Las ventas en otra divisa se ' +
+        'calculan en esa divisa y se pasan a euros con el tipo de referencia del BCE del día ' +
+        'de la venta (criterio de la DGT, V0152-26); la diferencia de cambio de la divisa ' +
+        'invertida va aparte (`fxDifference`), suponiendo que el bróker cambia a euros al ' +
+        'comprar y al vender. Las ventas sin tipo publicado van en `unconverted`, fuera de ' +
+        'los totales; si `ratesLoaded` es false, no se pudieron cargar los tipos del BCE y las ' +
+        'ventas en divisa quedan todas sin convertir: avisa al usuario. Sirve para preparar ' +
+        'las casillas de ganancias patrimoniales. Aplica la regla de los dos meses (art. 33.5.f ' +
+        'LIRPF): la pérdida de una venta con recompra homogénea en la ventana se difiere ' +
+        '(`deferredLoss`) y se integra al vender esa recompra (`integratedLoss`). Compensa las ' +
+        'ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
+        'ejercicios anteriores ni la compensación del 25 % con dividendos e intereses (para ' +
+        'eso, `get_tax_return_report`). Solo lectura.',
       inputSchema: {
-        year: z
-          .number()
-          .int()
-          .min(1900)
-          .max(2100)
+        year: fiscalYearSchema
           .optional()
           .describe('Ejercicio fiscal. Sin valor, devuelve todos los ejercicios con ventas.'),
       },
       annotations: { readOnlyHint: true },
     },
     ({ year }) =>
-      runner.run('get_realised_gains', async () => {
-        const [positions, lots] = await Promise.all([
-          deps.positions.findAllByUser(runner.userId),
-          deps.lots.findAllByUser(runner.userId),
-        ]);
-        const lotsByPosition = new Map<string, typeof lots>();
-        for (const lot of lots) {
-          lotsByPosition.set(lot.positionId, [...(lotsByPosition.get(lot.positionId) ?? []), lot]);
-        }
-        const report = buildRealisedGainsReport(
-          positions.map((p) => ({
-            id: p.id,
-            ticker: p.ticker,
-            name: p.name,
-            currency: p.currency,
-            lots: lotsByPosition.get(p.id) ?? [],
-          })),
-        );
-        const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
-        return jsonResult({ years });
-      }),
+      runner.run('get_realised_gains', async () =>
+        // Mismo cálculo que `get_tax_return_report` y la API REST (`TaxReturnService`).
+        jsonResult(await deps.taxReturn.realisedGains(runner.userId, year)),
+      ),
+  );
+
+  server.registerTool(
+    'get_tax_return_report',
+    {
+      title: 'Base del ahorro de un ejercicio (para rellenar la Renta WEB)',
+      description:
+        'Informe de la base del ahorro de un ejercicio para ayudar a rellenar la Renta WEB, ' +
+        'montado con las mismas funciones que la web. Bloques: `gains` = ventas de valores ' +
+        '(FIFO, en euros, con valor de transmisión, de adquisición y resultado de cada venta ' +
+        'en `sales`, más la diferencia de cambio `fxDifference`); `income` = intereses y ' +
+        'dividendos cobrados (rendimientos del capital mobiliario, con retenciones en origen ' +
+        'y en España y la parte que ya consta en el borrador de la AEAT); `incomeEvents` = ' +
+        'cada cobro; `savings` = la base del ahorro: saldo de ganancias y pérdidas, ' +
+        'rendimientos del capital, compensación de saldos negativos de años anteriores ' +
+        '(incluidos los pendientes que el usuario introdujo a mano), cuota, deducción por ' +
+        'doble imposición internacional y retenciones españolas (`result` = cuota − ' +
+        'retenciones). `availableYears` lista los ejercicios con datos; `null` en un bloque ' +
+        'significa que ese ejercicio no tiene datos de ese tipo. Las cifras son orientativas, ' +
+        'no asesoramiento, y no sustituyen al borrador de la AEAT: contrástalas con él. ' +
+        'Cada cifra lleva su procedencia: en los cobros, `grossSource` y ' +
+        '`withholdingOriginSource` valen `broker` (dato del bróker), `derived` (calculado a ' +
+        'partir de datos del bróker), `market` (dato de mercado), `estimate` (estimación, p. ' +
+        'ej. el tipo legal de retención del país: hay que contrastarla con el certificado del ' +
+        'pagador) o `manual` (lo escribió el usuario); en las ventas, `eur` indica el tipo ' +
+        'del BCE (y su fecha) aplicado a la venta y a cada compra. Si `incomplete` es true o ' +
+        '`ratesLoaded` es false, la cifra está incompleta (ventas o cobros sin tipo de cambio, ' +
+        'o retención en origen desconocida) y debes avisar al usuario. Solo lectura.',
+      inputSchema: {
+        year: fiscalYearSchema
+          .optional()
+          .describe('Ejercicio fiscal. Sin valor, el último ejercicio con ventas o cobros.'),
+      },
+      annotations: { readOnlyHint: true },
+    },
+    ({ year }) =>
+      runner.run('get_tax_return_report', async () => jsonResult(await deps.taxReturn.build(runner.userId, year))),
   );
 
   server.registerTool(

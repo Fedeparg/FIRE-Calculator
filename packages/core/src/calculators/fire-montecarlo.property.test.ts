@@ -4,6 +4,7 @@ import { describe, it } from "vitest";
 import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { computeFire } from "./fire.js";
 import { simulateFire, withdrawalSensitivity, type MonteCarloInput } from "./fire-montecarlo.js";
+import { firstItem } from "../arrays.js";
 
 // Cada simulación cuesta milisegundos: menos casos y menos vidas que en el resto de propiedades.
 const PARAMS = { ...PROPERTY_PARAMS, numRuns: 40 };
@@ -97,7 +98,7 @@ describe("simulateFire — propiedades", () => {
   it("la tabla de sensibilidad es la simulación de cada tasa por separado", () => {
     fc.assert(
       fc.property(anyModel, fc.double({ min: 1, max: 10, noNaN: true }), (i, rate) => {
-        const [row] = withdrawalSensitivity(i, [rate], OPTIONS);
+        const row = firstItem(withdrawalSensitivity(i, [rate], OPTIONS));
         return row.successRate === simulateFire({ ...i, withdrawalRate: rate }, OPTIONS).successRate;
       }),
       PARAMS,

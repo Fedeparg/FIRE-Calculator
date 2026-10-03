@@ -12,8 +12,6 @@ export interface InflationInput {
 }
 
 export interface InflationPoint {
-  // firma de índice numérica: consumible como dato genérico de gráfica
-  [key: string]: number;
   year: number;
   nominalNeeded: number;
   /** Poder adquisitivo del importe parado. */
@@ -53,8 +51,9 @@ export function computeInflation(input: InflationInput): InflationResult {
   const realValue = finalFactor !== 0 ? amount / finalFactor : amount;
   const realValueInvested = finalFactor !== 0 ? (amount * Math.pow(1 + ret, years)) / finalFactor : amount;
 
-  // Rentabilidad real anualizada (efecto Fisher exacto): (1+r)/(1+i) − 1.
-  const realReturn = ((1 + ret) / (1 + rate) - 1) * 100;
+  // Rentabilidad real anualizada (efecto Fisher exacto): (1+r)/(1+i) − 1. Con una inflación
+  // ≤ −100 % el factor se anula y, como en `realValue`, no se ajusta: queda la nominal.
+  const realReturn = 1 + rate > 0 ? ((1 + ret) / (1 + rate) - 1) * 100 : ret * 100;
 
   return {
     nominalNeeded: amount * finalFactor,

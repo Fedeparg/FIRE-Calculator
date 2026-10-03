@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeCreditCard } from "./tarjeta-credito.js";
+import { defined } from "../assert.js";
 
 describe("computeCreditCard", () => {
   it("salda una deuda sin intereses en el número exacto de meses", () => {
@@ -87,6 +88,6 @@ describe("computeCreditCard", () => {
       minFloor: 25,
     });
     // Ambas empiezan pagando 60 €, pero la mínima baja con el saldo → tarda más.
-    expect(percent.monthsToPayoff!).toBeGreaterThan(fixed.monthsToPayoff!);
+    expect(percent.monthsToPayoff).toBeGreaterThan(defined(fixed.monthsToPayoff));
   });
 });

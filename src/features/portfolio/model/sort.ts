@@ -4,8 +4,8 @@
 // (USD) para poder comparar importes entre posiciones en divisas distintas. Aquí solo
 // vive la comparación: nulos siempre al final, desempate estable por ticker.
 
-/** Campo por el que se puede ordenar la tabla de posiciones. */
-export type SortKey = "ticker" | "name" | "quantity" | "avgPrice" | "broker" | "invested" | "marketValue" | "pnl";
+/** Campo por el que se puede ordenar la tabla de posiciones (los que ofrece la UI). */
+export type SortKey = "name" | "invested" | "marketValue" | "pnl";
 
 /** Sentido de la ordenación: descendente (mayor a menor) o ascendente. */
 export type SortDir = "asc" | "desc";
@@ -22,17 +22,13 @@ export const DEFAULT_SORT_DIR: SortDir = "desc";
  * `pnl` es el mismo número que se muestra (porcentaje o importe base) según el modo activo.
  */
 export interface SortableRow {
+  /** Solo para desempatar: no es una columna ordenable. */
   ticker: string;
   name: string | null;
-  broker: string | null;
-  quantity: number;
-  avgPrice: number | null;
   invested: number | null;
   marketValue: number | null;
   pnl: number | null;
 }
-
-const STRING_KEYS = new Set<SortKey>(["ticker", "name", "broker"]);
 
 /** localeCompare tolerante a acentos y con orden numérico dentro de las cadenas. */
 function compareStrings(a: string, b: string): number {
@@ -46,17 +42,17 @@ function compareStrings(a: string, b: string): number {
 function compareRows(a: SortableRow, b: SortableRow, key: SortKey, dir: SortDir): number {
   const factor = dir === "asc" ? 1 : -1;
 
-  if (STRING_KEYS.has(key)) {
-    const av = a[key] as string | null;
-    const bv = b[key] as string | null;
+  if (key === "name") {
+    const av = a.name;
+    const bv = b.name;
     if (av === null && bv === null) return 0;
     if (av === null) return 1;
     if (bv === null) return -1;
     return factor * compareStrings(av, bv);
   }
 
-  const av = a[key] as number | null;
-  const bv = b[key] as number | null;
+  const av = a[key];
+  const bv = b[key];
   if (av === null && bv === null) return 0;
   if (av === null) return 1;
   if (bv === null) return -1;

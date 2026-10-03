@@ -1,10 +1,13 @@
 /**
- * Llamadas de la cartera a la API (posiciones, lotes, precios, FX, buscador de instrumentos).
+ * Llamadas de la cartera a la API (posiciones, lotes, cobros, precios, FX, buscador de instrumentos).
  * Sin React: se prueba sin DOM. La autorización y el scoping por usuario los decide la API;
  * aquí solo se transporta y se traducen los fallos a claves i18n.
  */
 
+import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
+import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import type {
+  AssetClass,
   InstrumentSearchResult,
   LotPayload,
   Position,
@@ -12,7 +15,7 @@ import type {
   PositionPayload,
   PriceInfo,
 } from "@sextante/core/portfolio/types";
-import { ApiError, NO_STORE, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
+import { ApiError, NO_STORE, apiJson, createApiErrorMapper } from "@/shared/api/client";
 
 export const FX_PATH = "/api/prices/fx";
 
@@ -68,6 +71,33 @@ export function deleteLot(positionId: string, lotId: string): Promise<void> {
   return apiJson<void>(`${lotsPath(positionId)}/${lotId}`, { method: "DELETE" });
 }
 
+/** Cobros del usuario; con `positionId`, solo los de esa posición. */
+export function incomePath(positionId?: string): string {
+  return positionId ? `/api/income?positionId=${encodeURIComponent(positionId)}` : "/api/income";
+}
+
+/** Alta (`incomeId === null`) o edición de un cobro. */
+export function saveIncome(incomeId: string | null, payload: IncomePayload): Promise<IncomeEvent> {
+  return apiJson<IncomeEvent>(incomeId ? `/api/income/${incomeId}` : "/api/income", {
+    method: incomeId ? "PATCH" : "POST",
+    body: payload,
+  });
+}
+
+export function deleteIncome(incomeId: string): Promise<void> {
+  return apiJson<void>(`/api/income/${incomeId}`, { method: "DELETE" });
+}
+
+/** Clasifica una posición (acción, fondo o ETF, derivado u otro) para la declaración. */
+export function setAssetClass(positionId: string, assetClass: AssetClass): Promise<Position> {
+  return apiJson<Position>(`/api/positions/${positionId}`, { method: "PATCH", body: { assetClass } });
+}
+
+/** Sustituye los saldos negativos pendientes de años que Sextante no calcula. */
+export function savePendingBalances(balances: PendingNegative[]): Promise<PendingNegative[]> {
+  return apiJson<PendingNegative[]>("/api/tax-return/pending-balances", { method: "PUT", body: { balances } });
+}
+
 /** Resultados del buscador de instrumentos; `signal` cancela la petición (debounce). */
 export async function searchInstruments(query: string, signal: AbortSignal): Promise<InstrumentSearchResult[]> {
   const body = await apiJson<{ results: InstrumentSearchResult[] }>(
@@ -76,9 +106,6 @@ export async function searchInstruments(query: string, signal: AbortSignal): Pro
   );
   return body.results;
 }
-
-/** Claves del formulario de posición: las comunes más el 409 `HAS_SALES`. */
-export type PositionErrorKey = ApiErrorKey | "errorHasSales";
 
 /** Conflicto 409 del alta/edición de posiciones, con lo que la UI necesita para reaccionar. */
 export type PositionConflict =
@@ -101,7 +128,10 @@ export function positionConflict(error: unknown): PositionConflict | null {
   return null;
 }
 
-/** Clave i18n de un fallo de posiciones (sin volcar el `message` del servidor, que está en castellano). */
-export function positionErrorKey(error: unknown): PositionErrorKey {
-  return positionConflict(error)?.kind === "hasSales" ? "errorHasSales" : apiErrorKey(error);
-}
+/** Clave i18n de un fallo de posiciones: las comunes más el 409 `HAS_SALES`. */
+export const positionErrorKey = createApiErrorMapper({
+  codes: { HAS_SALES: "errorHasSales" },
+  invalidFallback: "errorInvalid",
+});
+
+export type PositionErrorKey = ReturnType<typeof positionErrorKey>;

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { staleSnapshotDates, type StalenessLot, type StalenessSnapshot } from "./staleness.js";
+import {
+  planSnapshotWrites,
+  staleSnapshotDates,
+  type SnapshotValues,
+  type StalenessLot,
+  type StalenessSnapshot,
+  type StoredSnapshot,
+} from "./staleness.js";
+import { itemAt } from "../arrays.js";
 
 const at = (iso: string): number => Date.parse(iso);
 
@@ -83,5 +91,72 @@ describe("staleSnapshotDates", () => {
       ],
     });
     expect(stale.size).toBe(real.length);
+  });
+});
+
+describe("planSnapshotWrites", () => {
+  const values = (date: string, invested = "100.00000000", fxRates = { USD: 1, EUR: 1.1 }): SnapshotValues => ({
+    date,
+    invested,
+    marketValue: "110.00000000",
+    valuedPositions: 1,
+    totalPositions: 1,
+    fxRates,
+  });
+  const stored = (date: string, estimated: boolean, invested?: string): StoredSnapshot => ({
+    ...values(date, invested),
+    estimated,
+  });
+  const plan = (rows: SnapshotValues[], existing: StoredSnapshot[], staleReal: string[] = []) =>
+    planSnapshotWrites({ rows, existing, staleReal: new Set(staleReal), trackingSince: "2026-09-10" });
+
+  it("escribe los días nuevos y marca como estimados los anteriores al seguimiento", () => {
+    const { changed, stale } = plan([values("2026-09-09"), values("2026-09-10")], []);
+
+    expect(changed.map((row) => [row.date, row.estimated])).toEqual([
+      ["2026-09-09", true],
+      ["2026-09-10", false],
+    ]);
+    expect(stale).toEqual([]);
+  });
+
+  it("no reescribe una estimación idéntica, aunque las tasas vengan en otro orden", () => {
+    const existing = [stored("2026-09-01", true)];
+    const rows = [values("2026-09-01", "100.00000000", { EUR: 1.1, USD: 1 })];
+
+    expect(plan(rows, existing).changed).toEqual([]);
+  });
+
+  it("reescribe una estimación si cambia un valor o si su marca ya no cumple la regla", () => {
+    expect(plan([values("2026-09-01", "200.00000000")], [stored("2026-09-01", true)]).changed).toHaveLength(1);
+    // Posterior al seguimiento guardada como estimada: se corrige a real.
+    const repaired = plan([values("2026-09-15")], [stored("2026-09-15", true)]).changed;
+    expect(repaired).toMatchObject([{ date: "2026-09-15", estimated: false }]);
+  });
+
+  it("solo pisa una captura real si está obsoleta", () => {
+    const existing = [stored("2026-09-15", false, "999.00000000"), stored("2026-09-16", false, "999.00000000")];
+    const rows = [values("2026-09-15"), values("2026-09-16")];
+
+    expect(plan(rows, existing).changed).toEqual([]);
+    expect(plan(rows, existing, ["2026-09-16"]).changed.map((row) => row.date)).toEqual(["2026-09-16"]);
+  });
+
+  it("retira las estimaciones que ya no salen de la reconstrucción, nunca las reales", () => {
+    const existing = [stored("2026-09-01", true), stored("2026-09-02", false), stored("2026-09-03", true)];
+
+    expect(plan([values("2026-09-03")], existing).stale).toEqual(["2026-09-01"]);
+  });
+
+  it("conserva los campos propios de cada fila (p. ej. el usuario)", () => {
+    const { changed } = planSnapshotWrites({
+      rows: [{ ...values("2026-09-20"), userId: "u1" }],
+      existing: [],
+      staleReal: new Set(),
+      trackingSince: "2026-09-10",
+    });
+
+    expect(itemAt(changed, 0).userId).toBe("u1");
+    expect(itemAt(changed, 0).estimated).toBe(false);
   });
 });

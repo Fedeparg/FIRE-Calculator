@@ -12,6 +12,7 @@ import { verifySchema, type VerifyDto } from './dto/verify.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
+import { SessionService } from './session.service.js';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +20,7 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
+    private readonly sessions: SessionService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -31,7 +33,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<{ ok: true }> {
     this.logDetectedIp(req);
-    await this.auth.requestLink(dto.email);
+    await this.auth.requestLink(dto.email, dto.locale ?? 'es');
     // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
     return { ok: true };
   }
@@ -44,15 +46,35 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<SessionUser> {
     const user = await this.auth.verify(dto.token);
-    const jwt = await this.auth.signSession(user);
+    const jwt = await this.sessions.sign(user);
     res.cookie(SESSION_COOKIE, jwt, this.cookieOptions());
     return user;
   }
 
-  /** Cierra la sesión borrando la cookie. */
+  /**
+   * Cierra la sesión: invalida el JWT en el servidor (sube la versión de sesión del usuario) y
+   * borra la cookie. Sin lo primero, quien se hubiera quedado con el JWT podría seguir usándolo
+   * hasta que caducara. Como la versión es por usuario, cierra también sus otras sesiones. Sin
+   * sesión válida solo borra la cookie (idempotente, sin 401).
+   */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response): { ok: true } {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<{ ok: true }> {
+    const user = await this.sessions.resolve(req);
+    if (user) await this.sessions.revokeAll(user.id);
+    res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
+    return { ok: true };
+  }
+
+  /** Cierra todas las sesiones abiertas del usuario, en todos sus dispositivos, incluida esta. */
+  @Post('sessions/revoke')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async revokeSessions(
+    @CurrentUser() user: SessionUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ ok: true }> {
+    await this.sessions.revokeAll(user.id);
     res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
     return { ok: true };
   }

@@ -4,11 +4,13 @@ import { z } from 'zod';
 import {
   HISTORY_DEFAULT_DAYS,
   HISTORY_MAX_DAYS,
-  PortfolioSnapshotsService,
+  type PortfolioSnapshotsService,
 } from '../../portfolio/portfolio-snapshots.service.js';
-import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
+import { incomeQuerySchema } from '../../income/dto/income-query.dto.js';
+import type { IncomeService } from '../../income/income.service.js';
+import type { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
+import type { PositionLotsService } from '../../positions/position-lots.service.js';
+import type { PositionsService } from '../../positions/positions.service.js';
 import type { InstrumentSearchProvider } from '../../prices/instrument-search.js';
 import { jsonResult } from '../mcp-results.js';
 import { CURRENCY_VALUES } from './tool-schemas.js';
@@ -20,6 +22,7 @@ export type ReadToolDeps = {
   valuation: PortfolioValuationService;
   snapshots: PortfolioSnapshotsService;
   instruments: InstrumentSearchProvider;
+  income: IncomeService;
 };
 
 /** Tools de solo lectura (scope `portfolio:read`). */
@@ -161,6 +164,27 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
       runner.run('list_position_lots', async () => {
         const lots = await deps.lots.listByPosition(runner.userId, positionId);
         return jsonResult({ lots });
+      }),
+  );
+
+  server.registerTool(
+    'list_income',
+    {
+      title: 'Listar dividendos, intereses y recompensas',
+      description:
+        'Devuelve los cobros del usuario que tributan como rendimientos del capital mobiliario: ' +
+        'dividendos (`dividend`), intereses (`interest`) y recompensas del bróker como el ' +
+        'saveback (`benefit`, que se declaran como intereses). Cada cobro trae el íntegro, la ' +
+        'retención en origen (`withholdingOrigin`, null si no se sabe) y la española, en su ' +
+        'divisa, y `reportedToAeat`: si el pagador ya lo comunicó a Hacienda y puede estar en el ' +
+        'borrador. Filtra por ejercicio (`year`) o posición. Solo lectura.',
+      inputSchema: incomeQuerySchema.shape,
+      annotations: { readOnlyHint: true },
+    },
+    (query) =>
+      runner.run('list_income', async () => {
+        const income = await deps.income.list(runner.userId, query);
+        return jsonResult({ income });
       }),
   );
 }

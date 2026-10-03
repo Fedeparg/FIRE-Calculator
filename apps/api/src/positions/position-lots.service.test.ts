@@ -1,11 +1,10 @@
-import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
 
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { positionLots, positions } from '../db/schema.js';
@@ -14,8 +13,8 @@ import { buildPositionsStack } from '../../test/positions-stack.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { aggregateLots } from './lot-aggregate.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
-import { PositionLotsService } from './position-lots.service.js';
-import { PositionsService } from './positions.service.js';
+import type { PositionLotsService } from './position-lots.service.js';
+import type { PositionsService } from './positions.service.js';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
 
@@ -27,26 +26,16 @@ function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePo
 const START_DATE = '2026-01-01';
 
 /**
- * Extrae del SQL de las migraciones la sentencia REAL de backfill de `position_lots`.
- *
- * Se lee del fichero (buscándolo por contenido, no por nombre fijo) en vez de reescribirla en
- * el test: así lo que se prueba es la sentencia que se ejecutará en producción. El backfill
- * se aplica en `global-setup` contra una BD vacía, así que allí es un no-op y esta es la
- * única cobertura real que puede tener.
+ * Sentencia de backfill de `position_lots` de la migración `0011_melodic_marten_broadcloak.sql`,
+ * copiada literalmente. Esa migración ya está aplicada en producción y nunca se edita, así que no
+ * puede divergir; congelarla aquí evita que el test dependa de cómo se nombran y trocean los
+ * ficheros de `drizzle/`. El backfill se aplica en `global-setup` contra una BD vacía (allí es un
+ * no-op), así que esta es la única cobertura real que tiene.
  */
-function readBackfillStatement(): string {
-  const dir = resolve(import.meta.dirname, '../../drizzle');
-  const statements = readdirSync(dir)
-    .filter((file) => file.endsWith('.sql'))
-    .flatMap((file) => readFileSync(resolve(dir, file), 'utf8').split('--> statement-breakpoint'))
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.includes('INSERT INTO "position_lots"'));
-
-  // Si una renumeración o un renombrado dejase de encontrarla, el test debe FALLAR, no
-  // volverse vacío en silencio.
-  expect(statements).toHaveLength(1);
-  return statements[0];
-}
+const BACKFILL_SQL = `INSERT INTO "position_lots" ("position_id", "user_id", "kind", "quantity", "price", "fees", "traded_at")
+SELECT p."id", p."user_id", 'buy', p."quantity", p."avg_price", 0, (p."created_at" AT TIME ZONE 'UTC')::date
+FROM "positions" p
+WHERE NOT EXISTS (SELECT 1 FROM "position_lots" l WHERE l."position_id" = p."id");`;
 
 describe('PositionLotsService (integración con Postgres)', () => {
   let db: Database;
@@ -74,7 +63,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
    */
   async function createBackdated(userId: string, partial: Partial<CreatePositionDto> & { ticker: string }) {
     const position = await service.create(userId, dto(partial));
-    const [initial] = await lots.listByPosition(userId, position.id);
+    const initial = firstItem(await lots.listByPosition(userId, position.id));
     await lots.update(userId, position.id, initial.id, { tradedAt: START_DATE });
     return position;
   }
@@ -83,19 +72,21 @@ describe('PositionLotsService (integración con Postgres)', () => {
     it('crea un lote de compra por posición y sus agregados CUADRAN con la posición', async () => {
       const userId = await insertUser(db, 'a@example.com');
       // Posición "antigua": insertada a mano, como estaría en producción antes de migrar.
-      const [existing] = await db
-        .insert(positions)
-        .values({
-          userId,
-          ticker: 'IWDA',
-          quantity: '12.500000',
-          avgPrice: '95.420000',
-          currency: 'EUR',
-          createdAt: new Date('2025-11-02T23:30:00Z'),
-        })
-        .returning();
+      const existing = firstItem(
+        await db
+          .insert(positions)
+          .values({
+            userId,
+            ticker: 'IWDA',
+            quantity: '12.500000',
+            avgPrice: '95.420000',
+            currency: 'EUR',
+            createdAt: new Date('2025-11-02T23:30:00Z'),
+          })
+          .returning(),
+      );
 
-      await db.execute(sql.raw(readBackfillStatement()));
+      await db.execute(sql.raw(BACKFILL_SQL));
 
       const rows = await db.select().from(positionLots).where(eq(positionLots.positionId, existing.id));
 
@@ -121,9 +112,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(positions).values({ userId, ticker: 'VWCE', quantity: '3', avgPrice: '110', currency: 'EUR' });
 
-      const backfill = readBackfillStatement();
-      await db.execute(sql.raw(backfill));
-      await db.execute(sql.raw(backfill));
+      await db.execute(sql.raw(BACKFILL_SQL));
+      await db.execute(sql.raw(BACKFILL_SQL));
 
       expect(await db.select().from(positionLots)).toHaveLength(1);
     });
@@ -150,9 +140,33 @@ describe('PositionLotsService (integración con Postgres)', () => {
         tradedAt: '2026-06-01',
       });
 
-      const [updated] = await service.findAllByUser(userId);
+      const updated = firstItem(await service.findAllByUser(userId));
       expect(updated.quantity).toBe(20);
       expect(updated.avgPrice).toBe(150);
+    });
+
+    it('dos altas de lote simultáneas suman las dos (sin lost update)', async () => {
+      // Pool de varias conexiones: las dos transacciones corren de verdad a la vez.
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const stack = buildPositionsStack(concurrent.db);
+        const userId = await insertUser(db, 'a@example.com');
+        const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 1, avgPrice: 100 });
+
+        // Varias rondas: sin el bloqueo, basta con que una se entrelace para perder una compra.
+        for (let round = 0; round < 5; round++) {
+          await Promise.all(
+            [2, 3].map((quantity) =>
+              stack.lots.create(userId, position.id, { kind: 'buy', quantity, price: 100, tradedAt: '2026-06-01' }),
+            ),
+          );
+        }
+
+        const updated = firstItem(await service.findAllByUser(userId));
+        expect(updated.quantity).toBe(1 + 5 * (2 + 3));
+      } finally {
+        await concurrent.close();
+      }
     });
 
     it('una venta baja la cantidad y NO mueve el precio medio', async () => {
@@ -167,7 +181,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
         tradedAt: '2026-06-01',
       });
 
-      const [updated] = await service.findAllByUser(userId);
+      const updated = firstItem(await service.findAllByUser(userId));
       expect(updated.quantity).toBe(6);
       expect(updated.avgPrice).toBe(100);
     });
@@ -183,11 +197,11 @@ describe('PositionLotsService (integración con Postgres)', () => {
           price: 180,
           tradedAt: '2026-06-01',
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toMatchObject({ code: 'NEGATIVE_QUANTITY' });
 
       // Ni el lote inválido ni un descuadre en la posición.
       expect(await lots.listByPosition(userId, position.id)).toHaveLength(1);
-      expect((await service.findAllByUser(userId))[0].quantity).toBe(10);
+      expect(firstItem(await service.findAllByUser(userId)).quantity).toBe(10);
     });
 
     it('borrar un lote reagrega el resto', async () => {
@@ -202,7 +216,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
 
       await lots.remove(userId, position.id, extra.id);
 
-      const [updated] = await service.findAllByUser(userId);
+      const updated = firstItem(await service.findAllByUser(userId));
       expect(updated.quantity).toBe(10);
       expect(updated.avgPrice).toBe(100);
     });
@@ -210,11 +224,11 @@ describe('PositionLotsService (integración con Postgres)', () => {
     it('editar un lote reagrega la posición', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
-      const [initial] = await lots.listByPosition(userId, position.id);
+      const initial = firstItem(await lots.listByPosition(userId, position.id));
 
       await lots.update(userId, position.id, initial.id, { quantity: 25 });
 
-      expect((await service.findAllByUser(userId))[0].quantity).toBe(25);
+      expect(firstItem(await service.findAllByUser(userId)).quantity).toBe(25);
     });
 
     it('borrar la posición borra sus lotes (cascada)', async () => {
@@ -248,7 +262,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
 
       // Coste 0,6 sobre 3 títulos = 0,2 exacto. La cadena anterior con `Number()` daba
       // 0.20000000000000004 y lo guardaba redondeado arrastrando el error.
-      const [row] = await db.select().from(positions).where(eq(positions.id, position.id));
+      const row = firstItem(await db.select().from(positions).where(eq(positions.id, position.id)));
       expect(row.avgPrice).toBe('0.200000');
       expect(result.avgPrice).toBe(0.2);
     });
@@ -258,14 +272,14 @@ describe('PositionLotsService (integración con Postgres)', () => {
     it('con un solo lote lo edita EN SITIO (no pierde el histórico)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
-      const [initial] = await lots.listByPosition(userId, position.id);
+      const initial = firstItem(await lots.listByPosition(userId, position.id));
 
       const updated = await service.update(userId, position.id, { quantity: 7, avgPrice: 120 });
 
       const rows = await lots.listByPosition(userId, position.id);
       expect(updated).toMatchObject({ quantity: 7, avgPrice: 120 });
       expect(rows).toHaveLength(1);
-      expect(rows[0].id).toBe(initial.id);
+      expect(itemAt(rows, 0).id).toBe(initial.id);
       expect(rows[0]).toMatchObject({ quantity: 7, price: 120 });
     });
 
@@ -284,7 +298,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const rows = await lots.listByPosition(userId, position.id);
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ kind: 'buy', quantity: 3, price: 90 });
-      expect(rows[0].tradedAt).toBe(START_DATE);
+      expect(itemAt(rows, 0).tradedAt).toBe(START_DATE);
     });
 
     it('editar solo el bróker no toca los lotes', async () => {
@@ -320,7 +334,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       await expect(attempt).rejects.toBeInstanceOf(ConflictException);
       await expect(attempt).rejects.toMatchObject({ response: { code: 'HAS_SALES' } });
       expect(await lots.listByPosition(userId, position.id)).toEqual(before);
-      const [row] = await db.select().from(positions).where(eq(positions.id, position.id));
+      const row = firstItem(await db.select().from(positions).where(eq(positions.id, position.id)));
       expect(row.quantity).toBe('6.000000');
     });
 
@@ -389,7 +403,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const userId = await insertUser(db, 'a@example.com');
       const first = await service.create(userId, dto({ ticker: 'IWDA' }));
       const second = await service.create(userId, dto({ ticker: 'VWCE' }));
-      const [foreignLot] = await lots.listByPosition(userId, second.id);
+      const foreignLot = firstItem(await lots.listByPosition(userId, second.id));
 
       await expect(lots.remove(userId, first.id, foreignLot.id)).rejects.toBeInstanceOf(NotFoundException);
     });
@@ -436,13 +450,13 @@ describe('PositionLotsService (integración con Postgres)', () => {
         price: 100,
         tradedAt: '2026-03-01',
       });
-      expect(emitted[0].invalidateFrom).toBeUndefined();
+      expect(itemAt(emitted, 0).invalidateFrom).toBeUndefined();
 
       await svc.update(userId, position.id, added.id, { tradedAt: '2026-04-01' });
       await svc.update(userId, position.id, added.id, { price: 110 });
 
-      expect(emitted[1].invalidateFrom).toBe('2026-03-01');
-      expect(emitted[2].invalidateFrom).toBeUndefined();
+      expect(itemAt(emitted, 1).invalidateFrom).toBe('2026-03-01');
+      expect(itemAt(emitted, 2).invalidateFrom).toBeUndefined();
     });
   });
 });

@@ -1,15 +1,23 @@
 import { BadRequestException, ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
+import { firstItem } from '@sextante/core/arrays';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
 import type { CombinePositionDto } from './dto/combine-position.dto.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import type { UpdatePositionDto } from './dto/update-position.dto.js';
-import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import {
+  brokerEquals,
+  findOwnedPosition,
+  ownedPosition,
+  positionNotFound,
+  type DatabaseOrTransaction,
+} from './position-access.js';
 import { PositionLotsService, sameAmount } from './position-lots.service.js';
+import { toPositionResponse, type PositionResponse } from './position.mapper.js';
 import {
   LOT_CHANGED_EVENT,
   POSITION_CREATED_EVENT,
@@ -17,26 +25,13 @@ import {
   type PositionCreatedEvent,
 } from './position-events.js';
 import { isoDate, todayUtc } from '../common/dates.js';
-
-/** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
-export type PositionResponse = {
-  id: string;
-  ticker: string;
-  name: string | null;
-  quantity: number;
-  avgPrice: number;
-  broker: string | null;
-  currency: string;
-  /** Derivado: se registra pero no se valora ni entra en los totales. */
-  isDerivative: boolean;
-  createdAt: string;
-};
+import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../common/pg-error.js';
 
 @Injectable()
 export class PositionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly prices: PricesService,
+    private readonly prices: PriceHistoryService,
     private readonly lots: PositionLotsService,
     private readonly events: EventEmitter2,
   ) {}
@@ -51,18 +46,21 @@ export class PositionsService {
     try {
       // Alta y lote inicial en la misma transacción: sin lotes, el primer recálculo la pondría a cero.
       const row = await this.db.transaction(async (tx) => {
-        const [inserted] = await tx
-          .insert(positions)
-          .values({
-            userId,
-            ticker,
-            name: dto.name ?? null,
-            quantity: dto.quantity.toString(),
-            avgPrice: dto.avgPrice.toString(),
-            broker: broker || null,
-            currency: dto.currency ?? 'EUR',
-          })
-          .returning();
+        const inserted = firstItem(
+          await tx
+            .insert(positions)
+            .values({
+              userId,
+              ticker,
+              name: dto.name ?? null,
+              quantity: dto.quantity.toString(),
+              avgPrice: dto.avgPrice.toString(),
+              broker: broker || null,
+              currency: dto.currency ?? 'EUR',
+              assetClass: dto.assetClass ?? null,
+            })
+            .returning(),
+        );
 
         await this.lots.appendLotOwned(tx, {
           positionId: inserted.id,
@@ -80,12 +78,18 @@ export class PositionsService {
       await this.prices.primeSymbol(row.ticker, row.currency);
       // Evento sin esperar: no debe alargar la respuesta del alta (ver `position-events.ts`).
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
-      return this.toResponse(row);
+      return toPositionResponse(row);
     } catch (error) {
       // La única FK es `userId → users.id`: JWT válido pero usuario inexistente (cuenta
       // borrada, BD reiniciada en dev) es sesión muerta → 401, no 500.
-      if (isForeignKeyViolation(error)) {
+      if (isPgError(error, PG_FOREIGN_KEY_VIOLATION)) {
         throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');
+      }
+      // Alta concurrente del mismo (símbolo, bróker): la comprobación previa no vio la otra fila
+      // (aún sin confirmar) y el índice único la ha parado. Se responde como si la hubiera visto:
+      // 409 DUPLICATE con la existente (o BROKER_REQUIRED), para ofrecer combinar.
+      if (isPgError(error, PG_UNIQUE_VIOLATION)) {
+        await this.assertCanUseTickerBroker(userId, ticker, broker);
       }
       throw error;
     }
@@ -99,7 +103,7 @@ export class PositionsService {
       .where(eq(positions.userId, userId))
       .orderBy(desc(positions.createdAt));
 
-    return rows.map((row) => this.toResponse(row));
+    return rows.map((row) => toPositionResponse(row));
   }
 
   /**
@@ -127,7 +131,7 @@ export class PositionsService {
       return this.reread(tx, id);
     });
 
-    return this.toResponse(row);
+    return toPositionResponse(row);
   }
 
   /** Edición manual; 409 si `ticker`/`broker` chocan con otra posición del usuario. */
@@ -159,10 +163,13 @@ export class PositionsService {
           quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
           avgPrice: dto.avgPrice !== undefined ? dto.avgPrice.toString() : current.avgPrice,
           currency: dto.currency ?? current.currency,
+          assetClass: dto.assetClass ?? current.assetClass,
           updatedAt: new Date(),
         })
-        .where(eq(positions.id, id))
+        .where(ownedPosition(userId, id))
         .returning();
+      // Borrada entre la comprobación de propiedad y la escritura.
+      if (!updated) throw positionNotFound();
 
       if (!declaresAmounts) return updated;
 
@@ -184,13 +191,13 @@ export class PositionsService {
       // Los lotes realineados cambian la reconstrucción aunque el símbolo no.
       this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: id } satisfies LotChangedEvent);
     }
-    return this.toResponse(row);
+    return toPositionResponse(row);
   }
 
   /** Borra una posición propia: 404 si no existe o es de otro usuario. */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.db.delete(positions).where(eq(positions.id, id));
+    const deleted = await this.db.delete(positions).where(ownedPosition(userId, id)).returning({ id: positions.id });
+    if (deleted.length === 0) throw positionNotFound();
   }
 
   /** Delega en el helper compartido con el servicio de lotes (ver `position-access.ts`). */
@@ -200,8 +207,8 @@ export class PositionsService {
 
   /** Relee la posición tras un recálculo de lotes. */
   private async reread(tx: DatabaseOrTransaction, id: string): Promise<Position> {
-    const [row] = await tx.select().from(positions).where(eq(positions.id, id));
-    return row;
+    // La posición existe: se acaba de recalcular dentro de la misma transacción.
+    return firstItem(await tx.select().from(positions).where(eq(positions.id, id)));
   }
 
   /**
@@ -226,11 +233,7 @@ export class PositionsService {
       return;
     }
 
-    const conditions = [
-      eq(positions.userId, userId),
-      eq(positions.ticker, ticker),
-      sql`lower(${positions.broker}) = lower(${broker})`,
-    ];
+    const conditions = [eq(positions.userId, userId), eq(positions.ticker, ticker), brokerEquals(broker)];
     if (excludeId) {
       conditions.push(ne(positions.id, excludeId));
     }
@@ -243,7 +246,7 @@ export class PositionsService {
       throw new ConflictException({
         code: 'DUPLICATE',
         message: 'Ya tienes este símbolo en este bróker',
-        existing: this.toResponse(existing),
+        existing: toPositionResponse(existing),
       });
     }
   }
@@ -265,33 +268,4 @@ export class PositionsService {
   private normalizeTicker(ticker: string): string {
     return ticker.trim().toUpperCase();
   }
-
-  private toResponse(row: Position): PositionResponse {
-    return {
-      id: row.id,
-      ticker: row.ticker,
-      name: row.name,
-      quantity: Number(row.quantity),
-      avgPrice: Number(row.avgPrice),
-      broker: row.broker,
-      currency: row.currency,
-      isDerivative: row.isDerivative,
-      createdAt: row.createdAt.toISOString(),
-    };
-  }
-}
-
-/** SQLSTATE de violación de clave foránea. */
-const PG_FOREIGN_KEY_VIOLATION = '23503';
-
-/** Drizzle envuelve el error del driver: el `code` SQLSTATE está en algún `cause` de la cadena. */
-function isForeignKeyViolation(error: unknown): boolean {
-  let current: unknown = error;
-  while (typeof current === 'object' && current !== null) {
-    if ((current as { code?: unknown }).code === PG_FOREIGN_KEY_VIOLATION) {
-      return true;
-    }
-    current = (current as { cause?: unknown }).cause;
-  }
-  return false;
 }

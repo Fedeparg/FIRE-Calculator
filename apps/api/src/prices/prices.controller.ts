@@ -3,25 +3,30 @@ import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { pricesQuerySchema, type PricesQueryDto } from './dto/prices-query.dto.js';
+import { PriceHistoryService, type RefreshSummary } from './price-history.service.js';
+import { PriceReadService, type FxRates, type PriceInfo } from './price-read.service.js';
 
 /** Precios: la lectura sale de nuestra DB; a la fuente externa solo va el cron diario (o el refresco manual de dev). */
 @Controller('prices')
 @UseGuards(JwtAuthGuard)
 export class PricesController {
   constructor(
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
+    private readonly history: PriceHistoryService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
-  /** `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original. */
+  /**
+   * `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original.
+   * Como mucho `MAX_PRICE_SYMBOLS` símbolos de 20 caracteres (400 si no).
+   */
   @Get()
-  async get(@Query('symbols') symbols?: string): Promise<Record<string, PriceInfo>> {
-    const tickers = (symbols ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const prices = await this.prices.getPrices(tickers);
+  async get(
+    @Query(new ZodValidationPipe(pricesQuerySchema)) query: PricesQueryDto,
+  ): Promise<Record<string, PriceInfo>> {
+    const prices = await this.prices.getPrices(query.symbols);
     return Object.fromEntries(prices);
   }
 
@@ -38,6 +43,6 @@ export class PricesController {
     if (this.config.get('NODE_ENV', { infer: true }) === 'production') {
       throw new ForbiddenException('El refresco manual está deshabilitado en producción');
     }
-    return this.prices.refreshAll();
+    return this.history.refreshAll();
   }
 }

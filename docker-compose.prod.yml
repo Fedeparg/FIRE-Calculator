@@ -19,6 +19,14 @@
 
 name: sextante
 
+# Imagen de la API, compartida por `migrate` y `api` (el mismo Dockerfile, la misma etiqueta):
+# se define una vez y cada servicio la referencia con `<<: *api-image`.
+x-api-image: &api-image
+  image: sextante-api:latest
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -38,10 +46,7 @@ services:
 
   # One-shot: aplica migraciones y termina. La API espera a que acabe OK.
   migrate:
-    image: sextante-api:latest
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    <<: *api-image
     command: ['node', 'dist/db/migrate.js']
     restart: 'no'
     environment:
@@ -51,10 +56,7 @@ services:
         condition: service_healthy
 
   api:
-    image: sextante-api:latest
-    build:
-      context: .
-      dockerfile: apps/api/Dockerfile
+    <<: *api-image
     restart: unless-stopped
     environment:
       NODE_ENV: production

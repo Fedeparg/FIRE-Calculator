@@ -2,30 +2,30 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeStaking } from "@sextante/core/calculators/staking";
 import { useFormat } from "@/shared/format/use-format";
-import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
-import { useNumberField } from "./CalculatorState";
+import { useBoundNumberField } from "./CalculatorState";
+import NumField from "./NumField";
+import { useInputs } from "./use-inputs";
 import StatGrid from "@/shared/ui/StatGrid";
 
 export default function StakingCalculator() {
   const t = useTranslations("calc.staking");
   const { formatEUR } = useFormat();
 
-  const [principal, setPrincipal] = useNumberField("principal", 5000);
-  const [apy, setApy] = useNumberField("apy", 8);
-  const [years, setYears] = useNumberField("years", 5);
-  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const principal = useBoundNumberField("principal", 5000);
+  const apy = useBoundNumberField("apy", 8);
+  const years = useBoundNumberField("years", 5);
+  const withholdingRate = useBoundNumberField("withholdingRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
 
-  const result = useMemo(
-    () => computeStaking({ principal, apy, years, withholdingRate }),
-    [principal, apy, years, withholdingRate],
-  );
+  const inputs = useInputs({ principal, apy, years, withholdingRate });
+  const result = useMemo(() => computeStaking(inputs), [inputs]);
 
   return (
     <CalculatorLayout
@@ -33,23 +33,10 @@ export default function StakingCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField
-            label={t("principal")}
-            value={principal}
-            onChange={setPrincipal}
-            step={500}
-            help={t("help.principal")}
-          />
-          <NumberField label={t("apy")} value={apy} onChange={setApy} step={0.5} max={1000} help={t("help.apy")} />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={50} help={t("help.years")} />
-          <NumberField
-            label={t("withholdingRate")}
-            value={withholdingRate}
-            onChange={setWithholdingRate}
-            step={1}
-            max={100}
-            help={t("help.withholdingRate")}
-          />
+          <NumField field={principal} step={500} />
+          <NumField field={apy} step={0.5} max={1000} />
+          <NumField field={years} step={1} max={50} />
+          <NumField field={withholdingRate} step={1} max={100} />
         </>
       }
       results={
@@ -78,7 +65,7 @@ export default function StakingCalculator() {
             title={t("donutTitle")}
             centerLabel={t("donutCenter")}
             data={[
-              { name: t("seriesPrincipal"), value: principal, color: "var(--brand)" },
+              { name: t("seriesPrincipal"), value: inputs.principal, color: "var(--brand)" },
               { name: t("seriesRewards"), value: result.rewards, color: "var(--accent)" },
             ]}
           />
