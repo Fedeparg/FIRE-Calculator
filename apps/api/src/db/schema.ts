@@ -14,12 +14,33 @@ import {
   index,
   uniqueIndex,
   primaryKey,
+  check,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { IncomeKind, IncomeSource, ValueSource } from '@sextante/core/fiscal/income';
 import type { SavingsGroup } from '@sextante/core/fiscal/savings-base';
 import type { AssetClass } from '@sextante/core/portfolio/types';
+
+/**
+ * Valores admitidos por las columnas de texto con una unión cerrada. Repiten los de
+ * `@sextante/core` como literales porque drizzle-kit carga este fichero sin resolver el paquete
+ * compartido; `schema-checks.test.ts` comprueba que coinciden con las constantes de core.
+ */
+export const DB_ENUM_VALUES = {
+  lotKind: ['buy', 'sell'] satisfies PositionLotKind[],
+  assetClass: ['stock', 'fund', 'derivative', 'other'] satisfies AssetClass[],
+  incomeKind: ['dividend', 'interest', 'benefit'] satisfies IncomeKind[],
+  incomeSource: ['manual', 'trade_republic'] satisfies IncomeSource[],
+  valueSource: ['broker', 'derived', 'market', 'estimate', 'manual'] satisfies ValueSource[],
+  savingsGroup: ['gains', 'capitalIncome'] satisfies SavingsGroup[],
+} as const;
+
+/** `columna IN ('a', 'b')` para un `CHECK`: el DDL no admite parámetros y los valores son constantes nuestras. */
+function oneOf(column: AnyPgColumn, values: readonly string[]) {
+  return sql`${column} in (${sql.raw(values.map((value) => `'${value}'`).join(', '))})`;
+}
 
 /**
  * Esquema de base de datos (única fuente de verdad); Drizzle genera las migraciones
@@ -96,6 +117,10 @@ export const positions = pgTable(
       table.ticker,
       sql`lower(coalesce(${table.broker}, ''))`,
     ),
+    check(
+      'positions_asset_class_check',
+      sql`${table.assetClass} is null or ${oneOf(table.assetClass, DB_ENUM_VALUES.assetClass)}`,
+    ),
   ],
 );
 
@@ -144,6 +169,11 @@ export const positionLots = pgTable(
       .on(table.userId, table.externalId)
       .where(sql`${table.externalId} is not null`),
     index('position_lots_user_id_idx').on(table.userId),
+    // Un `kind` distinto de 'buy' se trataría como venta: la base de datos no lo deja entrar.
+    check('position_lots_kind_check', oneOf(table.kind, DB_ENUM_VALUES.lotKind)),
+    check('position_lots_quantity_check', sql`${table.quantity} > 0`),
+    check('position_lots_price_check', sql`${table.price} >= 0`),
+    check('position_lots_fees_check', sql`${table.fees} >= 0`),
   ],
 );
 
@@ -198,6 +228,13 @@ export const incomeEvents = pgTable(
     uniqueIndex('income_events_user_external_id_idx')
       .on(table.userId, table.externalId)
       .where(sql`${table.externalId} is not null`),
+    check('income_events_kind_check', oneOf(table.kind, DB_ENUM_VALUES.incomeKind)),
+    check('income_events_source_check', oneOf(table.source, DB_ENUM_VALUES.incomeSource)),
+    check('income_events_gross_source_check', oneOf(table.grossSource, DB_ENUM_VALUES.valueSource)),
+    check(
+      'income_events_withholding_origin_source_check',
+      sql`${table.withholdingOriginSource} is null or ${oneOf(table.withholdingOriginSource, DB_ENUM_VALUES.valueSource)}`,
+    ),
   ],
 );
 
@@ -224,6 +261,7 @@ export const savingsPendingBalances = pgTable(
   },
   (table) => [
     uniqueIndex('savings_pending_balances_user_year_kind_idx').on(table.userId, table.originYear, table.kind),
+    check('savings_pending_balances_kind_check', oneOf(table.kind, DB_ENUM_VALUES.savingsGroup)),
   ],
 );
 
