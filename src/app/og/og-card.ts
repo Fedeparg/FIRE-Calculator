@@ -11,12 +11,12 @@ import { asLocale, type Locale } from "@/i18n/types";
 import { OG_CARD_PARAM, OG_PAGES, type OgPage } from "@/shared/seo/seo";
 import { SITE_NAME } from "@/shared/seo/site";
 
-/** Lo que pinta la tarjeta. */
+/** What the card renders. */
 export type ResolvedOgCard = { title: string; subtitle: string | null; locale: Locale };
 
 const MESSAGES = { es, en } as const;
 
-/** De dónde sale el título de cada página fija: el mismo texto que su `generateMetadata`. */
+/** Where each fixed page's title comes from: the same text as its `generateMetadata`. */
 const PAGE_TITLES = {
   home: "landing.meta.title",
   learn: "wiki.heading",
@@ -30,10 +30,10 @@ function isOgPage(value: string): value is OgPage {
 }
 
 /**
- * Título y subtítulo de la tarjeta a partir de la query de `/og` (`?calc=<slug>`,
- * `?article=<slug>`, `?legal=<slug>` o `?page=<id>`, más `locale`). Solo pinta textos que ya
- * existen en Sextante; cualquier otra cosa (un slug desconocido, un `?title=` de los de antes)
- * da la tarjeta genérica con el nombre del sitio.
+ * Card title and subtitle from the `/og` query (`?calc=<slug>`, `?article=<slug>`,
+ * `?legal=<slug>` or `?page=<id>`, plus `locale`). It only renders text that already exists in
+ * Sextante; anything else (an unknown slug, a legacy `?title=`) yields the generic card with
+ * the site name.
  */
 export async function resolveOgCard(params: URLSearchParams): Promise<ResolvedOgCard> {
   const locale = asLocale(params.get("locale") ?? "");

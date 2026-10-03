@@ -1,5 +1,5 @@
-<!-- Sextante destilado a lo que se lee a 16px: sector, alidada, perilla y limbo.
-     Sin variables de tema: un favicon se rasteriza fuera del documento. -->
+<!-- Sextante distilled to what reads at 16px: frame, index arm, knob and arc.
+     No theme variables: a favicon is rasterized outside the document. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <rect width="32" height="32" rx="7" fill="#4f46e5" />
   <g stroke="#ffffff" stroke-width="2.8" stroke-linecap="round">

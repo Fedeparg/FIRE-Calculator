@@ -8,25 +8,25 @@ import { SITE_NAME } from "@/shared/seo/site";
 import { resolveOgCard } from "./og-card";
 
 /**
- * Generador de imágenes Open Graph (1200×630) para tarjetas sociales. Vive fuera
- * de `/api` (proxeado a la API) y fuera del routing por idioma (excluido en
- * `proxy.ts`). Recibe QUÉ tarjeta pintar por slug (`?calc=`, `?article=`, `?legal=` o
- * `?page=`; ver `OgCard`) y resuelve su título en `og-card.ts`: no acepta texto libre, así que
- * nadie puede generar imágenes con la marca y un mensaje arbitrario.
+ * Open Graph image generator (1200×630) for social cards. It lives outside `/api`
+ * (proxied to the API) and outside locale routing (excluded in `proxy.ts`). It receives
+ * WHICH card to render by slug (`?calc=`, `?article=`, `?legal=` or `?page=`; see `OgCard`)
+ * and resolves its title in `og-card.ts`: it does not accept free text, so nobody can
+ * generate images with the brand and an arbitrary message.
  *
- * Es dinámica (lee la query por petición). Las fuentes se leen del disco con
- * `fs.readFile(new URL(..., import.meta.url))`: ese patrón hace que Next/Turbopack
- * incluya los .woff en el build `standalone`, y `fs` (a diferencia de `fetch`)
- * sí soporta URLs `file:`, así que funciona en el servidor de producción.
+ * It is dynamic (reads the query per request). Fonts are read from disk with
+ * `fs.readFile(new URL(..., import.meta.url))`: that pattern makes Next/Turbopack include
+ * the .woff files in the `standalone` build, and `fs` (unlike `fetch`) does support
+ * `file:` URLs, so it works on the production server.
  */
 const SIZE = { width: 1200, height: 630 };
 const MAX_TITLE = 110;
 const MAX_SUBTITLE = 90;
 
 /**
- * Reclamo de marca al pie de la tarjeta. No puede salir de `next-intl` (esta ruta
- * vive fuera del routing por idioma), así que se resuelve con el parámetro
- * `locale` que añade `buildMetadata`.
+ * Brand tagline at the bottom of the card. It cannot come from `next-intl` (this route
+ * lives outside locale routing), so it is resolved with the `locale` parameter that
+ * `buildMetadata` adds.
  */
 const TAGLINE: Record<Locale, string> = {
   es: "Calculadoras y guías de finanzas personales · España",
@@ -34,8 +34,8 @@ const TAGLINE: Record<Locale, string> = {
 };
 
 /**
- * Las dos fuentes, leídas UNA vez por proceso (la primera petición) en vez de en cada imagen.
- * Si la lectura falla, se olvida la promesa para reintentar en la siguiente petición.
+ * Both fonts, read ONCE per process (on the first request) instead of for every image.
+ * If the read fails, the promise is dropped so the next request retries.
  */
 let fontsPromise: Promise<[Buffer, Buffer]> | null = null;
 
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-        {/* Marca de la brújula: arco simple en el color de marca. */}
+        {/* Compass mark: a simple arc in the brand color. */}
         <div
           style={{
             width: "56px",
@@ -133,10 +133,10 @@ export async function GET(request: Request) {
         { name: "Inter", data: bold, weight: 700, style: "normal" },
       ],
       headers: {
-        // La imagen es función de la query (qué tarjeta y en qué idioma), así que el mismo
-        // enlace da siempre el mismo PNG: se cachea un año sin revalidar. Si cambia el título
-        // de una página, su vista previa en redes tardará en cambiar; es el precio de no
-        // re-renderizar la tarjeta con sus fuentes en cada vista previa.
+        // The image is a function of the query (which card and which locale), so the same link
+        // always yields the same PNG: it is cached for a year without revalidation. If a page
+        // title changes, its social preview will take a while to update; that is the price of
+        // not re-rendering the card with its fonts on every preview.
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     },

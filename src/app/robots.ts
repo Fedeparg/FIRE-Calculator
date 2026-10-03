@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 import { DEFAULT_LOCALE, LOCALES } from "@/i18n/types";
 import { absoluteUrl } from "@/shared/seo/site";
 
-// Las páginas rastreables pero no indexables (/gracias, /auth/verify) no se listan: llevan
-// `noindex` en su metadata, y un `Disallow` impediría a Google verlo.
+// Crawlable but non-indexable pages (/gracias, /auth/verify) are not listed: they carry
+// `noindex` in their metadata, and a `Disallow` would stop Google from seeing it.
 export default function robots(): MetadataRoute.Robots {
   const privatePaths = ["/portfolio", "/entrar", "/oauth"];
   const prefixed = LOCALES.filter((locale) => locale !== DEFAULT_LOCALE).flatMap((locale) =>

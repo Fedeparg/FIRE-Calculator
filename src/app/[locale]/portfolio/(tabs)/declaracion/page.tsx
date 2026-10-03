@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
- * Pestaña Declaración: el informe de la Renta de la base del ahorro. Pide sus propios datos
- * (posiciones CON lotes, cobros, saldos pendientes y tipos del BCE) en vez de usar los del layout:
- * el informe necesita todo el histórico, que el resto de pestañas no.
- * La sesión ya la comprueba el layout.
+ * Tax return (Declaración) tab: the income tax (Renta) report for the savings base. It fetches its
+ * own data (positions WITH lots, income, carried-forward balances and ECB rates) instead of using
+ * the layout's: the report needs the full history, which the other tabs do not.
+ * The layout already checks the session.
  */
 export default async function TaxReturnPage({ params }: Props) {
   const { locale } = await params;

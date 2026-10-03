@@ -22,7 +22,7 @@ describe("POST /api/revalidate", () => {
     revalidatePath.mockClear();
   });
 
-  it("revalida todo el contenido con el token en la cabecera", async () => {
+  it("revalidates all content with the token in the header", async () => {
     const res = await post("/api/revalidate", { "x-revalidate-token": TOKEN });
 
     expect(res.status).toBe(200);
@@ -32,14 +32,14 @@ describe("POST /api/revalidate", () => {
     );
   });
 
-  it("no acepta el token en la query (acabaría en los logs de acceso)", async () => {
+  it("does not accept the token in the query string (it would end up in the access logs)", async () => {
     const res = await post(`/api/revalidate?token=${TOKEN}`);
 
     expect(res.status).toBe(401);
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it("rechaza un token incorrecto", async () => {
+  it("rejects a wrong token", async () => {
     const res = await post("/api/revalidate", { "x-revalidate-token": "otro" });
 
     expect(res.status).toBe(401);

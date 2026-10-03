@@ -5,9 +5,9 @@ import { Link } from "@/i18n/navigation";
 import { getAllArticles, WIKI_LEVELS, type ArticleMeta } from "@/features/wiki/content";
 import { buildMetadata } from "@/shared/seo/seo";
 
-// ISR: el contenido se lee de ficheros Markdown en runtime; se revalida cada
-// hora y bajo demanda vía /api/revalidate, de modo que editar la wiki en el
-// servidor no requiere redesplegar.
+// ISR: content is read from Markdown files at runtime; it is revalidated every
+// hour and on demand via /api/revalidate, so editing the wiki on the server
+// does not require a redeploy.
 export const revalidate = 3600;
 
 type Props = { params: Promise<{ locale: string }> };

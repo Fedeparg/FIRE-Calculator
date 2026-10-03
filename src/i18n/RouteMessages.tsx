@@ -6,14 +6,14 @@ import { ROUTE_NAMESPACES, type RouteKey } from "./route-namespaces";
 
 type Props = {
   route: RouteKey;
-  /** Namespaces que dependen de la URL (p. ej. `calc.<slug>`). */
+  /** Namespaces that depend on the URL (e.g. `calc.<slug>`). */
   extra?: readonly string[];
   children: ReactNode;
 };
 
 /**
- * Provider de mensajes de una ruta: solo serializa los namespaces declarados en
- * `ROUTE_NAMESPACES`. Sustituye (no fusiona) los del layout raíz; ver `route-namespaces.ts`.
+ * Per-route message provider: it only serializes the namespaces declared in
+ * `ROUTE_NAMESPACES`. It replaces (does not merge) the root layout's; see `route-namespaces.ts`.
  */
 export default async function RouteMessages({ route, extra = [], children }: Props) {
   const messages = pickMessages(await getMessages(), [...ROUTE_NAMESPACES[route], ...extra]);

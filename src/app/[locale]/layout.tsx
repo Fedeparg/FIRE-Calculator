@@ -34,15 +34,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "site" });
   return {
-    // Resuelve a absolutas las URLs relativas de canonical, hreflang y OG.
+    // Resolves the relative canonical, hreflang and OG URLs to absolute ones.
     metadataBase: new URL(SITE_URL),
-    // Las páginas pasan su título "a secas"; la plantilla añade la marca. La
-    // home (sin título propio) usa el `default` sin sufijo duplicado.
+    // Pages pass their bare title; the template appends the brand. The home
+    // page (with no title of its own) uses `default` without a duplicated suffix.
     title: { default: t("title"), template: `%s | ${SITE_NAME}` },
     description: t("tagline"),
     applicationName: SITE_NAME,
-    // Defaults de Open Graph para cualquier página que no los especifique;
-    // `buildMetadata` los enriquece por página (canonical, imagen, tipo…).
+    // Open Graph defaults for any page that does not set them;
+    // `buildMetadata` enriches them per page (canonical, image, type…).
     openGraph: {
       type: "website",
       siteName: SITE_NAME,
@@ -56,7 +56,7 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
-  // Sin `messages` el provider hereda el catálogo entero; ver `src/i18n/route-namespaces.ts`.
+  // Without `messages` the provider inherits the whole catalog; see `src/i18n/route-namespaces.ts`.
   const messages = pickMessages(await getMessages(), CHROME_NAMESPACES);
 
   return (

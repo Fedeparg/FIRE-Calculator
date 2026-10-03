@@ -3,10 +3,10 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Revalidación bajo demanda del contenido Markdown (wiki, explainers, legales y novedades): un
-// webhook llama aquí tras editarlo y queda en vivo sin redesplegar. El token va SOLO en la
-// cabecera `x-revalidate-token`: en la query acabaría en los logs de acceso del proxy. `?path=`
-// revalida además una ruta. REVALIDATE_TOKEN vive en `.env`, nunca en el cliente.
+// On-demand revalidation of Markdown content (wiki, explainers, legal pages and changelog): a
+// webhook calls this after an edit and the change goes live without a redeploy. The token goes
+// ONLY in the `x-revalidate-token` header: in the query string it would end up in the proxy access
+// logs. `?path=` also revalidates one route. REVALIDATE_TOKEN lives in `.env`, never on the client.
 
 const CONTENT_ROUTE_PATTERNS = [
   "/[locale]/aprende",
@@ -20,8 +20,8 @@ function getToken(request: NextRequest): string | null {
   return request.headers.get("x-revalidate-token");
 }
 
-// Tiempo constante (sin filtrar longitud ni prefijo por timing); se comparan hashes
-// SHA-256 porque `timingSafeEqual` exige buffers del mismo tamaño.
+// Constant time (leaks neither length nor prefix through timing); SHA-256 hashes are
+// compared because `timingSafeEqual` requires buffers of the same size.
 function tokensMatch(provided: string, expected: string): boolean {
   const a = createHash("sha256").update(provided).digest();
   const b = createHash("sha256").update(expected).digest();

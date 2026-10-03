@@ -6,7 +6,7 @@ import { routing } from "@/i18n/routing";
 import { getLegalDoc, getLegalSlugs } from "@/features/wiki/content";
 import { buildMetadata } from "@/shared/seo/seo";
 
-// Documentos legales: estáticos, se regeneran cada hora (igual que la wiki).
+// Legal documents: static, regenerated every hour (same as the wiki).
 export const revalidate = 3600;
 export const dynamicParams = true;
 
