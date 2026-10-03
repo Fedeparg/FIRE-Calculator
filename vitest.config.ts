@@ -39,6 +39,9 @@ export default defineConfig({
           environment: "jsdom",
           include: ["src/**/*.test.tsx"],
           setupFiles: ["src/test/setup-dom.ts"],
+          // `next-intl/navigation` importa `next/navigation` sin extensión, que Node en ESM no
+          // resuelve (Next no declara `exports`); procesándolo con Vite sí se resuelve.
+          server: { deps: { inline: ["next-intl"] } },
         },
       },
     ],
