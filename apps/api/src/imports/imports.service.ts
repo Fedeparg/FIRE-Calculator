@@ -123,20 +123,25 @@ export class ImportsService {
   async confirm(userId: string, csv: string): Promise<ImportResult> {
     const parsed = parseOrThrow(csv);
     const groups = await this.groupByInstrument(userId, parsed.trades);
+    // Una sola consulta para todas las posiciones de Trade Republic del fichero, en vez de una (o
+    // dos) por instrumento. Un alta o un borrado concurrente entre esta lectura y la transacción
+    // acaban en el conflicto de la restricción única o de la FK (`PgErrorFilter`).
+    const existing = await this.findExistingPositions(userId, groups);
 
     const results: ImportResultPosition[] = [];
     const created: Position[] = [];
     const extended: Position[] = [];
 
     for (const group of groups) {
+      const position = existing.get(group.isin);
       if (group.fresh.length === 0) {
         // Reimportar el mismo fichero también completa la clase de activo que falte.
-        await this.backfillAssetClass(this.db, userId, group);
+        await this.backfillAssetClass(this.db, position, group);
         results.push(resultOf(group, 'unchanged', 0, null, null));
         continue;
       }
       try {
-        const outcome = await this.db.transaction((tx) => this.importInstrument(tx, userId, group));
+        const outcome = await this.db.transaction((tx) => this.importInstrument(tx, userId, group, position));
         if (outcome.wasCreated) created.push(outcome.position);
         else if (outcome.inserted > 0) extended.push(outcome.position);
         results.push(
@@ -254,8 +259,9 @@ export class ImportsService {
     tx: DatabaseOrTransaction,
     userId: string,
     group: InstrumentGroup,
+    existing: Position | undefined,
   ): Promise<{ position: Position; wasCreated: boolean; inserted: number }> {
-    let position = await this.findPosition(tx, userId, group.isin);
+    let position = existing;
     const wasCreated = position === undefined;
 
     if (position === undefined) {
@@ -276,7 +282,7 @@ export class ImportsService {
         .returning();
     }
 
-    if (!wasCreated) position = (await this.backfillAssetClass(tx, userId, group)) ?? position;
+    if (!wasCreated) position = (await this.backfillAssetClass(tx, position, group)) ?? position;
 
     const { inserted } = await this.lots.appendImported(tx, {
       positionId: position.id,
@@ -315,17 +321,16 @@ export class ImportsService {
   /** Da la clase de activo del bróker a una posición importada antes de que se guardara; devuelve la posición. */
   private async backfillAssetClass(
     db: DatabaseOrTransaction,
-    userId: string,
+    position: Position | undefined,
     group: InstrumentGroup,
   ): Promise<Position | undefined> {
-    const position = await this.findPosition(db, userId, group.isin);
     if (!position || position.assetClass !== null) return position;
     const [updated] = await db
       .update(positions)
       .set({ assetClass: group.assetClass })
-      .where(eq(positions.id, position.id))
+      .where(and(eq(positions.id, position.id), eq(positions.userId, position.userId)))
       .returning();
-    return updated;
+    return updated ?? position;
   }
 
   /** Completa los dividendos con los datos de mercado ya cacheados; un fallo no afecta a la importación. */
@@ -403,20 +408,6 @@ export class ImportsService {
         ),
       );
     return new Map(rows.map((row) => [row.ticker, row]));
-  }
-
-  private async findPosition(db: DatabaseOrTransaction, userId: string, isin: string): Promise<Position | undefined> {
-    const [row] = await db
-      .select()
-      .from(positions)
-      .where(
-        and(
-          eq(positions.userId, userId),
-          eq(positions.ticker, isin),
-          sql`lower(${positions.broker}) = lower(${TRADE_REPUBLIC_BROKER})`,
-        ),
-      );
-    return row;
   }
 
   private async selectLotsByPosition(existing: readonly Position[]): Promise<Map<string, PositionLot[]>> {

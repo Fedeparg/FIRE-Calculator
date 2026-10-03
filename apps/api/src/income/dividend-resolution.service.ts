@@ -56,24 +56,29 @@ export class DividendResolutionService {
     const symbolByTicker = await this.prices.resolveCachedTickers([...new Set(tickers)]);
     const market = await this.marketDividends([...new Set(symbolByTicker.values())]);
 
-    let resolved = 0;
-    for (const { event, ticker } of pending) {
+    const updates = pending.flatMap(({ event, ticker }) => {
       const result = this.resolve(event, ticker ? symbolByTicker.get(ticker) : undefined, market);
-      if (!result) continue;
-      await this.db
-        .update(incomeEvents)
-        .set({
-          gross: String(result.gross),
-          grossSource: result.grossSource,
-          withholdingOrigin: result.origin === null ? null : String(result.origin),
-          withholdingOriginSource: result.originSource,
-          withholdingSpain: String(result.spain),
-        })
-        .where(eq(incomeEvents.id, event.id));
-      resolved++;
-    }
-    if (resolved > 0) this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${resolved}`);
-    return resolved;
+      return result ? [{ id: event.id, result }] : [];
+    });
+    if (updates.length === 0) return 0;
+
+    // Todas en una transacción: una sola ida y vuelta de commit en vez de una por cobro.
+    await this.db.transaction(async (tx) => {
+      for (const { id, result } of updates) {
+        await tx
+          .update(incomeEvents)
+          .set({
+            gross: String(result.gross),
+            grossSource: result.grossSource,
+            withholdingOrigin: result.origin === null ? null : String(result.origin),
+            withholdingOriginSource: result.originSource,
+            withholdingSpain: String(result.spain),
+          })
+          .where(eq(incomeEvents.id, id));
+      }
+    });
+    this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${updates.length}`);
+    return updates.length;
   }
 
   /** Capa 2 (mercado) y, si no hay dato, capa 3 (tipo legal); `null` si no cambia nada. */
@@ -109,10 +114,16 @@ export class DividendResolutionService {
         .from(instrumentSplits)
         .where(inArray(instrumentSplits.symbol, [...symbols])),
     ]);
+    const splitsBySymbol = new Map<string, (typeof splits)[number][]>();
+    for (const split of splits) {
+      const list = splitsBySymbol.get(split.symbol) ?? [];
+      list.push(split);
+      splitsBySymbol.set(split.symbol, list);
+    }
     for (const row of dividends) {
       // Yahoo divide el dividendo por cada split posterior (como los cierres): se deshace.
-      const factor = splits
-        .filter((split) => split.symbol === row.symbol && split.date > row.exDate)
+      const factor = (splitsBySymbol.get(row.symbol) ?? [])
+        .filter((split) => split.date > row.exDate)
         .reduce((product, split) => product * Number(split.ratio), 1);
       const list = out.get(row.symbol) ?? [];
       list.push({ exDate: row.exDate, amount: Number(row.amount) * factor, currency: row.currency });
