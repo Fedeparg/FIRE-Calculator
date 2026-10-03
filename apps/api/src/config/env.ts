@@ -71,6 +71,10 @@ const appEnvSchema = z
     LOGIN_TOKEN_RETENTION_DAYS: lenientInt(1, 30),
     MCP_AUDIT_RETENTION_DAYS: lenientInt(1, 180),
     OAUTH_CLIENT_RETENTION_DAYS: lenientInt(1, 30),
+    // Pool de Postgres (`db/database.module.ts`). Un 0 en el idle o en el statement los desactiva.
+    DB_IDLE_TIMEOUT_SECONDS: lenientInt(0, 30),
+    DB_CONNECT_TIMEOUT_SECONDS: lenientInt(1, 10),
+    DB_STATEMENT_TIMEOUT_MS: lenientInt(0, 30_000),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV === 'production') {
