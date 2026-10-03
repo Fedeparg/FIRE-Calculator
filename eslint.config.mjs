@@ -161,7 +161,6 @@ const eslintConfig = defineConfig([
   // responsabilidades (el mayor de lógica, `fiscal/realised-gains.ts`, ronda las 260). Fuera quedan
   // los tests (un `describe` largo no es un problema de diseño), las tablas de datos y el registro
   // declarativo de esquemas de calculadoras, que crecen con el producto y no con la lógica.
-  // `imports/trade-republic.ts` está pendiente de partir (hallazgo CO8): quitar de aquí al hacerlo.
   {
     files: ["src/**/*.ts", "packages/**/*.ts"],
     ignores: [
@@ -169,7 +168,6 @@ const eslintConfig = defineConfig([
       "**/test-support/**",
       "packages/core/src/data/**",
       "packages/core/src/calculators/schemas.ts",
-      "packages/core/src/imports/trade-republic.ts",
     ],
     rules: {
       "max-lines": ["error", { max: 400, skipBlankLines: true, skipComments: true }],
