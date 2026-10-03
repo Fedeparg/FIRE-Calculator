@@ -14,6 +14,7 @@ import { IncomeService } from '../income/income.service.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { PendingBalancesService } from './pending-balances.service.js';
+import { errorMessage } from '../common/errors.js';
 
 /**
  * Base del ahorro de un ejercicio, montada en el servidor con las mismas funciones del core que
@@ -108,9 +109,7 @@ export class TaxReturnService {
     try {
       return { rates: await this.referenceRates.getRates(currencies, from), ratesLoaded: true };
     } catch (error) {
-      this.logger.warn(
-        `No se pudieron cargar los tipos del BCE: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      this.logger.warn(`No se pudieron cargar los tipos del BCE: ${errorMessage(error)}`);
       return { rates: {}, ratesLoaded: false };
     }
   }

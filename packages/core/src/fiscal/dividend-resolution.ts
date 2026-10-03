@@ -5,6 +5,7 @@
 //   3. `estimateWithStatutoryRate`: tipo que retiene por ley el país, marcado como estimación.
 // Criterio y fuentes: ver ./README.md, sección `dividend-resolution.ts`.
 
+import { roundCents } from "../money.js";
 import type { ValueSource } from "./income.js";
 
 /** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF). */
@@ -22,8 +23,6 @@ const CENT_TOLERANCE = 0.011;
 
 /** Una retención en origen por encima de esto no es verosímil: el dato de mercado no casa. */
 const MAX_PLAUSIBLE_ORIGIN_RATE = 0.4;
-
-const round2 = (value: number) => Math.round(value * 100) / 100;
 
 /** Lo que dice el bróker de un dividendo. Importes en euros salvo `originalAmount`. */
 export interface DividendFacts {
@@ -65,7 +64,7 @@ export function resolveFromBroker({ amount, tax, country, reported }: DividendFa
   if (tax === 0) {
     if (country === "ES") return { gross: amount, origin: 0, spain: 0, grossSource: "broker", originSource: "broker" };
     // Tan pequeño que la retención de origen redondearía a 0 céntimos.
-    if (rate !== undefined && round2(Math.abs(amount) * rate) === 0) {
+    if (rate !== undefined && roundCents(Math.abs(amount) * rate) === 0) {
       return { gross: amount, origin: 0, spain: 0, grossSource: "broker", originSource: "derived" };
     }
     return { gross: amount, origin: null, spain: 0, grossSource: "broker", originSource: null };
@@ -77,8 +76,8 @@ export function resolveFromBroker({ amount, tax, country, reported }: DividendFa
       return { gross: amount, origin: 0, spain: tax, grossSource: "broker", originSource: "broker" };
     if (rate === undefined)
       return { gross: amount, origin: null, spain: tax, grossSource: "broker", originSource: null };
-    const gross = round2(amount / (1 - rate));
-    return { gross, origin: round2(gross - amount), spain: tax, grossSource: "estimate", originSource: "estimate" };
+    const gross = roundCents(amount / (1 - rate));
+    return { gross, origin: roundCents(gross - amount), spain: tax, grossSource: "estimate", originSource: "estimate" };
   }
   if (
     rate !== undefined &&
@@ -86,14 +85,14 @@ export function resolveFromBroker({ amount, tax, country, reported }: DividendFa
   ) {
     // Se reproduce el redondeo del bróker (origen a céntimos, España el resto): despejarlo
     // algebraicamente falla por un céntimo en importes pequeños.
-    const origin = round2(rate * amount);
-    return { gross: amount, origin, spain: round2(tax - origin), grossSource: "broker", originSource: "derived" };
+    const origin = roundCents(rate * amount);
+    return { gross: amount, origin, spain: roundCents(tax - origin), grossSource: "broker", originSource: "derived" };
   }
   // Sin clasificar: la española no puede pasar del 19 % de lo cobrado; el origen, sin saber.
   return {
     gross: amount,
     origin: null,
-    spain: Math.min(tax, round2(SPANISH_WITHHOLDING_RATE * amount)),
+    spain: Math.min(tax, roundCents(SPANISH_WITHHOLDING_RATE * amount)),
     grossSource: "broker",
     originSource: null,
   };
@@ -118,13 +117,13 @@ export function resolveWithMarket(facts: DividendFacts, marketGross: number): Di
     // Lo abonado es el íntegro: lo que retuvo el bróker es todo lo que hubo.
     const broker = resolveFromBroker(facts);
     if (broker.origin !== null && broker.originSource !== "estimate") return broker;
-    const spain = facts.reported ? Math.min(facts.tax, round2(SPANISH_WITHHOLDING_RATE * facts.amount)) : 0;
-    const origin = round2(Math.max(0, facts.tax - spain));
+    const spain = facts.reported ? Math.min(facts.tax, roundCents(SPANISH_WITHHOLDING_RATE * facts.amount)) : 0;
+    const origin = roundCents(Math.max(0, facts.tax - spain));
     return { gross: facts.amount, origin, spain, grossSource: "market", originSource: "market" };
   }
 
-  const gross = round2(marketGross * fx);
-  const origin = round2(gross - facts.amount);
+  const gross = roundCents(marketGross * fx);
+  const origin = roundCents(gross - facts.amount);
   if (origin / gross > MAX_PLAUSIBLE_ORIGIN_RATE) return null;
   return { gross, origin, spain: facts.reported ? facts.tax : 0, grossSource: "market", originSource: "market" };
 }
@@ -135,6 +134,6 @@ export function resolveWithMarket(facts: DividendFacts, marketGross: number): Di
  */
 export function estimateWithStatutoryRate(facts: DividendFacts, statutoryRate: number): DividendResolution {
   const spain = facts.reported ? facts.tax : 0;
-  const gross = round2(facts.amount / (1 - statutoryRate));
-  return { gross, origin: round2(gross - facts.amount), spain, grossSource: "estimate", originSource: "estimate" };
+  const gross = roundCents(facts.amount / (1 - statutoryRate));
+  return { gross, origin: roundCents(gross - facts.amount), spain, grossSource: "estimate", originSource: "estimate" };
 }

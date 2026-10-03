@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import type { DividendEvent, PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
 import { isoDate, todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
@@ -224,7 +225,7 @@ export class YahooPriceProvider implements PriceProvider {
           await delay(RETRY_BASE_MS * attempt);
           continue;
         }
-        this.logger.warn(`Yahoo ${symbol}: ${(error as Error).message}`);
+        this.logger.warn(`Yahoo ${symbol}: ${errorMessage(error)}`);
         return null;
       } finally {
         clearTimeout(timeout);

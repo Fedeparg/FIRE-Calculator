@@ -27,6 +27,7 @@ import {
 } from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
 import { addDays, MS_PER_DAY, todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
 const FX_QUOTE = 'USD';
@@ -307,7 +308,7 @@ export class PricesService {
       const fxPairs = [...fxCurrencies].filter((c): c is string => !!c && c !== FX_QUOTE).map(fxSymbol);
       await this.ensureHistory(new Map(fxPairs.map((pair) => [pair, daysAgo(HISTORY_MAX_DAYS)])));
     } catch (error) {
-      this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${(error as Error).message}`);
+      this.logger.warn(`Prime de "${ticker}" falló (se reintentará en el refresco): ${errorMessage(error)}`);
     }
   }
 
@@ -344,7 +345,7 @@ export class PricesService {
       try {
         await this.primeHistory(symbol);
       } catch (error) {
-        this.logger.warn(`Histórico de "${symbol}" no se pudo completar: ${(error as Error).message}`);
+        this.logger.warn(`Histórico de "${symbol}" no se pudo completar: ${errorMessage(error)}`);
       }
     }
   }

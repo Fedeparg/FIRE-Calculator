@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { eq } from 'drizzle-orm';
 
+import { isIsin } from '@sextante/core/portfolio/isin';
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instruments } from '../db/schema.js';
@@ -13,9 +14,9 @@ import {
 } from './instrument-search.js';
 import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.js';
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Forma de un ISIN: 2 letras (país) + 9 alfanuméricos + 1 dígito de control. */
-const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 /** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
@@ -204,7 +205,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     const cached = await this.lookup(query);
     if (cached !== undefined) return cached; // hit: símbolo resuelto o null (no encontrado).
 
-    if (ISIN_RE.test(query)) {
+    if (isIsin(query)) {
       // La búsqueda nunca lanza: ante un fallo devuelve [] y se sigue con OpenFIGI.
       const searched = await this.firstThatPrices(searchCandidates(await this.search.search(query)));
       if (searched) {
@@ -297,7 +298,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       );
       return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
     } catch (error) {
-      this.logger.warn(`OpenFIGI ${isin}: ${(error as Error).message}`);
+      this.logger.warn(`OpenFIGI ${isin}: ${errorMessage(error)}`);
       return { kind: 'error' };
     } finally {
       clearTimeout(timeout);

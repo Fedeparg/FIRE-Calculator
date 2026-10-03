@@ -23,6 +23,7 @@ import {
 import type { HistoryPointDto, PortfolioHistoryDto } from '@sextante/core/portfolio/types';
 import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
 import { addDays, isoDate, todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 
 /**
  * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
@@ -97,7 +98,7 @@ export class PortfolioSnapshotsService {
         captured += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
+        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
       }
     }
 
@@ -360,7 +361,7 @@ export class PortfolioSnapshotsService {
         backfilled += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
+        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
       }
     }
     this.logger.log(
@@ -374,7 +375,7 @@ export class PortfolioSnapshotsService {
     try {
       await this.backfillUser(userId);
     } catch (error) {
-      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`);
+      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${errorMessage(error)}`);
     }
   }
 
@@ -404,9 +405,7 @@ export class PortfolioSnapshotsService {
           for (const id of batch) await this.ensureLotHistory(id);
           await this.backfillUser(userId, { invalidateFrom: from });
         } catch (error) {
-          this.logger.warn(
-            `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
-          );
+          this.logger.warn(`Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${errorMessage(error)}`);
         }
       }
     } finally {

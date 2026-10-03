@@ -12,8 +12,6 @@ import {
 } from "./plusvalias.js";
 import { computeWashSales, type WashSaleIntegration } from "./wash-sale.js";
 
-export { TAX_CURRENCY };
-
 /** Una posición con su histórico, tal y como la tiene la cartera. */
 export interface RealisedGainsPosition {
   id: string;

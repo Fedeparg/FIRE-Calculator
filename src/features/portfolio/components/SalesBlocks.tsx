@@ -13,15 +13,13 @@ import { useFormat } from "@/shared/format/use-format";
 import CopyValue from "@/shared/ui/CopyValue";
 import { inputClass } from "@/shared/ui/field-classes";
 import Notice from "@/shared/ui/Notice";
+import { formatTaxBox } from "@sextante/core/money";
 
 /** Bloques de la declaración en que van las ventas, en el orden del modelo 100. */
 type Block = "shares" | "funds" | "other" | "unclassified";
 
 const BLOCK_OF: Record<AssetClass, Block> = { stock: "shares", fund: "funds", derivative: "other", other: "other" };
 const BLOCKS: readonly Block[] = ["shares", "funds", "other", "unclassified"];
-
-/** Importe como se escribe en Renta WEB: coma decimal, sin separador de miles. */
-const boxValue = (value: number) => value.toFixed(2).replace(".", ",");
 
 const signColor = (value: number) => (value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground");
 
@@ -149,7 +147,7 @@ function BlockTable({
               </dt>
               <dd className="text-right tabular-nums text-foreground">
                 {eur(row.transferValue)}
-                <CopyValue value={boxValue(row.transferValue)} label={`${row.ticker} ${t("transferValue")}`} />
+                <CopyValue value={formatTaxBox(row.transferValue)} label={`${row.ticker} ${t("transferValue")}`} />
               </dd>
               <dt className="text-muted">
                 {t("acquisitionValue")}
@@ -157,7 +155,10 @@ function BlockTable({
               </dt>
               <dd className="text-right tabular-nums text-foreground">
                 {eur(row.acquisitionValue)}
-                <CopyValue value={boxValue(row.acquisitionValue)} label={`${row.ticker} ${t("acquisitionValue")}`} />
+                <CopyValue
+                  value={formatTaxBox(row.acquisitionValue)}
+                  label={`${row.ticker} ${t("acquisitionValue")}`}
+                />
               </dd>
               {showFx && row.currency !== TAX_CURRENCY && (
                 <>
@@ -220,11 +221,14 @@ function BlockTable({
                 <td className="px-3 py-2 text-right tabular-nums text-foreground">{formatQuantity(row.quantity)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-foreground">
                   {eur(row.transferValue)}
-                  <CopyValue value={boxValue(row.transferValue)} label={`${row.ticker} ${t("transferValue")}`} />
+                  <CopyValue value={formatTaxBox(row.transferValue)} label={`${row.ticker} ${t("transferValue")}`} />
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums text-foreground">
                   {eur(row.acquisitionValue)}
-                  <CopyValue value={boxValue(row.acquisitionValue)} label={`${row.ticker} ${t("acquisitionValue")}`} />
+                  <CopyValue
+                    value={formatTaxBox(row.acquisitionValue)}
+                    label={`${row.ticker} ${t("acquisitionValue")}`}
+                  />
                 </td>
                 <td className={`px-3 py-2 text-right tabular-nums ${signColor(row.gain)}`}>{signed(row.gain)}</td>
                 {showFx && (

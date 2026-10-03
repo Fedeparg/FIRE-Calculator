@@ -10,11 +10,9 @@ import CopyValue from "@/shared/ui/CopyValue";
 import type { IncomeCategoryReport, IncomeEvent, IncomeYear } from "@sextante/core/fiscal/income";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
+import { formatTaxBox } from "@sextante/core/money";
 import { useIncomeMutations } from "../use-income";
 import IncomeManager from "./IncomeManager";
-
-/** Importe como se escribe en Renta WEB: coma decimal, sin separador de miles. */
-const boxValue = (value: number) => value.toFixed(2).replace(".", ",");
 
 type Props = {
   year: number;
@@ -126,7 +124,7 @@ function CategoryCard({
         <dt className="text-muted">{t("gross")}</dt>
         <dd className="text-right font-semibold tabular-nums text-foreground">
           {eur(category.total.gross)}
-          <CopyValue value={boxValue(category.total.gross)} label={`${title} ${t("gross")}`} />
+          <CopyValue value={formatTaxBox(category.total.gross)} label={`${title} ${t("gross")}`} />
         </dd>
         <dt className="text-muted">{t("withholdingOrigin")}</dt>
         <dd className="text-right tabular-nums text-foreground">{eur(category.total.withholdingOrigin)}</dd>

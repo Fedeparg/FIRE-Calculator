@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { and, eq, isNull } from 'drizzle-orm';
 
 import type { AssetClass } from '@sextante/core/portfolio/types';
+import { isIsin } from '@sextante/core/portfolio/isin';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider, type InstrumentType } from '../prices/instrument-search.js';
@@ -20,7 +21,6 @@ const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
 /** Tope de símbolos por ejecución: el buscador es de Yahoo y rate-limita en ráfaga. */
 const MAX_TICKERS_PER_RUN = 40;
 const SEARCH_DELAY_MS = 400;
-const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -65,7 +65,7 @@ export class AssetClassBackfillService {
   /** Por ISIN vale el primer resultado; por símbolo, solo el que coincide exactamente. */
   private async classify(ticker: string): Promise<AssetClass | null> {
     const results = await this.search.search(ticker);
-    const match = ISIN.test(ticker) ? results[0] : results.find((r) => r.symbol.toUpperCase() === ticker.toUpperCase());
+    const match = isIsin(ticker) ? results[0] : results.find((r) => r.symbol.toUpperCase() === ticker.toUpperCase());
     return match ? ASSET_CLASS_OF[match.type] : null;
   }
 }

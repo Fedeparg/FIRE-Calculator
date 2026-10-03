@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import Notice from "@/shared/ui/Notice";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
+import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
 import { estimateSavingsTax, simulateSale, type TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { formatIsoDate } from "@/shared/format/format";
 import { convertCurrency } from "@sextante/core/fx";
@@ -23,9 +24,6 @@ type Props = {
   /** Tasas FX (USD por unidad de divisa). */
   rates: Record<string, number>;
 };
-
-/** Divisa en la que está expresada la escala del ahorro del IRPF. */
-const TAX_CURRENCY = "EUR";
 
 /**
  * "¿Qué pasaría si vendo X participaciones a Y precio?": empareja la venta con los lotes por

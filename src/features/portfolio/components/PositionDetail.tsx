@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { LotPayload, PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
+import { incomeDefaultsFor } from "@sextante/core/portfolio/isin";
 import IncomeManager from "./IncomeManager";
 import LotList from "./LotList";
 import PositionDeleteBar from "./PositionDeleteBar";
@@ -40,9 +41,6 @@ type View = "lots" | "income" | "sale";
 
 const VIEW_LABELS = { lots: "viewLots", income: "viewIncome", sale: "viewSale" } as const;
 
-/** Un ticker con forma de ISIN (posiciones importadas): da el ISIN y el país del emisor de sus dividendos. */
-const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
-
 /**
  * Detalle de una posición, dentro del panel: cuánto vale y cuánto gana, sus datos clave, sus
  * operaciones (lotes), sus cobros (dividendos) o la simulación fiscal de una venta, y editar o
@@ -60,7 +58,6 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const { lots, loadState, errorKey, submitting, save, remove } = usePositionLots(position.id, onMutated);
   const incomeState = usePositionIncome(position.id);
   const [view, setView] = useState<View>("lots");
-  const isin = ISIN.test(position.ticker) ? position.ticker : null;
   const [editingLot, setEditingLot] = useState<PositionLot | null>(null);
   const [confirmingLotId, setConfirmingLotId] = useState<string | null>(null);
 
@@ -147,14 +144,7 @@ export default function PositionDetail({ position, price, rates, pricePending, o
       {view === "income" && incomeState.loadState === "ready" && (
         <IncomeManager
           income={incomeState.income}
-          defaults={{
-            kind: "dividend",
-            positionId: position.id,
-            isin,
-            name: position.name ?? position.ticker,
-            country: isin ? isin.slice(0, 2) : null,
-            currency: position.currency,
-          }}
+          defaults={incomeDefaultsFor(position)}
           submitting={incomeState.submitting}
           errorKey={incomeState.errorKey}
           save={incomeState.save}

@@ -2,6 +2,7 @@ import { MIN_INSTRUMENT_QUERY_LENGTH } from '@sextante/core/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { InstrumentSearchProvider, InstrumentSearchResult, InstrumentType } from './instrument-search.js';
+import { errorMessage } from '../common/errors.js';
 
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const QUOTES_COUNT = 8;
@@ -80,7 +81,7 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
       return parseYahooSearch(await res.json());
     } catch (error) {
       // Degrada a "sin resultados" para no romper la UI.
-      this.logger.warn(`Yahoo search "${q}": ${(error as Error).message}`);
+      this.logger.warn(`Yahoo search "${q}": ${errorMessage(error)}`);
       return [];
     } finally {
       clearTimeout(timeout);

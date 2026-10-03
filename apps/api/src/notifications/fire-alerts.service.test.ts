@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { FIRE_CALCULATOR_SLUG } from '@sextante/core/portfolio/goal';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
@@ -8,7 +9,7 @@ import type { FireMilestoneEmail } from '../email/templates/fire-milestone.js';
 import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { FireAlertsService } from './fire-alerts.service.js';
-import { FIRE_SCENARIO_SLUG, NotificationSettingsService } from './notification-settings.service.js';
+import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
 const DATE = '2026-09-28';
@@ -60,7 +61,7 @@ describe('FireAlertsService (integración con Postgres)', () => {
     await settings.update(userId, { fireAlertsEnabled: true, locale: options.locale ?? 'es' });
     await db.insert(savedScenarios).values({
       userId,
-      slug: FIRE_SCENARIO_SLUG,
+      slug: FIRE_CALCULATOR_SLUG,
       name: 'Mi objetivo',
       inputs: { annualExpenses: 24000, withdrawalRate: 4 },
     });

@@ -6,6 +6,7 @@
 import { convertCurrency } from "@sextante/core/fx";
 import { computeGoalProgress, type GoalMode, type GoalOutcome } from "@sextante/core/portfolio/goal";
 import type { Frequency } from "@sextante/core/projection";
+import { roundCents } from "@sextante/core/money";
 import type { GoalSettings } from "./goal-scenario";
 
 /** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
@@ -19,11 +20,6 @@ export type ShownAmounts = Omit<GoalAmounts, "currency"> & { note: CurrencyNote 
 
 /** Cifra de ejemplo del modo cantidad (en la divisa que se está viendo). */
 export const DEFAULT_TARGET_AMOUNT = 100000;
-
-/** Redondeo a céntimos: los importes convertidos no deben arrastrar decimales binarios. */
-export function toCents(value: number): number {
-  return Math.round(value * 100) / 100;
-}
 
 /** Importes de un objetivo guardado, en SU divisa (`settings.currency`). */
 export function amountsFromSettings(settings: GoalSettings): GoalAmounts {
@@ -62,9 +58,9 @@ export function showAmounts(amounts: GoalAmounts, display: string, rates: Record
     return { ...original, note: { kind: "notConvertible", from: currency, to: display } };
   }
   return {
-    annualExpenses: toCents(expenses),
-    contribution: toCents(periodic),
-    targetAmount: toCents(target),
+    annualExpenses: roundCents(expenses),
+    contribution: roundCents(periodic),
+    targetAmount: roundCents(target),
     note: { kind: "converted", from: currency, to: display },
   };
 }
@@ -112,7 +108,7 @@ export function buildGoalInputs(
   return {
     ...loadedInputs,
     annualExpenses: shown.annualExpenses,
-    currentSavings: toCents(currentValue),
+    currentSavings: roundCents(currentValue),
     savings: shown.contribution,
     frequency: params.frequency,
     annualReturn: params.annualReturn,

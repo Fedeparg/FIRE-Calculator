@@ -10,6 +10,7 @@ import {
 } from '@sextante/core/portfolio/goal';
 import { z } from 'zod';
 
+import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
 import { ReferenceRatesService } from '../../fx-reference/reference-rates.service.js';
 import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
 import { PositionLotsService } from '../../positions/position-lots.service.js';
@@ -60,11 +61,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         'ejercicios anteriores, la compensación del 25 % con dividendos e intereses ni la ' +
         'regla de los dos meses. Solo lectura.',
       inputSchema: {
-        year: z
-          .number()
-          .int()
-          .min(1900)
-          .max(2100)
+        year: fiscalYearSchema
           .optional()
           .describe('Ejercicio fiscal. Sin valor, devuelve todos los ejercicios con ventas.'),
       },
@@ -124,11 +121,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         '`ratesLoaded` es false, la cifra está incompleta (ventas o cobros sin tipo de cambio, ' +
         'o retención en origen desconocida) y debes avisar al usuario. Solo lectura.',
       inputSchema: {
-        year: z
-          .number()
-          .int()
-          .min(1990)
-          .max(2100)
+        year: fiscalYearSchema
           .optional()
           .describe('Ejercicio fiscal. Sin valor, el último ejercicio con ventas o cobros.'),
       },

@@ -12,11 +12,8 @@ import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import { buildSavingsReturns } from "@sextante/core/fiscal/savings-return";
 import { taxBoxesFor } from "@sextante/core/fiscal/tax-boxes";
 import type { AssetClass } from "@sextante/core/portfolio/types";
-import {
-  buildRealisedGainsReport,
-  TAX_CURRENCY,
-  type RealisedGainsPosition,
-} from "@sextante/core/fiscal/realised-gains";
+import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
+import { buildRealisedGainsReport, type RealisedGainsPosition } from "@sextante/core/fiscal/realised-gains";
 import { buildIncomeCsv } from "@/features/portfolio/model/income-csv";
 import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
 import { asLocale } from "@/i18n/types";

@@ -8,6 +8,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { MS_PER_DAY } from '../common/dates.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 15 * * * *';
@@ -73,7 +74,7 @@ export class OAuthReaper implements OnModuleInit {
     try {
       await this.run();
     } catch (error) {
-      this.logger.error(`Limpieza falló: ${(error as Error).message}`);
+      this.logger.error(`Limpieza falló: ${errorMessage(error)}`);
     }
   }
 

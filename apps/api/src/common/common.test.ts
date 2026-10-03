@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { randomToken, sha256Hex } from './crypto.js';
 import { isoDate, todayUtc } from './dates.js';
+import { errorMessage } from './errors.js';
 import { scheduleFromEnv } from './schedule.js';
 
 describe('dates', () => {
@@ -85,5 +86,14 @@ describe('scheduleFromEnv', () => {
     expect(() =>
       scheduleFromEnv(asRegistry, { name: 'job', cronTime: 'off', defaultCron: '0 0 3 * * *', handler: vi.fn() }),
     ).toThrow();
+  });
+});
+
+describe('errorMessage', () => {
+  it('usa el message de un Error y convierte a texto lo que no lo es', () => {
+    expect(errorMessage(new Error('fallo'))).toBe('fallo');
+    expect(errorMessage('texto lanzado')).toBe('texto lanzado');
+    expect(errorMessage(42)).toBe('42');
+    expect(errorMessage(undefined)).toBe('undefined');
   });
 });

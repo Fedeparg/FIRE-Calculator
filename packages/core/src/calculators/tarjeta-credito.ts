@@ -2,6 +2,7 @@
 // (cuota fija) y "percent" (mínimo como % del saldo con suelo en euros; sin suelo la cuota tiende a 0
 // y la deuda no termina).
 
+import { roundCents } from "../money.js";
 import { monthlyRate } from "./amortization.js";
 
 export const PAYMENT_MODES = ["fixed", "percent"] as const;
@@ -69,7 +70,7 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
   let totalInterest = 0;
   let months = 0;
   let firstPayment = 0;
-  const series: CreditCardPoint[] = [{ month: 0, balance: round2(balance), interestPaid: 0 }];
+  const series: CreditCardPoint[] = [{ month: 0, balance: roundCents(balance), interestPaid: 0 }];
 
   while (remaining > 0 && months < MAX_MONTHS) {
     const interest = remaining * rate;
@@ -85,8 +86,8 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
 
     series.push({
       month: months,
-      balance: round2(Math.max(0, remaining)),
-      interestPaid: round2(totalInterest),
+      balance: roundCents(Math.max(0, remaining)),
+      interestPaid: roundCents(totalInterest),
     });
   }
 
@@ -99,8 +100,4 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
     firstPayment,
     series,
   };
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
 }

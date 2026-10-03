@@ -7,6 +7,7 @@
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import { convertCurrency } from "@sextante/core/fx";
 import type { Locale } from "@/i18n/types";
+import { roundCents } from "@sextante/core/money";
 
 /** Columnas del fichero, en orden. Es también el orden de `PortfolioCsvHeaders`. */
 export const CSV_COLUMNS = [
@@ -57,7 +58,7 @@ export function buildPortfolioCsv({ positions, prices, rates, display, headers, 
     // cambio de divisa): se redondea a céntimos para no volcar el ruido binario del coma
     // flotante ("1999,9999999999998") en una hoja de cálculo. El resto de importes salen tal
     // cual de la base de datos.
-    const marketValue = rawValue === null ? null : Math.round(rawValue * 100) / 100;
+    const marketValue = rawValue === null ? null : roundCents(rawValue);
 
     return [
       position.ticker,

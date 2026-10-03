@@ -9,6 +9,7 @@ import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PricesService } from '../prices/prices.service.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
@@ -87,12 +88,12 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       await this.prices.ensureHistoryForActivePositions();
     } catch (error) {
-      this.logger.error(`Backfill de histórico de precios al arrancar falló: ${(error as Error).message}`);
+      this.logger.error(`Backfill de histórico de precios al arrancar falló: ${errorMessage(error)}`);
     }
     try {
       await this.snapshots.backfillAll();
     } catch (error) {
-      this.logger.error(`Backfill de snapshots al arrancar falló: ${(error as Error).message}`);
+      this.logger.error(`Backfill de snapshots al arrancar falló: ${errorMessage(error)}`);
     }
     await this.classifyAssets();
   }
@@ -102,7 +103,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       await this.assetClasses.classifyMissing();
     } catch (error) {
-      this.logger.error(`Clasificación de posiciones falló: ${(error as Error).message}`);
+      this.logger.error(`Clasificación de posiciones falló: ${errorMessage(error)}`);
     }
   }
 
@@ -117,7 +118,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
         const summary = await this.prices.refreshAll();
         this.logger.log(`Refresco intradía: ${summary.fetched}/${summary.symbols} símbolos`);
       } catch (error) {
-        this.logger.error(`Refresco intradía de precios falló: ${(error as Error).message}`);
+        this.logger.error(`Refresco intradía de precios falló: ${errorMessage(error)}`);
       }
     });
   }
@@ -140,7 +141,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       await this.prices.refreshAll();
     } catch (error) {
-      this.logger.error(`Refresco de precios falló: ${(error as Error).message}`);
+      this.logger.error(`Refresco de precios falló: ${errorMessage(error)}`);
     }
 
     // Las alertas evalúan este snapshot concreto (ver `evaluateAll`).
@@ -148,13 +149,13 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       captureDate = (await this.snapshots.captureAll()).date;
     } catch (error) {
-      this.logger.error(`Captura de snapshots falló: ${(error as Error).message}`);
+      this.logger.error(`Captura de snapshots falló: ${errorMessage(error)}`);
     }
 
     try {
       await this.snapshots.backfillAll();
     } catch (error) {
-      this.logger.error(`Backfill de snapshots falló: ${(error as Error).message}`);
+      this.logger.error(`Backfill de snapshots falló: ${errorMessage(error)}`);
     }
 
     try {
@@ -163,7 +164,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
         this.logger.log(`Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`);
       }
     } catch (error) {
-      this.logger.error(`Evaluación de alertas FIRE falló: ${(error as Error).message}`);
+      this.logger.error(`Evaluación de alertas FIRE falló: ${errorMessage(error)}`);
     }
 
     // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
@@ -171,14 +172,14 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     try {
       await this.prices.refreshStaleSplits();
     } catch (error) {
-      this.logger.error(`Refresco de splits falló: ${(error as Error).message}`);
+      this.logger.error(`Refresco de splits falló: ${errorMessage(error)}`);
     }
 
     // Con los dividendos de mercado recién cacheados (viajan con los splits), se completan los cobros pendientes.
     try {
       await this.dividends.resolvePending();
     } catch (error) {
-      this.logger.error(`Resolución de dividendos falló: ${(error as Error).message}`);
+      this.logger.error(`Resolución de dividendos falló: ${errorMessage(error)}`);
     }
     await this.classifyAssets();
   }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { INCOME_KINDS, withholdingsFitGross } from '@sextante/core/fiscal/income';
+import { ISIN_PATTERN } from '@sextante/core/portfolio/isin';
 import { amountSchema, currencySchema, trimmedText } from '../../positions/dto/create-position.dto.js';
 
 /** Campos de un cobro, sin las reglas que cruzan campos (las comparte la actualización parcial). */
@@ -14,7 +15,7 @@ export const incomeFieldsSchema = z.strictObject({
     .string()
     .trim()
     .toUpperCase()
-    .regex(/^[A-Z]{2}[A-Z0-9]{9}[0-9]$/, { error: 'isin no tiene el formato de un ISIN' })
+    .regex(ISIN_PATTERN, { error: 'isin no tiene el formato de un ISIN' })
     .nullable()
     .optional()
     .describe('ISIN del valor (opcional).'),
