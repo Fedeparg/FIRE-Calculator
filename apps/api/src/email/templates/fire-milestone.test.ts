@@ -13,7 +13,7 @@ const DATA: FireMilestoneEmail = {
 };
 
 describe('renderFireMilestoneEmail', () => {
-  it('en español: asunto, cifras formateadas, enlace de baja y aviso de no asesoramiento', () => {
+  it('in Spanish: subject, formatted figures, unsubscribe link and no-advice disclaimer', () => {
     const email = renderFireMilestoneEmail(DATA, 'https://example.test/email-logo.png');
 
     expect(email.subject).toBe('Tu cartera ha llegado al 50 % de tu objetivo FIRE');
@@ -24,7 +24,7 @@ describe('renderFireMilestoneEmail', () => {
     expect(email.html).toContain('lang="es"');
   });
 
-  it('en inglés y con el 100 % cambia el mensaje', () => {
+  it('in English and at 100 % the message changes', () => {
     const email = renderFireMilestoneEmail({ ...DATA, locale: 'en', milestone: 100, currency: 'USD' }, 'x');
 
     expect(email.subject).toBe('Your portfolio has reached your FIRE goal');
@@ -32,13 +32,13 @@ describe('renderFireMilestoneEmail', () => {
     expect(email.text).toContain('not financial advice');
   });
 
-  it('escapa los enlaces en el HTML', () => {
+  it('escapes the links in the HTML', () => {
     const email = renderFireMilestoneEmail({ ...DATA, unsubscribeUrl: 'https://x.test/?a=1&b="2"' }, 'x');
     expect(email.html).toContain('https://x.test/?a=1&amp;b=&quot;2&quot;');
     expect(email.html).not.toContain('b="2"');
   });
 
-  it('una divisa desconocida no rompe el envío', () => {
+  it('an unknown currency does not break the send', () => {
     const email = renderFireMilestoneEmail({ ...DATA, currency: 'ZZ9' }, 'x');
     expect(email.text).toContain('ZZ9');
   });

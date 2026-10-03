@@ -3,9 +3,9 @@ import type { EmailLocale, RenderedEmail } from './fire-milestone.js';
 import { escapeHtml } from './html.js';
 
 /**
- * Email del enlace mágico de acceso, en español o inglés (el idioma de la web desde la que se
- * pidió). Plantilla PURA, como `fire-milestone.ts`: devuelve asunto, texto y HTML sin tocar
- * Resend, para testearla sin red y para que el transporte de desarrollo enseñe lo mismo.
+ * Sign-in magic link email, in Spanish or English (the language of the site it was requested
+ * from). PURE template, like `fire-milestone.ts`: it returns subject, text and HTML without
+ * touching Resend, so it can be tested offline and the development transport shows the same.
  */
 
 const COPY = {
@@ -35,10 +35,10 @@ export function renderMagicLinkEmail(locale: EmailLocale, link: string, logoUrl:
   const copy = COPY[locale];
   const safeLink = escapeHtml(link);
 
-  // Versión en texto plano (fallback para clientes sin HTML).
+  // Plain-text version (fallback for clients without HTML).
   const text = ['Sextante', '', copy.intro, '', link, '', copy.expiry, '', copy.ignore].join('\n');
 
-  // HTML con estilos en línea: los clientes de correo no aplican CSS externo.
+  // HTML with inline styles: mail clients don't apply external CSS.
   const html = `<!doctype html>
 <html lang="${locale}">
   <body style="margin:0;padding:0;background-color:#f4f5f7;">

@@ -1,10 +1,10 @@
 /**
- * Email de hito del objetivo FIRE (25/50/75/100 %), en español o inglés. Plantilla PURA:
- * recibe los datos ya calculados y devuelve asunto, texto y HTML, sin tocar Resend. Así se
- * testea sin red y el transporte de desarrollo puede enseñar exactamente lo que se enviaría.
+ * FIRE goal milestone email (25/50/75/100 %), in Spanish or English. PURE template: it receives
+ * the already computed data and returns subject, text and HTML, without touching Resend. That way
+ * it is tested offline and the development transport can show exactly what would be sent.
  *
- * Tono: informativo. Dice dónde está el usuario respecto al objetivo que ÉL se marcó; no
- * recomienda nada ni juzga (Sextante no asesora, ver ROADMAP).
+ * Tone: informational. It tells users where they stand against the goal THEY set; it recommends
+ * nothing and passes no judgement (Sextante gives no advice, see ROADMAP).
  */
 
 import { escapeHtml } from './html.js';
@@ -13,17 +13,17 @@ export type EmailLocale = 'es' | 'en';
 
 export interface FireMilestoneEmail {
   locale: EmailLocale;
-  /** Hito alcanzado, en % (25, 50, 75 o 100). */
+  /** Milestone reached, in % (25, 50, 75 or 100). */
   milestone: number;
-  /** Valor de la cartera en la divisa del objetivo. */
+  /** Portfolio value in the goal's currency. */
   currentValue: number;
-  /** Patrimonio objetivo. */
+  /** Target net worth. */
   target: number;
-  /** Divisa del objetivo (código ISO). */
+  /** Goal currency (ISO code). */
   currency: string;
-  /** Enlace a la cartera. */
+  /** Link to the portfolio. */
   portfolioUrl: string;
-  /** Página de baja (confirma con un botón: un GET no da de baja, ver el controlador). */
+  /** Unsubscribe page (it confirms with a button: a GET does not unsubscribe, see the controller). */
   unsubscribeUrl: string;
 }
 
@@ -70,7 +70,7 @@ function money(amount: number, currency: string, locale: EmailLocale): string {
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
-    // Código de divisa que `Intl` no reconoce: mejor la cifra con el código que no enviar nada.
+    // Currency code that `Intl` does not recognize: the figure with the code beats sending nothing.
     return `${Math.round(amount)} ${currency}`;
   }
 }

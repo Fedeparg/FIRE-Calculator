@@ -5,7 +5,7 @@ import { renderMagicLinkEmail } from './magic-link.js';
 const LINK = 'https://example.test/auth/verify?token=abc&x="1"';
 
 describe('renderMagicLinkEmail', () => {
-  it('en español: asunto, enlace, caducidad y lang="es"', () => {
+  it('in Spanish: subject, link, expiry and lang="es"', () => {
     const email = renderMagicLinkEmail('es', LINK, 'https://example.test/email-logo.png');
 
     expect(email.subject).toBe('Tu enlace de acceso a Sextante');
@@ -15,7 +15,7 @@ describe('renderMagicLinkEmail', () => {
     expect(email.html).toContain('Entrar en Sextante');
   });
 
-  it('en inglés cambia el texto y el lang', () => {
+  it('in English the text and lang change', () => {
     const email = renderMagicLinkEmail('en', LINK, 'x');
 
     expect(email.subject).toBe('Your Sextante sign-in link');
@@ -24,7 +24,7 @@ describe('renderMagicLinkEmail', () => {
     expect(email.html).toContain('Sign in to Sextante');
   });
 
-  it('escapa el enlace en el HTML', () => {
+  it('escapes the link in the HTML', () => {
     const { html } = renderMagicLinkEmail('es', LINK, 'x');
 
     expect(html).toContain('token=abc&amp;x=&quot;1&quot;');

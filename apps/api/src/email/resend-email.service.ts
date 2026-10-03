@@ -8,10 +8,10 @@ import { renderMagicLinkEmail } from './templates/magic-link.js';
 import type { Env } from '../config/env.js';
 
 /**
- * Transporte de email de producción vía Resend. Se activa con `EMAIL_TRANSPORT=resend`.
- * Requiere `RESEND_API_KEY`, `EMAIL_FROM` y `APP_URL`.
+ * Production email transport via Resend. Enabled with `EMAIL_TRANSPORT=resend`.
+ * Requires `RESEND_API_KEY`, `EMAIL_FROM` and `APP_URL`.
  *
- * Si falta cualquiera de las tres, la validación de `config/env.ts` aborta el arranque de la API.
+ * If any of the three is missing, the `config/env.ts` validation aborts the API startup.
  */
 @Injectable()
 export class ResendEmailService implements EmailService {
@@ -21,16 +21,16 @@ export class ResendEmailService implements EmailService {
   private readonly appUrl: string;
 
   constructor(config: ConfigService<Env, true>) {
-    // `parseEnv` ya exige `RESEND_API_KEY` y `EMAIL_FROM` con `EMAIL_TRANSPORT=resend`
-    // (preferimos un fallo ruidoso al arrancar a enviar a un agujero negro); `getOrThrow` solo estrecha el tipo.
+    // `parseEnv` already requires `RESEND_API_KEY` and `EMAIL_FROM` with `EMAIL_TRANSPORT=resend`
+    // (we prefer a loud failure at startup to sending into a black hole); `getOrThrow` only narrows the type.
     this.resend = new Resend(config.getOrThrow('RESEND_API_KEY', { infer: true }));
 
-    // Sin remitente por defecto: el dominio de envío es propio de cada despliegue y Resend solo
-    // acepta dominios verificados en la cuenta, así que un valor "de fábrica" fallaría en el envío.
+    // No default sender: the sending domain belongs to each deployment and Resend only accepts
+    // domains verified in the account, so a "factory" value would fail when sending.
     this.from = config.getOrThrow('EMAIL_FROM', { infer: true });
 
-    // Base absoluta para el logo del email (los clientes de correo no resuelven rutas
-    // relativas). El PNG se sirve desde el frontend en `/email-logo.png`.
+    // Absolute base for the email logo (mail clients don't resolve relative paths). The PNG is
+    // served by the frontend at `/email-logo.png`.
     this.appUrl = config.getOrThrow('APP_URL', { infer: true });
   }
 
@@ -45,8 +45,8 @@ export class ResendEmailService implements EmailService {
     });
 
     if (error) {
-      this.logger.error(`Error enviando magic link a ${to}: ${error.message}`);
-      throw new Error('No se pudo enviar el email');
+      this.logger.error(`Error sending magic link to ${to}: ${error.message}`);
+      throw new Error('Could not send the email');
     }
   }
 
@@ -58,8 +58,8 @@ export class ResendEmailService implements EmailService {
       subject: rendered.subject,
       text: rendered.text,
       html: rendered.html,
-      // Baja en un clic (RFC 8058): los clientes de correo que la soportan hacen un POST a
-      // esta URL con el cuerpo `List-Unsubscribe=One-Click`, sin abrir nada.
+      // One-click unsubscribe (RFC 8058): mail clients that support it POST to this URL with
+      // the body `List-Unsubscribe=One-Click`, without opening anything.
       headers: {
         'List-Unsubscribe': `<${oneClickUnsubscribeUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
@@ -67,8 +67,8 @@ export class ResendEmailService implements EmailService {
     });
 
     if (error) {
-      this.logger.error(`Error enviando aviso de hito a ${to}: ${error.message}`);
-      throw new Error('No se pudo enviar el email');
+      this.logger.error(`Error sending milestone notice to ${to}: ${error.message}`);
+      throw new Error('Could not send the email');
     }
   }
 }

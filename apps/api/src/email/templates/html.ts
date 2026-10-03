@@ -1,4 +1,4 @@
-/** Escapa un texto para insertarlo en el HTML de un email (contenido o atributo entre comillas). */
+/** Escapes text for insertion into an email's HTML (content or quoted attribute). */
 export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')

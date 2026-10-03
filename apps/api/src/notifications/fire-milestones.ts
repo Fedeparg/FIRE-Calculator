@@ -1,11 +1,11 @@
 /**
- * Hitos del objetivo FIRE (lógica pura). El objetivo repite la fórmula de la calculadora FIRE
- * (gasto anual / tasa de retiro, 4 % si no es positiva); no hace falta la proyección entera y un test la fija.
+ * FIRE goal milestones (pure logic). The goal repeats the FIRE calculator's formula
+ * (annual spending / withdrawal rate, 4 % if not positive); the full projection is not needed and a test pins it.
  */
 
 import { goalModeFromInputs } from '@sextante/core/portfolio/goal';
 
-/** Hitos avisados, en % del objetivo. */
+/** Notified milestones, as % of the goal. */
 export const FIRE_MILESTONES = [25, 50, 75, 100] as const;
 export type FireMilestone = (typeof FIRE_MILESTONES)[number];
 
@@ -18,11 +18,11 @@ export interface FireTarget {
 
 const finite = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
 
-/** Objetivo de un escenario FIRE, o `null` si no hay gasto anual positivo. `goalCurrency` la añade el bloque de cartera; sin ella, EUR. */
+/** Goal of a FIRE scenario, or `null` if there is no positive annual spending. `goalCurrency` is added by the portfolio block; without it, EUR. */
 export function fireTargetFromInputs(inputs: Record<string, unknown>): FireTarget | null {
   const currency =
     typeof inputs.goalCurrency === 'string' && /^[A-Z]{3}$/.test(inputs.goalCurrency) ? inputs.goalCurrency : 'EUR';
-  // Modo cantidad ("X en N años"): el objetivo es la cifra tal cual.
+  // Amount mode ("X in N years"): the goal is the figure as is.
   if (goalModeFromInputs(inputs) === 'amount') {
     const amount = finite(inputs.targetAmount);
     return amount !== null && amount > 0 ? { target: amount, currency } : null;
@@ -42,7 +42,7 @@ export function reachedMilestone(progress: number): FireMilestone | 0 {
   return reached;
 }
 
-/** Hito nuevo a avisar (el más alto si supera al último avisado). Si se cruzan varios de golpe, solo el mayor. */
+/** New milestone to notify (the highest, if above the last notified one). If several are crossed at once, only the highest. */
 export function newMilestone(progress: number, lastNotified: number): FireMilestone | null {
   const reached = reachedMilestone(progress);
   return reached !== 0 && reached > lastNotified ? reached : null;
