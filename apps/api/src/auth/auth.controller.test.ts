@@ -150,6 +150,21 @@ describe('AuthController (HTTP)', () => {
       expect(sentLinks.map((s) => s.to)).toEqual(['existe@example.com', 'nuevo@example.com']);
     });
 
+    it('limita los enlaces por email aunque cambie la IP: el 4º en 15 min es 202 pero no se envía', async () => {
+      const statuses: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        // Cada petición desde una IP distinta: el límite por IP no actúa, el de email sí.
+        statuses.push((await postJson(`${baseUrl}/request`, { email: 'victima@example.com' })).status);
+      }
+
+      expect(statuses).toEqual([202, 202, 202, 202]);
+      expect(sentLinks).toHaveLength(3);
+      expect(await db.select().from(loginTokens)).toHaveLength(3);
+      // Otra dirección no comparte el cupo.
+      await postJson(`${baseUrl}/request`, { email: 'otra@example.com' });
+      expect(sentLinks).toHaveLength(4);
+    });
+
     it('no crea el usuario al pedir el enlace: se crea al verificarlo', async () => {
       await postJson(`${baseUrl}/request`, { email: 'nuevo@example.com' });
 

@@ -37,15 +37,20 @@ export type User = typeof users.$inferSelect;
 /**
  * Tokens de magic link. Solo se guarda el hash (SHA-256): el enlace lleva el token en claro y
  * al verificar se busca por hash. De un solo uso (`consumedAt`) y con caducidad (`expiresAt`).
+ * El índice `(email, created_at)` sirve al límite de enlaces por email (`AuthService.requestLink`).
  */
-export const loginTokens = pgTable('login_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: text('email').notNull(),
-  tokenHash: text('token_hash').notNull().unique(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const loginTokens = pgTable(
+  'login_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index('login_tokens_email_created_at_idx').on(table.email, table.createdAt)],
+);
 
 /**
  * Posiciones tecleadas por el usuario (sin conexión a bancos). `userId` con cascada (RGPD);

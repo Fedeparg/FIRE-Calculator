@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { and, eq, gt, isNull } from 'drizzle-orm';
+import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@sextante/core/contracts';
 import type { Env } from '../config/env.js';
@@ -13,6 +13,14 @@ import { LOGIN_LINK_TTL_MINUTES } from './session.constants.js';
 
 /** Validez del enlace mágico. */
 const TOKEN_TTL_MS = LOGIN_LINK_TTL_MINUTES * 60 * 1000;
+
+/**
+ * Límite de enlaces por email: como mucho 3 cada 15 minutos. El controlador ya limita por IP,
+ * pero con muchas IPs se podría bombardear una dirección (y quemar la reputación del dominio en
+ * Resend). Por encima del límite se responde igual (202) sin enviar nada, para no revelar nada.
+ */
+export const MAX_LINKS_PER_EMAIL = 3;
+export const LINKS_PER_EMAIL_WINDOW_MS = 15 * 60 * 1000;
 
 /** Los controladores lo importan de aquí; la definición (contrato con el frontend) vive en core. */
 export type { SessionUser };
@@ -40,7 +48,28 @@ export class AuthService {
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
 
-    await this.db.insert(loginTokens).values({ email, tokenHash, expiresAt });
+    // Contar y luego insertar, serializado por email con un cerrojo transaccional: si no, varias
+    // peticiones simultáneas verían el mismo recuento y pasarían todas del límite.
+    const allowed = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('login_links'), hashtext(${email}))`);
+      const [recent] = await tx
+        .select({ total: count() })
+        .from(loginTokens)
+        .where(
+          and(
+            eq(loginTokens.email, email),
+            gt(loginTokens.createdAt, new Date(Date.now() - LINKS_PER_EMAIL_WINDOW_MS)),
+          ),
+        );
+      if (recent.total >= MAX_LINKS_PER_EMAIL) return false;
+      await tx.insert(loginTokens).values({ email, tokenHash, expiresAt });
+      return true;
+    });
+    if (!allowed) {
+      // Sin el email en el log (dato personal): basta con saber que el límite actúa.
+      this.logger.warn(`Límite de enlaces por email alcanzado (${MAX_LINKS_PER_EMAIL} en 15 min): no se envía otro`);
+      return;
+    }
 
     const appUrl = this.config.getOrThrow('APP_URL', { infer: true });
     const link = `${appUrl}/auth/verify?token=${token}`;
