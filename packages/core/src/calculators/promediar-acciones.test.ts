@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeAveragePrice } from "./promediar-acciones.js";
 
 describe("computeAveragePrice", () => {
-  it("calcula el precio medio ponderado de varias compras", () => {
+  it("computes the weighted average price of several purchases", () => {
     const r = computeAveragePrice({
       purchases: [
         { price: 10, shares: 10 },
@@ -14,7 +14,7 @@ describe("computeAveragePrice", () => {
     expect(r.averagePrice).toBeCloseTo(15, 6);
   });
 
-  it("pondera por número de acciones, no por número de compras", () => {
+  it("weights by number of shares, not by number of purchases", () => {
     const r = computeAveragePrice({
       purchases: [
         { price: 10, shares: 90 },
@@ -24,7 +24,7 @@ describe("computeAveragePrice", () => {
     expect(r.averagePrice).toBeCloseTo(19, 6); // (900 + 1000) / 100
   });
 
-  it("incluye comisiones en el coste y el precio de equilibrio, no en el precio medio (defaults)", () => {
+  it("includes commissions in the cost and the break-even price, not in the average price (defaults)", () => {
     const r = computeAveragePrice({
       purchases: [
         { price: 10, shares: 10, commission: 5 },
@@ -38,7 +38,7 @@ describe("computeAveragePrice", () => {
     expect(r.breakEvenPrice).toBeCloseTo(9.2, 6);
   });
 
-  it("valora la posición a precio actual de mercado (defaults)", () => {
+  it("values the position at the current market price (defaults)", () => {
     const r = computeAveragePrice({
       purchases: [
         { price: 10, shares: 10, commission: 5 },
@@ -51,14 +51,14 @@ describe("computeAveragePrice", () => {
     expect(r.returnPct).toBeCloseTo(30.434782608695656, 6);
   });
 
-  it("sin precio actual deja la valoración en null", () => {
+  it("without a current price it leaves the valuation as null", () => {
     const r = computeAveragePrice({ purchases: [{ price: 10, shares: 10 }] });
     expect(r.marketValue).toBeNull();
     expect(r.unrealizedGain).toBeNull();
     expect(r.returnPct).toBeNull();
   });
 
-  it("devuelve ceros con una lista vacía (sin dividir por cero)", () => {
+  it("returns zeros for an empty list (no division by zero)", () => {
     const r = computeAveragePrice({ purchases: [] });
     expect(r.totalShares).toBe(0);
     expect(r.totalCost).toBe(0);
@@ -66,7 +66,7 @@ describe("computeAveragePrice", () => {
     expect(r.breakEvenPrice).toBe(0);
   });
 
-  it("ignora valores negativos", () => {
+  it("ignores negative values", () => {
     const r = computeAveragePrice({ purchases: [{ price: -5, shares: -3, commission: -2 }] });
     expect(r.totalShares).toBe(0);
     expect(r.averagePrice).toBe(0);

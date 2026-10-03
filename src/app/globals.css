@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-/* Modo oscuro por clase (next-themes pone class="dark" en <html>). */
+/* Class-based dark mode (next-themes sets class="dark" on <html>). */
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
@@ -16,23 +16,22 @@
   --brand-soft: #e6e8fd;
   --accent: #10b981;
   --accent-soft: #d6f5e7;
-  /* Acento para TEXTO: el verde de --accent sobre blanco o --accent-soft se queda en ~2,5:1 y no
-     llega a AA (4,5:1); este da 5,5:1 sobre blanco y 4,7:1 sobre --accent-soft. --accent sigue
-     para rellenos, bordes y gráficas. */
+  /* Accent for TEXT: the --accent green on white or --accent-soft only reaches ~2.5:1 and misses
+     AA (4.5:1); this one gives 5.5:1 on white and 4.7:1 on --accent-soft. --accent remains for
+     fills, borders and charts. */
   --accent-text: #047857;
   --warning: #b45309;
   --warning-soft: #fef3e2;
   --warning-border: #f5d9a8;
-  /* Ganancia/pérdida (P&L de cartera). Verde/rojo con contraste sobre fondo claro. */
+  /* Gain/loss (portfolio P&L). Green/red with enough contrast on a light background. */
   --success: #15803d;
   --danger: #b91c1c;
   --danger-fg: #ffffff;
   --danger-soft: #fef2f2;
   --danger-border: #f3c4c4;
-  /* Paleta categórica de gráficas (composición de la cartera). Ocho tonos con matiz
-     bien separado, para que sigan distinguiéndose en un donut de muchos sectores.
-     Los dos primeros coinciden con --brand y --accent para no chocar con el resto
-     de la interfaz. */
+  /* Categorical chart palette (portfolio composition). Eight well-separated hues, so they
+     stay distinguishable in a donut with many slices. The first two match --brand and
+     --accent so they do not clash with the rest of the interface. */
   --chart-1: #4f46e5;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
@@ -56,7 +55,7 @@
   --brand-soft: #1f2a4d;
   --accent: #34d399;
   --accent-soft: #123726;
-  /* En oscuro el verde claro ya contrasta (≥ 6,8:1 sobre superficie y --accent-soft). */
+  /* In dark mode the light green already has enough contrast (≥ 6.8:1 on surface and --accent-soft). */
   --accent-text: #34d399;
   --warning: #fbbf24;
   --warning-soft: #2a2110;
@@ -66,7 +65,7 @@
   --danger-fg: #0a0f1d;
   --danger-soft: #2a1414;
   --danger-border: #4a2222;
-  /* Misma secuencia de matices, aclarada para conservar contraste sobre fondo oscuro. */
+  /* Same hue sequence, lightened to keep contrast on a dark background. */
   --chart-1: #818cf8;
   --chart-2: #34d399;
   --chart-3: #fbbf24;
@@ -109,9 +108,9 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Movimiento reducido: quien lo pide en el sistema no ve animaciones ni transiciones (los
-   desplazamientos, el panel que sube, los hover con `transition`). Se acortan a casi cero en vez
-   de quitarlas para que los eventos `transitionend`/`animationend` sigan llegando. */
+/* Reduced motion: users who ask for it at OS level see no animations or transitions (scrolling,
+   the sliding panel, hovers with `transition`). They are shortened to almost zero instead of
+   removed so that `transitionend`/`animationend` events still fire. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -123,8 +122,8 @@ body {
   }
 }
 
-/* Recharts: quitar el contorno de foco al hacer clic/arrastrar en gráficas y
-   sectores (el "cuadrado de selección" queda feo) y evitar selección de texto. */
+/* Recharts: remove the focus outline when clicking/dragging on charts and slices
+   (the "selection box" looks ugly) and prevent text selection. */
 .recharts-wrapper,
 .recharts-surface {
   user-select: none;
@@ -140,8 +139,8 @@ body {
   outline: none;
 }
 
-/* Impresión (informe de la declaración): sin navegación ni formularios, y siempre con los colores
-   del tema claro, que es lo que se lee en papel o en PDF. */
+/* Print (tax return report): no navigation or forms, and always the light-theme colors, which
+   is what reads well on paper or in a PDF. */
 @media print {
   header,
   footer,

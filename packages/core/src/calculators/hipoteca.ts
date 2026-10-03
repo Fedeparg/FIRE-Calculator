@@ -1,5 +1,5 @@
-// Hipoteca a tipo fijo (amortización francesa). Además de cuota e intereses estima la TAE con
-// comisión de apertura y seguros vinculados, la cifra honesta para comparar ofertas. Core puro.
+// Fixed-rate mortgage (French amortization). Besides the payment and interest it estimates the TAE
+// (APR) including the opening fee and tied insurance, the honest figure for comparing offers. Pure core.
 
 import { amortizationSchedule, levelPayment, monthlyRate } from "./amortization.js";
 import { clampYears } from "../inputs.js";
@@ -9,7 +9,7 @@ export interface MortgageInput {
   annualRate: number;
   years: number;
   openingFeeRate?: number;
-  /** Coste anual de los productos vinculados exigidos para el tipo; entra en la TAE. */
+  /** Annual cost of the tied products required to get the rate; it counts toward the TAE. */
   annualInsurance?: number;
 }
 
@@ -27,12 +27,15 @@ export interface MortgageResult {
   openingCost: number;
   insuranceCost: number;
   totalCostWithFees: number;
-  /** TAE estimada, en base 100, con comisión y seguros. Sin ellos equivale a (1 + TIN/12)^12 − 1. */
+  /** Estimated TAE, in base 100, including fee and insurance. Without them it equals (1 + TIN/12)^12 − 1. */
   apr: number;
   schedule: MortgageYearPoint[];
 }
 
-/** Tipo mensual `r` que iguala el neto recibido con el valor actual de los pagos (bisección sobre una función monótona decreciente). */
+/**
+ * Monthly rate `r` that equates the net amount received with the present value of the payments (bisection
+ * over a monotonically decreasing function).
+ */
 function solveMonthlyIrr(netReceived: number, monthlyOutflow: number, n: number): number {
   if (netReceived <= 0 || monthlyOutflow <= 0 || n <= 0) return 0;
 
@@ -48,7 +51,7 @@ function solveMonthlyIrr(netReceived: number, monthlyOutflow: number, n: number)
   };
 
   let lo = 0;
-  let hi = 1; // 100 % mensual: cota superior holgada
+  let hi = 1; // 100% monthly: a generous upper bound
   for (let iter = 0; iter < 100; iter++) {
     const mid = (lo + hi) / 2;
     if (npv(mid) > 0) lo = mid;
@@ -97,7 +100,7 @@ export function computeMortgage(input: MortgageInput): MortgageResult {
   const monthlyInsurance = annualInsurance / 12;
   const insuranceCost = monthlyInsurance * n;
 
-  // TAE: el banco entrega el capital menos la comisión y tú devuelves cuota + seguro cada mes.
+  // TAE: the bank hands over the principal minus the fee and you pay back payment + insurance each month.
   const monthlyIrr = solveMonthlyIrr(principal - openingCost, monthlyPayment + monthlyInsurance, n);
   const apr = (Math.pow(1 + monthlyIrr, 12) - 1) * 100;
 

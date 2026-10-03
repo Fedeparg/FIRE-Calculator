@@ -7,7 +7,7 @@ import { buildPortfolioCsv, CSV_COLUMNS, type PortfolioCsvHeaders, type Portfoli
 
 type CsvPosition = PortfolioCsvInput["positions"][number];
 
-/** Cabeceras de prueba: en producción llegan traducidas desde el componente. */
+/** Test headers: in production they arrive already translated from the component. */
 const HEADERS: PortfolioCsvHeaders = {
   ticker: "Símbolo",
   name: "Nombre",
@@ -21,7 +21,7 @@ const HEADERS: PortfolioCsvHeaders = {
   marketValue: "Valoración (EUR)",
 };
 
-/** EUR y USD convertibles; GBP deliberadamente ausente para probar la exclusión. */
+/** EUR and USD are convertible; GBP is deliberately missing to test the exclusion. */
 const RATES = { USD: 1, EUR: 1.1 };
 
 function position(overrides: Partial<CsvPosition> & Pick<CsvPosition, "ticker">): CsvPosition {
@@ -37,13 +37,13 @@ function position(overrides: Partial<CsvPosition> & Pick<CsvPosition, "ticker">)
 
 const BASE = { rates: RATES, display: "EUR", headers: HEADERS } as const;
 
-/** Divide el CSV en filas sin la línea final vacía. */
+/** Splits the CSV into rows without the trailing empty line. */
 function rows(csv: string): string[] {
   return csv.split("\r\n").filter((line) => line !== "");
 }
 
 describe("buildPortfolioCsv", () => {
-  it("usa punto y coma y coma decimal en español (dialecto de Excel en España)", () => {
+  it("uses semicolons and a decimal comma in Spanish (Excel's dialect in Spain)", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -57,7 +57,7 @@ describe("buildPortfolioCsv", () => {
     ]);
   });
 
-  it("usa coma y punto decimal en inglés", () => {
+  it("uses commas and a decimal point in English", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "en",
@@ -68,7 +68,7 @@ describe("buildPortfolioCsv", () => {
     expect(rows(csv)[1]).toBe("VWCE,,12.5,98.75,EUR,,110.4,EUR,2026-09-02,1380");
   });
 
-  it("termina siempre en salto de línea y no emite la línea sep=", () => {
+  it("always ends with a line break and does not emit the sep= line", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -80,14 +80,14 @@ describe("buildPortfolioCsv", () => {
     expect(csv.startsWith("sep=")).toBe(false);
   });
 
-  it("cartera vacía: solo la fila de cabeceras", () => {
+  it("empty portfolio: only the header row", () => {
     const csv = buildPortfolioCsv({ ...BASE, locale: "es", positions: [], prices: {} });
 
     expect(rows(csv)).toHaveLength(1);
     expect(itemAt(rows(csv), 0).split(";")).toHaveLength(CSV_COLUMNS.length);
   });
 
-  it("entrecomilla el texto que lleva el separador o comillas", () => {
+  it("quotes text containing the separator or quotes", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -99,7 +99,7 @@ describe("buildPortfolioCsv", () => {
     expect(rows(csv)[1]).toContain('"MyInvestor; SA"');
   });
 
-  it("neutraliza las fórmulas del texto libre (inyección en CSV)", () => {
+  it("neutralizes formulas in free text (CSV injection)", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -111,7 +111,7 @@ describe("buildPortfolioCsv", () => {
     expect(rows(csv)[1]).toContain(";'@SUM(A1);");
   });
 
-  it("deja vacías las celdas de precio cuando no hay cotización", () => {
+  it("leaves the price cells empty when there is no quote", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -122,7 +122,7 @@ describe("buildPortfolioCsv", () => {
     expect(rows(csv)[1]).toBe("SINPRECIO;;3;10;EUR;;;;;");
   });
 
-  it("exporta el precio pero no la valoración si la divisa no es convertible", () => {
+  it("exports the price but not the valuation if the currency is not convertible", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -130,12 +130,12 @@ describe("buildPortfolioCsv", () => {
       prices: { VOD: { close: 0.8, currency: "GBP", date: "2026-09-02" } },
     });
 
-    // El último precio se conserva en su divisa nativa; la valoración en EUR queda vacía
-    // (nunca 0) porque falta la tasa GBP.
+    // The last price is kept in its native currency; the EUR valuation is left empty
+    // (never 0) because the GBP rate is missing.
     expect(rows(csv)[1]).toBe("VOD;;100;0,7;GBP;;0,8;GBP;2026-09-02;");
   });
 
-  it("convierte la valoración a la divisa elegida", () => {
+  it("converts the valuation into the chosen currency", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       display: "EUR",
@@ -144,11 +144,11 @@ describe("buildPortfolioCsv", () => {
       prices: { AAPL: { close: 220, currency: "USD", date: "2026-09-02" } },
     });
 
-    // 10 × 220 USD → EUR con USD = 1 y EUR = 1,1 → 2000 EUR.
+    // 10 × 220 USD → EUR with USD = 1 and EUR = 1.1 → 2000 EUR.
     expect(itemAt(rows(csv), 1).split(";").at(-1)).toBe("2000");
   });
 
-  it("no escribe notación científica para cantidades muy pequeñas", () => {
+  it("does not write scientific notation for very small quantities", () => {
     const csv = buildPortfolioCsv({
       ...BASE,
       locale: "es",
@@ -160,7 +160,7 @@ describe("buildPortfolioCsv", () => {
     expect(rows(csv)[1]).not.toContain("e-");
   });
 
-  it("el BOM es la marca UTF-8 esperada por Excel", () => {
+  it("the BOM is the UTF-8 mark Excel expects", () => {
     expect(UTF8_BOM).toBe("﻿");
   });
 });

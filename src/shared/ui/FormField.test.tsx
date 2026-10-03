@@ -16,7 +16,7 @@ function Amount({ label, error }: { label: string; error?: string }) {
 }
 
 describe("FormField + DecimalField", () => {
-  it("enlaza etiqueta, ayuda y error con el control, con ids únicos por instancia", () => {
+  it("wires label, hint and error to the control, with ids unique per instance", () => {
     render(
       <>
         <Amount label="Precio" />
@@ -33,7 +33,7 @@ describe("FormField + DecimalField", () => {
     expect(fees).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("sanea lo tecleado y abre el teclado decimal", async () => {
+  it("sanitizes the input and opens the decimal keyboard", async () => {
     render(<Amount label="Precio" />);
     const input = screen.getByLabelText("Precio");
 

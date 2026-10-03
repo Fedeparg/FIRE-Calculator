@@ -29,14 +29,14 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
 
 @Module({
   imports: [
-    // `validate` corre al importar el módulo: el entorno ya debe estar completo (ver `config/env.ts`).
+    // `validate` runs when the module is imported: the environment must already be complete (see `config/env.ts`).
     ConfigModule.forRoot({ isGlobal: true, validate: parseEnv }),
-    // Límite por defecto anti-abuso (los endpoints sensibles ajustan el suyo).
+    // Default anti-abuse limit (sensitive endpoints set their own).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
-    // Habilita el cron nocturno de cartera (DailyJobsScheduler).
+    // Enables the nightly portfolio cron (DailyJobsScheduler).
     ScheduleModule.forRoot(),
-    // Global: desacopla PositionsModule de PortfolioModule (que ya importa PositionsModule)
-    // sin forwardRef — ver `positions/position-events.ts`.
+    // Global: decouples PositionsModule from PortfolioModule (which already imports PositionsModule)
+    // without forwardRef — see `positions/position-events.ts`.
     EventEmitterModule.forRoot(),
     DatabaseModule,
     EmailModule,
@@ -60,7 +60,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // Errores de Postgres con significado para el cliente (FK, único…) → 4xx/503 en vez de 500.
+    // Postgres errors that mean something to the client (FK, unique…) → 4xx/503 instead of 500.
     { provide: APP_FILTER, useClass: ErrorTranslationFilter },
   ],
 })

@@ -9,17 +9,17 @@ import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { safeReturnTo } from "@/shared/navigation/safe-return-to";
 import Button from "@/shared/ui/Button";
 
-/** Formulario de login por magic link: pide el email y solicita el enlace. */
+/** Magic-link login form: asks for the email and requests the link. */
 export default function LoginForm() {
   const t = useTranslations("auth.login");
   const emailId = useId();
-  // El email y la página del enlace salen en el idioma de esta página.
+  // The email and the link's landing page use this page's locale.
   const locale = useLocale();
   const [email, setEmail] = useState("");
   const request = useApiMutation();
 
-  // Si se llega aquí desde un flujo OAuth (?returnTo=/authorize…), recuérdalo para
-  // volver tras canjear el magic link. Solo rutas de nuestro origen (anti open-redirect).
+  // If we got here from an OAuth flow (?returnTo=/authorize…), remember it so we can return
+  // after redeeming the magic link. Only paths on our origin (prevents open redirects).
   useEffect(() => {
     const raw = new URLSearchParams(window.location.search).get("returnTo");
     const returnTo = raw ? safeReturnTo(raw, window.location.origin) : null;

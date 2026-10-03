@@ -23,22 +23,21 @@ type Props = {
   step?: number;
   help?: string;
   /**
-   * Oculta la etiqueta visualmente (sigue en el DOM y sigue siendo el nombre
-   * accesible del input). Para filas repetidas donde la etiqueta ya se ve una
-   * vez en la cabecera: se evita repetirla en pantalla sin dejar el campo
-   * anónimo para un lector de pantalla.
+   * Hides the label visually (it stays in the DOM and remains the input's accessible name).
+   * For repeated rows where the label is already shown once in the header: avoids repeating it
+   * on screen without leaving the field nameless for screen readers.
    */
   hideLabel?: boolean;
 };
 
 /**
- * Campo numérico con teclado decimal en móvil.
+ * Numeric field with a decimal keyboard on mobile.
  *
- * Es `type="text"` a propósito, no `type="number"`: el teclado decimal de un móvil
- * en español ofrece coma, y `type="number"` descarta todo lo que no sea un número
- * con punto, así que la coma nunca llegaba al handler y no se podían escribir
- * decimales. A cambio perdemos las flechas nativas del spinner, que se reimplementan
- * aquí; como allí, `min`/`max` gobiernan las flechas y no lo que se teclea.
+ * It is `type="text"` on purpose, not `type="number"`: a Spanish mobile decimal keyboard offers
+ * a comma, and `type="number"` drops anything that is not a number with a point, so the comma
+ * never reached the handler and decimals could not be typed. In exchange we lose the native
+ * spinner arrows, which are reimplemented here; as there, `min`/`max` drive the arrows, not what
+ * is typed.
  */
 export default function NumberField({
   label,
@@ -52,14 +51,14 @@ export default function NumberField({
 }: Props) {
   const id = useId();
   const { decimalSeparator } = useFormat();
-  // Estado de texto interno: permite el campo vacío mientras se edita (sin
-  // forzar un "0" que dejaría ceros feos a la izquierda) y conserva el separador
-  // tal y como lo escribe el usuario.
+  // Internal text state: allows an empty field while editing (without forcing a
+  // "0" that would leave ugly leading zeros) and keeps the separator exactly as
+  // the user types it.
   const [text, setText] = useState(() => formatDecimalInput(value, decimalSeparator));
-  // Último `value` visto. Si cambia desde FUERA (un enlace compartido, un escenario cargado), el
-  // texto se resincroniza; si es el eco de lo que se acaba de teclear ("3," ya vale 3), se
-  // respeta lo escrito. Es el patrón de React para ajustar estado cuando cambia una prop:
-  // comparar durante el render, sin un efecto que pintaría primero el texto viejo.
+  // Last `value` seen. If it changes from OUTSIDE (a shared link, a loaded scenario), the text
+  // is resynced; if it is the echo of what was just typed ("3," already means 3), the typed text
+  // is kept. This is React's pattern for adjusting state when a prop changes: compare during
+  // render, without an effect that would paint the stale text first.
   const [syncedValue, setSyncedValue] = useState(value);
   if (!Object.is(value, syncedValue)) {
     setSyncedValue(value);
@@ -73,10 +72,10 @@ export default function NumberField({
   }
 
   /**
-   * Al salir, el texto se resincroniza con el número ("3," → "3", "" → "0"). No se
-   * acota a [min, max]: `type="number"` tampoco lo hacía al teclear, y hay tasas que
-   * son legítimamente negativas pese al `min = 0` por defecto (un año en pérdidas,
-   * deflación). Los extremos solo gobiernan las flechas, como el spinner nativo.
+   * On blur, the text is resynced with the number ("3," → "3", "" → "0"). It is not clamped to
+   * [min, max]: `type="number"` did not clamp typed input either, and some rates are legitimately
+   * negative despite the default `min = 0` (a losing year, deflation). The bounds only drive
+   * the arrows, like the native spinner.
    */
   function handleBlur() {
     const parsed = parseDecimalInput(text) ?? 0;
@@ -84,7 +83,7 @@ export default function NumberField({
     setText(formatDecimalInput(parsed, decimalSeparator));
   }
 
-  /** Reemplaza las flechas del spinner nativo, que `type="text"` no trae. */
+  /** Replaces the native spinner arrows, which `type="text"` lacks. */
   function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
     event.preventDefault();

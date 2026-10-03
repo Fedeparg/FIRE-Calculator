@@ -11,71 +11,71 @@ import {
 import { REGION_CODES } from "./regions.js";
 
 describe("workIncomeReduction", () => {
-  it("rendimiento bajo → reducción máxima fija", () => {
+  it("low earned income → fixed maximum reduction", () => {
     expect(workIncomeReduction(10000)).toBe(7302);
     expect(workIncomeReduction(14852)).toBe(7302);
   });
 
-  it("tramo intermedio decrece de forma continua", () => {
+  it("decreases continuously in the middle band", () => {
     expect(workIncomeReduction(16000)).toBeCloseTo(7302 - 1.75 * (16000 - 14852), 4);
   });
 
-  it("se anula por encima del límite", () => {
+  it("drops to zero above the threshold", () => {
     expect(workIncomeReduction(19747.5)).toBeCloseTo(0, 2);
     expect(workIncomeReduction(25000)).toBe(0);
   });
 
-  it("nunca es negativa", () => {
+  it("is never negative", () => {
     expect(workIncomeReduction(19000)).toBeGreaterThanOrEqual(0);
   });
 });
 
 describe("generalIncomeTax", () => {
-  it("una base igual al mínimo personal no tributa", () => {
+  it("a base equal to the personal allowance (mínimo personal) is not taxed", () => {
     expect(generalIncomeTax(5550)).toBeCloseTo(0, 6);
   });
 
-  it("base por debajo del mínimo personal → 0 (nunca negativa)", () => {
+  it("base below the personal allowance → 0 (never negative)", () => {
     expect(generalIncomeTax(3000)).toBe(0);
   });
 
-  it("crece con la base", () => {
+  it("grows with the base", () => {
     expect(generalIncomeTax(30000)).toBeGreaterThan(generalIncomeTax(20000));
   });
 });
 
 describe("estimateNetSalary", () => {
-  it("aplica SS del 6,5% sobre el bruto", () => {
+  it("applies 6.5% SS on the gross", () => {
     const r = estimateNetSalary({ grossAnnual: 30000 });
     expect(r.socialSecurity).toBeCloseTo(1950, 6);
   });
 
-  it("un salario en torno al SMI apenas tributa por IRPF", () => {
+  it("a salary around the minimum wage (SMI) pays almost no IRPF", () => {
     const r = estimateNetSalary({ grossAnnual: 16000 });
     expect(r.incomeTax).toBeLessThan(300);
     expect(r.netAnnual).toBeLessThan(r.grossAnnual);
   });
 
-  it("el neto es menor que el bruto y la retención positiva", () => {
+  it("the net is lower than the gross and the withholding is positive", () => {
     const r = estimateNetSalary({ grossAnnual: 40000 });
     expect(r.netAnnual).toBeLessThan(40000);
     expect(r.withholdingRate).toBeGreaterThan(0);
     expect(r.totalDeductionRate).toBeGreaterThan(r.withholdingRate);
   });
 
-  it("aportar a un plan de pensiones reduce el IRPF", () => {
-    const sin = estimateNetSalary({ grossAnnual: 40000 });
-    const con = estimateNetSalary({ grossAnnual: 40000, pensionContribution: 1500 });
-    expect(con.incomeTax).toBeLessThan(sin.incomeTax);
+  it("contributing to a pension plan lowers IRPF", () => {
+    const withoutPlan = estimateNetSalary({ grossAnnual: 40000 });
+    const withPlan = estimateNetSalary({ grossAnnual: 40000, pensionContribution: 1500 });
+    expect(withPlan.incomeTax).toBeLessThan(withoutPlan.incomeTax);
   });
 
-  it("reparte el neto entre el número de pagas indicado", () => {
+  it("splits the net across the given number of payments", () => {
     const r = estimateNetSalary({ grossAnnual: 28000, payments: 12 });
     expect(r.netPerPayment).toBeCloseTo(r.netAnnual / 12, 6);
   });
 
-  // Valores "golden" verificados a mano contra el motor y referencias públicas.
-  it("GOLDEN: 30.000 € soltero sin hijos (14 pagas)", () => {
+  // "Golden" values checked by hand against the engine and public references.
+  it("GOLDEN: €30,000 single, no children (14 payments)", () => {
     const r = estimateNetSalary({ grossAnnual: 30000, payments: 14 });
     expect(r.socialSecurity).toBeCloseTo(1950, 2);
     expect(r.incomeTax).toBeCloseTo(4926, 0);
@@ -83,73 +83,73 @@ describe("estimateNetSalary", () => {
     expect(r.personalMinimum).toBe(5550);
   });
 
-  it("los hijos a cargo reducen el IRPF", () => {
-    const sin = estimateNetSalary({ grossAnnual: 30000 });
-    const con = estimateNetSalary({ grossAnnual: 30000, children: 2 });
-    expect(con.incomeTax).toBeLessThan(sin.incomeTax);
-    expect(con.personalMinimum).toBeGreaterThan(sin.personalMinimum);
+  it("dependent children lower IRPF", () => {
+    const withoutChildren = estimateNetSalary({ grossAnnual: 30000 });
+    const withChildren = estimateNetSalary({ grossAnnual: 30000, children: 2 });
+    expect(withChildren.incomeTax).toBeLessThan(withoutChildren.incomeTax);
+    expect(withChildren.personalMinimum).toBeGreaterThan(withoutChildren.personalMinimum);
   });
 
-  it("el contrato temporal cotiza algo más a la SS", () => {
-    const indef = estimateNetSalary({ grossAnnual: 30000, contractType: "indefinido" });
-    const temp = estimateNetSalary({ grossAnnual: 30000, contractType: "temporal" });
-    expect(temp.socialSecurity).toBeGreaterThan(indef.socialSecurity);
+  it("a temporary contract pays slightly more SS", () => {
+    const permanent = estimateNetSalary({ grossAnnual: 30000, contractType: "indefinido" });
+    const temporary = estimateNetSalary({ grossAnnual: 30000, contractType: "temporal" });
+    expect(temporary.socialSecurity).toBeGreaterThan(permanent.socialSecurity);
   });
 
-  it("la tributación conjunta reduce la base y el IRPF", () => {
-    const ind = estimateNetSalary({ grossAnnual: 30000 });
-    const conj = estimateNetSalary({ grossAnnual: 30000, jointReturn: true });
-    expect(conj.incomeTax).toBeLessThan(ind.incomeTax);
+  it("a joint return (tributación conjunta) lowers the base and IRPF", () => {
+    const individual = estimateNetSalary({ grossAnnual: 30000 });
+    const joint = estimateNetSalary({ grossAnnual: 30000, jointReturn: true });
+    expect(joint.incomeTax).toBeLessThan(individual.incomeTax);
   });
 
-  it("la cotización a la SS se topa en la base máxima", () => {
+  it("SS contributions are capped at the maximum contribution base", () => {
     const r = estimateNetSalary({ grossAnnual: 200000 });
-    // Base máxima 61.214,40 € × 6,5 % = 3.978,94 €, no 13.000 €.
+    // Maximum base €61,214.40 × 6.5% = €3,978.94, not €13,000.
     expect(r.socialSecurity).toBeCloseTo(61214.4 * 0.065, 2);
   });
 });
 
 describe("personalAndFamilyMinimum", () => {
-  it("mínimo del contribuyente por defecto", () => {
+  it("default taxpayer allowance", () => {
     expect(personalAndFamilyMinimum()).toBe(5550);
   });
 
-  it("aumenta con la edad", () => {
+  it("increases with age", () => {
     expect(personalAndFamilyMinimum({ age: 70 })).toBe(6700);
     expect(personalAndFamilyMinimum({ age: 80 })).toBe(8100);
   });
 
-  it("acumula el mínimo por descendientes en orden", () => {
-    // 5.550 + 2.400 (1.º) + 2.700 (2.º) = 10.650
+  it("accumulates the descendants allowance in order", () => {
+    // 5,550 + 2,400 (1st) + 2,700 (2nd) = 10,650
     expect(personalAndFamilyMinimum({ children: 2 })).toBe(10650);
   });
 
-  it("suma 2.800 € por cada hijo menor de 3 años", () => {
+  it("adds €2,800 for each child under 3", () => {
     expect(personalAndFamilyMinimum({ children: 1, childrenUnder3: 1 })).toBe(5550 + 2400 + 2800);
   });
 
-  it("suma ascendientes y discapacidad", () => {
+  it("adds ascendants and disability", () => {
     expect(personalAndFamilyMinimum({ ascendants: 1 })).toBe(5550 + 1150);
     expect(personalAndFamilyMinimum({ disability: "g65" })).toBe(5550 + 9000);
   });
 });
 
-describe("IRPF por comunidad autónoma", () => {
+describe("IRPF by autonomous community (comunidad autónoma)", () => {
   const BASES = [0, 5550, 12450, 20000, 30000, 60000, 100000, 300000, 500000];
 
-  it("sin comunidad el resultado es exactamente el de siempre (escala conjunta)", () => {
+  it("without a region the result is exactly the legacy one (combined scale)", () => {
     for (const base of BASES) {
       const legacy = generalIncomeTax(base);
       expect(generalIncomeTax(base, PERSONAL_MINIMUM, {})).toBe(legacy);
       expect(generalIncomeTax(base, PERSONAL_MINIMUM, { region: undefined })).toBe(legacy);
-      // Un mínimo autonómico distinto es irrelevante mientras no haya comunidad.
+      // A different regional allowance is irrelevant as long as there is no region.
       expect(generalIncomeTax(base, PERSONAL_MINIMUM, { regionalMinimum: 9999 })).toBe(legacy);
     }
   });
 
-  it("Castilla-La Mancha da el mismo resultado que no indicar comunidad", () => {
-    // Su escala autonómica es idéntica a la supletoria y no modifica el mínimo:
-    // es la comprobación de que sumar estatal + autonómica no introduce sesgo.
+  it("Castilla-La Mancha gives the same result as no region", () => {
+    // Its regional scale is identical to the fallback (supletoria) one and it does not change the
+    // allowance: this checks that adding state + regional introduces no bias.
     for (const base of BASES) {
       expect(generalIncomeTax(base, PERSONAL_MINIMUM, { region: "castilla-la-mancha" })).toBeCloseTo(
         generalIncomeTax(base),
@@ -158,7 +158,7 @@ describe("IRPF por comunidad autónoma", () => {
     }
   });
 
-  it.each(REGION_CODES)("%s: cuota positiva, creciente y nunca superior al 47 % de la base", (region) => {
+  it.each(REGION_CODES)("%s: tax is positive, increasing and never above 47% of the base", (region) => {
     const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
     expect(generalIncomeTax(0, PERSONAL_MINIMUM, options)).toBe(0);
     expect(generalIncomeTax(40000, PERSONAL_MINIMUM, options)).toBeGreaterThan(
@@ -167,11 +167,11 @@ describe("IRPF por comunidad autónoma", () => {
     expect(generalIncomeTax(60000, PERSONAL_MINIMUM, options)).toBeLessThan(60000 * 0.47);
   });
 
-  it("cada cuota se acota a cero por separado, no la suma", () => {
-    // Asturias sube el mínimo del contribuyente a 6.105 €. Con una base de
-    // 6.000 € hay cuota estatal (por encima de 5.550 €) y NO hay cuota
-    // autonómica: 450 € al 9,5 % estatal = 42,75 €. Acotar la suma en lugar de
-    // cada cuota daría 33,30 €, restando una cuota autonómica negativa.
+  it("each tax amount (cuota) is floored at zero separately, not their sum", () => {
+    // Asturias raises the taxpayer allowance to €6,105. With a base of
+    // €6,000 there is state tax (above €5,550) and NO regional
+    // tax: €450 at the 9.5% state rate = €42.75. Flooring the sum instead of
+    // each amount would give €33.30, subtracting a negative regional amount.
     const options = {
       region: "asturias" as const,
       regionalMinimum: regionalPersonalAndFamilyMinimum({ region: "asturias" }),
@@ -180,7 +180,7 @@ describe("IRPF por comunidad autónoma", () => {
     expect(generalIncomeTax(6000, PERSONAL_MINIMUM, options)).toBeCloseTo(42.75, 6);
   });
 
-  it("Madrid tributa menos que la escala supletoria y la Comunitat Valenciana, más", () => {
+  it("Madrid pays less than the fallback scale and the Comunitat Valenciana pays more", () => {
     const withRegion = (region: "madrid" | "valencia") =>
       generalIncomeTax(100000, PERSONAL_MINIMUM, {
         region,
@@ -190,7 +190,7 @@ describe("IRPF por comunidad autónoma", () => {
     expect(withRegion("valencia")).toBeGreaterThan(generalIncomeTax(100000));
   });
 
-  it("bases nulas o no finitas no rompen el cálculo con comunidad", () => {
+  it("zero or non-finite bases do not break the calculation with a region", () => {
     for (const region of REGION_CODES) {
       const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
       expect(generalIncomeTax(0, PERSONAL_MINIMUM, options)).toBe(0);
@@ -201,10 +201,10 @@ describe("IRPF por comunidad autónoma", () => {
     }
   });
 
-  it("el mínimo autonómico solo alimenta la cuota autonómica", () => {
-    // Canarias baja el marginal de los primeros tramos y sube el mínimo: con la
-    // misma base, su cuota difiere de la que sale usando el mínimo estatal en
-    // ambas escalas.
+  it("the regional allowance only feeds the regional tax", () => {
+    // Canarias lowers the marginal rate of the first brackets and raises the allowance: with the
+    // same base, its tax differs from the one obtained using the state allowance in
+    // both scales.
     const base = 30000;
     const withOwnMinimum = generalIncomeTax(base, PERSONAL_MINIMUM, {
       region: "canarias",
@@ -215,15 +215,15 @@ describe("IRPF por comunidad autónoma", () => {
     expect(withOwnMinimum).toBeLessThan(withStateMinimum);
   });
 
-  it("las circunstancias familiares se aplican también al mínimo autonómico", () => {
+  it("family circumstances also apply to the regional allowance", () => {
     const c = { region: "galicia" as const, children: 2, childrenUnder3: 1 };
-    // 5.789 + 2.503 + 2.816 + 2.920 (menor de 3 años) = 14.028 €.
+    // 5,789 + 2,503 + 2,816 + 2,920 (under 3) = €14,028.
     expect(regionalPersonalAndFamilyMinimum(c)).toBeCloseTo(14028, 6);
-    // El mínimo estatal del mismo contribuyente sigue siendo el estatal.
+    // The same taxpayer's state allowance is still the state one.
     expect(personalAndFamilyMinimum(c)).toBeCloseTo(5550 + 2400 + 2700 + 2800, 6);
   });
 
-  it("sin comunidad, el mínimo autonómico es el estatal", () => {
+  it("without a region, the regional allowance is the state one", () => {
     const c = { children: 1, age: 70 };
     expect(regionalPersonalAndFamilyMinimum(c)).toBe(personalAndFamilyMinimum(c));
     expect(regionalPersonalAndFamilyMinimum()).toBe(personalAndFamilyMinimum());
@@ -231,39 +231,39 @@ describe("IRPF por comunidad autónoma", () => {
 });
 
 describe("generalMarginalRate", () => {
-  it("sin comunidad devuelve el marginal de la escala conjunta", () => {
+  it("without a region returns the marginal rate of the combined scale", () => {
     expect(generalMarginalRate(30000)).toBe(30);
     expect(generalMarginalRate(400000)).toBe(47);
   });
 
-  it("con comunidad suma el marginal estatal y el autonómico", () => {
-    // Madrid: 17,40 % autonómico + 18,50 % estatal en el tramo de 35.200-57.320 €.
+  it("with a region adds the state and regional marginal rates", () => {
+    // Madrid: 17.40% regional + 18.50% state in the €35,200-57,320 bracket.
     expect(generalMarginalRate(40000, "madrid")).toBeCloseTo(35.9, 6);
-    // La Rioja por encima de 120.000 €: 27 % + 22,50 % estatal.
+    // La Rioja above €120,000: 27% + 22.50% state.
     expect(generalMarginalRate(150000, "la-rioja")).toBeCloseTo(49.5, 6);
   });
 
-  it("bases no finitas o negativas usan el primer tramo", () => {
+  it("non-finite or negative bases use the first bracket", () => {
     expect(generalMarginalRate(Number.NaN, "madrid")).toBeCloseTo(9.5 + 8.5, 6);
     expect(generalMarginalRate(-5000)).toBe(19);
   });
 });
 
-describe("estimateNetSalary por comunidad", () => {
-  it("sin comunidad el resultado no cambia respecto del histórico", () => {
+describe("estimateNetSalary by region", () => {
+  it("without a region the result is unchanged from the legacy one", () => {
     const withoutRegion = estimateNetSalary({ grossAnnual: 30000 });
     const explicitUndefined = estimateNetSalary({ grossAnnual: 30000, region: undefined });
     expect(explicitUndefined).toEqual(withoutRegion);
   });
 
-  it("la comunidad cambia el neto en la dirección esperada", () => {
+  it("the region moves the net in the expected direction", () => {
     const base = { grossAnnual: 60000 };
-    const madrid = estimateNetSalary({ ...base, region: "madrid" });
-    const supletoria = estimateNetSalary(base);
-    const valencia = estimateNetSalary({ ...base, region: "valencia" });
-    expect(madrid.netAnnual).toBeGreaterThan(supletoria.netAnnual);
-    expect(valencia.netAnnual).toBeLessThan(supletoria.netAnnual);
-    // El mínimo que se reporta sigue siendo el estatal.
-    expect(madrid.personalMinimum).toBe(supletoria.personalMinimum);
+    const inMadrid = estimateNetSalary({ ...base, region: "madrid" });
+    const fallback = estimateNetSalary(base);
+    const inValencia = estimateNetSalary({ ...base, region: "valencia" });
+    expect(inMadrid.netAnnual).toBeGreaterThan(fallback.netAnnual);
+    expect(inValencia.netAnnual).toBeLessThan(fallback.netAnnual);
+    // The reported allowance is still the state one.
+    expect(inMadrid.personalMinimum).toBe(fallback.personalMinimum);
   });
 });

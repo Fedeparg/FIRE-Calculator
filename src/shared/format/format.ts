@@ -1,73 +1,73 @@
-// Formato localizado. Core puro (sin React), parametrizado por idioma.
+// Localized formatting. Pure core (no React), parameterized by locale.
 //
-// El idioma de la UI (`es` | `en`) determina el locale de `Intl`: `es-ES` (separador de
-// miles ".", decimal ",", y sin agrupar las cifras de 4 dígitos, según la norma española)
-// y `en-GB` (agrupa siempre desde 4 dígitos: "£2,000.00"). Los componentes obtienen el
-// juego de formateadores del idioma activo con el hook `useFormat()` (ver `@/shared/format/use-format`).
+// The UI language (`es` | `en`) determines the `Intl` locale: `es-ES` (thousands separator ".",
+// decimal ",", and no grouping for 4-digit figures, per the Spanish standard) and `en-GB`
+// (always groups from 4 digits: "£2,000.00"). Components get the active locale's formatter set
+// with the `useFormat()` hook (see `@/shared/format/use-format`).
 //
-// `getFormatters(locale)` memoiza un juego por idioma: `Intl.NumberFormat` es caro de crear,
-// así que se construye una sola vez por locale y se reutiliza en todos los renders.
+// `getFormatters(locale)` memoizes one set per locale: `Intl.NumberFormat` is expensive to
+// create, so it is built once per locale and reused across renders.
 
 import { type Locale } from "@/i18n/types";
 
-/** Idioma de la UI → locale de `Intl`. `en-GB` y `en-US` son idénticos para números/moneda. */
+/** UI language → `Intl` locale. `en-GB` and `en-US` are identical for numbers/currency. */
 const INTL_LOCALE: Record<Locale, string> = { es: "es-ES", en: "en-GB" };
 
 /**
- * Marcador para valores no representables (Infinity, NaN, divisiones por cero).
- * Centralizar esto evita que cada calculadora invente su propio guard y que un
- * resultado indefinido se cuele como "0 €", que sería engañoso.
+ * Placeholder for unrepresentable values (Infinity, NaN, division by zero). Centralizing it
+ * keeps each calculator from inventing its own guard and an undefined result from slipping
+ * through as "0 €", which would be misleading.
  */
 const NON_FINITE = "—";
 
-/** Juego de formateadores ya ligados a un idioma. Lo devuelve `getFormatters` / `useFormat`. */
+/** Set of formatters bound to a locale. Returned by `getFormatters` / `useFormat`. */
 export interface Formatters {
-  /** Moneda (EUR) sin decimales (cifras grandes: patrimonio, totales). */
+  /** Currency (EUR) without decimals (large figures: net worth, totals). */
   formatEUR: (n: number) => string;
-  /** Moneda (EUR) con 2 decimales (cuotas, importes pequeños). */
+  /** Currency (EUR) with 2 decimals (installments, small amounts). */
   formatEURCents: (n: number) => string;
-  /** Número entero con separador de miles del idioma. */
+  /** Integer with the locale's thousands separator. */
   formatNumber: (n: number) => string;
-  /** Cantidad de títulos (participaciones, acciones, cripto): hasta 6 decimales. */
+  /** Quantity of securities (fund units, shares, crypto): up to 6 decimals. */
   formatQuantity: (n: number) => string;
-  /** Coeficiente o multiplicador con 2-4 decimales (p. ej. 1,5882). */
+  /** Coefficient or multiplier with 2-4 decimals (e.g. 1.5882). */
   formatMultiplier: (n: number) => string;
-  /** Notación compacta para ejes de gráficas ("1,2 M €"). */
+  /** Compact notation for chart axes ("1,2 M €"). */
   formatCompactEUR: (n: number) => string;
-  /** Notación compacta en una divisa arbitraria, para ejes de gráficas en la divisa elegida. */
+  /** Compact notation in an arbitrary currency, for chart axes in the chosen currency. */
   formatCompactCurrency: (n: number, currency: string) => string;
   /**
-   * Recibe un porcentaje en base 100 (7 → "7 %"). Por defecto omite los decimales que
-   * no aportan, que es lo natural en prosa y en leyendas.
+   * Takes a base-100 percentage (7 → "7 %"). By default it omits decimals that add nothing,
+   * which reads naturally in prose and legends.
    *
-   * `minDecimals` los fuerza: en una COLUMNA de cifras comparables, "39,4 %" entre
-   * "15,34 %" y "28,48 %" se lee como si tuviera menos precisión que las demás, cuando
-   * en realidad es 39,40 %. Ahí conviene pasar `{ minDecimals: 2 }`.
+   * `minDecimals` forces them: in a COLUMN of comparable figures, "39,4 %" between "15,34 %"
+   * and "28,48 %" reads as if it were less precise than the others, when it is really 39.40%.
+   * Pass `{ minDecimals: 2 }` there.
    */
   formatPercent: (n: number, options?: { minDecimals?: number }) => string;
-  /** Moneda en una divisa arbitraria (EUR/USD/GBP/JPY…), para las posiciones de la cartera. */
+  /** Amount in an arbitrary currency (EUR/USD/GBP/JPY…), for portfolio positions. */
   formatCurrency: (n: number, currency: string) => string;
   /**
-   * Como `formatCurrency` pero con signo explícito para ganancias y pérdidas ("+1.234,56 €",
-   * "-3,00 €"). El cero (y lo que redondea a cero, y el -0) va sin signo: "+0,00 €" o "-0,00 €"
-   * sugerirían una ganancia o una pérdida que no hay.
+   * Like `formatCurrency` but with an explicit sign for gains and losses ("+1.234,56 €",
+   * "-3,00 €"). Zero (and anything rounding to zero, and -0) is unsigned: "+0,00 €" or "-0,00 €"
+   * would suggest a gain or loss that does not exist.
    */
   formatSignedCurrency: (n: number, currency: string) => string;
-  /** Como `formatPercent` pero con signo explícito ("+5,2 %"), con la misma regla del cero. */
+  /** Like `formatPercent` but with an explicit sign ("+5,2 %"), with the same zero rule. */
   formatSignedPercent: (n: number, options?: { minDecimals?: number }) => string;
-  /** Símbolo corto de una divisa ("€", "$", "£", "CHF"…) en el idioma activo. */
+  /** Short currency symbol ("€", "$", "£", "CHF"…) in the active locale. */
   currencySymbol: (currency: string) => string;
-  /** Etiqueta compacta de una divisa para selectores: "€ EUR", "$ USD"… */
+  /** Compact currency label for selectors: "€ EUR", "$ USD"… */
   currencyLabel: (currency: string) => string;
-  /** Separador decimal del idioma ("," en es, "." en en). Para los campos de entrada editables. */
+  /** The locale's decimal separator ("," in es, "." in en). For editable input fields. */
   decimalSeparator: string;
 }
 
-/** Construye un juego de formateadores para un idioma. Cachea internamente por divisa. */
+/** Builds a formatter set for a locale. Caches internally per currency. */
 function build(locale: Locale): Formatters {
   const l = INTL_LOCALE[locale];
 
-  // `signDisplay: "negative"`: sin él, -0,4 € redondeado a 0 sale "-0 €".
+  // `signDisplay: "negative"`: without it, -0.4 € rounded to 0 comes out as "-0 €".
   const eur = new Intl.NumberFormat(l, {
     style: "currency",
     currency: "EUR",
@@ -81,9 +81,9 @@ function build(locale: Locale): Formatters {
     maximumFractionDigits: 2,
   });
   const num = new Intl.NumberFormat(l, { maximumFractionDigits: 0 });
-  // Cantidades: hasta 6 decimales (la BD guarda `numeric(18,6)`), sin forzar decimales para
-  // que un entero se muestre limpio. Redondear a entero falsearía 1368,8 → "1.369" y
-  // ocultaría 0,5 BTC como "1".
+  // Quantities: up to 6 decimals (the DB stores `numeric(18,6)`), without forcing decimals so an
+  // integer shows cleanly. Rounding to an integer would misreport 1368.8 → "1.369" and hide
+  // 0.5 BTC as "1".
   const quantity = new Intl.NumberFormat(l, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 6,
@@ -98,13 +98,13 @@ function build(locale: Locale): Formatters {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   });
-  // Variante con dos decimales SIEMPRE, para columnas de cifras alineadas (ver `formatPercent`).
+  // Variant with ALWAYS two decimals, for columns of aligned figures (see `formatPercent`).
   const pctFixed2 = new Intl.NumberFormat(l, {
     style: "percent",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-  // `exceptZero`: "+" en positivos, "-" en negativos y nada en el cero ya redondeado.
+  // `exceptZero`: "+" for positives, "-" for negatives and nothing for an already rounded zero.
   const signedPct = new Intl.NumberFormat(l, {
     style: "percent",
     minimumFractionDigits: 0,
@@ -118,14 +118,14 @@ function build(locale: Locale): Formatters {
     signDisplay: "exceptZero",
   });
 
-  // Cachés por divisa (dentro del closure del idioma: cada locale tiene las suyas). Sin esto,
-  // una caché global por-divisa devolvería el formateador del primer idioma que la tocara.
+  // Per-currency caches (inside the locale's closure: each locale has its own). Otherwise a
+  // global per-currency cache would return the formatter of whichever locale touched it first.
   const currencyFormatters = new Map<string, Intl.NumberFormat>();
   const signedCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const compactCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const currencySymbols = new Map<string, string>();
-  // Para una divisa que `Intl` no conoce (un código ISO inválido en un dato importado): el
-  // importe con dos decimales y el código detrás, en vez de un `RangeError` en pleno render.
+  // For a currency `Intl` does not know (an invalid ISO code in imported data): the amount with
+  // two decimals followed by the code, instead of a `RangeError` mid-render.
   const plainAmount = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const signedPlainAmount = new Intl.NumberFormat(l, {
     minimumFractionDigits: 2,
@@ -133,7 +133,7 @@ function build(locale: Locale): Formatters {
     signDisplay: "exceptZero",
   });
 
-  /** `Intl.NumberFormat` de divisa, o `null` si el código no es válido. */
+  /** Currency `Intl.NumberFormat`, or `null` if the code is invalid. */
   const currencyFormat = (options: Intl.NumberFormatOptions): Intl.NumberFormat | null => {
     try {
       return new Intl.NumberFormat(l, options);
@@ -146,7 +146,7 @@ function build(locale: Locale): Formatters {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = currencyFormatters.get(currency);
     if (!fmt) {
-      // Los decimales los decide `Intl` por divisa (EUR/USD → 2, JPY → 0): forzar 2 rompería el yen.
+      // `Intl` picks the decimals per currency (EUR/USD → 2, JPY → 0): forcing 2 would break the yen.
       const created = currencyFormat({ style: "currency", currency });
       if (!created) return `${plainAmount.format(n)} ${currency}`;
       fmt = created;
@@ -167,9 +167,9 @@ function build(locale: Locale): Formatters {
     return fmt.format(n);
   };
 
-  // Compacto CON divisa: se delega en `Intl` (style "currency" + notation "compact") en vez de
-  // pegar el símbolo a mano, porque la posición del símbolo depende del idioma ("1,2 M €" en
-  // es, "€1.2M" en en) y del propio código de divisa.
+  // Compact WITH currency: delegated to `Intl` (style "currency" + notation "compact") instead of
+  // gluing the symbol by hand, because the symbol position depends on the locale ("1,2 M €" in
+  // es, "€1.2M" in en) and on the currency code itself.
   const formatCompactCurrency = (n: number, currency: string): string => {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = compactCurrencyFormatters.get(currency);
@@ -198,7 +198,7 @@ function build(locale: Locale): Formatters {
     formatNumber: (n) => (Number.isFinite(n) ? num.format(n) : NON_FINITE),
     formatQuantity: (n) => (Number.isFinite(n) ? quantity.format(n) : NON_FINITE),
     formatMultiplier: (n) => (Number.isFinite(n) ? multiplier.format(n) : NON_FINITE),
-    // La posición del símbolo depende del idioma ("1,2 M €" / "€1.2M"): la decide `Intl`.
+    // The symbol position depends on the locale ("1,2 M €" / "€1.2M"): `Intl` decides it.
     formatCompactEUR: (n) => formatCompactCurrency(n, "EUR"),
     formatCompactCurrency,
     formatPercent: (n, options) =>
@@ -208,22 +208,22 @@ function build(locale: Locale): Formatters {
     formatCurrency,
     formatSignedCurrency,
     currencySymbol,
-    // El código ISO va SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY).
-    // Si la divisa no tiene símbolo propio (CHF), `currencySymbol` ya devuelve el código.
+    // The ISO code is ALWAYS included (symbols collide: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY).
+    // If the currency has no symbol of its own (CHF), `currencySymbol` already returns the code.
     currencyLabel: (currency) => {
       const symbol = currencySymbol(currency);
       return symbol === currency ? currency : `${symbol} ${currency}`;
     },
-    // `num` redondea a entero, así que no sirve para sondear el separador: usamos uno limpio.
+    // `num` rounds to an integer, so it cannot probe the separator: use a clean one.
     decimalSeparator: new Intl.NumberFormat(l).formatToParts(1.1).find((p) => p.type === "decimal")?.value ?? ".",
   };
 }
 
-// Un juego de formateadores por idioma, construido una sola vez y reutilizado. Es seguro como
-// singleton de módulo (contenido inmutable y determinista por locale; sin estado por request).
+// One formatter set per locale, built once and reused. Safe as a module singleton (immutable,
+// deterministic content per locale; no per-request state).
 const cache = new Map<Locale, Formatters>();
 
-/** Devuelve el juego de formateadores del idioma dado (memoizado). */
+/** Returns the formatter set for the given locale (memoized). */
 export function getFormatters(locale: Locale): Formatters {
   let f = cache.get(locale);
   if (!f) {
@@ -233,24 +233,23 @@ export function getFormatters(locale: Locale): Formatters {
   return f;
 }
 
-/** Reformatea una fecha ISO "YYYY-MM-DD" a "DD/MM/YYYY" sin construir un Date (sin desfase de zona). */
+/** Reformats an ISO "YYYY-MM-DD" date as "DD/MM/YYYY" without building a Date (no time-zone shift). */
 export const formatIsoDate = (iso: string): string => {
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
 };
 
-// Fecha larga por idioma ("3 de septiembre de 2026" / "3 September 2026"). Un juego por
-// locale, memoizado igual que los formateadores numéricos.
+// Long date per locale ("3 de septiembre de 2026" / "3 September 2026"). One per locale,
+// memoized like the numeric formatters.
 const longDateFormatters = new Map<Locale, Intl.DateTimeFormat>();
 
 /**
- * Fecha ISO "YYYY-MM-DD" → fecha larga en el idioma dado.
+ * ISO "YYYY-MM-DD" date → long date in the given locale.
  *
- * El día se ancla en UTC (`Date.UTC` + `timeZone: "UTC"`) por dos motivos: una fecha
- * "a secas" no tiene hora, y sin anclar, un navegador en una zona por detrás de UTC
- * mostraría el día anterior; además así el resultado es idéntico en servidor y en
- * cliente, que es lo que evita un desajuste de hidratación. Devuelve el ISO tal cual
- * si no es una fecha parseable, para no inventar un día.
+ * The day is anchored in UTC (`Date.UTC` + `timeZone: "UTC"`) for two reasons: a plain date has
+ * no time, and without anchoring, a browser in a zone behind UTC would show the previous day;
+ * it also makes the result identical on server and client, which avoids a hydration mismatch.
+ * Returns the ISO string as is if it is not a parseable date, so no day is made up.
  */
 export const formatLongDate = (iso: string, locale: Locale): string => {
   const [y = NaN, m = NaN, d = NaN] = iso.split("-").map(Number);
@@ -272,10 +271,10 @@ export const formatLongDate = (iso: string, locale: Locale): string => {
   return fmt.format(timestamp);
 };
 
-// Tiempo relativo por idioma ("hace 5 minutos" / "5 minutes ago"), memoizado igual que el resto.
+// Relative time per locale ("hace 5 minutos" / "5 minutes ago"), memoized like the rest.
 const relativeTimeFormatters = new Map<Locale, Intl.RelativeTimeFormat>();
 
-/** Escalones del tiempo relativo: la unidad se elige por el tamaño de la diferencia. */
+/** Relative-time steps: the unit is picked by the size of the difference. */
 const RELATIVE_STEPS: readonly { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
   { unit: "day", seconds: 86_400 },
   { unit: "hour", seconds: 3_600 },
@@ -283,12 +282,12 @@ const RELATIVE_STEPS: readonly { unit: Intl.RelativeTimeFormatUnit; seconds: num
 ];
 
 /**
- * Instante ISO → tiempo relativo a `now` (milisegundos), en el idioma dado: "hace un momento",
- * "hace 5 minutos", "hace 2 horas", "ayer". Se redondea HACIA ABAJO (58 minutos son "hace 58
- * minutos", no "hace 1 hora"), que es lo honesto al hablar de la frescura de un dato. Un
- * instante futuro (relojes desajustados) cuenta como "ahora". Devuelve "—" si no se puede leer.
+ * ISO instant → time relative to `now` (milliseconds), in the given locale: "a moment ago",
+ * "5 minutes ago", "2 hours ago", "yesterday". It rounds DOWN (58 minutes is "58 minutes ago",
+ * not "1 hour ago"), which is the honest choice when describing how fresh data is. A future
+ * instant (skewed clocks) counts as "now". Returns "—" if it cannot be read.
  *
- * `now` se recibe en vez de leer el reloj para que la función sea pura y testeable.
+ * `now` is passed in instead of reading the clock so the function stays pure and testable.
  */
 export function formatRelativeTime(iso: string, now: number, locale: Locale): string {
   const timestamp = Date.parse(iso);

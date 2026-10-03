@@ -11,7 +11,7 @@ type Props = {
   categories: LandingCategory[];
 };
 
-/** Categorías de calculadoras destacadas (datos reales del registro). */
+/** Featured calculator categories (real data from the registry). */
 export default function Categories({ categories }: Props) {
   const t = useTranslations("landing.categories");
 

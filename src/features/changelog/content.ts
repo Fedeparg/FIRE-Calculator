@@ -7,31 +7,31 @@ import { renderMarkdown } from "@/shared/content/markdown";
 import { asLocale } from "@/i18n/types";
 
 /**
- * Novedades escritas a mano: una entrega por día, `content/changelog/<YYYY-MM-DD>.<locale>.md`.
- * Mismo patrón que la wiki (primitivas en `shared/content/localized-markdown.ts`): frontmatter, cuerpo
- * Markdown compilado en runtime y sufijo de idioma. La fecha sale del nombre del fichero, no del
- * frontmatter, para que no pueda discrepar de él. Frontmatter: `title` y `highlight` (hito, opcional).
+ * Hand-written changelog ("Novedades"): one release per day, `content/changelog/<YYYY-MM-DD>.<locale>.md`.
+ * Same pattern as the wiki (primitives in `shared/content/localized-markdown.ts`): frontmatter, a
+ * Markdown body compiled at runtime and a locale suffix. The date comes from the file name, not the
+ * frontmatter, so the two cannot disagree. Frontmatter: `title` and `highlight` (milestone, optional).
  */
 const CHANGELOG_DIR = path.join(process.cwd(), "content", "changelog");
 
-/** Slug de una entrega: su fecha ISO. */
+/** A release's slug: its ISO date. */
 const RELEASE_DATE = "\\d{4}-\\d{2}-\\d{2}";
 
 export interface ChangelogRelease {
-  /** `YYYY-MM-DD`, tomada del nombre del fichero. */
+  /** `YYYY-MM-DD`, taken from the file name. */
   date: string;
   title: string;
   highlight: boolean;
   html: string;
 }
 
-/** Fechas de las entregas de un idioma, de más reciente a más antigua. */
+/** Release dates for one locale, newest first. */
 export async function getChangelogDates(locale: string): Promise<string[]> {
-  // ISO: ordena bien como cadena.
+  // ISO: sorts correctly as a string.
   return (await listLocalizedSlugs(CHANGELOG_DIR, locale, RELEASE_DATE)).reverse();
 }
 
-/** Entregas de un idioma, de más reciente a más antigua. Un fichero ilegible se omite. */
+/** Releases for one locale, newest first. An unreadable file is skipped. */
 export async function getChangelog(locale: string): Promise<ChangelogRelease[]> {
   const dates = await getChangelogDates(locale);
   const releases = await Promise.all(
@@ -51,9 +51,9 @@ export async function getChangelog(locale: string): Promise<ChangelogRelease[]> 
 }
 
 /**
- * Fecha de la entrega más reciente (`YYYY-MM-DD`) o `undefined` si no hay ninguna.
- * Alimenta el `lastModified` del sitemap: aquí sí hay una fecha REAL de contenido,
- * a diferencia de las calculadoras (ver la cabecera de `app/sitemap.ts`).
+ * Date of the latest release (`YYYY-MM-DD`), or `undefined` if there is none.
+ * Feeds the sitemap's `lastModified`: here there IS a real content date, unlike the
+ * calculators (see the header of `app/sitemap.ts`).
  */
 export async function getChangelogLastUpdated(): Promise<string | undefined> {
   return (await getChangelogDates("es"))[0];

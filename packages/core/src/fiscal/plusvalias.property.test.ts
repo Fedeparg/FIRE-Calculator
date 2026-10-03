@@ -4,7 +4,7 @@ import { describe, it } from "vitest";
 import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { walkLots, type TradeLot } from "./plusvalias.js";
 
-/** Histórico arbitrario: compras y ventas en fechas de 2020-2025, en cualquier orden. */
+/** Arbitrary history: buys and sells dated 2020-2025, in any order. */
 const history = fc
   .array(
     fc.record({
@@ -29,8 +29,8 @@ const history = fc
 
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-6 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("walkLots — propiedades", () => {
-  it("conserva la cantidad: comprado = vendido emparejado + lo que queda vivo", () => {
+describe("walkLots — properties", () => {
+  it("conserves quantity: bought = matched sold + what remains open", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const { open, sales } = walkLots(lots);
@@ -43,14 +43,14 @@ describe("walkLots — propiedades", () => {
     );
   });
 
-  it("sin ventas no hay ganancias realizadas", () => {
+  it("has no realised gains without sales", () => {
     fc.assert(
       fc.property(history, (lots) => walkLots(lots.filter((l) => l.kind === "buy")).sales.length === 0),
       PROPERTY_PARAMS,
     );
   });
 
-  it("cada venta cuadra: ganancia = transmisión − adquisición = suma del desglose por lote", () => {
+  it("every sale reconciles: gain = transfer − acquisition = sum of the per-lot breakdown", () => {
     fc.assert(
       fc.property(history, (lots) =>
         walkLots(lots).sales.every(
@@ -70,7 +70,7 @@ describe("walkLots — propiedades", () => {
     );
   });
 
-  it("el resultado no depende del orden en que lleguen los lotes", () => {
+  it("the result does not depend on the order in which the lots arrive", () => {
     fc.assert(
       fc.property(history, (lots) => {
         const forward = walkLots(lots);

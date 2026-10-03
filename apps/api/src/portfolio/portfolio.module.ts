@@ -9,15 +9,15 @@ import { SnapshotRepository } from './snapshot.repository.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
- * Valoración de cartera (tools MCP `get_portfolio_valuation`, `get_position`) y su histórico
- * (`PortfolioSnapshotsService`, que usa la misma valoración). Importa `SessionModule`
- * para que `JwtAuthGuard` valide la cookie en `GET /api/portfolio/history`.
+ * Portfolio valuation (MCP tools `get_portfolio_valuation`, `get_position`) and its history
+ * (`PortfolioSnapshotsService`, which uses the same valuation). Imports `SessionModule` so
+ * that `JwtAuthGuard` validates the cookie on `GET /api/portfolio/history`.
  */
 @Module({
   imports: [PositionsModule, PricesModule, SessionModule],
   controllers: [PortfolioController],
   providers: [PortfolioValuationService, PortfolioSnapshotsService, SnapshotRepository],
-  // Los snapshots se exportan al job diario y a las tools MCP de histórico.
+  // Snapshots are exported to the daily job and to the MCP history tools.
   exports: [PortfolioValuationService, PortfolioSnapshotsService],
 })
 export class PortfolioModule {}

@@ -8,7 +8,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions } from '../db/schema.js';
 import { INSTRUMENT_SEARCH, type InstrumentSearchProvider, type InstrumentType } from '../prices/instrument-search.js';
 
-/** Tipo del buscador → clase de activo de la declaración (el mismo criterio que el alta manual). */
+/** Search result type → tax-return asset class (the same criterion as manual creation). */
 const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
   equity: 'stock',
   etf: 'fund',
@@ -19,14 +19,14 @@ const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
   other: 'other',
 };
 
-/** Tope de símbolos por ejecución: el buscador es de Yahoo y rate-limita en ráfaga. */
+/** Cap on symbols per run: the search is Yahoo's and it rate-limits bursts. */
 const MAX_TICKERS_PER_RUN = 40;
 const SEARCH_DELAY_MS = 400;
 
 /**
- * Da clase de activo a las posiciones que no la tienen (anteriores a guardarla, o dadas de alta
- * tecleando el símbolo) con el tipo que devuelve el buscador de instrumentos. Sin ella, sus ventas
- * salen "sin clasificar" en la declaración. El usuario puede cambiarla después en la posición.
+ * Assigns an asset class to positions that lack one (created before it was stored, or by typing
+ * the symbol) using the type returned by the instrument search. Without it, their sales show up as
+ * "unclassified" in the tax return. The user can change it later on the position.
  */
 @Injectable()
 export class AssetClassBackfillService {
@@ -37,7 +37,7 @@ export class AssetClassBackfillService {
     @Inject(INSTRUMENT_SEARCH) private readonly search: InstrumentSearchProvider,
   ) {}
 
-  /** Devuelve cuántas posiciones ha clasificado. */
+  /** Returns how many positions it classified. */
   async classifyMissing(): Promise<number> {
     const rows = await this.db
       .selectDistinct({ ticker: positions.ticker })
@@ -57,11 +57,11 @@ export class AssetClassBackfillService {
         .returning({ id: positions.id });
       classified += updated.length;
     }
-    if (classified > 0) this.logger.log(`Clase de activo deducida para ${classified} posiciones`);
+    if (classified > 0) this.logger.log(`Asset class inferred for ${classified} positions`);
     return classified;
   }
 
-  /** Por ISIN vale el primer resultado; por símbolo, solo el que coincide exactamente. */
+  /** By ISIN the first result is used; by symbol, only the exact match. */
   private async classify(ticker: string): Promise<AssetClass | null> {
     const results = await this.search.search(ticker);
     const match = isIsin(ticker) ? results[0] : results.find((r) => r.symbol.toUpperCase() === ticker.toUpperCase());

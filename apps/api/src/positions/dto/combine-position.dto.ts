@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 import { amountSchema, currencySchema, quantitySchema } from '../../common/dto/primitives.js';
 
-/** Cuerpo de POST /api/positions/:id/combine: la nueva compra a fusionar; la divisa debe coincidir con la de la posición (lo rechaza el servicio). */
+/** Body of POST /api/positions/:id/combine: the new buy to merge; the currency must match the position's (the service rejects it otherwise). */
 export const combinePositionSchema = z.strictObject({
-  quantity: quantitySchema.describe('Cantidad de la nueva compra.'),
-  avgPrice: amountSchema.describe('Precio de la nueva compra.'),
+  quantity: quantitySchema.describe('Quantity of the new purchase.'),
+  avgPrice: amountSchema.describe('Price of the new purchase.'),
   currency: currencySchema.optional(),
 });
 

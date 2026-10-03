@@ -1,17 +1,17 @@
-// Matchers del DOM (`toHaveTextContent`, `toHaveValue`, `toBeInTheDocument`…) para `expect`.
+// DOM matchers (`toHaveTextContent`, `toHaveValue`, `toBeInTheDocument`…) for `expect`.
 import "@testing-library/jest-dom/vitest";
 
 import { cleanup } from "@testing-library/react";
 import { afterEach } from "vitest";
 
-// Sin `globals: true`, Testing Library no registra su limpieza automática: se desmonta aquí lo
-// renderizado en cada test para que el DOM no se acumule entre tests.
+// Without `globals: true`, Testing Library does not register its automatic cleanup: whatever each
+// test rendered is unmounted here so the DOM does not pile up across tests.
 afterEach(() => {
   cleanup();
 });
 
-// jsdom no implementa `matchMedia`. Por defecto ninguna media query se cumple (pantalla estrecha,
-// sin preferencias); un test que necesite otra cosa la sustituye con `vi.spyOn(window, "matchMedia")`.
+// jsdom does not implement `matchMedia`. By default no media query matches (narrow screen, no
+// preferences); a test that needs something else overrides it with `vi.spyOn(window, "matchMedia")`.
 if (typeof window.matchMedia !== "function") {
   window.matchMedia = (query: string): MediaQueryList => ({
     matches: false,

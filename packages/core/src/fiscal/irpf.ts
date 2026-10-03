@@ -1,6 +1,6 @@
-// IRPF sobre rendimientos del trabajo (nómina, retención, planes de pensiones, autónomos):
-// aproximación orientativa del cálculo de la AEAT por doble escala. Core puro.
-// Alcance y supuestos: ver ./README.md. Sin comunidad rige la escala supletoria.
+// IRPF on employment income (payslip, withholding, pension plans, self-employed): an indicative
+// approximation of the AEAT two-scale calculation. Pure core module.
+// Scope and assumptions: see ./README.md. With no region, the default regional scale applies.
 
 import { itemAt } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
@@ -31,42 +31,42 @@ import {
   type RegionCode,
 } from "./regions.js";
 
-/** Tipos de contrato, en el orden en que se ofrecen en el desplegable. */
+/** Contract types, in the order the dropdown offers them. */
 export const CONTRACT_TYPES = ["indefinido", "temporal"] as const;
 export type ContractType = (typeof CONTRACT_TYPES)[number];
-/** Pagas al año de las calculadoras de nómina; son texto porque son el valor de un desplegable. */
+/** Payments per year in the payslip calculators; strings because they are a dropdown's value. */
 export const PAYMENT_COUNTS = ["14", "12"] as const;
 export type PaymentCount = (typeof PAYMENT_COUNTS)[number];
 
-/** Respuesta a "declaración conjunta" (desplegable sí/no). */
+/** Answer to "joint return" (yes/no dropdown). */
 export const JOINT_RETURN_OPTIONS = ["no", "yes"] as const;
 export type JointReturnOption = (typeof JOINT_RETURN_OPTIONS)[number];
 
-/** Grados de discapacidad reconocidos, de menor a mayor. */
+/** Recognised disability grades, from lowest to highest. */
 export const DISABILITY_GRADES = ["none", "g33", "g65"] as const;
 export type DisabilityGrade = (typeof DISABILITY_GRADES)[number];
 
-/** Circunstancias personales y familiares que afectan al mínimo y a la cuota. */
+/** Personal and family circumstances that affect the minimum and the tax. */
 export interface PersonalCircumstances {
-  /** Edad del contribuyente (afecta al mínimo personal). Por defecto < 65. */
+  /** Taxpayer's age (affects the personal minimum). Defaults to under 65. */
   age?: number;
-  /** Tipo de contrato (afecta a la cotización por desempleo). */
+  /** Contract type (affects the unemployment contribution). */
   contractType?: ContractType;
-  /** Número de hijos/descendientes a cargo. */
+  /** Number of dependent children/descendants. */
   children?: number;
-  /** De esos hijos, cuántos son menores de 3 años. */
+  /** How many of those children are under 3. */
   childrenUnder3?: number;
-  /** Ascendientes mayores de 65 años a cargo. */
+  /** Dependent ascendants over 65. */
   ascendants?: number;
-  /** Grado de discapacidad del contribuyente. */
+  /** Taxpayer's disability grade. */
   disability?: DisabilityGrade;
-  /** Tributación conjunta (unidad familiar): aplica una reducción en la base. */
+  /** Joint taxation (family unit): applies a reduction to the base. */
   jointReturn?: boolean;
-  /** Comunidad de régimen común; sin valor, escala supletoria. */
+  /** Common-regime region; when unset, the default regional scale. */
   region?: RegionCode;
 }
 
-/** Reducción por rendimientos del trabajo (art. 20 LIRPF), nunca negativa; cifras en `brackets.ts`. */
+/** Employment income reduction (art. 20 LIRPF), never negative; figures in `brackets.ts`. */
 export function workIncomeReduction(netWorkIncome: number): number {
   const r = nonNegative(netWorkIncome);
   if (r <= WORK_INCOME_REDUCTION_FULL_LIMIT) return WORK_INCOME_REDUCTION_MAX;
@@ -85,19 +85,19 @@ export function workIncomeReduction(netWorkIncome: number): number {
   return 0;
 }
 
-/** Tope de personas a cargo por categoría: sin él, `children = Infinity` haría un bucle sin fin. */
+/** Cap on dependants per category: without it, `children = Infinity` would loop forever. */
 const MAX_DEPENDANTS = 50;
 
 const dependants = (n: number | undefined): number => Math.min(MAX_DEPENDANTS, Math.max(0, Math.floor(n ?? 0)));
 
-/** Aplica un cuadro de mínimos a unas circunstancias; sirve para el estatal y los autonómicos. */
+/** Applies a minimums schedule to some circumstances; works for the state and regional ones. */
 function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircumstances): number {
   const age = Math.max(0, c.age ?? 0);
   let min = age >= 75 ? schedule.taxpayer75 : age >= 65 ? schedule.taxpayer65 : schedule.taxpayer;
 
   const children = dependants(c.children);
   for (let i = 0; i < children; i++) {
-    // Del cuarto hijo en adelante se repite el último importe del cuadro (nunca vacío).
+    // From the fourth child on, the schedule's last amount repeats (never empty).
     min += itemAt(schedule.descendants, Math.min(i, schedule.descendants.length - 1));
   }
   const under3 = Math.min(children, dependants(c.childrenUnder3));
@@ -112,31 +112,31 @@ function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircu
 }
 
 /**
- * Mínimo personal y familiar estatal (arts. 57-60 LIRPF), con descendientes al 100 %.
- * Siempre alimenta la cuota estatal, aunque la comunidad tenga importes propios.
+ * State personal and family minimum (mínimo personal y familiar, arts. 57-60 LIRPF), with
+ * descendants at 100%. It always feeds the state tax, even if the region has its own amounts.
  */
 export function personalAndFamilyMinimum(c: PersonalCircumstances = {}): number {
   return minimumFromSchedule(STATE_PERSONAL_MINIMUM, c);
 }
 
-/** Mínimo de la cuota autonómica: el de la comunidad si lo tiene (art. 46.1.a Ley 22/2009), si no el estatal. */
+/** Minimum for the regional tax: the region's own if it has one (art. 46.1.a Ley 22/2009), otherwise the state one. */
 export function regionalPersonalAndFamilyMinimum(c: PersonalCircumstances = {}): number {
   const schedule = c.region === undefined ? STATE_PERSONAL_MINIMUM : regionalMinimumSchedule(c.region);
   return minimumFromSchedule(schedule, c);
 }
 
-/** Ajustes opcionales de `generalIncomeTax`. */
+/** Optional settings for `generalIncomeTax`. */
 export interface GeneralIncomeTaxOptions {
-  /** Comunidad autónoma de régimen común. Sin valor: escala supletoria. */
+  /** Common-regime region (comunidad autónoma de régimen común). When unset: default regional scale. */
   readonly region?: RegionCode;
-  /** Mínimo autonómico; solo con comunidad. Por defecto, el estatal de `minimum`. */
+  /** Regional minimum; only with a region. Defaults to the state one in `minimum`. */
   readonly regionalMinimum?: number;
 }
 
 /**
- * Cuota íntegra del IRPF sobre la base liquidable general (doble escala:
- * cuota(base) − cuota(mínimo)), nunca negativa. Sin comunidad usa `IRPF_GENERAL_SCALE`; con
- * comunidad suma cuota estatal y autonómica, cada una acotada a cero por separado.
+ * IRPF gross tax liability (cuota íntegra) on the general taxable base (two-scale method:
+ * tax(base) − tax(minimum)), never negative. With no region it uses `IRPF_GENERAL_SCALE`; with
+ * a region it adds the state and regional taxes, each floored at zero separately.
  */
 export function generalIncomeTax(
   taxableBase: number,
@@ -167,44 +167,44 @@ export function generalIncomeTax(
   return stateQuota + regionalQuota;
 }
 
-/** Tipo marginal (%) del IRPF general, estatal + autonómico (supletoria sin comunidad). */
+/** General IRPF marginal rate (%), state + regional (default regional scale with no region). */
 export function generalMarginalRate(taxableBase: number, region?: RegionCode): number {
   if (region === undefined) return marginalRate(taxableBase, IRPF_GENERAL_SCALE);
   return marginalRate(taxableBase, IRPF_STATE_SCALE) + marginalRate(taxableBase, regionalScale(region));
 }
 
 export interface NetSalaryInput extends PersonalCircumstances {
-  /** Salario bruto anual. */
+  /** Annual gross salary. */
   grossAnnual: number;
-  /** Número de pagas al año (12 o 14). Por defecto 14. */
+  /** Number of payments per year (12 or 14). Defaults to 14. */
   payments?: number;
-  /** Aportación anual a plan de pensiones (reduce la base). Por defecto 0. */
+  /** Annual pension-plan contribution (reduces the base). Defaults to 0. */
   pensionContribution?: number;
 }
 
 export interface NetSalaryResult {
   grossAnnual: number;
-  /** Cotización del trabajador a la Seguridad Social (anual). */
+  /** Employee Social Security contribution (annual). */
   socialSecurity: number;
-  /** Rendimiento neto del trabajo tras gastos y reducción. */
+  /** Net employment income after expenses and reduction. */
   netWorkIncome: number;
-  /** Mínimo estatal aplicado; la cuota autonómica puede haber usado el de la comunidad. */
+  /** State minimum applied; the regional tax may have used the region's own. */
   personalMinimum: number;
-  /** Base liquidable general (tras aportaciones y reducción conjunta). */
+  /** General taxable base (after contributions and the joint-return reduction). */
   taxableBase: number;
-  /** Cuota de IRPF anual estimada. */
+  /** Estimated annual IRPF tax. */
   incomeTax: number;
-  /** Salario neto anual. */
+  /** Annual net salary. */
   netAnnual: number;
-  /** Salario neto por paga. */
+  /** Net salary per payment. */
   netPerPayment: number;
-  /** Tipo de retención efectivo sobre el bruto (%). */
+  /** Effective withholding rate on gross (%). */
   withholdingRate: number;
-  /** Tipo total (SS + IRPF) sobre el bruto (%). */
+  /** Total rate (SS + IRPF) on gross (%). */
   totalDeductionRate: number;
 }
 
-/** Estima el salario neto a partir del bruto anual y las circunstancias. */
+/** Estimates the net salary from the annual gross and the circumstances. */
 export function estimateNetSalary(input: NetSalaryInput): NetSalaryResult {
   const grossAnnual = Math.max(0, input.grossAnnual || 0);
   const payments = input.payments === 12 ? 12 : 14;

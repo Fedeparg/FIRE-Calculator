@@ -6,9 +6,9 @@ import { DividendResolutionService } from './dividend-resolution.service.js';
 import { IncomeController } from './income.controller.js';
 import { IncomeService } from './income.service.js';
 
-/** Cobros (rendimientos del capital mobiliario). Lo usan también la importación, MCP y el export RGPD. */
+/** Income payments (rendimientos del capital mobiliario, i.e. investment income). Also used by the import, MCP and the GDPR export. */
 @Module({
-  // `PricesModule`: la resolución de símbolos con la que se buscan los dividendos de mercado.
+  // `PricesModule`: the symbol resolution used to look up market dividends.
   imports: [SessionModule, PricesModule],
   controllers: [IncomeController],
   providers: [IncomeService, DividendResolutionService],

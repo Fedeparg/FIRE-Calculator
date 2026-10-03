@@ -20,7 +20,7 @@ function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePo
   };
 }
 
-describe('PositionsService (integración con Postgres)', () => {
+describe('PositionsService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: PositionsService;
@@ -38,8 +38,8 @@ describe('PositionsService (integración con Postgres)', () => {
     await close();
   });
 
-  describe('aislamiento entre usuarios', () => {
-    it('findAllByUser solo devuelve las posiciones del propio usuario', async () => {
+  describe('isolation between users', () => {
+    it("findAllByUser only returns the user's own positions", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
 
@@ -55,18 +55,18 @@ describe('PositionsService (integración con Postgres)', () => {
       expect(itemAt(bPositions, 0).ticker).toBe('VWCE');
     });
 
-    it('un usuario no puede borrar la posición de otro (404)', async () => {
+    it("a user cannot delete another user's position (404)", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
 
       await expect(service.remove(userB, a.id)).rejects.toBeInstanceOf(NotFoundException);
 
-      // Sigue existiendo para su dueño: el borrado ajeno no surtió efecto.
+      // It still exists for its owner: the foreign delete had no effect.
       expect(await service.findAllByUser(userA)).toHaveLength(1);
     });
 
-    it('un usuario no puede actualizar la posición de otro (404)', async () => {
+    it("a user cannot update another user's position (404)", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const a = await service.create(userA, dto({ ticker: 'IWDA' }));
@@ -74,14 +74,14 @@ describe('PositionsService (integración con Postgres)', () => {
       await expect(service.update(userB, a.id, { quantity: 999 })).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('borrar/actualizar una posición inexistente da 404', async () => {
+    it('deleting/updating a non-existent position gives 404', async () => {
       const userA = await insertUser(db, 'a@example.com');
       await expect(service.remove(userA, randomUUID())).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
-  describe('reglas de duplicados', () => {
-    it('exige bróker si el símbolo ya existe sin bróker (BROKER_REQUIRED)', async () => {
+  describe('duplicate rules', () => {
+    it('requires a broker if the symbol already exists without one (BROKER_REQUIRED)', async () => {
       const user = await insertUser(db, 'a@example.com');
       await service.create(user, dto({ ticker: 'IWDA' }));
 
@@ -90,7 +90,7 @@ describe('PositionsService (integración con Postgres)', () => {
       });
     });
 
-    it('rechaza el mismo (símbolo, bróker) case-insensitive (DUPLICATE)', async () => {
+    it('rejects the same (symbol, broker) case-insensitively (DUPLICATE)', async () => {
       const user = await insertUser(db, 'a@example.com');
       await service.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' }));
 
@@ -99,7 +99,7 @@ describe('PositionsService (integración con Postgres)', () => {
       });
     });
 
-    it('dos altas simultáneas del mismo (símbolo, bróker): una entra y la otra es 409 DUPLICATE, no 500', async () => {
+    it('two simultaneous creations of the same (symbol, broker): one succeeds and the other is 409 DUPLICATE, not 500', async () => {
       const concurrent = createTestDb({ max: 4 });
       try {
         const { positions: parallel } = buildPositionsStack(concurrent.db);
@@ -119,7 +119,7 @@ describe('PositionsService (integración con Postgres)', () => {
       }
     });
 
-    it('permite el mismo símbolo en brókers distintos', async () => {
+    it('allows the same symbol at different brokers', async () => {
       const user = await insertUser(db, 'a@example.com');
       await service.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' }));
       const second = await service.create(user, dto({ ticker: 'IWDA', broker: 'MyInvestor' }));
@@ -128,23 +128,23 @@ describe('PositionsService (integración con Postgres)', () => {
       expect(await service.findAllByUser(user)).toHaveLength(2);
     });
 
-    it('el mismo símbolo de dos usuarios distintos no es duplicado', async () => {
+    it('the same symbol for two different users is not a duplicate', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
 
       await service.create(userA, dto({ ticker: 'IWDA' }));
-      // El mismo símbolo sin bróker para OTRO usuario debe permitirse.
+      // The same symbol without a broker must be allowed for ANOTHER user.
       const b = await service.create(userB, dto({ ticker: 'IWDA' }));
       expect(b.ticker).toBe('IWDA');
     });
   });
 
-  it('traduce una violación de FK (usuario inexistente) a 401, no 500', async () => {
-    // JWT con firma válida pero `sub` que ya no existe en BD.
+  it('translates an FK violation (non-existent user) to 401, not 500', async () => {
+    // A JWT with a valid signature but a `sub` that no longer exists in the DB.
     await expect(service.create(randomUUID(), dto({ ticker: 'IWDA' }))).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
-  it('editar cantidad o precio medio emite LOT_CHANGED_EVENT (los lotes se realinean)', async () => {
+  it('editing quantity or average price emits LOT_CHANGED_EVENT (the lots are realigned)', async () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
@@ -152,7 +152,7 @@ describe('PositionsService (integración con Postgres)', () => {
     const userId = await insertUser(db, 'a@example.com');
     const position = await svc.create(userId, dto({ ticker: 'IWDA' }));
 
-    await svc.update(userId, position.id, { name: 'Solo el nombre' });
+    await svc.update(userId, position.id, { name: 'Name only' });
     expect(emitted).toEqual([]);
 
     await svc.update(userId, position.id, { quantity: 5 });

@@ -1,4 +1,5 @@
-// Independencia financiera (FIRE): acumulación con `project` más el objetivo. Número FIRE = gasto anual / tasa de retiro (4 % → 25x).
+// Financial independence (FIRE): accumulation with `project` plus the target. FIRE number = annual spending /
+// withdrawal rate (4% → 25x).
 
 import { project, type Frequency, type ProjectionPoint } from "../projection.js";
 
@@ -7,7 +8,7 @@ export interface FireInput {
   currentSavings: number;
   savings: number;
   frequency?: Frequency;
-  /** Rentabilidad anual real esperada, en base 100. */
+  /** Expected real annual return, in base 100. */
   annualReturn: number;
   withdrawalRate: number;
   savingsGrowth?: number;
@@ -23,10 +24,10 @@ export interface FireResult {
   series: FireYearPoint[];
 }
 
-/** Regla del 4 %, en base 100: tasa de retirada segura por defecto (también la usa `ahorro-jubilacion`). */
+/** The 4% rule, in base 100: default safe withdrawal rate (also used by `ahorro-jubilacion`). */
 export const SAFE_WITHDRAWAL_RATE_PERCENT = 4;
 
-/** Horizonte máximo (años) en el que se busca alcanzar el número FIRE. */
+/** Maximum horizon (years) over which we search for reaching the FIRE number. */
 export const FIRE_SEARCH_MAX_YEARS = 60;
 
 export function computeFire(input: FireInput): FireResult {
@@ -46,7 +47,7 @@ export function computeFire(input: FireInput): FireResult {
   const yearsToFire = projection.series.find((p) => p.value >= fireNumber)?.year ?? null;
   const series: FireYearPoint[] = projection.series.map((p) => ({ ...p, target: fireNumber }));
 
-  // se recorta la gráfica unos años tras alcanzar el objetivo
+  // trim the chart a few years after the target is reached
   const trimmed = yearsToFire === null ? series : series.filter((p) => p.year <= yearsToFire + 3);
 
   return { fireNumber, yearsToFire, series: trimmed };

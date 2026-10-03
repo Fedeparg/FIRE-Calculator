@@ -24,49 +24,50 @@ export type AnalysisToolDeps = {
   taxReturn: TaxReturnService;
 };
 
-/** Mensaje al cliente MCP de cada error de `resolveGoalTarget`. */
+/** Message sent to the MCP client for each `resolveGoalTarget` error. */
 const GOAL_TARGET_ERRORS: Record<GoalTargetError, string> = {
-  amountIncomplete: 'el modo cantidad necesita targetAmount y targetYears',
-  mixedModes: 'usa annualExpenses/withdrawalRate (modo FIRE) o targetAmount/targetYears (modo cantidad), no ambos',
-  fireIncomplete: 'el modo FIRE necesita annualExpenses y withdrawalRate',
+  amountIncomplete: 'amount mode needs targetAmount and targetYears',
+  mixedModes: 'use annualExpenses/withdrawalRate (FIRE mode) or targetAmount/targetYears (amount mode), not both',
+  fireIncomplete: 'FIRE mode needs annualExpenses and withdrawalRate',
 };
 
 /**
- * Tools de análisis de la cartera (scope `portfolio:read`): lo que la web calcula sobre los
- * datos del usuario, con las mismas funciones de `@sextante/core`.
+ * Portfolio analysis tools (scope `portfolio:read`): what the web app computes over the user's
+ * data, with the same `@sextante/core` functions.
  */
 export function registerAnalysisTools(server: McpServer, runner: ToolRunner, deps: AnalysisToolDeps): void {
   server.registerTool(
     'get_realised_gains',
     {
-      title: 'Plusvalías realizadas por ejercicio (para la Renta)',
+      title: 'Realised capital gains by tax year (for the Renta tax return)',
       description:
-        'Ganancias y pérdidas patrimoniales de las ventas registradas, calculadas por FIFO ' +
-        'como exige la normativa española y agrupadas por ejercicio fiscal, en euros: valor ' +
-        'de transmisión, valor de adquisición (con comisiones) y resultado de cada venta, ' +
-        'más una estimación de la cuota de la base del ahorro. Las ventas en otra divisa se ' +
-        'calculan en esa divisa y se pasan a euros con el tipo de referencia del BCE del día ' +
-        'de la venta (criterio de la DGT, V0152-26); la diferencia de cambio de la divisa ' +
-        'invertida va aparte (`fxDifference`), suponiendo que el bróker cambia a euros al ' +
-        'comprar y al vender. Las ventas sin tipo publicado van en `unconverted`, fuera de ' +
-        'los totales; si `ratesLoaded` es false, no se pudieron cargar los tipos del BCE y las ' +
-        'ventas en divisa quedan todas sin convertir: avisa al usuario. Sirve para preparar ' +
-        'las casillas de ganancias patrimoniales. Aplica la regla de los dos meses (art. 33.5.f ' +
-        'LIRPF): la pérdida de una venta con recompra homogénea en la ventana se difiere ' +
-        '(`deferredLoss`) y se integra al vender esa recompra (`integratedLoss`). Compensa las ' +
-        'ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
-        'ejercicios anteriores ni la compensación del 25 % con dividendos e intereses (para ' +
-        'eso, `get_tax_return_report`). Solo lectura.',
+        'Capital gains and losses (ganancias y pérdidas patrimoniales) of the recorded sales, ' +
+        'computed by FIFO as Spanish law requires and grouped by tax year (ejercicio), in euros: ' +
+        'transfer value (valor de transmisión), acquisition value (valor de adquisición, fees ' +
+        'included) and the result of each sale, plus an estimate of the tax due on the savings ' +
+        'base (base del ahorro). Sales in another currency are computed in that currency and ' +
+        'converted to euros at the ECB reference rate on the sale date (DGT ruling V0152-26); ' +
+        'the exchange difference on the invested currency is reported separately ' +
+        '(`fxDifference`), assuming the broker converts to euros on buying and on selling. ' +
+        'Sales without a published rate go in `unconverted`, outside the totals; if ' +
+        '`ratesLoaded` is false, the ECB rates could not be loaded and every foreign-currency ' +
+        'sale stays unconverted: warn the user. Use it to prepare the capital gains boxes ' +
+        '(casillas). Applies the two-month rule (art. 33.5.f LIRPF): the loss on a sale with a ' +
+        'homogeneous repurchase within the window is deferred (`deferredLoss`) and included ' +
+        'when that repurchase is sold (`integratedLoss`). It offsets sales within the same tax ' +
+        'year, but does NOT apply the negative balances of the previous four tax years nor the ' +
+        '25% offset against dividends and interest (for that, use `get_tax_return_report`). ' +
+        'Read-only.',
       inputSchema: {
         year: fiscalYearSchema
           .optional()
-          .describe('Ejercicio fiscal. Sin valor, devuelve todos los ejercicios con ventas.'),
+          .describe('Tax year (ejercicio). Without a value, returns every tax year with sales.'),
       },
       annotations: { readOnlyHint: true },
     },
     ({ year }) =>
       runner.run('get_realised_gains', async () =>
-        // Mismo cálculo que `get_tax_return_report` y la API REST (`TaxReturnService`).
+        // Same computation as `get_tax_return_report` and the REST API (`TaxReturnService`).
         jsonResult(await deps.taxReturn.realisedGains(runner.userId, year)),
       ),
   );
@@ -74,33 +75,33 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
   server.registerTool(
     'get_tax_return_report',
     {
-      title: 'Base del ahorro de un ejercicio (para rellenar la Renta WEB)',
+      title: 'Savings base of a tax year (to fill in Renta WEB)',
       description:
-        'Informe de la base del ahorro de un ejercicio para ayudar a rellenar la Renta WEB, ' +
-        'montado con las mismas funciones que la web. Bloques: `gains` = ventas de valores ' +
-        '(FIFO, en euros, con valor de transmisión, de adquisición y resultado de cada venta ' +
-        'en `sales`, más la diferencia de cambio `fxDifference`); `income` = intereses y ' +
-        'dividendos cobrados (rendimientos del capital mobiliario, con retenciones en origen ' +
-        'y en España y la parte que ya consta en el borrador de la AEAT); `incomeEvents` = ' +
-        'cada cobro; `savings` = la base del ahorro: saldo de ganancias y pérdidas, ' +
-        'rendimientos del capital, compensación de saldos negativos de años anteriores ' +
-        '(incluidos los pendientes que el usuario introdujo a mano), cuota, deducción por ' +
-        'doble imposición internacional y retenciones españolas (`result` = cuota − ' +
-        'retenciones). `availableYears` lista los ejercicios con datos; `null` en un bloque ' +
-        'significa que ese ejercicio no tiene datos de ese tipo. Las cifras son orientativas, ' +
-        'no asesoramiento, y no sustituyen al borrador de la AEAT: contrástalas con él. ' +
-        'Cada cifra lleva su procedencia: en los cobros, `grossSource` y ' +
-        '`withholdingOriginSource` valen `broker` (dato del bróker), `derived` (calculado a ' +
-        'partir de datos del bróker), `market` (dato de mercado), `estimate` (estimación, p. ' +
-        'ej. el tipo legal de retención del país: hay que contrastarla con el certificado del ' +
-        'pagador) o `manual` (lo escribió el usuario); en las ventas, `eur` indica el tipo ' +
-        'del BCE (y su fecha) aplicado a la venta y a cada compra. Si `incomplete` es true o ' +
-        '`ratesLoaded` es false, la cifra está incompleta (ventas o cobros sin tipo de cambio, ' +
-        'o retención en origen desconocida) y debes avisar al usuario. Solo lectura.',
+        'Report on the savings base (base del ahorro) of a tax year to help fill in Renta WEB ' +
+        '(the Spanish online tax return), built with the same functions as the website. ' +
+        'Blocks: `gains` = sales of securities (FIFO, in euros, with the transfer value, ' +
+        'acquisition value and result of each sale in `sales`, plus the exchange difference ' +
+        '`fxDifference`); `income` = interest and dividends received (investment income, ' +
+        'rendimientos del capital mobiliario, with withholding tax at source and in Spain and ' +
+        'the part already in the AEAT draft return, borrador); `incomeEvents` = each payment; ' +
+        '`savings` = the savings base: net capital gains and losses, investment income, offset ' +
+        'of negative balances from previous years (including the pending ones the user entered ' +
+        'by hand), tax due (cuota), international double taxation relief and Spanish ' +
+        'withholdings (`result` = tax due − withholdings). `availableYears` lists the tax years ' +
+        'with data; `null` in a block means that tax year has no data of that kind. The figures ' +
+        'are indicative, not advice, and do not replace the AEAT draft return: check them ' +
+        'against it. Every figure carries its source: in payments, `grossSource` and ' +
+        '`withholdingOriginSource` are `broker` (broker data), `derived` (computed from broker ' +
+        "data), `market` (market data), `estimate` (an estimate, e.g. the country's statutory " +
+        "withholding rate: check it against the payer's certificate) or `manual` (entered by " +
+        'the user); in sales, `eur` gives the ECB rate (and its date) applied to the sale and ' +
+        'to each purchase. If `incomplete` is true or `ratesLoaded` is false, the figure is ' +
+        'incomplete (sales or payments without an exchange rate, or an unknown withholding at ' +
+        'source) and you must warn the user. Read-only.',
       inputSchema: {
         year: fiscalYearSchema
           .optional()
-          .describe('Ejercicio fiscal. Sin valor, el último ejercicio con ventas o cobros.'),
+          .describe('Tax year (ejercicio). Without a value, the latest tax year with sales or payments.'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -111,15 +112,15 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
   server.registerTool(
     'get_portfolio_breakdown',
     {
-      title: 'Reparto de la cartera',
+      title: 'Portfolio breakdown',
       description:
-        'Reparte el valor de mercado actual de la cartera por activo, bróker o divisa y ' +
-        'devuelve el peso de cada grupo en %, convertido a la divisa `display`. Las ' +
-        'posiciones sin precio o en divisa no convertible se excluyen y se cuentan; los ' +
-        'derivados no entran. Solo lectura.',
+        "Splits the portfolio's current market value by asset, broker or currency and " +
+        'returns the weight of each group in %, converted to the `display` currency. Positions ' +
+        'without a price or in a non-convertible currency are left out and counted; ' +
+        'derivatives are not included. Read-only.',
       inputSchema: {
-        groupBy: z.enum(BREAKDOWN_VALUES).describe('Criterio: asset (por valor), broker o currency.'),
-        display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del reparto (por defecto EUR).'),
+        groupBy: z.enum(BREAKDOWN_VALUES).describe('Grouping: asset (by security), broker or currency.'),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Currency of the breakdown (default EUR).'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -132,50 +133,50 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
   server.registerTool(
     'get_fire_goal_progress',
     {
-      title: 'Progreso de la cartera hacia el objetivo FIRE',
+      title: 'Portfolio progress towards the FIRE goal',
       description:
-        'Mide la cartera REAL del usuario (su valor de mercado actual) contra un objetivo, ' +
-        'en uno de dos modos. FIRE (`annualExpenses` + `withdrawalRate`): patrimonio ' +
-        'objetivo = gasto anual / tasa de retiro; con `volatility` y `retirementYears` añade ' +
-        'la probabilidad Monte Carlo de alcanzarlo y de que el dinero dure. Cantidad ' +
-        '(`targetAmount` + `targetYears`): reunir una cifra en un plazo, con la aportación ' +
-        'necesaria por periodo y si se llega al ritmo actual. Ambos devuelven % conseguido, ' +
-        'lo que falta y años estimados con la aportación y la rentabilidad indicadas. Si el ' +
-        'usuario guardó un escenario de la calculadora FIRE (slug independencia-financiera ' +
-        'en `list_saved_scenarios`), usa sus valores: `goalMode: "amount"` indica el modo ' +
-        'cantidad. Los importes van en la divisa `display`. Solo lectura.',
+        "Measures the user's REAL portfolio (its current market value) against a goal, in " +
+        'one of two modes. FIRE (`annualExpenses` + `withdrawalRate`): target wealth = annual ' +
+        'spending / withdrawal rate; with `volatility` and `retirementYears` it adds the Monte ' +
+        'Carlo probability of reaching it and of the money lasting. Amount (`targetAmount` + ' +
+        '`targetYears`): gather a sum within a term, with the contribution needed per period ' +
+        'and whether the current pace gets there. Both return the % achieved, what is missing ' +
+        'and the estimated years with the given contribution and return. If the user saved a ' +
+        'FIRE calculator scenario (slug independencia-financiera in `list_saved_scenarios`), ' +
+        'use its values: `goalMode: "amount"` means amount mode. Amounts are in the `display` ' +
+        'currency. Read-only.',
       inputSchema: {
-        annualExpenses: z.number().min(0).max(1e12).optional().describe('Modo FIRE: gasto anual deseado.'),
-        withdrawalRate: z.number().min(0).max(100).optional().describe('Modo FIRE: tasa de retiro (habitual: 4).'),
+        annualExpenses: z.number().min(0).max(1e12).optional().describe('FIRE mode: desired annual spending.'),
+        withdrawalRate: z.number().min(0).max(100).optional().describe('FIRE mode: withdrawal rate (typically 4).'),
         targetAmount: z
           .number()
           .min(0)
           .max(1e12)
           .optional()
-          .describe('Modo cantidad: cifra a reunir. Excluye annualExpenses/withdrawalRate.'),
+          .describe('Amount mode: sum to gather. Excludes annualExpenses/withdrawalRate.'),
         targetYears: z
           .number()
           .int()
           .min(0)
           .max(FIRE_SEARCH_MAX_YEARS)
           .optional()
-          .describe('Modo cantidad: plazo en años enteros.'),
-        contribution: z.number().min(0).max(1e12).describe('Aportación por periodo.'),
-        frequency: z.enum(FREQUENCY_VALUES).optional().describe('Frecuencia de la aportación (por defecto monthly).'),
-        annualReturn: z.number().min(-99).max(100).describe('Rentabilidad anual REAL esperada, en base 100.'),
+          .describe('Amount mode: term in whole years.'),
+        contribution: z.number().min(0).max(1e12).describe('Contribution per period.'),
+        frequency: z.enum(FREQUENCY_VALUES).optional().describe('Contribution frequency (default monthly).'),
+        annualReturn: z.number().min(-99).max(100).describe('Expected REAL annual return, on a base of 100.'),
         volatility: z
           .number()
           .min(0)
           .max(MAX_VOLATILITY)
           .optional()
-          .describe('Volatilidad anual en base 100, para la simulación Monte Carlo.'),
+          .describe('Annual volatility on a base of 100, for the Monte Carlo simulation.'),
         retirementYears: z
           .number()
           .min(0)
           .max(MAX_RETIREMENT_YEARS)
           .optional()
-          .describe('Años que debe durar el dinero, para la simulación Monte Carlo.'),
-        display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del objetivo y de la cartera (por defecto EUR).'),
+          .describe('Years the money must last, for the Monte Carlo simulation.'),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Currency of the goal and the portfolio (default EUR).'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -207,7 +208,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         const outcome = computeGoalProgress(resolved.target, progress);
         const header = {
           display: currency,
-          // Cuántas posiciones entran en el valor actual: las que no tienen precio no cuentan.
+          // How many positions count towards the current value: those without a price do not.
           valuedPositions: aggregate.valued,
           totalPositions: aggregate.total,
         };
@@ -215,7 +216,7 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
           resolved.target.mode === 'fire' && volatility !== undefined && retirementYears !== undefined
             ? simulatePortfolioGoal({ ...progress, ...resolved.target, volatility, retirementYears })
             : undefined;
-        // `mode` va primero a propósito: es el orden de claves que ve el cliente.
+        // `mode` goes first on purpose: it is the key order the client sees.
         const { mode, ...result } = outcome;
         return jsonResult({ mode, ...header, ...result, ...(simulation ? { simulation } : {}) });
       }),
@@ -224,13 +225,13 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
   server.registerTool(
     'list_saved_scenarios',
     {
-      title: 'Escenarios guardados de las calculadoras',
+      title: 'Saved calculator scenarios',
       description:
-        'Devuelve los escenarios que el usuario guardó en las calculadoras de la web (nombre, ' +
-        'calculadora por su slug y valores introducidos), para reutilizarlos con `calculate` ' +
-        'o con `get_fire_goal_progress`. Solo lectura.',
+        'Returns the scenarios the user saved in the website calculators (name, calculator by ' +
+        'its slug and the values entered), to reuse them with `calculate` or ' +
+        '`get_fire_goal_progress`. Read-only.',
       inputSchema: {
-        slug: z.string().max(64).optional().describe('Solo los de una calculadora (p. ej. independencia-financiera).'),
+        slug: z.string().max(64).optional().describe('Only those of one calculator (e.g. independencia-financiera).'),
       },
       annotations: { readOnlyHint: true },
     },

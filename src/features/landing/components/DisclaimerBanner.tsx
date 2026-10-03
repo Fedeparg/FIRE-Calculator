@@ -1,7 +1,7 @@
 import { useTranslations } from "next-intl";
 import Notice from "@/shared/ui/Notice";
 
-/** Aviso visible: información orientativa, no asesoramiento financiero. */
+/** Visible notice: guidance only, not financial advice. */
 export default function DisclaimerBanner() {
   const t = useTranslations("landing.disclaimer");
 

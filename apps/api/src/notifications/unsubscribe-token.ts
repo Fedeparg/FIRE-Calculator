@@ -1,10 +1,10 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Token del enlace de baja: `<userId>.<HMAC-SHA256 del userId>`. HMAC y no token aleatorio en BD:
- * la baja debe funcionar desde cualquier email antiguo, y guardar o rotar tokens rompería enlaces.
- * Un enlace filtrado solo permite desactivar las alertas de ese usuario. La clave se deriva del
- * secreto de sesión con prefijo propio, para que la firma no sirva para nada más.
+ * Unsubscribe link token: `<userId>.<HMAC-SHA256 of the userId>`. HMAC rather than a random token in
+ * the DB: unsubscribing must work from any old email, and storing or rotating tokens would break links.
+ * A leaked link only allows disabling that user's alerts. The key is derived from the session secret
+ * with its own prefix, so the signature is useless for anything else.
  */
 const KEY_CONTEXT = 'sextante:unsubscribe:v1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -21,7 +21,7 @@ export function createUnsubscribeToken(userId: string, secret: string): string {
   return `${userId}.${sign(userId, secret)}`;
 }
 
-/** `userId` del token si la firma es válida; `null` en cualquier otro caso. */
+/** The token's `userId` if the signature is valid; `null` otherwise. */
 export function verifyUnsubscribeToken(token: string, secret: string): string | null {
   const dot = token.indexOf('.');
   if (dot <= 0) return null;
@@ -29,6 +29,6 @@ export function verifyUnsubscribeToken(token: string, secret: string): string | 
   if (!UUID.test(userId)) return null;
   const given = Buffer.from(token.slice(dot + 1));
   const expected = Buffer.from(sign(userId, secret));
-  // Tiempo constante; `timingSafeEqual` exige longitudes iguales.
+  // Constant time; `timingSafeEqual` requires equal lengths.
   return given.length === expected.length && timingSafeEqual(given, expected) ? userId : null;
 }

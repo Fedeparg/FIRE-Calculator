@@ -8,30 +8,30 @@ import { referenceRatesRequest, toRealisedGainsPositions } from "@sextante/core/
 import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import type { AssetClass, Position, PositionLot } from "@sextante/core/portfolio/types";
 
-/** Posiciones para el SSR inicial; `[]` ante cualquier fallo (la página ya está protegida). */
+/** Positions for the initial SSR; `[]` on any failure (the page is already protected). */
 export async function fetchPositions(): Promise<Position[]> {
   return (await serverApiFetch<Position[]>("/api/positions")) ?? [];
 }
 
-/** Lo que necesita el informe fiscal: ventas y cobros. */
+/** What the tax report needs: sales and income. */
 export type RealisedGainsData = {
   positions: RealisedGainsPosition[];
   income: IncomeEvent[];
-  /** Saldos negativos pendientes de años que Sextante no calcula. */
+  /** Pending negative balances from years Sextante does not compute. */
   pendingBalances: PendingNegative[];
-  /** Clase de activo de cada posición: decide el bloque de la declaración de sus ventas. */
+  /** Asset class of each position: decides which tax-return block its sales go to. */
   assetClasses: Record<string, AssetClass | null>;
-  /** Tipos de referencia del BCE de las divisas con ventas o cobros (vacío si todo es en euros). */
+  /** ECB reference rates for the currencies with sales or income (empty if everything is in euros). */
   rates: ReferenceRates;
-  /** `false` si hacían falta tipos y no se pudieron cargar: las ventas en divisa quedan sin convertir. */
+  /** `false` if rates were needed and could not be loaded: foreign-currency sales stay unconverted. */
   ratesLoaded: boolean;
 };
 
 /**
- * Posiciones con todas sus operaciones, los cobros y los tipos del BCE que necesitan, para el
- * informe fiscal; `null` si falla la lectura de la cartera. No se disfraza de lista vacía: "no tienes
- * ventas" por un error sería un falso fiscal. Sin tipos, el informe sí sale y marca lo que no
- * pudo convertir.
+ * Positions with all their trades, the income and the ECB rates they need, for the tax report;
+ * `null` if reading the portfolio fails. It is not disguised as an empty list: "you have no
+ * sales" because of an error would be a false tax statement. Without rates the report still
+ * renders and flags what it could not convert.
  */
 export async function fetchRealisedGainsData(): Promise<RealisedGainsData | null> {
   const [positions, lots, income, pendingBalances] = await Promise.all([

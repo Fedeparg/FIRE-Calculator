@@ -18,7 +18,7 @@ export default async function ImportPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Protección server-side: sin sesión válida, al login (con prefijo de locale).
+  // Server-side guard: without a valid session, redirect to login (with the locale prefix).
   await requireSessionUser(locale);
 
   const t = await getTranslations("portfolio.import");

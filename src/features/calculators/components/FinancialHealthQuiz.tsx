@@ -13,7 +13,7 @@ import SelectField from "@/shared/ui/SelectField";
 
 import { useOptionFields } from "./CalculatorState";
 
-/** Estilos del banner según categoría. */
+/** Banner styles per category. */
 const CATEGORY_STYLES: Record<HealthCategory, string> = {
   critical: "border-warning-border bg-warning-soft text-warning",
   fragile: "border-warning-border bg-warning-soft text-warning",
@@ -22,9 +22,9 @@ const CATEGORY_STYLES: Record<HealthCategory, string> = {
 };
 
 /**
- * Cada pregunta es un campo de opción con su `id` como clave de URL y el índice de la respuesta
- * como valor ("0" = peor): así el test se comparte por enlace y se guarda como escenario, igual
- * que las demás calculadoras. Constantes de módulo: su identidad gobierna el registro.
+ * Each question is an option field with its `id` as the URL key and the answer index as the
+ * value ("0" = worst): that way the quiz can be shared by link and saved as a scenario, like
+ * the other calculators. Module constants: their identity drives registration.
  */
 const QUESTION_KEYS = FINANCIAL_HEALTH_QUESTIONS.map((q) => q.id);
 const OPTION_VALUES = FINANCIAL_HEALTH_OPTION_SCORES.map((_, index) => String(index));

@@ -1,9 +1,9 @@
 import { firstItem } from "@sextante/core/arrays";
-// Qué ejercicios ofrece el informe fiscal y cuál abre por defecto. Puro, testeable en node.
+// Which tax years the tax report offers and which one it opens by default. Pure, testable in node.
 
 /**
- * Ejercicios con ventas o con cobros, del más reciente al más antiguo. Sin ninguno, el año en
- * curso, para poder anotar el primer cobro.
+ * Tax years with sales or income, from most recent to oldest. With none, the current year, so the
+ * first income entry can be recorded.
  */
 export function taxYears(withData: Iterable<number>, currentYear: number): number[] {
   const all = new Set(withData);
@@ -12,8 +12,8 @@ export function taxYears(withData: Iterable<number>, currentYear: number): numbe
 }
 
 /**
- * Ejercicio que abre el informe: el que se declara ahora (el año pasado) si tiene datos, porque
- * el actual aún no ha terminado; si no, el más reciente. `years` nunca está vacía (ver `taxYears`).
+ * Year the report opens on: the one being filed now (last year) if it has data, because the
+ * current one has not ended yet; otherwise the most recent one. `years` is never empty (see `taxYears`).
  */
 export function defaultTaxYear(years: readonly number[], currentYear: number): number {
   const lastClosed = currentYear - 1;

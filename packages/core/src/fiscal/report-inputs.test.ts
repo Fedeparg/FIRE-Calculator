@@ -26,7 +26,7 @@ const income = (currency: string, paidAt: string): IncomeEvent =>
   ({ currency, paidAt, kind: "dividend", gross: 1 }) as Partial<IncomeEvent> as IncomeEvent;
 
 describe("toRealisedGainsPositions", () => {
-  it("reparte las operaciones entre sus posiciones conservando su orden", () => {
+  it("distributes trades among their positions keeping their order", () => {
     const lots = [
       lot("1", "a", "buy", "2024-01-01"),
       lot("2", "b", "buy", "2024-02-01"),
@@ -42,27 +42,27 @@ describe("toRealisedGainsPositions", () => {
     ]);
   });
 
-  it("conserva la marca de derivado y los datos de la posición", () => {
+  it("keeps the derivative flag and the position data", () => {
     const [result] = toRealisedGainsPositions([position("w", "USD", true)], []);
 
     expect(result).toEqual({ id: "w", ticker: "W", name: null, currency: "USD", isDerivative: true, lots: [] });
   });
 
-  it("ignora las operaciones de posiciones que no están en la lista", () => {
-    expect(itemAt(toRealisedGainsPositions([position("a")], [lot("1", "otra", "buy", "2024-01-01")]), 0).lots).toEqual(
+  it("ignores trades of positions that are not in the list", () => {
+    expect(itemAt(toRealisedGainsPositions([position("a")], [lot("1", "other", "buy", "2024-01-01")]), 0).lots).toEqual(
       [],
     );
   });
 });
 
 describe("referenceRatesRequest", () => {
-  it("es null si todo es en euros", () => {
+  it("is null when everything is in euros", () => {
     const positions = toRealisedGainsPositions([position("a")], [lot("1", "a", "sell", "2024-01-01")]);
 
     expect(referenceRatesRequest(positions, [income("EUR", "2024-01-01")])).toBeNull();
   });
 
-  it("une las divisas de ventas y cobros desde la fecha más antigua de las dos", () => {
+  it("merges the currencies of sales and payments from the older of the two dates", () => {
     const positions = toRealisedGainsPositions(
       [position("a", "USD")],
       [lot("1", "a", "buy", "2023-05-01"), lot("2", "a", "sell", "2024-01-01")],
@@ -74,7 +74,7 @@ describe("referenceRatesRequest", () => {
     });
   });
 
-  it("sirve con solo ventas o solo cobros", () => {
+  it("works with only sales or only payments", () => {
     const positions = toRealisedGainsPositions(
       [position("a", "USD")],
       [lot("1", "a", "buy", "2023-05-01"), lot("2", "a", "sell", "2024-01-01")],

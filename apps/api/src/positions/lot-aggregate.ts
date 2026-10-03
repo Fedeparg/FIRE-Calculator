@@ -1,39 +1,39 @@
-// Agregación pura de lotes → (cantidad, precio medio). Los `numeric` llegan como `string` y se
-// operan como enteros de coma fija (`bigint`): pasar por `number` desplazaría el precio medio
-// en céntimos por error binario.
+// Pure aggregation of lots → (quantity, average price). `numeric` values arrive as `string` and
+// are handled as fixed-point integers (`bigint`): going through `number` would shift the average
+// price by cents due to binary rounding error.
 
 import { compareStrings } from '@sextante/core/compare';
 import { DomainError } from '../common/domain-error.js';
 import type { PositionLotKind } from '../db/schema.js';
 
-/** Escala (decimales) de `position_lots.quantity/price` y de `positions.quantity/avg_price`. */
+/** Scale (decimal places) of `position_lots.quantity/price` and `positions.quantity/avg_price`. */
 export const AMOUNT_SCALE = 6;
 
-/** Escala del coste acumulado (cantidad · precio = 12 decimales exactos). Solo la venta redondea, half-up: error máximo 5·10⁻¹³. */
+/** Scale of the accumulated cost (quantity · price = exactly 12 decimals). Only sells round, half-up: max error 5·10⁻¹³. */
 export const COST_SCALE = 12;
 
-/** Un lote tal y como lo necesita la agregación (subconjunto de `PositionLot`). */
+/** A lot as the aggregation needs it (a subset of `PositionLot`). */
 export interface AggregatableLot {
   id: string;
   kind: PositionLotKind;
-  /** Decimal en `string`, tal y como lo devuelve Drizzle. */
+  /** Decimal as a `string`, exactly as Drizzle returns it. */
   quantity: string;
   price: string;
-  /** Fecha de la operación (YYYY-MM-DD). */
+  /** Trade date (YYYY-MM-DD). */
   tradedAt: string;
-  /** Instante de alta; desempata los lotes del mismo día. */
+  /** Creation instant; breaks ties between lots on the same day. */
   createdAt: Date;
 }
 
-/** Resultado de agregar: los dos campos que `positions` mantiene sincronizados. */
+/** Aggregation result: the two fields `positions` keeps in sync. */
 export interface LotAggregate {
   quantity: string;
   avgPrice: string;
-  /** Coste vivo (cantidad · precio medio); informativo, sin columna propia. */
+  /** Open cost (quantity · average price); informational, with no column of its own. */
   cost: string;
 }
 
-/** Códigos de error de la agregación (el borde los traduce a 400; ver `DomainError`). */
+/** Aggregation error codes (the edge translates them to 400; see `DomainError`). */
 export type LotAggregateErrorCode = 'NEGATIVE_QUANTITY' | 'OVERFLOW' | 'INVALID_DECIMAL';
 
 export class LotAggregateError extends DomainError {
@@ -46,18 +46,18 @@ export class LotAggregateError extends DomainError {
   }
 }
 
-/** Tope de `numeric(18,6)` (12 dígitos enteros): un 400 claro en vez de un 500 del driver. */
+/** Upper bound of `numeric(18,6)` (12 integer digits): a clear 400 instead of a driver 500. */
 const MAX_AMOUNT_UNITS = 10n ** 12n;
 
 const ONE_AMOUNT = 10n ** BigInt(AMOUNT_SCALE);
 
-/** Vender "todo" puede exceder lo comprado por el redondeo a 6 decimales (un bróker exporta hasta 10): dentro de 10⁻⁶ queda en 0; más allá es una venta de más (sin cortos) y falla. */
+/** Selling "everything" can exceed what was bought due to rounding to 6 decimals (a broker exports up to 10): within 10⁻⁶ it becomes 0; beyond that it is an oversell (no shorts) and fails. */
 const SELL_ROUNDING_TOLERANCE = 1n;
 
-/** Solo decimales "planos" con signo opcional: nada de notación exponencial ni espacios. */
+/** Only "plain" decimals with an optional sign: no exponential notation or whitespace. */
 const PLAIN_DECIMAL = /^[+-]?(\d+)(?:\.(\d+))?$/;
 
-/** Decimal en `string` → entero de coma fija con `scale` decimales (half-up si trae más). */
+/** Decimal `string` → fixed-point integer with `scale` decimals (half-up if it has more). */
 export function parseDecimal(value: string, scale: number): bigint {
   const match = PLAIN_DECIMAL.exec(value.trim());
   if (!match) {
@@ -66,7 +66,7 @@ export function parseDecimal(value: string, scale: number): bigint {
   const negative = value.trim().startsWith('-');
   const [, intPart, fracPart = ''] = match;
 
-  // Alarga con ceros o recorta (guardando el primer dígito sobrante para el redondeo).
+  // Pads with zeros or truncates (keeping the first extra digit for rounding).
   const padded = fracPart.padEnd(scale + 1, '0');
   const kept = padded.slice(0, scale);
   const nextDigit = padded.charCodeAt(scale) - 48;
@@ -76,7 +76,7 @@ export function parseDecimal(value: string, scale: number): bigint {
   return negative ? -units : units;
 }
 
-/** Inverso de `parseDecimal`. */
+/** Inverse of `parseDecimal`. */
 export function formatDecimal(units: bigint, scale: number): string {
   const negative = units < 0n;
   const digits = (negative ? -units : units).toString().padStart(scale + 1, '0');
@@ -85,7 +85,7 @@ export function formatDecimal(units: bigint, scale: number): string {
   return `${negative ? '-' : ''}${intPart}${fracPart}`;
 }
 
-/** División entera con redondeo half-up (`divisor` debe ser > 0). */
+/** Integer division with half-up rounding (`divisor` must be > 0). */
 function divRoundHalfUp(dividend: bigint, divisor: bigint): bigint {
   const quotient = dividend / divisor;
   const remainder = dividend % divisor;
@@ -95,8 +95,8 @@ function divRoundHalfUp(dividend: bigint, divisor: bigint): bigint {
 }
 
 /**
- * Orden canónico `(tradedAt, createdAt, id)`. `tradedAt` no lleva hora: sin desempate, el
- * coste medio móvil dependería del orden en que la BD devuelva las filas del mismo día.
+ * Canonical order `(tradedAt, createdAt, id)`. `tradedAt` has no time: without a tie-break, the
+ * moving average cost would depend on the order in which the DB returns same-day rows.
  */
 export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
   if (a.tradedAt !== b.tradedAt) return compareStrings(a.tradedAt, b.tradedAt);
@@ -107,17 +107,17 @@ export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
 }
 
 /**
- * Cantidad viva y precio medio por coste medio móvil: la compra suma `q` y `q · p`; la venta
- * resta `q` y `q · precioMedioVigente` (el medio no cambia). No es el promedio de todas las
- * compras: 10@100, venta 5, 5@200 → cantidad 10, medio 150 (no 133,33).
+ * Open quantity and average price by moving average cost: a buy adds `q` and `q · p`; a sell
+ * subtracts `q` and `q · currentAveragePrice` (the average does not change). It is not the mean of
+ * all buys: 10@100, sell 5, 5@200 → quantity 10, average 150 (not 133.33).
  *
- * @throws {LotAggregateError} `NEGATIVE_QUANTITY` (venta de más, fuera de tolerancia) u
- *   `OVERFLOW` (no cabe en `numeric(18,6)`).
+ * @throws {LotAggregateError} `NEGATIVE_QUANTITY` (oversell, beyond tolerance) or
+ *   `OVERFLOW` (does not fit in `numeric(18,6)`).
  */
 export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
   const ordered = [...lots].sort(compareLots);
 
-  // `quantity` en escala 6 (sumas y restas exactas); `cost` en escala 12 (ver COST_SCALE).
+  // `quantity` at scale 6 (exact additions and subtractions); `cost` at scale 12 (see COST_SCALE).
   let quantity = 0n;
   let cost = 0n;
 
@@ -127,7 +127,7 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
 
     if (lot.kind === 'buy') {
       quantity += q;
-      // escala 6 · escala 6 = escala 12: producto exacto, sin redondeo.
+      // scale 6 · scale 6 = scale 12: exact product, no rounding.
       cost += q * p;
       continue;
     }
@@ -140,16 +140,16 @@ export function aggregateLots(lots: readonly AggregatableLot[]): LotAggregate {
         'La venta deja la posición en negativo: no puedes vender más de lo que tienes',
       );
     }
-    // `coste · restante / cantidad` en una sola división: se redondea una vez, no dos.
+    // `cost · remaining / quantity` in a single division: rounds once, not twice.
     cost = remaining === 0n || quantity === 0n ? 0n : divRoundHalfUp(cost * remaining, quantity);
     quantity = remaining;
   }
 
-  // avgPrice = coste / cantidad. En unidades: (cost/10¹²) / (quantity/10⁶) · 10⁶ = cost/quantity.
+  // avgPrice = cost / quantity. In units: (cost/10¹²) / (quantity/10⁶) · 10⁶ = cost/quantity.
   const avgPrice = quantity > 0n ? divRoundHalfUp(cost, quantity) : 0n;
   const costAmount = divRoundHalfUp(cost, 10n ** BigInt(COST_SCALE - AMOUNT_SCALE));
 
-  // Solo los dos valores que van a `numeric(18,6)`; el coste vivo no tiene columna.
+  // Only the two values that go into `numeric(18,6)`; the open cost has no column.
   for (const units of [quantity, avgPrice]) {
     if (units >= MAX_AMOUNT_UNITS * ONE_AMOUNT) {
       throw new LotAggregateError('OVERFLOW', 'El resultado de los lotes excede el máximo admitido por la posición');

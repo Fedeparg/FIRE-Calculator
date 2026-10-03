@@ -4,7 +4,7 @@ import type { BudgetInput } from "./presupuesto.js";
 import { amount } from "./schema-helpers.js";
 
 export const budgetSchema = z.strictObject({
-  income: amount("Ingresos mensuales netos."),
-  needs: amount("Gasto mensual en necesidades (vivienda, comida, suministros…)."),
-  wants: amount("Gasto mensual en deseos (ocio, caprichos…)."),
+  income: amount("Net monthly income."),
+  needs: amount("Monthly spending on needs (housing, food, utilities…)."),
+  wants: amount("Monthly spending on wants (leisure, treats…)."),
 }) satisfies z.ZodType<BudgetInput>;

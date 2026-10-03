@@ -9,13 +9,13 @@ import { useFormat } from "@/shared/format/use-format";
 import DataTable, { type DataTableColumn } from "@/shared/ui/DataTable";
 
 type Props = {
-  /** Lotes de compra que consume la venta, emparejados por FIFO. */
+  /** Purchase lots consumed by the sale, matched by FIFO. */
   matched: readonly MatchedLot[];
-  /** Divisa de la posición: los lotes van siempre en ella. */
+  /** Position currency: the lots are always in it. */
   currency: string;
 };
 
-/** Desglose FIFO de una venta: de qué lotes sale cada participación y cuánto se gana con cada uno. */
+/** FIFO breakdown of a sale: which lots each share comes from and how much is gained on each. */
 export default function SaleMatchesTable({ matched, currency }: Props) {
   const t = useTranslations("portfolio.sale");
   const { formatCurrency, formatSignedCurrency, formatQuantity } = useFormat();

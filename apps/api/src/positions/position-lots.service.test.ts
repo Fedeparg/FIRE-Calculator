@@ -16,28 +16,28 @@ import { LOT_CHANGED_EVENT } from './position-events.js';
 import type { PositionLotsService } from './position-lots.service.js';
 import type { PositionsService } from './positions.service.js';
 
-/** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
+/** `primeSymbol` only refreshes the price on the fly; in tests it is a no-op. */
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
   return { quantity: 1, avgPrice: 100, ...partial };
 }
 
-/** Fecha fija anterior a cualquier fecha que usen los tests (el alta pone `tradedAt` = hoy). */
+/** A fixed date earlier than any date the tests use (creation sets `tradedAt` = today). */
 const START_DATE = '2026-01-01';
 
 /**
- * Sentencia de backfill de `position_lots` de la migración `0011_melodic_marten_broadcloak.sql`,
- * copiada literalmente. Esa migración ya está aplicada en producción y nunca se edita, así que no
- * puede divergir; congelarla aquí evita que el test dependa de cómo se nombran y trocean los
- * ficheros de `drizzle/`. El backfill se aplica en `global-setup` contra una BD vacía (allí es un
- * no-op), así que esta es la única cobertura real que tiene.
+ * The `position_lots` backfill statement from migration `0011_melodic_marten_broadcloak.sql`,
+ * copied verbatim. That migration is already applied in production and is never edited, so it
+ * cannot diverge; freezing it here keeps the test independent of how the `drizzle/` files are
+ * named and split. The backfill runs in `global-setup` against an empty DB (a no-op there), so
+ * this is the only real coverage it has.
  */
 const BACKFILL_SQL = `INSERT INTO "position_lots" ("position_id", "user_id", "kind", "quantity", "price", "fees", "traded_at")
 SELECT p."id", p."user_id", 'buy', p."quantity", p."avg_price", 0, (p."created_at" AT TIME ZONE 'UTC')::date
 FROM "positions" p
 WHERE NOT EXISTS (SELECT 1 FROM "position_lots" l WHERE l."position_id" = p."id");`;
 
-describe('PositionLotsService (integración con Postgres)', () => {
+describe('PositionLotsService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let lots: PositionLotsService;
@@ -57,9 +57,9 @@ describe('PositionLotsService (integración con Postgres)', () => {
   });
 
   /**
-   * Crea una posición y retrasa su lote inicial a `START_DATE`. El alta fecha el lote HOY, así
-   * que sin esto los tests que añaden lotes con fechas fijas dependerían de la fecha del
-   * sistema (una venta anterior a la compra daría, con razón, cantidad negativa).
+   * Creates a position and moves its initial lot back to `START_DATE`. Creation dates the lot
+   * TODAY, so without this the tests that add lots on fixed dates would depend on the system date
+   * (a sell before the buy would, rightly, give a negative quantity).
    */
   async function createBackdated(userId: string, partial: Partial<CreatePositionDto> & { ticker: string }) {
     const position = await service.create(userId, dto(partial));
@@ -68,10 +68,10 @@ describe('PositionLotsService (integración con Postgres)', () => {
     return position;
   }
 
-  describe('backfill de la migración', () => {
-    it('crea un lote de compra por posición y sus agregados CUADRAN con la posición', async () => {
+  describe('migration backfill', () => {
+    it('creates one buy lot per position and its aggregates MATCH the position', async () => {
       const userId = await insertUser(db, 'a@example.com');
-      // Posición "antigua": insertada a mano, como estaría en producción antes de migrar.
+      // An "old" position: inserted by hand, as it would be in production before migrating.
       const existing = firstItem(
         await db
           .insert(positions)
@@ -97,18 +97,18 @@ describe('PositionLotsService (integración con Postgres)', () => {
         quantity: '12.500000',
         price: '95.420000',
         fees: '0.000000',
-        // Fecha de alta convertida en UTC (no en la zona de la sesión: 23:30Z NO es el día 3).
+        // Creation date converted in UTC (not in the session's time zone: 23:30Z is NOT the 3rd).
         tradedAt: '2025-11-02',
       });
 
-      // Lo que exige la regla de oro: la foto y la película dicen lo mismo.
+      // What the golden rule requires: the snapshot and the history agree.
       expect(aggregateLots(rows)).toMatchObject({
         quantity: existing.quantity,
         avgPrice: existing.avgPrice,
       });
     });
 
-    it('es idempotente: reejecutarlo no duplica lotes', async () => {
+    it('is idempotent: re-running it does not duplicate lots', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(positions).values({ userId, ticker: 'VWCE', quantity: '3', avgPrice: '110', currency: 'EUR' });
 
@@ -119,8 +119,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
     });
   });
 
-  describe('sincronía posición ↔ lotes', () => {
-    it('el alta de una posición crea su lote inicial de compra', async () => {
+  describe('position ↔ lots sync', () => {
+    it('creating a position creates its initial buy lot', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
 
@@ -129,7 +129,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(rows[0]).toMatchObject({ kind: 'buy', quantity: 10, price: 100 });
     });
 
-    it('añadir una compra recalcula cantidad y precio medio de la posición', async () => {
+    it("adding a buy recomputes the position's quantity and average price", async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
 
@@ -145,15 +145,15 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(updated.avgPrice).toBe(150);
     });
 
-    it('dos altas de lote simultáneas suman las dos (sin lost update)', async () => {
-      // Pool de varias conexiones: las dos transacciones corren de verdad a la vez.
+    it('two simultaneous lot creations both add up (no lost update)', async () => {
+      // Multi-connection pool: the two transactions really run at the same time.
       const concurrent = createTestDb({ max: 4 });
       try {
         const stack = buildPositionsStack(concurrent.db);
         const userId = await insertUser(db, 'a@example.com');
         const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 1, avgPrice: 100 });
 
-        // Varias rondas: sin el bloqueo, basta con que una se entrelace para perder una compra.
+        // Several rounds: without the lock, a single interleaving is enough to lose a buy.
         for (let round = 0; round < 5; round++) {
           await Promise.all(
             [2, 3].map((quantity) =>
@@ -169,7 +169,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       }
     });
 
-    it('una venta baja la cantidad y NO mueve el precio medio', async () => {
+    it('a sell lowers the quantity and does NOT move the average price', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
 
@@ -186,7 +186,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(updated.avgPrice).toBe(100);
     });
 
-    it('rechaza vender más de lo que se tiene y NO deja el lote guardado (rollback)', async () => {
+    it('rejects selling more than is held and does NOT keep the lot (rollback)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
 
@@ -199,12 +199,12 @@ describe('PositionLotsService (integración con Postgres)', () => {
         }),
       ).rejects.toMatchObject({ code: 'NEGATIVE_QUANTITY' });
 
-      // Ni el lote inválido ni un descuadre en la posición.
+      // Neither the invalid lot nor an out-of-sync position.
       expect(await lots.listByPosition(userId, position.id)).toHaveLength(1);
       expect(firstItem(await service.findAllByUser(userId)).quantity).toBe(10);
     });
 
-    it('borrar un lote reagrega el resto', async () => {
+    it('deleting a lot re-aggregates the rest', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
       const extra = await lots.create(userId, position.id, {
@@ -221,7 +221,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(updated.avgPrice).toBe(100);
     });
 
-    it('editar un lote reagrega la posición', async () => {
+    it('editing a lot re-aggregates the position', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
       const initial = firstItem(await lots.listByPosition(userId, position.id));
@@ -231,7 +231,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(firstItem(await service.findAllByUser(userId)).quantity).toBe(25);
     });
 
-    it('borrar la posición borra sus lotes (cascada)', async () => {
+    it('deleting the position deletes its lots (cascade)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA' }));
 
@@ -241,8 +241,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
     });
   });
 
-  describe('combine registra histórico y no pierde precisión', () => {
-    it('deja un lote por compra y recalcula la media ponderada', async () => {
+  describe('combine records history and does not lose precision', () => {
+    it('leaves one lot per buy and recomputes the weighted average', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
 
@@ -253,23 +253,23 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(await lots.listByPosition(userId, position.id)).toHaveLength(2);
     });
 
-    it('mantiene el precio medio EXACTO donde la media en coma flotante lo desplazaría', async () => {
+    it('keeps the average price EXACT where a floating-point average would shift it', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 1, avgPrice: 0.1 }));
 
       await service.combine(userId, position.id, { quantity: 1, avgPrice: 0.2 });
       const result = await service.combine(userId, position.id, { quantity: 1, avgPrice: 0.3 });
 
-      // Coste 0,6 sobre 3 títulos = 0,2 exacto. La cadena anterior con `Number()` daba
-      // 0.20000000000000004 y lo guardaba redondeado arrastrando el error.
+      // Cost 0.6 over 3 shares = exactly 0.2. The previous `Number()` chain gave
+      // 0.20000000000000004 and stored it rounded, carrying the error forward.
       const row = firstItem(await db.select().from(positions).where(eq(positions.id, position.id)));
       expect(row.avgPrice).toBe('0.200000');
       expect(result.avgPrice).toBe(0.2);
     });
   });
 
-  describe('edición manual de cantidad/precio medio', () => {
-    it('con un solo lote lo edita EN SITIO (no pierde el histórico)', async () => {
+  describe('manual edit of quantity/average price', () => {
+    it('with a single lot edits it IN PLACE (keeps the history)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
       const initial = firstItem(await lots.listByPosition(userId, position.id));
@@ -283,7 +283,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(rows[0]).toMatchObject({ quantity: 7, price: 120 });
     });
 
-    it('con varios lotes los colapsa en uno, conservando la fecha más antigua', async () => {
+    it('with several lots collapses them into one, keeping the oldest date', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
       await lots.create(userId, position.id, {
@@ -301,7 +301,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(itemAt(rows, 0).tradedAt).toBe(START_DATE);
     });
 
-    it('editar solo el bróker no toca los lotes', async () => {
+    it('editing only the broker does not touch the lots', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await service.create(userId, dto({ ticker: 'IWDA', quantity: 10, avgPrice: 100 }));
       const before = await lots.listByPosition(userId, position.id);
@@ -312,7 +312,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
     });
   });
 
-  describe('protección del histórico con ventas', () => {
+  describe('history protection with sells', () => {
     async function positionWithSale(userId: string) {
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
       await lots.create(userId, position.id, {
@@ -324,7 +324,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       return position;
     }
 
-    it('rechaza declarar otra cantidad o precio medio (409 HAS_SALES) y no toca nada', async () => {
+    it('rejects declaring a different quantity or average price (409 HAS_SALES) and touches nothing', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await positionWithSale(userId);
       const before = await lots.listByPosition(userId, position.id);
@@ -338,7 +338,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(row.quantity).toBe('6.000000');
     });
 
-    it('reenviar los MISMOS importes (formulario de edición) no falla ni toca los lotes', async () => {
+    it('resending the SAME amounts (edit form) neither fails nor touches the lots', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await positionWithSale(userId);
       const before = await lots.listByPosition(userId, position.id);
@@ -354,7 +354,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(await lots.listByPosition(userId, position.id)).toEqual(before);
     });
 
-    it('sin ventas se sigue pudiendo colapsar', async () => {
+    it('without sells collapsing is still allowed', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
       await lots.create(userId, position.id, { kind: 'buy', quantity: 1, price: 1, tradedAt: '2026-02-01' });
@@ -365,8 +365,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
     });
   });
 
-  describe('listado de todas las operaciones del usuario', () => {
-    it('devuelve los lotes de todas sus posiciones en orden cronológico, y solo los suyos', async () => {
+  describe("listing all of the user's trades", () => {
+    it('returns the lots of all their positions in chronological order, and only theirs', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const otherId = await insertUser(db, 'b@example.com');
       const a = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
@@ -382,8 +382,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
     });
   });
 
-  describe('aislamiento entre usuarios', () => {
-    it('un usuario no puede listar ni crear lotes en la posición de otro (404)', async () => {
+  describe('isolation between users', () => {
+    it("a user can neither list nor create lots on another user's position (404)", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       const position = await service.create(userA, dto({ ticker: 'IWDA' }));
@@ -399,7 +399,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       ).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('un lote de OTRA posición del propio usuario no se alcanza por la ruta (404)', async () => {
+    it("a lot of ANOTHER of the user's own positions is not reachable through the route (404)", async () => {
       const userId = await insertUser(db, 'a@example.com');
       const first = await service.create(userId, dto({ ticker: 'IWDA' }));
       const second = await service.create(userId, dto({ ticker: 'VWCE' }));
@@ -408,14 +408,14 @@ describe('PositionLotsService (integración con Postgres)', () => {
       await expect(lots.remove(userId, first.id, foreignLot.id)).rejects.toBeInstanceOf(NotFoundException);
     });
 
-    it('una posición inexistente da 404', async () => {
+    it('a non-existent position gives 404', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await expect(lots.listByPosition(userId, randomUUID())).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 
-  describe('LOT_CHANGED_EVENT: fecha a invalidar', () => {
-    /** Servicio con su propio emisor, para capturar lo que emite. */
+  describe('LOT_CHANGED_EVENT: date to invalidate', () => {
+    /** A service with its own emitter, to capture what it emits. */
     function withEvents() {
       const events = new EventEmitter2();
       const emitted: { invalidateFrom?: string }[] = [];
@@ -423,7 +423,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       return { svc: buildPositionsStack(db, { lotsEvents: events }).lots, emitted };
     }
 
-    it('borrar un lote lleva su fecha de operación (no deja marca de tiempo)', async () => {
+    it('deleting a lot carries its trade date (it leaves no timestamp)', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA' });
       const { svc, emitted } = withEvents();
@@ -440,7 +440,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(emitted).toEqual([expect.objectContaining({ invalidateFrom: '2026-03-01' })]);
     });
 
-    it('mover un lote de fecha lleva la ANTERIOR; editar otra cosa o crear no lleva ninguna', async () => {
+    it("moving a lot's date carries the PREVIOUS one; editing anything else or creating carries none", async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA' });
       const { svc, emitted } = withEvents();

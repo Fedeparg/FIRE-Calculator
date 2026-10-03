@@ -1,12 +1,12 @@
-// Fallos de los endpoints de lotes -> clave de mensaje. No se muestra el `message` de la
-// API: está en castellano y quedaría sin traducir en inglés; solo viaja el `code`.
+// Lot endpoint failures -> message key. The API's `message` is not shown: it is in Spanish
+// and would stay untranslated in English; only the `code` is used.
 
 import type { PositionLot } from "@sextante/core/portfolio/types";
 import { createApiErrorMapper } from "@/shared/api/client";
 
 /**
- * Clave bajo `portfolio.lots.*`. Hay dos formas de 400: la de dominio (con `code`) y la de
- * validación (sin `code`, se explica como "revisa los datos"). El resto, el mapeo común.
+ * Key under `portfolio.lots.*`. There are two kinds of 400: the domain one (with `code`) and the
+ * validation one (no `code`, explained as "check the data"). Everything else uses the common mapping.
  */
 export const lotErrorKey = createApiErrorMapper({
   codes: { NEGATIVE_QUANTITY: "errorNegative", OVERFLOW: "errorOverflow", INVALID_DECIMAL: "errorInvalid" },
@@ -15,9 +15,9 @@ export const lotErrorKey = createApiErrorMapper({
 });
 
 /**
- * ¿Tiene ventas la posición? `null` si aún no se sabe (lotes cargando o con error): quien lo use
- * debe tratar `null` como "puede que sí", porque borrar una posición con ventas las quita del
- * informe de plusvalías y ese aviso no puede perderse por una carga lenta o fallida.
+ * Does the position have sales? `null` if it is not known yet (lots loading or failed): callers
+ * must treat `null` as "maybe", because deleting a position with sales removes them from the
+ * capital gains report, and that warning must not be lost to a slow or failed load.
  */
 export function positionHasSales(
   loadState: "loading" | "ready" | "error",

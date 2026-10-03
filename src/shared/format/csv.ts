@@ -1,12 +1,12 @@
-// CSV puro (sin React ni DOM); la descarga está en `download.ts`.
-// El dialecto va por idioma de la UI porque Excel usa el separador de listas del sistema:
-// es -> `;` y coma decimal, en -> `,` y punto. Sin `sep=;` (otros parsers lo leen como dato).
-// Los importes van sin separador de miles: "1.234,56" mal leído sería 1,23456.
+// Pure CSV (no React or DOM); the download lives in `download.ts`.
+// The dialect follows the UI locale because Excel uses the system list separator:
+// es -> `;` and decimal comma, en -> `,` and decimal point. No `sep=;` (other parsers read it as
+// data). Amounts have no thousands separator: "1.234,56" misread would become 1.23456.
 
 import { formatDecimalInput } from "./number-input";
 import type { Locale } from "@/i18n/types";
 
-// BOM al descargar: sin él Excel lee en la página de códigos local y rompe acentos y €.
+// BOM on download: without it Excel reads the local code page and mangles accents and €.
 export const UTF8_BOM = "\uFEFF";
 
 const LINE_BREAK = "\r\n";
@@ -16,11 +16,11 @@ const DIALECTS: Record<Locale, { delimiter: string; decimal: string }> = {
   en: { delimiter: ",", decimal: "." },
 };
 
-/** `null` (y los no finitos) salen vacíos, no como 0: "no lo sabemos" no es "vale cero". */
+/** `null` (and non-finite numbers) are written empty, not as 0: "unknown" is not "zero". */
 export type CsvCell = string | number | null;
 
-// Evita la inyección de fórmulas (Excel ejecuta `=`, `+`, `-`, `@` iniciales). Solo en
-// texto: en las numéricas rompería los importes negativos.
+// Prevents formula injection (Excel evaluates a leading `=`, `+`, `-`, `@`). Text cells only:
+// on numeric cells it would break negative amounts.
 function escapeFormula(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
@@ -30,12 +30,12 @@ function quoteCell(value: string, delimiter: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-/** Las cabeceras llegan ya traducidas: este módulo no traduce. */
+/** Headers arrive already translated: this module does not translate. */
 export function buildCsv(headers: readonly string[], rows: readonly (readonly CsvCell[])[], locale: Locale): string {
   const { delimiter, decimal } = DIALECTS[locale];
   const cell = (value: CsvCell): string => {
     if (value === null) return "";
-    // `formatDecimalInput` devuelve "" para los no finitos.
+    // `formatDecimalInput` returns "" for non-finite numbers.
     if (typeof value === "number") return formatDecimalInput(value, decimal);
     return quoteCell(escapeFormula(value.trim()), delimiter);
   };

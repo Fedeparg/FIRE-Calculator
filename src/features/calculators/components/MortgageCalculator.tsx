@@ -29,7 +29,7 @@ export default function MortgageCalculator() {
     [principal, annualRate, years, openingFeeRate, annualInsurance],
   );
 
-  // Alternativa textual del cuadro de amortización (ver `ChartDataTable`).
+  // Text alternative for the amortisation schedule (see `ChartDataTable`).
   const scheduleColumns: ChartTableColumn<MortgageYearPoint>[] = [
     { label: tc("axisYear"), value: (row) => formatNumber(row.year) },
     { label: t("seriesPrincipal"), value: (row) => formatEUR(row.principalPaid) },

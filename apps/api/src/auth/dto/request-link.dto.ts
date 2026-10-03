@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
-/** Cuerpo de POST /api/auth/request. */
+/** Body of POST /api/auth/request. */
 export const requestLinkSchema = z.strictObject({
   email: z.email({ error: 'Email no válido' }).max(254),
-  // Idioma de la web desde la que se pide: el del email y el de la página del enlace. Opcional
-  // (castellano por defecto) para no romper a un cliente que no lo envíe.
+  // Language of the site the request comes from: used for the email and for the linked page.
+  // Optional (Spanish by default) so a client that does not send it keeps working.
   locale: z.enum(['es', 'en']).optional(),
 });
 

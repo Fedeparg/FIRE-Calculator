@@ -1,28 +1,28 @@
-// Ordenación de la tabla de posiciones. Core puro (sin React), testeable.
+// Sorting of the positions table. Pure core (no React), testable.
 //
-// La UI decora cada fila con sus valores comparables ya normalizados a una divisa base
-// (USD) para poder comparar importes entre posiciones en divisas distintas. Aquí solo
-// vive la comparación: nulos siempre al final, desempate estable por ticker.
+// The UI decorates each row with its comparable values, already normalized to a base currency
+// (USD) so amounts can be compared across positions in different currencies. Only the
+// comparison lives here: nulls always last, stable tie-break by ticker.
 
-/** Campo por el que se puede ordenar la tabla de posiciones (los que ofrece la UI). */
+/** Field the positions table can be sorted by (the ones the UI offers). */
 export type SortKey = "name" | "invested" | "marketValue" | "pnl";
 
-/** Sentido de la ordenación: descendente (mayor a menor) o ascendente. */
+/** Sort direction: descending (highest first) or ascending. */
 export type SortDir = "asc" | "desc";
 
-/** Por defecto ordenamos por lo invertido, de mayor a menor. Es el único campo siempre
- *  definido (no depende de que haya llegado el precio de mercado), así el orden inicial es
- *  estable y no se reordena cuando cargan los precios de forma asíncrona. */
+/** By default we sort by amount invested, highest first. It is the only field that is always
+ *  defined (it does not depend on the market price having arrived), so the initial order is
+ *  stable and does not reshuffle when prices load asynchronously. */
 export const DEFAULT_SORT_KEY: SortKey = "invested";
 export const DEFAULT_SORT_DIR: SortDir = "desc";
 
 /**
- * Valores comparables de una posición, ya precalculados por la UI. Los importes monetarios
- * vienen convertidos a una divisa base común (USD); `null` si faltaba la tasa de cambio.
- * `pnl` es el mismo número que se muestra (porcentaje o importe base) según el modo activo.
+ * Comparable values of a position, precomputed by the UI. Monetary amounts are converted to a
+ * common base currency (USD); `null` if the exchange rate was missing. `pnl` is the same number
+ * that is displayed (percentage or base amount) depending on the active mode.
  */
 export interface SortableRow {
-  /** Solo para desempatar: no es una columna ordenable. */
+  /** Tie-break only: not a sortable column. */
   ticker: string;
   name: string | null;
   invested: number | null;
@@ -30,14 +30,14 @@ export interface SortableRow {
   pnl: number | null;
 }
 
-/** localeCompare tolerante a acentos y con orden numérico dentro de las cadenas. */
+/** Accent-insensitive localeCompare with numeric ordering inside strings. */
 function compareStrings(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: "base", numeric: true });
 }
 
 /**
- * Compara dos filas por `key` en el sentido `dir`. Los valores ausentes (`null`) van SIEMPRE
- * al final, tanto en ascendente como en descendente (no queremos que un "—" se cuele arriba).
+ * Compares two rows by `key` in direction `dir`. Missing values (`null`) ALWAYS go last, in both
+ * ascending and descending order (we do not want a "—" to sneak to the top).
  */
 function compareRows(a: SortableRow, b: SortableRow, key: SortKey, dir: SortDir): number {
   const factor = dir === "asc" ? 1 : -1;
@@ -60,9 +60,9 @@ function compareRows(a: SortableRow, b: SortableRow, key: SortKey, dir: SortDir)
 }
 
 /**
- * Ordena una lista de filas (cada una con su `sortable`) por `key` y `dir`, sin mutar la
- * entrada. `Array.prototype.sort` es estable, pero además desempatamos por ticker para que el
- * orden sea determinista aunque dos posiciones empaten en el campo elegido.
+ * Sorts a list of rows (each with its `sortable`) by `key` and `dir`, without mutating the input.
+ * `Array.prototype.sort` is stable, but we also break ties by ticker so the order is
+ * deterministic even when two positions tie on the chosen field.
  */
 export function sortPositions<T extends { sortable: SortableRow }>(
   rows: readonly T[],

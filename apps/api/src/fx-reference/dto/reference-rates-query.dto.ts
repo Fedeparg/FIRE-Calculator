@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { ECB_FIRST_DATE, MAX_REFERENCE_CURRENCIES } from '../constants.js';
 
 /**
- * Query de GET /api/fx/reference-rates. `currencies` es una lista separada por comas de códigos
- * ISO 4217 (`USD,CHF`); `from`, la fecha de la operación más antigua que hay que convertir.
+ * Query of GET /api/fx/reference-rates. `currencies` is a comma-separated list of ISO 4217 codes
+ * (`USD,CHF`); `from`, the date of the oldest transaction that must be converted.
  */
 export const referenceRatesQuerySchema = z.strictObject({
   currencies: z

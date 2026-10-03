@@ -126,21 +126,21 @@ describe("createApiErrorMapper", () => {
     invalidFallback: "errorInvalid",
   });
 
-  it("el código de dominio manda sobre el status", () => {
+  it("lets the domain code take precedence over the status", () => {
     expect(map(new ApiError(400, "QUOTA"))).toBe("errorQuota");
     expect(map(new ApiError(404, "QUOTA"))).toBe("errorQuota");
   });
 
-  it("sin código conocido, usa el status propio", () => {
+  it("without a known code, uses the feature's own status mapping", () => {
     expect(map(new ApiError(404))).toBe("errorNotFound");
     expect(map(new ApiError(429, "OTRO"))).toBe("errorRateLimit");
   });
 
-  it("no confunde un código con una propiedad del prototipo", () => {
+  it("does not mistake a code for a prototype property", () => {
     expect(map(new ApiError(400, "toString"))).toBe("errorInvalid");
   });
 
-  it("el resto cae en el mapeo común", () => {
+  it("falls back to the common mapping for the rest", () => {
     expect(map(new ApiError(0))).toBe("errorNetwork");
     expect(map(new ApiError(401))).toBe("errorSession");
     expect(map(new ApiError(503))).toBe("errorServer");
@@ -148,7 +148,7 @@ describe("createApiErrorMapper", () => {
     expect(map(new Error("boom"))).toBe("errorGeneric");
   });
 
-  it("un 400/422 sin código propio se traduce con invalidFallback", () => {
+  it("translates a 400/422 without its own code with invalidFallback", () => {
     const noForm = createApiErrorMapper({ invalidFallback: "errorGeneric" });
     expect(map(new ApiError(422))).toBe("errorInvalid");
     expect(noForm(new ApiError(400))).toBe("errorGeneric");

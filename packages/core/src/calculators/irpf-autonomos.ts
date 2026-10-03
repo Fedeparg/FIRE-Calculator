@@ -1,7 +1,8 @@
-// IRPF de autónomos (estimación directa): rendimiento neto e IRPF con mínimo personal y familiar y
-// tributación conjunta. Core puro, orientativo. En la simplificada aplica los gastos de difícil
-// justificación (5 % del rendimiento previo, máx. 2.000 €/año; art. 30 Reglamento IRPF). No aplica
-// la reducción por rendimientos del trabajo (art. 20 LIRPF): no rige para actividades económicas.
+// Self-employed IRPF (direct assessment, estimación directa): net income and IRPF with the personal
+// and family allowance (mínimo personal y familiar) and joint filing (tributación conjunta). Pure core,
+// indicative only. The simplified variant applies the hard-to-justify expenses allowance (gastos de
+// difícil justificación: 5% of prior net income, max €2,000/year; art. 30 Reglamento IRPF). It does
+// not apply the employment income reduction (art. 20 LIRPF), which does not cover business activities.
 
 import {
   JOINT_RETURN_REDUCTION,
@@ -21,7 +22,7 @@ export interface SelfEmployedInput extends PersonalCircumstances {
   expenses: number;
   socialSecurity: number;
   pensionContribution?: number;
-  /** Estimación directa simplificada: gastos de difícil justificación (5 %, máx. 2.000 €/año). Por defecto false. */
+  /** Simplified direct assessment: hard-to-justify expenses allowance (5%, max €2,000/year). Defaults to false. */
   simplifiedRegime?: boolean;
 }
 

@@ -13,7 +13,7 @@ import { toPositionLotResponse, type PositionLotResponse } from './position.mapp
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 import { todayUtc } from '../common/dates.js';
 
-/** Lote importado de un bróker (importes en decimal `string`). */
+/** A lot imported from a broker (amounts as decimal `string`). */
 export type ImportedLotInput = {
   externalId: string;
   kind: 'buy' | 'sell';
@@ -24,10 +24,10 @@ export type ImportedLotInput = {
 };
 
 /**
- * CRUD de lotes y recálculo de `positions.quantity/avgPrice` a partir de ellos. Cada mutación
- * ocurre dentro de una transacción que termina reescribiendo esos campos, así que foto
- * (`positions`) y lotes dicen siempre lo mismo. La propiedad se comprueba con
- * `findOwnedPosition` y no con `PositionsService`, que inyecta a este servicio (evita ciclo).
+ * Lot CRUD and recompute of `positions.quantity/avgPrice` from the lots. Every mutation runs
+ * inside a transaction that ends by rewriting those fields, so the snapshot (`positions`) and the
+ * lots always agree. Ownership is checked with `findOwnedPosition` rather than `PositionsService`,
+ * which injects this service (avoids a cycle).
  */
 @Injectable()
 export class PositionLotsService {
@@ -44,14 +44,14 @@ export class PositionLotsService {
     } satisfies LotChangedEvent);
   }
 
-  /** Lotes de una posición del usuario, en orden cronológico. */
+  /** Lots of one of the user's positions, in chronological order. */
   async listByPosition(userId: string, positionId: string): Promise<PositionLotResponse[]> {
     await findOwnedPosition(this.db, userId, positionId);
     const rows = await this.selectLots(this.db, positionId);
     return rows.map((row) => toPositionLotResponse(row));
   }
 
-  /** Todos los lotes del usuario (por `userId` desnormalizado, sin join); los usan la exportación RGPD y la tool MCP de operaciones. */
+  /** All of the user's lots (by the denormalised `userId`, no join); used by the GDPR export and the MCP trades tool. */
   async findAllByUser(userId: string): Promise<PositionLotResponse[]> {
     const rows = await this.db
       .select()
@@ -62,7 +62,7 @@ export class PositionLotsService {
     return rows.map((row) => toPositionLotResponse(row));
   }
 
-  /** Añade un lote y reagrega en una transacción: una secuencia inválida (venta en negativo) lo revierte. */
+  /** Adds a lot and re-aggregates in one transaction: an invalid sequence (sell into negative) rolls it back. */
   async create(userId: string, positionId: string, dto: CreatePositionLotDto): Promise<PositionLotResponse> {
     const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
@@ -90,7 +90,7 @@ export class PositionLotsService {
     return created;
   }
 
-  /** Edita un lote y reagrega (misma transacción). */
+  /** Edits a lot and re-aggregates (same transaction). */
   async update(
     userId: string,
     positionId: string,
@@ -102,12 +102,12 @@ export class PositionLotsService {
     const updated = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const current = await this.findLot(tx, positionId, lotId);
-      // Mover un lote a una fecha posterior vacía el tramo [antigua, nueva) y su `updatedAt` solo
-      // alcanza desde la nueva: se avisa también de la antigua.
+      // Moving a lot to a later date empties the range [old, new) and its `updatedAt` only reaches
+      // from the new date on: the old date is reported too.
       if (dto.tradedAt !== undefined && dto.tradedAt !== current.tradedAt) previousDate = current.tradedAt;
 
-      // Sin cambio real no se escribe: tocar `updatedAt` invalidaría las capturas reales (ver
-      // `staleSnapshotDates`) por una edición cosmética.
+      // No real change means no write: touching `updatedAt` would invalidate real captures (see
+      // `staleSnapshotDates`) over a cosmetic edit.
       const next = {
         kind: dto.kind ?? current.kind,
         quantity: dto.quantity !== undefined ? dto.quantity.toString() : current.quantity,
@@ -150,9 +150,9 @@ export class PositionLotsService {
     return updated;
   }
 
-  /** Borra un lote y reagrega (misma transacción). */
+  /** Deletes a lot and re-aggregates (same transaction). */
   async remove(userId: string, positionId: string, lotId: string): Promise<void> {
-    // Un lote borrado no deja marca de tiempo: se avisa de su fecha de operación.
+    // A deleted lot leaves no timestamp behind: its trade date is reported instead.
     const removedDate = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const lot = await this.findLot(tx, positionId, lotId);
@@ -167,7 +167,7 @@ export class PositionLotsService {
     this.emitLotChanged(userId, positionId, removedDate);
   }
 
-  /** Añade un lote sin comprobar propiedad (el llamante ya lo hizo) y reagrega; lo usa `PositionsService` en alta y combinación. */
+  /** Adds a lot without checking ownership (the caller already did) and re-aggregates; used by `PositionsService` on create and combine. */
   async appendLotOwned(
     tx: DatabaseOrTransaction,
     input: {
@@ -191,14 +191,14 @@ export class PositionLotsService {
   }
 
   /**
-   * Añade lotes importados (el llamante ya comprobó propiedad) y reagrega una sola vez, no por
-   * lote. Idempotente: `ON CONFLICT DO NOTHING` sobre `(user_id, external_id)` descarta los ya
-   * importados, también ante una petición concurrente; devuelve cuántos entraron.
+   * Adds imported lots (the caller already checked ownership) and re-aggregates once, not per
+   * lot. Idempotent: `ON CONFLICT DO NOTHING` on `(user_id, external_id)` discards those already
+   * imported, also under a concurrent request; returns how many went in.
    *
-   * Los lotes llegan ordenados por ejecución, pero el agregado desempata el mismo día por
-   * `createdAt` y `defaultNow()` da el mismo valor a toda la transacción: se asigna uno
-   * creciente (+1 ms) para respetar el orden del bróker en el coste medio móvil.
-   * Una secuencia inválida (`NEGATIVE_QUANTITY`) hace lanzar a `recompute` y revierte el llamante.
+   * Lots arrive in execution order, but the aggregate breaks same-day ties by `createdAt` and
+   * `defaultNow()` gives the whole transaction the same value: an increasing one (+1 ms) is
+   * assigned to keep the broker's order in the moving average cost.
+   * An invalid sequence (`NEGATIVE_QUANTITY`) makes `recompute` throw and the caller rolls back.
    */
   async appendImported(
     tx: DatabaseOrTransaction,
@@ -228,16 +228,16 @@ export class PositionLotsService {
   }
 
   /**
-   * Rehace los lotes para que reflejen una cantidad y un precio medio declarados a mano (UI o
-   * MCP). Es una declaración del estado actual, no una operación de mercado (bajar el precio
-   * medio no es compra ni venta):
-   *   - 1 lote: se edita en sitio. 0 lotes: se crea el inicial.
-   *   - más de 1: se colapsan en un lote sintético con la fecha del más antiguo. Es destructivo
-   *     a propósito (lotes y posición descuadrados romperían el siguiente recálculo); para
-   *     conservar el histórico están los endpoints de lotes.
-   *   - con alguna venta se rechaza con 409 `HAS_SALES`: colapsar borraría ganancias realizadas
-   *     (base del informe de plusvalías). Salvo que los importes sean los actuales: el formulario
-   *     los envía siempre y cambiar solo nombre o bróker no debe fallar.
+   * Rewrites the lots so they reflect a quantity and average price declared by hand (UI or
+   * MCP). It is a declaration of the current state, not a market trade (lowering the average
+   * price is neither a buy nor a sell):
+   *   - 1 lot: edited in place. 0 lots: the initial one is created.
+   *   - more than 1: collapsed into one synthetic lot dated like the oldest. Destructive on
+   *     purpose (lots and position out of sync would break the next recompute); the lot
+   *     endpoints are there to keep the history.
+   *   - with any sell it is rejected with 409 `HAS_SALES`: collapsing would erase realised gains
+   *     (the basis of the capital gains report). Unless the amounts are the current ones: the form
+   *     always sends them and changing only the name or broker must not fail.
    */
   async declareState(
     tx: DatabaseOrTransaction,
@@ -259,7 +259,7 @@ export class PositionLotsService {
 
     if (existing.length === 1) {
       const only = firstItem(existing);
-      // Declarar lo que ya hay no toca el lote (ver `staleSnapshotDates`).
+      // Declaring what is already there does not touch the lot (see `staleSnapshotDates`).
       if (only.kind === 'buy' && sameAmount(only.quantity, input.quantity) && sameAmount(only.price, input.price)) {
         return;
       }
@@ -285,14 +285,14 @@ export class PositionLotsService {
     await this.recompute(tx, input.positionId);
   }
 
-  /** Reagrega los lotes y escribe el resultado en `positions`: único sitio que lo sincroniza; llamar dentro de la transacción de la mutación. */
+  /** Re-aggregates the lots and writes the result to `positions`: the only place that syncs it; call inside the mutation's transaction. */
   async recompute(tx: DatabaseOrTransaction, positionId: string): Promise<LotAggregate> {
-    // Bloquea la fila de la posición antes de releer los lotes: sin esto, dos mutaciones
-    // simultáneas (web + MCP, importación + edición) leen cada una los lotes sin el INSERT de la
-    // otra y la última `UPDATE` gana (lost update). Con el bloqueo, la segunda espera y, en READ
-    // COMMITTED, su `SELECT` siguiente ya ve lo que confirmó la primera. `NO KEY UPDATE` y no
-    // `UPDATE`: el INSERT del lote ya tiene un `KEY SHARE` sobre la posición (por la FK), que
-    // `FOR UPDATE` no admite (interbloqueo entre las dos); `NO KEY UPDATE` sí.
+    // Locks the position row before re-reading the lots: without this, two concurrent mutations
+    // (web + MCP, import + edit) each read the lots without the other's INSERT and the last
+    // `UPDATE` wins (lost update). With the lock, the second one waits and, under READ COMMITTED,
+    // its next `SELECT` already sees what the first one committed. `NO KEY UPDATE` rather than
+    // `UPDATE`: the lot INSERT already holds a `KEY SHARE` on the position (through the FK), which
+    // `FOR UPDATE` conflicts with (deadlock between the two); `NO KEY UPDATE` does not.
     await tx.select({ id: positions.id }).from(positions).where(eq(positions.id, positionId)).for('no key update');
     const lots = await this.selectLots(tx, positionId);
     const aggregate = aggregateLots(lots);
@@ -309,7 +309,7 @@ export class PositionLotsService {
     return aggregate;
   }
 
-  /** Lotes de una posición en el orden canónico `(tradedAt, createdAt, id)`. */
+  /** A position's lots in the canonical order `(tradedAt, createdAt, id)`. */
   private selectLots(tx: DatabaseOrTransaction, positionId: string): Promise<PositionLot[]> {
     return tx
       .select()
@@ -318,7 +318,7 @@ export class PositionLotsService {
       .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
   }
 
-  /** Filtrar por `positionId` (ya validada como propia) hace que el id de un lote ajeno dé 404. */
+  /** Filtering by `positionId` (already validated as owned) makes another user's lot id give a 404. */
   private async findLot(tx: DatabaseOrTransaction, positionId: string, lotId: string): Promise<PositionLot> {
     const [row] = await tx
       .select()
@@ -331,8 +331,8 @@ export class PositionLotsService {
   }
 
   /**
-   * Condición "el lote `lotId`, de la posición `positionId`, es de `userId`". Las escrituras la
-   * usan además de `findOwnedPosition`/`findLot`: defensa en profundidad (ver `ownedPosition`).
+   * Condition "lot `lotId`, of position `positionId`, belongs to `userId`". Writes use it on top
+   * of `findOwnedPosition`/`findLot`: defence in depth (see `ownedPosition`).
    */
   private ownedLot(userId: string, positionId: string, lotId: string): SQL {
     return and(
@@ -347,7 +347,7 @@ function lotNotFound(): NotFoundException {
   return new NotFoundException('Lote no encontrado');
 }
 
-/** ¿Mismo importe a la escala de la columna? Compara en coma fija; un valor ilegible (p. ej. exponencial) cuenta como distinto. */
+/** Same amount at the column's scale? Compares in fixed point; an unparsable value (e.g. exponential) counts as different. */
 export function sameAmount(a: string, b: string): boolean {
   try {
     return parseDecimal(a, AMOUNT_SCALE) === parseDecimal(b, AMOUNT_SCALE);

@@ -8,27 +8,27 @@ import { useCalculatorState } from "./CalculatorState";
 import ScenarioPanel from "./ScenarioPanel";
 import Button from "@/shared/ui/Button";
 
-/** Resultado del último intento de copiar (el portapapeles puede estar denegado). */
+/** Outcome of the last copy attempt (clipboard access may be denied). */
 type CopyStatus = "idle" | "copied" | "error";
 
-/** Cuánto se mantiene visible la confirmación de copiado. */
+/** How long the copy confirmation stays visible. */
 const COPY_FEEDBACK_MS = 3000;
 
 /**
- * Barra de acciones bajo la calculadora: copiar el enlace del cálculo y (con sesión) los
- * escenarios guardados en la cuenta.
+ * Actions bar below the calculator: copy the link to the calculation and (with a session) the
+ * scenarios saved to the account.
  *
- * La monta `CalculatorStateProvider`, así que aparece sola en cualquier calculadora que
- * declare sus campos con `useNumberField`/`useOptionField`; las que no declaran ninguno
- * (las de entrada no escalar) no tienen nada que compartir y no la muestran.
+ * `CalculatorStateProvider` mounts it, so it shows up on its own in any calculator that declares
+ * its fields with `useNumberField`/`useOptionField`; those that declare none (non-scalar inputs)
+ * have nothing to share and do not show it.
  */
 export default function CalculatorActions() {
   const t = useTranslations("calculator.share");
   const state = useCalculatorState();
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
-  // La confirmación se borra sola: si se quedase fija, dejaría de leerse como respuesta a
-  // la última pulsación.
+  // The confirmation clears itself: if it stayed put, it would stop reading as the response
+  // to the last click.
   useEffect(() => {
     if (copyStatus === "idle") return;
     const timer = setTimeout(() => setCopyStatus("idle"), COPY_FEEDBACK_MS);
@@ -39,15 +39,15 @@ export default function CalculatorActions() {
 
   async function handleCopy() {
     if (!state) return;
-    // `flushUrl` escribe la URL sin esperar al retardo: así se copia el estado actual y no
-    // el de hace un cuarto de segundo.
+    // `flushUrl` writes the URL without waiting for the delay: that way the current state is
+    // copied rather than the one from a quarter of a second ago.
     const href = state.flushUrl();
     try {
       await navigator.clipboard.writeText(href);
       setCopyStatus("copied");
       trackEvent({ name: "share-link-copied", data: { calculator: state.slug } });
     } catch {
-      // El portapapeles puede estar bloqueado (permiso denegado, contexto no seguro).
+      // The clipboard may be blocked (permission denied, insecure context).
       setCopyStatus("error");
     }
   }
@@ -60,8 +60,8 @@ export default function CalculatorActions() {
           {t("copyLink")}
         </Button>
         {/*
-          Región viva: el cambio de estado del botón se ANUNCIA, no solo se colorea. Está
-          siempre en el DOM (no se crea al copiar) para que el lector de pantalla la observe.
+          Live region: the button's state change is ANNOUNCED, not just coloured. It is always
+          in the DOM (not created on copy) so the screen reader observes it.
         */}
         <p
           role="status"

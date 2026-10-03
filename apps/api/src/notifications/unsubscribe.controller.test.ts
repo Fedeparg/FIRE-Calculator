@@ -19,17 +19,17 @@ function setup() {
 }
 
 describe('UnsubscribeController', () => {
-  it('con un token válido da de baja a ese usuario', async () => {
+  it('unsubscribes the user when the token is valid', async () => {
     const { controller, settings } = setup();
     await controller.unsubscribe(createUnsubscribeToken(USER, SECRET));
     expect(settings.unsubscribe).toHaveBeenCalledWith(USER);
   });
 
-  it('con un token inválido o ausente no hace nada (y no lanza: siempre 204)', async () => {
+  it('does nothing with an invalid or missing token (and does not throw: always 204)', async () => {
     const { controller, settings } = setup();
-    await controller.unsubscribe(createUnsubscribeToken(USER, 'otro'));
+    await controller.unsubscribe(createUnsubscribeToken(USER, 'other'));
     await controller.unsubscribe(undefined);
-    await controller.unsubscribe('basura');
+    await controller.unsubscribe('garbage');
     expect(settings.unsubscribe).not.toHaveBeenCalled();
   });
 });

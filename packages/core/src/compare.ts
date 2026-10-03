@@ -1,7 +1,7 @@
 /**
- * Comparador de cadenas por unidades de código (el orden de `<`), para `sort`. Es el que conviene
- * con fechas ISO, ids y tickers: determinista y sin depender del idioma, a diferencia de
- * `localeCompare` (que se reserva para textos que lee una persona).
+ * String comparator by code units (the order of `<`), for `sort`. It is the right one for ISO
+ * dates, ids and tickers: deterministic and locale-independent, unlike `localeCompare` (which is
+ * reserved for text a person reads).
  */
 export function compareStrings(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;

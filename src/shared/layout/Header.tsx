@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 
-// `authSlot` lo inyecta el layout: `shared` no puede depender de `features/auth`.
+// The layout injects `authSlot`: `shared` cannot depend on `features/auth`.
 export default function Header({ authSlot }: { authSlot: ReactNode }) {
   const t = useTranslations("site");
   const tNav = useTranslations("nav");
@@ -19,8 +19,8 @@ export default function Header({ authSlot }: { authSlot: ReactNode }) {
           </span>
           <span className="text-foreground">{t("title")}</span>
         </Link>
-        {/* Móvil: marca e idioma/tema en la primera fila y la navegación debajo, a todo el ancho
-            y sin iconos para que quepa con el menú de usuario. Desde `sm`, una sola fila. */}
+        {/* Mobile: brand and language/theme on the first row and navigation below, full width
+            and without icons so it fits alongside the user menu. From `sm` up, a single row. */}
         <div className="order-2 flex items-center gap-2 sm:order-3">
           <span aria-hidden className="mr-1 hidden h-5 w-px bg-border sm:block" />
           <LanguageSwitcher />

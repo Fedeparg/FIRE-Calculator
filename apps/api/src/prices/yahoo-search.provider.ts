@@ -9,11 +9,11 @@ import { YAHOO_USER_AGENT } from './yahoo-http.js';
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const QUOTES_COUNT = 8;
 const REQUEST_TIMEOUT_MS = 8_000;
-/** Consultas recientes en memoria: el buscador repite las mismas al teclear y borrar. */
+/** Recent queries kept in memory: the search box repeats the same ones while typing and deleting. */
 const CACHE_MAX_ENTRIES = 500;
 const CACHE_TTL_MS = 10 * 60_000;
 
-/** `quoteType` de Yahoo → tipo normalizado; los no contemplados caen en 'other'. */
+/** Yahoo `quoteType` → normalized type; unknown ones fall back to 'other'. */
 const TYPE_MAP: Record<string, InstrumentType> = {
   EQUITY: 'equity',
   ETF: 'etf',
@@ -22,10 +22,10 @@ const TYPE_MAP: Record<string, InstrumentType> = {
   INDEX: 'index',
   CURRENCY: 'currency',
 };
-/** Derivados que no encajan en una cartera al uso. */
+/** Derivatives that do not fit a regular portfolio. */
 const EXCLUDED_TYPES = new Set(['FUTURE', 'OPTION', 'ECNQUOTE']);
 
-/** Forma (parcial) de un resultado de la búsqueda de Yahoo. */
+/** (Partial) shape of a Yahoo search result. */
 interface YahooSearchQuote {
   symbol?: string;
   shortname?: string;
@@ -38,7 +38,7 @@ interface YahooSearchResponse {
   quotes?: YahooSearchQuote[];
 }
 
-/** Parsea la respuesta de Yahoo (pura): descarta resultados sin símbolo o nombre y tipos excluidos; el parseo frágil vive aquí. */
+/** Parses the Yahoo response (pure): drops results without symbol or name and excluded types; the fragile parsing lives here. */
 export function parseYahooSearch(body: unknown): InstrumentSearchResult[] {
   const quotes = (body as YahooSearchResponse)?.quotes;
   if (!Array.isArray(quotes)) return [];
@@ -59,7 +59,7 @@ export function parseYahooSearch(body: unknown): InstrumentSearchResult[] {
   return out;
 }
 
-/** Búsqueda sobre el autocompletado (no oficial) de Yahoo. Se dispara en la ruta del usuario mientras teclea: el frontend hace debounce. */
+/** Search on Yahoo's (unofficial) autocomplete. It fires on the user's path while typing: the frontend debounces. */
 @Injectable()
 export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
   readonly name = 'yahoo';
@@ -77,7 +77,7 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
     const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` + `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
     const result = await fetchJson(url, { timeoutMs: REQUEST_TIMEOUT_MS, headers: { 'User-Agent': YAHOO_USER_AGENT } });
     if (!result.ok) {
-      // Degrada a "sin resultados" para no romper la UI. No se cachea: es un fallo transitorio.
+      // Degrade to "no results" so the UI does not break. Not cached: it is a transient failure.
       this.logger.warn(`Yahoo search "${q}": ${result.error}`);
       return [];
     }

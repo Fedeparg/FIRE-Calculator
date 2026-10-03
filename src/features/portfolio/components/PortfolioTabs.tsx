@@ -12,14 +12,14 @@ type Tab = {
   href: string;
   label: string;
   count?: number;
-  /** ¿La pestaña expresa importes en la divisa elegida? Si no, se oculta el selector. */
+  /** Does the tab show amounts in the chosen currency? If not, the selector is hidden. */
   usesDisplay: boolean;
 };
 
 /**
- * Barra de pestañas de la cartera, con el selector de divisa a la derecha. Es navegación
- * entre páginas (cada pestaña tiene su URL, que se puede enlazar y recargar), no un `tablist`
- * de ARIA: por eso son enlaces con `aria-current`. En móvil la barra se desliza en horizontal.
+ * Portfolio tab bar, with the currency selector on the right. It is navigation between pages
+ * (each tab has its own URL, which can be linked and reloaded), not an ARIA `tablist`: that is
+ * why they are links with `aria-current`. On mobile the bar scrolls horizontally.
  */
 export default function PortfolioTabs() {
   const t = useTranslations("portfolio.tabs");
@@ -38,7 +38,7 @@ export default function PortfolioTabs() {
   const active = tabs.find((tab) => tab.href === pathname);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
-  // En móvil la barra se desliza: la pestaña activa se trae a la vista para que no quede cortada.
+  // On mobile the bar scrolls: the active tab is scrolled into view so it is not cut off.
   useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [pathname]);

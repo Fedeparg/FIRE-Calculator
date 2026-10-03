@@ -1,28 +1,28 @@
-// Rentabilidades reales anuales (descontada la inflación de EE. UU.) del S&P Composite con
-// dividendos reinvertidos y del bono del Tesoro de EE. UU. a 10 años, de enero a enero.
+// Annual real returns (net of US inflation) of the S&P Composite with dividends reinvested and of
+// the 10-year US Treasury bond, January to January.
 //
-// Fuente: Robert J. Shiller, "Online Data" (U.S. Stock Markets 1871-Present and CAPE Ratio),
-// fichero ie_data.xls, hoja "Data", versión guardada el 2024-09-05, descargado el 2026-09-28
-// de https://shillerdata.com. Datos públicos; se citan con atribución a su autor.
+// Source: Robert J. Shiller, "Online Data" (U.S. Stock Markets 1871-Present and CAPE Ratio), file
+// ie_data.xls, sheet "Data", version saved on 2024-09-05, downloaded on 2026-09-28 from
+// https://shillerdata.com. Public data; cited with attribution to its author.
 //
-// Método: stocks = TRP(ene. año+1) / TRP(ene. año) − 1, con TRP la columna "Real Total Return
-// Price"; bonds = igual sobre la columna "Real Total Bond Returns" (índice acumulado). Cada
-// fila es el año natural que empieza en `year`. No editar a mano.
+// Method: stocks = TRP(Jan. year+1) / TRP(Jan. year) − 1, where TRP is the "Real Total Return
+// Price" column; bonds = the same over the "Real Total Bond Returns" column (cumulative index).
+// Each row is the calendar year starting in `year`. Do not edit by hand.
 //
-// Para regenerarlo: (1) descargar `ie_data.xls` de shillerdata.com y anotar aquí su versión y
-// su SHA-256; (2) en la hoja "Data", quedarse con las filas de enero (fecha `AAAA.01`); (3) para
-// cada año con el enero siguiente publicado, aplicar el método de arriba a las dos columnas,
-// redondeando a 6 decimales; (4) sustituir la tabla. El script de la versión actual no se
-// versionó ni se conservó el `.xls`, así que esta no tiene hash: la próxima actualización debe
-// dejar el script en `scripts/` y el hash del fichero fuente en esta cabecera.
-// `shiller-returns.test.ts` comprueba la forma de la serie y las cifras de referencia.
+// To regenerate it: (1) download `ie_data.xls` from shillerdata.com and record its version and
+// SHA-256 here; (2) in the "Data" sheet, keep the January rows (date `YYYY.01`); (3) for each year
+// whose following January is published, apply the method above to both columns, rounding to 6
+// decimals; (4) replace the table. The script for the current version was not committed and the
+// `.xls` was not kept, so this one has no hash: the next update must leave the script in
+// `scripts/` and the source file's hash in this header.
+// `shiller-returns.test.ts` checks the shape of the series and the reference figures.
 
 export interface HistoricalYear {
-  /** Año natural (enero de `year` a enero de `year + 1`). */
+  /** Calendar year (January of `year` to January of `year + 1`). */
   year: number;
-  /** Rentabilidad real de la bolsa de EE. UU. con dividendos, en tanto por uno. */
+  /** Real return of the US stock market with dividends, as a fraction. */
   stocks: number;
-  /** Rentabilidad real del bono a 10 años de EE. UU., en tanto por uno. */
+  /** Real return of the 10-year US bond, as a fraction. */
   bonds: number;
 }
 

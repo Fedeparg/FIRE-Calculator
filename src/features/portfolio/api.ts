@@ -1,7 +1,7 @@
 /**
- * Llamadas de la cartera a la API (posiciones, lotes, cobros, precios, FX, buscador de instrumentos).
- * Sin React: se prueba sin DOM. La autorización y el scoping por usuario los decide la API;
- * aquí solo se transporta y se traducen los fallos a claves i18n.
+ * Portfolio API calls (positions, lots, income, prices, FX, instrument search).
+ * No React: tested without a DOM. Authorization and per-user scoping are decided by the API;
+ * this module only transports data and maps failures to i18n keys.
  */
 
 import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
@@ -19,7 +19,7 @@ import { ApiError, NO_STORE, apiJson, createApiErrorMapper } from "@/shared/api/
 
 export const FX_PATH = "/api/prices/fx";
 
-/** Ruta de precios de un conjunto de tickers; `null` si no hay ninguno que pedir. */
+/** Price route for a set of tickers; `null` if there is nothing to request. */
 export function pricesPath(tickersKey: string): string | null {
   return tickersKey ? `/api/prices?symbols=${encodeURIComponent(tickersKey)}` : null;
 }
@@ -34,12 +34,12 @@ export function lotsPath(positionId: string): string {
   return `/api/positions/${positionId}/lots`;
 }
 
-/** Re-sincroniza la lista de posiciones (fuente de verdad: la API). */
+/** Re-syncs the position list (source of truth: the API). */
 export function listPositions(): Promise<Position[]> {
   return apiJson<Position[]>("/api/positions", NO_STORE);
 }
 
-/** Alta (`editingId === null`) o edición de una posición. */
+/** Creates (`editingId === null`) or edits a position. */
 export function savePosition(editingId: string | null, payload: PositionPayload): Promise<Position> {
   return apiJson<Position>(editingId ? `/api/positions/${editingId}` : "/api/positions", {
     method: editingId ? "PATCH" : "POST",
@@ -47,7 +47,7 @@ export function savePosition(editingId: string | null, payload: PositionPayload)
   });
 }
 
-/** Combina una compra con la posición existente (media ponderada). */
+/** Merges a purchase into the existing position (weighted average). */
 export function combinePosition(
   id: string,
   payload: { quantity: number; avgPrice: number; currency: string },
@@ -59,7 +59,7 @@ export function deletePosition(id: string): Promise<void> {
   return apiJson<void>(`/api/positions/${id}`, { method: "DELETE" });
 }
 
-/** Alta (`lotId === null`) o edición de un lote. */
+/** Creates (`lotId === null`) or edits a lot. */
 export function saveLot(positionId: string, lotId: string | null, payload: LotPayload): Promise<PositionLot> {
   return apiJson<PositionLot>(lotId ? `${lotsPath(positionId)}/${lotId}` : lotsPath(positionId), {
     method: lotId ? "PATCH" : "POST",
@@ -71,12 +71,12 @@ export function deleteLot(positionId: string, lotId: string): Promise<void> {
   return apiJson<void>(`${lotsPath(positionId)}/${lotId}`, { method: "DELETE" });
 }
 
-/** Cobros del usuario; con `positionId`, solo los de esa posición. */
+/** The user's income; with `positionId`, only that position's. */
 export function incomePath(positionId?: string): string {
   return positionId ? `/api/income?positionId=${encodeURIComponent(positionId)}` : "/api/income";
 }
 
-/** Alta (`incomeId === null`) o edición de un cobro. */
+/** Creates (`incomeId === null`) or edits an income entry. */
 export function saveIncome(incomeId: string | null, payload: IncomePayload): Promise<IncomeEvent> {
   return apiJson<IncomeEvent>(incomeId ? `/api/income/${incomeId}` : "/api/income", {
     method: incomeId ? "PATCH" : "POST",
@@ -88,17 +88,17 @@ export function deleteIncome(incomeId: string): Promise<void> {
   return apiJson<void>(`/api/income/${incomeId}`, { method: "DELETE" });
 }
 
-/** Clasifica una posición (acción, fondo o ETF, derivado u otro) para la declaración. */
+/** Classifies a position (stock, fund or ETF, derivative or other) for the tax return. */
 export function setAssetClass(positionId: string, assetClass: AssetClass): Promise<Position> {
   return apiJson<Position>(`/api/positions/${positionId}`, { method: "PATCH", body: { assetClass } });
 }
 
-/** Sustituye los saldos negativos pendientes de años que Sextante no calcula. */
+/** Replaces the pending negative balances from years Sextante does not compute. */
 export function savePendingBalances(balances: PendingNegative[]): Promise<PendingNegative[]> {
   return apiJson<PendingNegative[]>("/api/tax-return/pending-balances", { method: "PUT", body: { balances } });
 }
 
-/** Resultados del buscador de instrumentos; `signal` cancela la petición (debounce). */
+/** Instrument search results; `signal` cancels the request (debounce). */
 export async function searchInstruments(query: string, signal: AbortSignal): Promise<InstrumentSearchResult[]> {
   const body = await apiJson<{ results: InstrumentSearchResult[] }>(
     `/api/instruments/search?q=${encodeURIComponent(query)}`,
@@ -107,28 +107,28 @@ export async function searchInstruments(query: string, signal: AbortSignal): Pro
   return body.results;
 }
 
-/** Conflicto 409 del alta/edición de posiciones, con lo que la UI necesita para reaccionar. */
+/** 409 conflict from creating/editing a position, with what the UI needs to react. */
 export type PositionConflict =
   { kind: "hasSales" } | { kind: "brokerRequired" } | { kind: "duplicate"; existing: Position };
 
 /**
- * Lee un 409 de `POST/PATCH /api/positions`. DUPLICATE: ya existe ese símbolo+bróker (en alta
- * se ofrece combinar). BROKER_REQUIRED: el símbolo ya existe y falta el bróker. HAS_SALES: la
- * posición tiene ventas y cambiar cantidad/precio a mano borraría su histórico. `null` si no es
- * un conflicto conocido (se trata como un fallo cualquiera).
+ * Reads a 409 from `POST/PATCH /api/positions`. DUPLICATE: that symbol+broker already exists
+ * (on create, merging is offered). BROKER_REQUIRED: the symbol already exists and the broker is
+ * missing. HAS_SALES: the position has sales, and changing quantity/price by hand would erase its
+ * history. `null` if it is not a known conflict (treated as any other failure).
  */
 export function positionConflict(error: unknown): PositionConflict | null {
   if (!(error instanceof ApiError) || error.status !== 409) return null;
   if (error.code === "HAS_SALES") return { kind: "hasSales" };
   if (error.code === "BROKER_REQUIRED") return { kind: "brokerRequired" };
   if (error.code === "DUPLICATE" && typeof error.body === "object" && error.body !== null && "existing" in error.body) {
-    // El cuerpo viene de nuestra API: se confía en su forma, como en el resto de respuestas.
+    // The body comes from our own API: its shape is trusted, as with every other response.
     return { kind: "duplicate", existing: error.body.existing as Position };
   }
   return null;
 }
 
-/** Clave i18n de un fallo de posiciones: las comunes más el 409 `HAS_SALES`. */
+/** i18n key for a positions failure: the common ones plus the 409 `HAS_SALES`. */
 export const positionErrorKey = createApiErrorMapper({
   codes: { HAS_SALES: "errorHasSales" },
   invalidFallback: "errorInvalid",

@@ -1,10 +1,10 @@
-// Parser CSV mínimo (RFC 4180), propio: el formato es pequeño y estable y así el código que toca
-// datos financieros se audita entero.
+// Minimal in-house CSV parser (RFC 4180): the format is small and stable, and this way the code
+// that handles financial data can be audited in full.
 
-/** Registro con la línea (1-based) donde empieza. */
+/** Record with the (1-based) line where it starts. */
 export type CsvRecord = { line: number; fields: string[] };
 
-/** CSV mal formado (comilla sin cerrar o fuera de sitio). */
+/** Malformed CSV (unterminated or misplaced quote). */
 export class CsvSyntaxError extends Error {
   constructor(
     message: string,
@@ -16,10 +16,10 @@ export class CsvSyntaxError extends Error {
 }
 
 /**
- * Trocea `text` en registros: campos entrecomillados (comas, saltos de línea, `""`), LF o CRLF y BOM
- * inicial; ignora líneas vacías.
+ * Splits `text` into records: quoted fields (commas, line breaks, `""`), LF or CRLF and a leading
+ * BOM; ignores empty lines.
  *
- * @throws {CsvSyntaxError} ante comilla sin cerrar o texto tras la comilla de cierre.
+ * @throws {CsvSyntaxError} on an unterminated quote or text after the closing quote.
  */
 export function parseCsv(text: string): CsvRecord[] {
   const input = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
@@ -28,7 +28,7 @@ export function parseCsv(text: string): CsvRecord[] {
   let fields: string[] = [];
   let field = "";
   let inQuotes = false;
-  // tras cerrar comillas solo puede venir coma, fin de línea o fin de texto
+  // after a closing quote only a comma, end of line or end of text may follow
   let afterQuote = false;
   let line = 1;
   let recordLine = 1;
@@ -40,7 +40,7 @@ export function parseCsv(text: string): CsvRecord[] {
   };
   const endRecord = (): void => {
     endField();
-    // una línea vacía produce un único campo vacío: no es un registro
+    // an empty line yields a single empty field: it is not a record
     if (!(fields.length === 1 && fields[0] === "")) {
       records.push({ line: recordLine, fields });
     }
@@ -69,7 +69,7 @@ export function parseCsv(text: string): CsvRecord[] {
     if (char === ",") {
       endField();
     } else if (char === "\n" || char === "\r") {
-      // CRLF cuenta como un único terminador
+      // CRLF counts as a single terminator
       if (char === "\r" && input[i + 1] === "\n") i++;
       endRecord();
       line++;
@@ -86,7 +86,7 @@ export function parseCsv(text: string): CsvRecord[] {
   if (inQuotes) {
     throw new CsvSyntaxError("Unterminated quoted field", recordLine);
   }
-  // Último registro sin terminador final.
+  // Last record without a trailing terminator.
   if (field !== "" || fields.length > 0 || afterQuote) {
     endRecord();
   }

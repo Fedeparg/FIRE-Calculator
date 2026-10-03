@@ -7,9 +7,9 @@ import { EMAIL_SERVICE, type EmailService } from './email.service.js';
 import { ResendEmailService } from './resend-email.service.js';
 
 /**
- * Transporte según EMAIL_TRANSPORT: 'resend' (producción; requiere RESEND_API_KEY, EMAIL_FROM y
- * APP_URL) o, por defecto, `DevEmailService` (log). Solo se construye el elegido: el
- * constructor de Resend exige claves que no existen en dev.
+ * Transport selected by EMAIL_TRANSPORT: 'resend' (production; requires RESEND_API_KEY, EMAIL_FROM
+ * and APP_URL) or, by default, `DevEmailService` (log). Only the chosen one is built: the Resend
+ * constructor requires keys that don't exist in dev.
  */
 @Module({
   imports: [ConfigModule],

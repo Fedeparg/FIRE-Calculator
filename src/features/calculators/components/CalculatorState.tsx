@@ -14,26 +14,26 @@ import {
 import CalculatorActions from "./CalculatorActions";
 
 /**
- * Estado compartido (campos y valores) para implementar una sola vez compartir por URL y
- * guardar escenarios: cada campo se declara con `useNumberField`/`useOptionField`.
+ * Shared state (fields and values) so URL sharing and saved scenarios are implemented once:
+ * each field is declared with `useNumberField`/`useOptionField`.
  */
 type CalculatorStateContextValue = {
-  /** Identifica sus escenarios guardados. */
+  /** Identifies its saved scenarios. */
   slug: string;
-  /** Solo los campos que difieren de su valor por defecto. */
+  /** Only the fields that differ from their default value. */
   values: FieldValues;
   hasFields: boolean;
   registerField: (key: string, spec: FieldSpec) => void;
   setValue: (key: string, value: FieldValue) => void;
   applyInputs: (inputs: unknown) => void;
   getInputs: () => FieldValues;
-  /** Escribe la URL sin esperar al retardo (copiar no debe perder la última tecla) y devuelve el enlace. */
+  /** Writes the URL without waiting for the delay (copying must not lose the last keystroke) and returns the link. */
   flushUrl: () => string;
 };
 
 const CalculatorStateContext = createContext<CalculatorStateContextValue | null>(null);
 
-// Los navegadores limitan las llamadas por segundo a `replaceState`.
+// Browsers rate-limit calls to `replaceState`.
 const URL_SYNC_DELAY_MS = 250;
 
 type Props = {
@@ -42,27 +42,27 @@ type Props = {
 };
 
 /**
- * Proveedor montado por `CalculatorShell`. Sincronización con la URL:
+ * Provider mounted by `CalculatorShell`. URL synchronisation:
  *
- * - Se lee de `window.location.search` tras el montaje, no con `useSearchParams`: la página
- *   es estática (ISR), así que el primer render usa los valores por defecto para casar con
- *   la hidratación y la ruta no se vuelve dinámica. La lectura va en un `useLayoutEffect`
- *   (corre tras montar y ANTES de que el navegador pinte, y después de los de los hijos, que
- *   ya han registrado sus campos): los valores del enlace se ven en el primer pintado del
- *   cliente, sin un fotograma intermedio con los de por defecto.
- * - Se escribe con `history.replaceState`, no con `router.replace`, que sería una navegación
- *   de App Router (pide de nuevo el payload RSC); `replaceState` no recarga ni apila entradas.
+ * - It reads `window.location.search` after mounting, not `useSearchParams`: the page is static
+ *   (ISR), so the first render uses the defaults to match hydration and the route does not turn
+ *   dynamic. The read happens in a `useLayoutEffect` (it runs after mounting and BEFORE the
+ *   browser paints, and after the children's effects, which have already registered their
+ *   fields): the link's values show up on the client's first paint, with no intermediate frame
+ *   showing the defaults.
+ * - It writes with `history.replaceState`, not `router.replace`, which would be an App Router
+ *   navigation (refetching the RSC payload); `replaceState` neither reloads nor pushes entries.
  *
- * Los valores externos (URL o escenario) se aplican cambiando el estado, sin remontar los
- * campos: cada `NumberField` resincroniza su texto cuando su `value` cambia desde fuera.
+ * External values (URL or scenario) are applied by changing state, without remounting the
+ * fields: each `NumberField` resyncs its text when its `value` changes from outside.
  */
 export default function CalculatorStateProvider({ slug, children }: Props) {
-  // Ref y no estado: las specs son configuración (no se pintan) y se registran desde los
-  // efectos de cada campo; guardarlas en estado provocaría renders inútiles.
+  // A ref rather than state: specs are configuration (never rendered) and are registered from
+  // each field's effects; keeping them in state would cause pointless renders.
   const specsRef = useRef<Record<string, FieldSpec>>({});
   const [values, setValues] = useState<FieldValues>({});
   const [hasFields, setHasFields] = useState(false);
-  // Hasta leer la URL no se puede escribir en ella (se borraría).
+  // The URL cannot be written until it has been read (it would be wiped).
   const [hydrated, setHydrated] = useState(false);
 
   const registerField = useCallback((key: string, spec: FieldSpec) => {
@@ -73,16 +73,16 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
     setValues((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }));
   }, []);
 
-  // Entrada de valores externos de un escenario. Reemplaza el estado en vez de mezclarlo: lo
-  // que no venga vuelve a su valor por defecto.
+  // Entry point for a scenario's external values. It replaces the state instead of merging it:
+  // anything missing goes back to its default value.
   const applyInputs = useCallback((inputs: unknown) => {
     setValues(decodeCalculatorInputs(inputs, specsRef.current));
   }, []);
 
   const getInputs = useCallback(() => completeValues(values, specsRef.current), [values]);
 
-  // Única vía de escritura a la URL: la comparten el efecto con retardo y `flushUrl`.
-  // Solo llama a `replaceState` si algo cambió, y devuelve el enlace completo.
+  // The only path that writes the URL: shared by the delayed effect and `flushUrl`.
+  // It only calls `replaceState` if something changed, and returns the full link.
   const writeUrl = useCallback(() => {
     const search = encodeCalculatorState(window.location.search, values, specsRef.current);
     const { origin, pathname, hash } = window.location;
@@ -92,7 +92,7 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
     return `${origin}${pathname}${search}${hash}`;
   }, [values]);
 
-  // Un `setState` dentro de `useLayoutEffect` se aplica de forma síncrona antes de pintar.
+  // A `setState` inside `useLayoutEffect` is applied synchronously before painting.
   useLayoutEffect(() => {
     const specs = specsRef.current;
     setHasFields(Object.keys(specs).length > 0);
@@ -120,12 +120,12 @@ export default function CalculatorStateProvider({ slug, children }: Props) {
   );
 }
 
-/** `null` fuera de un proveedor (páginas que no son calculadoras). */
+/** `null` outside a provider (pages that are not calculators). */
 export function useCalculatorState(): CalculatorStateContextValue | null {
   return useContext(CalculatorStateContext);
 }
 
-/** Slug de la calculadora en curso (su namespace de mensajes es `calc.<slug>`). */
+/** Slug of the current calculator (its message namespace is `calc.<slug>`). */
 export function useCalculatorSlug(): string {
   return useRequiredCalculatorState().slug;
 }
@@ -133,20 +133,20 @@ export function useCalculatorSlug(): string {
 function useRequiredCalculatorState(): CalculatorStateContextValue {
   const context = useContext(CalculatorStateContext);
   if (!context) {
-    throw new Error("Los campos de una calculadora requieren <CalculatorStateProvider>");
+    throw new Error("Calculator fields require <CalculatorStateProvider>");
   }
   return context;
 }
 
 /**
- * Sustituto de `useState(defaultValue)` cuyo valor viaja en la URL y en los escenarios.
- * `key` es el parámetro de la query string: cambiarlo invalida enlaces y escenarios ya guardados.
+ * Drop-in for `useState(defaultValue)` whose value travels in the URL and in scenarios.
+ * `key` is the query-string parameter: changing it invalidates existing links and saved scenarios.
  */
 export function useNumberField(key: string, defaultValue: number): [number, (value: number) => void] {
   const { values, registerField, setValue } = useRequiredCalculatorState();
-  // En un efecto y no durante el render: el render debe ser puro (React puede repetirlo o
-  // descartarlo en modo estricto o concurrente). `useLayoutEffect` de un hijo corre antes que el
-  // del proveedor, así que la spec ya está registrada cuando este lee la URL.
+  // In an effect, not during render: render must be pure (React may repeat or discard it in
+  // strict or concurrent mode). A child's `useLayoutEffect` runs before the provider's, so the
+  // spec is already registered when the provider reads the URL.
   useLayoutEffect(() => {
     registerField(key, { kind: "number", defaultValue });
   }, [registerField, key, defaultValue]);
@@ -158,14 +158,14 @@ export function useNumberField(key: string, defaultValue: number): [number, (val
   return [value, set];
 }
 
-/** Como `useNumberField`, validado contra `allowed`: un valor desconocido cae al de por defecto. */
+/** Like `useNumberField`, validated against `allowed`: an unknown value falls back to the default. */
 export function useOptionField<T extends string>(
   key: string,
   defaultValue: T,
   allowed: readonly T[],
 ): [T, (value: T) => void] {
   const { values, registerField, setValue } = useRequiredCalculatorState();
-  // Ver `useNumberField`.
+  // See `useNumberField`.
   useLayoutEffect(() => {
     registerField(key, { kind: "option", defaultValue, allowed });
   }, [registerField, key, defaultValue, allowed]);
@@ -178,10 +178,9 @@ export function useOptionField<T extends string>(
 }
 
 /**
- * Varios campos de opción con los mismos valores permitidos (p. ej. las preguntas de un
- * cuestionario), cuando su número sale de datos y no se puede llamar a `useOptionField` una vez
- * por campo (los hooks no pueden ir en un bucle). `keys` y `allowed` deben ser constantes de
- * módulo: su identidad gobierna el registro.
+ * Several option fields sharing the same allowed values (e.g. a quiz's questions), when their
+ * count comes from data and `useOptionField` cannot be called once per field (hooks cannot go
+ * in a loop). `keys` and `allowed` must be module constants: their identity drives registration.
  */
 export function useOptionFields<T extends string>(
   keys: readonly string[],
@@ -189,7 +188,7 @@ export function useOptionFields<T extends string>(
   allowed: readonly T[],
 ): [T[], (index: number, value: T) => void] {
   const { values, registerField, setValue } = useRequiredCalculatorState();
-  // Ver `useNumberField`.
+  // See `useNumberField`.
   useLayoutEffect(() => {
     for (const key of keys) registerField(key, { kind: "option", defaultValue, allowed });
   }, [registerField, keys, defaultValue, allowed]);
@@ -214,9 +213,9 @@ export function useOptionFields<T extends string>(
 }
 
 /**
- * Campo enlazado: su clave de URL (que es también la clave de su etiqueta, por convención), su
- * valor y su setter en un solo objeto. Lo consumen `<NumField>` (etiqueta y ayuda derivadas de la
- * clave) y `useInputs` (entradas del cálculo), para no repetir cada campo en tres sitios.
+ * Bound field: its URL key (which by convention is also its label key), its value and its setter
+ * in a single object. Consumed by `<NumField>` (label and help derived from the key) and
+ * `useInputs` (the computation's inputs), so each field is not repeated in three places.
  */
 export type FieldBinding<T> = {
   key: string;
@@ -225,15 +224,15 @@ export type FieldBinding<T> = {
 };
 
 /**
- * `useNumberField` que devuelve el campo enlazado en vez de la tupla. El objeto se memoiza: solo
- * cambia de identidad cuando cambia su valor, así puede ir en dependencias de `useMemo`.
+ * `useNumberField` returning the bound field instead of the tuple. The object is memoised: its
+ * identity only changes when its value does, so it can go in `useMemo` dependencies.
  */
 export function useBoundNumberField(key: string, defaultValue: number): FieldBinding<number> {
   const [value, set] = useNumberField(key, defaultValue);
   return useMemo(() => ({ key, value, set }), [key, value, set]);
 }
 
-/** `useOptionField` que devuelve el campo enlazado (ver `useBoundNumberField`). */
+/** `useOptionField` returning the bound field (see `useBoundNumberField`). */
 export function useBoundOptionField<T extends string>(
   key: string,
   defaultValue: T,

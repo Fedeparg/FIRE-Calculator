@@ -1,4 +1,4 @@
-// Lógica pura de la pestaña Posiciones (valoración, filtro, búsqueda), compartida por la lista y el detalle para mostrar la misma cifra.
+// Pure logic for the Positions tab (valuation, filter, search), shared by the list and the detail view so both show the same figure.
 
 import { convertCurrency } from "../fx.js";
 import { valueInDisplay } from "./aggregate.js";
@@ -14,17 +14,17 @@ export interface ClosePrice {
   currency: string;
 }
 
-/** Valoración en la divisa de la posición (la del coste). */
+/** Valuation in the position's currency (the cost currency). */
 export interface PositionValuation {
   invested: number;
-  /** Valor de mercado en la divisa de la posición; `null` sin precio o sin tasa. */
+  /** Market value in the position's currency; `null` without a price or a rate. */
   marketValue: number | null;
   pnlAbs: number | null;
-  /** `null` también si lo invertido es 0. */
+  /** Also `null` when the invested amount is 0. */
   pnlPct: number | null;
 }
 
-/** Valora una posición; el precio puede venir en otra divisa (ETF en USD comprado en EUR) y solo sin tasa queda sin valorar. */
+/** Values a position; the price may be in another currency (a USD ETF bought in EUR) and it stays unvalued only without a rate. */
 export function valuePosition(
   position: ValuablePosition,
   price: ClosePrice | undefined,
@@ -38,7 +38,7 @@ export function valuePosition(
   return { invested, marketValue, pnlAbs, pnlPct };
 }
 
-/** Grupos del filtro; un derivado va siempre a "derivatives", esté o no cerrado. */
+/** Filter groups; a derivative always goes to "derivatives", whether closed or not. */
 export const POSITION_FILTERS = ["open", "closed", "derivatives"] as const;
 export type PositionFilter = (typeof POSITION_FILTERS)[number];
 
@@ -61,7 +61,7 @@ export function countByFilter(positions: readonly FilterablePosition[]): Record<
   return counts;
 }
 
-/** Minúsculas y sin acentos. */
+/** Lowercase and without accents. */
 function normalize(text: string): string {
   return text
     .normalize("NFD")
@@ -69,7 +69,7 @@ function normalize(text: string): string {
     .toLowerCase();
 }
 
-/** ¿Casa con el buscador? Mira símbolo, nombre y bróker sin distinguir mayúsculas ni acentos; vacío casa con todo. */
+/** Matches the search box? Checks symbol, name and broker, ignoring case and accents; an empty query matches all. */
 export function matchesQuery(position: FilterablePosition, query: string): boolean {
   const needle = normalize(query.trim());
   if (!needle) return true;
@@ -94,8 +94,8 @@ export interface DailyMove {
 }
 
 /**
- * Posiciones abiertas que más se han movido hoy (en valor absoluto). Es la variación del precio,
- * independiente de divisa y cantidad; sin cierre anterior positivo no hay variación y no entra.
+ * Open positions that moved the most today (in absolute value). It is the price change, independent
+ * of currency and quantity; without a positive previous close there is no change and it is left out.
  */
 export function dailyMovers(
   positions: readonly MoverPosition[],
@@ -120,9 +120,9 @@ export interface DailyGain {
 }
 
 /**
- * Ganancia de hoy: cantidad × (cierre − cierre anterior) en la divisa de la posición; el % es el del
- * precio, como en `dailyMovers`. `null` sin precio, sin cierre anterior positivo, sin cantidad
- * abierta o sin tasa.
+ * Today's gain: quantity × (close − previous close) in the position's currency; the % is the
+ * price's, as in `dailyMovers`. `null` without a price, a positive previous close, an open quantity
+ * or a rate.
  */
 export function dailyGain(
   position: ValuablePosition,

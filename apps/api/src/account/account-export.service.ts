@@ -15,7 +15,7 @@ import type { PositionLotResponse, PositionResponse } from '../positions/positio
 import { PositionsService } from '../positions/positions.service.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
 
-/** Una aplicación OAuth/MCP conectada, tal y como aparece en la exportación RGPD. */
+/** A connected OAuth/MCP application, as it appears in the GDPR export. */
 export type ConnectedAppExport = {
   clientId: string;
   clientName: string | null;
@@ -25,26 +25,25 @@ export type ConnectedAppExport = {
 };
 
 /**
- * Exportación RGPD de los datos del usuario (derecho de portabilidad/acceso). Incluye el
- * email de la cuenta, todas sus posiciones y sus lotes, el histórico de valoración, los
- * escenarios guardados y las aplicaciones conectadas (accesos OAuth/MCP). Si se añaden más
- * datos personales en el futuro, deben sumarse aquí para que la exportación siga siendo
- * completa: una tabla nueva con datos del usuario que no aparezca aquí es un agujero de
- * portabilidad, aunque el borrado sí la cubra por cascada.
+ * GDPR export of the user's data (right of access/portability). Includes the account email,
+ * all positions and their lots, the valuation history, the saved scenarios and the connected
+ * applications (OAuth/MCP access). Any personal data added in the future must be added here
+ * too so the export stays complete: a new table with user data that is missing here is a
+ * portability gap, even if deletion does cover it by cascade.
  */
 export type AccountExport = {
   email: string;
   exportedAt: string;
   positions: PositionResponse[];
-  /** Compras y ventas de todas sus posiciones (el histórico del que salen los agregados). */
+  /** Buys and sells across all positions (the history the aggregates are derived from). */
   positionLots: PositionLotResponse[];
   income: IncomeEvent[];
   savingsPendingBalances: PendingNegative[];
-  /** Serie de valoración diaria, en EUR (la divisa base del histórico). */
+  /** Daily valuation series, in EUR (the base currency of the history). */
   portfolioHistory: HistoryPointDto[];
   savedScenarios: SavedScenarioResponse[];
   connectedApps: ConnectedAppExport[];
-  /** Preferencias de avisos por email (opt-in). */
+  /** Email alert preferences (opt-in). */
   notificationSettings: {
     fireAlertsEnabled: boolean;
     locale: string;
@@ -66,12 +65,12 @@ export class AccountExportService {
   ) {}
 
   /**
-   * Exporta todos los datos personales del usuario (RGPD): email, posiciones, lotes,
-   * histórico de valoración, escenarios guardados y apps conectadas. El `userId` viene
-   * siempre del JWT, nunca del cliente.
+   * Exports all of the user's personal data (GDPR): email, positions, lots, valuation
+   * history, saved scenarios and connected apps. The `userId` always comes from the JWT,
+   * never from the client.
    */
   async export(user: SessionUser): Promise<AccountExport> {
-    // Consultas independientes entre sí: en paralelo, no en serie.
+    // The queries are independent of each other: run them in parallel, not in series.
     const [
       positions,
       positionLots,
@@ -86,7 +85,7 @@ export class AccountExportService {
       this.lots.findAllByUser(user.id),
       this.income.list(user.id),
       this.pendingBalances.list(user.id),
-      // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
+      // Export the FULL history we keep (the service's cap), in EUR.
       this.snapshots.history(user.id, HISTORY_MAX_DAYS),
       this.scenarios.findAllByUser(user.id),
       this.notifications.get(user.id),

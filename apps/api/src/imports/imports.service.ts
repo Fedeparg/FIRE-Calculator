@@ -11,10 +11,10 @@ import { resultOf, sum, TRADE_REPUBLIC_BROKER } from './trade-republic-import.mo
 import { summarizeSkipped, TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
 
 /**
- * Importación desde Trade Republic, sin estado: vista previa y confirmación reciben el mismo
- * CSV y lo reparsean, así que no se guarda nada entre ellas y el export solo vive lo que dura
- * la petición. Este servicio solo orquesta: el planificador lee y simula, el escritor escribe y
- * las tareas posteriores (precios, dividendos) corren en segundo plano.
+ * Stateless Trade Republic import: preview and confirm receive the same CSV and re-parse it, so
+ * nothing is stored between them and the export only lives as long as the request. This service
+ * only orchestrates: the planner reads and simulates, the writer writes and the follow-up tasks
+ * (prices, dividends) run in the background.
  */
 @Injectable()
 export class ImportsService {
@@ -27,19 +27,19 @@ export class ImportsService {
     private readonly events: EventEmitter2,
   ) {}
 
-  /** Calcula qué haría la confirmación, sin escribir nada. */
+  /** Works out what the confirm would do, without writing anything. */
   async preview(userId: string, csv: string): Promise<ImportPlan> {
     return this.planner.plan(userId, parseOrThrow(csv));
   }
 
   /**
-   * Escribe la importación en una transacción por posición: si una queda en negativo solo esa
-   * se revierte y se informa. Idempotente por `external_id`.
+   * Writes the import in one transaction per position: if one ends up negative, only that one
+   * is rolled back and reported. Idempotent by `external_id`.
    */
   async confirm(userId: string, csv: string): Promise<ImportResult> {
     const parsed = parseOrThrow(csv);
-    // Un alta o un borrado concurrente entre esta lectura y la transacción acaban en el conflicto
-    // de la restricción única o de la FK (`ErrorTranslationFilter`).
+    // A concurrent create or delete between this read and the transaction ends in a unique
+    // constraint or FK conflict (`ErrorTranslationFilter`).
     const { groups, existing } = await this.planner.loadInstruments(userId, parsed.trades);
 
     const results: ImportResultPosition[] = [];
@@ -49,7 +49,7 @@ export class ImportsService {
     for (const group of groups) {
       const position = existing.get(group.isin);
       if (group.fresh.length === 0) {
-        // Reimportar el mismo fichero también completa la clase de activo que falte.
+        // Re-importing the same file also fills in a missing asset class.
         await this.writer.backfillAssetClass(position, group);
         results.push(resultOf(group, 'unchanged', 0, null, null));
         continue;
@@ -63,10 +63,8 @@ export class ImportsService {
       } catch (error) {
         const failure = failureOf(error);
         if (failure === 'UNEXPECTED') {
-          // No se vuelca el mensaje de la BD (puede incluir valores de la fila): solo el tipo.
-          this.logger.error(
-            `Importación de una posición fallida: ${error instanceof Error ? error.name : 'error desconocido'}`,
-          );
+          // The database message is not dumped (it may include row values): only the type.
+          this.logger.error(`Position import failed: ${error instanceof Error ? error.name : 'unknown error'}`);
         }
         results.push(resultOf(group, 'failed', 0, null, failure));
       }
@@ -74,11 +72,11 @@ export class ImportsService {
 
     this.tasks.schedule(userId, created);
 
-    // Después de las posiciones: un dividendo se enlaza con la posición de su ISIN, aunque sea nueva.
+    // After the positions: a dividend is linked to the position of its ISIN, even a new one.
     const income = await this.writer.importIncome(userId, parsed.income);
 
-    // Importar sobre posiciones que ya existían puede traer operaciones antiguas: se rehace el
-    // histórico al momento (las nuevas ya lo hacen con `POSITION_CREATED_EVENT`).
+    // Importing into existing positions may bring in old trades: the history is rebuilt right
+    // away (new positions already do so via `POSITION_CREATED_EVENT`).
     for (const position of extended) {
       this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: position.id } satisfies LotChangedEvent);
     }

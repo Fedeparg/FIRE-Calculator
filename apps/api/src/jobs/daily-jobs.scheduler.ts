@@ -11,42 +11,42 @@ import { PriceHistoryService } from '../prices/price-history.service.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 import { errorMessage } from '../common/errors.js';
 
-/** Paso de un trabajo: nombre (para el log de error) y cuerpo. */
+/** One step of a job: name (for the error log) and body. */
 type JobStep = readonly [name: string, run: () => Promise<unknown>];
 
-/** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
+/** Default: every day at 22:30 Madrid time. 6-field format (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
-/** Intradía: en punto de 9:00 a 21:00 (Madrid), lunes a viernes; cubre Europa y casi todo EE. UU. y acaba antes del nocturno. */
+/** Intraday: on the hour from 9:00 to 21:00 (Madrid), Monday to Friday; covers Europe and most of the US and ends before the nightly job. */
 export const DEFAULT_INTRADAY_CRON = '0 0 9-21 * * 1-5';
-/** Valor de `PRICE_INTRADAY_CRON` que desactiva el intradía. */
+/** `PRICE_INTRADAY_CRON` value that disables the intraday refresh. */
 export const INTRADAY_OFF = 'off';
 
 /**
- * Trabajo nocturno (22:30 Madrid, `PRICE_REFRESH_CRON`; ya cerradas las bolsas europea y
- * estadounidense), todos los días: los findes las acciones devuelven el último cierre, la cripto
- * se actualiza y el snapshot diario no puede tener huecos. Pasos, en orden:
- *   1. Refresco de precios (símbolos en uso y pares FX).
- *   2. Snapshot de cada cartera. Va tras el 1: capturar antes guardaría el cierre de ayer con fecha de hoy.
- *   3. Reconstrucción del histórico, autocurativa. Solo lee precios de la caché (no vuelve a bajar
- *      5 años cada noche); repara altas reconstruidas con el histórico a medio traer.
- *   4. Alertas de hitos FIRE (opt-in) sobre el snapshot recién capturado.
+ * Nightly job (22:30 Madrid, `PRICE_REFRESH_CRON`; European and US exchanges are already closed),
+ * every day: at weekends stocks return the last close, crypto keeps moving and the daily snapshot
+ * must not have gaps. Steps, in order:
+ *   1. Price refresh (symbols in use and FX pairs).
+ *   2. Snapshot of every portfolio. Runs after 1: capturing earlier would store yesterday's close under today's date.
+ *   3. Self-healing history rebuild. It only reads prices from the cache (it does not re-download
+ *      5 years every night); it repairs rebuilt positions whose history was only half fetched.
+ *   4. FIRE milestone alerts (opt-in) on the snapshot just captured.
  *
- * El intradía (`PRICE_INTRADAY_CRON`, `off` lo desactiva) solo actualiza precios y FX; el
- * nocturno deja la fila del día con el cierre. Comparten un cerrojo en memoria para no duplicar
- * peticiones a Yahoo: el intradía (y el arranque) se salta si hay otro trabajo en marcha, pero el
- * NOCTURNO espera a que termine, porque saltárselo dejaría el día sin snapshot. El cerrojo es de
- * proceso, no distribuido: vale porque la API corre en una sola réplica. Un
- * `pg_try_advisory_lock` serviría con varias réplicas, pero es de SESIÓN: exige reservar una
- * conexión del pool durante todo el trabajo y sondear para la espera del nocturno; no compensa
- * mientras haya una sola instancia.
+ * The intraday job (`PRICE_INTRADAY_CRON`, `off` disables it) only updates prices and FX; the
+ * nightly job leaves the day's row with the close. They share an in-memory lock so they don't
+ * duplicate requests to Yahoo: the intraday job (and the startup pass) is skipped if another job is
+ * running, but the NIGHTLY one waits for it to finish, because skipping it would leave the day
+ * without a snapshot. The lock is per process, not distributed: that is fine because the API runs as
+ * a single replica. A `pg_try_advisory_lock` would work with several replicas, but it is
+ * SESSION-scoped: it requires holding a pool connection for the whole job and polling for the
+ * nightly job's wait; not worth it while there is a single instance.
  *
- * Vive aquí y no en `prices/` porque el snapshot necesita `PortfolioModule`, que depende de
- * `PricesModule`: colgarlo de `prices/` crearía un ciclo que solo se rompe con `forwardRef`.
+ * It lives here and not in `prices/` because the snapshot needs `PortfolioModule`, which depends on
+ * `PricesModule`: hanging it off `prices/` would create a cycle that only `forwardRef` can break.
  */
 @Injectable()
 export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap {
   private readonly logger = new Logger(DailyJobsScheduler.name);
-  /** Trabajo en marcha (nunca rechaza), o null si el cerrojo está libre. */
+  /** Running job (never rejects), or null if the lock is free. */
   private current: Promise<void> | null = null;
 
   constructor(
@@ -66,7 +66,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       defaultCron: DEFAULT_CRON,
       handler: () => void this.run(),
     });
-    this.logger.log(`Trabajo diario de cartera programado: "${cronTime}" (${TIME_ZONE})`);
+    this.logger.log(`Daily portfolio job scheduled: "${cronTime}" (${TIME_ZONE})`);
 
     const intradayTime = scheduleFromEnv(this.registry, {
       name: 'intraday-price-refresh',
@@ -76,57 +76,57 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       off: INTRADAY_OFF,
     });
     if (intradayTime === undefined) {
-      this.logger.log('Refresco intradía de precios desactivado (PRICE_INTRADAY_CRON=off)');
+      this.logger.log('Intraday price refresh disabled (PRICE_INTRADAY_CRON=off)');
       return;
     }
-    this.logger.log(`Refresco intradía de precios programado: "${intradayTime}" (${TIME_ZONE})`);
+    this.logger.log(`Intraday price refresh scheduled: "${intradayTime}" (${TIME_ZONE})`);
   }
 
   /**
-   * Pasada de arranque: repara huecos de usuarios existentes sin esperar al cron. Va aquí y no
-   * en `onModuleInit` (depende del orden entre `PricesModule` y `PortfolioModule`), sin bloquear
-   * `listen()` y tolerante a fallos.
+   * Startup pass: repairs gaps for existing users without waiting for the cron. It goes here and
+   * not in `onModuleInit` (it depends on the order between `PricesModule` and `PortfolioModule`),
+   * without blocking `listen()` and tolerant to failures.
    */
   onApplicationBootstrap(): void {
-    // Mismo cerrojo: puede pedir decenas de históricos a Yahoo y no debe solaparse con un refresco.
-    void this.exclusive('arranque', () => this.bootstrapBackfill());
+    // Same lock: it may request dozens of histories from Yahoo and must not overlap a refresh.
+    void this.exclusive('startup', () => this.bootstrapBackfill());
   }
 
   private async bootstrapBackfill(): Promise<void> {
     await this.steps([
-      ['Backfill de histórico de precios al arrancar', () => this.prices.ensureHistoryForActivePositions()],
-      ['Backfill de snapshots al arrancar', () => this.snapshots.backfillAll()],
-      ['Clasificación de posiciones', () => this.assetClasses.classifyMissing()],
+      ['Price history backfill at startup', () => this.prices.ensureHistoryForActivePositions()],
+      ['Snapshot backfill at startup', () => this.snapshots.backfillAll()],
+      ['Position classification', () => this.assetClasses.classifyMissing()],
     ]);
   }
 
   /**
-   * Ejecuta los pasos en orden, cada uno con su propio `try/catch`: el fallo de uno se registra
-   * con su nombre y no impide los siguientes (con la fuente caída, el snapshot se guarda igual).
+   * Runs the steps in order, each with its own `try/catch`: a failing step is logged with its name
+   * and does not stop the next ones (with the source down, the snapshot is still stored).
    */
   private async steps(steps: readonly JobStep[]): Promise<void> {
     for (const [name, fn] of steps) {
       try {
         await fn();
       } catch (error) {
-        this.logger.error(`${name} falló: ${errorMessage(error)}`);
+        this.logger.error(`${name} failed: ${errorMessage(error)}`);
       }
     }
   }
 
-  /** Pasos con errores capturados por separado: con la fuente caída el snapshot se guarda igual (precios de ayer, mejor que un hueco). */
+  /** Steps with errors caught separately: with the source down the snapshot is still stored (yesterday's prices beat a gap). */
   async run(): Promise<void> {
-    await this.exclusive('nocturno', () => this.runNightly(), 'wait');
+    await this.exclusive('nightly', () => this.runNightly(), 'wait');
   }
 
   async runIntraday(): Promise<void> {
-    await this.exclusive('intradía', () =>
+    await this.exclusive('intraday', () =>
       this.steps([
         [
-          'Refresco intradía de precios',
+          'Intraday price refresh',
           async () => {
             const summary = await this.prices.refreshAll();
-            this.logger.log(`Refresco intradía: ${summary.fetched}/${summary.symbols} símbolos`);
+            this.logger.log(`Intraday refresh: ${summary.fetched}/${summary.symbols} symbols`);
           },
         ],
       ]),
@@ -134,16 +134,16 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   /**
-   * Ejecuta `task` con el cerrojo. Si hay otro trabajo en marcha, `skip` lo omite (y lo registra)
-   * y `wait` espera a que termine antes de empezar. El cerrojo se libera siempre.
+   * Runs `task` under the lock. If another job is running, `skip` drops it (and logs it) and `wait`
+   * waits for it to finish before starting. The lock is always released.
    */
   private async exclusive(label: string, task: () => Promise<void>, onBusy: 'skip' | 'wait' = 'skip'): Promise<void> {
     while (this.current) {
       if (onBusy === 'skip') {
-        this.logger.warn(`Trabajo ${label} omitido: hay otro trabajo de precios en marcha`);
+        this.logger.warn(`Skipped the ${label} job: another price job is running`);
         return;
       }
-      this.logger.warn(`Trabajo ${label} en espera: hay otro trabajo de precios en marcha`);
+      this.logger.warn(`The ${label} job is waiting: another price job is running`);
       await this.current;
     }
     const running = task();
@@ -159,34 +159,32 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   private async runNightly(): Promise<void> {
-    // Las alertas evalúan este snapshot concreto (ver `evaluateAll`).
+    // The alerts evaluate this specific snapshot (see `evaluateAll`).
     let captureDate: string | undefined;
     await this.steps([
-      ['Refresco de precios', () => this.prices.refreshAll()],
+      ['Price refresh', () => this.prices.refreshAll()],
       [
-        'Captura de snapshots',
+        'Snapshot capture',
         async () => {
           captureDate = (await this.snapshots.captureAll()).date;
         },
       ],
-      ['Backfill de snapshots', () => this.snapshots.backfillAll()],
+      ['Snapshot backfill', () => this.snapshots.backfillAll()],
       [
-        'Evaluación de alertas FIRE',
+        'FIRE alert evaluation',
         async () => {
           const alerts = await this.fireAlerts.evaluateAll(captureDate);
           if (alerts.users > 0) {
-            this.logger.log(
-              `Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`,
-            );
+            this.logger.log(`FIRE alerts: ${alerts.sent} sent, ${alerts.failed} failed, ${alerts.users} users`);
           }
         },
       ],
-      // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
-      // Va tras las alertas: el snapshot y los avisos no deben esperar a Yahoo.
-      ['Refresco de splits', () => this.prices.refreshStaleSplits()],
-      // Con los dividendos de mercado recién cacheados (viajan con los splits), se completan los cobros pendientes.
-      ['Resolución de dividendos', () => this.dividends.resolvePending()],
-      ['Clasificación de posiciones', () => this.assetClasses.classifyMissing()],
+      // Splits of the symbols in use whose mark is older than 7 days (1 call per symbol and week).
+      // Runs after the alerts: the snapshot and the notifications must not wait for Yahoo.
+      ['Split refresh', () => this.prices.refreshStaleSplits()],
+      // With the market dividends just cached (they come with the splits), the pending payments are completed.
+      ['Dividend resolution', () => this.dividends.resolvePending()],
+      ['Position classification', () => this.assetClasses.classifyMissing()],
     ]);
   }
 }

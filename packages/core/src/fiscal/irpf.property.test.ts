@@ -5,7 +5,7 @@ import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import { estimateNetSalary, generalIncomeTax, generalMarginalRate, type NetSalaryInput } from "./irpf.js";
 import { REGION_CODES, type RegionCode } from "./regions.js";
 
-/** Una comunidad de régimen común, o ninguna (escala supletoria). */
+/** A common-regime (régimen común) region, or none (fallback scale). */
 const region: fc.Arbitrary<RegionCode | undefined> = fc.option(fc.constantFrom(...REGION_CODES), {
   nil: undefined,
 });
@@ -23,8 +23,8 @@ const circumstances = fc.record({
   region,
 });
 
-describe("IRPF — propiedades", () => {
-  it("la cuota nunca baja al subir la base, en todas las comunidades", () => {
+describe("IRPF — properties", () => {
+  it("the tax never drops as the base rises, in every region", () => {
     fc.assert(
       fc.property(base, fc.double({ min: 0, max: 50_000, noNaN: true }), region, (b, extra, r) => {
         const options = { region: r };
@@ -34,7 +34,7 @@ describe("IRPF — propiedades", () => {
     );
   });
 
-  it("la cuota nunca supera la base ni es negativa", () => {
+  it("the tax never exceeds the base and is never negative", () => {
     fc.assert(
       fc.property(base, region, (b, r) => {
         const tax = generalIncomeTax(b, undefined, { region: r });
@@ -44,7 +44,7 @@ describe("IRPF — propiedades", () => {
     );
   });
 
-  it("el tipo marginal está entre 0 y 100 %", () => {
+  it("the marginal rate is between 0 and 100%", () => {
     fc.assert(
       fc.property(base, region, (b, r) => {
         const rate = generalMarginalRate(b, r);
@@ -54,7 +54,7 @@ describe("IRPF — propiedades", () => {
     );
   });
 
-  it("el neto nunca supera al bruto y las cifras son finitas", () => {
+  it("the net never exceeds the gross and the figures are finite", () => {
     fc.assert(
       fc.property(circumstances, (input) => {
         const r = estimateNetSalary(input satisfies NetSalaryInput);
@@ -69,7 +69,7 @@ describe("IRPF — propiedades", () => {
     );
   });
 
-  it("cobrar más bruto nunca deja menos neto", () => {
+  it("earning more gross never leaves less net", () => {
     fc.assert(
       fc.property(circumstances, fc.double({ min: 1, max: 20_000, noNaN: true }), (input, raise) => {
         const before = estimateNetSalary(input).netAnnual;

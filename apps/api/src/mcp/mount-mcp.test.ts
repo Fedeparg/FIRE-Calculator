@@ -15,13 +15,13 @@ import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-j
 import { mountMcp } from './mount-mcp.js';
 
 /**
- * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
- * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ * `AppModule` is imported lazily: `ConfigModule.forRoot({ validate })` validates the environment when
+ * the module is evaluated, and these tests set theirs in `beforeAll`, i.e. after the imports.
  */
 const loadAppModule = async () => (await import('../app.module.js')).AppModule;
 
 const APP_URL = 'https://sextante.example.test';
-/** Audiencia canónica de los tokens: `<issuer>/api/mcp`. */
+/** Canonical token audience: `<issuer>/api/mcp`. */
 const AUDIENCE = `${APP_URL}/api/mcp`;
 const CLIENT_ID = 'cliente-de-prueba';
 
@@ -30,9 +30,9 @@ const sha256 = (value: string): string => createHash('sha256').update(value).dig
 type ToolResult = { isError?: boolean; content: { type: string; text: string }[] };
 
 /**
- * Prueba el montaje real del servidor MCP (`mountMcp`) sobre la aplicación completa: la capa
- * Bearer, el descubrimiento OAuth, el CORS y el control de scope por tool. Los tests de
- * `McpService` instancian el servicio a mano y no ven nada de esto.
+ * Tests the real mounting of the MCP server (`mountMcp`) on the full application: the Bearer layer,
+ * OAuth discovery, CORS and per-tool scope control. The `McpService` tests build the service by
+ * hand and see none of this.
  */
 describe('mountMcp (HTTP)', () => {
   const original = { ...process.env };
@@ -42,7 +42,7 @@ describe('mountMcp (HTTP)', () => {
   let closeDb: () => Promise<void>;
   let userId: string;
 
-  /** Inserta un token de acceso (solo se guarda su hash, como en producción). */
+  /** Inserts an access token (only its hash is stored, as in production). */
   const issueAccessToken = async (
     options: {
       scopes?: string[];
@@ -64,7 +64,7 @@ describe('mountMcp (HTTP)', () => {
     return token;
   };
 
-  /** POST JSON-RPC a `/api/mcp`. Sin `token`, no envía `Authorization`. */
+  /** JSON-RPC POST to `/api/mcp`. Without `token`, no `Authorization` is sent. */
   const mcpPost = (body: unknown, token?: string): Promise<Response> =>
     fetch(`${origin}/api/mcp`, {
       method: 'POST',
@@ -76,7 +76,7 @@ describe('mountMcp (HTTP)', () => {
       body: JSON.stringify(body),
     });
 
-  /** Llama a una tool y devuelve su resultado (la respuesta llega como SSE o como JSON). */
+  /** Calls a tool and returns its result (the response arrives as SSE or as JSON). */
   const callTool = async (token: string, name: string, args: Record<string, unknown> = {}): Promise<ToolResult> => {
     const res = await mcpPost(
       { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
@@ -88,7 +88,7 @@ describe('mountMcp (HTTP)', () => {
       ? (text.split('\n').find((line) => line.startsWith('data:')) ?? '').slice('data:'.length)
       : text;
     const message = JSON.parse(payload) as { result?: ToolResult; error?: { message: string } };
-    if (!message.result) throw new Error(`Respuesta JSON-RPC sin result: ${text}`);
+    if (!message.result) throw new Error(`JSON-RPC response without result: ${text}`);
     return message.result;
   };
 
@@ -103,14 +103,14 @@ describe('mountMcp (HTTP)', () => {
     process.env.EMAIL_TRANSPORT = 'dev';
     process.env.EMAIL_FROM = 'Sextante <no-reply@example.test>';
     process.env.APP_URL = APP_URL;
-    // Los crons no deben interbloquearse con el TRUNCATE de `resetDb` (ver imports.controller.test).
+    // The crons must not deadlock with `resetDb`'s TRUNCATE (see imports.controller.test).
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
     process.env.PRICE_INTRADAY_CRON = 'off';
 
     ({ db, close: closeDb } = createTestDb());
     disableStartupBackfill();
 
-    // Mismo orden que `main.ts`: cookieParser antes de `mountMcp`, y este antes de escuchar.
+    // Same order as `main.ts`: cookieParser before `mountMcp`, and that before listening.
     app = await NestFactory.create<NestExpressApplication>(await loadAppModule(), {
       abortOnError: false,
       logger: false,
@@ -135,7 +135,7 @@ describe('mountMcp (HTTP)', () => {
     process.env = original;
   });
 
-  describe('autenticación Bearer', () => {
+  describe('Bearer authentication', () => {
     const initialize = {
       jsonrpc: '2.0',
       id: 1,
@@ -143,46 +143,46 @@ describe('mountMcp (HTTP)', () => {
       params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '1.0.0' } },
     };
 
-    /** Comprueba el 401 con el reto de descubrimiento OAuth (RFC 9728) en `WWW-Authenticate`. */
+    /** Checks the 401 with the OAuth discovery challenge (RFC 9728) in `WWW-Authenticate`. */
     const expectBearerChallenge = (res: Response): void => {
       expect(res.status).toBe(401);
       const challenge = res.headers.get('www-authenticate') ?? '';
       expect(challenge).toMatch(/^Bearer /);
       expect(challenge).toContain('error="invalid_token"');
-      // Apunta a la metadata del recurso, sobre el origen público (no sobre `127.0.0.1`).
+      // Points to the resource metadata, on the public origin (not on `127.0.0.1`).
       expect(challenge).toContain(`resource_metadata="${APP_URL}/.well-known/oauth-protected-resource/api/mcp"`);
     };
 
-    it('devuelve 401 con el reto WWW-Authenticate si no hay token', async () => {
+    it('returns 401 with the WWW-Authenticate challenge when there is no token', async () => {
       const res = await mcpPost(initialize);
 
       expectBearerChallenge(res);
       expect(await res.json()).toMatchObject({ error: 'invalid_token' });
     });
 
-    it('devuelve 401 con un token desconocido', async () => {
+    it('returns 401 for an unknown token', async () => {
       expectBearerChallenge(await mcpPost(initialize, 'token-que-no-existe'));
     });
 
-    it('devuelve 401 con un token caducado', async () => {
+    it('returns 401 for an expired token', async () => {
       const token = await issueAccessToken({ expiresAt: new Date(Date.now() - 1_000) });
 
       expectBearerChallenge(await mcpPost(initialize, token));
     });
 
-    it('devuelve 401 con un token emitido para otra audiencia', async () => {
-      const token = await issueAccessToken({ audience: 'https://otro-recurso.example.test/api/mcp' });
+    it('returns 401 for a token issued for another audience', async () => {
+      const token = await issueAccessToken({ audience: 'https://other-resource.example.test/api/mcp' });
 
       expectBearerChallenge(await mcpPost(initialize, token));
     });
 
-    it('devuelve 401 si se presenta un refresh token como access token', async () => {
+    it('returns 401 when a refresh token is presented as an access token', async () => {
       const token = await issueAccessToken({ type: 'refresh' });
 
       expectBearerChallenge(await mcpPost(initialize, token));
     });
 
-    it('devuelve 401 con un esquema de autorización que no es Bearer', async () => {
+    it('returns 401 for an authorization scheme other than Bearer', async () => {
       const res = await fetch(`${origin}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Basic dXNlcjpwYXNz' },
@@ -192,7 +192,7 @@ describe('mountMcp (HTTP)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('acepta un token válido y atiende el initialize', async () => {
+    it('accepts a valid token and serves initialize', async () => {
       const token = await issueAccessToken();
 
       const res = await mcpPost(initialize, token);
@@ -201,7 +201,7 @@ describe('mountMcp (HTTP)', () => {
       expect(await res.text()).toContain('"serverInfo"');
     });
 
-    it('el 401 lleva cabeceras CORS para que un cliente de navegador pueda leer el reto', async () => {
+    it('the 401 carries CORS headers so a browser client can read the challenge', async () => {
       const res = await fetch(`${origin}/api/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Origin: 'https://inspector.example.test' },
@@ -213,7 +213,7 @@ describe('mountMcp (HTTP)', () => {
       expect(res.headers.get('access-control-expose-headers')).toContain('WWW-Authenticate');
     });
 
-    it('responde al preflight OPTIONS con 204 sin exigir token', async () => {
+    it('answers the OPTIONS preflight with 204 without requiring a token', async () => {
       const res = await fetch(`${origin}/api/mcp`, {
         method: 'OPTIONS',
         headers: { Origin: 'https://inspector.example.test', 'Access-Control-Request-Method': 'POST' },
@@ -224,14 +224,14 @@ describe('mountMcp (HTTP)', () => {
       expect(res.headers.get('access-control-allow-headers')).toContain('Authorization');
     });
 
-    it('responde 405 (no 404) a GET y DELETE: el servidor es sin estado y solo admite POST', async () => {
+    it('answers 405 (not 404) to GET and DELETE: the server is stateless and only accepts POST', async () => {
       expect((await fetch(`${origin}/api/mcp`)).status).toBe(405);
       expect((await fetch(`${origin}/api/mcp`, { method: 'DELETE' })).status).toBe(405);
     });
   });
 
-  describe('discovery OAuth', () => {
-    it('publica la metadata del recurso protegido (RFC 9728)', async () => {
+  describe('OAuth discovery', () => {
+    it('publishes the protected resource metadata (RFC 9728)', async () => {
       const res = await fetch(`${origin}/.well-known/oauth-protected-resource/api/mcp`);
 
       expect(res.status).toBe(200);
@@ -243,7 +243,7 @@ describe('mountMcp (HTTP)', () => {
       });
     });
 
-    it('publica la metadata del servidor de autorización (RFC 8414) con PKCE S256 y registro dinámico', async () => {
+    it('publishes the authorization server metadata (RFC 8414) with PKCE S256 and dynamic registration', async () => {
       const res = await fetch(`${origin}/.well-known/oauth-authorization-server`);
 
       expect(res.status).toBe(200);
@@ -261,7 +261,7 @@ describe('mountMcp (HTTP)', () => {
       expect(metadata.grant_types_supported).toEqual(expect.arrayContaining(['authorization_code', 'refresh_token']));
     });
 
-    it('el discovery es público: no exige token', async () => {
+    it('discovery is public: no token required', async () => {
       const res = await fetch(`${origin}/.well-known/oauth-authorization-server`, {
         headers: { Authorization: 'Bearer basura' },
       });
@@ -270,8 +270,8 @@ describe('mountMcp (HTTP)', () => {
     });
   });
 
-  describe('scope por tool', () => {
-    it('un token de solo lectura puede usar tools de lectura (auditoría ok)', async () => {
+  describe('per-tool scope', () => {
+    it('a read-only token can use read tools (audit ok)', async () => {
       const token = await issueAccessToken({ scopes: [SCOPE_PORTFOLIO_READ] });
 
       const result = await callTool(token, 'list_positions');
@@ -280,7 +280,7 @@ describe('mountMcp (HTTP)', () => {
       expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'ok', clientId: CLIENT_ID }]);
     });
 
-    it('un token de solo lectura no puede usar tools de escritura: isError, denied_scope y sin efecto', async () => {
+    it('a read-only token cannot use write tools: isError, denied_scope and no effect', async () => {
       const position = firstItem(
         await db
           .insert(positions)
@@ -294,12 +294,12 @@ describe('mountMcp (HTTP)', () => {
       expect(result.isError).toBe(true);
       expect(itemAt(result.content, 0).text).toContain('portfolio:write');
       expect(await auditRows()).toEqual([{ tool: 'delete_position', outcome: 'denied_scope', clientId: CLIENT_ID }]);
-      // La posición sigue ahí: el rechazo ocurre antes de ejecutar nada.
+      // The position is still there: the rejection happens before anything runs.
       expect(await db.select().from(positions).where(eq(positions.id, position.id))).toHaveLength(1);
     });
 
-    it('portfolio:write implica portfolio:read: un token emitido solo con write también lee', async () => {
-      // Token "legado" (emitido antes de la regla): la verificación aplica `withImpliedScopes`.
+    it('portfolio:write implies portfolio:read: a token issued with write only can also read', async () => {
+      // "Legacy" token (issued before the rule): verification applies `withImpliedScopes`.
       const token = await issueAccessToken({ scopes: [SCOPE_PORTFOLIO_WRITE] });
 
       const result = await callTool(token, 'list_positions');
@@ -308,7 +308,7 @@ describe('mountMcp (HTTP)', () => {
       expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'ok', clientId: CLIENT_ID }]);
     });
 
-    it('un token sin portfolio:read no puede usar tools de lectura: isError y denied_scope', async () => {
+    it('a token without portfolio:read cannot use read tools: isError and denied_scope', async () => {
       const token = await issueAccessToken({ scopes: [] });
 
       const result = await callTool(token, 'list_positions');
@@ -318,7 +318,7 @@ describe('mountMcp (HTTP)', () => {
       expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'denied_scope', clientId: CLIENT_ID }]);
     });
 
-    it('un token con portfolio:write sí puede usar tools de escritura', async () => {
+    it('a token with portfolio:write can use write tools', async () => {
       const position = firstItem(
         await db
           .insert(positions)

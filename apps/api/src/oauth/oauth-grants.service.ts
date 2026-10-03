@@ -4,7 +4,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 
-/** Un consentimiento con los datos legibles de su cliente. */
+/** A consent with its client's readable data. */
 export interface GrantWithClient {
   clientId: string;
   clientName: string | null;
@@ -15,16 +15,15 @@ export interface GrantWithClient {
 }
 
 /**
- * Consentimientos OAuth (tabla `oauth_grants`): qué scopes ha concedido un usuario a un
- * cliente. Es la base jurídica (RGPD) del acceso y lo que la pantalla "Aplicaciones
- * conectadas" lista y revoca. Compartido entre el provider (`authorize`) y el flujo de
- * consentimiento.
+ * OAuth consents (`oauth_grants` table): which scopes a user has granted to a client. It is the
+ * legal basis (GDPR) for the access and what the "Connected apps" screen lists and revokes. Shared
+ * between the provider (`authorize`) and the consent flow.
  */
 @Injectable()
 export class OAuthGrantsService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  /** ¿El usuario ya consintió a este cliente todos los scopes pedidos? */
+  /** Has the user already granted this client every requested scope? */
   async hasConsent(userId: string, clientId: string, scopes: string[]): Promise<boolean> {
     const [row] = await this.db
       .select({ scopes: oauthGrants.scopes })
@@ -39,10 +38,10 @@ export class OAuthGrantsService {
   }
 
   /**
-   * Registra/actualiza el consentimiento. Hace UNIÓN con lo ya concedido (step-up: pedir
-   * un scope nuevo no debe perder los anteriores), conservando el orden de concesión. Marca
-   * `lastUsedAt`. Es una sola sentencia (`INSERT … ON CONFLICT`): con leer y luego escribir, dos
-   * aprobaciones simultáneas chocaban en el índice único o se pisaban la unión.
+   * Records/updates the consent. It takes the UNION with what was already granted (step-up:
+   * requesting a new scope must not lose the earlier ones), keeping the grant order. Sets
+   * `lastUsedAt`. It is a single statement (`INSERT … ON CONFLICT`): with read-then-write, two
+   * concurrent approvals clashed on the unique index or overwrote each other's union.
    */
   async recordConsent(userId: string, clientId: string, scopes: string[]): Promise<void> {
     const now = new Date();
@@ -65,7 +64,7 @@ export class OAuthGrantsService {
       });
   }
 
-  /** Marca el consentimiento como usado (al emitir un token). Best-effort. */
+  /** Marks the consent as used (when a token is issued). Best-effort. */
   async touch(userId: string, clientId: string): Promise<void> {
     await this.db
       .update(oauthGrants)
@@ -74,13 +73,13 @@ export class OAuthGrantsService {
   }
 
   /**
-   * Revoca el acceso de un cliente para un usuario: borra el consentimiento y todos sus
-   * tokens (access y refresh). Usado por "Aplicaciones conectadas" (Fase D) y por reuso de
-   * refresh. El scoping por `userId` impide revocar lo de otro.
+   * Revokes a client's access for a user: deletes the consent and all its tokens (access and
+   * refresh). Used by "Connected apps" (Phase D) and on refresh-token reuse. Scoping by `userId`
+   * prevents revoking someone else's.
    */
   async revoke(userId: string, clientId: string): Promise<void> {
-    // En una transacción: si fallara el segundo borrado quedaría un consentimiento sin tokens (o
-    // al revés), y la pantalla de aplicaciones conectadas mentiría.
+    // In a transaction: if the second delete failed, a consent would be left without tokens (or the
+    // other way round), and the connected apps screen would lie.
     await this.db.transaction(async (inner) => {
       await inner.delete(oauthTokens).where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, clientId)));
       await inner.delete(oauthGrants).where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)));
@@ -88,9 +87,9 @@ export class OAuthGrantsService {
   }
 
   /**
-   * Consentimientos del usuario con el nombre y la URL de su cliente ("Aplicaciones conectadas" y
-   * exportación RGPD), los usados más recientemente primero. Una sola consulta: el cliente se une
-   * aquí en vez de pedirlo grant a grant. Un grant cuyo cliente ya no existe sale sin nombre.
+   * The user's consents with their client's name and URL ("Connected apps" and the GDPR export),
+   * most recently used first. A single query: the client is joined here instead of fetched grant by
+   * grant. A grant whose client no longer exists comes out without a name.
    */
   async listWithClients(userId: string): Promise<GrantWithClient[]> {
     return this.db

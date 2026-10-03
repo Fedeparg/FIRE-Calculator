@@ -6,11 +6,11 @@ import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
 import type { RealisedGainsRow } from "@sextante/core/fiscal/realised-gains";
 import CopyValue from "@/shared/ui/CopyValue";
 
-// Piezas de una fila de venta que comparten la tabla y la tarjeta de `SalesBlocks`.
+// Pieces of a sale row shared by the table and the card in `SalesBlocks`.
 
 /**
- * Denominación del valor primero (es lo que pide Renta WEB, casilla de entidad emisora en
- * acciones), con su botón de copiar; debajo, el símbolo o ISIN y la divisa.
+ * Security name first (it is what Renta WEB asks for: the issuer box for shares), with its copy
+ * button; below it, the symbol or ISIN and the currency.
  */
 export function EntityName({ row, entityBox }: { row: RealisedGainsRow; entityBox: string | undefined }) {
   const t = useTranslations("portfolio.realisedGains");
@@ -29,8 +29,8 @@ export function EntityName({ row, entityBox }: { row: RealisedGainsRow; entityBo
 }
 
 /**
- * Pérdidas que la regla de los dos meses deja sin computar (o integra) en esta entidad: Renta WEB
- * separa el importe obtenido del computable, así que hay que verlas valor a valor.
+ * Losses that the two-month rule leaves uncomputed (or brings back) for this issuer: Renta WEB
+ * separates the amount obtained from the computable one, so they must be seen security by security.
  */
 export function WashSaleNote({ row, eur }: { row: RealisedGainsRow; eur: (value: number) => string }) {
   const t = useTranslations("portfolio.realisedGains");

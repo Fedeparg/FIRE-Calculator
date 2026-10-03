@@ -14,13 +14,13 @@ import Stat from "@/shared/ui/Stat";
 import { roundCents } from "@sextante/core/money";
 
 type Props = {
-  /** Importes ya expresados en la divisa que se está viendo (los mismos que usa el objetivo). */
+  /** Amounts already expressed in the currency being viewed (the same ones the goal uses). */
   annualExpenses: number;
   contribution: number;
   frequency: Frequency;
   withdrawalRate: number;
   annualReturn: number;
-  /** Valor de mercado de la cartera: el mismo "patrimonio actual" que el resto del bloque. */
+  /** Portfolio market value: the same "current net worth" as the rest of the block. */
   currentValue: number;
   volatility: number;
   onVolatilityChange: (value: number) => void;
@@ -29,14 +29,14 @@ type Props = {
 };
 
 /**
- * "¿Y si el mercado no acompaña?": la parte Monte Carlo del objetivo. El objetivo determinista
- * responde "cuándo llegas si todo va según la media"; esto responde "con qué probabilidad
- * llegas y aguantas", partiendo del valor REAL de la cartera.
+ * "What if the market does not cooperate?": the Monte Carlo part of the goal. The deterministic
+ * goal answers "when do you get there if everything tracks the average"; this answers "how likely
+ * are you to get there and last", starting from the portfolio's REAL value.
  *
- * El cálculo es `simulatePortfolioGoal` (core puro). Aquí solo se difiere: 5.000 vidas cuestan
- * decenas de milisegundos y el bloque se recalcula con cada tecla, así que `useDeferredValue`
- * deja que los campos respondan al instante y la simulación vaya por detrás, igual que en el
- * simulador.
+ * The computation is `simulatePortfolioGoal` (pure core). This component only defers it: 5,000
+ * lives cost tens of milliseconds and the block recomputes on every keystroke, so
+ * `useDeferredValue` lets the fields respond instantly while the simulation trails behind, just
+ * like in the simulator.
  */
 export default function PortfolioGoalSimulation({
   annualExpenses,
@@ -84,9 +84,9 @@ export default function PortfolioGoalSimulation({
     years === null ? t("never") : years === 0 ? t("now") : t("years", { years });
 
   /**
-   * Enlace al simulador con los MISMOS datos, en sus claves de URL. El simulador no tiene
-   * frecuencia: el ahorro va ya convertido a mensual y redondeado a céntimos, que es lo que
-   * admite el campo. El patrimonio actual se redondea también: en la URL basta con el euro.
+   * Link to the simulator with the SAME data, in its URL keys. The simulator has no frequency:
+   * savings are already converted to monthly and rounded to cents, which is what the field
+   * accepts. The current net worth is rounded too: whole euros are enough in the URL.
    */
   const simulatorHref = useMemo(() => {
     const params = new URLSearchParams({

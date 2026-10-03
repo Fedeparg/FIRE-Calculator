@@ -9,10 +9,10 @@ import { TaxReturnModule } from '../tax-return/tax-return.module.js';
 import { McpAuditService } from './mcp-audit.service.js';
 import { McpService } from './mcp.service.js';
 
-/** Servidor MCP. El endpoint `/api/mcp` se monta en `main.ts`, que recupera `McpService` (de ahí el export). */
+/** MCP server. The `/api/mcp` endpoint is mounted in `main.ts`, which fetches `McpService` (hence the export). */
 @Module({
-  // `PricesModule`: el buscador `INSTRUMENT_SEARCH` de la tool `search_instruments`, el mismo del alta de posiciones.
-  // `TaxReturnModule`: el informe de la Renta de `get_tax_return_report` y `get_realised_gains`.
+  // `PricesModule`: the `INSTRUMENT_SEARCH` provider behind `search_instruments`, the same one used to add positions.
+  // `TaxReturnModule`: the tax return (Renta) report behind `get_tax_return_report` and `get_realised_gains`.
   imports: [PositionsModule, PortfolioModule, PricesModule, ScenariosModule, IncomeModule, TaxReturnModule],
   providers: [McpService, McpAuditService],
   exports: [McpService],

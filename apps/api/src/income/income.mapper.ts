@@ -3,7 +3,7 @@ import type { IncomeEvent } from '@sextante/core/fiscal/income';
 import { numberOrNull } from '../common/numeric.js';
 import type { IncomeEventRow } from '../db/schema.js';
 
-/** Fila de `income_events` → cobro de la API (los `numeric` como `number`). Lo comparten REST, el MCP y el export RGPD. */
+/** `income_events` row → API payment (`numeric`s as `number`). Shared by REST, MCP and the GDPR export. */
 export function toIncomeEvent(row: IncomeEventRow): IncomeEvent {
   return {
     id: row.id,

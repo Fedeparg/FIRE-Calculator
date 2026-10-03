@@ -31,7 +31,7 @@ const position = (ticker: string, lots: HistoryLot[], currency = "EUR"): History
   lots,
 });
 
-/** Serie de cierres diarios (todos los días naturales) empezando en `from`. */
+/** Series of daily closes (every calendar day) starting at `from`. */
 function daily(from: string, closes: number[], currency = "EUR"): PricePoint[] {
   return closes.map((close, i) => ({
     date: new Date(Date.parse(`${from}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10),
@@ -45,7 +45,7 @@ function input(overrides: Partial<HistoryInput>): HistoryInput {
 }
 
 describe("reconstructHistory", () => {
-  it("devuelve vacío con la cartera vacía o con from > to", () => {
+  it("returns empty for an empty portfolio or when from > to", () => {
     expect(reconstructHistory(input({}))).toEqual([]);
     expect(
       reconstructHistory(
@@ -59,7 +59,7 @@ describe("reconstructHistory", () => {
     ).toEqual([]);
   });
 
-  it("no inventa historia: antes de la primera compra no hay snapshot", () => {
+  it("invents no history: there is no snapshot before the first buy", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-04", 10, 100)])],
@@ -68,12 +68,12 @@ describe("reconstructHistory", () => {
     );
     expect(itemAt(days, 0).date).toBe("2026-01-04");
     expect(days).toHaveLength(7);
-    // El día de la compra se valora con el cierre de ese día.
+    // The buy day is valued at that day's close.
     expect(itemAt(days, 0).aggregate.marketValue).toBe(10 * 103);
     expect(itemAt(days, 0).aggregate.invested).toBe(1000);
   });
 
-  it("usa la cantidad de cada día, no la actual (compra, segunda compra y venta parcial)", () => {
+  it("uses each day's quantity, not the current one (buy, second buy and partial sale)", () => {
     const days = reconstructHistory(
       input({
         positions: [
@@ -83,15 +83,15 @@ describe("reconstructHistory", () => {
       }),
     );
     const byDate = Object.fromEntries(days.map((d) => [d.date, d.aggregate]));
-    expect(byDate["2026-01-02"]?.marketValue).toBe(1000); // 10 uds
-    expect(byDate["2026-01-03"]?.marketValue).toBe(2000); // 20 uds
+    expect(byDate["2026-01-02"]?.marketValue).toBe(1000); // 10 units
+    expect(byDate["2026-01-03"]?.marketValue).toBe(2000); // 20 units
     expect(byDate["2026-01-03"]?.invested).toBe(2200); // 10·100 + 10·120
-    expect(byDate["2026-01-05"]?.marketValue).toBe(1500); // 15 uds tras vender 5
-    // Coste medio móvil: la venta retira al medio (110) y el medio no cambia.
+    expect(byDate["2026-01-05"]?.marketValue).toBe(1500); // 15 units after selling 5
+    // Moving average cost: the sale removes at the average (110) and the average does not change.
     expect(byDate["2026-01-05"]?.invested).toBeCloseTo(15 * 110, 8);
   });
 
-  it("compra y venta total en el periodo: desaparece tras vender y reaparece al recomprar", () => {
+  it("full buy and sell within the period: disappears after selling and reappears on rebuying", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-02", 10, 100), sell("2026-01-04", 10, 110), buy("2026-01-07", 4, 90)])],
@@ -101,17 +101,17 @@ describe("reconstructHistory", () => {
     expect(days.map((d) => d.date)).toEqual([
       "2026-01-02",
       "2026-01-03",
-      // 04, 05 y 06: todo vendido, nada que valorar
+      // 04, 05 and 06: all sold, nothing to value
       "2026-01-07",
       "2026-01-08",
       "2026-01-09",
       "2026-01-10",
     ]);
-    // Tras vender todo el coste arranca de cero: la recompra no hereda el medio anterior.
+    // After selling everything the cost restarts at zero: the rebuy does not inherit the previous average.
     expect(itemAt(days, 2).aggregate.invested).toBe(360);
   });
 
-  it("tolera vender más de lo que hay (se acota a cero, sin cantidades negativas)", () => {
+  it("tolerates selling more than is held (clamped to zero, no negative quantities)", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 1, 10), sell("2026-01-02", 5, 10)])],
@@ -121,19 +121,19 @@ describe("reconstructHistory", () => {
     expect(days.map((d) => d.date)).toEqual(["2026-01-01"]);
   });
 
-  it("respeta el orden de los lotes del mismo día (vender y recomprar)", () => {
+  it("respects the order of same-day lots (sell then rebuy)", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 10, 100), sell("2026-01-02", 10, 100), buy("2026-01-02", 5, 50)])],
         prices: { A: daily("2026-01-01", Array<number>(10).fill(60)) },
       }),
     );
-    // Vender todo y recomprar 5@50 deja coste 250; en el orden inverso se habría vendido de más.
+    // Selling everything and rebuying 5@50 leaves a cost of 250; in the reverse order it would have oversold.
     expect(itemAt(days, 1).aggregate.invested).toBe(250);
     expect(itemAt(days, 1).aggregate.marketValue).toBe(300);
   });
 
-  it("arrastra el último cierre en fines de semana y festivos", () => {
+  it("carries the last close forward over weekends and holidays", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 2, 10)])],
@@ -146,11 +146,11 @@ describe("reconstructHistory", () => {
       }),
     );
     const byDate = Object.fromEntries(days.map((d) => [d.date, d.aggregate.marketValue]));
-    expect(byDate["2026-01-03"]).toBe(20); // sigue valiendo el cierre del día 1
+    expect(byDate["2026-01-03"]).toBe(20); // still at the close of day 1
     expect(byDate["2026-01-05"]).toBe(24);
   });
 
-  it("salta los días sin precio cuando el último cierre es más viejo que el margen", () => {
+  it("skips days without a price when the last close is older than the margin", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 1, 10)])],
@@ -160,10 +160,10 @@ describe("reconstructHistory", () => {
       }),
     );
     expect(MAX_CARRY_FORWARD_DAYS).toBe(10);
-    expect(days.at(-1)?.date).toBe("2026-01-11"); // 1 ene + MAX_CARRY_FORWARD_DAYS
+    expect(days.at(-1)?.date).toBe("2026-01-11"); // 1 Jan + MAX_CARRY_FORWARD_DAYS
   });
 
-  it("una posición sin ningún precio queda sin valorar, sin tirar abajo el resto", () => {
+  it("a position with no price at all stays unvalued without bringing down the rest", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 1, 10)]), position("B", [buy("2026-01-01", 1, 10)])],
@@ -174,12 +174,12 @@ describe("reconstructHistory", () => {
     expect(itemAt(days, 0).aggregate.total).toBe(2);
   });
 
-  it("convierte con la tasa FX de CADA día y omite el día sin tasa", () => {
+  it("converts with EACH day's FX rate and skips the day without a rate", () => {
     const days = reconstructHistory(
       input({
         positions: [position("US", [buy("2026-01-01", 10, 100)], "USD")],
         prices: { US: daily("2026-01-01", Array<number>(10).fill(100), "USD") },
-        // USD por EUR: 1,10 desde el día 2 y 1,20 desde el día 3.
+        // USD per EUR: 1.10 from day 2 and 1.20 from day 3.
         fx: {
           EUR: [
             { date: "2026-01-02", rate: 1.1 },
@@ -188,13 +188,13 @@ describe("reconstructHistory", () => {
         },
       }),
     );
-    expect(itemAt(days, 0).date).toBe("2026-01-02"); // el día 1 no hay tasa EUR: no se valora
+    expect(itemAt(days, 0).date).toBe("2026-01-02"); // day 1 has no EUR rate: not valued
     expect(itemAt(days, 0).aggregate.marketValue).toBeCloseTo(1000 / 1.1, 8);
     expect(itemAt(days, 1).aggregate.marketValue).toBeCloseTo(1000 / 1.2, 8);
     expect(itemAt(days, 1).rates).toEqual({ USD: 1, EUR: 1.2 });
   });
 
-  it("ignora tasas no válidas (cero, NaN) y excluye los derivados del total", () => {
+  it("ignores invalid rates (zero, NaN) and excludes derivatives from the total", () => {
     const days = reconstructHistory(
       input({
         positions: [
@@ -209,7 +209,7 @@ describe("reconstructHistory", () => {
     expect(itemAt(days, 0).aggregate.total).toBe(1);
   });
 
-  it("procesa los lotes anteriores a `from` en el primer día de la ventana", () => {
+  it("processes lots before `from` on the first day of the window", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2025-12-20", 3, 10)])],
@@ -221,7 +221,7 @@ describe("reconstructHistory", () => {
     expect(itemAt(days, 0).aggregate.marketValue).toBe(30);
   });
 
-  it("ignora los lotes posteriores a `to`", () => {
+  it("ignores lots after `to`", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-02-01", 3, 10)])],
@@ -232,10 +232,10 @@ describe("reconstructHistory", () => {
   });
 });
 
-describe("reconstructHistory con splits", () => {
-  it("un split 10:1 no produce salto: la cantidad cruda se expresa en acciones de hoy", () => {
-    // 10 acciones compradas a 1000 € antes del split del día 5. La fuente da los cierres ya
-    // ajustados (100 € todos los días): sin corrección, valdría 1.000 € antes y 10.000 € después.
+describe("reconstructHistory with splits", () => {
+  it("a 10:1 split causes no jump: the raw quantity is expressed in today's shares", () => {
+    // 10 shares bought at €1000 before the split on day 5. The source returns already adjusted
+    // closes (€100 every day): without the correction it would be worth €1,000 before and €10,000 after.
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 10, 1000)])],
@@ -244,11 +244,11 @@ describe("reconstructHistory con splits", () => {
       }),
     );
     expect(days.map((d) => d.aggregate.marketValue)).toEqual(Array<number>(10).fill(10_000));
-    // El coste no cambia (10 · 1000).
+    // The cost does not change (10 · 1000).
     expect(days.every((d) => d.aggregate.invested === 10_000)).toBe(true);
   });
 
-  it("solo cuentan los splits posteriores al lote; los lotes posteriores al split no se tocan", () => {
+  it("only splits after the lot count; lots after the split are left untouched", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 10, 1000), buy("2026-01-06", 5, 100)])],
@@ -258,11 +258,11 @@ describe("reconstructHistory con splits", () => {
     );
     expect(itemAt(days, 0).aggregate.marketValue).toBe(10_000);
     expect(itemAt(days, 5).aggregate.marketValue).toBe(10_000 + 500);
-    // Coste medio móvil coherente: 10·1000 + 5·100.
+    // Consistent moving average cost: 10·1000 + 5·100.
     expect(itemAt(days, 5).aggregate.invested).toBe(10_500);
   });
 
-  it("encadena varios splits y un split inverso", () => {
+  it("chains several splits and a reverse split", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-01", 100, 10)])],
@@ -279,7 +279,7 @@ describe("reconstructHistory con splits", () => {
     expect(itemAt(days, 0).aggregate.marketValue).toBe(100 * 3 * 10);
   });
 
-  it("un split del mismo día de la compra no afecta a ese lote", () => {
+  it("a split on the same day as the buy does not affect that lot", () => {
     const days = reconstructHistory(
       input({
         positions: [position("A", [buy("2026-01-05", 10, 100)])],
@@ -292,7 +292,7 @@ describe("reconstructHistory con splits", () => {
 });
 
 describe("firstTradeDate", () => {
-  it("devuelve la operación más antigua entre todas las posiciones", () => {
+  it("returns the oldest trade across all positions", () => {
     expect(
       firstTradeDate([
         position("A", [buy("2025-03-01", 1, 1), buy("2025-01-15", 1, 1)]),
@@ -301,7 +301,7 @@ describe("firstTradeDate", () => {
     ).toBe("2024-11-30");
   });
 
-  it("devuelve null sin operaciones", () => {
+  it("returns null without trades", () => {
     expect(firstTradeDate([])).toBeNull();
     expect(firstTradeDate([position("A", [])])).toBeNull();
   });

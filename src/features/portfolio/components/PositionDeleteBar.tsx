@@ -10,24 +10,24 @@ import Button from "@/shared/ui/Button";
 type Props = {
   positionId: string;
   /**
-   * Borrar una posición con ventas las quita del informe de plusvalías: merece un aviso más
-   * fuerte que el "¿seguro?" normal. `null` = aún no se sabe (lotes cargando o con error): se
-   * avisa igual, que es lo seguro.
+   * Deleting a position with sales removes them from the capital gains report: it deserves a
+   * stronger warning than the usual "are you sure?". `null` = not known yet (lots loading or
+   * failed): we warn anyway, which is the safe choice.
    */
   hasSales: boolean | null;
-  /** Abrir el formulario de edición de la posición. */
+  /** Opens the position's edit form. */
   onEdit: () => void;
-  /** La posición se ha borrado. */
+  /** The position has been deleted. */
   onDeleted: (id: string) => void;
 };
 
-/** Pie del detalle: editar la posición o eliminarla (con confirmación). */
+/** Detail footer: edit the position or delete it (with confirmation). */
 export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDeleted }: Props) {
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
   const [confirming, setConfirming] = useState(false);
-  // Foco (como en `RowActions`): al pedir el borrado pasa a "Confirmar"; al cancelar vuelve a
-  // "Eliminar". El botón pulsado desaparece al cambiar de modo y el foco caería en `<body>`.
+  // Focus (as in `RowActions`): when deletion is requested it moves to "Confirm"; on cancel it
+  // goes back to "Delete". The pressed button disappears on mode change and focus would land on `<body>`.
   const confirmRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
   const returnFocus = useRef(false);

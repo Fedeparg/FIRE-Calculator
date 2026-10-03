@@ -1,9 +1,9 @@
-/** Búsqueda por texto libre que devuelve el símbolo exacto de la fuente ("BTC" es un ETF; Bitcoin es "BTC-USD"). */
+/** Free-text search that returns the source's exact symbol ("BTC" is an ETF; Bitcoin is "BTC-USD"). */
 
 export type InstrumentType = 'equity' | 'etf' | 'fund' | 'crypto' | 'index' | 'currency' | 'other';
 
 export interface InstrumentSearchResult {
-  /** Símbolo exacto de la fuente, listo para guardar como `ticker` (p. ej. "BTC-USD"). */
+  /** The source's exact symbol, ready to store as `ticker` (e.g. "BTC-USD"). */
   symbol: string;
   name: string;
   type: InstrumentType;
@@ -11,7 +11,7 @@ export interface InstrumentSearchResult {
 }
 
 export interface InstrumentSearchProvider {
-  /** Lista vacía si no hay coincidencias o la consulta es corta; nunca lanza por fallo de la fuente. */
+  /** Empty list when nothing matches or the query is short; never throws on a source failure. */
   search(query: string): Promise<InstrumentSearchResult[]>;
 }
 

@@ -16,37 +16,37 @@ const base = {
 };
 
 describe("computeBuyVsRent", () => {
-  it("acumula el alquiler con su subida anual", () => {
+  it("accumulates rent with its annual increase", () => {
     const r = computeBuyVsRent(base);
-    // Σ 12.000 × 1,02^y para y=0..9 > 120.000 (sin subida)
+    // Σ 12,000 × 1.02^y for y=0..9 > 120,000 (no increase)
     expect(r.totalRentPaid).toBeGreaterThan(120000);
   });
 
-  it("el patrimonio en el inmueble crece con la revalorización", () => {
+  it("home equity grows with appreciation", () => {
     const r = computeBuyVsRent(base);
     expect(r.buyEquityEnd).toBeGreaterThan(0);
   });
 
-  it("una revalorización alta inclina la balanza hacia comprar", () => {
-    const compra = computeBuyVsRent({ ...base, appreciationRate: 6 });
-    expect(compra.buyNetCost).toBeLessThan(compra.rentNetCost);
-    expect(compra.cheaper).toBe("buy");
+  it("high appreciation tips the balance towards buying", () => {
+    const buy = computeBuyVsRent({ ...base, appreciationRate: 6 });
+    expect(buy.buyNetCost).toBeLessThan(buy.rentNetCost);
+    expect(buy.cheaper).toBe("buy");
   });
 
-  it("una rentabilidad de inversión alta favorece alquilar", () => {
-    const alquila = computeBuyVsRent({ ...base, appreciationRate: 0, investmentReturn: 9 });
-    expect(alquila.cheaper === "rent" || alquila.difference < 0).toBe(true);
+  it("a high investment return favors renting", () => {
+    const rent = computeBuyVsRent({ ...base, appreciationRate: 0, investmentReturn: 9 });
+    expect(rent.cheaper === "rent" || rent.difference < 0).toBe(true);
   });
 
-  it("la diferencia es coherente con los costes netos", () => {
+  it("the difference is consistent with the net costs", () => {
     const r = computeBuyVsRent(base);
     expect(r.difference).toBeCloseTo(r.rentNetCost - r.buyNetCost, 4);
   });
 
-  it("los gastos de venta reducen el patrimonio neto y encarecen comprar", () => {
-    const sinVenta = computeBuyVsRent(base);
-    const conVenta = computeBuyVsRent({ ...base, sellingCostsRate: 5 });
-    expect(conVenta.buyEquityEnd).toBeLessThan(sinVenta.buyEquityEnd);
-    expect(conVenta.buyNetCost).toBeGreaterThan(sinVenta.buyNetCost);
+  it("selling costs reduce net equity and make buying more expensive", () => {
+    const withoutSellingCosts = computeBuyVsRent(base);
+    const withSellingCosts = computeBuyVsRent({ ...base, sellingCostsRate: 5 });
+    expect(withSellingCosts.buyEquityEnd).toBeLessThan(withoutSellingCosts.buyEquityEnd);
+    expect(withSellingCosts.buyNetCost).toBeGreaterThan(withoutSellingCosts.buyNetCost);
   });
 });

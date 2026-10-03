@@ -1,42 +1,42 @@
-// Matemática de préstamos a cuota constante (amortización francesa), compartida por hipoteca,
-// amortización anticipada, hipoteca asequible y tarjeta de crédito. Core puro.
+// Level-payment loan math (French amortization), shared by the mortgage, early repayment,
+// mortgage affordability and credit card calculators. Pure core.
 
-/** Tipo mensual (fracción, no %) a partir del TIN anual en base 100 (3 = 3 %). NaN cuenta como 0. */
+/** Monthly rate (a fraction, not %) from the annual TIN (nominal rate) in base 100 (3 = 3%). NaN counts as 0. */
 export function monthlyRate(annualPercent: number): number {
   return (annualPercent || 0) / 100 / 12;
 }
 
 /**
- * Cuota constante que amortiza `principal` en `months` pagos al tipo mensual `rate`. Con tipo 0 la
- * fórmula francesa es 0/0, así que se reparte el capital a partes iguales.
+ * Level payment that amortizes `principal` over `months` payments at the monthly rate `rate`. At a
+ * zero rate the French formula is 0/0, so the principal is split into equal parts.
  */
 export function levelPayment(principal: number, rate: number, months: number): number {
   return rate === 0 ? principal / months : (principal * rate) / (1 - Math.pow(1 + rate, -months));
 }
 
-/** Inversa de `levelPayment`: capital que financia una cuota `payment` durante `months` pagos. */
+/** Inverse of `levelPayment`: the principal that a `payment` over `months` payments can finance. */
 export function presentValueOfPayments(payment: number, rate: number, months: number): number {
   return rate === 0 ? payment * months : (payment * (1 - Math.pow(1 + rate, -months))) / rate;
 }
 
 export interface AmortizationMonth {
-  /** Número de mes, desde 1. */
+  /** Month number, starting at 1. */
   month: number;
-  /** Saldo vivo al empezar el mes. */
+  /** Outstanding balance at the start of the month. */
   balanceBefore: number;
   interest: number;
   /**
-   * Capital que amortiza la cuota: `payment − interest`, sin acotar. Puede ser negativo (la cuota no
-   * cubre los intereses) o exceder el saldo en el último pago; el consumidor decide qué hacer.
+   * Principal repaid by the payment: `payment − interest`, unclamped. It can be negative (the payment
+   * does not cover the interest) or exceed the balance on the last payment; the consumer decides.
    */
   principalPart: number;
-  /** Saldo al acabar el mes, nunca negativo. */
+  /** Balance at the end of the month, never negative. */
   balanceAfter: number;
 }
 
 /**
- * Recorre el calendario mes a mes (hasta `maxMonths`). Es un generador para que cada consumidor
- * corte cuando le convenga (p. ej. al liquidarse el saldo) sin que el recorrido conozca esa regla.
+ * Walks the schedule month by month (up to `maxMonths`). It is a generator so each consumer can stop
+ * whenever it needs to (e.g. once the balance is paid off) without the walk knowing that rule.
  */
 export function* amortizationSchedule(
   principal: number,

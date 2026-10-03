@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 import { validateIncomeForm, validateLotForm, validatePendingBalances, validatePositionForm } from "./form-validation";
 
 describe("validatePositionForm", () => {
-  it("acepta coma o punto y precio 0", () => {
+  it("accepts comma or dot and a price of 0", () => {
     expect(validatePositionForm({ ticker: " IWDA ", quantity: "1,5", avgPrice: "0" })).toEqual({
       quantity: 1.5,
       avgPrice: 0,
     });
   });
 
-  it("exige símbolo, cantidad positiva y precio no negativo", () => {
+  it("requires a symbol, a positive quantity and a non-negative price", () => {
     expect(validatePositionForm({ ticker: " ", quantity: "1", avgPrice: "1" })).toBeNull();
     expect(validatePositionForm({ ticker: "A", quantity: "0", avgPrice: "1" })).toBeNull();
     expect(validatePositionForm({ ticker: "A", quantity: "1", avgPrice: "-1" })).toBeNull();
@@ -21,12 +21,12 @@ describe("validatePositionForm", () => {
 describe("validateLotForm", () => {
   const base = { quantity: "2", price: "10,5", fees: "", tradedAt: "2025-03-01" };
 
-  it("las comisiones vacías son 0", () => {
+  it("empty fees are 0", () => {
     expect(validateLotForm(base)).toEqual({ quantity: 2, price: 10.5, fees: 0 });
     expect(validateLotForm({ ...base, fees: "1,25" })).toEqual({ quantity: 2, price: 10.5, fees: 1.25 });
   });
 
-  it("rechaza cantidad 0, importes negativos o sin número y fechas incompletas", () => {
+  it("rejects zero quantity, negative or non-numeric amounts and incomplete dates", () => {
     expect(validateLotForm({ ...base, quantity: "0" })).toBeNull();
     expect(validateLotForm({ ...base, price: "-1" })).toBeNull();
     expect(validateLotForm({ ...base, fees: "-" })).toBeNull();
@@ -37,7 +37,7 @@ describe("validateLotForm", () => {
 describe("validateIncomeForm", () => {
   const base = { gross: "100", origin: "15", spain: "12,75", country: "us", paidAt: "2025-06-01" };
 
-  it("normaliza el país y deja la retención en origen vacía como desconocida", () => {
+  it("normalizes the country and treats an empty withholding at source as unknown", () => {
     expect(validateIncomeForm(base)).toEqual({
       ok: true,
       value: { gross: 100, withholdingOrigin: 15, withholdingSpain: 12.75, country: "US" },
@@ -48,23 +48,23 @@ describe("validateIncomeForm", () => {
     });
   });
 
-  it("acepta retenciones que suman exactamente el íntegro (sin errores de coma flotante)", () => {
+  it("accepts withholdings that add up exactly to the gross amount (no floating-point errors)", () => {
     expect(validateIncomeForm({ ...base, gross: "0,3", origin: "0,1", spain: "0,2" }).ok).toBe(true);
   });
 
-  it("avisa (inconsistent) cuando los números valen pero el conjunto no cuadra", () => {
+  it("warns (inconsistent) when the numbers are valid but the whole does not add up", () => {
     expect(validateIncomeForm({ ...base, origin: "60", spain: "50" })).toEqual({ ok: false, reason: "inconsistent" });
     expect(validateIncomeForm({ ...base, country: "USA" })).toEqual({ ok: false, reason: "inconsistent" });
   });
 
-  it("no avisa mientras falta algo por teclear (incomplete)", () => {
+  it("does not warn while something is still being typed (incomplete)", () => {
     expect(validateIncomeForm({ ...base, gross: "" })).toEqual({ ok: false, reason: "incomplete" });
     expect(validateIncomeForm({ ...base, spain: "-" })).toEqual({ ok: false, reason: "incomplete" });
   });
 });
 
 describe("validatePendingBalances", () => {
-  it("devuelve los importes en orden si todo vale", () => {
+  it("returns the amounts in order if everything is valid", () => {
     expect(
       validatePendingBalances([
         { originYear: 2021, kind: "gains", amount: "100" },
@@ -73,7 +73,7 @@ describe("validatePendingBalances", () => {
     ).toEqual({ duplicated: false, amounts: [100, 1.5] });
   });
 
-  it("marca los ejercicios y tipos repetidos y rechaza importes no positivos", () => {
+  it("flags repeated years and types and rejects non-positive amounts", () => {
     expect(
       validatePendingBalances([
         { originYear: 2021, kind: "gains", amount: "1" },

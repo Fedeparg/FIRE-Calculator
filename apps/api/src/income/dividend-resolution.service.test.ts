@@ -9,7 +9,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { DividendResolutionService } from './dividend-resolution.service.js';
 import { makeIncome, seedPosition, stub } from '../../test/factories.js';
 
-/** Resolución de símbolos fija: el ISIN de la posición → símbolo de Yahoo. */
+/** Fixed symbol resolution: the position's ISIN → Yahoo symbol. */
 const prices = stub<PriceReadService>({
   resolveCachedTickers: (tickers: string[]) =>
     Promise.resolve(
@@ -21,7 +21,7 @@ const prices = stub<PriceReadService>({
     ),
 });
 
-describe('DividendResolutionService (integración con Postgres)', () => {
+describe('DividendResolutionService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: DividendResolutionService;
@@ -65,9 +65,9 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     return row.id;
   }
 
-  it('completa un dividendo neto de origen con el dividendo por acción de mercado (ASML)', async () => {
+  it('completes a dividend net of origin withholding with the market dividend per share (ASML)', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    // Lo que deja el importador: neto deshecho con el 15 %, como estimación.
+    // What the importer leaves: net amount grossed up at 15 %, as an estimate.
     const id = await dividend(userId, 'NL0010273215', {
       gross: '1.6',
       grossSource: 'estimate',
@@ -90,9 +90,9 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     });
   });
 
-  it('deshace el ajuste por splits posteriores y compara en la divisa de pago (Suiza)', async () => {
+  it('undoes the adjustment for later splits and compares in the payment currency (Switzerland)', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    // 10 acciones; abonados 19,83 CHF = 21,10 €, sin retención española (antes de la sucursal).
+    // 10 shares; CHF 19.83 = €21.10 paid out, with no Spanish withholding (before the branch).
     const id = await dividend(userId, 'CH0038863350', {
       paidAt: '2025-04-25',
       gross: '21.1',
@@ -102,7 +102,7 @@ describe('DividendResolutionService (integración con Postgres)', () => {
       originalAmount: '19.83',
       originalCurrency: 'CHF',
     });
-    // Yahoo da 1,525 tras un split 2:1 posterior: el dividendo real fue 3,05 CHF por acción.
+    // Yahoo reports 1.525 after a later 2:1 split: the real dividend was CHF 3.05 per share.
     await db
       .insert(instrumentDividends)
       .values({ symbol: 'NESN.SW', exDate: '2025-04-22', amount: '1.525', currency: 'CHF' });
@@ -115,7 +115,7 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     expect(row.withholdingOriginSource).toBe('market');
   });
 
-  it('sin un dato de mercado que case (otra divisa, fuera de fecha) cae a la estimación, no al mercado', async () => {
+  it('without matching market data (other currency, out of range) it falls back to the estimate, not the market', async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     const wrongCurrency = await dividend(a, 'CH0038863350', { originalAmount: '1.2', originalCurrency: 'USD' });
@@ -127,7 +127,7 @@ describe('DividendResolutionService (integración con Postgres)', () => {
       .insert(instrumentDividends)
       .values({ symbol: 'ASML.AS', exDate: '2025-07-28', amount: '1.6', currency: 'EUR' });
 
-    // Ningún dato de mercado casa: los dos quedan como estimación con el tipo legal (Suiza, Países Bajos).
+    // No market data matches: both end up estimated with the statutory rate (Switzerland, Netherlands).
     expect(await service.resolvePending(a)).toBe(1);
     expect(await service.resolvePending(b)).toBe(1);
     for (const id of [wrongCurrency, tooOld]) {
@@ -136,9 +136,9 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     }
   });
 
-  it('sin dato de mercado, estima con el tipo legal del país y lo marca como estimación', async () => {
+  it("without market data, estimates with the country's statutory rate and flags it as an estimate", async () => {
     const userId = await insertUser(db, 'a@example.com');
-    // Alemania: 26,375 %. Abonados 7,36 € netos, con la española del 19 % (1,40 €).
+    // Germany: 26.375 %. €7.36 net paid out, with the Spanish 19 % (€1.40).
     const id = await dividend(userId, 'DE0007164600', { gross: '7.36', withholdingSpain: '1.4' });
 
     expect(await service.resolvePending(userId)).toBe(1);
@@ -146,7 +146,7 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     expect(Number(row.gross)).toBeCloseTo(10, 2);
     expect(Number(row.withholdingOrigin)).toBeCloseTo(2.64, 2);
     expect(row).toMatchObject({ grossSource: 'estimate', withholdingOriginSource: 'estimate' });
-    // Volver a pasar no la cambia.
+    // Running it again does not change it.
     expect(await service.resolvePending(userId)).toBe(0);
   });
 });

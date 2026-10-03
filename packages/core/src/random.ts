@@ -1,11 +1,11 @@
-// PRNG con semilla para simulaciones (Monte Carlo): `Math.random` no sirve porque la misma URL debe
-// dar el mismo resultado en servidor y cliente, y los tests necesitan valores fijos. No es criptográfico.
+// Seeded PRNG for simulations (Monte Carlo): `Math.random` will not do because the same URL must
+// give the same result on server and client, and tests need fixed values. Not cryptographic.
 
 import { itemAt } from "./arrays.js";
 
 export type Rng = () => number;
 
-/** mulberry32: PRNG de 32 bits; la misma semilla da la misma secuencia. */
+/** mulberry32: 32-bit PRNG; the same seed gives the same sequence. */
 export function mulberry32(seed: number): Rng {
   let state = seed >>> 0;
   return () => {
@@ -17,7 +17,7 @@ export function mulberry32(seed: number): Rng {
   };
 }
 
-/** Normales N(0, 1) por Box-Muller; la segunda del par se guarda para la siguiente llamada. */
+/** N(0, 1) normals via Box-Muller; the second of each pair is kept for the next call. */
 export function normalGenerator(rng: Rng): () => number {
   let spare: number | null = null;
   return () => {
@@ -26,7 +26,7 @@ export function normalGenerator(rng: Rng): () => number {
       spare = null;
       return value;
     }
-    // `1 - rng()` está en (0, 1]: evita log(0).
+    // `1 - rng()` is in (0, 1]: avoids log(0).
     const u = 1 - rng();
     const v = rng();
     const radius = Math.sqrt(-2 * Math.log(u));
@@ -36,7 +36,7 @@ export function normalGenerator(rng: Rng): () => number {
   };
 }
 
-/** Percentil `p` (0–100) de una muestra ya ordenada, con interpolación lineal (como `PERCENTILE.INC`); NaN si está vacía. */
+/** Percentile `p` (0–100) of an already sorted sample, linearly interpolated (like `PERCENTILE.INC`); NaN if empty. */
 export function percentileSorted(sorted: ArrayLike<number>, p: number): number {
   const n = sorted.length;
   if (n === 0) return NaN;
@@ -44,7 +44,7 @@ export function percentileSorted(sorted: ArrayLike<number>, p: number): number {
   const rank = (Math.min(100, Math.max(0, p)) / 100) * (n - 1);
   const low = Math.floor(rank);
   const high = Math.ceil(rank);
-  // `rank` está en [0, n − 1], así que `low` y `high` son índices válidos.
+  // `rank` is in [0, n − 1], so `low` and `high` are valid indices.
   const lowValue = itemAt(sorted, low);
   return lowValue + (itemAt(sorted, high) - lowValue) * (rank - low);
 }

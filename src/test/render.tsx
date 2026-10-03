@@ -10,9 +10,9 @@ const MESSAGES = { es, en } as const;
 type Options = Omit<RenderOptions, "wrapper"> & { locale?: keyof typeof MESSAGES };
 
 /**
- * `render` de Testing Library dentro de `NextIntlClientProvider` con los mensajes REALES del
- * idioma (por defecto, castellano): los tests buscan por el texto que ve el usuario, así que una
- * clave renombrada o borrada rompe el test igual que rompería la pantalla.
+ * Testing Library's `render` inside `NextIntlClientProvider` with the locale's REAL messages
+ * (Spanish by default): tests query by the text the user sees, so a renamed or deleted key
+ * breaks the test just as it would break the screen.
  */
 export function renderWithIntl(ui: ReactElement, { locale = "es", ...options }: Options = {}): RenderResult {
   function Wrapper({ children }: { children: ReactNode }) {

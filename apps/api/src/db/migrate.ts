@@ -7,29 +7,29 @@ import postgres from 'postgres';
 import { parseDatabaseEnv } from '../config/env.js';
 
 /**
- * Migrador del servicio one-shot `migrate` de Compose. Usa `drizzle-orm` (no `drizzle-kit`)
- * para funcionar en la imagen de runtime; la API espera a que termine OK.
+ * Migrator for the one-shot Compose `migrate` service. Uses `drizzle-orm` (not `drizzle-kit`)
+ * so it works in the runtime image; the API waits for it to finish successfully.
  */
 async function main(): Promise<void> {
-  // Mismo esquema que la API, pero solo `DATABASE_URL`: el migrador no necesita JWT, email, etc.
+  // Same schema as the API, but only `DATABASE_URL`: the migrator needs no JWT, email, etc.
   const { DATABASE_URL } = parseDatabaseEnv(process.env);
 
   const client = postgres(DATABASE_URL, { max: 1 });
   const db = drizzle(client);
 
-  // Relativa a este archivo (dist/db/migrate.js -> ../../drizzle).
+  // Relative to this file (dist/db/migrate.js -> ../../drizzle).
   const migrationsFolder = resolve(import.meta.dirname, '../../drizzle');
 
   try {
-    console.log(`Aplicando migraciones desde ${migrationsFolder}...`);
+    console.log(`Applying migrations from ${migrationsFolder}...`);
     await migrate(db, { migrationsFolder });
-    console.log('Migraciones aplicadas correctamente.');
+    console.log('Migrations applied successfully.');
   } finally {
     await client.end({ timeout: 5 });
   }
 }
 
 main().catch((error: unknown) => {
-  console.error('Fallo al aplicar migraciones:', error);
+  console.error('Failed to apply migrations:', error);
   process.exit(1);
 });

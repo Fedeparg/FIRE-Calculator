@@ -15,7 +15,7 @@ vi.mock("@/features/portfolio/api", () => ({
   searchInstruments: vi.fn(() => Promise.resolve([APPLE])),
 }));
 
-/** El campo de búsqueda dentro del panel, como en el formulario de alta. */
+/** The search field inside the panel, as in the create form. */
 function SearchInPanel({ onClose }: { onClose: () => void }) {
   const [value, setValue] = useState("");
   return (
@@ -33,8 +33,8 @@ function SearchInPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-describe("InstrumentSearchField dentro de PositionPanel", () => {
-  it("Escape con el desplegable abierto solo lo cierra; el siguiente Escape cierra el panel", async () => {
+describe("InstrumentSearchField inside PositionPanel", () => {
+  it("Escape with the dropdown open only closes it; the next Escape closes the panel", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     renderWithIntl(<SearchInPanel onClose={onClose} />);
@@ -51,7 +51,7 @@ describe("InstrumentSearchField dentro de PositionPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("elegir un resultado con el teclado rellena el símbolo exacto", async () => {
+  it("picking a result with the keyboard fills in the exact symbol", async () => {
     const user = userEvent.setup();
     renderWithIntl(<SearchInPanel onClose={vi.fn()} />);
 
@@ -62,7 +62,7 @@ describe("InstrumentSearchField dentro de PositionPanel", () => {
     expect(screen.getByRole("combobox")).toHaveValue("AAPL");
   });
 
-  it("la opción es el propio elemento seleccionable: sin botones anidados, y se elige con el ratón", async () => {
+  it("the option itself is the selectable element: no nested buttons, and it can be picked with the mouse", async () => {
     const user = userEvent.setup();
     renderWithIntl(<SearchInPanel onClose={vi.fn()} />);
 

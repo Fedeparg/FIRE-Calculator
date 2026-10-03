@@ -1,7 +1,7 @@
-// Ganancias y pérdidas patrimoniales por transmisión de valores homogéneos: emparejamiento
-// FIFO de lotes. Core puro. La cuota del ahorro vive en `savings-tax.ts`.
-// Lo usan la simulación de venta y el informe `realised-gains.ts`, con las mismas reglas.
-// Alcance fiscal (qué modela y qué no): ver ./README.md. Resultado solo orientativo.
+// Capital gains and losses (ganancias y pérdidas patrimoniales) from transfers of homogeneous
+// securities: FIFO lot matching. Pure core module. The savings tax lives in `savings-tax.ts`.
+// Used by the sale simulation and the `realised-gains.ts` report, with the same rules.
+// Tax scope (what it models and what it does not): see ./README.md. Indicative result only.
 
 import { firstItem } from "../arrays.js";
 import { finiteOr, QUANTITY_EPSILON } from "../inputs.js";
@@ -9,69 +9,69 @@ import type { PositionLot } from "../portfolio/types.js";
 import { compareStrings } from "../compare.js";
 
 /**
- * Operación del histórico de una posición, como la sirve `GET /api/positions/:id/lots`, en la
- * divisa de la posición: un `PositionLot` sin lo que el FIFO no usa. `createdAt` es opcional
- * porque una simulación o un test pueden no tenerlo.
+ * A transaction in a position's history, as served by `GET /api/positions/:id/lots`, in the
+ * position's currency: a `PositionLot` without what FIFO does not use. `createdAt` is optional
+ * because a simulation or a test may not have it.
  */
 export type TradeLot = Pick<PositionLot, "id" | "kind" | "quantity" | "price" | "fees" | "tradedAt"> &
   Partial<Pick<PositionLot, "createdAt">>;
 
-/** Lote de compra con la parte aún sin vender. */
+/** A purchase lot with its still unsold part. */
 export interface OpenLot {
   lotId: string;
   tradedAt: string;
-  /** Participaciones vivas del lote. */
+  /** The lot's remaining units. */
   quantity: number;
-  /** Precio unitario de compra. */
+  /** Unit purchase price. */
   price: number;
-  /** Comisiones de compra por participación (prorrateo coherente si el lote se vende en varias veces). */
+  /** Purchase fees per unit (consistent proration if the lot is sold in several goes). */
   feesPerUnit: number;
 }
 
-/** Trozo de un lote consumido por una venta, con su ganancia. */
+/** A piece of a lot consumed by a sale, with its gain. */
 export interface MatchedLot {
   lotId: string;
   tradedAt: string;
-  /** Participaciones de este lote que absorbe la venta. */
+  /** Units of this lot the sale absorbs. */
   quantity: number;
   price: number;
-  /** Valor de adquisición de esa parte (coste + comisiones de compra prorrateadas). */
+  /** Acquisition value of that part (cost + prorated purchase fees). */
   acquisitionValue: number;
-  /** Valor de transmisión imputado a esa parte (proporcional a las participaciones). */
+  /** Transfer value allocated to that part (proportional to the units). */
   transferValue: number;
-  /** Ganancia (+) o pérdida (−) de esa parte. */
+  /** Gain (+) or loss (−) of that part. */
   gain: number;
 }
 
-/** Resultado de simular una venta contra el histórico de lotes. */
+/** Result of simulating a sale against the lot history. */
 export interface SaleSimulation {
-  /** Participaciones vivas antes de la venta simulada. */
+  /** Units held before the simulated sale. */
   availableQuantity: number;
-  /** `true` si se piden más participaciones de las que hay; los importes usan solo lo disponible y la UI debe avisar. */
+  /** `true` if more units are requested than are held; amounts use only what is available and the UI must warn. */
   insufficient: boolean;
-  /** Participaciones realmente emparejadas (= `quantity` pedida, salvo si `insufficient`). */
+  /** Units actually matched (= requested `quantity`, unless `insufficient`). */
   quantitySold: number;
-  /** Importe bruto de la venta (participaciones × precio), antes de comisiones. */
+  /** Gross sale proceeds (units × price), before fees. */
   grossProceeds: number;
-  /** Comisiones de la venta. */
+  /** Sale fees. */
   sellFees: number;
-  /** Valor de transmisión = bruto − comisiones de venta. */
+  /** Transfer value = gross − sale fees. */
   transferValue: number;
-  /** Valor de adquisición de lo vendido, comisiones de compra incluidas. */
+  /** Acquisition value of what was sold, purchase fees included. */
   acquisitionValue: number;
-  /** Ganancia (+) o pérdida (−) patrimonial: transmisión − adquisición. */
+  /** Capital gain (+) or loss (−): transfer − acquisition. */
   gain: number;
-  /** Desglose por lote consumido, del más antiguo al más reciente. */
+  /** Breakdown per consumed lot, from oldest to newest. */
   matched: MatchedLot[];
-  /** Participaciones que quedarían tras la venta. */
+  /** Units that would remain after the sale. */
   remainingQuantity: number;
-  /** Precio medio de coste de lo que quedaría (comisiones aparte), o 0 si no queda nada. */
+  /** Average cost price of what would remain (excluding fees), or 0 if nothing remains. */
   remainingAvgPrice: number;
 }
 
 /**
- * Orden canónico `(tradedAt, createdAt, id)`, el mismo que el backend (`lot-aggregate.ts`).
- * `tradedAt` no lleva hora: sin desempate el FIFO del mismo día no sería determinista.
+ * Canonical order `(tradedAt, createdAt, id)`, the same as the backend (`lot-aggregate.ts`).
+ * `tradedAt` has no time: without a tie-break, same-day FIFO would not be deterministic.
  */
 export function compareTradeLots(a: TradeLot, b: TradeLot): number {
   if (a.tradedAt !== b.tradedAt) return compareStrings(a.tradedAt, b.tradedAt);
@@ -81,15 +81,15 @@ export function compareTradeLots(a: TradeLot, b: TradeLot): number {
   return compareStrings(a.id, b.id);
 }
 
-/** Venta registrada, emparejada por FIFO contra las compras anteriores. */
+/** A recorded sale, FIFO-matched against earlier purchases. */
 export interface RealisedSale {
-  /** Id del lote de venta. */
+  /** Id of the sale lot. */
   lotId: string;
-  /** Fecha de la venta (`YYYY-MM-DD`). */
+  /** Sale date (`YYYY-MM-DD`). */
   tradedAt: string;
-  /** Participaciones emparejadas (las de la venta, salvo exceso sobre lo disponible). */
+  /** Matched units (those of the sale, unless it exceeds what is available). */
   quantity: number;
-  /** Precio unitario de venta. */
+  /** Unit sale price. */
   price: number;
   grossProceeds: number;
   sellFees: number;
@@ -99,44 +99,44 @@ export interface RealisedSale {
   matched: MatchedLot[];
 }
 
-/** Resultado de recorrer el histórico: lo que queda vivo y las ventas ya realizadas. */
+/** Result of walking the history: what is still held and the sales already realised. */
 export interface LotWalk {
-  /** Lotes de compra con la parte todavía sin vender, en orden cronológico. */
+  /** Purchase lots with their still unsold part, in chronological order. */
   open: OpenLot[];
-  /** Ventas registradas, en orden cronológico, con su ganancia o pérdida. */
+  /** Recorded sales, in chronological order, with their gain or loss. */
   sales: RealisedSale[];
   /**
-   * Ids de las compras que se trataron como ampliación liberada y se repartieron entre los
-   * lotes vivos (no son lote propio ni compra a efectos de la regla de los dos meses).
+   * Ids of the purchases treated as a bonus issue and spread across the open lots (they are
+   * neither a lot of their own nor a purchase for the two-month rule).
    */
   bonusIssueIds: string[];
   /**
-   * Solo con `trackOpenLots`: lotes vivos justo después de cada venta (clave: id de la venta),
-   * en las participaciones de ese momento. No forma parte del resultado serializable.
+   * Only with `trackOpenLots`: open lots right after each sale (key: the sale's id), with the
+   * units at that moment. Not part of the serialisable result.
    */
   openAfterSale?: ReadonlyMap<string, readonly { lotId: string; quantity: number }[]>;
 }
 
-/** Opciones de `walkLots`. */
+/** Options for `walkLots`. */
 export interface WalkLotsOptions {
-  /** Guarda en `openAfterSale` los lotes vivos tras cada venta (lo necesita `wash-sale.ts`). */
+  /** Stores the open lots after each sale in `openAfterSale` (needed by `wash-sale.ts`). */
   trackOpenLots?: boolean;
 }
 
-/** Importes de una venta emparejada contra `open` (que se consume en el proceso). */
+/** Amounts of a sale matched against `open` (which is consumed in the process). */
 type SaleMatch = Omit<RealisedSale, "lotId" | "tradedAt" | "price">;
 
 /**
- * Empareja una venta contra los lotes vivos por FIFO, consumiéndolos (muta `open`). Es la
- * única implementación: simulación y ventas registradas dan la misma cifra. El valor de
- * transmisión se reparte proporcional a las participaciones, así que las ganancias por lote
- * suman exactamente la total. Si la venta excede lo disponible, empareja solo lo que hay.
+ * Matches a sale against the open lots by FIFO, consuming them (mutates `open`). It is the
+ * single implementation: simulation and recorded sales give the same figure. The transfer value
+ * is split in proportion to the units, so the per-lot gains add up exactly to the total. If the
+ * sale exceeds what is available, it matches only what there is.
  */
 function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: number): SaleMatch {
   const available = open.reduce((sum, lot) => sum + lot.quantity, 0);
   const quantitySold = Math.min(quantity, available);
   const grossProceeds = quantitySold * price;
-  // Comisión de venta entera (es de la operación); sin existencias no hay transmisión a la que imputarla.
+  // The whole sale fee (it belongs to the transaction); with no holdings there is no transfer to charge it to.
   const fees = quantitySold > 0 ? sellFees : 0;
   const transferValue = grossProceeds - fees;
 
@@ -163,7 +163,7 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
     acquisitionValue += lotAcquisition;
     pending -= taken;
     lot.quantity -= taken;
-    // Con tolerancia: restar decimales deja restos de 1e-16 que ensuciarían el desglose.
+    // With a tolerance: subtracting decimals leaves 1e-16 leftovers that would clutter the breakdown.
     if (lot.quantity <= QUANTITY_EPSILON) open.shift();
   }
 
@@ -178,14 +178,14 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
   };
 }
 
-/** Comisiones saneadas: no finitas o negativas cuentan como 0. */
+/** Sanitised fees: non-finite or negative ones count as 0. */
 const cleanFees = (fees: number) => (Number.isFinite(fees) && fees > 0 ? fees : 0);
 
 /**
- * Ampliación liberada (art. 37.1.a LIRPF): las acciones nuevas reparten el coste de las
- * antiguas y heredan su antigüedad. Reparte `quantity` entre los lotes vivos en proporción a
- * sus participaciones: cada lote gana títulos, conserva su coste total (precio y comisiones por
- * participación bajan en la misma proporción) y su fecha, y por tanto su orden FIFO.
+ * Bonus issue (ampliación liberada, art. 37.1.a LIRPF): the new shares share the cost of the old
+ * ones and inherit their holding period. Spreads `quantity` across the open lots in proportion to
+ * their units: each lot gains shares and keeps its total cost (price and fees per unit drop in the
+ * same proportion) and its date, and therefore its FIFO order.
  */
 function applyBonusIssue(open: OpenLot[], quantity: number): void {
   const total = open.reduce((sum, lot) => sum + lot.quantity, 0);
@@ -198,15 +198,15 @@ function applyBonusIssue(open: OpenLot[], quantity: number): void {
 }
 
 /**
- * Recorre el histórico en orden canónico aplicando las ventas por FIFO; devuelve los lotes
- * vivos y las ventas con su ganancia. Una venta que exceda lo disponible (el backend la
- * rechaza) agota existencias y el exceso se ignora, para no dejar cantidades negativas.
+ * Walks the history in canonical order applying the sales by FIFO; returns the open lots and
+ * the sales with their gain. A sale that exceeds what is available (the backend rejects it)
+ * exhausts the holdings and the excess is ignored, so as not to leave negative quantities.
  *
- * **Ampliaciones liberadas.** Una compra a precio 0 y sin comisiones se interpreta como acciones
- * totalmente liberadas (el importador convierte así las `BONUS_ISSUE`) y se reparte entre los
- * lotes vivos (`applyBonusIssue`), con la antigüedad de las antiguas. Las parcialmente liberadas
- * (se paga algo) no se distinguen de una compra normal y siguen como compra. Sin lotes vivos, es
- * una compra a precio 0. Afecta también a `simulateSale` y `buildOpenLots`.
+ * **Bonus issues.** A purchase at price 0 and with no fees is read as fully paid-up bonus shares
+ * (the importer converts `BONUS_ISSUE` this way) and spread across the open lots
+ * (`applyBonusIssue`), with the holding period of the old ones. Partly paid-up bonus shares
+ * (something is paid) are not told apart from an ordinary purchase and stay a purchase. With no
+ * open lots, it is a purchase at price 0. It also affects `simulateSale` and `buildOpenLots`.
  */
 export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {}): LotWalk {
   const ordered = [...lots].sort(compareTradeLots);
@@ -220,8 +220,8 @@ export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {
     const price = finiteOr(lot.price, 0);
 
     if (lot.kind === "buy") {
-      // Ampliación liberada: precio 0 DE VERDAD (no un precio no numérico saneado a 0), sin
-      // comisiones y con lotes vivos. Ver README, "Ampliaciones liberadas".
+      // Bonus issue: a GENUINE price of 0 (not a non-numeric price sanitised to 0), no fees and
+      // open lots. See README, "Bonus issues".
       const isBonusIssue =
         lot.price === 0 && cleanFees(lot.fees) === 0 && open.some((l) => l.quantity > QUANTITY_EPSILON);
       if (isBonusIssue) {
@@ -250,27 +250,27 @@ export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {
   return { open, sales, bonusIssueIds, ...(openAfterSale ? { openAfterSale } : {}) };
 }
 
-/** Lotes de compra vivos tras aplicar las ventas registradas (ver `walkLots`). */
+/** Open purchase lots after applying the recorded sales (see `walkLots`). */
 export function buildOpenLots(lots: readonly TradeLot[]): OpenLot[] {
   return walkLots(lots).open;
 }
 
-/** Entrada de la simulación: el histórico de la posición y la venta hipotética. */
+/** Simulation input: the position's history and the hypothetical sale. */
 export interface SaleSimulationInput {
-  /** Histórico completo de la posición (compras y ventas), en cualquier orden. */
+  /** The position's full history (purchases and sales), in any order. */
   lots: readonly TradeLot[];
-  /** Participaciones que se quieren vender. */
+  /** Units to sell. */
   quantity: number;
-  /** Precio unitario de venta. */
+  /** Unit sale price. */
   price: number;
-  /** Comisiones de la venta. Por defecto 0. */
+  /** Sale fees. Defaults to 0. */
   fees?: number;
 }
 
 /**
- * Simula una venta contra el histórico por FIFO. Devuelve `null` si la entrada no permite
- * calcular (cantidad o precio no finitos, cantidad ≤ 0, precio negativo): mejor sin
- * resultado que un número inventado.
+ * Simulates a sale against the history by FIFO. Returns `null` if the input cannot be computed
+ * (non-finite quantity or price, quantity ≤ 0, negative price): better no result than a made-up
+ * number.
  */
 export function simulateSale({ lots, quantity, price, fees = 0 }: SaleSimulationInput): SaleSimulation | null {
   if (!Number.isFinite(quantity) || quantity <= 0) return null;
@@ -282,7 +282,7 @@ export function simulateSale({ lots, quantity, price, fees = 0 }: SaleSimulation
   const insufficient = quantity > availableQuantity + QUANTITY_EPSILON;
   const sale = matchSale(open, quantity, price, sellFees);
 
-  // `open` ya está consumido: es la posición posterior a la venta.
+  // `open` is already consumed: it is the position after the sale.
   const remainingQuantity = open.reduce((sum, lot) => sum + lot.quantity, 0);
   const remainingCost = open.reduce((sum, lot) => sum + lot.quantity * lot.price, 0);
 

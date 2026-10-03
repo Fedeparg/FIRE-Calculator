@@ -1,18 +1,18 @@
-// Resumen de la vista previa de una importación: lo que la pantalla cuenta antes de confirmar.
-// Puro (sin React), testeable en node.
+// Summary of an import preview: what the screen reports before confirming.
+// Pure (no React), testable in node.
 
 import type { ImportPlan } from "@sextante/core/imports/types";
 
 export type ImportPlanSummary = {
-  /** Posiciones nuevas que se crearán (sin las bloqueadas). */
+  /** New positions that will be created (excluding blocked ones). */
   created: number;
-  /** Posiciones existentes a las que se añadirán lotes (sin las bloqueadas). */
+  /** Existing positions that will get lots added (excluding blocked ones). */
   extended: number;
-  /** Operaciones que se importarán de verdad: compras y ventas nuevas de posiciones no bloqueadas. */
+  /** Trades that will actually be imported: new buys and sells of non-blocked positions. */
   lotsToImport: number;
-  /** Cobros del fichero, nuevos o ya importados: si hay alguno, el fichero no está "vacío". */
+  /** Income in the file, new or already imported: if there is any, the file is not "empty". */
   incomeInFile: number;
-  /** Hay algo que confirmar (lotes o cobros nuevos). */
+  /** There is something to confirm (new lots or income). */
   canConfirm: boolean;
 };
 

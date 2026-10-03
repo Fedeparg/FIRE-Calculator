@@ -16,10 +16,10 @@ type Props = {
 };
 
 /**
- * Pantalla de consentimiento OAuth: el servidor MCP redirige aquí cuando un cliente LLM pide
- * acceso a la cartera. Muestra qué aplicación y qué permisos, y al aprobar registra el
- * consentimiento y reanuda el flujo de `/authorize`. Requiere sesión: si no la hay, manda al
- * login conservando el destino (returnTo). Ver `_local/mcp-integracion.md`.
+ * OAuth consent screen: the MCP server redirects here when an LLM client requests access to
+ * the portfolio. It shows which application and which scopes; on approval it records the
+ * consent and resumes the `/authorize` flow. Requires a session: without one it sends the user
+ * to login, preserving the destination (returnTo). See `_local/mcp-integracion.md`.
  */
 export default async function ConsentPage({ params, searchParams }: Props) {
   const { locale } = await params;
@@ -41,15 +41,15 @@ export default async function ConsentPage({ params, searchParams }: Props) {
 
   const user = await getSessionUser();
   if (!user) {
-    // Conserva la URL de consentimiento para volver tras iniciar sesión.
+    // Keep the consent URL so the user comes back here after signing in.
     const returnTo = `/oauth/consent?client_id=${encodeURIComponent(
       clientId,
     )}&scope=${encodeURIComponent(scope)}&authorize_params=${encodeURIComponent(authorizeParams)}`;
     redirect({ href: { pathname: "/entrar", query: { returnTo } }, locale });
   }
 
-  // Nombre legible de la aplicación (best-effort; si falla, intro genérica) y sus
-  // `redirect_uris` registradas (sin ellas, "Denegar" vuelve a la portada).
+  // Human-readable application name (best effort; on failure, a generic intro) and its
+  // registered `redirect_uris` (without them, "Deny" goes back to the home page).
   const client = await serverApiFetch<{ clientName: string | null; redirectUris?: string[] }>(
     `/api/oauth/consent/client/${encodeURIComponent(clientId)}`,
   );

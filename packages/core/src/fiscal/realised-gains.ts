@@ -1,6 +1,6 @@
-// Informe anual de ganancias y pérdidas patrimoniales realizadas: ventas registradas,
-// emparejadas por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas
-// dentro de él. Core puro. Alcance, criterio de divisas y fuentes: ver ./README.md.
+// Annual report of realised capital gains and losses (ganancias y pérdidas patrimoniales):
+// recorded sales, FIFO-matched (`walkLots`), converted to euros, grouped by tax year and offset
+// within it. Pure core module. Scope, currency criterion and sources: see ./README.md.
 
 import { firstItem } from "../arrays.js";
 import { compareStrings } from "../compare.js";
@@ -9,7 +9,7 @@ import { walkLots, type RealisedSale, type TradeLot } from "./plusvalias.js";
 import { estimateSavingsTax, type SavingsTaxEstimate } from "./savings-tax.js";
 import { computeWashSales, type WashSaleIntegration } from "./wash-sale.js";
 
-/** Una posición con su histórico, tal y como la tiene la cartera. */
+/** A position with its history, as the portfolio holds it. */
 export interface RealisedGainsPosition {
   id: string;
   ticker: string;
@@ -17,149 +17,150 @@ export interface RealisedGainsPosition {
   currency: string;
   lots: readonly TradeLot[];
   /**
-   * Derivado. Solo sirve para no emparejarlo por FIFO con una acción del mismo símbolo: la regla
-   * de los dos meses sí se le aplica, porque los de la cartera son warrants y certificados con
-   * ISIN, que son valores negociables (DGT V1790-07); V2172-21 y V3755-16 solo excluyen contratos
-   * como opciones y futuros. Por defecto, `false`.
+   * Derivative. It only serves to avoid FIFO-matching it with a share of the same symbol: the
+   * two-month rule does apply to it, because the ones in the portfolio are warrants and
+   * certificates with an ISIN, which are transferable securities (DGT V1790-07); V2172-21 and
+   * V3755-16 only exclude contracts such as options and futures. Defaults to `false`.
    */
   isDerivative?: boolean;
 }
 
 /**
- * Venta en divisa pasada a euros con el criterio de la DGT: la ganancia se calcula en la divisa
- * y se convierte al tipo del día de la venta; la diferencia de cambio de la divisa invertida es
- * otra ganancia o pérdida aparte. En euros, `fxDifference` es 0 y el tipo es 1.
+ * A foreign-currency sale converted to euros with the DGT criterion: the gain is computed in the
+ * currency and converted at the sale-date rate; the FX difference (diferencia de cambio) of the
+ * invested currency is a separate gain or loss. In euros, `fxDifference` is 0 and the rate is 1.
  */
 export interface SaleInEur {
-  /** Tipo del día de la venta, el que convierte los valores de transmisión y adquisición. */
+  /** Sale-date rate, the one that converts the transfer and acquisition values. */
   sellRate: AppliedRate;
   transferValue: number;
   acquisitionValue: number;
   gain: number;
-  /** Pérdida de esta venta que no se computa por la regla de los dos meses (≤ 0), en euros al tipo de esta venta. */
+  /** Loss of this sale not computed under the two-month rule (≤ 0), in euros at this sale's rate. */
   deferredLoss: number;
   /**
-   * Pérdida de ventas anteriores que se integra en esta (≤ 0), en euros. Cada parte se convierte
-   * con el tipo de la venta donde se generó la pérdida (si esa venta no tiene tipo, con el de esta).
+   * Loss from earlier sales integrated into this one (≤ 0), in euros. Each part is converted at the
+   * rate of the sale where the loss arose (if that sale has no rate, at this one's).
    */
   integratedLoss: number;
-  /** Resultado que computa esta venta en su ejercicio: `gain − deferredLoss + integratedLoss`. */
+  /** Result this sale computes in its tax year: `gain − deferredLoss + integratedLoss`. */
   computableGain: number;
   /**
-   * Diferencia de cambio de la divisa con la que se compró lo vendido, suponiendo que se compró
-   * con euros cambiados ese día y que lo cobrado se cambia a euros el día de la venta (lo que
-   * hace un bróker con cuenta en euros). `null` si falta el tipo de alguna compra.
+   * FX difference of the currency used to buy what was sold, assuming it was bought with euros
+   * converted that day and that the proceeds are converted to euros on the sale date (what a
+   * broker with a euro account does). `null` if the rate of some purchase is missing.
    */
   fxDifference: number | null;
-  /** Tipo del día de cada compra emparejada, alineado con `matched`. */
+  /** Rate on the date of each matched purchase, aligned with `matched`. */
   buyRates: (AppliedRate | null)[];
 }
 
-/** Venta del informe con su posición; es la fila del CSV. Los importes de `RealisedSale` van en la divisa de la posición. */
+/** A report sale with its position; it is the CSV row. The `RealisedSale` amounts are in the position's currency. */
 export interface RealisedGainsSale extends RealisedSale {
   positionId: string;
   ticker: string;
   name: string | null;
   currency: string;
-  /** La venta en euros, o `null` si no hay tipo de referencia para el día de la venta. */
+  /** The sale in euros, or `null` if there is no reference rate for the sale date. */
   eur: SaleInEur | null;
-  /** Pérdida de esta venta diferida por la regla de los dos meses (≤ 0), en la divisa de la posición. */
+  /** Loss of this sale deferred by the two-month rule (≤ 0), in the position's currency. */
   deferredLoss: number;
-  /** Títulos vendidos con pérdida bloqueados por compras homogéneas. */
+  /** Shares sold at a loss that are blocked by homogeneous purchases. */
   deferredQuantity: number;
-  /** Pérdida de ventas anteriores que se integra aquí (≤ 0), en la divisa de la posición. */
+  /** Loss from earlier sales integrated here (≤ 0), in the position's currency. */
   integratedLoss: number;
-  /** Desglose de `integratedLoss` por venta de origen. */
+  /** Breakdown of `integratedLoss` by originating sale. */
   integratedFrom: WashSaleIntegration[];
 }
 
-/** Ventas de una posición en un ejercicio, sumadas y en euros. */
+/** A position's sales in a tax year, summed and in euros. */
 export interface RealisedGainsRow {
   positionId: string;
   ticker: string;
   name: string | null;
   currency: string;
-  /** Número de ventas de la posición en el ejercicio. */
+  /** Number of the position's sales in the tax year. */
   sales: number;
   quantity: number;
   transferValue: number;
   acquisitionValue: number;
-  /** Resultado computable: ya sin las pérdidas diferidas y con las integradas (`computableGain`). */
+  /** Computable result: already without the deferred losses and with the integrated ones (`computableGain`). */
   gain: number;
-  /** Pérdidas diferidas de esas ventas (≤ 0), en euros. */
+  /** Deferred losses of those sales (≤ 0), in euros. */
   deferredLoss: number;
-  /** Pérdidas de años anteriores integradas en esas ventas (≤ 0), en euros. */
+  /** Losses from earlier years integrated into those sales (≤ 0), in euros. */
   integratedLoss: number;
-  /** Suma de las diferencias de cambio conocidas de esas ventas. */
+  /** Sum of the known FX differences of those sales. */
   fxDifference: number;
 }
 
-/** Ventas de una divisa que no se han podido pasar a euros, en esa divisa. */
+/** Sales in a currency that could not be converted to euros, in that currency. */
 export interface RealisedGainsUnconverted {
   currency: string;
   sales: number;
-  /** Saldo de esas ventas, en la divisa. */
+  /** Balance of those sales, in the currency. */
   gain: number;
 }
 
 export interface RealisedGainsYear {
   year: number;
-  /** Posiciones con ventas convertidas, por símbolo. */
+  /** Positions with converted sales, by symbol. */
   rows: RealisedGainsRow[];
-  /** Todas las ventas del ejercicio, en orden cronológico (las no convertidas con `eur: null`). */
+  /** All the tax year's sales, in chronological order (unconverted ones with `eur: null`). */
   sales: RealisedGainsSale[];
-  /** Suma de las ventas con ganancia computable, en euros. */
+  /** Sum of the sales with a computable gain, in euros. */
   gains: number;
-  /** Suma de las ventas con pérdida computable (≤ 0), en euros. */
+  /** Sum of the sales with a computable loss (≤ 0), in euros. */
   losses: number;
-  /** Saldo de las ventas de valores: `gains + losses`, sin las pérdidas diferidas y con las integradas. */
+  /** Balance of the securities sales: `gains + losses`, without the deferred losses and with the integrated ones. */
   net: number;
-  /** Pérdidas de este ejercicio que no se computan por la regla de los dos meses (≤ 0), en euros. */
+  /** Losses of this tax year not computed under the two-month rule (≤ 0), in euros. */
   deferred: number;
-  /** Pérdidas diferidas de ejercicios anteriores que se integran en este (≤ 0), en euros. */
+  /** Deferred losses from earlier tax years integrated into this one (≤ 0), in euros. */
   integrated: number;
-  /** Saldo de las diferencias de cambio conocidas. */
+  /** Balance of the known FX differences. */
   fxDifference: number;
-  /** Ventas en divisa cuya diferencia de cambio no se pudo calcular (falta el tipo de alguna compra). */
+  /** Foreign-currency sales whose FX difference could not be computed (the rate of some purchase is missing). */
   fxIncomplete: number;
-  /** Ventas sin tipo de referencia el día de la venta, por divisa: fuera de los totales. */
+  /** Sales without a reference rate on the sale date, by currency: left out of the totals. */
   unconverted: RealisedGainsUnconverted[];
-  /** Saldo que se integra en la base del ahorro: `net + fxDifference`. */
+  /** Balance that goes into the savings base (base del ahorro): `net + fxDifference`. */
   total: number;
-  /** Cuota estimada sobre `total`; con pérdida neta, 0 (no se arrastra). */
+  /** Estimated tax on `total`; with a net loss, 0 (not carried forward). */
   tax: SavingsTaxEstimate;
 }
 
 export interface RealisedGainsReport {
-  /** Ejercicios con alguna venta, del más reciente al más antiguo. */
+  /** Tax years with at least one sale, from newest to oldest. */
   years: RealisedGainsYear[];
 }
 
-/** Ejercicio fiscal de una venta: el año natural de su fecha `YYYY-MM-DD`. */
+/** A sale's tax year: the calendar year of its `YYYY-MM-DD` date. */
 function fiscalYear(tradedAt: string): number {
   return Number(tradedAt.slice(0, 4));
 }
 
 /**
- * Clave de valor homogéneo: símbolo (sin mayúsculas) y divisa, pues importes de divisas distintas
- * no se emparejan. Un derivado con el mismo símbolo que una acción no es homogéneo con ella.
+ * Homogeneous-security key: symbol (case-insensitive) and currency, since amounts in different
+ * currencies are not matched. A derivative with the same symbol as a share is not homogeneous
+ * with it.
  */
 function securityKey(position: RealisedGainsPosition): string {
   return `${position.ticker.trim().toUpperCase()}\u0000${position.currency}\u0000${position.isDerivative ? "d" : ""}`;
 }
 
-/** Tipos de referencia que necesita el informe: divisas y fecha desde la que pedirlos. */
+/** Reference rates the report needs: currencies and the date to request them from. */
 export interface ReferenceRatesRequest {
   currencies: string[];
-  /** Operación más antigua de esas divisas (`YYYY-MM-DD`). */
+  /** Oldest transaction in those currencies (`YYYY-MM-DD`). */
   from: string;
 }
 
 /**
- * Qué tipos pedir para `buildRealisedGainsReport`: las divisas distintas del euro de los valores
- * con alguna venta, desde su operación más antigua. Mira el valor entero, no la posición: el FIFO
- * puede emparejar la venta de un bróker con una compra antigua de otro. `null` si no hace falta
- * ninguno.
+ * Which rates to request for `buildRealisedGainsReport`: the non-euro currencies of the
+ * securities with at least one sale, from their oldest transaction. It looks at the whole
+ * security, not the position: FIFO can match a sale at one broker with an old purchase at another.
+ * `null` if none is needed.
  */
 export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]): ReferenceRatesRequest | null {
   const bySecurity = new Map<string, RealisedGainsPosition[]>();
@@ -182,7 +183,7 @@ export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]
   return from === null ? null : { currencies: [...currencies].sort(), from };
 }
 
-/** Pasa una venta a euros con el criterio de la DGT, o `null` si falta el tipo del día de la venta. */
+/** Converts a sale to euros with the DGT criterion, or `null` if the sale-date rate is missing. */
 function convertSale(sale: RealisedSale, currency: string, rates: ReferenceRates): SaleInEur | null {
   const sellRate = referenceRateOn(rates, currency, sale.tradedAt);
   if (!sellRate) return null;
@@ -196,7 +197,7 @@ function convertSale(sale: RealisedSale, currency: string, rates: ReferenceRates
         fxDifference = null;
         break;
       }
-      // Divisa invertida en ese lote: costó `toEur(A, compra)` y vuelve a euros a `toEur(A, venta)`.
+      // Currency invested in that lot: it cost `toEur(A, purchase)` and goes back to euros at `toEur(A, sale)`.
       fxDifference += toEur(m.acquisitionValue, sellRate) - toEur(m.acquisitionValue, buyRate);
     }
   }
@@ -206,7 +207,7 @@ function convertSale(sale: RealisedSale, currency: string, rates: ReferenceRates
     transferValue: toEur(sale.transferValue, sellRate),
     acquisitionValue: toEur(sale.acquisitionValue, sellRate),
     gain: toEur(sale.gain, sellRate),
-    // La regla de los dos meses se aplica después, con todas las ventas del valor a la vista.
+    // The two-month rule is applied later, with all the security's sales in view.
     deferredLoss: 0,
     integratedLoss: 0,
     computableGain: toEur(sale.gain, sellRate),
@@ -216,8 +217,8 @@ function convertSale(sale: RealisedSale, currency: string, rates: ReferenceRates
 }
 
 /**
- * Construye el informe desde las posiciones y su histórico; solo aparecen las que tienen ventas.
- * `rates` son los tipos de referencia del BCE de las divisas distintas del euro.
+ * Builds the report from the positions and their history; only those with sales appear.
+ * `rates` are the ECB reference rates for the non-euro currencies.
  */
 export function buildRealisedGainsReport(
   positions: readonly RealisedGainsPosition[],
@@ -234,18 +235,18 @@ export function buildRealisedGainsReport(
   const byYear = new Map<number, RealisedGainsSale[]>();
 
   for (const group of bySecurity.values()) {
-    // FIFO sobre todas las operaciones del valor juntas.
+    // FIFO over all of the security's transactions together.
     const owner = new Map<string, RealisedGainsPosition>();
     for (const position of group) for (const lot of position.lots) owner.set(lot.id, position);
 
     const groupLots = group.flatMap((p) => p.lots);
     const walk = walkLots(groupLots, { trackOpenLots: true });
-    // Regla de los dos meses (art. 33.5.f), también para warrants y certificados (ver `isDerivative`).
+    // Two-month rule (art. 33.5.f), also for warrants and certificates (see `isDerivative`).
     const wash = computeWashSales(groupLots, walk);
 
     const groupSales: RealisedGainsSale[] = [];
     for (const sale of walk.sales) {
-      // Una venta que no emparejó nada (histórico incoherente) no realiza ninguna ganancia.
+      // A sale that matched nothing (inconsistent history) realises no gain.
       if (sale.quantity <= 0) continue;
       const year = fiscalYear(sale.tradedAt);
       const position = owner.get(sale.lotId);
@@ -280,10 +281,10 @@ export function buildRealisedGainsReport(
 }
 
 /**
- * Pasa a euros las pérdidas diferidas e integradas de las ventas de un valor (muta `eur`). La
- * pérdida diferida se convierte al tipo de la venta que la generó (el de la DGT para esa venta) y
- * se integra después por ese mismo importe en euros, no al tipo de la venta posterior. Si la
- * venta de origen no tiene tipo (sale de los totales), se usa el de la que la integra.
+ * Converts to euros the deferred and integrated losses of a security's sales (mutates `eur`). The
+ * deferred loss is converted at the rate of the sale that caused it (the DGT one for that sale)
+ * and later integrated for that same amount in euros, not at the rate of the later sale. If the
+ * originating sale has no rate (it is left out of the totals), the integrating sale's rate is used.
  */
 function applyWashSalesInEur(sales: readonly RealisedGainsSale[]): void {
   const byId = new Map(sales.map((sale) => [sale.lotId, sale]));
@@ -370,7 +371,7 @@ function buildYear(year: number, sales: RealisedGainsSale[]): RealisedGainsYear 
     fxIncomplete,
     unconverted: [...unconverted.values()].sort((a, b) => a.currency.localeCompare(b.currency)),
     total,
-    // Cuota sobre el saldo compensado; si es negativo, `estimateSavingsTax` da 0.
+    // Tax on the offset balance; if it is negative, `estimateSavingsTax` gives 0.
     tax: estimateSavingsTax(total),
   };
 }

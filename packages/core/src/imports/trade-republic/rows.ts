@@ -1,5 +1,5 @@
-// Filas del export ya mapeadas por nombre de columna, validadores de campo y el contexto que
-// comparten los resolutores de cada tipo de fila.
+// Export rows already mapped by column name, field validators and the context shared by the
+// resolvers of each row type.
 
 import { itemAt } from "../../arrays.js";
 import type { CsvRecord } from "../csv.js";
@@ -7,14 +7,14 @@ import { formatUnits, parseUnits } from "../decimal.js";
 import type { ImportedAssetClass, ImportSkipReason, ImportSkippedRow } from "../types.js";
 import { TRADE_REPUBLIC_HEADER, type TradeRepublicColumn } from "./header.js";
 
-/** Escala de `position_lots.quantity/price/fees`: se redondea aquí para no depender de la BD. */
+/** Scale of `position_lots.quantity/price/fees`: rounding happens here so as not to depend on the DB. */
 export const AMOUNT_SCALE = 6;
 
 export const ISIN = /^[A-Z0-9]{12}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const DATETIME = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,9}))?Z$/;
 
-/** Fila ya mapeada por nombre de columna: solo las columnas que el parser necesita. */
+/** Row already mapped by column name: only the columns the parser needs. */
 export type Row = {
   line: number;
   datetime: string;
@@ -34,21 +34,21 @@ export type Row = {
   transactionId: string;
 };
 
-/** Descarta una fila con su motivo (queda en `skipped`, ordenado por línea al final). */
+/** Skips a row with its reason (it ends up in `skipped`, sorted by line at the end). */
 export type SkipFn = (row: { line: number; type: string }, reason: ImportSkipReason) => void;
 
 /**
- * Estado compartido por los resolutores de un mismo fichero. `seenIds` detecta `transaction_id`
- * repetidos ENTRE tipos de fila: el primero que lo registra se queda la fila y los demás la
- * descartan como `duplicate_row`, así que el orden en que se llaman los resolutores importa
- * (compras y ventas, después ampliaciones liberadas, después cobros).
+ * State shared by the resolvers of a single file. `seenIds` detects `transaction_id`s repeated
+ * ACROSS row types: the first one to claim it keeps the row and the rest skip it as
+ * `duplicate_row`, so the order in which the resolvers are called matters (buys and sells, then
+ * bonus issues, then payouts).
  */
 export type ImportContext = {
   skip: SkipFn;
   seenIds: Set<string>;
 };
 
-/** Crea el contexto de un fichero y la lista de filas descartadas que va llenando. */
+/** Creates the context of a file and the list of skipped rows it fills. */
 export function createImportContext(): { context: ImportContext; skipped: ImportSkippedRow[] } {
   const skipped: ImportSkippedRow[] = [];
   const skip: SkipFn = (row, reason) => {
@@ -58,8 +58,8 @@ export function createImportContext(): { context: ImportContext; skipped: Import
 }
 
 /**
- * Registra el `transaction_id` de una fila válida, o la descarta como duplicada si ya estaba.
- * Devuelve si la fila sigue adelante.
+ * Claims the `transaction_id` of a valid row, or skips it as a duplicate if already seen.
+ * Returns whether the row goes ahead.
  */
 export function claimTransactionId(row: Row, context: ImportContext): boolean {
   if (context.seenIds.has(row.transactionId)) {
@@ -70,7 +70,7 @@ export function claimTransactionId(row: Row, context: ImportContext): boolean {
   return true;
 }
 
-/** Fila de datos ya validada: tiene exactamente las columnas de `TRADE_REPUBLIC_HEADER`, en su orden. */
+/** Already validated data row: it has exactly the columns of `TRADE_REPUBLIC_HEADER`, in order. */
 export function toRow(record: CsvRecord): Row {
   const get = (column: TradeRepublicColumn): string =>
     itemAt(record.fields, TRADE_REPUBLIC_HEADER.indexOf(column)).trim();
@@ -94,16 +94,16 @@ export function toRow(record: CsvRecord): Row {
   };
 }
 
-/** `executedAt` normalizado a 6 decimales de segundo, o `null` si no es un instante válido. */
+/** `executedAt` normalized to 6 decimal places of seconds, or `null` if it is not a valid instant. */
 export function normalizeDatetime(raw: string): string | null {
   const match = DATETIME.exec(raw);
   if (!match) return null;
   const [, base, fraction = ""] = match;
-  // El grupo de la fecha es obligatorio en `DATETIME`: si hay `match`, hay `base`.
+  // The date group is mandatory in `DATETIME`: if there is a `match`, there is a `base`.
   if (base === undefined) return null;
   const normalized = `${base}.${fraction.padEnd(6, "0").slice(0, 6)}Z`;
   const parsed = new Date(normalized);
-  // `Date` acepta 31 de febrero reajustándolo: se comprueba que el viaje de ida y vuelta coincide.
+  // `Date` accepts 31 February by rolling it over: check that the round trip matches.
   if (Number.isNaN(parsed.getTime()) || !parsed.toISOString().startsWith(base)) return null;
   return normalized;
 }
@@ -127,17 +127,17 @@ export function assetClassOf(raw: string): ImportedAssetClass {
   }
 }
 
-/** Importe de la escala de la BD, o `null` si no es un decimal plano. */
+/** Amount at the DB scale, or `null` if it is not a plain decimal. */
 export function amountUnits(raw: string): bigint | null {
   return parseUnits(raw, AMOUNT_SCALE);
 }
 
-/** Entero de coma fija de la escala de la BD → decimal sin ceros sobrantes. */
+/** Fixed-point integer at the DB scale → decimal without trailing zeros. */
 export function formatAmount(units: bigint): string {
   return formatUnits(units, AMOUNT_SCALE);
 }
 
-/** Número ya redondeado → decimal de la escala de la BD. */
+/** Already rounded number → decimal at the DB scale. */
 export function decimalOf(value: number): string {
   return formatAmount(amountUnits(value.toFixed(AMOUNT_SCALE)) ?? 0n);
 }

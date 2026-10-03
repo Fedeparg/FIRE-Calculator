@@ -4,15 +4,15 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 type Props = {
-  /** Texto que se copia, tal y como se escribe en el formulario de destino (p. ej. "1234,56"). */
+  /** Text to copy, exactly as typed into the target form (e.g. "1234,56"). */
   value: string;
-  /** Qué se copia, para el lector de pantalla (p. ej. "casilla 0328"). */
+  /** What is being copied, for screen readers (e.g. "casilla 0328", a tax form box). */
   label: string;
 };
 
 /**
- * Botón pequeño que copia un valor al portapapeles y confirma durante un momento. Si el navegador
- * no deja copiar, muestra el valor para copiarlo a mano.
+ * Small button that copies a value to the clipboard and briefly confirms it. If the browser
+ * does not allow copying, it shows the value so it can be copied by hand.
  */
 export default function CopyValue({ value, label }: Props) {
   const t = useTranslations("common");

@@ -1,6 +1,6 @@
-// Casos de borde con significado propio (tasa 0, plazo 0, entradas negativas o extremas) de las
-// calculadoras que no los cubrían. La tabla genérica de `edge-inputs.test.ts` solo garantiza que no
-// lancen y que sean finitas; aquí se fija además QUÉ resultado es el correcto.
+// Meaningful edge cases (zero rate, zero term, negative or extreme inputs) for the calculators
+// that did not cover them. The generic table in `edge-inputs.test.ts` only guarantees that they do
+// not throw and that the outputs are finite; here we also pin down WHICH result is correct.
 
 import { describe, expect, it } from "vitest";
 import { computeRetirement } from "./ahorro-jubilacion.js";
@@ -11,33 +11,33 @@ import { computePayrollWithholding } from "./irpf-nomina.js";
 import { computeHolidayRental } from "./rentabilidad-alquiler-vacacional.js";
 import { computeStaking } from "./staking.js";
 
-describe("computeStaking: bordes", () => {
-  it("con APY 0 no hay recompensas ni retención", () => {
+describe("computeStaking: edge cases", () => {
+  it("with zero APY there are no rewards and no withholding", () => {
     const r = computeStaking({ principal: 5000, apy: 0, years: 3 });
     expect(r.rewards).toBe(0);
     expect(r.withheld).toBe(0);
     expect(r.netFinalValue).toBe(5000);
   });
 
-  it("con 0 años devuelve el principal intacto", () => {
+  it("with 0 years it returns the principal untouched", () => {
     const r = computeStaking({ principal: 5000, apy: 8, years: 0 });
     expect(r.rewards).toBe(0);
     expect(r.netFinalValue).toBe(5000);
     expect(r.series).toHaveLength(1);
   });
 
-  it("con principal 0 no hay nada que rendir", () => {
+  it("with zero principal there is nothing to earn", () => {
     expect(computeStaking({ principal: 0, apy: 8, years: 3 }).netFinalValue).toBe(0);
   });
 
-  it("un APY negativo (pérdida) no genera retención negativa", () => {
+  it("a negative APY (loss) does not produce negative withholding", () => {
     const r = computeStaking({ principal: 5000, apy: -10, years: 2 });
     expect(r.rewards).toBeLessThan(0);
     expect(r.withheld).toBe(0);
     expect(r.netFinalValue).toBeCloseTo(5000 + r.rewards, 6);
   });
 
-  it("acota la retención a 0-100 %", () => {
+  it("clamps the withholding to 0-100%", () => {
     const all = computeStaking({ principal: 1000, apy: 10, years: 1, withholdingRate: 500 });
     expect(all.netRewards).toBeCloseTo(0, 9);
     const none = computeStaking({ principal: 1000, apy: 10, years: 1, withholdingRate: -5 });
@@ -45,23 +45,23 @@ describe("computeStaking: bordes", () => {
   });
 });
 
-describe("computeAffordability: bordes", () => {
+describe("computeAffordability: edge cases", () => {
   const base = { netMonthlyIncome: 3000, monthlyDebts: 200, downPayment: 40000, termYears: 30 };
 
-  it("con tipo 0 el préstamo máximo es cuota × meses", () => {
+  it("with a zero rate the maximum loan is payment × months", () => {
     const r = computeAffordability({ ...base, annualRate: 0 });
     expect(r.maxMonthlyPayment).toBeCloseTo(3000 * 0.35 - 200, 9);
     expect(r.maxLoan).toBeLessThanOrEqual(r.maxMonthlyPayment * 360 + 1e-6);
     expect(Number.isFinite(r.estimatedMonthlyPayment)).toBe(true);
   });
 
-  it("con plazo 0 se trata como 1 año", () => {
+  it("a zero term is treated as 1 year", () => {
     expect(computeAffordability({ ...base, annualRate: 3, termYears: 0 })).toEqual(
       computeAffordability({ ...base, annualRate: 3, termYears: 1 }),
     );
   });
 
-  it("sin ingresos o con deudas que se los comen no hay hipoteca", () => {
+  it("without income, or with debts that eat it up, there is no mortgage", () => {
     const noIncome = computeAffordability({ ...base, netMonthlyIncome: 0, annualRate: 3 });
     expect(noIncome.maxMonthlyPayment).toBe(0);
     expect(noIncome.maxLoan).toBe(0);
@@ -69,38 +69,38 @@ describe("computeAffordability: bordes", () => {
     expect(overIndebted.maxLoan).toBe(0);
   });
 
-  it("sin ahorro no hay entrada que pagar y el precio máximo es 0", () => {
+  it("without savings there is no down payment and the maximum price is 0", () => {
     const r = computeAffordability({ ...base, downPayment: 0, annualRate: 3 });
     expect(r.maxPrice).toBe(0);
     expect(r.binding).toBe("savings");
   });
 
-  it("con LTV 0 el banco no financia nada y manda el ahorro", () => {
+  it("with zero LTV the bank finances nothing and savings are the binding constraint", () => {
     const r = computeAffordability({ ...base, annualRate: 3, maxLtv: 0 });
     expect(r.maxLoan).toBe(0);
     expect(Number.isFinite(r.maxPrice)).toBe(true);
   });
 });
 
-describe("computeEarlyRepayment: bordes", () => {
+describe("computeEarlyRepayment: edge cases", () => {
   const base = { pendingPrincipal: 100000, remainingYears: 20, extraPayment: 20000 };
 
-  it("con tipo 0 reducir plazo ahorra meses exactos y ningún interés", () => {
+  it("with a zero rate shortening the term saves exact months and no interest", () => {
     const r = computeEarlyRepayment({ ...base, annualRate: 0 });
     expect(r.totalInterestBefore).toBeCloseTo(0, 6);
-    expect(r.reduceTerm.newMonths).toBe(192); // 80.000 / (100.000 / 240)
+    expect(r.reduceTerm.newMonths).toBe(192); // 80,000 / (100,000 / 240)
     expect(r.reduceTerm.monthsSaved).toBe(48);
     expect(r.reduceTerm.interestSaved).toBeCloseTo(0, 6);
     expect(r.reducePayment.newMonthlyPayment).toBeCloseTo(80000 / 240, 9);
   });
 
-  it("con 0 años restantes se trata como 1 año", () => {
+  it("0 remaining years is treated as 1 year", () => {
     const r = computeEarlyRepayment({ ...base, annualRate: 3, remainingYears: 0 });
     expect(r).toEqual(computeEarlyRepayment({ ...base, annualRate: 3, remainingYears: 1 }));
     expect(r.reduceTerm.newMonths).toBeLessThanOrEqual(12);
   });
 
-  it("amortizar todo el capital deja 0 meses y 0 cuota", () => {
+  it("repaying the whole principal leaves 0 months and a zero payment", () => {
     const r = computeEarlyRepayment({ ...base, annualRate: 3, extraPayment: 1e9 });
     expect(r.reduceTerm.newMonths).toBe(0);
     expect(r.reduceTerm.monthsSaved).toBe(240);
@@ -108,22 +108,22 @@ describe("computeEarlyRepayment: bordes", () => {
     expect(r.reduceTerm.interestSaved).toBeCloseTo(r.totalInterestBefore, 6);
   });
 
-  it("sin amortización extra no se ahorra nada", () => {
+  it("without an extra payment nothing is saved", () => {
     const r = computeEarlyRepayment({ ...base, annualRate: 3, extraPayment: 0 });
     expect(r.reducePayment.interestSaved).toBeCloseTo(0, 6);
     expect(r.reduceTerm.monthsSaved).toBe(0);
     expect(r.prepaymentFee).toBe(0);
   });
 
-  it("sin capital pendiente no hay nada que calcular", () => {
+  it("without outstanding principal there is nothing to compute", () => {
     const r = computeEarlyRepayment({ ...base, pendingPrincipal: 0, annualRate: 3 });
     expect(r.monthlyPaymentBefore).toBe(0);
     expect(r.reduceTerm.newMonths).toBe(0);
   });
 });
 
-describe("computePayrollWithholding: bordes", () => {
-  it("con bruto 0 todo es 0 y no hay división por cero", () => {
+describe("computePayrollWithholding: edge cases", () => {
+  it("with zero gross everything is 0 and there is no division by zero", () => {
     const r = computePayrollWithholding({ grossAnnual: 0 });
     expect(r.grossPerPayment).toBe(0);
     expect(r.withholdingPerPayment).toBe(0);
@@ -131,36 +131,36 @@ describe("computePayrollWithholding: bordes", () => {
     expect(r.annualWithholding).toBe(0);
   });
 
-  it("un bruto negativo se trata como 0", () => {
+  it("a negative gross is treated as 0", () => {
     expect(computePayrollWithholding({ grossAnnual: -1000 })).toEqual(computePayrollWithholding({ grossAnnual: 0 }));
   });
 
-  it("un número de pagas distinto de 12 se trata como 14", () => {
+  it("a number of payments other than 12 is treated as 14", () => {
     const base = { grossAnnual: 30000 };
     expect(computePayrollWithholding({ ...base, payments: 0 }).grossPerPayment).toBeCloseTo(30000 / 14, 9);
     expect(computePayrollWithholding({ ...base, payments: 12 }).grossPerPayment).toBe(2500);
   });
 
-  it("con un salario por debajo del mínimo exento la retención es 0", () => {
+  it("with a salary below the exempt minimum the withholding is 0", () => {
     expect(computePayrollWithholding({ grossAnnual: 8000 }).annualWithholding).toBe(0);
   });
 });
 
-describe("computeWealthTax: bordes", () => {
-  it("con patrimonio 0 o por debajo del mínimo exento no hay cuota", () => {
+describe("computeWealthTax: edge cases", () => {
+  it("with zero wealth or below the exempt minimum there is no tax", () => {
     expect(computeWealthTax({ totalWealth: 0, primaryResidenceValue: 0 }).tax).toBe(0);
     const below = computeWealthTax({ totalWealth: 600000, primaryResidenceValue: 0, exemptMinimum: 700000 });
     expect(below.taxableBase).toBe(0);
     expect(below.tax).toBe(0);
   });
 
-  it("la vivienda habitual solo exime hasta 300.000 €", () => {
+  it("the primary residence is only exempt up to €300,000", () => {
     const r = computeWealthTax({ totalWealth: 2000000, primaryResidenceValue: 1000000, exemptMinimum: 0 });
     expect(r.residenceExemption).toBe(300000);
     expect(r.taxableBase).toBe(1700000);
   });
 
-  it("una bonificación del 100 % anula la cuota y fuera de rango se acota", () => {
+  it("a 100% rebate cancels the tax and out-of-range values are clamped", () => {
     const full = computeWealthTax({ totalWealth: 3000000, primaryResidenceValue: 0, regionalRebate: 100 });
     expect(full.grossTax).toBeGreaterThan(0);
     expect(full.tax).toBe(0);
@@ -170,12 +170,12 @@ describe("computeWealthTax: bordes", () => {
     );
   });
 
-  it("valores negativos se tratan como 0", () => {
+  it("negative values are treated as 0", () => {
     expect(computeWealthTax({ totalWealth: -5, primaryResidenceValue: -5 }).effectiveRate).toBe(0);
   });
 });
 
-describe("computeHolidayRental: bordes", () => {
+describe("computeHolidayRental: edge cases", () => {
   const base = {
     purchasePrice: 200000,
     purchaseCosts: 20000,
@@ -185,60 +185,60 @@ describe("computeHolidayRental: bordes", () => {
     annualExpenses: 3000,
   };
 
-  it("con precio y costes 0 las rentabilidades son 0, no infinitas", () => {
+  it("with zero price and costs the yields are 0, not infinite", () => {
     const r = computeHolidayRental({ ...base, purchasePrice: 0, purchaseCosts: 0 });
     expect(r.grossYield).toBe(0);
     expect(r.netYield).toBe(0);
     expect(r.grossIncome).toBe(18000);
   });
 
-  it("acota las noches ocupadas a 365", () => {
+  it("clamps occupied nights to 365", () => {
     const r = computeHolidayRental({ ...base, occupiedNights: 1000 });
     expect(r.occupancyRate).toBe(100);
     expect(r.grossIncome).toBe(36500);
   });
 
-  it("una estancia media de 0 noches se trata como 1 (sin dividir por cero)", () => {
+  it("an average stay of 0 nights is treated as 1 (no division by zero)", () => {
     const r = computeHolidayRental({ ...base, avgStayNights: 0, cleaningFee: 30 });
     expect(r.stays).toBe(180);
     expect(r.cleaningCost).toBe(5400);
   });
 
-  it("sin ocupación el neto es el gasto anual en negativo", () => {
+  it("without occupancy the net is the annual expense as a negative", () => {
     const r = computeHolidayRental({ ...base, occupiedNights: 0 });
     expect(r.netIncome).toBe(-3000);
     expect(r.stays).toBe(0);
   });
 
-  it("una gestión por encima del 100 % se acota", () => {
+  it("a management fee above 100% is clamped", () => {
     const r = computeHolidayRental({ ...base, managementRate: 400 });
     expect(r.managementCost).toBe(r.grossIncome);
   });
 });
 
-describe("computeRetirement: bordes", () => {
+describe("computeRetirement: edge cases", () => {
   const base = { currentSavings: 10000, monthlySavings: 500, annualReturn: 6 };
 
-  it("con la misma edad de jubilación no hay años de proyección y la renta sale del ahorro actual", () => {
+  it("at retirement age there are no projection years and the income comes from current savings", () => {
     const r = computeRetirement({ ...base, currentAge: 65, retirementAge: 65 });
     expect(r.yearsToRetirement).toBe(0);
     expect(r.finalValue).toBe(10000);
     expect(r.monthlyIncome).toBeCloseTo((10000 * 0.04) / 12, 9);
   });
 
-  it("con una edad de jubilación anterior a la actual se trata como 0 años", () => {
+  it("a retirement age below the current age is treated as 0 years", () => {
     const r = computeRetirement({ ...base, currentAge: 70, retirementAge: 65 });
     expect(r.yearsToRetirement).toBe(0);
     expect(r.finalValue).toBe(10000);
   });
 
-  it("con rentabilidad 0 el patrimonio es lo aportado", () => {
+  it("with a zero return the wealth is what was contributed", () => {
     const r = computeRetirement({ ...base, annualReturn: 0, currentAge: 30, retirementAge: 40 });
     expect(r.finalValue).toBeCloseTo(10000 + 500 * 12 * 10, 6);
     expect(r.totalInterest).toBeCloseTo(0, 6);
   });
 
-  it("sin ahorro ni aportaciones la renta es 0", () => {
+  it("without savings or contributions the income is 0", () => {
     const r = computeRetirement({
       currentSavings: 0,
       monthlySavings: 0,
@@ -250,7 +250,7 @@ describe("computeRetirement: bordes", () => {
     expect(r.monthlyIncomeNominal).toBe(0);
   });
 
-  it("con inflación la renta real queda por debajo de la nominal", () => {
+  it("with inflation the real income stays below the nominal income", () => {
     const r = computeRetirement({ ...base, currentAge: 30, retirementAge: 65, inflationRate: 2 });
     expect(r.monthlyIncome).toBeLessThan(r.monthlyIncomeNominal);
   });

@@ -4,12 +4,12 @@ import type { HolidayRentalInput } from "./rentabilidad-alquiler-vacacional.js";
 import { amount, count, percent } from "./schema-helpers.js";
 
 export const holidayRentalSchema = z.strictObject({
-  purchasePrice: amount("Precio de compra."),
-  purchaseCosts: amount("Gastos e impuestos de compra."),
-  nightlyRate: amount("Precio medio por noche."),
-  occupiedNights: count("Noches ocupadas al año.", 366),
-  managementRate: percent("Comisión de plataforma/gestión sobre ingresos."),
-  cleaningFee: amount("Coste de limpieza por estancia.").optional(),
-  avgStayNights: z.number().min(1).max(366).optional().describe("Estancia media en noches (por defecto 3)."),
-  annualExpenses: amount("Gastos fijos anuales (IBI, comunidad, seguro, suministros…)."),
+  purchasePrice: amount("Purchase price."),
+  purchaseCosts: amount("Purchase costs and taxes."),
+  nightlyRate: amount("Average price per night."),
+  occupiedNights: count("Nights occupied per year.", 366),
+  managementRate: percent("Platform/management fee on income."),
+  cleaningFee: amount("Cleaning cost per stay.").optional(),
+  avgStayNights: z.number().min(1).max(366).optional().describe("Average stay in nights (default 3)."),
+  annualExpenses: amount("Fixed annual costs (IBI property tax, community fees, insurance, utilities…)."),
 }) satisfies z.ZodType<HolidayRentalInput>;

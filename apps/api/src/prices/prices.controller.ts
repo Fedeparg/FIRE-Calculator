@@ -8,7 +8,7 @@ import { pricesQuerySchema, type PricesQueryDto } from './dto/prices-query.dto.j
 import { PriceHistoryService, type RefreshSummary } from './price-history.service.js';
 import { PriceReadService, type FxRates, type PriceInfo } from './price-read.service.js';
 
-/** Precios: la lectura sale de nuestra DB; a la fuente externa solo va el cron diario (o el refresco manual de dev). */
+/** Prices: reads come from our DB; only the daily cron (or the dev manual refresh) hits the external source. */
 @Controller('prices')
 @UseGuards(JwtAuthGuard)
 export class PricesController {
@@ -19,8 +19,8 @@ export class PricesController {
   ) {}
 
   /**
-   * `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original.
-   * Como mucho `MAX_PRICE_SYMBOLS` símbolos de 20 caracteres (400 si no).
+   * `?symbols=AAPL,EUNL.DE,BTC-USD` → latest price of each ticker, keyed by the original ticker.
+   * At most `MAX_PRICE_SYMBOLS` symbols of 20 characters (400 otherwise).
    */
   @Get()
   async get(
@@ -30,13 +30,13 @@ export class PricesController {
     return Object.fromEntries(prices);
   }
 
-  /** Tasas FX (USD por unidad de divisa) para convertir el total agregado de la cartera. */
+  /** FX rates (USD per unit of currency) to convert the aggregated portfolio total. */
   @Get('fx')
   async fx(): Promise<FxRates> {
     return this.prices.getFxRates();
   }
 
-  /** Refresco manual solo para desarrollo: bloqueado en producción para no exponer un disparador de tráfico externo. */
+  /** Manual refresh for development only: blocked in production so it does not expose a trigger of external traffic. */
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(): Promise<RefreshSummary> {

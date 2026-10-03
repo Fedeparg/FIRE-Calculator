@@ -11,16 +11,16 @@ import PortfolioTabs from "@/features/portfolio/components/PortfolioTabs";
 type Props = { children: ReactNode; params: Promise<{ locale: string }> };
 
 /**
- * Marco común de las pestañas de la cartera (Resumen, Posiciones, Plusvalías, Objetivo): la
- * cabecera con las acciones, la barra de pestañas y los datos compartidos. Un layout no se
- * vuelve a montar al cambiar de pestaña, así que posiciones, precios y divisa sobreviven a
- * la navegación. Importar y Mi cuenta quedan fuera a propósito: son tareas, no vistas.
+ * Shared frame for the portfolio tabs (Summary, Positions, Capital gains, Goal): the header
+ * with the actions, the tab bar and the shared data. A layout is not remounted when switching
+ * tabs, so positions, prices and currency survive navigation. Import and My account are left
+ * out on purpose: they are tasks, not views.
  */
 export default async function PortfolioTabsLayout({ children, params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Protección server-side: sin sesión válida, al login (con prefijo de locale).
+  // Server-side guard: without a valid session, redirect to login (with the locale prefix).
   await requireSessionUser(locale);
 
   const t = await getTranslations("auth.portfolio");

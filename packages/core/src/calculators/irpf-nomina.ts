@@ -1,9 +1,9 @@
-// Retención de IRPF en nómina sobre el motor bruto→neto. Core puro, orientativo.
+// Payroll IRPF withholding on top of the gross→net engine. Pure core, indicative only.
 
 import { estimateNetSalary, type NetSalaryInput } from "../fiscal/irpf.js";
 
 export interface PayrollWithholdingResult {
-  /** Importes por paga (12 o 14 pagas). */
+  /** Amounts per payment (12 or 14 payments a year). */
   grossPerPayment: number;
   withholdingPerPayment: number;
   socialSecurityPerPayment: number;

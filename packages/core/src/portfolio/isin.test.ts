@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { incomeDefaultsFor, isIsin, isinCountry } from "./isin.js";
 
 describe("isIsin", () => {
-  it("acepta ISIN con su forma y rechaza tickers y cadenas sueltas", () => {
+  it("accepts well-formed ISINs and rejects tickers and arbitrary strings", () => {
     expect(isIsin("IE00B4L5Y983")).toBe(true);
     expect(isIsin("US0378331005")).toBe(true);
     expect(isIsin("AAPL")).toBe(false);
@@ -14,14 +14,14 @@ describe("isIsin", () => {
 });
 
 describe("isinCountry", () => {
-  it("devuelve el prefijo de país o null", () => {
+  it("returns the country prefix or null", () => {
     expect(isinCountry("IE00B4L5Y983")).toBe("IE");
     expect(isinCountry("AAPL")).toBeNull();
   });
 });
 
 describe("incomeDefaultsFor", () => {
-  it("rellena ISIN y país cuando el ticker es un ISIN", () => {
+  it("fills in ISIN and country when the ticker is an ISIN", () => {
     expect(incomeDefaultsFor({ id: "p1", ticker: "US0378331005", name: "Apple", currency: "USD" })).toEqual({
       kind: "dividend",
       positionId: "p1",
@@ -32,7 +32,7 @@ describe("incomeDefaultsFor", () => {
     });
   });
 
-  it("sin ISIN deja isin y país vacíos y usa el ticker como nombre si falta", () => {
+  it("without an ISIN it leaves isin and country empty and falls back to the ticker as the name", () => {
     expect(incomeDefaultsFor({ id: "p2", ticker: "AAPL", name: null, currency: "USD" })).toMatchObject({
       isin: null,
       country: null,

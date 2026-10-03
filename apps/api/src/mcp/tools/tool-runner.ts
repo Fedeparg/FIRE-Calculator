@@ -10,9 +10,9 @@ import { errorResult } from '../mcp-results.js';
 import { InvalidToolInputError, ToolUserError } from '../tool-errors.js';
 
 /**
- * Contexto de seguridad de una petición MCP, derivado del access token verificado. El
- * `userId` es lo que hace que toda tool devuelva solo los datos de su dueño (mismo principio
- * de aislamiento que `positions` con el JWT). Ver `_local/mcp-integracion.md`.
+ * Security context of an MCP request, derived from the verified access token. The `userId` is
+ * what makes every tool return only its owner's data (same isolation principle as `positions`
+ * with the JWT). See `_local/mcp-integracion.md`.
  */
 export type McpContext = {
   userId: string;
@@ -22,19 +22,19 @@ export type McpContext = {
 
 type ToolScope = typeof SCOPE_PORTFOLIO_READ | typeof SCOPE_PORTFOLIO_WRITE;
 
-/** Mensaje al host cuando el token no tiene el scope que exige la tool (step-up). */
+/** Message to the host when the token lacks the scope the tool requires (step-up). */
 const SCOPE_DENIED_MESSAGES: Record<ToolScope, string> = {
   [SCOPE_PORTFOLIO_READ]:
-    'Esta acción requiere permiso de lectura (portfolio:read). Vuelve a conectar la aplicación ' +
-    'concediendo acceso de lectura para poder consultar la cartera.',
+    'This action requires read permission (portfolio:read). Reconnect the application and ' +
+    'grant read access to view the portfolio.',
   [SCOPE_PORTFOLIO_WRITE]:
-    'Esta acción requiere permiso de escritura (portfolio:write). Vuelve a conectar la ' +
-    'aplicación concediendo acceso de escritura para poder modificar la cartera.',
+    'This action requires write permission (portfolio:write). Reconnect the application and ' +
+    'grant write access to modify the portfolio.',
 };
 
 /**
- * Ejecuta el cuerpo de las tools de UNA petición con auditoría y control de scope. Se crea por
- * petición con su contexto, de modo que las tools cierran sobre SU `userId`.
+ * Runs the tool bodies of ONE request with auditing and scope control. It is created per request
+ * with its context, so the tools close over THEIR `userId`.
  */
 export class ToolRunner {
   private static readonly logger = new Logger('McpTools');
@@ -49,17 +49,17 @@ export class ToolRunner {
   }
 
   /**
-   * Ejecuta el cuerpo de una tool de LECTURA: exige `portfolio:read` (que todo token válido
-   * tiene, porque `write` lo implica; ver `withImpliedScopes`) y audita. Los errores de dominio
-   * se traducen a resultado de error de tool (no a un 500): el host los muestra al usuario.
+   * Runs the body of a READ tool: requires `portfolio:read` (which every valid token has, because
+   * `write` implies it; see `withImpliedScopes`) and audits. Domain errors are turned into a tool
+   * error result (not a 500): the host shows them to the user.
    */
   run(tool: string, body: () => Promise<CallToolResult>): Promise<CallToolResult> {
     return this.runWithScope(SCOPE_PORTFOLIO_READ, tool, body);
   }
 
   /**
-   * Igual que `run` pero exige el scope de escritura antes de ejecutar (step-up por-tool). Un
-   * token sin `portfolio:write` recibe un error claro y queda registrado como `denied_scope`.
+   * Like `run`, but requires the write scope before running (per-tool step-up). A token without
+   * `portfolio:write` gets a clear error and is logged as `denied_scope`.
    */
   runWrite(tool: string, body: () => Promise<CallToolResult>): Promise<CallToolResult> {
     return this.runWithScope(SCOPE_PORTFOLIO_WRITE, tool, body);
@@ -86,16 +86,16 @@ export class ToolRunner {
   }
 
   /**
-   * Convierte un error en un mensaje para el host MCP, que lo pasa al LLM y al usuario. Solo
-   * se reenvía el texto de los errores PENSADOS para el usuario: los de entrada de las tools, las
-   * `HttpException` de Nest (detalle en `response`: string u objeto con `message`/`code`) y los de
-   * dominio (`DomainError`), con la misma traducción que REST.
-   * Cualquier otro error (una consulta de Drizzle con su SQL y parámetros, un fallo de red, un
-   * bug) se registra aquí con una referencia y al host solo le llega esa referencia.
+   * Turns an error into a message for the MCP host, which passes it on to the LLM and the user.
+   * Only the text of errors MEANT for the user is forwarded: tool input errors, Nest
+   * `HttpException`s (detail in `response`: a string or an object with `message`/`code`) and domain
+   * errors (`DomainError`), with the same translation as REST.
+   * Any other error (a Drizzle query with its SQL and parameters, a network failure, a bug) is
+   * logged here with a reference, and only that reference reaches the host.
    */
   private toUserMessage(tool: string, error: unknown): string {
     if (error instanceof InvalidToolInputError) {
-      return `Entrada no válida: ${error.message}`;
+      return `Invalid input: ${error.message}`;
     }
     if (error instanceof ToolUserError) {
       return error.message;
@@ -107,14 +107,14 @@ export class ToolRunner {
     }
     const reference = randomUUID();
     ToolRunner.logger.error(
-      `Error interno en la tool ${tool} (ref. ${reference})`,
+      `Internal error in tool ${tool} (ref. ${reference})`,
       error instanceof Error ? error.stack : String(error),
     );
-    return `Error interno al ejecutar la operación (ref. ${reference}).`;
+    return `Internal error while running the operation (ref. ${reference}).`;
   }
 }
 
-/** Texto de una `HttpException` de Nest (`message` y, si lo hay, el `code` de dominio). */
+/** Text of a Nest `HttpException` (`message` and, if present, the domain `code`). */
 function httpExceptionMessage(error: HttpException): string | null {
   const response = error.getResponse();
   if (typeof response === 'string') {

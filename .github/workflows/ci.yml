@@ -1,26 +1,26 @@
-# Integración continua: gate de calidad ANTES de fusionar/desplegar.
+# Continuous integration: quality gate BEFORE merging/deploying.
 #
-# Corre en cada push y pull request, en runners de GitHub (no en el self-hosted de
-# producción): typecheck, lint, tests y build de los DOS paquetes (frontend y API).
-# Los tests del backend levantan un PostgreSQL efímero con Testcontainers, que usa
-# el Docker preinstalado en los runners `ubuntu-latest`.
+# Runs on every push and pull request, on GitHub-hosted runners (not on the
+# self-hosted production one): typecheck, lint, tests and build of BOTH packages
+# (frontend and API). The backend tests spin up an ephemeral PostgreSQL with
+# Testcontainers, which uses the Docker preinstalled on `ubuntu-latest` runners.
 #
-# Para que sea un gate real, marca estos checks como obligatorios en la protección
-# de la rama `main` (Settings → Branches → Branch protection), ya que eso es una
-# configuración del repositorio y no puede vivir en este fichero.
+# For this to be a real gate, mark these checks as required in the `main` branch
+# protection (Settings → Branches → Branch protection), since that is a repository
+# setting and cannot live in this file.
 
 name: ci
 
 on:
-  # Solo `main`: en una rama de PR, el evento `pull_request` ya cubre el gate.
-  # Sin este filtro, cada push a una rama con PR abierto lanzaba CI DOS veces
-  # (y el grupo de concurrencia difiere entre ambos eventos, así que ninguna
-  # cancelaba a la otra).
+  # Only `main`: on a PR branch, the `pull_request` event already covers the gate.
+  # Without this filter, every push to a branch with an open PR ran CI TWICE
+  # (and the concurrency group differs between the two events, so neither
+  # cancelled the other).
   push:
     branches: [main]
   pull_request:
 
-# Cancela ejecuciones antiguas de la misma rama/PR cuando llega un push nuevo.
+# Cancels older runs of the same branch/PR when a new push arrives.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -32,25 +32,27 @@ jobs:
   frontend:
     name: Frontend (Next.js)
     runs-on: ubuntu-latest
+    # A hung job (a test that never ends, a stuck build) must not hold the runner for 6 h.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Instalar pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      - name: Instalar Node
+      - name: Install Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: pnpm
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Caché de compilación de Next: sin ella, cada build parte de cero. La clave
-      # incluye el lockfile y las fuentes; si solo cambian las fuentes, `restore-keys`
-      # recupera la caché del último lockfile igual y Next reaprovecha lo que no cambió.
-      - name: Caché de Next.js
+      # Next build cache: without it, every build starts from scratch. The key
+      # includes the lockfile and the sources; if only the sources change, `restore-keys`
+      # restores the cache of the last matching lockfile and Next reuses what did not change.
+      - name: Next.js cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
@@ -74,20 +76,31 @@ jobs:
   backend:
     name: Backend (NestJS)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Instalar pnpm
+      - name: Install pnpm
         uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
 
-      - name: Instalar Node
+      - name: Install Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
           cache: pnpm
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Migration drift: if `schema.ts` changed without its migration (or a migration was
+      # hand-edited and no longer matches the schema), `drizzle-kit generate` writes new files
+      # and this step fails. It needs no database.
+      - name: Migrations match the schema
+        run: |
+          pnpm core:build
+          pnpm --filter @sextante/api exec drizzle-kit generate
+          git diff --exit-code -- apps/api/drizzle
+          test -z "$(git status --porcelain -- apps/api/drizzle)"
 
       - name: Typecheck
         run: pnpm --filter @sextante/api typecheck
@@ -95,8 +108,41 @@ jobs:
       - name: Lint
         run: pnpm --filter @sextante/api lint
 
-      - name: Tests (Postgres efímero vía Testcontainers)
+      - name: Tests (ephemeral Postgres via Testcontainers)
         run: pnpm --filter @sextante/api test
 
       - name: Build
         run: pnpm --filter @sextante/api build
+
+  # Builds the images that get deployed (without publishing them): a broken Dockerfile or a
+  # dependency that only fails inside the image shows up in the PR, not in the deployment.
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            dockerfile: apps/api/Dockerfile
+          - image: web
+            dockerfile: Dockerfile.web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build ${{ matrix.image }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          # Same build arguments as docker-compose.prod.yml (the web image bakes them in).
+          build-args: |
+            API_URL=http://api:3001
+            NEXT_PUBLIC_SITE_URL=https://sextante.fpardo.net
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}

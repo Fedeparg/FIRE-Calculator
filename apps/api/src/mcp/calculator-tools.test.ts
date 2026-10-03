@@ -12,21 +12,21 @@ import { SAMPLES } from './calculator-samples.js';
 const slugs = Object.keys(CALCULATORS);
 
 describe('CALCULATORS', () => {
-  it('tiene una entrada de muestra para cada calculadora, y ninguna sobrante', () => {
+  it('has a sample input for every calculator, and no extra ones', () => {
     expect([...slugs].sort()).toEqual(Object.keys(SAMPLES).sort());
   });
 
-  it.each(slugs)('%s calcula con una entrada realista y el resultado se serializa', (slug) => {
+  it.each(slugs)('%s computes with a realistic input and the result serialises', (slug) => {
     const result = runCalculator(slug, SAMPLES[slug]);
     expect(result).toBeTypeOf('object');
     expect(() => JSON.stringify(result)).not.toThrow();
   });
 
-  it.each(slugs)('%s rechaza una clave desconocida en vez de ignorarla', (slug) => {
+  it.each(slugs)('%s rejects an unknown key instead of ignoring it', (slug) => {
     expect(() => runCalculator(slug, { ...SAMPLES[slug], notAField: 1 })).toThrow(/notAField/);
   });
 
-  it('da exactamente lo mismo que la calculadora de la web', () => {
+  it('returns exactly the same as the web calculator', () => {
     const input = { principal: 200_000, annualRate: 3, years: 30 };
     expect(runCalculator('hipoteca-fija', input)).toEqual(computeMortgage(input));
 
@@ -34,7 +34,7 @@ describe('CALCULATORS', () => {
     expect(runCalculator('salario-bruto-neto', salary)).toEqual(estimateNetSalary(salary));
   });
 
-  it('el Monte Carlo es el de la web: misma semilla, mismo resultado', () => {
+  it('the Monte Carlo is the web one: same seed, same result', () => {
     const input: MonteCarloInput = {
       annualExpenses: 24_000,
       currentSavings: 100_000,
@@ -49,13 +49,13 @@ describe('CALCULATORS', () => {
     expect(runCalculator('simulador-montecarlo', { ...input, ...options })).toEqual(
       simulateFire({ ...input, returnModel: { kind: 'lognormal' } }, options),
     );
-    // El % en bolsa del modelo histórico va en base 100, igual que en la web.
+    // The historical model's stock share is a 0-100 percentage, as on the web.
     expect(runCalculator('simulador-montecarlo', { ...input, ...options, historicalStockShare: 60 })).toEqual(
       simulateFire({ ...input, returnModel: { kind: 'historical', stockShare: 60 } }, options),
     );
   });
 
-  it('añade la tabla de sensibilidad solo si se pide', () => {
+  it('adds the sensitivity table only when asked', () => {
     const sample = SAMPLES['simulador-montecarlo'];
     expect(runCalculator('simulador-montecarlo', sample)).not.toHaveProperty('sensitivity');
     expect(runCalculator('simulador-montecarlo', { ...sample, includeSensitivity: true })).toHaveProperty(
@@ -63,7 +63,7 @@ describe('CALCULATORS', () => {
     );
   });
 
-  it('rechaza entradas fuera de rango antes de calcular', () => {
+  it('rejects out-of-range inputs before computing', () => {
     const monteCarlo = SAMPLES['simulador-montecarlo'];
     expect(() => runCalculator('simulador-montecarlo', { ...monteCarlo, paths: 1_000_000 })).toThrow(/paths/);
     expect(() => runCalculator('simulador-montecarlo', { ...monteCarlo, retirementYears: 500 })).toThrow();
@@ -77,7 +77,7 @@ describe('CALCULATORS', () => {
     expect(() => runCalculator('salario-bruto-neto', { grossAnnual: 30_000, region: 'navarra' })).toThrow();
   });
 
-  it('un slug desconocido (o heredado de Object) es un error claro', () => {
+  it('an unknown slug (or one inherited from Object) is a clear error', () => {
     expect(() => runCalculator('no-existe', {})).toThrow(UnknownCalculatorError);
     expect(() => runCalculator('constructor', {})).toThrow(UnknownCalculatorError);
     expect(() => runCalculator('__proto__', {})).toThrow(UnknownCalculatorError);
@@ -85,7 +85,7 @@ describe('CALCULATORS', () => {
     expect(hasCalculator('toString')).toBe(false);
   });
 
-  it('la tarjeta resume la serie mensual en el saldo de cada año y el último mes', () => {
+  it('the credit card summarises the monthly series as each year-end balance and the last month', () => {
     const result = runCalculator('intereses-tarjeta-credito', SAMPLES['intereses-tarjeta-credito']) as {
       monthsToPayoff: number;
       yearlySeries: { month: number }[];
@@ -96,7 +96,7 @@ describe('CALCULATORS', () => {
     expect(months.slice(0, -1).every((m) => m % 12 === 0)).toBe(true);
   });
 
-  it('una deuda que no se salda devuelve monthsToPayoff null', () => {
+  it('a debt that is never paid off returns monthsToPayoff null', () => {
     const result = runCalculator('intereses-tarjeta-credito', {
       balance: 10_000,
       annualRate: 30,
@@ -105,7 +105,7 @@ describe('CALCULATORS', () => {
     expect(result).toMatchObject({ monthsToPayoff: null, yearlySeries: [] });
   });
 
-  it('el test de salud financiera puntúa por índice de opción', () => {
+  it('the financial health check scores by option index', () => {
     const best = Object.fromEntries(
       ['emergencyFund', 'savingsRate', 'debt', 'housingCost', 'investing', 'retirement', 'protection', 'tracking'].map(
         (id) => [id, 3],
@@ -118,7 +118,7 @@ describe('CALCULATORS', () => {
 });
 
 describe('listCalculators', () => {
-  it('lista todas con su esquema JSON (tipos, topes y unidades)', () => {
+  it('lists all of them with their JSON Schema (types, bounds and units)', () => {
     expect(
       listCalculators()
         .map((c) => c.slug)
@@ -139,14 +139,14 @@ describe('listCalculators', () => {
     expect(schema.properties.annualRate?.description).toContain('TIN');
   });
 
-  it('filtra por categoría y por slug', () => {
+  it('filters by category and by slug', () => {
     const tax = listCalculators({ category: 'fiscalidad' });
     expect(tax.length).toBeGreaterThan(1);
     expect(tax.every((c) => c.category === 'fiscalidad')).toBe(true);
     expect(listCalculators({ slug: 'no-existe' })).toEqual([]);
   });
 
-  it('depósito y cuenta remunerada comparten esquema', () => {
+  it('deposit and interest-bearing account share a schema', () => {
     const [deposit] = listCalculators({ slug: 'deposito-plazo-fijo' });
     const [account] = listCalculators({ slug: 'cuenta-remunerada' });
     expect(account?.inputSchema).toEqual(deposit?.inputSchema);

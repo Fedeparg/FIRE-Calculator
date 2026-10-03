@@ -10,7 +10,7 @@ import {
 } from "./history-series.js";
 import type { HistoryPointDto } from "./types.js";
 
-/** Punto de serie con lo mínimo: el resto de campos no influye en la construcción. */
+/** Minimal series point: the remaining fields do not affect the construction. */
 function point(date: string, invested: number | null, marketValue: number | null, estimated = false): HistoryPointDto {
   return {
     date,
@@ -25,7 +25,7 @@ function point(date: string, invested: number | null, marketValue: number | null
 }
 
 describe("buildHistorySeries", () => {
-  it("una serie vacía no es pintable", () => {
+  it("an empty series is not plottable", () => {
     const series = buildHistorySeries([]);
     expect(series.points).toEqual([]);
     expect(series.insufficient).toBe(true);
@@ -35,7 +35,7 @@ describe("buildHistorySeries", () => {
     expect(series.to).toBeNull();
   });
 
-  it("un solo punto (cuenta recién creada) todavía no es pintable", () => {
+  it("a single point (brand-new account) is not plottable yet", () => {
     const series = buildHistorySeries([point("2026-01-01", 1000, 1100)]);
     expect(series.points).toHaveLength(1);
     expect(series.insufficient).toBe(true);
@@ -44,7 +44,7 @@ describe("buildHistorySeries", () => {
     expect(series.to).toBe("2026-01-01");
   });
 
-  it("dos puntos ya son suficientes y resumen la variación del periodo", () => {
+  it("two points are enough and summarize the period's change", () => {
     const series = buildHistorySeries([point("2026-01-01", 1000, 1000), point("2026-01-31", 1000, 1250)]);
 
     expect(series.insufficient).toBe(false);
@@ -54,14 +54,14 @@ describe("buildHistorySeries", () => {
     expect(series.to).toBe("2026-01-31");
   });
 
-  it("una caída da una variación negativa", () => {
+  it("a drop yields a negative change", () => {
     const series = buildHistorySeries([point("2026-01-01", 1000, 2000), point("2026-02-01", 1000, 1500)]);
 
     expect(series.changeAbs).toBe(-500);
     expect(series.changePct).toBeCloseTo(-25, 10);
   });
 
-  it("descarta los puntos no convertibles y los cuenta en vez de dibujar ceros", () => {
+  it("drops non-convertible points and counts them instead of drawing zeros", () => {
     const series = buildHistorySeries([
       point("2026-01-01", 1000, 1000),
       point("2026-01-02", null, 1200),
@@ -74,7 +74,7 @@ describe("buildHistorySeries", () => {
     expect(series.changeAbs).toBe(100);
   });
 
-  it("descarta también los importes no finitos", () => {
+  it("also drops non-finite amounts", () => {
     const series = buildHistorySeries([
       point("2026-01-01", Number.NaN, 1000),
       point("2026-01-02", 1000, Number.POSITIVE_INFINITY),
@@ -86,7 +86,7 @@ describe("buildHistorySeries", () => {
     expect(series.insufficient).toBe(true);
   });
 
-  it("ordena cronológicamente aunque la API los devolviera desordenados", () => {
+  it("sorts chronologically even if the API returned them out of order", () => {
     const series = buildHistorySeries([
       point("2026-03-01", 1000, 1300),
       point("2026-01-01", 1000, 1000),
@@ -97,19 +97,19 @@ describe("buildHistorySeries", () => {
     expect(series.changeAbs).toBe(300);
   });
 
-  it("no calcula el porcentaje si se partía de cero (evita dividir por 0)", () => {
+  it("does not compute the percentage when starting from zero (avoids dividing by 0)", () => {
     const series = buildHistorySeries([point("2026-01-01", 0, 0), point("2026-01-02", 100, 120)]);
 
     expect(series.changeAbs).toBe(120);
     expect(series.changePct).toBeNull();
   });
 
-  it("sin puntos estimados, estimatedRanges está vacío", () => {
+  it("without estimated points, estimatedRanges is empty", () => {
     const series = buildHistorySeries([point("2026-01-01", 1000, 1000), point("2026-01-02", 1000, 1100)]);
     expect(series.estimatedRanges).toEqual([]);
   });
 
-  it("calcula el tramo de puntos estimados (reconstrucción) al principio de la serie", () => {
+  it("computes the run of estimated (reconstructed) points at the start of the series", () => {
     const series = buildHistorySeries([
       point("2026-01-01", 1000, 1000, true),
       point("2026-01-02", 1000, 1050, true),
@@ -118,7 +118,7 @@ describe("buildHistorySeries", () => {
     expect(series.estimatedRanges).toEqual([{ from: "2026-01-01", to: "2026-01-02" }]);
   });
 
-  it("un punto descartado (no convertible) no cuenta para los tramos", () => {
+  it("a dropped (non-convertible) point does not count towards the runs", () => {
     const series = buildHistorySeries([
       point("2026-01-01", null, null, true),
       point("2026-01-02", 1000, 1050, true),
@@ -127,7 +127,7 @@ describe("buildHistorySeries", () => {
     expect(series.estimatedRanges).toEqual([{ from: "2026-01-02", to: "2026-01-02" }]);
   });
 
-  it("sombrea por separado cada tramo estimado, sin tragarse los reales de en medio", () => {
+  it("shades each estimated run separately, without swallowing the real points in between", () => {
     const series = buildHistorySeries([
       point("2026-01-01", 1000, 1000, true),
       point("2026-01-05", 1000, 1100, false),
@@ -141,11 +141,11 @@ describe("buildHistorySeries", () => {
     ]);
   });
 
-  it("los rangos ofrecidos son crecientes y el rango por defecto existe", () => {
+  it("the offered ranges are increasing and the default range exists", () => {
     const days = HISTORY_RANGES.map((r) => r.days);
     expect(days).toEqual([...days].sort((a, b) => a - b));
     expect(HISTORY_RANGES.some((r) => r.key === DEFAULT_HISTORY_RANGE)).toBe(true);
-    // El tope coincide con el `HISTORY_MAX_DAYS` del backend: pedir más daría 400.
+    // The cap matches the backend's `HISTORY_MAX_DAYS`: requesting more would return a 400.
     expect(Math.max(...days)).toBe(1825);
     expect(MIN_HISTORY_POINTS).toBe(2);
   });
@@ -163,13 +163,13 @@ describe("gainSince", () => {
     estimated,
   });
 
-  it("no cuenta una aportación como ganancia", () => {
-    // Del 2 de enero al 30 de junio el valor sube 1.500, pero 1.000 son aportación.
+  it("does not count a contribution as a gain", () => {
+    // From 2 January to 30 June the value rises by 1,500, but 1,000 of it is contributions.
     const result = gainSince([point("2026-01-02", 10_000, 11_000), point("2026-06-30", 11_000, 12_500)], "2026-01-01");
     expect(result).toEqual({ gain: 500, since: "2026-01-02", estimated: false });
   });
 
-  it("ignora lo anterior a la fecha y avisa si el punto de partida es estimado", () => {
+  it("ignores what comes before the date and flags an estimated starting point", () => {
     const result = gainSince(
       [point("2025-12-31", 0, 0), point("2026-03-01", 100, 120, true), point("2026-04-01", 100, 90)],
       "2026-01-01",
@@ -177,7 +177,7 @@ describe("gainSince", () => {
     expect(result).toEqual({ gain: -30, since: "2026-03-01", estimated: true });
   });
 
-  it("devuelve null con menos de dos puntos utilizables", () => {
+  it("returns null with fewer than two usable points", () => {
     expect(gainSince([point("2026-02-01", 1, 1)], "2026-01-01")).toBeNull();
     expect(gainSince([], "2026-01-01")).toBeNull();
   });
@@ -204,22 +204,22 @@ describe("withLivePoint", () => {
     totalPositions: 1,
   };
 
-  it("cierra la serie con el valor de hoy", () => {
+  it("ends the series with today's value", () => {
     const points = withLivePoint([snapshot("2026-09-30")], live);
     expect(points.map((p) => p.date)).toEqual(["2026-09-30", "2026-10-01"]);
     expect(points[1]).toMatchObject({ marketValue: 120, estimated: false });
   });
 
-  it("si ya hay snapshot de hoy, manda el snapshot", () => {
+  it("if today already has a snapshot, the snapshot wins", () => {
     expect(withLivePoint([snapshot("2026-10-01")], live)).toHaveLength(1);
   });
 
-  it("no añade nada sin valoración o sin posiciones valoradas", () => {
+  it("adds nothing without a valuation or without valued positions", () => {
     expect(withLivePoint([snapshot("2026-09-30")], null)).toHaveLength(1);
     expect(withLivePoint([snapshot("2026-09-30")], { ...live, valuedPositions: 0 })).toHaveLength(1);
   });
 
-  it("con la serie vacía, el punto de hoy es el único", () => {
+  it("with an empty series, today's point is the only one", () => {
     expect(withLivePoint([], live)).toHaveLength(1);
   });
 });

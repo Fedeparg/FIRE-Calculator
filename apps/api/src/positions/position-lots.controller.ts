@@ -22,9 +22,9 @@ import { PositionLotsService } from './position-lots.service.js';
 import type { PositionLotResponse } from './position.mapper.js';
 
 /**
- * Lotes de una posición, anidados a propósito: el aislamiento se resuelve una vez comprobando
- * que la posición es del usuario del JWT (404) y el lote se busca dentro de ella, así que
- * un id de lote ajeno da 404. Cada mutación reescribe `positions.quantity/avgPrice` en la misma transacción.
+ * A position's lots, nested on purpose: isolation is settled once by checking that the position
+ * belongs to the JWT's user (404) and the lot is looked up inside it, so another user's lot id
+ * gives a 404. Every mutation rewrites `positions.quantity/avgPrice` in the same transaction.
  */
 @Controller('positions/:positionId/lots')
 @UseGuards(JwtAuthGuard)

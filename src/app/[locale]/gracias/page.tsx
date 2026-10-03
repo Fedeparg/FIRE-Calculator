@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: t("meta.title"), robots: { index: false } };
 }
 
-/** Página de aterrizaje tras una donación completada (success_url de Stripe Checkout). */
+/** Landing page after a completed donation (Stripe Checkout success_url). */
 export default async function ThanksPage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);

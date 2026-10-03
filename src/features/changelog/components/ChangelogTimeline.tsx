@@ -6,11 +6,11 @@ import type { Locale } from "@/i18n/types";
 import type { ChangelogRelease } from "../content";
 
 /**
- * Línea temporal de entregas. Componente de servidor: no hay filtros ni estado, así que no
- * envía JavaScript al cliente y la ruta se prerenderiza con ISR igual que la wiki.
+ * Release timeline. Server component: there are no filters or state, so it ships no JavaScript
+ * to the client and the route is prerendered with ISR, just like the wiki.
  */
 type Props = {
-  /** Entregas ya resueltas a un idioma, de más reciente a más antigua. */
+  /** Releases already resolved to one locale, newest first. */
   releases: ChangelogRelease[];
   locale: Locale;
 };
@@ -22,10 +22,10 @@ export default async function ChangelogTimeline({ releases, locale }: Props) {
     <ol role="list" className="relative mt-10 space-y-8">
       {releases.map((release, index) => (
         <li key={release.date} className="relative pl-8 sm:pl-10">
-          {/* Nodo de la línea temporal. El nodo ocupa 0-16 px en horizontal (centro en
-              8 px) y el hilo va a 7 px, de modo que ambos comparten eje. El hilo se
-              dibuja por elemento y llega justo al siguiente (`-bottom-8` = el hueco de
-              `space-y-8`), en vez de ser una barra única que sobresaldría por el final. */}
+          {/* Timeline node. The node spans 0-16 px horizontally (centred at 8 px) and the
+              thread sits at 7 px, so both share an axis. The thread is drawn per item and
+              reaches exactly the next one (`-bottom-8` = the `space-y-8` gap), instead of a
+              single bar that would overshoot the end. */}
           {index < releases.length - 1 && (
             <span aria-hidden className="absolute -bottom-8 left-[7px] top-6 w-px bg-border" />
           )}
@@ -52,8 +52,8 @@ export default async function ChangelogTimeline({ releases, locale }: Props) {
               )}
             </div>
             <h2 className="mt-1 text-lg font-semibold text-foreground">{release.title}</h2>
-            {/* El HTML sale de Markdown de confianza en `content/changelog` (remark descarta HTML
-                embebido), igual que los artículos de la wiki. */}
+            {/* The HTML comes from trusted Markdown in `content/changelog` (remark drops embedded
+                HTML), just like the wiki articles. */}
             <div
               className="prose prose-neutral mt-2 max-w-none text-sm dark:prose-invert prose-a:text-brand prose-strong:text-foreground"
               dangerouslySetInnerHTML={{ __html: release.html }}

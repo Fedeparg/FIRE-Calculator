@@ -3,11 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE, withImpliedScopes } from './oauth.constants.js';
 
 describe('withImpliedScopes', () => {
-  it('añade portfolio:read cuando se concede portfolio:write', () => {
+  it('adds portfolio:read when portfolio:write is granted', () => {
     expect(withImpliedScopes([SCOPE_PORTFOLIO_WRITE])).toEqual([SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE]);
   });
 
-  it('deja igual lo que ya es coherente, sin duplicar ni reordenar', () => {
+  it('leaves already consistent scopes as they are, without duplicating or reordering', () => {
     expect(withImpliedScopes([SCOPE_PORTFOLIO_READ])).toEqual([SCOPE_PORTFOLIO_READ]);
     expect(withImpliedScopes([SCOPE_PORTFOLIO_WRITE, SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE])).toEqual([
       SCOPE_PORTFOLIO_WRITE,

@@ -9,19 +9,19 @@ import { useFormat } from "@/shared/format/use-format";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import DerivativesNotice from "./DerivativesNotice";
 
-/** Id del título: da nombre al panel que contiene el detalle. */
+/** Title id: names the panel that contains the detail. */
 export const POSITION_DETAIL_TITLE_ID = "position-detail-title";
 
 type Props = {
   position: Position;
-  /** Último precio conocido del instrumento. */
+  /** Last known price of the instrument. */
   price: PriceInfo | undefined;
   rates: Record<string, number>;
-  /** El precio aún se está buscando (alta reciente). */
+  /** The price is still being fetched (recently created). */
   pricePending: boolean;
 };
 
-/** Cabecera del detalle: nombre, valor y ganancia de la posición, y sus datos clave. */
+/** Detail header: the position's name, value and gain, and its key data. */
 export default function PositionDetailSummary({ position, price, rates, pricePending }: Props) {
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
@@ -55,7 +55,7 @@ export default function PositionDetailSummary({ position, price, rates, pricePen
               </>
             )}
           </span>
-          {/* La ganancia de hoy, aparte de la total: sin cierre anterior no se enseña. */}
+          {/* Today's gain, separate from the total: without a previous close it is not shown. */}
           {today !== null && (
             <span className={`text-xs tabular-nums ${signedTone(today.abs, "text-muted")}`}>
               {tDetail("todayGain")}: {formatSignedCurrency(today.abs, position.currency)}

@@ -12,9 +12,9 @@ import { inputClass } from "@/shared/ui/field-classes";
 import FormField from "@/shared/ui/FormField";
 
 type Props = {
-  /** Lote en edición, o `null` para dar de alta uno nuevo. */
+  /** Lot being edited, or `null` to create a new one. */
   editing: PositionLot | null;
-  /** Divisa de la posición: los importes del lote van SIEMPRE en ella. */
+  /** Position currency: the lot's amounts are ALWAYS in it. */
   currency: string;
   submitting: boolean;
   onSubmit: (payload: LotPayload) => void;
@@ -22,12 +22,12 @@ type Props = {
 };
 
 /**
- * Alta y edición de un lote. Los importes van en la divisa de la posición (un lote no tiene
- * divisa propia), así que la etiqueta la muestra pero no hay selector que elegir.
+ * Creates and edits a lot. Amounts are in the position's currency (a lot has no currency of its
+ * own), so the label shows it but there is no selector to pick one.
  *
- * La fecha es un `<input type="date">` nativo: da exactamente el `YYYY-MM-DD` que exige el DTO
- * y trae el calendario y la navegación por teclado del sistema, que ninguna implementación
- * propia igualaría.
+ * The date is a native `<input type="date">`: it yields exactly the `YYYY-MM-DD` the DTO requires
+ * and brings the system calendar and keyboard navigation, which no custom implementation would
+ * match.
  */
 export default function PositionLotForm({ editing, currency, submitting, onSubmit, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.lots");
@@ -35,7 +35,7 @@ export default function PositionLotForm({ editing, currency, submitting, onSubmi
   const [tradedAt, setTradedAt] = useState(() => editing?.tradedAt ?? todayUtc());
   const [quantity, setQuantity] = useDecimalText(editing?.quantity);
   const [price, setPrice] = useDecimalText(editing?.price);
-  // Sin comisiones, el campo empieza vacío (no "0"): vacío también vale 0.
+  // Without fees the field starts empty (not "0"): empty also counts as 0.
   const [fees, setFees] = useDecimalText(editing?.fees || null);
   const [note, setNote] = useState(editing?.note ?? "");
 

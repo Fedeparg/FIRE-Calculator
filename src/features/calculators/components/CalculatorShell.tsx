@@ -11,16 +11,16 @@ type Props = {
   title: string;
   intro: string;
   children: React.ReactNode;
-  /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */
+  /** Calculator slug (see `src/features/calculators/registry.ts`). */
   slug?: string;
   /**
-   * Bloque divulgativo de la wiki que se pinta bajo el aviso legal. Lo compone la ruta (no el
-   * shell) para que `calculators` no dependa de `wiki`.
+   * Explanatory wiki block rendered below the legal notice. The route composes it (not the
+   * shell) so `calculators` does not depend on `wiki`.
    */
   explainer?: React.ReactNode;
 };
 
-/** Estructura común a todas las páginas de calculadora. */
+/** Layout shared by every calculator page. */
 export default function CalculatorShell({ title, intro, children, slug, explainer }: Props) {
   const t = useTranslations("common");
   const tNav = useTranslations("nav");
@@ -49,11 +49,11 @@ export default function CalculatorShell({ title, intro, children, slug, explaine
 
       <div className="mt-6">
         {/*
-          El proveedor de estado envuelve la calculadora aquí porque este es el único punto
-          por el que pasan TODAS las páginas de calculadora y el que conoce el slug: así el
-          estado en la URL, el botón de copiar enlace y los escenarios guardados existen una
-          sola vez y no calculadora a calculadora. Añade además la barra de acciones cuando
-          la calculadora declara sus campos (ver `CalculatorState.tsx`).
+          The state provider wraps the calculator here because this is the only point that
+          ALL calculator pages go through and the one that knows the slug: that way URL
+          state, the copy-link button and saved scenarios exist once rather than per
+          calculator. It also adds the actions bar when the calculator declares its fields
+          (see `CalculatorState.tsx`).
         */}
         {slug ? <CalculatorStateProvider slug={slug}>{children}</CalculatorStateProvider> : children}
 

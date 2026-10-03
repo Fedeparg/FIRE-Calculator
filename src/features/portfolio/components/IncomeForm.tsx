@@ -13,9 +13,9 @@ import { inputClass } from "@/shared/ui/field-classes";
 import FormField from "@/shared/ui/FormField";
 
 type Props = {
-  /** Cobro en edición, o `null` para dar de alta uno nuevo. */
+  /** Income entry being edited, or `null` to create a new one. */
   editing: IncomeEvent | null;
-  /** Valores de partida del alta: el panel de una posición fija posición, ISIN, país y divisa. */
+  /** Initial values when creating: a position's panel pins position, ISIN, country and currency. */
   defaults: Pick<IncomePayload, "kind" | "positionId" | "isin" | "name" | "country" | "currency">;
   submitting: boolean;
   onSubmit: (payload: IncomePayload) => void;
@@ -23,9 +23,9 @@ type Props = {
 };
 
 /**
- * Alta y edición de un cobro: dividendo, interés o recompensa del bróker. La retención en origen
- * vacía significa "no la sé" (distinto de 0): el informe avisa de que sin ella no se puede
- * calcular la deducción por doble imposición.
+ * Creates and edits an income entry: dividend, interest or broker reward. An empty withholding at
+ * source means "I don't know it" (not the same as 0): the report warns that without it the
+ * double taxation deduction cannot be computed.
  */
 export default function IncomeForm({ editing, defaults, submitting, onSubmit, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.income");
@@ -33,7 +33,7 @@ export default function IncomeForm({ editing, defaults, submitting, onSubmit, on
   const [paidAt, setPaidAt] = useState(() => editing?.paidAt ?? todayUtc());
   const [currency, setCurrency] = useState(editing?.currency ?? defaults.currency ?? "EUR");
   const [gross, setGross] = useDecimalText(editing?.gross);
-  // En edición, la retención en origen puede ser `null` ("no la sé"): el campo queda vacío.
+  // When editing, the withholding at source may be `null` ("I don't know it"): the field stays empty.
   const [origin, setOrigin] = useDecimalText(editing ? editing.withholdingOrigin : 0);
   const [spain, setSpain] = useDecimalText(editing?.withholdingSpain ?? 0);
   const [country, setCountry] = useState(editing?.country ?? defaults.country ?? "");

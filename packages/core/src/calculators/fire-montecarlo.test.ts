@@ -10,7 +10,7 @@ import { HISTORICAL_RETURNS } from "../data/shiller-returns.js";
 import { mulberry32, normalGenerator } from "../random.js";
 import { firstItem, itemAt } from "../arrays.js";
 
-// Valores por defecto de la UI (MonteCarloCalculator).
+// UI defaults (MonteCarloCalculator).
 const base: MonteCarloInput = {
   annualExpenses: 24000,
   currentSavings: 20000,
@@ -21,28 +21,28 @@ const base: MonteCarloInput = {
   retirementYears: 40,
 };
 
-// Menos vidas en los tests que no miden precisión estadística: más rápidos, igual de deterministas.
+// Fewer paths in tests that do not measure statistical precision: faster, just as deterministic.
 const fast = { paths: 1000 };
 
 describe("simulateFire", () => {
-  it("número FIRE = gasto / tasa de retiro (regla del 4 % → 25x)", () => {
+  it("FIRE number = expenses / withdrawal rate (4% rule → 25x)", () => {
     expect(simulateFire(base, fast).fireNumber).toBeCloseTo(600_000);
   });
 
-  it("es determinista: misma semilla, mismo resultado", () => {
+  it("is deterministic: same seed, same result", () => {
     const a = simulateFire(base, fast);
     const b = simulateFire(base, fast);
     expect(a).toEqual(b);
   });
 
-  it("semillas distintas dan resultados distintos pero cercanos", () => {
+  it("different seeds give different but close results", () => {
     const a = simulateFire(base, { paths: 3000, seed: 1 });
     const b = simulateFire(base, { paths: 3000, seed: 2 });
     expect(a.successRate).not.toBe(b.successRate);
     expect(Math.abs(a.successRate - b.successRate)).toBeLessThan(0.05);
   });
 
-  it("volatilidad 0: todas las vidas iguales y coincide con la calculadora FIRE anual", () => {
+  it("zero volatility: all paths are equal and it matches the annual FIRE calculator", () => {
     const result = simulateFire({ ...base, volatility: 0 }, fast);
     const fire = computeFire({
       annualExpenses: 24000,
@@ -56,7 +56,7 @@ describe("simulateFire", () => {
     expect(result.yearsToFire.p50).toBe(fire.yearsToFire);
     expect(result.yearsToFire.p90).toBe(fire.yearsToFire);
     expect(result.deterministicYearsToFire).toBe(fire.yearsToFire);
-    // Retirando el 4 % con un 5 % real constante, el dinero no se acaba nunca.
+    // Withdrawing 4% with a constant 5% real return, the money never runs out.
     expect(result.successRate).toBe(1);
     for (const point of result.series) {
       expect(point.p10).toBeCloseTo(point.deterministic, 6);
@@ -64,28 +64,28 @@ describe("simulateFire", () => {
     }
   });
 
-  it("volatilidad 0 con retiro insostenible → éxito 0 %", () => {
-    // Tasa de retiro del 10 % con rentabilidad 0: el dinero dura 10 años, no 40.
+  it("zero volatility with an unsustainable withdrawal → 0% success", () => {
+    // A 10% withdrawal rate with a zero return: the money lasts 10 years, not 40.
     const result = simulateFire({ ...base, volatility: 0, annualReturn: 0, withdrawalRate: 10 }, fast);
     expect(result.reachRate).toBe(1);
     expect(result.successRate).toBe(0);
     expect(result.survivalRate).toBe(0);
   });
 
-  it("gasto 0: ya eres libre (año 0) y el éxito es del 100 %", () => {
+  it("zero expenses: already free (year 0) and success is 100%", () => {
     const result = simulateFire({ ...base, annualExpenses: 0 }, fast);
     expect(result.fireNumber).toBe(0);
     expect(result.yearsToFire).toEqual({ p10: 0, p50: 0, p90: 0 });
     expect(result.successRate).toBe(1);
   });
 
-  it("patrimonio ≥ número FIRE: se retira en el año 0", () => {
+  it("wealth ≥ FIRE number: retires in year 0", () => {
     const result = simulateFire({ ...base, currentSavings: 1_000_000 }, fast);
     expect(result.reachRate).toBe(1);
     expect(result.yearsToFire.p50).toBe(0);
   });
 
-  it("sin ahorro ni rentabilidad nunca se llega: años null y éxito 0 %", () => {
+  it("without savings or return FIRE is never reached: null years and 0% success", () => {
     const result = simulateFire({ ...base, monthlySavings: 0, annualReturn: 0, volatility: 0 }, fast);
     expect(result.reachRate).toBe(0);
     expect(result.successRate).toBe(0);
@@ -94,13 +94,13 @@ describe("simulateFire", () => {
     expect(result.deterministicYearsToFire).toBeNull();
   });
 
-  it("0 años de retiro: toda vida que llega cuenta como éxito", () => {
+  it("0 retirement years: every path that gets there counts as a success", () => {
     const result = simulateFire({ ...base, retirementYears: 0 }, fast);
     expect(result.successRate).toBe(result.reachRate);
     expect(result.survivalRate).toBe(1);
   });
 
-  it("sanea entradas no finitas o negativas", () => {
+  it("sanitizes non-finite or negative inputs", () => {
     const result = simulateFire(
       {
         annualExpenses: Number.NaN,
@@ -122,7 +122,7 @@ describe("simulateFire", () => {
     }
   });
 
-  it("volatilidad extrema: sin valores negativos ni no finitos", () => {
+  it("extreme volatility: no negative or non-finite values", () => {
     const result = simulateFire({ ...base, volatility: 500 }, fast);
     expect(result.successRate).toBeGreaterThanOrEqual(0);
     expect(result.successRate).toBeLessThanOrEqual(1);
@@ -132,20 +132,20 @@ describe("simulateFire", () => {
     }
   });
 
-  it("más volatilidad → menor probabilidad de éxito", () => {
+  it("more volatility → lower probability of success", () => {
     const calm = simulateFire({ ...base, volatility: 5 });
     const wild = simulateFire({ ...base, volatility: 25 });
     expect(wild.successRate).toBeLessThan(calm.successRate);
   });
 
-  it("más años de retiro → menor (o igual) probabilidad de éxito", () => {
+  it("more retirement years → lower (or equal) probability of success", () => {
     const short = simulateFire({ ...base, retirementYears: 20 });
     const long = simulateFire({ ...base, retirementYears: 50 });
     expect(long.successRate).toBeLessThanOrEqual(short.successRate);
     expect(long.reachRate).toBe(short.reachRate);
   });
 
-  it("los percentiles del patrimonio están ordenados cada año", () => {
+  it("wealth percentiles are ordered every year", () => {
     for (const p of simulateFire(base, fast).series) {
       expect(p.p10).toBeLessThanOrEqual(p.p25);
       expect(p.p25).toBeLessThanOrEqual(p.p50);
@@ -155,14 +155,14 @@ describe("simulateFire", () => {
     }
   });
 
-  it("la gráfica llega hasta el año FIRE mediano más los años de retiro", () => {
+  it("the chart reaches the median FIRE year plus the retirement years", () => {
     const result = simulateFire(base, fast);
     const last = result.series.at(-1);
     expect(last?.year).toBe((result.yearsToFire.p50 ?? 0) + base.retirementYears);
   });
 
-  it("la lognormal respeta la media aritmética: E[1 + r] ≈ 1 + μ", () => {
-    // Misma parametrización que el simulador, comprobada de forma independiente.
+  it("the lognormal preserves the arithmetic mean: E[1 + r] ≈ 1 + μ", () => {
+    // Same parameterization as the simulator, checked independently.
     const mu = 0.05;
     const sigma = 0.15;
     const v = Math.log(1 + (sigma * sigma) / ((1 + mu) * (1 + mu)));
@@ -182,9 +182,9 @@ describe("simulateFire", () => {
     expect(Math.sqrt(sumSq / n - mean * mean)).toBeCloseTo(sigma, 2);
   });
 
-  it("valor de referencia con los valores por defecto (semilla fija)", () => {
+  it("reference value with the defaults (fixed seed)", () => {
     const result = simulateFire(base);
-    // 28 y no 27 como en la calculadora FIRE: aquí el ahorro se aporta una vez al año.
+    // 28 rather than 27 as in the FIRE calculator: here savings are contributed once a year.
     expect(result.deterministicYearsToFire).toBe(28);
     expect(result.yearsToFire).toMatchInlineSnapshot(`
       {
@@ -198,23 +198,23 @@ describe("simulateFire", () => {
   });
 });
 
-describe("simulateFire — modelo histórico", () => {
+describe("simulateFire — historical model", () => {
   const historical = (stockShare: number): MonteCarloInput => ({
     ...base,
     returnModel: { kind: "historical", stockShare },
   });
 
-  it("es determinista con la misma semilla", () => {
+  it("is deterministic with the same seed", () => {
     expect(simulateFire(historical(60), fast)).toEqual(simulateFire(historical(60), fast));
   });
 
-  it("ignora la rentabilidad y la volatilidad tecleadas", () => {
+  it("ignores the typed-in return and volatility", () => {
     const a = simulateFire(historical(60), fast);
     const b = simulateFire({ ...historical(60), annualReturn: 12, volatility: 40 }, fast);
     expect(b).toEqual(a);
   });
 
-  it("la referencia determinista usa la media histórica de la mezcla", () => {
+  it("the deterministic reference uses the historical mean of the mix", () => {
     const stocks = HISTORICAL_RETURNS.reduce((sum, y) => sum + y.stocks, 0) / HISTORICAL_RETURNS.length;
     const result = simulateFire(historical(100), fast);
     const expected = computeFire({
@@ -228,22 +228,22 @@ describe("simulateFire — modelo histórico", () => {
     expect(result.deterministicYearsToFire).toBe(expected.yearsToFire);
   });
 
-  it("100 % acciones llega antes que 100 % bonos", () => {
+  it("100% stocks gets there sooner than 100% bonds", () => {
     const stocks = simulateFire(historical(100), fast);
     const bonds = simulateFire(historical(0), fast);
     expect(stocks.yearsToFire.p50 ?? Infinity).toBeLessThan(bonds.yearsToFire.p50 ?? Infinity);
     expect(stocks.reachRate).toBeGreaterThanOrEqual(bonds.reachRate);
   });
 
-  it("acota el porcentaje en acciones a 0–100 y trata lo no finito como 0", () => {
+  it("clamps the stock share to 0–100 and treats non-finite values as 0", () => {
     expect(simulateFire(historical(150), fast)).toEqual(simulateFire(historical(100), fast));
     expect(simulateFire(historical(-20), fast)).toEqual(simulateFire(historical(0), fast));
     expect(simulateFire(historical(Number.NaN), fast)).toEqual(simulateFire(historical(0), fast));
   });
 
-  it("los bloques recorren años consecutivos de la serie", () => {
-    // Con un solo camino y sin ahorro ni gasto, la riqueza año a año revela las rentabilidades:
-    // dentro de cada bloque tienen que ser años históricos consecutivos.
+  it("blocks walk consecutive years of the series", () => {
+    // With a single path and no savings or spending, year-over-year wealth reveals the returns:
+    // within each block they must be consecutive historical years.
     const result = simulateFire(
       { ...historical(100), annualExpenses: 1e12, currentSavings: 1, monthlySavings: 0, retirementYears: 0 },
       { paths: 1 },
@@ -257,7 +257,7 @@ describe("simulateFire — modelo histórico", () => {
     }
   });
 
-  it("no produce valores no finitos", () => {
+  it("produces no non-finite values", () => {
     const result = simulateFire(historical(60), fast);
     for (const point of result.series) {
       for (const key of ["p10", "p25", "p50", "p75", "p90", "deterministic"] as const) {
@@ -268,26 +268,26 @@ describe("simulateFire — modelo histórico", () => {
 });
 
 describe("withdrawalSensitivity", () => {
-  it("devuelve una fila por tasa, con su número FIRE", () => {
+  it("returns one row per rate, with its FIRE number", () => {
     const rows = withdrawalSensitivity(base, [3, 4, 5], fast);
     expect(rows.map((r) => r.rate)).toEqual([3, 4, 5]);
     expect(itemAt(rows, 0).fireNumber).toBeCloseTo(800_000);
     expect(itemAt(rows, 1).fireNumber).toBeCloseTo(600_000);
   });
 
-  it("cada fila coincide con simular esa tasa por separado", () => {
+  it("each row matches simulating that rate on its own", () => {
     const row = firstItem(withdrawalSensitivity(base, [3.5], fast));
     expect(row.successRate).toBe(simulateFire({ ...base, withdrawalRate: 3.5 }, fast).successRate);
   });
 
-  it("con un retiro largo, retirar más reduce la probabilidad de éxito", () => {
+  it("with a long retirement, withdrawing more lowers the probability of success", () => {
     const rows = withdrawalSensitivity({ ...base, retirementYears: 50 }, [3, 4, 5, 6], fast);
     for (let i = 1; i < rows.length; i++) {
       expect(itemAt(rows, i).successRate).toBeLessThanOrEqual(itemAt(rows, i - 1).successRate);
     }
   });
 
-  it("funciona también con el modelo histórico", () => {
+  it("also works with the historical model", () => {
     const rows = withdrawalSensitivity(
       { ...base, returnModel: { kind: "historical", stockShare: 60 } },
       undefined,

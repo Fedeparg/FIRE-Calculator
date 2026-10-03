@@ -9,9 +9,9 @@ import RowActions from "@/shared/ui/RowActions";
 
 type Props = {
   income: readonly IncomeEvent[];
-  /** Cobro que se está editando (se resalta). */
+  /** Income entry being edited (highlighted). */
   editingId: string | null;
-  /** Cobro pendiente de confirmar su borrado. */
+  /** Income entry pending delete confirmation. */
   confirmingId: string | null;
   submitting: boolean;
   onEdit: (event: IncomeEvent) => void;
@@ -20,7 +20,7 @@ type Props = {
   onConfirmDelete: (id: string) => void;
 };
 
-/** Cobros con su íntegro y retenciones, en su divisa; editar y borrar (con confirmación). */
+/** Income entries with their gross amount and withholdings, in their currency; edit and delete (with confirmation). */
 export default function IncomeList({
   income,
   editingId,

@@ -1,12 +1,12 @@
-// Serie histórica de la cartera para la gráfica. Core puro. El backend guarda un punto diario en
-// euros y lo reexpresa con las tasas FX de cada día; aquí solo se recorta, se descartan los puntos no
-// convertibles y se resume el periodo.
+// Historical portfolio series for the chart. Pure core. The backend stores one daily point in euros
+// and re-expresses it with each day's FX rates; here we only trim, drop non-convertible points and
+// summarize the period.
 
 import { firstItem, lastItem } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 import type { HistoryPointDto } from "./types.js";
 
-/** Punto listo para pintar. Es un `type` (no `interface`) para tener firma de índice implícita: `TimeSeriesChart` recibe `Record<string, …>`. */
+/** Point ready to plot. It is a `type` (not an `interface`) to get an implicit index signature: `TimeSeriesChart` takes `Record<string, …>`. */
 export type HistoryChartPoint = {
   date: string;
   invested: number;
@@ -16,7 +16,7 @@ export type HistoryChartPoint = {
 
 export type HistoryRangeKey = "30d" | "90d" | "1y" | "all";
 
-/** `all` pide el máximo del backend (`HISTORY_MAX_DAYS` = 1825); pasarse da 400. */
+/** `all` requests the backend maximum (`HISTORY_MAX_DAYS` = 1825); going over returns a 400. */
 export const HISTORY_RANGES: readonly { key: HistoryRangeKey; days: number }[] = [
   { key: "30d", days: 30 },
   { key: "90d", days: 90 },
@@ -26,28 +26,28 @@ export const HISTORY_RANGES: readonly { key: HistoryRangeKey; days: number }[] =
 
 export const DEFAULT_HISTORY_RANGE: HistoryRangeKey = "90d";
 
-/** Puntos mínimos para dibujar una línea; con menos (cuenta recién creada) la UI explica en vez de mostrar un lienzo vacío. */
+/** Minimum points to draw a line; with fewer (a new account) the UI explains instead of showing an empty canvas. */
 export const MIN_HISTORY_POINTS = 2;
 
 export interface HistorySeries {
-  /** Puntos completos, en orden cronológico. */
+  /** Complete points, in chronological order. */
   points: HistoryChartPoint[];
-  /** Puntos descartados por no ser convertibles a la divisa elegida. */
+  /** Points dropped because they cannot be converted to the chosen currency. */
   dropped: number;
   insufficient: boolean;
-  /** Variación del valor de mercado entre el primer y el último punto, o `null`. */
+  /** Change in market value between the first and the last point, or `null`. */
   changeAbs: number | null;
-  /** La misma variación en %, o `null` si partía de 0. */
+  /** The same change in %, or `null` if it started from 0. */
   changePct: number | null;
   from: string | null;
   to: string | null;
-  /** Tramos contiguos de puntos `estimated`; se calculan por tramos para tolerar filas sin reparar por el backfill. */
+  /** Contiguous runs of `estimated` points; computed per run to tolerate rows the backfill did not repair. */
   estimatedRanges: { from: string; to: string }[];
 }
 
 /**
- * Convierte la respuesta de la API en una serie pintable. Un punto sin `invested` o `marketValue`
- * no era convertible ese día: se descarta y cuenta en `dropped`, en vez de dibujar un 0.
+ * Turns the API response into a plottable series. A point without `invested` or `marketValue` was
+ * not convertible that day: it is dropped and counted in `dropped`, instead of drawing a 0.
  */
 export function buildHistorySeries(points: readonly HistoryPointDto[]): HistorySeries {
   const usable: HistoryChartPoint[] = [];
@@ -71,7 +71,7 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
     });
   }
 
-  // ordenar aquí evita depender del orden del backend
+  // sorting here avoids depending on the backend's order
   usable.sort((a, b) => compareStrings(a.date, b.date));
 
   const first = usable[0];
@@ -108,14 +108,14 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
 export interface PeriodGain {
   gain: number;
   since: string;
-  /** El punto de partida es anterior al seguimiento en Sextante (reconstrucción). */
+  /** The starting point predates tracking in Sextante (reconstruction). */
   estimated: boolean;
 }
 
 /**
- * Ganancia desde `from`: variación de la ganancia acumulada (no del valor de mercado), para que una
- * aportación a mitad de año no cuente como rentabilidad. Parte del primer punto con fecha `>= from`;
- * `null` con menos de dos puntos utilizables.
+ * Gain since `from`: change in the cumulative gain (not in market value), so a mid-year
+ * contribution does not count as return. Starts from the first point dated `>= from`; `null` with
+ * fewer than two usable points.
  */
 export function gainSince(points: readonly HistoryPointDto[], from: string): PeriodGain | null {
   const usable = points
@@ -138,8 +138,9 @@ export interface LiveValuation {
 }
 
 /**
- * Añade la valoración en vivo como último punto (el snapshot del día se escribe de noche). Solo si
- * es posterior al último punto y hay algo valorado; si ya hay punto de hoy, manda el snapshot.
+ * Appends the live valuation as the last point (the day's snapshot is written overnight). Only if it
+ * is later than the last point and something is valued; if today already has a point, the snapshot
+ * wins.
  */
 export function withLivePoint(points: readonly HistoryPointDto[], live: LiveValuation | null): HistoryPointDto[] {
   if (!live || live.valuedPositions === 0 || !Number.isFinite(live.marketValue)) return [...points];

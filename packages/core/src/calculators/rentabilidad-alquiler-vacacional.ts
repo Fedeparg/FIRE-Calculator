@@ -1,4 +1,4 @@
-// Rentabilidad de un alquiler vacacional: por noches ocupadas, con comisión de gestión y limpieza por estancia. Core puro.
+// Holiday rental yield: by occupied nights, with a management fee and a cleaning cost per stay. Pure core.
 
 export interface HolidayRentalInput {
   purchasePrice: number;

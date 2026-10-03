@@ -1,25 +1,25 @@
-// Migraciones (`MIGRATION`): cambio de custodia entre entidades de TR, en parejas salida/entrada.
+// Migrations (`MIGRATION`): custody change between TR entities, in outbound/inbound pairs.
 
 import { firstItem } from "../../arrays.js";
 import { absUnits, formatUnits, parseUnits } from "../decimal.js";
 import type { ImportWarning } from "../types.js";
 import { ISIN, isValidDate, normalizeDatetime, type Row, type SkipFn } from "./rows.js";
 
-/** Escala con la que se comparan cantidades de migraciones (el export trae hasta 10). */
+/** Scale at which migration quantities are compared (the export has up to 10 decimals). */
 const MIGRATION_SCALE = 10;
 
 /**
- * Ventana en la que una salida y una entrada de migración cuentan como la misma. En un export
- * real las dos filas de una pareja difieren en unos pocos milisegundos (3-6 ms), no coinciden
- * al instante exacto; un segundo cubre ese desfase sin confundir migraciones distintas.
+ * Window within which an outbound and an inbound migration count as the same one. In a real
+ * export the two rows of a pair differ by a few milliseconds (3-6 ms) rather than matching the
+ * exact instant; one second covers that gap without confusing distinct migrations.
  */
 const MIGRATION_PAIR_WINDOW_MS = 1_000;
 
 /**
- * Empareja migraciones (salida + entrada con mismo ISIN y cantidad, casi al mismo instante).
- * Las parejas se descartan como `migration_pair`; las filas sueltas como `migration_unbalanced`
- * y generan un aviso, porque pueden esconder historial que falta o sobra. No reclaman su
- * `transaction_id`: nunca se importan.
+ * Pairs migrations (outbound + inbound with the same ISIN and quantity, at almost the same
+ * instant). Pairs are skipped as `migration_pair`; unpaired rows as `migration_unbalanced`, and
+ * they raise a warning because they may hide missing or extra history. They do not claim their
+ * `transaction_id`: they are never imported.
  */
 export function resolveMigrations(migrations: readonly Row[], skip: SkipFn): ImportWarning[] {
   type Leg = { row: Row; ms: number };
@@ -33,7 +33,7 @@ export function resolveMigrations(migrations: readonly Row[], skip: SkipFn): Imp
       skip(row, "invalid_row");
       continue;
     }
-    // `Date` solo llega al milisegundo: se recortan los microsegundos antes de parsear.
+    // `Date` only goes down to the millisecond: microseconds are trimmed before parsing.
     const ms = new Date(`${executedAt.slice(0, 23)}Z`).getTime();
     const key = `${row.symbol}|${formatUnits(absUnits(shares), MIGRATION_SCALE)}`;
     const group = groups.get(key) ?? { outgoing: [], incoming: [] };

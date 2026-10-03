@@ -8,12 +8,12 @@ import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnController } from './tax-return.controller.js';
 import { TaxReturnService } from './tax-return.service.js';
 
-/** Informe de la Renta: saldos pendientes de años anteriores y la base del ahorro montada en el servidor. */
+/** Renta (income tax return) report: pending balances from previous years and the savings base built on the server. */
 @Module({
   imports: [SessionModule, PositionsModule, IncomeModule, FxReferenceModule],
   controllers: [TaxReturnController],
   providers: [PendingBalancesService, TaxReturnService],
-  // Lo usa también la tool MCP `get_tax_return_report`.
+  // Also used by the MCP tool `get_tax_return_report`.
   exports: [PendingBalancesService, TaxReturnService],
 })
 export class TaxReturnModule {}

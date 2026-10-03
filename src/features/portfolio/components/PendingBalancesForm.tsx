@@ -19,16 +19,16 @@ import { inputClass } from "@/shared/ui/field-classes";
 type Row = { key: number; originYear: number; kind: SavingsGroup; amount: string };
 
 type Props = {
-  /** Lo guardado. */
+  /** What is saved. */
   balances: readonly PendingNegative[];
-  /** Primer ejercicio que calcula Sextante: los saldos son de los cuatro anteriores. */
+  /** First tax year Sextante computes: the balances come from the four before it. */
   firstYear: number;
 };
 
 /**
- * Saldos negativos de la base del ahorro pendientes de compensar que vienen de ejercicios que
- * Sextante no calcula. Se copian del anexo C.3 de la última declaración presentada. Los de los
- * ejercicios que sí calcula se arrastran solos.
+ * Negative savings-base balances pending offset that come from tax years Sextante does not
+ * compute. They are copied from annex C.3 of the last return filed. Those from years it does
+ * compute are carried forward automatically.
  */
 export default function PendingBalancesForm({ balances, firstYear }: Props) {
   const t = useTranslations("portfolio.pendingBalances");
@@ -48,7 +48,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   );
   const [nextKey, setNextKey] = useState(balances.length);
   const save = useApiMutation();
-  // El refresco va en una transición: "Guardado" no aparece hasta que llegan los datos nuevos.
+  // The refresh runs in a transition: "Saved" does not appear until the new data arrives.
   const [refreshing, startTransition] = useTransition();
   const busy = save.status === "pending" || refreshing;
   const [saved, setSaved] = useState(false);

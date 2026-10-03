@@ -4,10 +4,9 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { mcpAuditLog } from '../db/schema.js';
 
 /**
- * Registro de auditoría de invocaciones MCP. Guarda solo METADATOS de la llamada (usuario,
- * cliente, tool, resultado), nunca los datos de la cartera. Trazabilidad e investigación de
- * incidentes (parte de las barreras anti data-leakage). Best-effort: un fallo al auditar no
- * debe tumbar la operación del usuario.
+ * Audit log of MCP invocations. Stores only call METADATA (user, client, tool, outcome), never
+ * portfolio data. For traceability and incident investigation (part of the anti data-leakage
+ * barriers). Best-effort: a failure to audit must not break the user's operation.
  */
 @Injectable()
 export class McpAuditService {
@@ -24,7 +23,7 @@ export class McpAuditService {
     try {
       await this.db.insert(mcpAuditLog).values({ userId, clientId, tool, outcome });
     } catch (error) {
-      this.logger.warn(`No se pudo registrar auditoría MCP (${tool}): ${String(error)}`);
+      this.logger.warn(`Could not record MCP audit entry (${tool}): ${String(error)}`);
     }
   }
 }

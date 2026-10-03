@@ -6,29 +6,29 @@ import { PortfolioSnapshotsService } from '../src/portfolio/portfolio-snapshots.
 import { PriceHistoryService } from '../src/prices/price-history.service.js';
 
 /**
- * Anula la pasada de arranque de `DailyJobsScheduler` (backfill de precios y snapshots).
- * Llamarlo ANTES de `NestFactory.create` en los tests que arrancan la app completa.
+ * Disables the startup pass of `DailyJobsScheduler` (price and snapshot backfill).
+ * Call it BEFORE `NestFactory.create` in the tests that start the full app.
  *
- * Esa pasada se lanza con `void` en `onApplicationBootstrap` y corre en segundo plano justo tras
- * `listen()`: pide históricos y FX a Yahoo (red real, o reintentos con backoff si `fetch` está
- * stubbeado) y lee la BD. Si el primer `resetDb` (TRUNCATE) coincide con ella, Postgres detecta
- * un interbloqueo y el test falla de forma intermitente. Estos tests no dependen de ella.
+ * That pass is launched with `void` in `onApplicationBootstrap` and runs in the background right
+ * after `listen()`: it requests history and FX from Yahoo (real network, or retries with backoff
+ * if `fetch` is stubbed) and reads the DB. If the first `resetDb` (TRUNCATE) coincides with it,
+ * Postgres detects a deadlock and the test fails intermittently. These tests do not depend on it.
  *
- * Los spies se deshacen con `vi.restoreAllMocks()`.
+ * The spies are undone with `vi.restoreAllMocks()`.
  */
 export function disableStartupBackfill(): void {
   vi.spyOn(PriceHistoryService.prototype, 'ensureHistoryForActivePositions').mockResolvedValue();
   vi.spyOn(PortfolioSnapshotsService.prototype, 'backfillAll').mockResolvedValue();
 }
 
-/** Espera a que el cerrojo del scheduler se libere (la pasada de arranque, ya anulada, termina). */
+/** Waits for the scheduler lock to be released (the startup pass, already disabled, finishes). */
 export async function waitForStartupJobs(app: INestApplication, timeoutMs = 10_000): Promise<void> {
-  // `running` es privado: es el cerrojo de los trabajos de precios y no hay otra señal pública.
+  // `running` is private: it is the lock of the price jobs and there is no other public signal.
   const scheduler = app.get<{ running: boolean }>(DailyJobsScheduler);
   const deadline = Date.now() + timeoutMs;
   while (scheduler.running) {
     if (Date.now() > deadline) {
-      throw new Error('El trabajo de arranque no terminó a tiempo');
+      throw new Error('The startup job did not finish in time');
     }
     await new Promise((resolve) => setTimeout(resolve, 20));
   }

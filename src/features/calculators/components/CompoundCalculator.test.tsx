@@ -11,8 +11,8 @@ import es from "../../../../messages/es.json";
 import CalculatorStateProvider from "./CalculatorState";
 import CompoundCalculator from "./CompoundCalculator";
 
-// Las gráficas (recharts) necesitan medidas de layout que jsdom no tiene, y el panel de
-// escenarios habla con la API: aquí solo interesan los campos y los resultados.
+// The charts (recharts) need layout measurements jsdom does not provide, and the scenario
+// panel talks to the API: only the fields and results matter here.
 vi.mock("@/shared/charts/TimeSeriesChart", () => ({ default: () => null }));
 vi.mock("@/shared/charts/BreakdownDonut", () => ({ default: () => null }));
 vi.mock("./ScenarioPanel", () => ({ default: () => null }));
@@ -37,7 +37,7 @@ function renderCompound() {
   );
 }
 
-/** Texto del valor de un `Stat` a partir de su etiqueta. */
+/** Value text of a `Stat`, looked up by its label. */
 function statValue(label: string): string {
   return screen.getByText(label).parentElement?.textContent?.replace(label, "") ?? "";
 }
@@ -45,22 +45,22 @@ function statValue(label: string): string {
 const { formatEUR } = getFormatters("es");
 const texts = es.calc["interes-compuesto"];
 
-describe("CompoundCalculator (campos enlazados)", () => {
+describe("CompoundCalculator (bound fields)", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/calculadoras/interes-compuesto");
   });
 
-  it("deriva etiqueta y ayuda de la clave del campo (calc.<slug>.<clave> y help.<clave>)", () => {
+  it("derives label and help from the field key (calc.<slug>.<key> and help.<key>)", () => {
     renderCompound();
 
     expect(screen.getByRole("spinbutton", { name: texts.initial })).toHaveValue("5000");
     expect(screen.getByRole("spinbutton", { name: texts.years })).toHaveValue("25");
-    // La ayuda (`help.<clave>`) está en el DOM aunque el popover esté cerrado (`HelpTooltip`).
+    // The help (`help.<key>`) is in the DOM even while the popover is closed (`HelpTooltip`).
     expect(screen.getByText(texts.help.initial)).toBeInTheDocument();
     expect(screen.getByText(texts.help.inflationRate)).toBeInTheDocument();
   });
 
-  it("recalcula con lo tecleado y lo escribe en la URL", async () => {
+  it("recomputes with typed input and writes it to the URL", async () => {
     const user = userEvent.setup();
     renderCompound();
     const years = screen.getByRole("spinbutton", { name: texts.years });
@@ -73,7 +73,7 @@ describe("CompoundCalculator (campos enlazados)", () => {
     await waitFor(() => expect(window.location.search).toBe("?years=10"));
   });
 
-  it("aplica un enlace compartido a campos y resultados", async () => {
+  it("applies a shared link to fields and results", async () => {
     window.history.replaceState(null, "", "/calculadoras/interes-compuesto?initial=20000&frequency=annual");
 
     renderCompound();

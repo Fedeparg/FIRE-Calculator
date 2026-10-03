@@ -26,29 +26,29 @@ import {
 export type SavedScenariosApi = {
   status: ScenariosStatus;
   scenarios: readonly SavedScenario[];
-  /** Plan activo: el de `updatedAt` más reciente (el que enseñan Resumen y avisos). */
+  /** Active plan: the one with the latest `updatedAt` (the one Summary and alerts show). */
   active: SavedScenario | null;
-  /** Último fallo (de la carga o de la última acción); se limpia al iniciar la siguiente acción. */
+  /** Last failure (from loading or the last action); cleared when the next action starts. */
   error: ScenarioErrorKey | null;
-  /** Crea y pone el nuevo el primero. `null` si falla (con `error`) o si el nombre está vacío. */
+  /** Creates a scenario and puts it first. `null` on failure (with `error`) or if the name is empty. */
   create: (name: string, inputs: Record<string, unknown>) => Promise<SavedScenario | null>;
   /**
-   * PATCH parcial. Por defecto el escenario conserva su posición en la lista; con
-   * `promote` pasa a ser el primero (guardar renueva `updatedAt`, o sea, lo activa).
+   * Partial PATCH. By default the scenario keeps its position in the list; with `promote` it
+   * moves to the front (saving bumps `updatedAt`, which activates it).
    */
   update: (id: string, patch: ScenarioPatch, options?: { promote?: boolean }) => Promise<SavedScenario | null>;
-  /** PATCH vacío: renueva `updatedAt` para que el plan sea el activo, y lo pone primero. */
+  /** Empty PATCH: bumps `updatedAt` so the plan becomes the active one, and moves it first. */
   activate: (id: string) => Promise<SavedScenario | null>;
   remove: (id: string) => Promise<boolean>;
 };
 
 /**
- * CRUD de los escenarios guardados de una calculadora (`slug`) con sus estados de carga y
- * sesión. Sin sesión (401) o sin respuesta, `status` es `anonymous` y el llamador sigue
- * calculando en local. Con `slug` `undefined` no carga (queda en `loading`).
+ * CRUD for a calculator's (`slug`) saved scenarios, with their loading and session states.
+ * Without a session (401) or without a response, `status` is `anonymous` and the caller keeps
+ * computing locally. With an `undefined` `slug` nothing loads (it stays in `loading`).
  *
- * La lista se guarda en la consulta y las acciones la corrigen en local (sin recargar) cuando
- * la API confirma; el estado local se descarta si la consulta devuelve datos nuevos.
+ * The list lives in the query and actions patch it locally (without refetching) once the API
+ * confirms; the local state is discarded if the query returns new data.
  */
 export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
   const query = useApiQuery<SavedScenario[]>(slug ? scenariosListPath(slug) : null, {
@@ -57,11 +57,11 @@ export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
   const { status, loadError } = classifyScenariosQuery(query);
   const loaded = query.status === "ready" ? query.data : null;
 
-  // Lista corregida a mano, atada a los datos de la consulta de los que parte.
+  // List patched by hand, tied to the query data it started from.
   const [local, setLocal] = useState<LocalScenarios | null>(null);
   const scenarios = currentScenarios(local, loaded);
 
-  // `undefined` = aún no hay acciones: se muestra el fallo de la carga, si lo hubo.
+  // `undefined` = no actions yet: show the loading failure, if any.
   const [actionError, setActionError] = useState<ScenarioErrorKey | null | undefined>(undefined);
   const error = actionError === undefined ? loadError : actionError;
 
@@ -80,7 +80,7 @@ export function useSavedScenarios(slug: string | undefined): SavedScenariosApi {
     }
   }
 
-  /** El backend rechaza nombres vacíos con 400; se evita el viaje. */
+  /** The backend rejects empty names with a 400; skip the round trip. */
   function rejectEmptyName(name: string | undefined): boolean {
     if (name === undefined || name.trim() !== "") return false;
     setActionError("errorInvalid");

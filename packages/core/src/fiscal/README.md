@@ -1,432 +1,455 @@
-# Motor fiscal (`packages/core/src/fiscal`)
+# Tax engine (`packages/core/src/fiscal`)
 
-Alcance, supuestos, fuentes y limitaciones de cada módulo. Todas las cifras son
-**orientativas** y se refieren al ejercicio `FISCAL_YEAR` (`brackets.ts`). No es
-asesoramiento fiscal.
+Scope, assumptions, sources and limitations of each module. All figures are
+**indicative** and refer to tax year `FISCAL_YEAR` (`brackets.ts`). This is not
+tax advice.
 
 ## `brackets.ts`
 
-Escalas oficiales, constantes del rendimiento del trabajo y motor de tramos
-progresivos. Es la única fuente de verdad de los tipos impositivos.
+Official scales, employment-income constants and the progressive-bracket engine. It is the
+single source of truth for tax rates.
 
-- **Revisión anual**: `FISCAL_REVIEW_BY` marca cuándo revisar las cifras de
-  `FISCAL_YEAR` (escalas, mínimos, Seguridad Social, `withholding-rates.ts`). Desde
-  esa fecha falla un test de `brackets.test.ts`: es un recordatorio, no una caducidad.
-- **Patrimonio, Donaciones y planes de pensiones**: el mínimo exento y la exención de
-  la vivienda (Ley 19/1991), los umbrales y coeficientes por parentesco del ISD (Ley
-  29/1987, art. 22.2) y el tope del 30 % de los planes (art. 52 LIRPF) también viven
-  aquí; las calculadoras solo los importan.
+- **Annual review**: `FISCAL_REVIEW_BY` marks when to review the `FISCAL_YEAR` figures
+  (scales, minimums, Social Security, `withholding-rates.ts`). From that date a test in
+  `brackets.test.ts` fails: it is a reminder, not an expiry date.
+- **Wealth Tax, Gift Tax and pension plans**: the exempt minimum and the primary-residence
+  exemption of the Wealth Tax (Ley 19/1991), the thresholds and kinship coefficients of the
+  Inheritance and Gift Tax, ISD (Ley 29/1987, art. 22.2), and the 30% cap on pension plans
+  (art. 52 LIRPF) also live here; the calculators only import them.
 
-- **Escala estatal general** (art. 63.1.1º LIRPF): se aplica tal cual. La ley ya
-  la da dividida por dos (tipos 9,50 a 24,50); multiplicarla por 0,5 la dividiría
-  dos veces. Fuente: AEAT, Manual práctico de Renta 2025, "Gravamen estatal".
-- **Escala autonómica supletoria** (art. 65 LIRPF): coincide con la estatal hasta
-  60.000 €, pero su último tramo es un 22,50 % plano, sin el desdoblamiento de
-  300.000 € al 24,50 %. Confundirlas sobreestima las rentas > 300.000 € (49 % en
-  vez del 47 % real). Desde 2011 no hay supletoriedad real: rige solo para Ceuta y
-  Melilla (DA 32ª LIRPF) y residentes en el extranjero, y es la que se usa si no
-  se indica comunidad.
-- **Escala general** `IRPF_GENERAL_SCALE` = estatal + supletoria tramo a tramo (el 47 %
-  final sale de 24,50 + 22,50).
-- **Ahorro, Patrimonio (Ley 19/1991, art. 30) y Sucesiones (Ley 29/1987, art. 21)**:
-  escalas estatales; las CCAA pueden aprobar la suya.
-- **Seguridad Social del trabajador**: 6,50 % indefinido (contingencias comunes
-  4,70 + desempleo 1,55 + FP 0,10 + MEI 0,15), 6,55 % temporal; base máxima
-  5.101,20 €/mes × 12. Fuente: Orden de cotización 2026.
-- **Gastos de difícil justificación** (estimación directa simplificada, art. 30
-  RIRPF, RD 439/2007): 5 % con tope de 2.000 €. El 7 % fue excepcional de 2023.
-- **Reducción por rendimientos del trabajo** (art. 20 LIRPF): escala decreciente de
-  tres tramos; por encima del tercer límite es 0.
-- **Planes de pensiones** (art. 52 LIRPF): límite individual 1.500 €, hasta 8.500 €
-  adicionales por contribuciones empresariales, conjunto 10.000 € y, además, el
-  30 % de los rendimientos netos del trabajo y de actividades económicas.
-- **Mínimos** (arts. 57-60 LIRPF): los descendientes se computan al 100 %; si se
-  repartieran con el otro progenitor serían la mitad.
+- **General state scale** (art. 63.1.1º LIRPF): applied as is. The law already gives it
+  halved (rates 9.50 to 24.50); multiplying it by 0.5 would halve it twice. Source: AEAT,
+  Manual práctico de Renta 2025, "Gravamen estatal".
+- **Default regional scale (escala autonómica supletoria)** (art. 65 LIRPF): matches the
+  state scale up to €60,000, but its last bracket is a flat 22.50%, without the split at
+  €300,000 to 24.50%. Mixing them up overstates income above €300,000 (49% instead of the
+  actual 47%). Since 2011 there is no real fallback: it only applies to Ceuta and Melilla
+  (DA 32ª LIRPF) and to residents abroad, and it is the one used when no region is given.
+- **General scale** `IRPF_GENERAL_SCALE` = state + default regional scale, bracket by bracket
+  (the final 47% comes from 24.50 + 22.50).
+- **Savings, Wealth Tax (Ley 19/1991, art. 30) and Inheritance Tax (Ley 29/1987, art. 21)**:
+  state scales; the regions (CCAA) may pass their own.
+- **Employee Social Security**: 6.50% permanent contract (common contingencies 4.70 +
+  unemployment 1.55 + vocational training (FP) 0.10 + MEI 0.15), 6.55% temporary contract;
+  maximum base €5,101.20/month × 12. Source: Orden de cotización 2026.
+- **Hard-to-justify expenses (gastos de difícil justificación)** (simplified direct assessment,
+  estimación directa simplificada, art. 30 RIRPF, RD 439/2007): 5% capped at €2,000. The 7%
+  was a one-off for 2023.
+- **Employment income reduction (reducción por rendimientos del trabajo)** (art. 20 LIRPF):
+  decreasing scale with three tiers; above the third limit it is 0.
+- **Pension plans** (art. 52 LIRPF): individual limit €1,500, up to €8,500 more for employer
+  contributions, joint limit €10,000 and, on top of that, 30% of net employment and business
+  income.
+- **Minimums** (arts. 57-60 LIRPF): descendants count at 100%; if shared with the other parent
+  they would count at half.
 
 ## `irpf.ts`
 
-Rendimiento del trabajo para las calculadoras de salario bruto→neto, retención,
-planes de pensiones e IRPF de autónomos. Aproxima el cálculo de la AEAT por el
-método de doble escala: cuota(base) − cuota(mínimo personal y familiar).
+Employment income for the gross-to-net salary, withholding, pension-plan and self-employed IRPF
+calculators. It approximates the AEAT calculation with the two-scale method:
+tax(base) − tax(personal and family minimum).
 
-- **Sin comunidad**: escala conjunta `IRPF_GENERAL_SCALE` y mínimo estatal (comportamiento
-  de Ceuta y Melilla).
-- **Con comunidad**: cuota estatal (escala y mínimo estatales) + cuota autonómica
-  (escala de la comunidad y su mínimo propio si lo tiene), cada una acotada a cero
-  por separado. El mínimo autonómico solo alimenta la cuota autonómica (art. 46.1.a
-  Ley 22/2009).
-- **Limitaciones**: no se modelan deducciones autonómicas (muchas y de gran
-  efecto en el resultado real).
+- **No region**: combined scale `IRPF_GENERAL_SCALE` and the state minimum (the behaviour of
+  Ceuta and Melilla).
+- **With a region**: state tax (state scale and minimum) + regional tax (the region's scale and
+  its own minimum, if it has one), each floored at zero separately. The regional minimum only
+  feeds the regional tax (art. 46.1.a Ley 22/2009).
+- **Limitations**: regional deductions are not modelled (there are many and they have a large
+  effect on the actual result).
 
 ## `regions.ts`
 
-Escalas autonómicas y mínimos personales y familiares de las 15 comunidades de
-régimen común.
+Regional scales and personal and family minimums (mínimo personal y familiar) of the 15
+common-regime regions (comunidades autónomas de régimen común).
 
-- **Combinación**: `cuotaÍntegraGeneral = escalaEstatal(BLG) + escalaAutonómica(BLG)`,
-  sin factor 0,5. Cada cuota es independiente: `escala(BLG) − escala(mínimo)`,
-  acotada a cero por separado.
-- **Sin rama "la comunidad no legisló"**: desde 2011 se exceptúa la aplicación
-  supletoria de la normativa estatal en tarifa autonómica y las 15 comunidades
-  tienen escala propia.
-- **Base del ahorro**: no es competencia autonómica (arts. 66.1 y 76 LIRPF las fija
-  la ley estatal), así que no se parametriza por comunidad.
-- **Fuentes**: AEAT, Manual práctico de Renta 2025 (actualizado en marzo de 2026),
-  capítulo 15 "Gravamen autonómico"; contrastado con Hacienda, _Tributación
-  Autonómica. Medidas 2026_ (29/04/2026), que confirma que ninguna comunidad
-  modificó su escala de 2026 respecto de 2025: valen para ambos ejercicios.
-- **Canarias, último tramo**: el Anexo I de Hacienda dice «26 % para BL > 121.200 €»,
-  pero es texto idéntico en los PDF de Medidas 2025 y 2026, boilerplate anterior a
-  la deflactación del 2,1 % (121.200 × 1,021 = 123.745,2). Vale 123.745 €, que es lo
-  que da la AEAT. No "corregir" a 121.200.
-- **Mínimos autonómicos**: importes del ejercicio 2025 (AEAT, "Cuadro comparativo de
-  los importes de los mínimos personales y familiares, estatal y autonómicos para
-  2025", 17/03/2026). Hacienda confirma que en 2026 ejercen la competencia las
-  mismas comunidades en los mismos términos, pero no publica importes de 2026 y el
-  manual de Renta 2026 aún no existe: la continuidad es razonable pero no está
-  verificada. Hueco declarado. Los importes por tramo de edad son totales
-  acumulados, no incrementos. No se modelan el incremento por ascendiente > 75 años
-  ni los gastos de asistencia de terceras personas.
-- **Illes Balears sin mínimo propio, a propósito**: el cuadro de la AEAT dice «5.550
-  euros anuales, en general. 6.105 euros anuales si tiene más de 65 años + 1.265
-  euros anuales, mayor de 65 años + 1.540 adicionales, mayor de 75» y es ambiguo
-  sobre si 6.105 sustituye a 5.550 o se acumula con el +1.265. Antes de codificarlo
-  hay que leer el art. 1 del TR balear (Decreto Legislativo 1/2014). Mientras tanto
-  usa el mínimo estatal: mejor un hueco declarado que un número inventado.
-- **La Rioja sin mínimo propio**: solo modifica el mínimo por discapacidad de
-  descendientes (3.300 / 9.900), que las calculadoras no modelan (solo la del
-  contribuyente, donde mantiene los importes estatales).
-- **Territorios no soportados**: se muestran en el selector deshabilitados en vez de
-  omitirlos, porque quien no se ve asume que el resultado genérico le vale.
-  - Régimen foral (Álava, Bizkaia, Gipuzkoa, Navarra): Concierto/Convenio
-    Económico con ley propia. Su escala es el impuesto total, no una mitad que se
-    sume a la estatal, y el País Vasco tiene tres escalas (una por territorio). No
-    hay ninguna cifra foral en el módulo.
-  - Ceuta y Melilla: su escala es la supletoria (art. 65 LIRPF), pero no se modela
-    la deducción por rentas obtenidas allí (art. 68.4 LIRPF, 60 %), que domina el
-    resultado; dar la cuota sin ella engañaría.
-- **Limitaciones**: no se modelan las deducciones autonómicas (≈358 vigentes).
+- **Combination**: `generalGrossTax = stateScaleTax(BLG) + regionalScaleTax(BLG)` (general
+  gross tax liability, cuota íntegra general, on the general taxable base, base liquidable
+  general or BLG), with no 0.5 factor. Each tax is independent: `scaleTax(BLG) −
+  scaleTax(minimum)`, floored at zero separately.
+- **No "the region did not legislate" branch**: since 2011 the fallback application of the state
+  rules to the regional rate no longer applies, and all 15 regions have their own scale.
+- **Savings base (base del ahorro)**: not a regional competence (arts. 66.1 and 76 LIRPF; it is
+  set by state law), so it is not parameterised by region.
+- **Sources**: AEAT, Manual práctico de Renta 2025 (updated in March 2026), chapter 15
+  "Gravamen autonómico"; cross-checked against Hacienda, _Tributación Autonómica. Medidas 2026_
+  (29/04/2026), which confirms that no region changed its 2026 scale from 2025: they hold for
+  both tax years.
+- **Canarias, last bracket**: Hacienda's Annex I says 26% for a taxable base above €121,200
+  (original: «26 % para BL > 121.200 €»), but the text is identical in the Medidas 2025 and
+  2026 PDFs, boilerplate that predates the 2.1% deflation (121,200 × 1.021 = 123,745.2). The
+  right value is €123,745, which is what the AEAT gives. Do not "fix" it to 121,200.
+- **Regional minimums**: tax year 2025 amounts (AEAT, "Cuadro comparativo de los importes de los
+  mínimos personales y familiares, estatal y autonómicos para 2025", 17/03/2026). Hacienda
+  confirms that in 2026 the same regions exercise the competence on the same terms, but it does
+  not publish 2026 amounts and the Renta 2026 manual does not exist yet: continuity is
+  reasonable but unverified. Declared gap. The amounts per age bracket are cumulative totals,
+  not increments. Neither the increase for ascendants over 75 nor third-party care expenses are
+  modelled.
+- **Illes Balears without its own minimum, on purpose**: the AEAT table says "€5,550 a year,
+  in general. €6,105 a year if over 65 + €1,265 a year, over 65 + 1,540 more, over 75"
+  (original: «5.550 euros anuales, en general. 6.105 euros anuales si tiene más de 65 años +
+  1.265 euros anuales, mayor de 65 años + 1.540 adicionales, mayor de 75») and is ambiguous
+  about whether 6,105 replaces 5,550 or adds to the +1,265. Before coding it, read art. 1 of
+  the Balearic consolidated text (Decreto Legislativo 1/2014). Until then the state minimum is
+  used: better a declared gap than a made-up number.
+- **La Rioja without its own minimum**: it only changes the minimum for descendants with a
+  disability (3,300 / 9,900), which the calculators do not model (only the taxpayer's own
+  disability, where it keeps the state amounts).
+- **Unsupported territories**: shown disabled in the selector instead of omitted, because
+  someone who does not see their territory assumes the generic result applies to them.
+  - Foral regime (régimen foral: Álava, Bizkaia, Gipuzkoa, Navarra): Concierto/Convenio
+    Económico with their own law. Their scale is the whole tax, not a half added to the state
+    one, and the Basque Country has three scales (one per territory). There is no foral figure
+    in the module.
+  - Ceuta and Melilla: their scale is the default one (art. 65 LIRPF), but the deduction for
+    income earned there (art. 68.4 LIRPF, 60%) is not modelled, and it dominates the result;
+    giving the tax without it would mislead.
+- **Limitations**: regional deductions are not modelled (≈358 in force).
 
 ## `plusvalias.ts`
 
-Ganancias y pérdidas patrimoniales por transmisión de valores homogéneos:
-emparejamiento FIFO de lotes (la cuota va aparte, en `savings-tax.ts`).
-Lo consumen la simulación "¿qué pasaría si vendo?" y el informe de ganancias
-realizadas (`realised-gains.ts`), con las mismas reglas.
+Capital gains and losses (ganancias y pérdidas patrimoniales) from transfers of homogeneous
+securities (valores homogéneos): FIFO lot matching (the tax lives separately in
+`savings-tax.ts`). It is used by the "what if I sell?" simulation and by the realised-gains
+report (`realised-gains.ts`), with the same rules.
 
-**Modela**
+**Models**
 
-- FIFO obligatorio para valores homogéneos: art. 37.2 Ley 35/2006 (valores
-  cotizados) y art. 37.1.b (participaciones en IIC). No se elige lote ni coste medio.
-- Valor de adquisición = importe + gastos y comisiones de compra (art. 35.1); las
-  comisiones del lote se prorratean entre las participaciones vivas.
-- Valor de transmisión = importe recibido − gastos y comisiones de venta (art. 35.2).
-- **Ampliaciones liberadas** (art. 37.1.a LIRPF): el coste total de las acciones antiguas se
-  reparte entre antiguas y nuevas, y las nuevas heredan la antigüedad de las antiguas. Una
-  compra a **precio 0 y sin comisiones** se interpreta como acciones totalmente liberadas (así las
-  importa Trade Republic, `BONUS_ISSUE`) y `walkLots` la reparte proporcionalmente entre los lotes
-  vivos en ese momento (solo si el precio es un 0 de verdad: un precio no numérico, que se sanea
-  a 0, queda como compra propia): cada lote gana títulos, conserva su coste total y su fecha (y su orden
-  FIFO). Con ello la ganancia cuadra con el ejemplo del Manual práctico de Renta 2025 (Parte 1,
-  págs. 885-887: 900 acciones de 2001 + 600 liberadas + 500 parcialmente liberadas de 2011; venta
-  de 1.600 a 10 € → 6.000 + 500 = 6.500 €). Supuestos: las **parcialmente liberadas** (se paga algo)
-  no se distinguen de una compra normal y siguen como compra; sin lotes vivos la compra a precio 0
-  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Pendiente de la revisión
-  del asesor fiscal: una compra manual a 0 (regalo, error de tecleo) también se reparte; la solución
-  completa es un flag explícito de ampliación que escriba el importador. Fuente: Ley 35/2006,
-  art. 37.1.a, https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
+- Mandatory FIFO for homogeneous securities: art. 37.2 Ley 35/2006 (listed securities) and
+  art. 37.1.b (units in collective investment undertakings, IIC). Neither lot picking nor
+  average cost.
+- Acquisition value = amount + purchase costs and fees (art. 35.1); a lot's fees are prorated
+  across its remaining units.
+- Transfer value = amount received − sale costs and fees (art. 35.2).
+- **Bonus issues (ampliaciones liberadas)** (art. 37.1.a LIRPF): the total cost of the old
+  shares is spread across old and new shares, and the new ones inherit the holding period of
+  the old ones. A purchase at **price 0 and with no fees** is read as fully paid-up bonus shares
+  (that is how Trade Republic exports them, `BONUS_ISSUE`) and `walkLots` spreads it
+  proportionally across the lots open at that moment (only if the price is a genuine 0: a
+  non-numeric price, sanitised to 0, stays an ordinary purchase): each lot gains shares and
+  keeps its total cost and its date (and its FIFO order). With this, the gain matches the
+  example in the Manual práctico de Renta 2025 (Part 1, pp. 885-887: 900 shares from 2001 + 600
+  bonus shares + 500 partly paid-up shares from 2011; sale of 1,600 at €10 → 6,000 + 500 =
+  €6,500). Assumptions: **partly paid-up** bonus shares (something is paid) are not told apart
+  from an ordinary purchase and stay a purchase; with no open lots, a purchase at price 0 is an
+  ordinary purchase. It also affects `simulateSale` and `buildOpenLots`. Pending review by the
+  tax adviser: a manual purchase at 0 (a gift, a typo) is spread as well; the complete fix is an
+  explicit bonus-issue flag written by the importer. Source: Ley 35/2006, art. 37.1.a,
+  https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
-**No modela** (resultado solo orientativo)
+**Does not model** (indicative result only)
 
-- Regla de los dos meses en la simulación de venta (`simulateSale` mira la venta aislada); sí la
-  aplica el informe anual, vía `wash-sale.ts`.
-- Compensación con otras ganancias y pérdidas: la simulación mira la venta aislada,
-  así que una pérdida da cuota 0 en vez del ahorro fiscal real. (El informe anual sí
-  compensa las ventas del mismo ejercicio.)
-- Resto de la base del ahorro (dividendos, intereses, otras ventas), que puede
-  empujar la ganancia a un tramo superior.
-- Retenciones, coeficientes de abatimiento (DT 9ª), no residentes, traspasos de
-  fondos con diferimiento (art. 94) y especialidades forales.
+- The two-month rule in the sale simulation (`simulateSale` looks at the sale in isolation); the
+  annual report does apply it, through `wash-sale.ts`.
+- Offsetting against other gains and losses: the simulation looks at the sale in isolation, so a
+  loss gives a tax of 0 instead of the actual tax saving. (The annual report does offset the
+  sales of the same tax year.)
+- The rest of the savings base (dividends, interest, other sales), which can push the gain into
+  a higher bracket.
+- Withholding, reduction coefficients (coeficientes de abatimiento, DT 9ª), non-residents,
+  tax-deferred fund switches (traspasos, art. 94) and foral specifics.
 
 ## `fx-reference.ts`
 
-Tipo de cambio de referencia del BCE vigente en una fecha, para pasar a euros operaciones en
-divisa. La serie la descarga y cachea la API (`apps/api/src/fx-reference/`) del ECB Data Portal
-(series `EXR.D.<DIVISA>.EUR.SP00.A`), que son los tipos que publica el Banco de España.
+ECB reference exchange rate in force on a date, to convert foreign-currency transactions to
+euros. The API (`apps/api/src/fx-reference/`) downloads and caches the series from the ECB Data
+Portal (series `EXR.D.<CURRENCY>.EUR.SP00.A`), which are the rates published by the Banco de
+España.
 
-- **Festivos y fines de semana:** el BCE no publica; vale la última publicación anterior a la
-  fecha. Si la última queda a más de `MAX_RATE_GAP_DAYS` (7) días, no es un festivo sino que
-  falta la serie, y no hay tipo (mejor sin cifra que con un cambio que no corresponde).
-- **Sin publicación posterior:** nunca se usa un tipo de un día posterior a la operación.
-- **Antes de 1999** no hay serie (el euro nace el 4 de enero de 1999).
+- **Holidays and weekends:** the ECB does not publish; the last publication before the date
+  applies. If the last one is more than `MAX_RATE_GAP_DAYS` (7) days old, it is not a holiday
+  but a missing series, and there is no rate (better no figure than a rate that does not
+  belong to the date).
+- **No later publication:** a rate from a day after the transaction is never used.
+- **Before 1999** there is no series (the euro was born on 4 January 1999).
 
 ## `realised-gains.ts`
 
-Informe anual de ganancias y pérdidas realizadas: ventas ya registradas, emparejadas
-por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas dentro de él.
+Annual report of realised gains and losses: sales already recorded, matched by FIFO
+(`walkLots`), converted to euros, grouped by tax year and offset within it.
 
-**Modela**
+**Models**
 
-- FIFO, valores de adquisición y transmisión con comisiones (ver `plusvalias.ts`).
-- FIFO por valor, no por posición: el criterio se aplica a todas las
-  participaciones del contribuyente, estén en el bróker que estén. Si el mismo
-  símbolo está en dos posiciones, una venta en cualquiera empareja primero la compra
-  más antigua de las dos; cada venta se atribuye a la posición donde se registró.
-- Integración y compensación dentro del ejercicio (art. 49.1.b LIRPF): se suman
-  ganancias y pérdidas del mismo año y la cuota se estima sobre el saldo si es
-  positivo.
-- **Valores en divisa (criterio de la DGT):** la ganancia se calcula en la divisa en que
-  están denominados los valores y la diferencia se convierte a euros al tipo vigente el día
-  de la venta. Los valores de transmisión y de adquisición se convierten con ese mismo tipo,
-  de modo que su resta es la ganancia. Fuentes: consultas vinculantes V2422-20, V0706-22 y
-  V0152-26 (27/01/2026), que repiten literalmente el criterio de una consulta de 6 de julio
-  de 2017: «debiendo efectuarse dicho
-  cálculo en la moneda en que se encuentren denominadas las acciones y efectuar la conversión
-  de la diferencia resultante a euros al tipo de cambio vigente en la fecha en la que haya
-  tenido lugar la alteración patrimonial».
-- **Diferencias de cambio:** cambiar la divisa a euros es otra ganancia o pérdida (art. 33
-  LIRPF; V2466-08, citada en V0152-26), por la diferencia entre lo que costó la divisa y lo
-  que se recibe por ella. El informe la calcula por lote vendido como
-  `adquisición / tipo de la venta − adquisición / tipo de la compra`, **suponiendo que la
-  divisa se compró el día de la compra y se cambia a euros el día de la venta** (lo que hace
-  un bróker con cuenta en euros). Con ese supuesto, ganancia + diferencia de cambio es
-  exactamente convertir cada operación al tipo de su fecha (lo comprueba un test de
-  propiedades). Si el usuario guarda la divisa en una cuenta, la diferencia se imputa cuando
-  la cambia (art. 14.2.e LIRPF) y el informe no puede saberlo: lo avisa en pantalla.
-- **Regla de los dos meses** (`wash-sale.ts`): la pérdida diferida no cuenta en el ejercicio de su
-  venta (`deferred`, `eur.deferredLoss`) y sí en el de la venta definitiva de los recomprados
-  (`integrated`, `eur.integratedLoss`); `gains`, `losses`, `net`, `total` y `tax` ya reflejan la regla
-  (`computableGain = gain − deferredLoss + integratedLoss`). La pérdida se convierte a euros con el
-  tipo del día de la venta que la originó y se integra por ese importe, no al tipo de la venta
-  posterior (si esa venta no tiene tipo, se usa el de la que la integra). La diferencia de cambio
-  no es una transmisión de valores y no se difiere. Los derivados (`isDerivative`) no se agrupan
-  con una acción del mismo símbolo, pero sí están sujetos: los de la cartera son warrants y
-  certificados con ISIN, valores negociables (DGT V1790-07); V2172-21 y V3755-16 solo excluyen
-  contratos como opciones y futuros (que Sextante no distingue: limitación declarada). Una venta sin tipo del día
-  (`unconverted`) queda fuera de los totales también en lo diferido.
-- **Sin tipo del día de la venta** (divisa que el BCE no publica, serie no disponible), la
-  venta va a `unconverted`, en su divisa y fuera de los totales y de la cuota. **Sin tipo de
-  alguna compra** (anterior a 1999), la ganancia sí se convierte pero no la diferencia de
-  cambio (`fxIncomplete`).
+- FIFO, acquisition and transfer values with fees (see `plusvalias.ts`).
+- FIFO per security, not per position: the rule applies to all of the taxpayer's units,
+  whatever broker they are held at. If the same symbol is in two positions, a sale in either
+  matches the oldest purchase of the two first; each sale is attributed to the position where
+  it was recorded.
+- Netting and offsetting within the tax year (integración y compensación, art. 49.1.b LIRPF):
+  gains and losses of the same year are added up and the tax is estimated on the balance if it
+  is positive.
+- **Foreign-currency securities (DGT criterion):** the gain is computed in the currency the
+  securities are denominated in, and the difference is converted to euros at the rate in force
+  on the sale date. The transfer and acquisition values are converted at that same rate, so
+  their difference is the gain. Sources: binding rulings V2422-20, V0706-22 and V0152-26
+  (27/01/2026), which repeat word for word the criterion of a ruling of 6 July 2017: the
+  calculation must be done in the currency the shares are denominated in, converting the
+  resulting difference to euros at the exchange rate in force on the date of the capital
+  change (original: «debiendo efectuarse dicho cálculo en la moneda en que se encuentren
+  denominadas las acciones y efectuar la conversión de la diferencia resultante a euros al tipo
+  de cambio vigente en la fecha en la que haya tenido lugar la alteración patrimonial»).
+- **FX differences (diferencias de cambio):** converting the currency to euros is a separate
+  gain or loss (art. 33 LIRPF; V2466-08, cited in V0152-26), for the difference between what
+  the currency cost and what is received for it. The report computes it per sold lot as
+  `acquisition / sale rate − acquisition / purchase rate`, **assuming the currency was bought on
+  the purchase date and converted to euros on the sale date** (what a broker with a euro
+  account does). Under that assumption, gain + FX difference is exactly converting each
+  transaction at the rate of its own date (a property test checks it). If the user keeps the
+  currency in an account, the difference is recognised when they convert it (art. 14.2.e LIRPF)
+  and the report cannot know it: it warns about it on screen.
+- **Two-month rule** (`wash-sale.ts`): the deferred loss does not count in the tax year of its
+  sale (`deferred`, `eur.deferredLoss`) but does in the year of the final sale of the
+  repurchased securities (`integrated`, `eur.integratedLoss`); `gains`, `losses`, `net`, `total`
+  and `tax` already reflect the rule (`computableGain = gain − deferredLoss + integratedLoss`).
+  The loss is converted to euros at the rate of the day of the sale that caused it and is
+  integrated for that amount, not at the rate of the later sale (if that sale has no rate, the
+  integrating sale's rate is used). The FX difference is not a transfer of securities and is not
+  deferred. Derivatives (`isDerivative`) are not grouped with a share of the same symbol, but
+  they are subject to the rule: the ones in the portfolio are warrants and certificates with an
+  ISIN, which are transferable securities (DGT V1790-07); V2172-21 and V3755-16 only exclude
+  contracts such as options and futures (which Sextante does not tell apart: declared
+  limitation). A sale without a rate for its date (`unconverted`) is left out of the totals,
+  including the deferred amounts.
+- **No rate for the sale date** (a currency the ECB does not publish, series unavailable): the
+  sale goes to `unconverted`, in its currency and out of the totals and the tax. **No rate for
+  some purchase** (before 1999): the gain is converted but the FX difference is not
+  (`fxIncomplete`).
 
-**No modela** (el informe lo avisa en pantalla)
+**Does not model** (the report warns about it on screen)
 
-- La compensación con rendimientos del capital mobiliario (25 %) y el arrastre de saldos
-  negativos de los cuatro ejercicios anteriores no están aquí: los hace `savings-base.ts`
-  sobre el saldo de este informe y los cobros (`savings-return.ts`).
-- Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
-  posición, como el resto de importes del lote.
+- Offsetting against capital income (rendimientos del capital mobiliario) (25%) and carrying
+  forward negative balances from the four previous tax years are not here: `savings-base.ts`
+  does them on this report's balance and the income payments (`savings-return.ts`).
+- Fees in a currency other than the position's: they are assumed to be in the position's
+  currency, like the lot's other amounts.
 
 ## `wash-sale.ts`
 
-Regla de los dos meses (art. 33.5.f LIRPF): no se computan las pérdidas por transmitir valores
-admitidos a negociación si el contribuyente adquiere valores homogéneos en los dos meses anteriores
-o posteriores; la pérdida se integra a medida que se transmiten, de forma definitiva, los valores
-recomprados. (Para valores no cotizados el plazo es de un año: fuera de alcance, todo se trata como
-cotizado.) `computeWashSales(lots, walk?)` es pura, trabaja en la divisa de la posición y recibe el
-histórico de un valor y su `walkLots(lots, { trackOpenLots: true })`; devuelve, por venta, la
-pérdida diferida (`deferredLoss`, ≤ 0), los títulos bloqueados y lo que se integra (`integratedLoss`,
-con su venta de origen).
+Two-month rule (art. 33.5.f LIRPF): losses from transferring securities admitted to trading are
+not computed if the taxpayer acquires homogeneous securities in the two months before or after;
+the loss is integrated as the repurchased securities are transferred for good. (For unlisted
+securities the period is one year: out of scope, everything is treated as listed.)
+`computeWashSales(lots, walk?)` is pure, works in the position's currency and receives the
+history of one security and its `walkLots(lots, { trackOpenLots: true })`; it returns, per
+sale, the deferred loss (`deferredLoss`, ≤ 0), the blocked shares and what is integrated
+(`integratedLoss`, with its originating sale).
 
-**Criterios (interpretaciones)**
+**Criteria (interpretations)**
 
-- **Ventana «de fecha a fecha»** (art. 5.1 Código Civil), con ambos extremos incluidos: venta 16/07 →
-  del 16/05 al 16/09. Si el mes de destino no tiene ese día, el último del mes (31/12 + 2 meses →
-  28/02). Una compra el día 16/09 bloquea; el 17/09, no. Misma regla hacia atrás (16/05 sí, 15/05 no).
-- **Qué compras bloquean:** las de la ventana cuyos títulos siguen en cartera tras la venta (las
-  anteriores) o que aún no existen (las posteriores). Los títulos vendidos en la propia operación no
-  cuentan. Las ampliaciones liberadas no son compra. Un título comprado bloquea como mucho una vez.
-- **Proporcionalidad:** se analiza cada trozo FIFO de la venta y solo los que dan pérdida; si se
-  recompran menos títulos que los vendidos con pérdida, se difiere `pérdida × recomprados / vendidos
-con pérdida`. Con varias ventas, se atienden por orden cronológico y cada una consume primero las
-  compras más antiguas de su ventana.
-- **Integración:** al vender títulos que bloquean una pérdida se libera la parte proporcional a lo
-  vendido (FIFO). Solo se integra si esa transmisión es «definitiva» (Manual: «Una transmisión se
-  considerará definitiva cuando, en los dos meses anteriores o posteriores a ella, no se adquieran
-  nuevamente valores homogéneos»); si hay otra recompra, la parte proporcional pasa a los nuevos
-  títulos conservando su venta de origen.
-- **Derivados:** sujetos si son valores negociables (warrants, certificados, turbos con ISIN:
-  V1790-07); no lo están los contratos como opciones y futuros (V2172-21, V3755-16). Sextante no
-  distingue unos de otros y aplica la regla a todos: sus derivados importados son warrants y
-  certificados de Trade Republic.
-- **Fuentes:** Ley 35/2006, art. 33.5.f,
+- **"Date to date" window** (art. 5.1 Código Civil), both ends included: sale on 16/07 → from
+  16/05 to 16/09. If the target month has no such day, its last day (31/12 + 2 months →
+  28/02). A purchase on 16/09 blocks; one on 17/09 does not. Same rule backwards (16/05 yes,
+  15/05 no).
+- **Which purchases block:** those in the window whose shares are still held after the sale
+  (earlier ones) or do not exist yet (later ones). Shares sold in the transaction itself do not
+  count. Bonus issues are not purchases. A purchased share blocks at most once.
+- **Proportionality:** each FIFO piece of the sale is analysed, and only those with a loss; if
+  fewer shares are repurchased than were sold at a loss, `loss × repurchased / sold at a loss`
+  is deferred. With several sales, they are handled in chronological order and each one
+  consumes the oldest purchases in its window first.
+- **Integration:** selling shares that block a loss releases the part proportional to what was
+  sold (FIFO). It is only integrated if that transfer is "definitive" (Manual: a transfer is
+  considered definitive when no homogeneous securities are acquired again in the two months
+  before or after it; original: «Una transmisión se considerará definitiva cuando, en los dos
+  meses anteriores o posteriores a ella, no se adquieran nuevamente valores homogéneos»); if
+  there is another repurchase, the proportional part moves to the new shares, keeping its
+  originating sale.
+- **Derivatives:** subject to the rule if they are transferable securities (warrants,
+  certificates, turbos with an ISIN: V1790-07); contracts such as options and futures are not
+  (V2172-21, V3755-16). Sextante does not tell them apart and applies the rule to all of them:
+  its imported derivatives are Trade Republic warrants and certificates.
+- **Sources:** Ley 35/2006, art. 33.5.f,
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 ; AEAT, Manual práctico de Renta 2025,
-  cap. 11 «Pérdidas patrimoniales que no se computan como tales»,
+  ch. 11 «Pérdidas patrimoniales que no se computan como tales»,
   https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/irpf-2025/c11-ganancias-perdidas-patrimoniales/ganancias-perdidas-patrimoniales-que-no-bi/perdidas-patrimoniales-que-no-se-tales.html
-  (la caja de texto con las citas del Manual se verificó; el caso práctico T.S.A. (1.000 acciones,
-  16/07/2025, 12.000 € frente a 16.800 €, recompra el 16/08/2025) se reproduce como test tal y
-  como figura en el encargo, sin haber podido localizar su texto en esa página).
+  (the text box with the Manual quotes was verified; the T.S.A. worked example (1,000 shares,
+  16/07/2025, €12,000 against €16,800, repurchase on 16/08/2025) is reproduced as a test as it
+  appears in the brief, without having been able to locate its text on that page).
 
-**No modela:** valores no cotizados (plazo de un año) ni distinguir valores homogéneos que no
-comparten símbolo y divisa (p. ej. una misma empresa con dos cotizaciones).
+**Does not model:** unlisted securities (one-year period), nor telling apart homogeneous
+securities that do not share symbol and currency (e.g. one company with two listings).
 
 ## `income.ts`
 
-Rendimientos del capital mobiliario del ejercicio (art. 25 LIRPF): dividendos, intereses y
-recompensas del bróker (saveback, stockperk), con su íntegro y sus retenciones.
+Capital income for the tax year (art. 25 LIRPF): dividends, interest and broker rewards
+(saveback, stockperk), with their gross amount and their withholding.
 
-- **Recompensas como intereses:** Trade Republic las declara en la casilla de intereses de
-  cuentas con retención del 19 % (sus informes fiscales de 2025, periodos alemán y español). Se
-  sigue ese criterio; la compra en la que se invierten entra con su coste.
-- **Ya en el borrador:** lo que el pagador comunicó a la AEAT (`reportedToAeat`) se separa de lo
-  que hay que añadir a mano. En Trade Republic, todo lo posterior al cambio de custodia a su
-  sucursal española, que retiene e informa con los modelos 187, 189, 193 y 196.
-- **Divisa:** cada cobro se convierte con el tipo del BCE del día de cobro (`fx-reference.ts`).
-- **Procedencia (`ValueSource`):** cada cifra dice de dónde sale: `broker` (tal cual en el
-  fichero), `derived` (aritmética sobre él), `market` (dividendo por acción de mercado),
-  `estimate` (tipo legal del país, sin confirmar) o `manual`. Una estimación nunca se presenta
-  como exacta: la pantalla la marca y cuenta aparte.
+- **Rewards as interest:** Trade Republic reports them in the account-interest box with 19%
+  withholding (its 2025 tax reports, German and Spanish periods). We follow that criterion; the
+  purchase they are invested in enters at its cost.
+- **Already in the draft return (borrador):** what the payer reported to the AEAT
+  (`reportedToAeat`) is kept apart from what has to be added by hand. At Trade Republic, that is
+  everything after custody moved to its Spanish branch, which withholds and reports on forms
+  187, 189, 193 and 196.
+- **Currency:** each payment is converted at the ECB rate of its payment date
+  (`fx-reference.ts`).
+- **Provenance (`ValueSource`):** each figure says where it comes from: `broker` (as is in the
+  file), `derived` (arithmetic on it), `market` (market dividend per share), `estimate` (the
+  country's statutory rate, unconfirmed) or `manual`. An estimate is never presented as exact:
+  the screen flags it and counts it separately.
 
 ## `dividend-resolution.ts`
 
-Reparte un dividendo importado en íntegro, retención en origen y retención española, por capas.
+Splits an imported dividend into gross amount, withholding at source and Spanish withholding,
+in layers.
 
-1. **Bróker** (`resolveFromBroker`). El export de Trade Republic cambia de significado según el
-   periodo y el emisor; se distingue por la razón `tax/amount` (verificado contra sus informes
-   fiscales de 2025: periodo español exacto al céntimo):
-   - antes de la sucursal española, `amount` es el íntegro y `tax` la retención en origen;
-   - después, España retiene el 19 % de lo cobrado neto de origen. Si `tax/amount` ≈ 19 %, lo
-     abonado llegó neto de origen y `tax` es solo la española (ASML); si ≈ origen + 19 % del
-     resto, `amount` es el íntegro y `tax` suma ambas (EE. UU. con W-8BEN, 15 %).
-   - **Base del 19 %:** el neto de la retención en origen. Lo fijan las consultas DGT V2505-10 y
-     V2506-10 (con la resolución del TEAC de 25/09/2008), que sustituyen el criterio anterior de
-     V1491-08 (íntegro); la AEAT lo explica igual en "Obtención de dividendos procedentes de otro
-     país" y es lo que aplica Trade Republic.
-   - Deshacer un neto con un tipo supuesto (Países Bajos 15 %) es una **estimación**.
-2. **Mercado** (`resolveWithMarket`): acciones × dividendo por acción de mercado (Yahoo, sin el
-   ajuste por splits posteriores), en la divisa de pago. Si coincide con lo abonado, el bróker dio
-   el íntegro; si es mayor, la diferencia es la retención en origen, sea cual sea el país. Se
-   compara en la divisa de pago y lo derivado se pasa a euros con el cambio implícito del bróker,
-   para que íntegro, retenciones y neto cuadren. Se descarta un dato menor que lo abonado o que
-   implique una retención superior al 40 %. Solo se usa la cotización en la divisa de pago.
-3. **Estimación** (`estimateWithStatutoryRate`): sin dato de mercado, el tipo que retiene por
-   ley el país, con su fuente, marcado como estimación.
+1. **Broker** (`resolveFromBroker`). The Trade Republic export changes meaning depending on the
+   period and the issuer; it is told apart by the `tax/amount` ratio (verified against its 2025
+   tax reports: Spanish period exact to the cent):
+   - before the Spanish branch, `amount` is the gross amount and `tax` the withholding at source;
+   - afterwards, Spain withholds 19% of the amount received net of source withholding. If
+     `tax/amount` ≈ 19%, the payment arrived net of source withholding and `tax` is only the
+     Spanish one (ASML); if ≈ source + 19% of the rest, `amount` is the gross amount and `tax`
+     adds up both (US with W-8BEN, 15%).
+   - **Base of the 19%:** the amount net of withholding at source. Set by DGT rulings V2505-10
+     and V2506-10 (with the TEAC decision of 25/09/2008), which replace the earlier criterion of
+     V1491-08 (gross amount); the AEAT explains it the same way in "Obtención de dividendos
+     procedentes de otro país" and it is what Trade Republic applies.
+   - Grossing up a net amount with an assumed rate (Netherlands 15%) is an **estimate**.
+2. **Market** (`resolveWithMarket`): shares × market dividend per share (Yahoo, without the
+   adjustment for later splits), in the payment currency. If it matches what was paid, the
+   broker gave the gross amount; if it is larger, the difference is the withholding at source,
+   whatever the country. The comparison is made in the payment currency and the derived figures
+   are converted to euros at the broker's implied rate, so that gross, withholdings and net add
+   up. A figure lower than what was paid, or one implying withholding above 40%, is discarded.
+   Only the quote in the payment currency is used.
+3. **Estimate** (`estimateWithStatutoryRate`): with no market data, the rate the country
+   withholds by law, with its source, flagged as an estimate.
 
-**No modela:** retenciones en origen recuperadas después (devoluciones de Suiza, Alemania…), ni
-dividendos de valores sin dato de mercado en la divisa de pago (quedan como estimación o sin
-saber, con aviso).
+**Does not model:** withholding at source recovered later (refunds from Switzerland,
+Germany…), nor dividends from securities with no market data in the payment currency (they stay
+as an estimate or unknown, with a warning).
 
 ## `countries.ts`
 
-Registro único, por país (ISO 3166-1 alfa-2) y **en %**, de los tipos sobre dividendos: el del
-convenio (`treatyPct`), la retención que aplica de hecho el país (`statutory`, con su fuente) y la
-que aplica el bróker (`brokerAppliedPct`). `TREATY_DIVIDEND_RATES` (en %),
-`STATUTORY_DIVIDEND_WITHHOLDING` y la tabla del bróker de `dividend-resolution.ts` (en tanto por
-uno) son vistas de este registro, cada una con su unidad en el borde. También fija
-`SPAIN_SAVINGS_WITHHOLDING_PCT` (19 %, art. 90 RIRPF), que usan la resolución de dividendos y el
-valor por defecto de las calculadoras.
+Single registry, per country (ISO 3166-1 alpha-2) and **in %**, of dividend rates: the treaty
+rate (`treatyPct`), the withholding the country actually applies (`statutory`, with its source)
+and the one the broker applies (`brokerAppliedPct`). `TREATY_DIVIDEND_RATES` (in %),
+`STATUTORY_DIVIDEND_WITHHOLDING` and the broker table in `dividend-resolution.ts` (as fractions)
+are views of this registry, each with its unit at the edge. It also defines
+`SPAIN_SAVINGS_WITHHOLDING_PCT` (19%, art. 90 RIRPF), used by the dividend resolution and the
+calculators' default value.
 
 ## `withholding-rates.ts`
 
-Retención que aplica de hecho cada país a los dividendos de una persona física residente en
-España. Solo sirve para **estimar** la retención en origen cuando faltan el dato del bróker y el de
-mercado; lo que sale de aquí se marca como estimación y la pantalla lo avisa.
+Withholding each country actually applies to the dividends of an individual resident in Spain.
+It only serves to **estimate** the withholding at source when both the broker figure and the
+market figure are missing; whatever comes out of here is flagged as an estimate and the screen
+warns about it.
 
-- Fuentes por país en `countries.ts`: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
-  Worldwide Tax Summaries (fuente secundaria: confianza media). Las autoridades fiscales de
-  Alemania, Suiza, Países Bajos, Italia, Noruega, Canadá y Japón no se pudieron consultar.
-- Fuera: Irlanda (25 % o 0 % con declaración de no residente) y Australia (30 % o 0 % según el
-  dividendo esté "franked"): el tipo depende de un dato que no tenemos.
-- Distinto del convenio (`double-taxation.ts`): lo retenido por encima del convenio no se deduce en
-  España y se reclama en origen (Suiza 35 % → 15 %, Alemania 26,375 % → 15 %).
+- Per-country sources in `countries.ts`: IRS, AEAT, Vero, issuer notices and, above all, PwC
+  Worldwide Tax Summaries (a secondary source: medium confidence). The tax authorities of
+  Germany, Switzerland, the Netherlands, Italy, Norway, Canada and Japan could not be consulted.
+- Left out: Ireland (25%, or 0% with a non-resident declaration) and Australia (30% or 0%
+  depending on whether the dividend is "franked"): the rate depends on a fact we do not have.
+- Different from the treaty (`double-taxation.ts`): what is withheld above the treaty rate is
+  not deductible in Spain and is reclaimed at source (Switzerland 35% → 15%, Germany 26.375% →
+  15%).
 
 ## `tax-boxes.ts`
 
-Casillas del modelo 100 con las que se presenta cada cifra. Cambian cada ejercicio: un año sin
-tabla verificada se muestra sin números de casilla, nunca con los de otro año.
+Boxes (casillas) of form 100 (modelo 100) in which each figure is reported. They change every
+tax year: a year without a verified table is shown without box numbers, never with another
+year's.
 
-- **2025:** Orden HAC/277/2026, de 25 de marzo (BOE-A-2026-7041), números leídos del formulario
-  del propio modelo; las de capital mobiliario y la 0597 contrastadas con el Manual práctico de
-  Renta 2025. Acciones por entidad emisora (0326-0340: valor de transmisión 0328 y de adquisición
-  0331, importes globales por entidad); fondos y ETF no sujetos a retención (2224-2236); IIC con
-  retención (0310-0325, cuando el depositario español retiene en el reembolso); otros elementos
-  patrimoniales (1624-1654).
-- **Derivados:** el modelo no los nombra. Van en otros elementos patrimoniales: la DGT manda los
-  warrants a "otras ganancias y pérdidas patrimoniales" (V1790-07) y Trade Republic los pone ahí en
-  su informe fiscal. La clave del bloque (4) es por exclusión: confianza baja.
-- **Fondos y ETF:** las IIC del art. 75.3.j RIRPF (ETF) van en 2224-2236 aunque el depositario
-  haya retenido: el título del bloque 0310-0325 las excluye expresamente.
-- **Doble imposición:** solo el importe global (0588); el detalle por país no está en la Orden.
+- **2025:** Orden HAC/277/2026, de 25 de marzo (BOE-A-2026-7041), numbers read from the form
+  itself; the capital-income boxes and 0597 cross-checked against the Manual práctico de
+  Renta 2025. Shares per issuing entity (0326-0340: transfer value 0328 and acquisition value
+  0331, aggregate amounts per entity); funds and ETFs not subject to withholding (2224-2236);
+  IIC with withholding (0310-0325, when the Spanish custodian withholds on redemption); other
+  assets (1624-1654).
+- **Derivatives:** the form does not name them. They go under other assets: the DGT sends
+  warrants to "otras ganancias y pérdidas patrimoniales" (V1790-07) and Trade Republic puts them
+  there in its tax report. The key for block (4) is by exclusion: low confidence.
+- **Funds and ETFs:** the IIC of art. 75.3.j RIRPF (ETFs) go in 2224-2236 even if the custodian
+  has withheld: the title of block 0310-0325 expressly excludes them.
+- **Double taxation:** only the aggregate amount (0588); the per-country breakdown is not in
+  the Orden.
 
 ## `savings-base.ts`
 
-Integración y compensación de la base imponible del ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
+Netting and offsetting of the savings tax base (base imponible del ahorro). Pure and text-free:
+it returns figures and the trace of each offset.
 
-- **Qué modela** (arts. 46, 48 y 49 LIRPF): dos grupos, ganancias y pérdidas
-  patrimoniales por transmisión (art. 49.1.b) y rendimientos del capital mobiliario
-  (art. 49.1.a). Un saldo negativo se compensa con el positivo del **otro** grupo con
-  el límite del **25 %** de ese positivo (límite vigente desde 2018). Lo que no cabe
-  queda pendiente **cuatro años** «en el mismo orden establecido en los párrafos
-  anteriores» (art. 49.1): primero contra el positivo de su mismo grupo y después contra
-  el del otro con el 25 %. Se compensa «en la cuantía máxima que permita cada uno de los
-  ejercicios» (art. 49.2). Caducan los saldos con origen anterior a `ejercicio − 4`.
-- **Orden aplicado** (Manual práctico de Renta 2025, cap. 12 y su caso práctico): primero el
-  saldo negativo del propio ejercicio contra el otro grupo; después todos los pendientes contra
-  su mismo grupo (sin límite porcentual), del más antiguo al más reciente; y por último, con lo
-  que les quede, contra el otro grupo. El 25 % es un único cupo por grupo positivo (sobre su saldo
-  positivo del ejercicio antes de compensar), compartido por el propio ejercicio y los arrastres
-  («límite conjunto», según el manual). El orden entre pendientes del mismo grupo de años
-  distintos no lo fija ninguna fuente: el más antiguo primero, para que caduque lo menos posible.
-- La cuota de la base resultante la calcula `savingsTax` (`savings-tax.ts`).
-- **No modela**: la reducción del art. 55 LIRPF (remanente que reduce la base del
-  ahorro, art. 50.2), deducciones ni rentas exentas. Un test reproduce el caso práctico del
-  capítulo 12 del Manual práctico de Renta 2025 (base del ahorro de 200 €).
-- **Fuentes**: Ley 35/2006, arts. 46, 48, 49 y 50.2 (art. 49 en la redacción de la
-  Ley 26/2014, de 27 de noviembre),
-  https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
+- **What it models** (arts. 46, 48 and 49 LIRPF): two groups, capital gains and losses from
+  transfers (art. 49.1.b) and capital income (art. 49.1.a). A negative balance is offset
+  against the positive balance of the **other** group up to **25%** of that positive balance
+  (limit in force since 2018). What does not fit stays pending for **four years** "in the same
+  order set out in the previous paragraphs" («en el mismo orden establecido en los párrafos
+  anteriores», art. 49.1): first against the positive balance of its own group and then against
+  the other's with the 25%. It is offset "for the maximum amount each tax year allows" («en la
+  cuantía máxima que permita cada uno de los ejercicios», art. 49.2). Balances originating
+  before `tax year − 4` expire.
+- **Order applied** (Manual práctico de Renta 2025, ch. 12 and its worked example): first the
+  current tax year's negative balance against the other group; then all pending balances
+  against their own group (no percentage limit), from oldest to newest; and finally, with what
+  is left, against the other group. The 25% is a single allowance per positive group (on its
+  positive balance for the tax year before offsetting), shared by the current tax year and the
+  carry-forwards ("joint limit", per the manual). No source sets the order between pending
+  balances of the same group from different years: oldest first, so that as little as possible
+  expires.
+- The tax on the resulting base is computed by `savingsTax` (`savings-tax.ts`).
+- **Does not model**: the art. 55 LIRPF reduction (remainder that reduces the savings base,
+  art. 50.2), deductions or exempt income. A test reproduces the worked example of chapter 12
+  of the Manual práctico de Renta 2025 (savings base of €200).
+- **Sources**: Ley 35/2006, arts. 46, 48, 49 and 50.2 (art. 49 as worded by Ley 26/2014, de 27
+  de noviembre), https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 ## `savings-tax.ts`
 
-La única implementación de la cuota de la escala del ahorro (`IRPF_SAVINGS_SCALE`, arts. 66 y 76 LIRPF).
+The single implementation of the savings-scale tax (`IRPF_SAVINGS_SCALE`, arts. 66 and 76
+LIRPF).
 
-- `savingsTax(base)`: cuota íntegra y tipo medio efectivo en % (`null` con base 0). La usa la
-  base del ahorro del informe de la Renta (`savings-return.ts`).
-- `estimateSavingsTax(gain)`: la cuota de una ganancia aislada (una pérdida da 0), con el tipo
-  medio y el marginal; se apoya en `savingsTax`. La usan el simulador de venta y el resumen de
+- `savingsTax(base)`: gross tax liability (cuota íntegra) and average effective rate in %
+  (`null` with base 0). Used by the savings base of the tax return report (`savings-return.ts`).
+- `estimateSavingsTax(gain)`: the tax on an isolated gain (a loss gives 0), with the average and
+  marginal rates; it relies on `savingsTax`. Used by the sale simulator and the summary in
   `realised-gains.ts`.
 
 ## `report-inputs.ts`
 
-Entradas del informe fiscal que comparten la web, la API (`TaxReturnService`) y el MCP, para que
-los tres canales lo monten igual: `toRealisedGainsPositions` reparte las operaciones entre sus
-posiciones y `referenceRatesRequest` une los tipos del BCE que necesitan ventas y cobros.
+Tax report inputs shared by the web app, the API (`TaxReturnService`) and MCP, so that all
+three channels build it the same way: `toRealisedGainsPositions` distributes the transactions
+among their positions and `referenceRatesRequest` merges the ECB rates that sales and income
+payments need.
 
 ## `double-taxation.ts`
 
-> Contraste de 2026-10-03: la tabla de la DGT es de 2018. Japón está al 5 % (BOE-A-2021-2977).
-> Irlanda, 0 %: el art. 10.1.c) de su convenio exime en origen al residente en España (el 15 % de
-> la tabla es la letra b, régimen de crédito fiscal); lo retenido allí no se deduce en España y se
-> reclama a Revenue (formulario V2A), principio de la consulta V0220-12. Dinamarca (sin convenio desde 2009) e Islas Caimán no tienen
-> convenio: se acredita todo lo pagado, con el límite del tipo medio. El tipo medio que se usa es
-> el de la escala del ahorro; el del art. 80.2 es cuota líquida total × (cuota íntegra del ahorro /
-> cuota íntegra total) / base liquidable del ahorro (ejemplo del Manual de Renta 2025, cap. 18), que
-> exige la base general, que Sextante no conoce.
+> Cross-check of 2026-10-03: the DGT table dates from 2018. Japan is at 5% (BOE-A-2021-2977).
+> Ireland, 0%: art. 10.1.c) of its treaty exempts the Spanish resident at source (the table's
+> 15% is letter b, the tax-credit regime); what is withheld there is not deductible in Spain and
+> is reclaimed from Revenue (form V2A), the principle of ruling V0220-12. Denmark (no treaty
+> since 2009) and the Cayman Islands have no treaty: everything paid is creditable, up to the
+> average rate. The average rate used is the savings-scale one; the art. 80.2 one is total net
+> tax liability (cuota líquida) × (savings gross tax / total gross tax) / savings taxable base
+> (example in the Manual de Renta 2025, ch. 18), which requires the general base, which
+> Sextante does not know.
 
-Deducción por doble imposición internacional (art. 80 LIRPF) para dividendos del
-extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,
-`excess_withholding`) con país e importe.
+Foreign tax credit (deducción por doble imposición internacional, art. 80 LIRPF) for foreign
+dividends. Pure: warnings are codes (`origin_unknown`, `no_treaty_rate`, `excess_withholding`)
+with country and amount.
 
-- **Qué modela**: deducción = mín(a) impuesto satisfecho en el extranjero, b) tipo
-  medio efectivo × renta gravada en el extranjero), art. 80.1, **país a país** y sumada.
-  La ley no dice si el límite b) va por país o en conjunto; el art. 80.1.a) habla del impuesto
-  «sobre dichos rendimientos» (renta a renta, como la DGT en V2393-25) y nada autoriza a compensar
-  el exceso de un país con la holgura de otro. Agregado daría igual o más: el criterio por país
-  es el prudente (confianza media). Por país, lo
-  acreditable es mín(retención, tipo del convenio × íntegro); la retención por encima
-  del convenio se devuelve como `excessReclaimable` (se reclama en origen, no se
-  deduce en España). El tipo medio se redondea a dos decimales (art. 80.2).
-- **Tabla `TREATY_DIVIDEND_RATES`** (vista de `countries.ts`): tipo «General» de dividendos de la tabla de la DGT
-  (actualización 01/01/2018), solo países con un único tipo sin nota al pie. No incluye
-  la cláusula matriz-filial ni cambios de convenio posteriores a 2018. Revisar al
-  cambiar de ejercicio.
-- **Prudencia**: sin tipo confirmado en la tabla (país sin convenio o no verificado) no
-  se deduce nada y se avisa. Con retención desconocida tampoco.
-- **Simplificaciones**: el tipo medio efectivo del art. 80.2 es cuota líquida total /
-  base liquidable; aquí se recibe el de la escala del ahorro (cuota íntegra / base,
-  `savingsTax`), sin deducciones. El límite b) usa el íntegro de todas las rentas
-  extranjeras, sin descontar gastos. No modela intereses, cánones ni ganancias del
-  extranjero ni la devolución efectiva en origen.
-- **Fuentes**: Ley 35/2006, art. 80,
+- **What it models**: credit = min(a) tax paid abroad, b) average effective rate × income taxed
+  abroad), art. 80.1, **country by country** and summed. The law does not say whether limit b)
+  applies per country or in aggregate; art. 80.1.a) speaks of the tax "on said income" («sobre
+  dichos rendimientos»: income by income, as the DGT does in V2393-25) and nothing allows
+  offsetting one country's excess with another's headroom. Aggregating would give the same or
+  more: the per-country criterion is the prudent one (medium confidence). Per country, the
+  creditable amount is min(withholding, treaty rate × gross); withholding above the treaty rate
+  is returned as `excessReclaimable` (reclaimed at source, not deductible in Spain). The
+  average rate is rounded to two decimals (art. 80.2).
+- **`TREATY_DIVIDEND_RATES` table** (view of `countries.ts`): the «General» dividend rate from
+  the DGT table (update of 01/01/2018), only countries with a single rate and no footnote. It
+  does not include the parent-subsidiary clause or treaty changes after 2018. Review when the
+  tax year changes.
+- **Prudence**: without a confirmed rate in the table (country with no treaty or not verified)
+  nothing is deducted and a warning is raised. The same with unknown withholding.
+- **Simplifications**: the art. 80.2 average effective rate is total net tax liability /
+  taxable base; here the savings-scale one is received (gross tax / base, `savingsTax`), with
+  no deductions. Limit b) uses the gross amount of all foreign income, without deducting
+  expenses. It does not model foreign interest, royalties or gains, nor the actual refund at
+  source.
+- **Sources**: Ley 35/2006, art. 80,
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 ; DGT, «Límites de imposición
   sobre dividendos, intereses y cánones resultantes de los CDI»,
   https://www.hacienda.gob.es/SGT/NormativaDoctrina/Tributaria/CDI/Documentacion/Limites_Imposicion_CDI.pdf

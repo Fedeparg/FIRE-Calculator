@@ -24,16 +24,16 @@ import type { SavedScenarioResponse } from '@sextante/core/contracts';
 import { SavedScenariosService } from './saved-scenarios.service.js';
 
 /**
- * Escenarios guardados de calculadora. todos los endpoints están autenticados y el `userId`
- * sale siempre del JWT, nunca del body ni de un query param: un usuario no puede ver, editar
- * ni borrar los escenarios de otro (scoping forzado en el servicio).
+ * Saved calculator scenarios. Every endpoint is authenticated and the `userId` always comes
+ * from the JWT, never from the body or a query param: a user cannot see, edit or delete another
+ * user's scenarios (scoping enforced in the service).
  */
 @Controller('scenarios')
 @UseGuards(JwtAuthGuard)
 export class SavedScenariosController {
   constructor(private readonly scenarios: SavedScenariosService) {}
 
-  /** `?slug=fire-basico` filtra por calculadora; sin filtro, todos los del usuario. */
+  /** `?slug=fire-basico` filters by calculator; with no filter, all of the user's scenarios. */
   @Get()
   findAll(
     @CurrentUser() user: SessionUser,

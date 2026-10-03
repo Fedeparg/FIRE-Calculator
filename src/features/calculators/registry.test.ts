@@ -1,8 +1,8 @@
-// Guardarraíl del catálogo: `registry.ts` alimenta el selector Y el sitemap, así
-// que una entrada sin componente produce un 404 indexado, y una sin mensajes o sin
-// explainer produce una página rota o a medias. Este test comprueba que cada
-// calculadora del catálogo tiene sus cuatro piezas, y que no queda material
-// huérfano de una calculadora retirada.
+// Catalog guardrail: `registry.ts` feeds the selector AND the sitemap, so an
+// entry without a component produces an indexed 404, and one without messages or
+// without an explainer produces a broken or half-finished page. This test checks
+// that every calculator in the catalog has its four pieces, and that nothing is
+// left orphaned by a retired calculator.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -36,23 +36,23 @@ const calcNamespaces = new Map<Locale, ReadonlySet<string>>(
 
 const allSlugs = new Set<string>(CALCULATORS.map((c) => c.slug));
 
-describe("registry: coherencia del catálogo", () => {
-  it("no hay slugs duplicados", () => {
+describe("registry: catalog consistency", () => {
+  it("has no duplicate slugs", () => {
     expect(allSlugs.size).toBe(CALCULATORS.length);
   });
 
-  it("cada calculadora tiene su componente en la ruta única", () => {
+  it("every calculator has its component in the single route", () => {
     const missing = [...allSlugs].filter((slug) => !(slug in CALCULATOR_COMPONENTS));
     expect(missing).toEqual([]);
   });
 
-  it.each(LOCALES)("cada calculadora publicada tiene su namespace calc.<slug> en %s", (locale) => {
+  it.each(LOCALES)("every published calculator has its calc.<slug> namespace in %s", (locale) => {
     const namespaces = defined(calcNamespaces.get(locale));
     const missing = [...allSlugs].filter((slug) => !namespaces.has(slug));
     expect(missing).toEqual([]);
   });
 
-  it.each(LOCALES)("cada calculadora tiene nombre y descripción en catalog.<slug> en %s", (locale) => {
+  it.each(LOCALES)("every calculator has a name and description in catalog.<slug> in %s", (locale) => {
     const catalog = loadMessages(locale).catalog ?? {};
     const missing = [...allSlugs].filter((slug) => {
       const entry = catalog[slug];
@@ -62,23 +62,23 @@ describe("registry: coherencia del catálogo", () => {
     expect(Object.keys(catalog).filter((slug) => !allSlugs.has(slug))).toEqual([]);
   });
 
-  it.each(LOCALES)("cada calculadora publicada tiene su explainer en %s", (locale) => {
+  it.each(LOCALES)("every published calculator has its explainer in %s", (locale) => {
     const missing = [...allSlugs].filter((slug) => !existsSync(path.join(EXPLAINERS_DIR, `${slug}.${locale}.md`)));
     expect(missing).toEqual([]);
   });
 });
 
-describe("registry: sin material huérfano", () => {
-  it("no hay componentes de calculadora fuera del registry", () => {
+describe("registry: no orphaned material", () => {
+  it("has no calculator components outside the registry", () => {
     expect(Object.keys(CALCULATOR_COMPONENTS).filter((slug) => !allSlugs.has(slug))).toEqual([]);
   });
 
-  it.each(LOCALES)("no hay namespaces calc.* fuera del registry en %s", (locale) => {
+  it.each(LOCALES)("has no calc.* namespaces outside the registry in %s", (locale) => {
     const orphans = [...defined(calcNamespaces.get(locale))].filter((ns) => !allSlugs.has(ns));
     expect(orphans).toEqual([]);
   });
 
-  it("no hay explainers de calculadora fuera del registry", () => {
+  it("has no calculator explainers outside the registry", () => {
     const orphans = readdirSync(EXPLAINERS_DIR)
       .map((file) => file.replace(/\.(es|en)\.md$/, ""))
       .filter((slug) => !allSlugs.has(slug));
@@ -86,10 +86,10 @@ describe("registry: sin material huérfano", () => {
   });
 });
 
-describe("objetivo de la cartera", () => {
-  it("el slug de la calculadora FIRE existe en el registro", () => {
-    // Si alguien renombra la calculadora, los escenarios guardados dejarían de encontrarse:
-    // este test lo convierte en un fallo ruidoso en vez de un bloque vacío en producción.
+describe("portfolio goal", () => {
+  it("the FIRE calculator slug exists in the registry", () => {
+    // If someone renames the calculator, saved scenarios would no longer be found: this test
+    // turns that into a loud failure instead of an empty block in production.
     expect(CALCULATORS.some((c) => c.slug === FIRE_CALCULATOR_SLUG)).toBe(true);
   });
 });

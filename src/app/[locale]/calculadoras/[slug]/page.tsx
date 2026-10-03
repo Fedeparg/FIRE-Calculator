@@ -11,11 +11,11 @@ import { calculatorNamespace } from "@/i18n/route-namespaces";
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
-// ISR: la calculadora es estática, pero el explainer de la wiki se lee de Markdown en runtime;
-// revalidar permite actualizarlo sin redeploy.
+// ISR: the calculator is static, but the wiki explainer is read from Markdown at runtime;
+// revalidating lets it be updated without a redeploy.
 export const revalidate = 3600;
 
-// Solo existen las calculadoras del registry: cualquier otro slug es un 404, no un render bajo demanda.
+// Only registry calculators exist: any other slug is a 404, not an on-demand render.
 export const dynamicParams = false;
 
 export function generateStaticParams() {

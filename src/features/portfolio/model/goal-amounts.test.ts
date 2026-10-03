@@ -19,7 +19,7 @@ const params: GoalParams = {
   volatility: 15,
   retirementYears: 40,
 };
-// USD por unidad: 1 EUR = 2 USD, para que las cuentas sean exactas.
+// USD per unit: 1 EUR = 2 USD, so the arithmetic is exact.
 const rates = { USD: 1, EUR: 2 };
 
 describe("showAmounts", () => {

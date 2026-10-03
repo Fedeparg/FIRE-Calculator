@@ -1,5 +1,5 @@
-// Filas de la lista de posiciones: valoración, peso, frescura del precio y datos de orden.
-// Core puro (sin React), testeable.
+// Rows of the position list: valuation, weight, price freshness and sort data.
+// Pure core (no React), testable.
 
 import { convertCurrency } from "@sextante/core/fx";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
@@ -7,28 +7,28 @@ import { isStalePrice } from "@sextante/core/portfolio/prices";
 import { dailyGain, valuePosition, type PositionValuation } from "@sextante/core/portfolio/positions";
 import type { SortableRow } from "./sort";
 
-/** Qué ganancia enseña la columna: la de hoy (cierre anterior) o la total (frente a lo invertido). */
+/** Which gain the column shows: today's (vs previous close) or the total (vs amount invested). */
 export type GainMode = "today" | "total";
 
-/** Fila enriquecida: lo que se pinta y lo que se compara para ordenar. */
+/** Enriched row: what is rendered and what is compared for sorting. */
 export type PositionRow = PositionValuation & {
   position: Position;
   price: PriceInfo | undefined;
-  /** Peso sobre el total, en % (0–100), o null si la fila no se puede valorar. */
+  /** Weight over the total, in % (0–100), or null if the row cannot be valued. */
   weight: number | null;
   stale: boolean;
   pending: boolean;
-  /** Ganancia según el modo activo (importe en la divisa de la posición y %), o null sin dato. */
+  /** Gain for the active mode (amount in the position's currency and %), or null without data. */
   gain: { abs: number; pct: number | null } | null;
   sortable: SortableRow;
 };
 
-/** Divisa base para comparar importes entre posiciones (las tasas son USD por unidad). */
+/** Base currency for comparing amounts across positions (rates are USD per unit). */
 const BASE_CURRENCY = "USD";
 
 /**
- * Convierte un importe a la base (USD) solo para ORDENAR importes de posiciones en divisas
- * distintas de forma justa. `null` si falta la tasa (esa fila va al final). No se muestra.
+ * Converts an amount to the base (USD) only to SORT amounts of positions in different currencies
+ * fairly. `null` if the rate is missing (that row goes last). Never displayed.
  */
 export function toBase(amount: number | null, currency: string, rates: Record<string, number>): number | null {
   if (amount === null) return null;
@@ -39,16 +39,16 @@ export function toBase(amount: number | null, currency: string, rates: Record<st
 
 export type BuildRowsInput = {
   positions: readonly Position[];
-  /** Último precio conocido por ticker. */
+  /** Last known price per ticker. */
   prices: Record<string, PriceInfo>;
   rates: Record<string, number>;
-  /** Divisa del total: el peso de cada fila se calcula en ella. */
+  /** Currency of the total: each row's weight is computed in it. */
   display: string;
-  /** Valor de mercado total en `display` (denominador del peso). */
+  /** Total market value in `display` (the weight's denominator). */
   total: number;
-  /** Fecha del precio más reciente de la cartera (referencia de frescura). */
+  /** Date of the portfolio's most recent price (freshness reference). */
   latestDate: string | null;
-  /** Ids de las posiciones cuyo precio aún se está buscando. */
+  /** Ids of the positions whose price is still being fetched. */
   pendingIds: ReadonlySet<string>;
   gainMode: GainMode;
 };
@@ -60,7 +60,7 @@ export function buildPositionRows(input: BuildRowsInput): PositionRow[] {
     const valuation = valuePosition(position, price, rates);
     const inDisplay =
       valuation.marketValue === null ? null : convertCurrency(valuation.marketValue, position.currency, display, rates);
-    // Ordenar por la columna de ganancia usa SIEMPRE lo que se ve: el importe del modo activo.
+    // Sorting by the gain column ALWAYS uses what is shown: the active mode's amount.
     const gain =
       gainMode === "today"
         ? dailyGain(position, price, rates)

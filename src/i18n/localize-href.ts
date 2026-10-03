@@ -1,8 +1,8 @@
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./types";
 
 /**
- * Los Markdown enlazan sin prefijo (el del español, `as-needed`); en inglés hay que añadir
- * `/en` o el lector cambia de idioma. Solo toca rutas internas sin prefijo de idioma.
+ * Markdown links carry no prefix (Spanish's, under `as-needed`); in English `/en` must be
+ * added or the reader switches locale. Only touches internal paths without a locale prefix.
  */
 export function localizeHref(href: string, locale: Locale): string {
   if (locale === DEFAULT_LOCALE) return href;

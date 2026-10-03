@@ -1,6 +1,6 @@
-// Composición de la cartera por activo, bróker o divisa, con el peso de cada grupo. Core puro.
-// Mismo criterio que `aggregatePortfolio`; las posiciones excluidas se cuentan para poder decirlo en
-// la UI en vez de repartir un total incompleto como si fuera el bueno.
+// Portfolio composition by asset, broker or currency, with the weight of each group. Pure core.
+// Same rule as `aggregatePortfolio`; excluded positions are counted so the UI can say so instead of
+// splitting an incomplete total as if it were the real one.
 
 import { compareStrings } from "../compare.js";
 import { canConvert, convertCurrency } from "../fx.js";
@@ -21,12 +21,12 @@ export interface BreakdownInput {
   rates: Record<string, number>;
   display: string;
   groupBy: BreakdownGroupBy;
-  /** Etiqueta de las posiciones sin bróker (la traduce quien llama: el core no traduce). */
+  /** Label for positions without a broker (translated by the caller: the core does not translate). */
   unknownBrokerLabel: string;
 }
 
 export interface BreakdownSlice {
-  /** Clave estable (ticker, bróker o divisa); sirve de `key` de React. */
+  /** Stable key (ticker, broker or currency); doubles as the React `key`. */
   key: string;
   label: string;
   value: number;
@@ -36,16 +36,16 @@ export interface BreakdownSlice {
 
 export interface BreakdownResult {
   slices: BreakdownSlice[];
-  /** Suma de los grupos: el valor de lo que se ha podido valorar. */
+  /** Sum of the groups: the value of everything that could be valued. */
   total: number;
   included: number;
   excluded: number;
 }
 
 /**
- * Reparte el valor de mercado (no el coste: un donut de composición muestra la exposición de hoy)
- * entre los grupos, de mayor a menor peso y por etiqueta a igualdad. Un precio corrupto que diera
- * un valor negativo se descarta como no valorable.
+ * Splits the market value (not the cost: a composition donut shows today's exposure) across the
+ * groups, from largest to smallest weight and by label on ties. A corrupt price that would yield a
+ * negative value is discarded as not valuable.
  */
 export function buildBreakdown({
   positions,
@@ -65,7 +65,7 @@ export function buildBreakdown({
 
     const value = convertCurrency(position.quantity * price.close, price.currency, display, rates);
     if (value === null || !Number.isFinite(value) || value < 0) continue;
-    // como `aggregatePortfolio`, exige convertir la divisa de la posición: si no, los pesos no cuadrarían con el total
+    // like `aggregatePortfolio`, the position's currency must convert or the weights would not match the total
     if (!canConvert(position.currency, display, rates)) continue;
 
     const { key, label } =

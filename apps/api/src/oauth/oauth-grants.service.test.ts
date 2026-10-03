@@ -11,7 +11,7 @@ import { OAuthGrantsService } from './oauth-grants.service.js';
 
 const randomHash = (): string => randomBytes(16).toString('hex');
 
-describe('OAuthGrantsService (integración con Postgres)', () => {
+describe('OAuthGrantsService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: OAuthGrantsService;
@@ -46,14 +46,14 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
   };
 
   describe('hasConsent / recordConsent', () => {
-    it('sin consentimiento previo, hasConsent es false', async () => {
+    it('without prior consent, hasConsent is false', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('c1');
 
       expect(await service.hasConsent(userId, 'c1', ['portfolio:read'])).toBe(false);
     });
 
-    it('solo cubre los scopes concedidos: pedir uno más exige consentir de nuevo', async () => {
+    it('only covers the granted scopes: requesting one more requires consenting again', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('c1');
       await service.recordConsent(userId, 'c1', ['portfolio:read']);
@@ -62,7 +62,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(await service.hasConsent(userId, 'c1', ['portfolio:read', 'portfolio:write'])).toBe(false);
     });
 
-    it('el consentimiento es por usuario y por cliente', async () => {
+    it('consent is per user and per client', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       await insertClient('c1');
@@ -73,7 +73,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(await service.hasConsent(userA, 'c2', ['portfolio:read'])).toBe(false);
     });
 
-    it('un nuevo consentimiento se UNE al anterior (step-up) sin duplicar la fila', async () => {
+    it('a new consent is MERGED into the previous one (step-up) without duplicating the row', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('c1');
       await service.recordConsent(userId, 'c1', ['portfolio:read']);
@@ -81,12 +81,12 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
       const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
       expect(rows).toHaveLength(1);
-      // Orden de concesión, sin duplicados.
+      // Grant order, no duplicates.
       expect(itemAt(rows, 0).scopes).toEqual(['portfolio:read', 'portfolio:write']);
       expect(itemAt(rows, 0).lastUsedAt).not.toBeNull();
     });
 
-    it('dos aprobaciones simultáneas dejan UNA fila con la unión de ambas, sin error', async () => {
+    it('two concurrent approvals leave ONE row with the union of both, without error', async () => {
       const concurrent = createTestDb({ max: 4 });
       try {
         const parallel = new OAuthGrantsService(concurrent.db);
@@ -108,7 +108,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
   });
 
   describe('touch', () => {
-    it('actualiza lastUsedAt solo del consentimiento indicado', async () => {
+    it('updates lastUsedAt only for the given consent', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       await insertClient('c1');
@@ -127,7 +127,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
   });
 
   describe('revoke', () => {
-    it('borra el consentimiento y todos los tokens (access y refresh) de ese cliente', async () => {
+    it('deletes the consent and all tokens (access and refresh) of that client', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('c1');
       await service.recordConsent(userId, 'c1', ['portfolio:read']);
@@ -140,7 +140,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(await db.select().from(oauthTokens).where(eq(oauthTokens.userId, userId))).toEqual([]);
     });
 
-    it('no toca los consentimientos ni los tokens de otro cliente del mismo usuario', async () => {
+    it('does not touch the consents or tokens of another client of the same user', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await insertClient('c1');
       await insertClient('c2');
@@ -154,7 +154,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(await db.select().from(oauthTokens).where(eq(oauthTokens.clientId, 'c2'))).toHaveLength(1);
     });
 
-    it('un usuario no puede revocar las conexiones de otro', async () => {
+    it("a user cannot revoke another user's connections", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       await insertClient('c1');
@@ -174,7 +174,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
   });
 
   describe('listWithClients', () => {
-    it('solo lista los consentimientos del usuario, los usados más recientemente primero', async () => {
+    it("lists only the user's consents, most recently used first", async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
       for (const id of ['old', 'recent', 'other']) await insertClient(id);
@@ -192,7 +192,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(itemAt(list, 0).scopes).toEqual(['portfolio:read']);
     });
 
-    it('trae el nombre y la URL del cliente en la misma consulta, y null si el cliente ya no existe', async () => {
+    it('fetches the client name and URL in the same query, and null if the client no longer exists', async () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(oauthClients).values({
         clientId: 'claude',
@@ -207,7 +207,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       expect(byId.get('borrado')).toMatchObject({ clientName: null, clientUri: null });
     });
 
-    it('un usuario sin consentimientos recibe una lista vacía', async () => {
+    it('a user without consents gets an empty list', async () => {
       const userId = await insertUser(db, 'a@example.com');
 
       expect(await service.listWithClients(userId)).toEqual([]);

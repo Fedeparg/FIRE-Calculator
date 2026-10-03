@@ -1,41 +1,41 @@
 # syntax=docker/dockerfile:1
-# Imagen de la API (NestJS). Node 24 LTS (no usamos versiones impares/non-LTS).
-# Multi-etapa: build (compila + genera un paquete desplegable autocontenido con
-# `pnpm deploy`) -> runtime delgado.
+# API image (NestJS). Node 24 LTS (we do not use odd/non-LTS versions).
+# Multi-stage: build (compiles + produces a self-contained deployable package with
+# `pnpm deploy`) -> slim runtime.
 
-# ---- Base común ----
+# ---- Shared base ----
 FROM node:24-slim AS base
 ENV CI=true
 RUN corepack enable
-# Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
-# `pnpm install` no re-descarga todo el árbol cuando cambia el lockfile.
+# pnpm store at a fixed path so it can be mounted as a BuildKit cache: that way
+# `pnpm install` does not re-download the whole tree when the lockfile changes.
 RUN pnpm config set store-dir /pnpm/store
 WORKDIR /app
 
 # ---- Build ----
 FROM base AS build
-# Manifiestos primero (cachea la instalación).
+# Manifests first (caches the install).
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/core/package.json ./packages/core/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter @sextante/api...
 
-# Código y compilación a dist. El build de la API compila antes @sextante/core
-# (lógica compartida con el frontend), cuyo `dist/` copia luego `pnpm deploy`.
+# Source and compilation to dist. The API build first compiles @sextante/core
+# (logic shared with the frontend), whose `dist/` `pnpm deploy` then copies.
 COPY packages/core ./packages/core
 COPY apps/api ./apps/api
 RUN pnpm --filter @sextante/api build
 
-# `pnpm deploy` copia el paquete (incluido dist) + un node_modules AUTOCONTENIDO
-# (sin symlinks al store de la raíz) en /app/deploy.
+# `pnpm deploy` copies the package (including dist) + a SELF-CONTAINED node_modules
+# (no symlinks to the root store) into /app/deploy.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm --filter @sextante/api deploy --prod --legacy /app/deploy
 
-# `pnpm deploy` copia el paquete ENTERO, así que arrastra fuentes, tests y tooling que la
-# imagen final no ejecuta (solo corre `dist/`). Se eliminan para reducir superficie y tamaño.
-# `drizzle/` se CONSERVA a propósito: el servicio one-shot `migrate` (`node dist/db/migrate.js`)
-# aplica esos .sql en el arranque.
+# `pnpm deploy` copies the WHOLE package, so it drags along sources, tests and tooling that the
+# final image never runs (it only runs `dist/`). They are removed to reduce surface and size.
+# `drizzle/` is KEPT on purpose: the one-shot `migrate` service (`node dist/db/migrate.js`)
+# applies those .sql files at startup.
 RUN rm -rf /app/deploy/src /app/deploy/test /app/deploy/vitest.config.ts \
     /app/deploy/eslint.config.mjs /app/deploy/nest-cli.json /app/deploy/tsconfig*.json \
     /app/deploy/*.tsbuildinfo /app/deploy/drizzle.config.ts
@@ -45,9 +45,9 @@ FROM node:24-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Sin privilegios: la imagen base de Node trae el usuario `node` (uid 1000). Correr como
-# root daría a un RCE en la app permisos totales dentro del contenedor (y sobre cualquier
-# volumen montado). `--chown` en el COPY evita una capa extra de `chown` duplicando ficheros.
+# Unprivileged: the Node base image ships the `node` user (uid 1000). Running as root would
+# give an RCE in the app full permissions inside the container (and over any mounted volume).
+# `--chown` on the COPY avoids an extra `chown` layer that would duplicate files.
 COPY --from=build --chown=node:node /app/deploy ./
 USER node
 

@@ -6,14 +6,14 @@ import { CALCULATORS, type CalculatorEntry } from '@sextante/core/calculators/sc
 import { ToolUserError } from './tool-errors.js';
 
 /**
- * Pegamento MCP sobre el registro de calculadoras de `@sextante/core` (esquemas, categoría y
- * cálculo de cada una): catálogo para `list_calculators` y ejecución para `calculate`.
+ * MCP glue over the `@sextante/core` calculator registry (schema, category and computation of
+ * each one): catalogue for `list_calculators` and execution for `calculate`.
  */
 
-/** Calculadora cuyo slug no existe (se traduce a error de tool con la lista de válidos). */
+/** Calculator whose slug does not exist (turned into a tool error pointing to the valid ones). */
 export class UnknownCalculatorError extends ToolUserError {
   constructor(slug: string) {
-    super(`Calculadora desconocida: "${slug}". Usa list_calculators para ver los slugs disponibles.`);
+    super(`Unknown calculator: "${slug}". Use list_calculators to see the available slugs.`);
   }
 }
 
@@ -22,30 +22,30 @@ export interface CalculatorListing {
   category: CalculatorCategory;
   title: string;
   description: string;
-  /** JSON Schema de `inputs` (tipos, mínimos, máximos y descripción con unidades de cada campo). */
+  /** JSON Schema of `inputs` (types, minimums, maximums and a description with units for each field). */
   inputSchema: unknown;
 }
 
-/** Un slug es válido solo si es una clave propia (evita `__proto__`, `constructor`, etc.). */
+/** A slug is valid only if it is an own key (rules out `__proto__`, `constructor`, etc.). */
 function findCalculator(slug: string): CalculatorEntry | undefined {
   return Object.hasOwn(CALCULATORS, slug) ? CALCULATORS[slug] : undefined;
 }
 
-/** Esquema JSON de cada calculadora, derivado del zod una sola vez (los esquemas son estáticos). */
+/** JSON Schema of each calculator, derived from zod only once (the schemas are static). */
 const listingCache = new Map<string, CalculatorListing>();
 
 function toListing(slug: string, entry: CalculatorEntry): CalculatorListing {
   let listing = listingCache.get(slug);
   if (!listing) {
     const inputSchema = z.toJSONSchema(entry.schema, { io: 'input' });
-    delete inputSchema.$schema; // ruido: el borrador de JSON Schema ya lo sabe el cliente
+    delete inputSchema.$schema; // noise: the client already knows the JSON Schema draft
     listing = { slug, category: entry.category, title: entry.title, description: entry.description, inputSchema };
     listingCache.set(slug, listing);
   }
   return listing;
 }
 
-/** Catálogo para `list_calculators`: todas, o las de una categoría / un slug. */
+/** Catalogue for `list_calculators`: all of them, or those of one category / one slug. */
 export function listCalculators(filter: { category?: CalculatorCategory; slug?: string } = {}): CalculatorListing[] {
   return Object.entries(CALCULATORS)
     .filter(
@@ -55,15 +55,15 @@ export function listCalculators(filter: { category?: CalculatorCategory; slug?: 
     .map(([slug, entry]) => toListing(slug, entry));
 }
 
-/** Resumen legible de los errores de validación de zod, sin volcar el JSON interno. */
+/** Readable summary of zod validation errors, without dumping the internal JSON. */
 function describeIssues(error: z.ZodError): string {
   return error.issues.map((issue) => `${issue.path.join('.') || 'inputs'}: ${issue.message}`).join('; ');
 }
 
 /**
- * Valida `inputs` con el esquema de ESA calculadora y calcula. Lanza `UnknownCalculatorError` si
- * el slug no existe y un `ToolUserError` con los campos inválidos si la entrada no cumple el esquema
- * (fuera de rango, de otro tipo o desconocida): en ambos casos no se calcula nada.
+ * Validates `inputs` against THAT calculator's schema and computes. Throws `UnknownCalculatorError`
+ * if the slug does not exist and a `ToolUserError` listing the invalid fields if the input breaks
+ * the schema (out of range, wrong type or unknown): in both cases nothing is computed.
  */
 export function runCalculator(slug: string, inputs: unknown): unknown {
   const entry = findCalculator(slug);
@@ -72,13 +72,13 @@ export function runCalculator(slug: string, inputs: unknown): unknown {
     return entry.run(inputs);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ToolUserError(`Entrada no válida para ${slug}: ${describeIssues(error)}`);
+      throw new ToolUserError(`Invalid input for ${slug}: ${describeIssues(error)}`);
     }
     throw error;
   }
 }
 
-/** ¿Existe la calculadora? Para auditar solo slugs conocidos (la columna es de longitud fija). */
+/** Does the calculator exist? So only known slugs are audited (the column has a fixed length). */
 export function hasCalculator(slug: string): boolean {
   return findCalculator(slug) !== undefined;
 }

@@ -8,14 +8,15 @@ import { serverApiFetch } from "./api.server";
 
 export type SessionUser = { id: string; email: string };
 
-/** Valida la cookie contra `/api/auth/me`; `null` sin sesión. La autorización la decide el servidor. */
+/** Validates the cookie against `/api/auth/me`; `null` without a session. The server decides authorization. */
 export async function getSessionUser(): Promise<SessionUser | null> {
   return serverApiFetch<SessionUser>("/api/auth/me");
 }
 
 /**
- * Protección server-side de una página privada: el usuario de la sesión o, sin sesión válida,
- * redirige al login de su idioma (`redirect` corta el render, así que nunca devuelve `null`).
+ * Server-side guard for a private page: returns the session user or, without a valid session,
+ * redirects to the login page in its locale (`redirect` aborts the render, so it never returns
+ * `null`).
  */
 export async function requireSessionUser(locale: string): Promise<SessionUser> {
   const user = await getSessionUser();

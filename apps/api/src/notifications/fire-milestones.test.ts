@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fireTargetFromInputs, newMilestone, reachedMilestone } from './fire-milestones.js';
 
 describe('fireTargetFromInputs', () => {
-  it('en modo cantidad el objetivo es la cifra guardada, con su divisa', () => {
+  it('in amount mode the goal is the stored figure, with its currency', () => {
     expect(
       fireTargetFromInputs({ goalMode: 'amount', targetAmount: 150_000, annualExpenses: 24000, goalCurrency: 'USD' }),
     ).toEqual({ target: 150_000, currency: 'USD' });
@@ -11,7 +11,7 @@ describe('fireTargetFromInputs', () => {
     expect(fireTargetFromInputs({ goalMode: 'amount' })).toBeNull();
   });
 
-  it('objetivo = gasto / tasa de retiro, como la calculadora FIRE', () => {
+  it('goal = spending / withdrawal rate, like the FIRE calculator', () => {
     expect(fireTargetFromInputs({ annualExpenses: 24000, withdrawalRate: 4 })).toEqual({
       target: 600000,
       currency: 'EUR',
@@ -22,24 +22,24 @@ describe('fireTargetFromInputs', () => {
     });
   });
 
-  it('una tasa no positiva o ausente usa el 4 %', () => {
+  it('uses 4 % when the rate is missing or not positive', () => {
     expect(fireTargetFromInputs({ annualExpenses: 20000, withdrawalRate: 0 })?.target).toBe(500000);
     expect(fireTargetFromInputs({ annualExpenses: 20000 })?.target).toBe(500000);
   });
 
-  it('sin gasto positivo no hay objetivo', () => {
+  it('returns no goal without positive spending', () => {
     expect(fireTargetFromInputs({ annualExpenses: 0 })).toBeNull();
     expect(fireTargetFromInputs({ annualExpenses: '24000' })).toBeNull();
     expect(fireTargetFromInputs({})).toBeNull();
   });
 
-  it('una divisa que no parece un código ISO cae a euros', () => {
+  it('falls back to euros when the currency does not look like an ISO code', () => {
     expect(fireTargetFromInputs({ annualExpenses: 1, goalCurrency: 'eur<script>' })?.currency).toBe('EUR');
   });
 });
 
-describe('hitos', () => {
-  it('reachedMilestone da el hito más alto alcanzado', () => {
+describe('milestones', () => {
+  it('reachedMilestone returns the highest milestone reached', () => {
     expect(reachedMilestone(0)).toBe(0);
     expect(reachedMilestone(24.99)).toBe(0);
     expect(reachedMilestone(25)).toBe(25);
@@ -48,7 +48,7 @@ describe('hitos', () => {
     expect(reachedMilestone(Number.NaN)).toBe(0);
   });
 
-  it('newMilestone solo avisa de lo nuevo y del mayor si se cruzan varios', () => {
+  it('newMilestone only reports new milestones, and the highest when several are crossed', () => {
     expect(newMilestone(30, 0)).toBe(25);
     expect(newMilestone(30, 25)).toBeNull();
     expect(newMilestone(80, 25)).toBe(75);

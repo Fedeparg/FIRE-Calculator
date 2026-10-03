@@ -6,8 +6,8 @@ import RouteMessages from "@/i18n/RouteMessages";
 
 type Props = { params: Promise<{ locale: string }> };
 
-// Callback efímero del magic link: rastreable pero nunca indexable. No se pone en
-// robots Disallow para que Google sí pueda leer este noindex si llega a la URL.
+// Ephemeral magic-link callback: crawlable but never indexable. It is not added to the
+// robots Disallow list so that Google can read this noindex if it reaches the URL.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function VerifyPage({ params }: Props) {

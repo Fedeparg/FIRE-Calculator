@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { PROPERTY_PARAMS } from "./test-support/property-config.js";
 import { COMPOUNDING_FREQUENCIES, FREQUENCIES, project, type ProjectionInput } from "./projection.js";
 
-/** Entradas "normales": importes y tasas no negativos, horizonte razonable. */
+/** "Normal" inputs: non-negative amounts and rates, a reasonable horizon. */
 const input = fc.record({
   initial: fc.double({ min: 0, max: 1e6, noNaN: true }),
   contribution: fc.double({ min: 0, max: 1e4, noNaN: true }),
@@ -14,11 +14,11 @@ const input = fc.record({
   contributionGrowth: fc.double({ min: 0, max: 10, noNaN: true }),
 }) satisfies fc.Arbitrary<ProjectionInput>;
 
-/** Tolerancia relativa para comparar sumas en coma flotante. */
+/** Relative tolerance for comparing floating-point sums. */
 const close = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("project — propiedades", () => {
-  it("un año más nunca reduce el valor final con rentabilidad y aportación no negativas", () => {
+describe("project — properties", () => {
+  it("one more year never lowers the final value with non-negative return and contribution", () => {
     fc.assert(
       fc.property(input, (i) => {
         const now = project(i).finalValue;
@@ -29,7 +29,7 @@ describe("project — propiedades", () => {
     );
   });
 
-  it("más aportación o más rentabilidad nunca reducen el valor final", () => {
+  it("a larger contribution or return never lowers the final value", () => {
     fc.assert(
       fc.property(input, fc.double({ min: 0, max: 1000, noNaN: true }), (i, extra) => {
         const base = project(i).finalValue;
@@ -43,7 +43,7 @@ describe("project — propiedades", () => {
     );
   });
 
-  it("sin aportaciones, la frecuencia de aportación no cambia el resultado (solo la capitalización)", () => {
+  it("without contributions, the contribution frequency does not change the result (only compounding does)", () => {
     fc.assert(
       fc.property(
         input,
@@ -59,7 +59,7 @@ describe("project — propiedades", () => {
     );
   });
 
-  it("con rentabilidad 0 el valor es exactamente lo aportado, sin intereses", () => {
+  it("with a 0 return the value is exactly what was contributed, with no interest", () => {
     fc.assert(
       fc.property(input, (i) => {
         const result = project({ ...i, annualRate: 0 });
@@ -69,7 +69,7 @@ describe("project — propiedades", () => {
     );
   });
 
-  it("valor = aportado + intereses en cada año, y nunca por debajo de lo aportado", () => {
+  it("value = contributed + interest every year, and never below what was contributed", () => {
     fc.assert(
       fc.property(input, (i) => {
         const result = project(i);
@@ -82,7 +82,7 @@ describe("project — propiedades", () => {
     );
   });
 
-  it("la serie tiene un punto por año, del 0 al horizonte", () => {
+  it("the series has one point per year, from 0 to the horizon", () => {
     fc.assert(
       fc.property(input, (i) => {
         const result = project(i);

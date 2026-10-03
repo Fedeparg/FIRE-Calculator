@@ -24,10 +24,10 @@ import { updatePositionSchema, type UpdatePositionDto } from './dto/update-posit
 import { PositionsService } from './positions.service.js';
 
 /**
- * Cartera del usuario. Todos los endpoints exigen sesión y el `userId` sale del JWT
- * (`CurrentUser`), nunca del body ni de un query param; el servicio fuerza el scoping.
- * Aislamiento: PATCH/DELETE de una posición ajena o uuid inexistente → 404 (no se
- * distingue, para no revelar ids), id no-uuid → 400, `(símbolo, bróker)` duplicado → 409 con la existente en el body.
+ * The user's portfolio. Every endpoint requires a session and the `userId` comes from the JWT
+ * (`CurrentUser`), never from the body or a query param; the service enforces the scoping.
+ * Isolation: PATCH/DELETE of a foreign position or a non-existent uuid → 404 (not told apart,
+ * so as not to reveal ids), non-uuid id → 400, duplicate `(symbol, broker)` → 409 with the existing one in the body.
  */
 @Controller('positions')
 @UseGuards(JwtAuthGuard)
@@ -51,7 +51,7 @@ export class PositionsController {
     return this.positions.findAllByUser(user.id);
   }
 
-  /** Todas las operaciones del usuario en orden cronológico (evita una petición por posición en el informe de plusvalías). */
+  /** All of the user's trades in chronological order (avoids one request per position in the capital gains report). */
   @Get('lots')
   findAllLots(@CurrentUser() user: SessionUser): Promise<PositionLotResponse[]> {
     return this.lots.findAllByUser(user.id);

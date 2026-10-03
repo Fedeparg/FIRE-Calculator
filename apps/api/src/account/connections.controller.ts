@@ -7,17 +7,17 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 
 /**
- * Gestión de "Aplicaciones conectadas" (RGPD): listar y revocar los clientes OAuth/MCP a los
- * que el usuario ha dado acceso a su cartera. Todo exige sesión (JwtAuthGuard) y el `userId`
- * se lee siempre del JWT: nadie puede ver ni revocar las conexiones de otro.
- * Ver `_local/mcp-integracion.md`.
+ * Management of "Connected applications" (GDPR): list and revoke the OAuth/MCP clients the
+ * user has granted access to their portfolio. Everything requires a session (JwtAuthGuard) and
+ * the `userId` is always read from the JWT: nobody can see or revoke someone else's connections.
+ * See `_local/mcp-integracion.md`.
  */
 @Controller('account/connections')
 @UseGuards(JwtAuthGuard)
 export class ConnectionsController {
   constructor(private readonly grants: OAuthGrantsService) {}
 
-  /** Lista las aplicaciones conectadas del usuario, con su nombre legible. */
+  /** Lists the user's connected applications, with their human-readable name. */
   @Get()
   async list(@CurrentUser() user: SessionUser): Promise<ConnectedApp[]> {
     const grants = await this.grants.listWithClients(user.id);
@@ -31,7 +31,7 @@ export class ConnectionsController {
     }));
   }
 
-  /** Revoca el acceso de un cliente: borra el consentimiento y todos sus tokens. */
+  /** Revokes a client's access: deletes the consent and all its tokens. */
   @Delete(':clientId')
   @HttpCode(HttpStatus.NO_CONTENT)
   async revoke(@CurrentUser() user: SessionUser, @Param('clientId') clientId: string): Promise<void> {

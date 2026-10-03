@@ -24,7 +24,7 @@ export class AuthController {
     private readonly config: ConfigService<Env, true>,
   ) {}
 
-  /** Solicita un magic link. Limitado para evitar abuso / bombardeo de emails. */
+  /** Requests a magic link. Rate-limited to prevent abuse and email bombing. */
   @Post('request')
   @HttpCode(HttpStatus.ACCEPTED)
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
@@ -34,11 +34,11 @@ export class AuthController {
   ): Promise<{ ok: true }> {
     this.logDetectedIp(req);
     await this.auth.requestLink(dto.email, dto.locale ?? 'es');
-    // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
+    // Always 202, without revealing whether the email exists (prevents user enumeration).
     return { ok: true };
   }
 
-  /** Canjea el token del enlace por una sesión (cookie HttpOnly con el JWT). */
+  /** Redeems the link token for a session (HttpOnly cookie holding the JWT). */
   @Post('verify')
   @HttpCode(HttpStatus.OK)
   async verify(
@@ -52,10 +52,10 @@ export class AuthController {
   }
 
   /**
-   * Cierra la sesión: invalida el JWT en el servidor (sube la versión de sesión del usuario) y
-   * borra la cookie. Sin lo primero, quien se hubiera quedado con el JWT podría seguir usándolo
-   * hasta que caducara. Como la versión es por usuario, cierra también sus otras sesiones. Sin
-   * sesión válida solo borra la cookie (idempotente, sin 401).
+   * Logs out: invalidates the JWT on the server (bumps the user's session version) and clears
+   * the cookie. Without the former, anyone holding on to the JWT could keep using it until it
+   * expired. Since the version is per user, this also closes their other sessions. Without a
+   * valid session it only clears the cookie (idempotent, no 401).
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -66,7 +66,7 @@ export class AuthController {
     return { ok: true };
   }
 
-  /** Cierra todas las sesiones abiertas del usuario, en todos sus dispositivos, incluida esta. */
+  /** Closes every open session of the user, on all their devices, including this one. */
   @Post('sessions/revoke')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
@@ -79,7 +79,7 @@ export class AuthController {
     return { ok: true };
   }
 
-  /** Devuelve el usuario autenticado (o 401). */
+  /** Returns the authenticated user (or 401). */
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: SessionUser): SessionUser {
@@ -87,8 +87,8 @@ export class AuthController {
   }
 
   /**
-   * RGPD — derecho de supresión: borra la cuenta del usuario autenticado (sus posiciones
-   * caen por cascade) y limpia la cookie de sesión. El `userId` se lee del JWT.
+   * GDPR right to erasure: deletes the authenticated user's account (their positions go via
+   * cascade) and clears the session cookie. The `userId` is read from the JWT.
    */
   @Delete('account')
   @UseGuards(JwtAuthGuard)
@@ -99,26 +99,26 @@ export class AuthController {
   }
 
   /**
-   * Diagnóstico de la IP real detectada. Solo en esta ruta (está limitada a 5 req/min, así
-   * que no ensucia el log) y a propósito: el rate limiting depende de que `TRUST_PROXY_HOPS`
-   * (ver `main.ts`) cuente bien los saltos de proxy, y eso no se puede deducir sin ver qué
-   * llega de verdad en producción. Si `req.ip` no coincide con la IP más a la izquierda de
-   * `X-Forwarded-For`, hay que subir el número de saltos.
+   * Diagnostic log of the real client IP detected. Only on this route (it is limited to 5 req/min,
+   * so it does not flood the log) and on purpose: rate limiting depends on `TRUST_PROXY_HOPS`
+   * (see `main.ts`) counting the proxy hops correctly, and that cannot be inferred without seeing
+   * what actually arrives in production. If `req.ip` does not match the leftmost IP in
+   * `X-Forwarded-For`, the number of hops must be raised.
    *
-   * No registra el email ni ningún otro dato del cuerpo (minimización de datos).
+   * It logs neither the email nor any other body field (data minimisation).
    */
   private logDetectedIp(req: Request): void {
     const forwardedFor = req.headers['x-forwarded-for'];
     const chain = Array.isArray(forwardedFor) ? forwardedFor.join(', ') : (forwardedFor ?? '-');
-    this.logger.log(`Diagnóstico de proxy — req.ip=${req.ip ?? '-'} x-forwarded-for=${chain}`);
+    this.logger.log(`Proxy diagnostics — req.ip=${req.ip ?? '-'} x-forwarded-for=${chain}`);
   }
 
   private cookieOptions(): CookieOptions {
     return {
       httpOnly: true,
-      // Secure explícito (no atado a NODE_ENV): así la API dockerizada puede servir
-      // a un frontend en http://localhost sin que el navegador rechace la cookie.
-      // En producción (HTTPS) se pone COOKIE_SECURE=true.
+      // Explicit Secure flag (not tied to NODE_ENV): this lets the dockerised API serve a
+      // frontend on http://localhost without the browser rejecting the cookie.
+      // In production (HTTPS), set COOKIE_SECURE=true.
       secure: this.config.get('COOKIE_SECURE', { infer: true }),
       sameSite: 'lax',
       path: '/',

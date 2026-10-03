@@ -22,8 +22,8 @@ import { fitYDomain } from "./fit-y-domain";
 import { useRangeSelection } from "./use-range-selection";
 
 /**
- * Clave de una fila de datos `T`: las series, las bandas y los ejes se refieren a columnas que
- * existen de verdad en el tipo de punto (una errata como `"valu"` no compila).
+ * Key of a data row `T`: series, bands and axes refer to columns that really exist in the point
+ * type (a typo such as `"valu"` does not compile).
  */
 type DataKey<T> = keyof T & string;
 
@@ -31,21 +31,21 @@ export type SeriesDef<T> = {
   key: DataKey<T>;
   name: string;
   color: string;
-  /** Solo para `lines`: trazo discontinuo (por defecto) o continuo. */
+  /** `lines` only: dashed (default) or solid stroke. */
   dashed?: boolean;
 };
 
 /**
- * Banda entre dos series (p. ej. los percentiles 10 y 90 de una simulación). Se pinta como un
- * área rellena entre `lowKey` y `highKey`, sin apilar sobre el resto.
+ * Band between two series (e.g. the 10th and 90th percentiles of a simulation). Drawn as a
+ * filled area between `lowKey` and `highKey`, not stacked on the rest.
  */
 export type BandDef<T> = { lowKey: DataKey<T>; highKey: DataKey<T>; name: string; color: string };
 
 /**
- * Fila de datos genérica, para quien construye sus puntos al vuelo (la cartera). El eje X admite
- * texto (una fecha ISO) además de número; `boolean` se admite para columnas extra de la tabla
- * accesible (p. ej. "estimado") que no se pintan en el propio gráfico. Las calculadoras pasan sus
- * tipos de punto de core, sin firma de índice.
+ * Generic data row, for callers that build their points on the fly (the portfolio). The X axis
+ * accepts text (an ISO date) as well as numbers; `boolean` is allowed for extra columns of the
+ * accessible table (e.g. "estimated") that are not drawn on the chart itself. The calculators
+ * pass their point types from core, without an index signature.
  */
 export type DataRow = Record<string, number | string | boolean>;
 
@@ -53,94 +53,94 @@ type Props<T extends object> = {
   title: string;
   data: readonly T[];
   xKey: DataKey<T>;
-  /** Series apiladas (p.ej. aportado + intereses). */
+  /** Stacked series (e.g. contributions + interest). */
   stack: readonly SeriesDef<T>[];
-  /** Líneas superpuestas opcionales (p.ej. objetivo FIRE). */
+  /** Optional overlaid lines (e.g. the FIRE target). */
   lines?: readonly SeriesDef<T>[];
-  /** Bandas opcionales entre dos series (p.ej. un abanico de percentiles). */
+  /** Optional bands between two series (e.g. a percentile fan). */
   bands?: readonly BandDef<T>[];
   valueKey: DataKey<T>;
   contributedKey?: DataKey<T>;
   interestKey?: DataKey<T>;
-  /** Nombre del eje X (cabecera de la tabla accesible y prefijo del tooltip). Por defecto, "Año". */
+  /** X-axis name (accessible table header and tooltip prefix). Defaults to "Year". */
   xLabel?: string;
   height?: number;
   /**
-   * Divisa de los importes. Si se omite, se formatea en euros exactamente como siempre
-   * (`formatEUR` / `formatCompactEUR`): las calculadoras no cambian. La cartera la pasa para
-   * pintar la serie en la divisa que el usuario haya elegido.
+   * Currency of the amounts. If omitted, amounts are formatted in euros exactly as before
+   * (`formatEUR` / `formatCompactEUR`): the calculators are unchanged. The portfolio passes it to
+   * draw the series in the currency the user picked.
    */
   currency?: string;
   /**
-   * Formato del valor del eje X (ticks, tooltip y tabla accesible). Por defecto se formatea
-   * como número entero, que es lo que necesita un eje de años.
+   * Format of the X-axis value (ticks, tooltip and accessible table). Defaults to an integer,
+   * which is what a year axis needs.
    */
   xFormat?: (value: string | number) => string;
   /**
-   * Selección por arrastre para ver el crecimiento de un tramo. Solo tiene sentido con un eje
-   * X numérico y continuo (años); con fechas se desactiva.
+   * Drag selection to see the growth over a range. Only meaningful with a numeric, continuous X
+   * axis (years); disabled for dates.
    */
   selectable?: boolean;
-  /** Fila de "total" en el tooltip. Sobra cuando hay una sola serie apilada. */
+  /** "Total" row in the tooltip. Redundant with a single stacked series. */
   showTotal?: boolean;
   /**
-   * Separación mínima entre etiquetas del eje X, en píxeles. El valor por defecto es el
-   * propio de Recharts; una serie diaria necesita bastante más para no solaparse.
+   * Minimum gap between X-axis labels, in pixels. The default is Recharts' own; a daily series
+   * needs much more to avoid overlap.
    */
   xMinTickGap?: number;
   /**
-   * Estrategia de etiquetas del eje X. El valor por defecto es el de Recharts;
-   * `preserveStartEnd` garantiza los extremos cuando se ocultan etiquetas intermedias.
+   * X-axis label strategy. The default is Recharts'; `preserveStartEnd` guarantees the ends
+   * when intermediate labels are hidden.
    */
   xInterval?: "preserveEnd" | "preserveStartEnd";
   /**
-   * Tramos del eje X que se sombrean de forma permanente (a diferencia de la selección por
-   * arrastre, que es interactiva). Genérico a propósito — el componente no sabe qué
-   * significa un tramo, solo lo pinta — para que cualquier calculadora lo reutilice; hoy lo
-   * usa la cartera para marcar los puntos `estimated` del histórico.
+   * X-axis ranges shaded permanently (unlike the drag selection, which is interactive). Generic
+   * on purpose — the component does not know what a range means, it just draws it — so any
+   * calculator can reuse it; today the portfolio uses it to mark the history's `estimated`
+   * points.
    */
   shadedRanges?: readonly { from: string | number; to: string | number; label?: string }[];
   /**
-   * Columnas extra de la tabla accesible, además del eje X y las series (`stack`/`lines`).
-   * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
+   * Extra columns for the accessible table, besides the X axis and the series (`stack`/`lines`).
+   * Like `shadedRanges`, it keeps the component agnostic of what the data means.
    */
   extraColumns?: readonly ChartTableColumn<T>[];
   /**
-   * Dominio del eje de valores. `"zero"` (por defecto) es el de siempre: arranca en 0, que es
-   * lo correcto para una proyección que crece desde cero. `"fit"` ajusta el eje al rango real
-   * de los datos (con un 1% de margen arriba y abajo) en vez de forzar el 0 como suelo; lo
-   * necesita la cartera, donde un valor base alto con poca variación se ve plana pegada a 0.
+   * Value-axis domain. `"zero"` (default) is the original one: it starts at 0, which is right
+   * for a projection that grows from zero. `"fit"` fits the axis to the actual data range (with
+   * a 1% margin above and below) instead of forcing 0 as the floor; the portfolio needs it, as a
+   * high base value with little variation looks flat against 0.
    */
   yDomain?: "zero" | "fit";
   /**
-   * Oculta el título a la vista (sigue en el DOM para lectores de pantalla y da nombre a la
-   * tabla accesible). Para cuando el bloque que lo contiene ya lo dice.
+   * Hides the title visually (it stays in the DOM for screen readers and names the accessible
+   * table). For when the enclosing block already states it.
    */
   hideTitle?: boolean;
-  /** Dibuja la leyenda de Recharts. Se apaga cuando quien llama pinta una propia, más explicada. */
+  /** Draws the Recharts legend. Turned off when the caller renders its own, more descriptive one. */
   showLegend?: boolean;
   /**
-   * `fromSm`: sin ejes por debajo de `sm`. En un móvil los ejes se comen el ancho; quien lo pide
-   * enseña encima el valor y el rango de fechas, y el tooltip da cada punto exacto.
+   * `fromSm`: no axes below `sm`. On a phone the axes eat up the width; the caller shows the
+   * value and the date range above, and the tooltip gives each exact point.
    */
   yAxis?: "always" | "fromSm";
 };
 
-// Valores por defecto de las props opcionales como constantes de módulo: un `= []` en la firma
-// crea un array nuevo en cada render, y los `useMemo` que dependen de él se recalcularían siempre.
-// Un array vacío y congelado vale para cualquier `T`.
+// Defaults for optional props as module constants: a `= []` in the signature creates a new array
+// on every render, and the `useMemo`s depending on it would always recompute. A frozen empty
+// array works for any `T`.
 const NO_ITEMS: readonly never[] = Object.freeze([]);
 
 /**
- * Tipo de fila con el que se instancian los componentes de Recharts que reciben una clave como
- * texto. Su `TypedDataKey<T>` es un tipo condicional que TypeScript no puede resolver mientras `T`
- * sea genérico; la clave ya está comprobada contra `T` en las props de este componente.
+ * Row type used to instantiate the Recharts components that take a key as text. Their
+ * `TypedDataKey<T>` is a conditional type TypeScript cannot resolve while `T` is generic; the key
+ * is already checked against `T` in this component's props.
  */
 type RechartsRow = Record<string, unknown>;
 
 const toNum = (v: unknown) => (v === undefined ? 0 : Number(v));
 
-/** Valor del eje X de una fila: número (años) o texto (fecha ISO). */
+/** X-axis value of a row: a number (years) or text (ISO date). */
 function xValueOf(value: unknown): string | number {
   return typeof value === "number" || typeof value === "string" ? value : String(value);
 }
@@ -173,22 +173,22 @@ export default function TimeSeriesChart<T extends object>({
   const isSmUp = useMediaQuery("(min-width: 640px)", true);
   const showYAxis = yAxis === "always" || isSmUp;
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } = useFormat();
-  // Sin `currency` el formato es EXACTAMENTE el de antes; con divisa se delega en `Intl`.
+  // Without `currency` the format is EXACTLY the previous one; with a currency it defers to `Intl`.
   const formatValue = currency ? (n: number) => formatCurrency(n, currency) : formatEUR;
-  // Espacios duros: Recharts parte las etiquetas de eje por los espacios normales cuando no
-  // caben, y en móvil "600 mil €" acababa en dos líneas.
+  // Non-breaking spaces: Recharts splits axis labels at regular spaces when they do not fit,
+  // and on mobile "600 mil €" ended up on two lines.
   const formatAxisValue = (n: number) =>
     (currency ? formatCompactCurrency(n, currency) : formatCompactEUR(n)).replace(/ /g, "\u00a0");
   const formatX = xFormat ?? ((value: string | number) => formatNumber(Number(value)));
-  // Las etiquetas (total, selección, accesibilidad) son genéricas de cualquier gráfica, así
-  // que se leen del namespace compartido `chart` en lugar de repetirlas en cada calculadora.
+  // The labels (total, selection, accessibility) are generic to any chart, so they are read from
+  // the shared `chart` namespace instead of being repeated in every calculator.
   const tc = useTranslations("chart");
   const axisX = xLabel ?? tc("axisYear");
-  // El tramo se enseña con el mismo formato que el eje (sin `xFormat`, tal cual: años).
+  // The range is shown with the same format as the axis (without `xFormat`, as is: years).
   const formatRangeX = xFormat ?? String;
   const { selection, handlers: selectionHandlers } = useRangeSelection(selectable);
 
-  // Con `yDomain="fit"` el eje se ajusta al rango real de los datos (ver `fitYDomain`).
+  // With `yDomain="fit"` the axis fits the actual data range (see `fitYDomain`).
   const fittedYDomain = useMemo(
     () =>
       yDomain === "fit"
@@ -237,8 +237,8 @@ export default function TimeSeriesChart<T extends object>({
   ];
 
   return (
-    // Sin eje Y (móvil compacto) la gráfica ya vive dentro de la tarjeta de quien la usa: sin
-    // segunda caja, para aprovechar todo el ancho.
+    // Without a Y axis (compact mobile) the chart already lives inside the caller's card: no
+    // second box, to use the full width.
     <div
       className={
         showYAxis
@@ -266,8 +266,8 @@ export default function TimeSeriesChart<T extends object>({
       </div>
 
       <div
-        // `pan-y`: en móvil el arrastre horizontal selecciona un tramo y el vertical sigue
-        // desplazando la página.
+        // `pan-y`: on mobile a horizontal drag selects a range and a vertical one still
+        // scrolls the page.
         style={{ width: "100%", height, touchAction: selectable ? "pan-y" : undefined }}
         className="select-none"
         role="img"
@@ -282,14 +282,14 @@ export default function TimeSeriesChart<T extends object>({
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
             <XAxis<RechartsRow>
               dataKey={xKey}
-              // En el modo compacto tampoco hay eje X: quien lo pide enseña el rango de fechas
-              // encima, y así la gráfica ocupa todo el ancho sin etiquetas cortadas.
+              // Compact mode has no X axis either: the caller shows the date range above, so
+              // the chart takes the full width without clipped labels.
               hide={!showYAxis}
               tick={{ fontSize: 12, fill: "var(--muted)" }}
-              // Sin `xFormat` no se pasa formateador: el eje se pinta igual que siempre.
+              // Without `xFormat` no formatter is passed: the axis renders as before.
               tickFormatter={xFormat}
-              // Con cientos de puntos (una serie diaria) Recharts pintaría una etiqueta por
-              // punto: `xMinTickGap` las separa y `preserveStartEnd` garantiza los extremos.
+              // With hundreds of points (a daily series) Recharts would draw one label per
+              // point: `xMinTickGap` spaces them and `preserveStartEnd` guarantees the ends.
               minTickGap={xMinTickGap}
               interval={xInterval}
             />
@@ -299,8 +299,8 @@ export default function TimeSeriesChart<T extends object>({
               tickFormatter={formatAxisValue}
               width={70}
               domain={fittedYDomain ?? [0, "auto"]}
-              // Sin esto Recharts extiende el dominio para incluir el baseline (0) que usa
-              // internamente para rellenar el área apilada, y el ajuste a 1% no se nota.
+              // Without this Recharts extends the domain to include the baseline (0) it uses
+              // internally to fill the stacked area, and the 1% fit has no visible effect.
               allowDataOverflow={yDomain === "fit"}
             />
             <Tooltip
@@ -332,7 +332,7 @@ export default function TimeSeriesChart<T extends object>({
               <Area
                 key={`${b.lowKey}-${b.highKey}`}
                 type="monotone"
-                // Recharts pinta un área de rango cuando `dataKey` devuelve [mínimo, máximo].
+                // Recharts draws a range area when `dataKey` returns [min, max].
                 dataKey={(row: T) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
                 name={b.name}
                 stroke="none"

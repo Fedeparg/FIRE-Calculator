@@ -8,9 +8,9 @@ import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
 
 /**
- * "Cerrar todas las sesiones": invalida en el servidor todos los inicios de sesión del usuario
- * (este navegador incluido), por si ha entrado en un equipo ajeno o sospecha que alguien se ha
- * quedado con su sesión. Tras hacerlo, vuelve al login.
+ * "Cerrar todas las sesiones" (Sign out everywhere): invalidates all of the user's sessions on
+ * the server (this browser included), in case they signed in on someone else's device or suspect
+ * someone kept their session. Afterwards it returns to the login page.
  */
 export default function AccountSessions() {
   const t = useTranslations("account.sessions");
@@ -21,7 +21,7 @@ export default function AccountSessions() {
   async function handleRevoke() {
     const result = await revoke.run(() => apiFetch("/api/auth/sessions/revoke", { method: "POST" }));
     if (!result.ok) return;
-    // `refresh` para que el layout (menú de usuario) deje de ver la sesión ya cerrada.
+    // `refresh` so the layout (user menu) stops seeing the now-closed session.
     router.replace("/entrar");
     router.refresh();
   }

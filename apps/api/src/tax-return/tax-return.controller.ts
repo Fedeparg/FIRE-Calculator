@@ -10,7 +10,7 @@ import { replacePendingBalancesSchema, type ReplacePendingBalancesDto } from './
 import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnService, type TaxReturnReport } from './tax-return.service.js';
 
-/** Datos de la declaración que no salen de la cartera, y el informe de la base del ahorro. */
+/** Tax return data that does not come from the portfolio, and the savings base report. */
 @Controller('tax-return')
 @UseGuards(JwtAuthGuard)
 export class TaxReturnController {
@@ -32,7 +32,7 @@ export class TaxReturnController {
     return this.pending.replace(user.id, dto);
   }
 
-  // Declarada la última: `:year` no debe tapar a las rutas fijas de arriba.
+  // Declared last: `:year` must not shadow the fixed routes above.
   @Get(':year')
   getReport(
     @CurrentUser() user: SessionUser,

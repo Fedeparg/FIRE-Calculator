@@ -1,4 +1,4 @@
-// Intereses, recompensas (saveback, stockperk) y dividendos → cobros.
+// Interest, rewards (saveback, stockperk) and dividends → payouts.
 
 import { firstItem } from "../../arrays.js";
 import { compareStrings } from "../../compare.js";
@@ -18,7 +18,7 @@ import {
 } from "./rows.js";
 import type { TaxedBuy } from "./trades.js";
 
-/** Tipos de fila que son cobros. */
+/** Row types that are payouts. */
 export const INCOME_TYPES: ReadonlySet<string> = new Set([
   "INTEREST_PAYMENT",
   "BENEFITS_SAVEBACK",
@@ -27,9 +27,9 @@ export const INCOME_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Anulaciones de dividendos: TR a veces abona un dividendo provisional y luego lo anula con la
- * misma cantidad en negativo antes de abonar el definitivo. Cada anulación se empareja con el
- * abono anterior del mismo ISIN e importe y se descartan los dos.
+ * Dividend reversals: TR sometimes pays a provisional dividend and then reverses it with the same
+ * amount as a negative before paying the final one. Each reversal is paired with the earlier
+ * payment with the same ISIN and amount, and both are skipped.
  */
 function reversedDividends(rows: readonly Row[]): Set<Row> {
   const dropped = new Set<Row>();
@@ -54,10 +54,11 @@ function reversedDividends(rows: readonly Row[]): Set<Row> {
 }
 
 /**
- * Día del cambio de custodia a la sucursal española de TR, o `null`. Desde el día siguiente TR
- * retiene en España e informa a la AEAT (modelos 187, 189, 193, 196…): esos cobros salen en el
- * borrador. Se reconoce por las filas `MIGRATION` (traspaso de valores entre las dos entidades);
- * sin ellas, por el primer interés con retención española (cuenta española desde el principio).
+ * Day of the custody change to TR's Spanish branch, or `null`. From the next day on, TR withholds
+ * in Spain and reports to the AEAT (modelos 187, 189, 193, 196…): those payouts show up in the
+ * draft return (borrador). It is detected through the `MIGRATION` rows (securities transfer
+ * between the two entities); without them, through the first interest payment with Spanish
+ * withholding (a Spanish account from the start).
  */
 function spanishBranchCutoff(
   migrations: readonly Row[],
@@ -72,7 +73,7 @@ function spanishBranchCutoff(
   return withheld.length > 0 ? { date: firstItem(withheld), inclusive: true } : null;
 }
 
-/** Cobro de un dividendo: las retenciones se reparten con `resolveFromBroker`. */
+/** Dividend payout: the withholdings are split with `resolveFromBroker`. */
 function dividendIncome(row: Row, amount: bigint, tax: bigint, isReported: boolean): ImportedIncome {
   const country = row.symbol.slice(0, 2);
   const shares = amountUnits(row.shares);
@@ -105,10 +106,11 @@ function dividendIncome(row: Row, amount: bigint, tax: bigint, isReported: boole
   };
 }
 
-/** Cobro de un interés o una recompensa, con el pagador según la sucursal. */
+/** Interest or reward payout, with the payer depending on the branch. */
 function interestOrBenefitIncome(row: Row, amount: bigint, tax: bigint, isReported: boolean): ImportedIncome {
-  // La sucursal española comunica a la AEAT los intereses del mes con fecha de su último día,
-  // aunque los abone el día 1 del siguiente: así el de diciembre cuenta en su año, como en el borrador.
+  // The Spanish branch reports each month's interest to the AEAT dated on its last day, even though
+  // it pays it on the 1st of the next month: that way December's counts in its own year, as in the
+  // draft return.
   const paidAt =
     row.type === "INTEREST_PAYMENT" && isReported && row.date.endsWith("-01") ? addDays(row.date, -1) : row.date;
   return {
@@ -132,11 +134,11 @@ function interestOrBenefitIncome(row: Row, amount: bigint, tax: bigint, isReport
 }
 
 /**
- * Intereses y recompensas (saveback, stockperk) → cobros. TR declara las recompensas como
- * intereses, con su retención del 19 %. Entre julio y noviembre de 2025 esa retención no venía en
- * la fila del saveback sino en la compra que lo invierte (mismo día e importe): se toma de ahí
- * (y se consume de `taxedBuys`). Antes del cambio a la sucursal española no hay retención ni
- * comunicación a la AEAT, y el pagador es TR Alemania (país `DE`); después, España.
+ * Interest and rewards (saveback, stockperk) → payouts. TR reports rewards as interest, with
+ * their 19% withholding. Between July and November 2025 that withholding was not on the saveback
+ * row but on the buy that invests it (same day and amount): it is taken from there (and consumed
+ * from `taxedBuys`). Before the switch to the Spanish branch there is no withholding nor reporting
+ * to the AEAT, and the payer is TR Germany (country `DE`); afterwards, Spain.
  */
 export function resolveIncome(
   rows: readonly Row[],

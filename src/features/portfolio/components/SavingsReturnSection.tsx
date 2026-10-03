@@ -12,14 +12,14 @@ import Notice from "@/shared/ui/Notice";
 import { formatTaxBox } from "@sextante/core/money";
 
 /**
- * Por debajo de 5 céntimos, un exceso de retención es ruido de redondeo: el bróker redondea cada
- * dividendo a céntimos y la suma de esos restos no es dinero que reclamar.
+ * Below 5 cents, excess withholding is rounding noise: the broker rounds each dividend to cents
+ * and the sum of those remainders is not money to claim back.
  */
 const MIN_EXCESS = 0.05;
 
 /**
- * La base del ahorro del ejercicio de principio a fin: saldos, compensación, cuota, deducción por
- * doble imposición internacional y retenciones españolas. El cálculo es `buildSavingsReturn`.
+ * The tax year's savings base end to end: balances, offsetting, tax due, international double
+ * taxation deduction and Spanish withholdings. The computation is `buildSavingsReturn`.
  */
 export default function SavingsReturnSection({
   result,
@@ -28,7 +28,7 @@ export default function SavingsReturnSection({
 }: {
   result: SavingsReturn;
   boxes: TaxBoxes | null;
-  /** El ejercicio no ha terminado: la cifra es provisional. */
+  /** The tax year has not ended: the figure is provisional. */
   inProgress: boolean;
 }) {
   const t = useTranslations("portfolio.savingsReturn");

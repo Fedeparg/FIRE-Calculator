@@ -16,13 +16,13 @@ import { goalPlanReducer, initialGoalPlan } from "@/features/portfolio/model/goa
 import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 
 /**
- * Estado y cálculo del objetivo de la cartera. El estado es un `useReducer` sobre el reductor
- * puro `goalPlanReducer` (varias piezas que cambian juntas, p. ej. cargar un escenario toca
- * importes, parámetros, nombre e id a la vez); lo convertido y el resultado se DERIVAN en cada
- * render, que es lo que evita sincronizar estado con efectos.
+ * State and computation of the portfolio goal. State is a `useReducer` over the pure reducer
+ * `goalPlanReducer` (several pieces that change together, e.g. loading a scenario touches
+ * amounts, parameters, name and id at once); the converted values and the result are DERIVED on
+ * every render, which avoids syncing state through effects.
  */
 export function useGoalPlan(display: string, rates: Record<string, number>, marketValue: number) {
-  // El inicializador perezoso (tercer argumento) solo corre al montar.
+  // The lazy initializer (third argument) only runs on mount.
   const [plan, dispatch] = useReducer(goalPlanReducer, display, initialGoalPlan);
   const shown = useMemo(() => showAmounts(plan.amounts, display, rates), [plan.amounts, display, rates]);
   const goal = useMemo(() => computeGoal(shown, plan.params, marketValue), [shown, plan.params, marketValue]);
@@ -33,10 +33,10 @@ export function useGoalPlan(display: string, rates: Record<string, number>, mark
     shown,
     goal,
     /**
-     * Escribir en un importe lo fija en la divisa que se está viendo: se guardan los tres ya
-     * convertidos, para no acabar con un campo en euros y otro en dólares. Si no había tasa (se
-     * mostraban sin convertir), editar uno da por hecho que todos son ya de esta divisa: es lo
-     * que significa teclear en un campo etiquetado con ella.
+     * Typing into an amount pins it to the currency being viewed: all three are stored already
+     * converted, so we never end up with one field in euros and another in dollars. If there was
+     * no rate (they were shown unconverted), editing one assumes all of them are already in this
+     * currency: that is what typing into a field labelled with it means.
      */
     updateAmounts(next: Partial<Omit<GoalAmounts, "currency">>) {
       dispatch({
@@ -55,20 +55,20 @@ export function useGoalPlan(display: string, rates: Record<string, number>, mark
 }
 
 /**
- * Guardar y cargar el objetivo como escenario de la calculadora FIRE (`useSavedScenarios`): no
- * hace falta almacenamiento nuevo y el plan aparece también en la calculadora. Al terminar la
- * carga inicial se aplica el plan activo (el que enseñan el Resumen y los avisos). Sin sesión
- * válida el bloque sigue calculando en local, simplemente no ofrece guardar.
+ * Saves and loads the goal as a FIRE calculator scenario (`useSavedScenarios`): no new storage is
+ * needed and the plan also shows up in the calculator. When the initial load finishes, the active
+ * plan (the one the Summary and the alerts show) is applied. Without a valid session the block
+ * still computes locally; it just does not offer saving.
  */
 export function usePlanPersistence({ plan, dispatch, shown, goal }: ReturnType<typeof useGoalPlan>, display: string) {
   const t = useTranslations("portfolio.goal");
   const scenarios = useSavedScenarios(FIRE_CALCULATOR_SLUG);
   const [saving, setSaving] = useState(false);
-  // Último mensaje de estado (guardado/actualizado/cargado) para la región viva.
+  // Last status message (saved/updated/loaded) for the live region.
   const [status, setStatus] = useState("");
 
-  // Se aplica el plan activo una sola vez, al terminar la carga. Se ajusta durante el render (el
-  // patrón de React para derivar estado de un cambio) en vez de con un efecto a posteriori.
+  // The active plan is applied once, when loading finishes. It is adjusted during render (the
+  // React pattern for deriving state from a change) instead of in an after-the-fact effect.
   const [initialApplied, setInitialApplied] = useState(false);
   if (!initialApplied && scenarios.status !== "loading") {
     setInitialApplied(true);
@@ -76,9 +76,9 @@ export function usePlanPersistence({ plan, dispatch, shown, goal }: ReturnType<t
   }
 
   /**
-   * Elegir un plan lo convierte en el activo: se aplica ya y se "toca" en la API (PATCH sin
-   * cambios, que renueva `updatedAt`) para que el Resumen y los avisos lo sigan. Si ese PATCH
-   * falla, el plan se queda cargado aquí pero se avisa (con el error) de que no se ha activado.
+   * Choosing a plan makes it the active one: it is applied immediately and "touched" in the API
+   * (a no-op PATCH that renews `updatedAt`) so the Summary and the alerts follow it. If that PATCH
+   * fails, the plan stays loaded here but the user is told (with the error) it was not activated.
    */
   async function select(id: string) {
     const scenario = scenarios.scenarios.find((s) => s.id === id);
@@ -89,9 +89,9 @@ export function usePlanPersistence({ plan, dispatch, shown, goal }: ReturnType<t
   }
 
   /**
-   * Guarda el objetivo. Si el nombre coincide con el del escenario cargado se ACTUALIZA ese
-   * (PATCH); si se cambia el nombre, se crea uno nuevo (POST). Guardar renueva `updatedAt`: el
-   * plan guardado pasa a ser el activo (primero de la lista).
+   * Saves the goal. If the name matches the loaded scenario's, that one is UPDATED (PATCH); if the
+   * name changed, a new one is created (POST). Saving renews `updatedAt`: the saved plan becomes
+   * the active one (first in the list).
    */
   async function save() {
     const trimmed = plan.name.trim();
@@ -117,7 +117,7 @@ export function usePlanPersistence({ plan, dispatch, shown, goal }: ReturnType<t
     saving,
     status,
     quotaReached: scenarios.scenarios.length >= MAX_SCENARIOS_PER_USER,
-    /** Guardar actualizará el escenario cargado (mismo nombre) en vez de crear uno. */
+    /** Saving will update the loaded scenario (same name) instead of creating a new one. */
     updating: scenarios.scenarios.some((s) => s.id === plan.selectedId && s.name === plan.name.trim()),
     select,
     save,

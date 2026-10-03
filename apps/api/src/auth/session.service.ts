@@ -8,20 +8,19 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { users } from '../db/schema.js';
 
 /**
- * Payload del JWT de sesión. `ver` es la versión de sesión del usuario al firmarlo: si la de BD
- * ha subido (cerrar sesión, "cerrar todas las sesiones"), el JWT deja de valer aunque su firma y
- * su caducidad sigan bien. Es opcional: los JWT emitidos antes de existir la columna no la
- * llevan y cuentan como versión 0, la inicial, para no desloguear a todo el mundo al desplegar.
+ * Session JWT payload. `ver` is the user's session version when it was signed: if the DB one has
+ * gone up (logout, "close all sessions"), the JWT stops being valid even though its signature and
+ * expiry are still fine. It is optional: JWTs issued before the column existed do not carry it
+ * and count as version 0, the initial one, so deploying did not log everyone out.
  */
 type SessionJwt = { sub: string; email: string; ver?: number };
 
 /**
- * Única verificación de la sesión del magic link (cookie JWT). La usan `JwtAuthGuard` (rutas
- * de la API) y el provider OAuth (`/authorize`), para que los dos apliquen la misma regla:
- * firma y caducidad válidas, usuario que SIGUE existiendo (una cuenta borrada, o la BD
- * reseteada en dev, no deja sesiones fantasma) y versión de sesión vigente (una sesión
- * cerrada no se puede reutilizar aunque alguien se haya quedado con el JWT). Cuesta un SELECT
- * por petición autenticada, asumible a esta escala.
+ * The single check of the magic-link session (JWT cookie). Used by `JwtAuthGuard` (API routes)
+ * and by the OAuth provider (`/authorize`), so both apply the same rule: valid signature and
+ * expiry, a user that STILL exists (a deleted account, or a DB reset in dev, leaves no ghost
+ * sessions) and a current session version (a closed session cannot be reused even if someone
+ * kept the JWT). It costs one SELECT per authenticated request, acceptable at this scale.
  */
 @Injectable()
 export class SessionService {
@@ -30,7 +29,7 @@ export class SessionService {
     @Inject(DRIZZLE) private readonly db: Database,
   ) {}
 
-  /** Firma el JWT de sesión de un usuario con su versión de sesión actual. */
+  /** Signs a user's session JWT with their current session version. */
   async sign(user: SessionUser): Promise<string> {
     const [row] = await this.db
       .select({ sessionVersion: users.sessionVersion })
@@ -41,7 +40,7 @@ export class SessionService {
     return this.jwt.signAsync(payload);
   }
 
-  /** Usuario de la cookie de sesión de la petición, o `null` si no hay sesión válida. */
+  /** User from the request's session cookie, or `null` if there is no valid session. */
   async resolve(req: Request): Promise<SessionUser | null> {
     const cookies = (req.cookies ?? {}) as Partial<Record<string, string>>;
     const token = cookies[SESSION_COOKIE];
@@ -64,8 +63,8 @@ export class SessionService {
   }
 
   /**
-   * Invalida TODAS las sesiones abiertas del usuario: sube su versión de sesión, así que los JWT
-   * ya emitidos (en este y en cualquier otro dispositivo) dejan de valer.
+   * Invalidates ALL of the user's open sessions: bumps their session version, so JWTs already
+   * issued (on this or any other device) stop being valid.
    */
   async revokeAll(userId: string): Promise<void> {
     await this.db

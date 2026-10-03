@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-/** Tramo seleccionado sobre un eje X numérico (p. ej. años), en el orden en que se arrastró. */
+/** Range selected on a numeric X axis (e.g. years), in the order it was dragged. */
 export type RangeSelection = { start: number; end: number };
 
-/** Lo que Recharts pasa a sus manejadores de ratón y táctiles: la etiqueta X bajo el puntero. */
+/** What Recharts passes to its mouse and touch handlers: the X label under the pointer. */
 type ChartPointerState = { activeLabel?: string | number } | null;
 
 type Handlers = {
@@ -19,13 +19,13 @@ type Handlers = {
 };
 
 /**
- * Selección por arrastre de un tramo del eje X, con ratón o con el dedo: mientras se arrastra se
- * enseña el crecimiento del tramo y al soltar se borra. Devuelve la selección y los manejadores
- * que se pasan tal cual al gráfico de Recharts. Con `enabled = false` los manejadores no hacen
- * nada (ejes de fechas, donde un tramo no tiene sentido).
+ * Drag-to-select a range of the X axis, by mouse or touch: while dragging, the range's growth is
+ * shown, and it clears on release. Returns the selection and the handlers, which are passed as is
+ * to the Recharts chart. With `enabled = false` the handlers do nothing (date axes, where a range
+ * makes no sense).
  *
- * Es un hook (estado de React) y no lógica pura porque la selección cambia con cada movimiento
- * del puntero y tiene que provocar un nuevo render del resumen.
+ * It is a hook (React state) rather than pure logic because the selection changes with every
+ * pointer move and has to re-render the summary.
  */
 export function useRangeSelection(enabled: boolean): { selection: RangeSelection | null; handlers: Handlers } {
   const [selection, setSelection] = useState<RangeSelection | null>(null);
@@ -42,15 +42,15 @@ export function useRangeSelection(enabled: boolean): { selection: RangeSelection
     const x = Number(state.activeLabel);
     setSelection((prev) => (prev ? { ...prev, end: x } : prev));
   };
-  // Con el dedo, al empezar el toque Recharts aún no ha calculado el punto activo (o trae el del
-  // toque anterior): el inicio solo limpia, el primer movimiento abre la selección y los
-  // siguientes la extienden.
+  // On touch, when the touch starts Recharts has not computed the active point yet (or carries
+  // the previous touch's): the start only clears, the first move opens the selection and later
+  // moves extend it.
   const touchMove = (state: ChartPointerState) => {
     if (!enabled || state?.activeLabel === undefined) return;
     const x = Number(state.activeLabel);
     setSelection((prev) => (prev ? { ...prev, end: x } : { start: x, end: x }));
   };
-  // Se resetea al soltar o al salir del gráfico.
+  // Reset on release or when leaving the chart.
   const stop = () => {
     setDragging(false);
     setSelection(null);

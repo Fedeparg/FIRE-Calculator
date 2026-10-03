@@ -2,7 +2,7 @@ import type { z } from 'zod';
 
 import { createPositionLotSchema } from './create-position-lot.dto.js';
 
-/** Cuerpo de PATCH de un lote: campos opcionales, validados como en el alta. Si al reagregar la posición quedara en negativo, no se guarda nada. */
+/** Body of a lot PATCH: optional fields, validated as on creation. If re-aggregating would leave the position negative, nothing is saved. */
 export const updatePositionLotSchema = createPositionLotSchema.partial();
 
 export type UpdatePositionLotDto = z.infer<typeof updatePositionLotSchema>;

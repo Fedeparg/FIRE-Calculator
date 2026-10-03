@@ -1,17 +1,17 @@
-# Orquestación de Sextante.
+# Sextante orchestration.
 #
-# PostgreSQL (volumen persistente) + servicio one-shot de migración + API NestJS.
-# El frontend Next se ejecuta de momento con `pnpm dev` (HMR) y proxea /api a la
-# API vía rewrites. El web dockerizado y el despliegue de producción (con un proxy
-# inverso externo que termina el TLS) viven en docker-compose.prod.yml.
+# PostgreSQL (persistent volume) + one-shot migration service + NestJS API.
+# The Next frontend runs with `pnpm dev` (HMR) for now and proxies /api to the
+# API via rewrites. The dockerised web service and the production deployment (with
+# an external reverse proxy that terminates TLS) live in docker-compose.prod.yml.
 #
-# Uso:
-#   docker compose up -d --build   # migra y levanta postgres + api
-#   docker compose logs -f api     # ver logs de la API
-#   docker compose down            # parar (los datos persisten en el volumen)
+# Usage:
+#   docker compose up -d --build   # migrate and start postgres + api
+#   docker compose logs -f api     # follow the API logs
+#   docker compose down            # stop (data persists in the volume)
 
-# Imagen de la API, compartida por `migrate` y `api` (el mismo Dockerfile, la misma etiqueta):
-# se define una vez y cada servicio la referencia con `<<: *api-image`.
+# API image, shared by `migrate` and `api` (same Dockerfile, same tag): defined
+# once and referenced by each service with `<<: *api-image`.
 x-api-image: &api-image
   image: sextante-api:latest
   build:
@@ -27,13 +27,13 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sextante_dev}
       POSTGRES_DB: ${POSTGRES_DB:-sextante}
     ports:
-      # Expuesto SOLO en el loopback del host, para lanzar migraciones (drizzle-kit)
-      # desde fuera del contenedor. Sin el prefijo 127.0.0.1, Docker publicaría el
-      # puerto en TODAS las interfaces y la contraseña por defecto de desarrollo
-      # (`sextante_dev`, pública en este fichero) dejaría Postgres abierto a la LAN.
+      # Exposed ONLY on the host loopback, to run migrations (drizzle-kit) from
+      # outside the container. Without the 127.0.0.1 prefix, Docker would publish the
+      # port on ALL interfaces and the default dev password (`sextante_dev`, public
+      # in this file) would leave Postgres open to the LAN.
       - '127.0.0.1:5432:5432'
     volumes:
-      # Volumen NOMBRADO persistente: los datos sobreviven a `down`/recreaciones.
+      # Persistent NAMED volume: data survives `down`/recreations.
       - sextante_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-sextante} -d ${POSTGRES_DB:-sextante}']
@@ -42,8 +42,8 @@ services:
       retries: 5
       start_period: 10s
 
-  # Servicio one-shot: aplica las migraciones y termina. La API espera a que acabe
-  # OK, así un arranque limpio nunca queda con la BD sin esquema.
+  # One-shot service: applies the migrations and exits. The API waits for it to
+  # finish OK, so a clean start never ends up with a schema-less DB.
   migrate:
     <<: *api-image
     command: ['node', 'dist/db/migrate.js']
@@ -59,33 +59,33 @@ services:
     restart: unless-stopped
     environment:
       PORT: 3001
-      # Por defecto DEV (arranca out-of-the-box). En PRODUCCIÓN (UNRAID) definir vía
-      # .env: NODE_ENV=production + JWT_SECRET fuerte + COOKIE_SECURE=true. Con
-      # NODE_ENV=production, la API se NIEGA a arrancar con el JWT_SECRET por defecto.
+      # DEV by default (works out of the box). In PRODUCTION (UNRAID) set via
+      # .env: NODE_ENV=production + a strong JWT_SECRET + COOKIE_SECURE=true. With
+      # NODE_ENV=production, the API REFUSES to start with the default JWT_SECRET.
       NODE_ENV: ${NODE_ENV:-development}
-      # Dentro de la red de Compose, el host de la BD es el nombre del servicio.
+      # Inside the Compose network, the DB host is the service name.
       DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD:-sextante_dev}@postgres:5432/${POSTGRES_DB:-sextante}
-      # Secreto del JWT de sesión (en prod, definir uno fuerte vía .env del compose).
+      # Session JWT secret (in prod, set a strong one via the compose .env).
       JWT_SECRET: ${JWT_SECRET:-dev_insecure_secret_change_me}
-      # Cookie Secure: false en dev (http://localhost), true en prod (HTTPS).
+      # Secure cookie: false in dev (http://localhost), true in prod (HTTPS).
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
-      # URL del frontend (base del magic link).
+      # Frontend URL (base of the magic link).
       APP_URL: ${APP_URL:-http://localhost:3000}
-      # Transporte de email: dev (log) o resend (producción).
+      # Email transport: dev (log) or resend (production).
       EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-dev}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
-      # Resolución ISIN/ticker → símbolo (OpenFIGI) y cadencia del refresco de precios.
+      # ISIN/ticker → symbol resolution (OpenFIGI) and price refresh schedule.
       OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
       PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
-      # Refresco intradía de precios (por defecto cada hora L-V); "off" lo desactiva.
+      # Intraday price refresh (hourly Mon-Fri by default); "off" disables it.
       PRICE_INTRADAY_CRON: ${PRICE_INTRADAY_CRON:-}
-      # Saltos de proxy de confianza para obtener la IP real (rate limiting). Ver
-      # apps/api/.env.example: por defecto 1; súbelo si hay más de un proxy delante
-      # y el rate limit agrupa a todos los usuarios en el mismo cubo.
+      # Trusted proxy hops to get the real client IP (rate limiting). See
+      # apps/api/.env.example: 1 by default; raise it if there is more than one proxy in
+      # front and the rate limit lumps every user into the same bucket.
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-}
-      # Poda periódica: códigos y tokens OAuth caducados, tokens de login gastados,
-      # auditoría de MCP y clientes DCR abandonados.
+      # Periodic pruning: expired OAuth codes and tokens, used login tokens, the MCP
+      # audit log and abandoned DCR clients.
       OAUTH_REAPER_CRON: ${OAUTH_REAPER_CRON:-}
       LOGIN_TOKEN_RETENTION_DAYS: ${LOGIN_TOKEN_RETENTION_DAYS:-}
       MCP_AUDIT_RETENTION_DAYS: ${MCP_AUDIT_RETENTION_DAYS:-}
@@ -98,7 +98,7 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      # Node 24 trae fetch global; sale 0 si /health responde OK.
+      # Node 24 ships a global fetch; exits 0 if /health responds OK.
       test:
         [
           'CMD',

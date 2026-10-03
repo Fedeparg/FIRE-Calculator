@@ -12,14 +12,14 @@ import {
 } from "./trade-republic.js";
 import { itemAt, takeItems } from "../arrays.js";
 
-/** Export sintético (valores inventados) con una fila de cada tipo relevante. */
+/** Synthetic export (made-up values) with one row of each relevant type. */
 const FIXTURE = readFileSync(resolve(import.meta.dirname, "fixtures/tr-transaction-export.synthetic.csv"), "utf8");
 
 const HEADER_LINE = TRADE_REPUBLIC_HEADER.map((column) => `"${column}"`).join(",");
 
 type RowFields = Partial<Record<(typeof TRADE_REPUBLIC_HEADER)[number], string>>;
 
-/** Construye una fila completa (todas las columnas entrecomilladas) con valores por defecto. */
+/** Builds a full row (every column quoted) with default values. */
 function row(fields: RowFields): string {
   const defaults: RowFields = {
     datetime: "2025-03-01T10:15:00.123456Z",
@@ -56,21 +56,21 @@ function expectParseError(text: string, code: TradeRepublicParseErrorCode): void
 }
 
 describe("parseCsv", () => {
-  it("separa campos y registros", () => {
+  it("splits fields and records", () => {
     expect(parseCsv("a,b\n1,2\n")).toEqual([
       { line: 1, fields: ["a", "b"] },
       { line: 2, fields: ["1", "2"] },
     ]);
   });
 
-  it("admite comas, comillas escapadas y saltos de línea dentro de comillas", () => {
+  it("accepts commas, escaped quotes and line breaks inside quotes", () => {
     const records = parseCsv('"a, b","say ""hi""","l1\nl2"\n"x","y","z"');
     expect(itemAt(records, 0).fields).toEqual(["a, b", 'say "hi"', "l1\nl2"]);
-    // La línea del segundo registro cuenta el salto interno del campo anterior.
+    // The second record's line accounts for the line break inside the previous field.
     expect(itemAt(records, 1).line).toBe(3);
   });
 
-  it("admite CRLF, BOM y falta de salto final, e ignora líneas vacías", () => {
+  it("accepts CRLF, BOM and a missing trailing newline, and ignores empty lines", () => {
     const records = parseCsv("﻿a,b\r\n\r\n1,2");
     expect(records.map((r) => r.fields)).toEqual([
       ["a", "b"],
@@ -78,23 +78,23 @@ describe("parseCsv", () => {
     ]);
   });
 
-  it("conserva campos vacíos entrecomillados", () => {
+  it("keeps quoted empty fields", () => {
     expect(itemAt(parseCsv('"a","","c"'), 0).fields).toEqual(["a", "", "c"]);
   });
 
-  it("falla con una comilla sin cerrar", () => {
+  it("fails on an unterminated quote", () => {
     expect(() => parseCsv('"a,b\n1,2')).toThrow(CsvSyntaxError);
   });
 
-  it("falla con texto pegado tras la comilla de cierre", () => {
+  it("fails on text right after the closing quote", () => {
     expect(() => parseCsv('"a"x,b')).toThrow(CsvSyntaxError);
   });
 });
 
-describe("parseTradeRepublicCsv — export sintético", () => {
+describe("parseTradeRepublicCsv — synthetic export", () => {
   const result = parseTradeRepublicCsv(FIXTURE);
 
-  it("importa solo compras y ventas, ordenadas por instante", () => {
+  it("imports only buys and sells, sorted by instant", () => {
     expect(result.trades).toHaveLength(10);
     expect(result.trades.filter((t) => t.kind === "buy")).toHaveLength(7);
     expect(result.trades.filter((t) => t.kind === "sell")).toHaveLength(3);
@@ -102,7 +102,7 @@ describe("parseTradeRepublicCsv — export sintético", () => {
     expect(instants).toEqual([...instants].sort());
   });
 
-  it("normaliza cantidad, precio, comisión y fechas", () => {
+  it("normalizes quantity, price, fee and dates", () => {
     const [first, , third] = takeItems(result.trades, 3);
     expect(first).toEqual({
       externalId: "00000000-0000-0000-0000-000000006e17",
@@ -114,29 +114,29 @@ describe("parseTradeRepublicCsv — export sintético", () => {
       price: "81.05",
       fees: "0",
       tradedAt: "2025-01-15",
-      // Los 3 decimales originales se completan a 6.
+      // The original 3 decimals are padded to 6.
       executedAt: "2025-01-15T09:30:00.123000Z",
     });
     expect(third.fees).toBe("1");
     expect(third.executedAt).toBe("2025-02-20T10:00:00.123456Z");
   });
 
-  it("las ventas llevan cantidad positiva y kind sell", () => {
+  it("sells carry a positive quantity and kind sell", () => {
     const sell = result.trades.find((t) => t.externalId.endsWith("e9d3"));
     expect(sell).toMatchObject({ kind: "sell", quantity: "4", price: "60.25", fees: "1" });
   });
 
-  it("acepta la compra antigua sin amount ni fee", () => {
+  it("accepts the old buy without amount or fee", () => {
     const legacy = result.trades.find((t) => t.externalId.endsWith("2003a"));
     expect(legacy).toMatchObject({ kind: "buy", quantity: "0.276891", price: "116.762806", fees: "0" });
   });
 
-  it("clasifica la clase de activo", () => {
+  it("classifies the asset class", () => {
     const classes = new Set(result.trades.map((t) => t.assetClass));
     expect(classes).toEqual(new Set(["fund", "stock", "derivative"]));
   });
 
-  it("descarta el resto con motivo y avisa del impuesto sin sumarlo", () => {
+  it("skips the rest with a reason and warns about the tax without adding it", () => {
     const reasons = new Map<string, number>();
     for (const { reason } of result.skipped) reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
     expect(Object.fromEntries(reasons)).toEqual({
@@ -147,12 +147,12 @@ describe("parseTradeRepublicCsv — export sintético", () => {
     expect(result.warnings).toEqual([{ code: "trade_tax_ignored", count: 1 }]);
   });
 
-  it("importa intereses y recompensas como cobros, informados a la AEAT tras el cambio a la sucursal española", () => {
-    // La migración de custodia del fixture es el 2025-06-06: todo lo posterior ya lo informa TR.
+  it("imports interest and rewards as payouts, reported to the AEAT after the switch to the Spanish branch", () => {
+    // The fixture's custody migration is on 2025-06-06: TR reports everything after it.
     expect(result.income).toEqual([
-      // Antes de la migración: `tax` es solo la retención en origen.
+      // Before the migration: `tax` is only the withholding at source.
       expect.objectContaining({ kind: "dividend", paidAt: "2025-05-05", gross: "2.55", withholdingOrigin: "0.45" }),
-      // Sin retención y de un emisor sin tipo conocido: el origen queda sin saber.
+      // No withholding and an issuer with no known rate: the source withholding stays unknown.
       expect.objectContaining({
         kind: "dividend",
         paidAt: "2025-05-20",
@@ -173,7 +173,7 @@ describe("parseTradeRepublicCsv — export sintético", () => {
     ]);
   });
 
-  it("no filtra datos de terceros en ninguna parte del resultado", () => {
+  it("does not leak third-party data anywhere in the result", () => {
     const serialized = JSON.stringify(result);
     for (const leaked of [
       "Jane Doe",
@@ -205,7 +205,7 @@ describe("parseTradeRepublicCsv — export sintético", () => {
         "withholdingSpain",
       ]);
     }
-    // Las operaciones solo tienen los campos del tipo genérico; las filas descartadas, solo línea/tipo/motivo.
+    // Trades only have the generic type's fields; skipped rows, only line/type/reason.
     for (const trade of result.trades) {
       expect(Object.keys(trade).sort()).toEqual([
         "assetClass",
@@ -226,18 +226,18 @@ describe("parseTradeRepublicCsv — export sintético", () => {
   });
 });
 
-describe("parseTradeRepublicCsv — filas", () => {
-  it("lee nombres con comas y comillas", () => {
+describe("parseTradeRepublicCsv — rows", () => {
+  it("reads names with commas and quotes", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ name: 'ACME, Inc. "Class A"' })));
     expect(itemAt(trades, 0).name).toBe('ACME, Inc. "Class A"');
   });
 
-  it("usa `date` como fecha de operación aunque el día UTC difiera", () => {
+  it("uses `date` as the trade date even if the UTC day differs", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ datetime: "2025-03-01T23:30:00.000000Z", date: "2025-03-02" })));
     expect(trades[0]).toMatchObject({ tradedAt: "2025-03-02", executedAt: "2025-03-01T23:30:00.000000Z" });
   });
 
-  it("ordena bien instantes con 3 y 6 decimales (no por texto crudo)", () => {
+  it("sorts instants with 3 and 6 decimals correctly (not by raw text)", () => {
     const { trades } = parseTradeRepublicCsv(
       csv(
         row({ datetime: "2025-03-01T10:00:00.5Z", transaction_id: "b" }),
@@ -247,22 +247,22 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(trades.map((t) => t.externalId)).toEqual(["a", "b"]);
   });
 
-  it("respeta el orden del fichero ante el mismo instante", () => {
+  it("keeps file order for the same instant", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ transaction_id: "z" }), row({ transaction_id: "a" })));
     expect(trades.map((t) => t.externalId)).toEqual(["z", "a"]);
   });
 
-  it("redondea half-up a 6 decimales", () => {
+  it("rounds half-up to 6 decimals", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ shares: "0.0000005", price: "1.0000004" })));
     expect(trades[0]).toMatchObject({ quantity: "0.000001", price: "1" });
   });
 
-  it("guarda la comisión en valor absoluto", () => {
+  it("stores the fee as an absolute value", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ fee: "-1.50" })));
     expect(itemAt(trades, 0).fees).toBe("1.5");
   });
 
-  it("no suma el impuesto y cuenta cuántas operaciones lo traen", () => {
+  it("does not add the tax and counts how many trades carry it", () => {
     const { trades, warnings } = parseTradeRepublicCsv(
       csv(
         row({ tax: "-0.45", transaction_id: "a" }),
@@ -274,7 +274,7 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(warnings).toEqual([{ code: "trade_tax_ignored", count: 2 }]);
   });
 
-  it("descarta con `invalid_row` los signos incoherentes y los números rotos", () => {
+  it("skips inconsistent signs and broken numbers as `invalid_row`", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
       csv(
         row({ type: "BUY", shares: "-1", transaction_id: "a" }),
@@ -295,19 +295,19 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(new Set(skipped.map((s) => s.reason))).toEqual(new Set(["invalid_row"]));
   });
 
-  it("descarta filas con número de columnas incorrecto", () => {
+  it("skips rows with the wrong number of columns", () => {
     const { trades, skipped } = parseTradeRepublicCsv(`${HEADER_LINE}\n"a","b"\n${row({})}\n`);
     expect(trades).toHaveLength(1);
     expect(skipped).toEqual([{ line: 2, type: "", reason: "invalid_row" }]);
   });
 
-  it("descarta una operación repetida por transaction_id", () => {
+  it("skips a trade repeated by transaction_id", () => {
     const { trades, skipped } = parseTradeRepublicCsv(csv(row({}), row({})));
     expect(trades).toHaveLength(1);
     expect(skipped).toEqual([{ line: 3, type: "BUY", reason: "duplicate_row" }]);
   });
 
-  it("descarta cripto y divisas distintas de EUR", () => {
+  it("skips crypto and currencies other than EUR", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
       csv(row({ asset_class: "CRYPTO", transaction_id: "a" }), row({ currency: "USD", transaction_id: "b" })),
     );
@@ -315,12 +315,12 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(skipped.map((s) => s.reason)).toEqual(["crypto", "unsupported_currency"]);
   });
 
-  it("clasifica un asset_class vacío como other", () => {
+  it("classifies an empty asset_class as other", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ asset_class: "" })));
     expect(itemAt(trades, 0).assetClass).toBe("other");
   });
 
-  it("trata las retiradas de efectivo como movimiento de efectivo", () => {
+  it("treats cash withdrawals as a cash movement", () => {
     const { skipped } = parseTradeRepublicCsv(
       csv(
         row({
@@ -336,19 +336,19 @@ describe("parseTradeRepublicCsv — filas", () => {
     expect(skipped.map((s) => s.reason)).toEqual(["cash_movement"]);
   });
 
-  it("descarta tipos desconocidos sin fallar", () => {
+  it("skips unknown types without failing", () => {
     const { trades, skipped } = parseTradeRepublicCsv(csv(row({ type: "SPIN_OFF" }), row({ transaction_id: "x" })));
     expect(trades).toHaveLength(1);
     expect(skipped).toEqual([{ line: 2, type: "SPIN_OFF", reason: "unknown_type" }]);
   });
 
-  it("acepta CRLF y BOM", () => {
+  it("accepts CRLF and BOM", () => {
     const text = `﻿${csv(row({})).replaceAll("\n", "\r\n")}`;
     expect(parseTradeRepublicCsv(text).trades).toHaveLength(1);
   });
 });
 
-describe("parseTradeRepublicCsv — cobros", () => {
+describe("parseTradeRepublicCsv — payouts", () => {
   const interest = (date: string, amount: string, tax: string, id: string) =>
     row({
       date,
@@ -389,7 +389,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
       transaction_id: id,
     });
 
-  it("toma la retención de un saveback de la compra que lo invierte (mismo día e importe) y no avisa de ella", () => {
+  it("takes a saveback's withholding from the buy that invests it (same day and amount) and does not warn about it", () => {
     const { income, trades, warnings } = parseTradeRepublicCsv(
       csv(
         saveback("2025-08-04", "13.350000", "", "s1"),
@@ -412,12 +412,12 @@ describe("parseTradeRepublicCsv — cobros", () => {
       ),
     );
     expect(income).toEqual([expect.objectContaining({ kind: "benefit", gross: "13.35", withholdingSpain: "2.54" })]);
-    // La compra del saveback se importa igual, con su coste.
+    // The saveback buy is imported all the same, with its cost.
     expect(trades.map((t) => t.externalId)).toEqual(["b1", "b2"]);
     expect(warnings).toEqual([{ code: "trade_tax_ignored", count: 1 }]);
   });
 
-  it("marca como informado lo posterior a la migración a la sucursal española, no el mismo día ni antes", () => {
+  it("marks as reported what comes after the migration to the Spanish branch, not the same day or earlier", () => {
     const { income } = parseTradeRepublicCsv(
       csv(
         interest("2025-06-01", "4.10", "", "i1"),
@@ -434,7 +434,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     ]);
   });
 
-  it("los intereses informados que se abonan el día 1 cuentan el último día del mes anterior, como en el borrador", () => {
+  it("reported interest paid on the 1st counts on the last day of the previous month, as in the draft return", () => {
     const { income } = parseTradeRepublicCsv(
       csv(
         interest("2025-06-01", "4.10", "", "i1"),
@@ -451,7 +451,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     ]);
   });
 
-  it("sin migración, la cuenta es española desde el primer interés con retención", () => {
+  it("without a migration, the account is Spanish from the first interest payment with withholding", () => {
     const { income } = parseTradeRepublicCsv(
       csv(
         interest("2025-01-01", "1.00", "", "i1"),
@@ -462,7 +462,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     expect(income.map((i) => i.reportedToAeat)).toEqual([false, true, true]);
   });
 
-  it("sin ninguna señal de cuenta española, nada está informado", () => {
+  it("with no sign of a Spanish account, nothing is reported", () => {
     const { income } = parseTradeRepublicCsv(csv(interest("2025-01-01", "1.00", "", "i1")));
     expect(income[0]).toMatchObject({ reportedToAeat: false, country: "DE", withholdingSpain: "0" });
   });
@@ -483,8 +483,8 @@ describe("parseTradeRepublicCsv — cobros", () => {
   const afterMigration = (...rows: string[]) =>
     csv(migration("2025-06-06", "-1", "m1"), migration("2025-06-06", "1", "m2"), ...rows);
 
-  it("tras la migración, un dividendo de EE. UU. trae el íntegro y las dos retenciones juntas en `tax`", () => {
-    // Informe fiscal de TR: íntegro 0,22, origen 0,03, España 0,04.
+  it("after the migration, a US dividend carries the gross amount and both withholdings together in `tax`", () => {
+    // TR tax report: gross 0.22, source 0.03, Spain 0.04.
     const { income } = parseTradeRepublicCsv(
       afterMigration(dividend("2025-08-14", "US0378331005", "0.22", "-0.07", "d1")),
     );
@@ -501,12 +501,12 @@ describe("parseTradeRepublicCsv — cobros", () => {
     });
   });
 
-  it("tras la migración, un dividendo neerlandés llega neto de origen y `tax` es solo la española", () => {
-    // Informe fiscal de TR: íntegro 1,60, origen 0,24, España 0,26 (ASML).
+  it("after the migration, a Dutch dividend arrives net of source withholding and `tax` is only the Spanish one", () => {
+    // TR tax report: gross 1.60, source 0.24, Spain 0.26 (ASML).
     const { income } = parseTradeRepublicCsv(
       afterMigration(dividend("2025-08-06", "NL0010273215", "1.36", "-0.26", "d1")),
     );
-    // Deshacer el neto con el 15 % es una estimación hasta que lo confirme el dato de mercado.
+    // Grossing up the net amount at 15% is an estimate until market data confirms it.
     expect(income[0]).toMatchObject({
       gross: "1.6",
       withholdingOrigin: "0.24",
@@ -517,7 +517,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     });
   });
 
-  it("antes de la migración `tax` es la retención en origen", () => {
+  it("before the migration `tax` is the withholding at source", () => {
     const { income } = parseTradeRepublicCsv(csv(dividend("2025-05-15", "US0378331005", "0.11", "-0.02", "d1")));
     expect(income[0]).toMatchObject({
       gross: "0.11",
@@ -527,7 +527,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     });
   });
 
-  it("no deduce el origen de países donde lo retenido no es el convenio, ni de lo que no encaja", () => {
+  it("does not derive the source withholding for countries where it is not the treaty rate, nor from figures that do not fit", () => {
     const { income } = parseTradeRepublicCsv(
       afterMigration(
         dividend("2025-09-01", "CH0038863350", "10.00", "-1.90", "d1"),
@@ -536,17 +536,17 @@ describe("parseTradeRepublicCsv — cobros", () => {
     );
     expect(income.map((i) => [i.withholdingOrigin, i.withholdingSpain])).toEqual([
       [null, "1.9"],
-      // Ni 15 %, ni 19 %, ni 31,15 %: la española no puede pasar del 19 % de lo cobrado.
+      // Neither 15%, nor 19%, nor 31.15%: the Spanish one cannot exceed 19% of the amount paid.
       [null, "1.9"],
     ]);
   });
 
-  it("un dividendo diminuto sin retención tiene origen 0, no desconocido", () => {
+  it("a tiny dividend without withholding has a 0 source withholding, not an unknown one", () => {
     const { income } = parseTradeRepublicCsv(afterMigration(dividend("2025-07-03", "US67066G1040", "0.01", "", "d1")));
     expect(income[0]).toMatchObject({ withholdingOrigin: "0", withholdingSpain: "0" });
   });
 
-  it("descarta un dividendo provisional y su anulación, y conserva el definitivo", () => {
+  it("skips a provisional dividend and its reversal, and keeps the final one", () => {
     const { income, skipped } = parseTradeRepublicCsv(
       csv(
         dividend("2025-07-29", "CNE100000296", "1.47", "", "d1"),
@@ -558,7 +558,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
     expect(skipped.map((s) => s.reason)).toEqual(["dividend_reversed", "dividend_reversed"]);
   });
 
-  it("descarta cobros con importe inválido, divisa no euro o repetidos", () => {
+  it("skips payouts with an invalid amount, a non-euro currency or duplicates", () => {
     const { income, skipped } = parseTradeRepublicCsv(
       csv(
         interest("2025-01-01", "abc", "", "i1"),
@@ -584,7 +584,7 @@ describe("parseTradeRepublicCsv — cobros", () => {
   });
 });
 
-describe("parseTradeRepublicCsv — migraciones", () => {
+describe("parseTradeRepublicCsv — migrations", () => {
   const migration = (shares: string, id: string, extra: RowFields = {}): string =>
     row({
       type: "MIGRATION",
@@ -598,9 +598,9 @@ describe("parseTradeRepublicCsv — migraciones", () => {
       ...extra,
     });
 
-  it("ignora la pareja salida/entrada equilibrada", () => {
+  it("ignores the balanced outbound/inbound pair", () => {
     const { trades, skipped, warnings } = parseTradeRepublicCsv(
-      // Como en un export real, las dos patas difieren unos milisegundos.
+      // As in a real export, the two legs differ by a few milliseconds.
       csv(migration("-3.0", "a"), migration("3.0000000000", "b", { datetime: "2025-03-01T10:15:00.127456Z" })),
     );
     expect(trades).toEqual([]);
@@ -608,13 +608,13 @@ describe("parseTradeRepublicCsv — migraciones", () => {
     expect(warnings).toEqual([]);
   });
 
-  it("avisa de una migración sin pareja", () => {
+  it("warns about an unpaired migration", () => {
     const { skipped, warnings } = parseTradeRepublicCsv(csv(migration("-3", "a")));
     expect(skipped).toEqual([{ line: 2, type: "MIGRATION", reason: "migration_unbalanced" }]);
     expect(warnings).toEqual([{ code: "unbalanced_migration", isin: "ZZ00MIGRA004", line: 2 }]);
   });
 
-  it("no empareja migraciones de distinta cantidad o separadas más de un segundo", () => {
+  it("does not pair migrations with different quantities or more than one second apart", () => {
     const { warnings } = parseTradeRepublicCsv(
       csv(migration("-3", "a"), migration("2", "b"), migration("3", "c", { datetime: "2025-03-01T10:15:05.123456Z" })),
     );
@@ -622,7 +622,7 @@ describe("parseTradeRepublicCsv — migraciones", () => {
   });
 });
 
-describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
+describe("parseTradeRepublicCsv — bonus issues", () => {
   const bonus = (type: string, shares: string, id: string, datetime: string): string =>
     row({
       type,
@@ -637,7 +637,7 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
       date: datetime.slice(0, 10),
     });
 
-  it("importa la emisión como compra a precio 0, sin comisión", () => {
+  it("imports the issue as a buy at price 0, with no fee", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
       csv(bonus("BONUS_ISSUE", "2.5", "a", "2025-07-30T06:25:21.431Z")),
     );
@@ -655,7 +655,7 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
     expect(skipped).toEqual([]);
   });
 
-  it("anula la emisión cancelada y conserva la reemisión, como en un export real", () => {
+  it("voids the cancelled issue and keeps the reissue, as in a real export", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
       csv(
         bonus("BONUS_ISSUE", "2.76243", "a", "2025-07-30T06:25:21.431Z"),
@@ -674,7 +674,7 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
     ]);
   });
 
-  it("una cancelación sin emisión que anular no resta nada", () => {
+  it("a cancellation with no issue to void subtracts nothing", () => {
     const { trades, skipped } = parseTradeRepublicCsv(
       csv(bonus("BONUS_ISSUE_CANCELLED", "-1", "a", "2025-08-13T05:09:14.774Z")),
     );
@@ -682,7 +682,7 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
     expect(skipped.map((s) => s.reason)).toEqual(["bonus_issue_cancelled"]);
   });
 
-  it("no anula una emisión de otra cantidad o posterior a la cancelación", () => {
+  it("does not void an issue with a different quantity or later than the cancellation", () => {
     const { trades } = parseTradeRepublicCsv(
       csv(
         bonus("BONUS_ISSUE", "3", "a", "2025-07-30T06:25:21.431Z"),
@@ -693,35 +693,35 @@ describe("parseTradeRepublicCsv — ampliaciones liberadas", () => {
     expect(trades.map((t) => t.externalId)).toEqual(["a", "c"]);
   });
 
-  it("descarta con `invalid_row` una emisión con signo incoherente", () => {
+  it("skips an issue with an inconsistent sign as `invalid_row`", () => {
     const { trades, skipped } = parseTradeRepublicCsv(csv(bonus("BONUS_ISSUE", "-1", "a", "2025-07-30T06:25:21.431Z")));
     expect(trades).toEqual([]);
     expect(skipped.map((s) => s.reason)).toEqual(["invalid_row"]);
   });
 });
 
-describe("parseTradeRepublicCsv — ficheros inválidos", () => {
-  it("falla con un fichero vacío", () => {
+describe("parseTradeRepublicCsv — invalid files", () => {
+  it("fails on an empty file", () => {
     expectParseError("", "EMPTY_FILE");
     expectParseError("\n\n", "EMPTY_FILE");
   });
 
-  it("falla con solo la cabecera", () => {
+  it("fails with only the header", () => {
     expectParseError(`${HEADER_LINE}\n`, "EMPTY_FILE");
   });
 
-  it("falla con una cabecera que no es la de Trade Republic", () => {
+  it("fails with a header that is not Trade Republic's", () => {
     expectParseError('"a","b"\n"1","2"\n', "NOT_TRADE_REPUBLIC");
-    // Una columna menos o en otro orden tampoco vale.
+    // One column fewer or a different order is not valid either.
     expectParseError(`${TRADE_REPUBLIC_HEADER.slice(1).join(",")}\n${row({})}\n`, "NOT_TRADE_REPUBLIC");
     expectParseError(`${[...TRADE_REPUBLIC_HEADER].reverse().join(",")}\n`, "NOT_TRADE_REPUBLIC");
   });
 
-  it("falla con un CSV mal formado", () => {
+  it("fails on a malformed CSV", () => {
     expectParseError(`${HEADER_LINE}\n"unterminated,1\n`, "MALFORMED_CSV");
   });
 
-  it("falla con un fichero binario o ajeno", () => {
+  it("fails on a binary or unrelated file", () => {
     expectParseError("%PDF-1.7\u0000\u0001binary", "NOT_TRADE_REPUBLIC");
   });
 });

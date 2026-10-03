@@ -6,84 +6,83 @@ import { POSITION_CREATED_EVENT } from './positions/position-events.js';
 import { PortfolioSnapshotsService } from './portfolio/portfolio-snapshots.service.js';
 
 /**
- * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
- * evaluar el módulo, y estos tests fijan el suyo en `beforeAll`, es decir, después de los imports.
+ * `AppModule` is imported lazily: `ConfigModule.forRoot({ validate })` validates the environment when
+ * the module is evaluated, and these tests set theirs in `beforeAll`, that is, after the imports.
  */
 const loadAppModule = async () => (await import('./app.module.js')).AppModule;
 
 /**
- * Comprueba que la aplicación ARRANCA entera: que el grafo de inyección de dependencias se
- * resuelve y que los hooks de inicio (el registro del cron diario y el backfill de
- * `DailyJobsScheduler.onApplicationBootstrap`) no revientan.
+ * Checks that the whole application STARTS: that the dependency injection graph resolves and
+ * that the startup hooks (registering the daily cron and the backfill in
+ * `DailyJobsScheduler.onApplicationBootstrap`) do not blow up.
  *
- * No es un test de comportamiento: es la red que atrapa los fallos que solo aparecen al
- * arrancar —un provider no exportado por su módulo, una dependencia circular entre módulos,
- * un token sin registrar— y que ningún test unitario ve, porque cada uno instancia sus
- * servicios a mano. Con el job diario encadenando `PricesModule` y `PortfolioModule`, esa
- * clase de fallo pasó a ser fácil de introducir.
+ * It is not a behaviour test: it is the net that catches failures that only show up at
+ * startup (a provider not exported by its module, a circular dependency between modules,
+ * an unregistered token) and that no unit test sees, because each one instantiates its
+ * services by hand. With the daily job chaining `PricesModule` and `PortfolioModule`, that
+ * class of failure became easy to introduce.
  *
- * Se usa un contexto de aplicación (sin servidor HTTP) para no ocupar puertos, y se cierra
- * al terminar, lo que para los crons registrados. `fetch` se sustituye por un stub: desde que
- * `DailyJobsScheduler.onApplicationBootstrap` backfillea el histórico de precios sin esperar a
- * `listen()`, este test dispararía sin esto una llamada real a Yahoo Finance en cada arranque.
+ * It uses an application context (no HTTP server) so it does not take up ports, and closes it
+ * at the end, which stops the registered crons. `fetch` is replaced with a stub: since
+ * `DailyJobsScheduler.onApplicationBootstrap` backfills the price history without waiting for
+ * `listen()`, without it this test would fire a real Yahoo Finance call on every startup.
  */
-describe('AppModule (arranque de la aplicación)', () => {
+describe('AppModule (application startup)', () => {
   const original = { ...process.env };
   const realFetch = global.fetch;
 
   beforeAll(() => {
-    // Entorno mínimo para arrancar: la BD efímera de Testcontainers y el secreto del JWT.
-    // Se fija aquí, y no se hereda del `.env` local, para que el test valga igual en CI.
+    // Minimal environment to start: the ephemeral Testcontainers DB and the JWT secret.
+    // Set here, rather than inherited from the local `.env`, so the test behaves the same in CI.
     process.env.DATABASE_URL = inject('databaseUrl');
-    process.env.JWT_SECRET = 'test-secret-para-el-grafo-de-dependencias';
+    process.env.JWT_SECRET = 'test-secret-for-the-dependency-graph';
     process.env.EMAIL_TRANSPORT = 'dev';
     process.env.EMAIL_FROM = 'Sextante <no-reply@example.test>';
-    // Base del issuer OAuth (`OAuthUrls` la exige); cualquier origen válido sirve aquí.
+    // Base of the OAuth issuer (`OAuthUrls` requires it); any valid origin works here.
     process.env.APP_URL = 'https://sextante.example.test';
-    // Un cron que no llega a dispararse durante el test (29 de febrero de un año no bisiesto
-    // no existe; basta con una fecha lejana): solo interesa que se REGISTRE sin error.
+    // A cron that never fires during the test (29 February of a non-leap year does not exist;
+    // a distant date is enough): all that matters is that it REGISTERS without error.
     process.env.PRICE_REFRESH_CRON = '0 0 4 1 1 *';
-    // El intradía salta a cada media hora: coincidiendo con un test, su lectura se interbloqueaba
-    // con el TRUNCATE de `resetDb` (fallo que dependía de la hora a la que corría la suite).
+    // The intraday cron fires every half hour: when it coincided with a test, its read deadlocked
+    // with the TRUNCATE in `resetDb` (a failure that depended on the time the suite ran).
     process.env.PRICE_INTRADAY_CRON = 'off';
   });
 
   afterAll(() => {
-    // No en `afterEach`: `onApplicationBootstrap` dispara `bootstrapBackfill()` sin
-    // esperarlo (`void`), así que tras `app.close()` puede seguir en vuelo una consulta a la
-    // BD que, al resolver, llame a `fetch`. Restaurarlo antes de eso reabriría la ventana a
-    // una llamada real a Yahoo que este test existe para eliminar.
+    // Not in `afterEach`: `onApplicationBootstrap` fires `bootstrapBackfill()` without awaiting
+    // it (`void`), so after `app.close()` a DB query may still be in flight that calls `fetch`
+    // when it resolves. Restoring it before then would reopen the window to a real Yahoo call
+    // that this test exists to eliminate.
     global.fetch = realFetch;
     process.env = original;
   });
 
-  it('resuelve todos los módulos y providers de la aplicación', async () => {
-    // Sin stub, `YahooPriceProvider.fetchChart` golpearía la red real en cuanto el backfill
-    // de arranque se dispare (ver comentario del `describe`). Rechazar sin más: el propio
-    // provider ya es tolerante a fallos (ver `price-provider.interface.ts`).
-    global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
+  it('resolves every module and provider of the application', async () => {
+    // Without a stub, `YahooPriceProvider.fetchChart` would hit the real network as soon as the
+    // startup backfill fires (see the `describe` comment). Simply rejecting is enough: the
+    // provider itself is already fault-tolerant (see `price-provider.interface.ts`).
+    global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in this test'));
 
-    // `abortOnError: false`: por defecto Nest hace `process.exit(1)` ante un fallo de
-    // arranque, lo que mataría el worker de Vitest sin decir por qué. Así lanza y se ve.
+    // `abortOnError: false`: by default Nest calls `process.exit(1)` on a startup failure,
+    // which would kill the Vitest worker without saying why. This way it throws visibly.
     const app = await NestFactory.createApplicationContext(await loadAppModule(), {
       abortOnError: false,
       logger: false,
     });
 
-    // Si el grafo tuviese un ciclo o faltase un `exports`, la línea anterior habría lanzado.
+    // Had the graph a cycle or a missing `exports`, the previous line would have thrown.
     expect(app).toBeDefined();
     await app.close();
   });
 
-  it('el evento position.created SÍ llega a @OnEvent bajo el arranque real de Nest', async () => {
-    // A diferencia de los tests de `PortfolioSnapshotsService`/`PositionsService` (que
-    // instancian los servicios con `new` y por tanto nunca pasan por el `DiscoveryService`
-    // de Nest), aquí el `EventEmitter2` y el listener decorado con `@OnEvent` vienen del
-    // MISMO contenedor de `AppModule`: es la única prueba de que el cableado del evento
-    // (`EventEmitterModule.forRoot()` + `@OnEvent(POSITION_CREATED_EVENT)`, ver
-    // `positions/position-events.ts`) funciona de verdad, no solo que el cuerpo del método
-    // funciona si lo llamas a mano.
-    global.fetch = vi.fn().mockRejectedValue(new Error('red deshabilitada en este test'));
+  it('the position.created event DOES reach @OnEvent under the real Nest startup', async () => {
+    // Unlike the `PortfolioSnapshotsService`/`PositionsService` tests (which instantiate the
+    // services with `new` and therefore never go through Nest's `DiscoveryService`), here the
+    // `EventEmitter2` and the `@OnEvent`-decorated listener come from the SAME `AppModule`
+    // container: it is the only proof that the event wiring (`EventEmitterModule.forRoot()` +
+    // `@OnEvent(POSITION_CREATED_EVENT)`, see `positions/position-events.ts`) really works, not
+    // just that the method body works when called by hand.
+    global.fetch = vi.fn().mockRejectedValue(new Error('network disabled in this test'));
 
     const app = await NestFactory.createApplicationContext(await loadAppModule(), {
       abortOnError: false,
@@ -94,9 +93,9 @@ describe('AppModule (arranque de la aplicación)', () => {
     const backfillUser = vi.spyOn(snapshots, 'backfillUser').mockResolvedValue(undefined);
     const emitter = app.get(EventEmitter2);
 
-    await emitter.emitAsync(POSITION_CREATED_EVENT, { userId: 'evento-de-prueba' });
+    await emitter.emitAsync(POSITION_CREATED_EVENT, { userId: 'test-event' });
 
-    expect(backfillUser).toHaveBeenCalledWith('evento-de-prueba');
+    expect(backfillUser).toHaveBeenCalledWith('test-event');
     await app.close();
   });
 });

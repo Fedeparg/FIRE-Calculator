@@ -13,7 +13,7 @@ import { createUnsubscribeToken } from './unsubscribe-token.js';
 import { todayUtc } from '../common/dates.js';
 import { errorMessage } from '../common/errors.js';
 
-/** Resultado de una pasada, para el log del trabajo nocturno. */
+/** Result of one pass, for the nightly job's log. */
 export interface FireAlertsSummary {
   users: number;
   sent: number;
@@ -23,21 +23,21 @@ export interface FireAlertsSummary {
 type Outcome = 'sent' | 'skipped';
 
 /**
- * Evalúa los hitos del objetivo FIRE de cada usuario con alertas activas, justo después de la
- * captura nocturna de snapshots, y envía un email por cada hito nuevo alcanzado.
+ * Evaluates the FIRE goal milestones of every user with alerts enabled, right after the nightly
+ * snapshot capture, and sends one email per newly reached milestone.
  *
- * Por usuario:
- *   1. Objetivo = el escenario FIRE guardado más reciente (sin escenario, nada que vigilar).
- *   2. Valor = el snapshot real de hoy (no uno estimado por backfill), convertido a la divisa
- *      del objetivo con las tasas FX guardadas en ese mismo snapshot.
- *   3. Si aún no hay referencia (recién activadas) o el objetivo ha cambiado desde que se tomó,
- *      se fija el hito actual sin enviar nada.
- *   4. Si hay hito nuevo, se REGISTRA antes de enviar con un `UPDATE … WHERE hito < nuevo`:
- *      solo quien gana esa carrera envía, así que ni un reintento ni dos procesos a la vez
- *      pueden mandar el mismo aviso dos veces. El precio es que un envío fallido no se
- *      reintenta (como mucho una vez, nunca dos).
+ * Per user:
+ *   1. Goal = the most recent saved FIRE scenario (no scenario, nothing to watch).
+ *   2. Value = today's real snapshot (not one estimated by the backfill), converted to the goal's
+ *      currency with the FX rates stored in that same snapshot.
+ *   3. If there is no reference yet (alerts just enabled) or the goal has changed since it was
+ *      taken, the current milestone is recorded without sending anything.
+ *   4. If there is a new milestone, it is RECORDED before sending with an
+ *      `UPDATE … WHERE milestone < new`: only whoever wins that race sends, so neither a retry nor
+ *      two concurrent processes can send the same notice twice. The price is that a failed send is
+ *      not retried (at most once, never twice).
  *
- * Los errores se aíslan por usuario: uno no bloquea a los demás.
+ * Errors are isolated per user: one does not block the others.
  */
 @Injectable()
 export class FireAlertsService {
@@ -56,9 +56,9 @@ export class FireAlertsService {
   }
 
   /**
-   * `date` debe ser la de la captura de snapshots que se acaba de hacer (el trabajo nocturno
-   * se la pasa): recalcularla aquí podría caer ya en el día siguiente si la pasada cruza la
-   * medianoche UTC, y entonces no habría snapshot real que evaluar.
+   * `date` must be the date of the snapshot capture that just ran (the nightly job passes it):
+   * recomputing it here could already land on the next day if the pass crosses UTC midnight, and
+   * then there would be no real snapshot to evaluate.
    */
   async evaluateAll(date: string = todayUtc()): Promise<FireAlertsSummary> {
     const subscribers = await this.db
@@ -79,7 +79,7 @@ export class FireAlertsService {
         if ((await this.evaluateUser(subscriber, date)) === 'sent') summary.sent++;
       } catch (error) {
         summary.failed++;
-        this.logger.error(`Alerta FIRE de ${subscriber.userId} falló: ${errorMessage(error)}`);
+        this.logger.error(`FIRE alert for ${subscriber.userId} failed: ${errorMessage(error)}`);
       }
     }
     return summary;
@@ -113,7 +113,7 @@ export class FireAlertsService {
       );
     if (!snapshot) return 'skipped';
 
-    // Los snapshots se guardan en EUR; el objetivo, en su divisa.
+    // Snapshots are stored in EUR; the goal, in its own currency.
     const value = convertCurrency(Number(snapshot.marketValue), 'EUR', target.currency, snapshot.fxRates);
     if (value === null || !Number.isFinite(value)) return 'skipped';
     const progress = (value / target.target) * 100;

@@ -5,9 +5,9 @@ import { deleteIncome, saveIncome } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 
 /**
- * Alta, edición y borrado de cobros; `onMutated` resincroniza quien los muestra (el panel de la
- * posición recarga su lista, la Declaración refresca la página). Lo usan los dos sitios, por eso
- * no vive en `use-position-income.ts`.
+ * Creating, editing and deleting income; `onMutated` re-syncs whoever displays it (the position
+ * panel reloads its list, the tax return refreshes the page). Both places use it, which is why it
+ * does not live in `use-position-income.ts`.
  */
 export function useIncomeMutations(onMutated: () => void) {
   const mutation = useApiMutation();
@@ -21,7 +21,7 @@ export function useIncomeMutations(onMutated: () => void) {
   return {
     submitting: mutation.status === "pending",
     errorKey: mutation.errorKey,
-    /** Alta (`incomeId === null`) o edición. `true` si la API lo aceptó. */
+    /** Creates (`incomeId === null`) or edits. `true` if the API accepted it. */
     save: (incomeId: string | null, payload: IncomePayload) => mutate(() => saveIncome(incomeId, payload)),
     remove: (incomeId: string) => mutate(() => deleteIncome(incomeId)),
   };

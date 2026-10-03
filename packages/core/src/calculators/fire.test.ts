@@ -11,37 +11,37 @@ const base = {
 };
 
 describe("computeFire", () => {
-  it("aplica la regla del 4 % (número FIRE = 25x el gasto anual)", () => {
+  it("applies the 4% rule (FIRE number = 25x annual expenses)", () => {
     const r = computeFire(base);
     expect(r.fireNumber).toBe(600000);
   });
 
-  it("usa una tasa de retiro distinta cuando se indica", () => {
+  it("uses a different withdrawal rate when given", () => {
     const r = computeFire({ ...base, withdrawalRate: 3 });
     expect(r.fireNumber).toBeCloseTo(24000 / 0.03, 6);
   });
 
-  it("evita dividir por cero: tasa de retiro 0 cae al 4 % por defecto", () => {
+  it("avoids dividing by zero: a 0 withdrawal rate falls back to the default 4%", () => {
     const r = computeFire({ ...base, withdrawalRate: 0 });
     expect(Number.isFinite(r.fireNumber)).toBe(true);
     expect(r.fireNumber).toBe(600000);
   });
 
-  it("detecta que ya se es independiente si el patrimonio supera el objetivo", () => {
+  it("detects that you are already independent if wealth exceeds the target", () => {
     const r = computeFire({ ...base, currentSavings: 700000 });
     expect(r.yearsToFire).toBe(0);
   });
 
-  it("calcula años hasta FIRE y el patrimonio alcanza el objetivo en ese punto", () => {
+  it("computes years to FIRE and wealth reaches the target at that point", () => {
     const r = computeFire(base);
     expect(r.yearsToFire).not.toBeNull();
     expect(r.yearsToFire).toBeGreaterThan(0);
 
-    const reached = r.series.find((p) => p.year >= Math.ceil(defined(r.yearsToFire, "años hasta FIRE")));
+    const reached = r.series.find((p) => p.year >= Math.ceil(defined(r.yearsToFire, "years to FIRE")));
     expect(reached?.value).toBeGreaterThanOrEqual(r.fireNumber);
   });
 
-  it("devuelve null si no se alcanza en el horizonte de 60 años", () => {
+  it("returns null if it is not reached within the 60-year horizon", () => {
     const r = computeFire({
       annualExpenses: 1_000_000,
       currentSavings: 0,
@@ -53,13 +53,13 @@ describe("computeFire", () => {
     expect(r.series.length).toBeLessThanOrEqual(61);
   });
 
-  it("golden: con los valores por defecto del componente tarda 27 años", () => {
+  it("golden: with the component defaults it takes 27 years", () => {
     const r = computeFire({ ...base, frequency: "monthly", savingsGrowth: 0 });
     expect(r.fireNumber).toBe(600000);
     expect(r.yearsToFire).toBe(27);
   });
 
-  it("mantiene el objetivo constante en toda la serie", () => {
+  it("keeps the target constant across the series", () => {
     const r = computeFire(base);
     for (const point of r.series) {
       expect(point.target).toBe(r.fireNumber);

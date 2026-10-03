@@ -10,7 +10,7 @@ import { TradeImportWriter } from './trade-import.writer.js';
 import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
 import { SessionModule } from '../auth/session.module.js';
 
-/** Importación de operaciones desde brókers (hoy Trade Republic), sobre los lotes y precios de `PositionsModule`/`PricesModule`. */
+/** Imports trades from brokers (today Trade Republic), on top of the `PositionsModule`/`PricesModule` lots and prices. */
 @Module({
   imports: [PositionsModule, PricesModule, SessionModule, IncomeModule],
   controllers: [ImportsController],

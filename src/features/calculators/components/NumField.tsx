@@ -15,12 +15,12 @@ type Props = {
 };
 
 /**
- * `NumberField` de una calculadora a partir de su campo enlazado. Etiqueta y ayuda salen por
- * convención del namespace de la calculadora (`calc.<slug>`): `t(clave)` y `t("help." + clave)`,
- * con la clave de URL del campo. La ayuda es opcional: si la clave no existe, no se pinta.
+ * A calculator's `NumberField`, built from its bound field. By convention the label and help come
+ * from the calculator's namespace (`calc.<slug>`): `t(key)` and `t("help." + key)`, using the
+ * field's URL key. Help is optional: if the key does not exist, nothing is rendered.
  *
- * Si una calculadora necesita una etiqueta que no sigue la convención (otro namespace, texto con
- * argumentos), sigue usando `NumberField` directamente.
+ * A calculator that needs a label outside this convention (another namespace, text with
+ * arguments) keeps using `NumberField` directly.
  */
 export default function NumField({ field, min, max, step, hideLabel }: Props) {
   const calculatorSlug = useCalculatorSlug();

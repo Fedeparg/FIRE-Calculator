@@ -21,23 +21,23 @@ export type WriteToolDeps = {
 };
 
 /**
- * Tools de escritura (scope `portfolio:write`). Se registran siempre (para que el host las
- * descubra), pero cada una verifica el scope en tiempo de ejecución: un token solo-lectura
- * recibe un error de tool pidiendo reconectar con permiso de escritura (step-up). No es un
- * 403 HTTP: todas las tools comparten el mismo endpoint, así que el control es por-tool.
+ * Write tools (scope `portfolio:write`). They are always registered (so the host discovers them),
+ * but each one checks the scope at run time: a read-only token gets a tool error asking it to
+ * reconnect with write permission (step-up). It is not an HTTP 403: all tools share the same
+ * endpoint, so the check is per tool.
  *
- * El `inputSchema` de cada tool sale de los esquemas zod de los DTO (los mismos que validan la API
- * REST). Pero el SDK solo acepta un `shape`, que pierde los refinamientos que cruzan campos
- * ("al menos un campo", "las retenciones no superan el íntegro"…): por eso cada tool vuelve a
- * validar con el esquema REST COMPLETO (`asRest`) antes de llamar al servicio. Así el camino MCP
- * no es una vía de escritura más débil.
+ * Each tool's `inputSchema` comes from the DTOs' zod schemas (the same ones that validate the REST
+ * API). But the SDK only accepts a `shape`, which drops the cross-field refinements ("at least one
+ * field", "withholdings do not exceed the gross amount"…): so each tool re-validates with the FULL
+ * REST schema (`asRest`) before calling the service. That way the MCP path is not a weaker way to
+ * write.
  */
-/** Valida como la API REST (esquema completo, refinamientos incluidos); un fallo es error de entrada de la tool. */
+/** Validates like the REST API (full schema, refinements included); a failure is a tool input error. */
 function asRest<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
   const result = schema.safeParse(value);
   if (!result.success) {
     throw new InvalidToolInputError(
-      result.error.issues.map((issue) => `${issue.path.join('.') || 'entrada'}: ${issue.message}`).join('; '),
+      result.error.issues.map((issue) => `${issue.path.join('.') || 'input'}: ${issue.message}`).join('; '),
     );
   }
   return result.data;
@@ -47,11 +47,11 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'add_position',
     {
-      title: 'Añadir una posición',
+      title: 'Add a position',
       description:
-        'Crea una nueva posición en la cartera. Si ya existe el mismo símbolo, indica el ' +
-        'bróker para distinguirla; si el (símbolo, bróker) exacto ya existe, usa ' +
-        '`combine_position` en su lugar. Requiere permiso de escritura.',
+        'Creates a new position in the portfolio. If the same symbol already exists, give the ' +
+        'broker to tell them apart; if the exact (symbol, broker) pair already exists, use ' +
+        '`combine_position` instead. Requires write permission.',
       inputSchema: createPositionSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
@@ -65,12 +65,12 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'update_position',
     {
-      title: 'Editar una posición',
+      title: 'Edit a position',
       description:
-        'Actualiza los campos indicados de una posición existente (por id). Solo se cambian ' +
-        'los campos enviados. Requiere permiso de escritura.',
+        'Updates the given fields of an existing position (by id). Only the fields sent are ' +
+        'changed. Requires write permission.',
       inputSchema: {
-        id: z.string().min(1).describe('Id de la posición a editar.'),
+        id: z.string().min(1).describe('Id of the position to edit.'),
         ...updatePositionSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -85,13 +85,13 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'combine_position',
     {
-      title: 'Combinar una compra con una posición existente',
+      title: 'Merge a purchase into an existing position',
       description:
-        'Fusiona una nueva compra con una posición existente (por id) mediante media ' +
-        'ponderada de cantidad y precio. La divisa debe coincidir con la de la posición. ' +
-        'Requiere permiso de escritura.',
+        'Merges a new purchase into an existing position (by id) using the weighted average of ' +
+        "quantity and price. The currency must match the position's. Requires write " +
+        'permission.',
       inputSchema: {
-        id: z.string().min(1).describe('Id de la posición existente.'),
+        id: z.string().min(1).describe('Id of the existing position.'),
         ...combinePositionSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
@@ -106,11 +106,10 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'delete_position',
     {
-      title: 'Borrar una posición',
-      description:
-        'Elimina una posición de la cartera (por id). Acción irreversible. Requiere permiso ' + 'de escritura.',
+      title: 'Delete a position',
+      description: 'Deletes a position from the portfolio (by id). This cannot be undone. Requires write permission.',
       inputSchema: {
-        id: z.string().min(1).describe('Id de la posición a borrar.'),
+        id: z.string().min(1).describe('Id of the position to delete.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     },
@@ -124,16 +123,16 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'add_position_lot',
     {
-      title: 'Registrar una compra o venta en una posición',
+      title: 'Record a buy or sell on a position',
       description:
-        'Añade una operación con su FECHA a una posición existente y recalcula su cantidad ' +
-        'y precio medio (compras y ventas; el precio medio sigue el coste medio móvil, así ' +
-        'que una venta baja la cantidad pero no lo mueve). Prefiere esta tool a ' +
-        '`combine_position` cuando conozcas la fecha de la operación, y úsala para ' +
-        'registrar ventas: es lo que construye el histórico. Una venta mayor que lo que se ' +
-        'tiene se rechaza. Requiere permiso de escritura.',
+        'Adds a trade with its DATE to an existing position and recalculates its quantity and ' +
+        'average price (buys and sells; the average price follows the moving average cost, so ' +
+        'a sell lowers the quantity but does not move it). Prefer this tool to ' +
+        '`combine_position` when you know the trade date, and use it to record sells: it is ' +
+        'what builds the history. A sell larger than the holding is rejected. Requires write ' +
+        'permission.',
       inputSchema: {
-        positionId: z.string().min(1).describe('Id de la posición.'),
+        positionId: z.string().min(1).describe('Id of the position.'),
         ...createPositionLotSchema.shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
@@ -148,15 +147,15 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'delete_position_lot',
     {
-      title: 'Borrar una operación (lote) de una posición',
+      title: 'Delete a trade (lot) from a position',
       description:
-        'Elimina una operación registrada y recalcula la cantidad y el precio medio de la ' +
-        'posición con las que queden. Acción irreversible: corrige errores de registro, no ' +
-        'sirve para reflejar una venta (para eso, `add_position_lot` con kind "sell"). ' +
-        'Requiere permiso de escritura.',
+        "Deletes a recorded trade and recalculates the position's quantity and average price " +
+        'from the remaining ones. This cannot be undone: it fixes recording mistakes and is not ' +
+        'the way to record a sell (for that, `add_position_lot` with kind "sell"). Requires ' +
+        'write permission.',
       inputSchema: {
-        positionId: z.string().min(1).describe('Id de la posición.'),
-        lotId: z.string().min(1).describe('Id del lote a borrar.'),
+        positionId: z.string().min(1).describe('Id of the position.'),
+        lotId: z.string().min(1).describe('Id of the lot to delete.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     },
@@ -170,12 +169,13 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'add_income',
     {
-      title: 'Registrar un dividendo, interés o recompensa',
+      title: 'Record a dividend, interest or reward',
       description:
-        'Añade un cobro que tributa como rendimiento del capital mobiliario, con su fecha de ' +
-        'cobro, el íntegro y las retenciones (en origen y en España). Para un dividendo ' +
-        'extranjero indica `country` y la retención en origen: hacen falta para la deducción ' +
-        'por doble imposición. Requiere permiso de escritura.',
+        'Adds a payment taxed as investment income (rendimiento del capital mobiliario), with ' +
+        'its payment date, the gross amount and the withholding taxes (at source and in Spain). ' +
+        'For a foreign dividend, give `country` and the withholding at source: they are needed ' +
+        'for the double taxation relief (deducción por doble imposición). Requires write ' +
+        'permission.',
       inputSchema: incomeFieldsSchema.shape,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
     },
@@ -189,12 +189,11 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'update_income',
     {
-      title: 'Editar un cobro',
+      title: 'Edit a payment',
       description:
-        'Actualiza los campos indicados de un cobro (por id); solo cambian los enviados. ' +
-        'Requiere permiso de escritura.',
+        'Updates the given fields of a payment (by id); only the fields sent change. ' + 'Requires write permission.',
       inputSchema: {
-        id: z.string().min(1).describe('Id del cobro.'),
+        id: z.string().min(1).describe('Id of the payment.'),
         ...incomeFieldsSchema.partial().shape,
       },
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
@@ -209,10 +208,10 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
   server.registerTool(
     'delete_income',
     {
-      title: 'Borrar un cobro',
-      description: 'Elimina un cobro (por id). Acción irreversible. Requiere permiso de escritura.',
+      title: 'Delete a payment',
+      description: 'Deletes a payment (by id). This cannot be undone. Requires write permission.',
       inputSchema: {
-        id: z.string().min(1).describe('Id del cobro a borrar.'),
+        id: z.string().min(1).describe('Id of the payment to delete.'),
       },
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
     },

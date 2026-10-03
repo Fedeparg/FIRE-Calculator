@@ -8,15 +8,15 @@ import type { InstrumentSearchResult, InstrumentType } from "@sextante/core/port
 import { isAbortError } from "@/shared/api/client";
 import { searchInstruments } from "@/features/portfolio/api";
 
-/** Espera tras la última tecla antes de buscar: evita una petición por carácter. */
+/** Delay after the last keystroke before searching: avoids one request per character. */
 const DEBOUNCE_MS = 300;
 
 type Props = {
-  /** Valor actual del símbolo (texto libre del input; se envía tal cual al guardar). */
+  /** Current symbol value (free text from the input; sent as-is on save). */
   value: string;
-  /** Edición libre del texto (permite teclear un ISIN o símbolo y enviarlo sin elegir). */
+  /** Free text editing (lets the user type an ISIN or symbol and submit it without picking). */
   onChange: (value: string) => void;
-  /** El usuario eligió un instrumento del desplegable (símbolo exacto + nombre). */
+  /** The user picked an instrument from the dropdown (exact symbol + name). */
   onSelect: (result: InstrumentSearchResult) => void;
   id: string;
   placeholder: string;
@@ -24,7 +24,7 @@ type Props = {
   maxLength?: number;
 };
 
-/** Etiqueta corta por tipo, para el badge del resultado (icono semántico aparte). */
+/** Short label per type, for the result badge (the semantic icon is separate). */
 const TYPE_ICON: Record<InstrumentType, string> = {
   crypto: "₿",
   equity: "📈",
@@ -36,13 +36,13 @@ const TYPE_ICON: Record<InstrumentType, string> = {
 };
 
 /**
- * Campo de símbolo con autocompletado contra `GET /api/instruments/search`. Resuelve de raíz
- * la ambigüedad del ticker suelto: el usuario teclea ("bitcoin", "apple") y elige el
- * instrumento concreto, con lo que guardamos el símbolo EXACTO de la fuente ("BTC-USD") en
- * vez de adivinar. Conserva la entrada libre: si no elige nada, se envía lo tecleado (útil
- * para un ISIN, que el backend resuelve vía OpenFIGI).
+ * Symbol field with autocomplete against `GET /api/instruments/search`. It removes the ambiguity
+ * of a bare ticker at the root: the user types ("bitcoin", "apple") and picks the specific
+ * instrument, so we store the source's EXACT symbol ("BTC-USD") instead of guessing. Free input
+ * is preserved: if nothing is picked, the typed text is sent (useful for an ISIN, which the
+ * backend resolves via OpenFIGI).
  *
- * Combobox accesible: `role="combobox"` + `listbox`, navegación con flechas/Enter/Escape.
+ * Accessible combobox: `role="combobox"` + `listbox`, navigation with arrows/Enter/Escape.
  */
 export default function InstrumentSearchField({
   value,
@@ -60,8 +60,8 @@ export default function InstrumentSearchField({
   const [activeIndex, setActiveIndex] = useState(-1);
   const listboxId = useId();
 
-  // Símbolo recién elegido: evita relanzar la búsqueda (y reabrir el desplegable) justo
-  // después de seleccionar, cuando el `value` pasa a ser exactamente ese símbolo.
+  // Symbol just picked: avoids relaunching the search (and reopening the dropdown) right
+  // after selecting, when `value` becomes exactly that symbol.
   const justSelected = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -84,10 +84,10 @@ export default function InstrumentSearchField({
         setActiveIndex(-1);
         setOpen(true);
       } catch (error) {
-        // Una tecla nueva cancela esta petición: el efecto siguiente ya gestiona `loading`, y
-        // tocarlo aquí lo apagaría mientras la nueva búsqueda espera su debounce.
+        // A new keystroke cancels this request: the next effect already handles `loading`, and
+        // touching it here would turn it off while the new search waits for its debounce.
         if (isAbortError(error)) return;
-        // Fallo de red o de la API: se degrada a "sin resultados".
+        // Network or API failure: degrades to "no results".
         setResults([]);
         setOpen(false);
       }
@@ -114,8 +114,8 @@ export default function InstrumentSearchField({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-    // Con el desplegable abierto, Escape solo lo cierra: no debe llegar al panel que contiene el
-    // formulario (cerraría el panel entero y se perdería lo escrito).
+    // With the dropdown open, Escape only closes it: it must not reach the panel that holds the
+    // form (it would close the whole panel and lose what was typed).
     if (event.key === "Escape" && open) {
       event.preventDefault();
       event.stopPropagation();
@@ -134,13 +134,13 @@ export default function InstrumentSearchField({
       setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
-      // Si la lista se ha acortado, el índice activo puede haber quedado fuera: no se elige nada.
+      // If the list got shorter, the active index may be out of range: nothing is picked.
       const result = results[activeIndex];
       if (result) pick(result);
     }
   }
 
-  // Cierra al perder el foco fuera del contenedor (clic en otro sitio, Tab fuera).
+  // Closes when focus leaves the container (click elsewhere, Tab out).
   function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
     if (!containerRef.current?.contains(event.relatedTarget as Node)) {
       setOpen(false);
@@ -177,22 +177,22 @@ export default function InstrumentSearchField({
           className="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border bg-surface shadow-lg"
         >
           {loading && results.length === 0 ? (
-            // Fila de estado, no seleccionable: un listbox solo admite opciones como hijos.
+            // Status row, not selectable: a listbox only accepts options as children.
             <li role="option" aria-disabled="true" aria-selected={false} className="px-3 py-2 text-sm text-muted">
               {t("searching")}
             </li>
           ) : (
             results.map((r, i) => (
-              // La opción ES el `li`: un `button` dentro de un `role="option"` anidaría un control
-              // interactivo en otro y el lector de pantalla anunciaría dos cosas. El teclado no
-              // llega aquí (lo gestiona el combobox con `aria-activedescendant`); el ratón sí.
+              // The option IS the `li`: a `button` inside a `role="option"` would nest one interactive
+              // control in another and the screen reader would announce two things. The keyboard does
+              // not get here (the combobox handles it with `aria-activedescendant`); the mouse does.
               <li
                 key={`${r.symbol}-${i}`}
                 id={`${listboxId}-opt-${i}`}
                 role="option"
                 aria-selected={i === activeIndex}
-                // `onMouseDown` (no `onClick`): se dispara antes del blur del input, así
-                // la selección no se pierde por el cierre del desplegable.
+                // `onMouseDown` (not `onClick`): it fires before the input's blur, so
+                // the selection is not lost when the dropdown closes.
                 onMouseDown={(e) => {
                   e.preventDefault();
                   pick(r);

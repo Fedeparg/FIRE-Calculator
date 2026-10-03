@@ -3,16 +3,16 @@
 import { useState } from "react";
 
 type Options<P> = {
-  /** Alta (`id === null`) o edición. `true` si la API lo aceptó. */
+  /** Create (`id === null`) or update. `true` if the API accepted it. */
   save: (id: string | null, payload: P) => Promise<boolean>;
   remove: (id: string) => Promise<boolean>;
 };
 
 /**
- * Estado de una lista editable con un formulario de alta/edición y borrado con confirmación
- * (lotes, cobros). Lo que se repetía en cada panel: qué elemento se edita, cuál pide confirmar
- * su borrado, y qué hacer al terminar (cerrar la edición si se guardó o si se borró el elemento
- * que se estaba editando). Las mutaciones y sus errores los pone quien llama.
+ * State of an editable list with a create/edit form and delete-with-confirmation (lots,
+ * income). What every panel used to repeat: which item is being edited, which one is awaiting
+ * delete confirmation, and what to do afterwards (close the editor on save, or when the item
+ * being edited is deleted). The caller supplies the mutations and their errors.
  */
 export function useEditableCollection<T extends { id: string }, P>({ save, remove }: Options<P>) {
   const [editing, setEditing] = useState<T | null>(null);
@@ -25,7 +25,7 @@ export function useEditableCollection<T extends { id: string }, P>({ save, remov
     cancelEdit: () => setEditing(null),
     askDelete: (id: string) => setConfirmingId(id),
     cancelDelete: () => setConfirmingId(null),
-    /** Guarda el formulario: alta si no se edita nada; si la API lo acepta, vuelve al alta. */
+    /** Submits the form: creates if nothing is being edited; on success, returns to create mode. */
     async submit(payload: P): Promise<void> {
       if (await save(editing?.id ?? null, payload)) setEditing(null);
     },

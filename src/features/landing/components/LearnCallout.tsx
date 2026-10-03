@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { WaveDivider } from "@/shared/illustrations";
 import CtaLink from "./CtaLink";
 
-/** Invitación a la wiki "Aprende". */
+/** Invitation to the "Aprende" (Learn) wiki. */
 export default function LearnCallout() {
   const t = useTranslations("landing.learn");
 

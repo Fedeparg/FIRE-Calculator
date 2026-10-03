@@ -54,35 +54,35 @@ import { computeCreditCard } from "./tarjeta-credito.js";
 import { creditCardSchema } from "./tarjeta-credito.schema.js";
 
 /**
- * Registro de las calculadoras de Sextante expuestas por MCP con DOS tools genéricas
- * (`list_calculators` y `calculate`), en vez de una tool por calculadora. Ejecutan exactamente el
- * mismo código que la web, así que el asistente y la calculadora no pueden dar cifras distintas.
- * No leen datos del usuario: son funciones puras sobre lo que el cliente envía. La clave es el
- * slug de la web (el mismo que devuelve `list_saved_scenarios`).
+ * Registry of the Sextante calculators exposed over MCP through TWO generic tools
+ * (`list_calculators` and `calculate`) instead of one tool per calculator. They run exactly the
+ * same code as the website, so the assistant and the calculator cannot disagree on the figures.
+ * They read no user data: they are pure functions over what the client sends. The key is the
+ * website slug (the same one `list_saved_scenarios` returns).
  *
- * Cada entrada enlaza el esquema zod de su calculadora (`<módulo>.schema.ts`, con límites de
- * importes, tasas, años y simulaciones) con su cálculo. Además de documentar las unidades al
- * cliente (se publica como JSON Schema en `list_calculators`), los límites acotan el trabajo que
- * una llamada puede pedir al servidor: el Monte Carlo corre aquí, no en el navegador. Añadir una
- * calculadora es añadir una entrada a `CALCULATORS`.
+ * Each entry links its calculator's zod schema (`<module>.schema.ts`, with bounds on amounts,
+ * rates, years and simulations) to its computation. Besides documenting units to the client
+ * (it is published as JSON Schema in `list_calculators`), the bounds cap the work a single call
+ * can ask of the server: the Monte Carlo runs here, not in the browser. Adding a calculator means
+ * adding an entry to `CALCULATORS`.
  *
- * Solo para el servidor: arrastra zod, así que el frontend no debe importarlo (regla de ESLint).
+ * Server-only: it pulls in zod, so the frontend must not import it (enforced by an ESLint rule).
  */
 
 export interface CalculatorEntry {
   readonly category: CalculatorCategory;
   readonly title: string;
   readonly description: string;
-  /** Esquema de entrada. Estricto: una clave desconocida es un error, no se ignora en silencio. */
+  /** Input schema. Strict: an unknown key is an error, not silently ignored. */
   readonly schema: z.ZodType;
-  /** Valida la entrada con `schema` (lanza `ZodError` si no cumple) y calcula. */
+  /** Validates the input against `schema` (throws `ZodError` if it does not conform) and computes. */
   readonly run: (input: unknown) => unknown;
 }
 
 const CURRENCY_NOTE =
-  "Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). " +
-  "Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; " +
-  "es una estimación orientativa, no asesoramiento.";
+  "Amounts are in the user's currency (the tax calculators, in euros). " +
+  "Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; " +
+  "it is an indicative estimate, not advice.";
 
 function defineCalculator<S extends z.ZodType>(
   category: CalculatorCategory,
@@ -98,32 +98,32 @@ function defineCalculator<S extends z.ZodType>(
   };
 }
 
-/** Paso del muestreo anual de la serie de la tarjeta (que es mensual y puede durar 100 años). */
+/** Step for the yearly sampling of the credit-card series (which is monthly and may span 100 years). */
 const MONTHS_PER_YEAR = 12;
 
-/** Depósito a plazo fijo y cuenta remunerada comparten cálculo (TAE) y esquema. */
+/** Fixed-term deposit and interest-bearing account share the computation (TAE, i.e. APY) and schema. */
 const DEPOSIT = defineCalculator(
   "ahorro",
   {
-    title: "Depósito a plazo fijo o cuenta remunerada",
+    title: "Fixed-term deposit or interest-bearing account",
     description:
-      "Intereses de un depósito a plazo fijo o de una cuenta remunerada a partir de la TAE, " +
-      "brutos y netos de la retención, y valor final en poder adquisitivo de hoy.",
+      "Interest on a fixed-term deposit (depósito a plazo fijo) or an interest-bearing account (cuenta remunerada) " +
+      "from its TAE (annual equivalent rate), gross and net of withholding tax, and the final value in today's purchasing power.",
     schema: depositSchema,
   },
   computeDeposit,
 );
 
 export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
-  // --- Inversión ------------------------------------------------------------------------------
+  // --- Investing ------------------------------------------------------------------------------
   "interes-compuesto": defineCalculator(
     "inversion",
     {
-      title: "Calculadora de interés compuesto",
+      title: "Compound interest calculator",
       description:
-        "Proyecta el crecimiento de una inversión con capital inicial y aportaciones periódicas: " +
-        "valor final, total aportado, intereses generados, valor real descontando inflación y " +
-        "serie año a año.",
+        "Projects the growth of an investment with an initial capital and periodic contributions: " +
+        "final value, total contributed, interest earned, real value after inflation and a " +
+        "year-by-year series.",
       schema: compoundSchema,
     },
     computeCompound,
@@ -131,10 +131,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "interes-simple": defineCalculator(
     "inversion",
     {
-      title: "Calculadora de interés simple",
+      title: "Simple interest calculator",
       description:
-        "Intereses de un capital a interés simple (sin reinvertir), brutos y netos de la " +
-        "retención española sobre rendimientos del capital mobiliario.",
+        "Interest on a principal at simple interest (not reinvested), gross and net of the " +
+        "Spanish withholding tax on investment income (rendimientos del capital mobiliario).",
       schema: simpleInterestSchema,
     },
     computeSimpleInterest,
@@ -142,10 +142,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "promediar-acciones": defineCalculator(
     "inversion",
     {
-      title: "Promediar acciones (precio medio ponderado)",
+      title: "Average share price (weighted average cost)",
       description:
-        "Precio medio ponderado de varias compras de un mismo valor (incluidas comisiones) y, " +
-        "si se da el precio actual, valor y ganancia/pérdida de la posición.",
+        "Weighted average price of several purchases of the same security (fees included) and, " +
+        "if the current price is given, the position's value and gain/loss.",
       schema: averagePriceSchema,
     },
     computeAveragePrice,
@@ -153,10 +153,9 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   dividendos: defineCalculator(
     "inversion",
     {
-      title: "Calculadora de dividendos",
+      title: "Dividend calculator",
       description:
-        "Ingresos por dividendos brutos y netos de retención, rentabilidad por dividendo y " +
-        "proyección con crecimiento del dividendo.",
+        "Dividend income gross and net of withholding tax, dividend yield and a " + "projection with dividend growth.",
       schema: dividendSchema,
     },
     computeDividends,
@@ -164,10 +163,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   roi: defineCalculator(
     "inversion",
     {
-      title: "Calculadora de ROI",
+      title: "ROI calculator",
       description:
-        "Retorno de una inversión cerrada: ROI bruto y neto de costes e impuestos y, con años, " +
-        "rentabilidad anualizada (CAGR).",
+        "Return on a closed investment: ROI gross and net of costs and taxes and, given the years, " +
+        "the annualised return (CAGR).",
       schema: roiSchema,
     },
     computeRoi,
@@ -175,25 +174,23 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   staking: defineCalculator(
     "inversion",
     {
-      title: "Calculadora de staking (cripto)",
-      description:
-        "Rendimiento del staking de criptoactivos con un APY compuesto, bruto y neto del " +
-        "impuesto sobre las recompensas.",
+      title: "Staking calculator (crypto)",
+      description: "Return on staking crypto-assets at a compounded APY, gross and net of the " + "tax on the rewards.",
       schema: stakingSchema,
     },
     computeStaking,
   ),
 
-  // --- FIRE y jubilación ----------------------------------------------------------------------
+  // --- FIRE and retirement --------------------------------------------------------------------
   "independencia-financiera": defineCalculator(
     "fire",
     {
-      title: "Calculadora de independencia financiera (FIRE)",
+      title: "Financial independence calculator (FIRE)",
       description:
-        "Número FIRE (gasto anual / tasa de retiro) y años hasta alcanzarlo con el ahorro y la " +
-        "rentabilidad REAL indicados, con la serie año a año. Para la probabilidad de éxito con " +
-        "volatilidad usa `simulate_fire_monte_carlo`; para medir la cartera real del usuario " +
-        "contra el objetivo, `get_fire_goal_progress`.",
+        "FIRE number (annual spending / withdrawal rate) and years to reach it with the given savings " +
+        "and REAL return, with a year-by-year series. For the probability of success with " +
+        "volatility, use the `simulador-montecarlo` calculator; to measure the user's real portfolio " +
+        "against the goal, `get_fire_goal_progress`.",
       schema: fireSchema,
     },
     computeFire,
@@ -201,13 +198,13 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "simulador-montecarlo": defineCalculator(
     "fire",
     {
-      title: "Simulador FIRE Monte Carlo",
+      title: "FIRE Monte Carlo simulator",
       description:
-        "Simula miles de vidas con rentabilidades aleatorias (lognormal) o remuestreando la " +
-        "historia de EE. UU. desde 1871 (Shiller) y devuelve la probabilidad de alcanzar FIRE y " +
-        "de que el dinero dure toda la jubilación, los años hasta FIRE en los percentiles " +
-        "10/50/90 y la evolución del patrimonio por percentiles. Con la misma semilla el " +
-        "resultado es reproducible. Opcionalmente, tabla de sensibilidad a la tasa de retiro.",
+        "Simulates thousands of lifetimes with random returns (lognormal) or by resampling " +
+        "US history since 1871 (Shiller) and returns the probability of reaching FIRE and " +
+        "of the money lasting through retirement, the years to FIRE at the 10th/50th/90th " +
+        "percentiles and the wealth path by percentile. The same seed gives a reproducible " +
+        "result. Optionally, a sensitivity table for the withdrawal rate.",
       schema: monteCarloSchema,
     },
     ({ historicalStockShare, paths, seed, includeSensitivity, ...rest }) => {
@@ -228,10 +225,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "ahorro-jubilacion": defineCalculator(
     "fire",
     {
-      title: "Calculadora de ahorro para la jubilación",
+      title: "Retirement savings calculator",
       description:
-        "Patrimonio estimado a la edad de jubilación con el ahorro mensual indicado, en " +
-        "términos nominales y reales, con la serie año a año.",
+        "Estimated wealth at retirement age with the given monthly savings, in " +
+        "nominal and real terms, with a year-by-year series.",
       schema: retirementSchema,
     },
     computeRetirement,
@@ -239,23 +236,22 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "presupuesto-mensual": defineCalculator(
     "fire",
     {
-      title: "Presupuesto mensual (regla 50/30/20)",
+      title: "Monthly budget (50/30/20 rule)",
       description:
-        "Reparte los ingresos netos mensuales en necesidades, deseos y ahorro y los compara con " +
-        "la regla 50/30/20.",
+        "Splits net monthly income into needs, wants and savings and compares them with " + "the 50/30/20 rule.",
       schema: budgetSchema,
     },
     computeBudget,
   ),
 
-  // --- Hipoteca e inmuebles -------------------------------------------------------------------
+  // --- Mortgages and real estate --------------------------------------------------------------
   "hipoteca-fija": defineCalculator(
     "hipoteca",
     {
-      title: "Hipoteca a tipo fijo",
+      title: "Fixed-rate mortgage",
       description:
-        "Cuota mensual (sistema francés), intereses totales, TAE con comisión de apertura y " +
-        "vinculaciones, y cuadro de amortización por años.",
+        "Monthly payment (French amortisation system), total interest, TAE (annual equivalent rate) including the " +
+        "opening fee and bundled products (vinculaciones), and a yearly amortisation schedule.",
       schema: mortgageSchema,
     },
     computeMortgage,
@@ -263,10 +259,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "que-hipoteca-me-puedo-permitir": defineCalculator(
     "hipoteca",
     {
-      title: "¿Qué hipoteca me puedo permitir?",
+      title: "What mortgage can I afford?",
       description:
-        "Precio máximo de vivienda e hipoteca asumibles según ingresos, deudas, ahorro y ratio " +
-        "de esfuerzo, indicando qué límite manda (cuota o entrada).",
+        "Maximum affordable home price and mortgage given income, debts, savings and debt-to-income " +
+        "ratio (ratio de esfuerzo), stating which limit binds (monthly payment or down payment).",
       schema: affordabilitySchema,
     },
     computeAffordability,
@@ -274,10 +270,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "hipoteca-vs-alquiler": defineCalculator(
     "hipoteca",
     {
-      title: "Hipoteca frente a alquiler",
+      title: "Buying with a mortgage vs renting",
       description:
-        "Compara el patrimonio neto de comprar con hipoteca frente a alquilar e invertir la " +
-        "diferencia durante el horizonte indicado, con la serie año a año.",
+        "Compares the net worth of buying with a mortgage against renting and investing the " +
+        "difference over the given horizon, with a year-by-year series.",
       schema: buyVsRentSchema,
     },
     computeBuyVsRent,
@@ -285,10 +281,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "amortizacion-anticipada": defineCalculator(
     "hipoteca",
     {
-      title: "Amortización anticipada de hipoteca",
+      title: "Early mortgage repayment",
       description:
-        "Compara amortizar reduciendo cuota o reduciendo plazo: nueva cuota, plazo, intereses " +
-        "ahorrados y ahorro neto tras la comisión de amortización.",
+        "Compares an early repayment that lowers the monthly payment with one that shortens the term: new payment, term, " +
+        "interest saved and net saving after the early repayment fee (comisión de amortización).",
       schema: earlyRepaymentSchema,
     },
     computeEarlyRepayment,
@@ -296,10 +292,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "rentabilidad-alquiler": defineCalculator(
     "hipoteca",
     {
-      title: "Rentabilidad de un alquiler",
+      title: "Rental yield",
       description:
-        "Rentabilidad bruta y neta de un inmueble en alquiler de larga estancia, con vacíos, " +
-        "IBI, comunidad, seguro y mantenimiento.",
+        "Gross and net yield of a long-term rental property, accounting for vacancies, " +
+        "IBI (property tax), community fees, insurance and maintenance.",
       schema: rentalYieldSchema,
     },
     computeRentalYield,
@@ -307,27 +303,26 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "rentabilidad-alquiler-vacacional": defineCalculator(
     "hipoteca",
     {
-      title: "Rentabilidad de un alquiler vacacional",
+      title: "Holiday rental yield",
       description:
-        "Ingresos, gastos y rentabilidad neta de un alquiler turístico según precio por noche, " +
-        "ocupación, comisiones y limpiezas.",
+        "Income, costs and net yield of a holiday rental given the nightly rate, " + "occupancy, fees and cleaning.",
       schema: holidayRentalSchema,
     },
     computeHolidayRental,
   ),
 
-  // --- Ahorro ---------------------------------------------------------------------------------
+  // --- Savings --------------------------------------------------------------------------------
   "deposito-plazo-fijo": DEPOSIT,
   "cuenta-remunerada": DEPOSIT,
 
-  // --- Fiscalidad -----------------------------------------------------------------------------
+  // --- Taxes ----------------------------------------------------------------------------------
   "salario-bruto-neto": defineCalculator(
     "fiscalidad",
     {
-      title: "Salario bruto a neto",
+      title: "Gross to net salary",
       description:
-        "Estima el salario neto anual y mensual a partir del bruto: cotizaciones a la Seguridad " +
-        "Social, IRPF estatal y autonómico, mínimos personales y familiares.",
+        "Estimates the annual and monthly net salary from the gross: Social Security " +
+        "contributions, state and regional IRPF (Spanish income tax), and personal and family allowances (mínimos).",
       schema: netSalarySchema,
     },
     estimateNetSalary,
@@ -335,10 +330,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "irpf-nomina": defineCalculator(
     "fiscalidad",
     {
-      title: "Retención de IRPF en nómina",
+      title: "IRPF payroll withholding",
       description:
-        "Tipo de retención de IRPF que corresponde en nómina y retención mensual, con el mismo " +
-        "modelo que el salario neto.",
+        "IRPF (Spanish income tax) withholding rate that applies to the payroll and the monthly withholding, with the same " +
+        "model as the net salary.",
       schema: netSalarySchema,
     },
     computePayrollWithholding,
@@ -346,10 +341,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "irpf-autonomos": defineCalculator(
     "fiscalidad",
     {
-      title: "IRPF de autónomos",
+      title: "IRPF for the self-employed (autónomos)",
       description:
-        "IRPF anual de un autónomo en estimación directa (normal o simplificada) a partir de " +
-        "ingresos, gastos y cuota de autónomos, con rendimiento neto y tipo efectivo.",
+        "Annual IRPF (Spanish income tax) of a self-employed worker under direct assessment (estimación directa, normal or simplified) from " +
+        "income, expenses and the self-employed social security fee (cuota de autónomos), with net business income and effective rate.",
       schema: selfEmployedSchema,
     },
     computeSelfEmployedTax,
@@ -357,10 +352,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "desgravacion-plan-pensiones": defineCalculator(
     "fiscalidad",
     {
-      title: "Desgravación del plan de pensiones",
+      title: "Pension plan tax relief",
       description:
-        "Ahorro de IRPF por aportar a un plan de pensiones según el salario bruto y la " +
-        "comunidad, aplicando los límites legales de aportación individual y de empresa.",
+        "IRPF (Spanish income tax) saving from contributing to a pension plan given the gross salary and the " +
+        "autonomous community, applying the legal limits on individual and employer contributions.",
       schema: pensionReliefSchema,
     },
     computePensionRelief,
@@ -368,10 +363,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "impuesto-donaciones": defineCalculator(
     "fiscalidad",
     {
-      title: "Impuesto de donaciones",
+      title: "Gift tax (impuesto de donaciones)",
       description:
-        "Cuota del Impuesto sobre Sucesiones y Donaciones (donación) con la tarifa estatal, el " +
-        "coeficiente por parentesco y patrimonio previo y la bonificación autonómica indicada.",
+        "Tax due under the Inheritance and Gift Tax (Impuesto sobre Sucesiones y Donaciones, gift) with the state scale, the " +
+        "multiplier for kinship and pre-existing wealth, and the given regional rebate (bonificación autonómica).",
       schema: giftTaxSchema,
     },
     computeGiftTax,
@@ -379,30 +374,30 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "impuesto-patrimonio": defineCalculator(
     "fiscalidad",
     {
-      title: "Impuesto sobre el patrimonio",
+      title: "Wealth tax (impuesto sobre el patrimonio)",
       description:
-        "Cuota del Impuesto sobre el Patrimonio con la tarifa estatal, la exención de la " +
-        "vivienda habitual, el mínimo exento y la bonificación autonómica indicada.",
+        "Tax due under the Wealth Tax (Impuesto sobre el Patrimonio) with the state scale, the primary " +
+        "residence exemption, the tax-free allowance (mínimo exento) and the given regional rebate (bonificación autonómica).",
       schema: wealthTaxSchema,
     },
     computeWealthTax,
   ),
 
-  // --- Deuda y herramientas -------------------------------------------------------------------
+  // --- Debt and tools -------------------------------------------------------------------------
   "intereses-tarjeta-credito": defineCalculator(
     "deuda",
     {
-      title: "Intereses de tarjeta de crédito",
+      title: "Credit card interest",
       description:
-        "Meses hasta saldar una deuda de tarjeta (cuota fija o porcentaje del saldo, típico del " +
-        "revolving), intereses totales y saldo al final de cada año. Si el pago no cubre los " +
-        "intereses, monthsToPayoff es null y los totales también (la deuda no se salda nunca).",
+        "Months to pay off a card debt (fixed payment or a percentage of the balance, typical of " +
+        "revolving credit), total interest and the balance at the end of each year. If the payment does not cover the " +
+        "interest, monthsToPayoff is null and so are the totals (the debt is never paid off).",
       schema: creditCardSchema,
     },
     (args) => {
       const { series, ...result } = computeCreditCard(args);
-      // La serie es mensual (hasta 1.200 puntos): al cliente le basta el saldo al cierre de
-      // cada año y el del último mes.
+      // The series is monthly (up to 1,200 points): the client only needs the balance at the end
+      // of each year and in the last month.
       const yearly = series.filter(
         (point, index) => point.month % MONTHS_PER_YEAR === 0 || index === series.length - 1,
       );
@@ -412,10 +407,10 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   inflacion: defineCalculator(
     "herramientas",
     {
-      title: "Inflación y poder adquisitivo",
+      title: "Inflation and purchasing power",
       description:
-        "Cuánto vale en el futuro un importe de hoy con la inflación indicada y cuánto poder " +
-        "adquisitivo se pierde si el dinero está parado o rinde poco, con la serie año a año.",
+        "What an amount of today is worth in the future with the given inflation and how much purchasing " +
+        "power is lost if the money sits idle or earns little, with a year-by-year series.",
       schema: inflationSchema,
     },
     computeInflation,
@@ -423,19 +418,19 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
   "salud-financiera": defineCalculator(
     "herramientas",
     {
-      title: "Test de salud financiera",
+      title: "Financial health check",
       description:
-        "Puntúa de 0 a 100 la salud financiera con 8 preguntas ponderadas y devuelve una " +
-        "categoría (critical, fragile, stable, strong). Cada respuesta es una opción de 0 (peor) " +
-        "a 3 (mejor); las que falten cuentan como 0. Opciones: emergencyFund (0 nada, 1 <1 mes " +
-        "de gastos, 2 1–3 meses, 3 >3 meses); savingsRate (0 nada, 1 <10 %, 2 10–20 %, " +
-        "3 >20 %); debt sin hipoteca (0 deuda cara, 1 préstamo personal/coche, 2 poca y " +
-        "controlada, 3 ninguna); housingCost % de ingresos (0 >50 %, 1 35–50 %, 2 25–35 %, " +
-        "3 <25 %); investing (0 no, 1 empezando, 2 puntual, 3 periódico y diversificado); " +
-        "retirement (0 nada, 1 solo pensión pública, 2 aporta a veces, 3 plan con aportación " +
-        "regular); protection (0 sin seguros, 1 solo obligatorios, 2 algún seguro clave, 3 bien " +
-        "cubierto); tracking (0 no sabe, 1 idea aproximada, 2 revisa a veces, 3 presupuesto " +
-        "mensual).",
+        "Scores financial health from 0 to 100 with 8 weighted questions and returns a " +
+        "category (critical, fragile, stable, strong). Each answer is an option from 0 (worst) " +
+        "to 3 (best); missing ones count as 0. Options: emergencyFund (0 none, 1 <1 month " +
+        "of expenses, 2 1–3 months, 3 >3 months); savingsRate (0 none, 1 <10%, 2 10–20%, " +
+        "3 >20%); debt excluding the mortgage (0 expensive debt, 1 personal/car loan, 2 little and " +
+        "under control, 3 none); housingCost as % of income (0 >50%, 1 35–50%, 2 25–35%, " +
+        "3 <25%); investing (0 no, 1 getting started, 2 occasionally, 3 regularly and diversified); " +
+        "retirement (0 nothing, 1 public pension only, 2 contributes sometimes, 3 plan with regular " +
+        "contributions); protection (0 no insurance, 1 mandatory only, 2 some key insurance, 3 well " +
+        "covered); tracking (0 does not know, 1 rough idea, 2 checks now and then, 3 monthly " +
+        "budget).",
       schema: financialHealthSchema,
     },
     (args) => scoreFinancialHealthOptions(FINANCIAL_HEALTH_QUESTIONS.map((q) => args[q.id] ?? 0)),

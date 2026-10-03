@@ -30,12 +30,12 @@ const PRICES = {
 
 const FX = { asOf: "2026-10-02", rates: { USD: 1, EUR: 1.1 } };
 
-/** Respuestas de la API por ruta; cada llamada devuelve objetos NUEVOS con el mismo contenido. */
+/** API responses per route; every call returns NEW objects with the same content. */
 function respond(url: string): unknown {
   if (url.startsWith("/api/positions")) return [{ ...POSITION }];
   if (url.startsWith("/api/prices/fx")) return { ...FX, rates: { ...FX.rates } };
   if (url.startsWith("/api/prices")) return { "VWCE.DE": { ...PRICES["VWCE.DE"] } };
-  throw new Error(`Ruta inesperada en el test: ${url}`);
+  throw new Error(`Unexpected route in test: ${url}`);
 }
 
 const fetchMock = vi.fn((input: RequestInfo | URL) =>
@@ -47,17 +47,17 @@ const calls = (prefix: string): number =>
     ([input]) => String(input).startsWith(prefix) && !String(input).startsWith(`${prefix}/fx`),
   ).length;
 
-/** Se llama en cada render del consumidor de datos: cuenta cuántas veces se re-renderiza. */
+/** Called on every render of the data consumer: counts how many times it re-renders. */
 const onDataRender = vi.fn();
 
-/** Consumidor SOLO de los datos. */
+/** Consumer of the data ONLY. */
 function DataConsumer() {
   const { agg } = usePortfolioData();
   onDataRender();
   return <p data-testid="value">{agg.marketValue}</p>;
 }
 
-/** Consumidor de la frescura: enseña cuándo se comprobaron los precios. */
+/** Consumer of the freshness: shows when the prices were checked. */
 function FreshnessConsumer() {
   const { pricesCheckedAt } = usePortfolioFreshness();
   return <p data-testid="checked">{pricesCheckedAt ?? "none"}</p>;
@@ -83,7 +83,7 @@ describe("PortfolioDataProvider", () => {
     onDataRender.mockClear();
     fetchMock.mockClear();
     vi.stubGlobal("fetch", fetchMock);
-    // jsdom arranca como pestaña oculta; el auto-refresco solo corre con la pestaña visible.
+    // jsdom starts as a hidden tab; the auto-refresh only runs while the tab is visible.
     Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
   });
 
@@ -91,7 +91,7 @@ describe("PortfolioDataProvider", () => {
     vi.unstubAllGlobals();
   });
 
-  it("no re-renderiza a quien solo lee datos cuando un refresco trae lo mismo", async () => {
+  it("does not re-render a data-only reader when a refresh brings the same data", async () => {
     renderProvider();
     await waitFor(() => expect(screen.getByTestId("value")).toHaveTextContent("1200"));
     await waitFor(() => expect(screen.getByTestId("checked")).not.toHaveTextContent("none"));
@@ -103,12 +103,12 @@ describe("PortfolioDataProvider", () => {
     await waitFor(() => expect(screen.getByTestId("checked")).toHaveTextContent(String(Number(firstCheck) + 60_000)));
     vi.restoreAllMocks();
 
-    // La frescura avanzó, pero posiciones y precios son iguales: sus referencias se conservan.
+    // The freshness moved forward, but positions and prices are equal: their references are kept.
     expect(calls("/api/prices")).toBe(2);
     expect(onDataRender).toHaveBeenCalledTimes(settledRenders);
   });
 
-  it("refresca una sola vez al volver a la pestaña (sin el doble disparo de focus)", async () => {
+  it("refreshes only once when returning to the tab (no double focus trigger)", async () => {
     renderProvider();
     await waitFor(() => expect(calls("/api/prices")).toBe(1));
     const positionsBefore = calls("/api/positions");

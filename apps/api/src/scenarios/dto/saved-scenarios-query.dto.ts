@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { calculatorSlugSchema } from './create-saved-scenario.dto.js';
 
 /**
- * Query de GET /api/scenarios. Estricta: un filtro desconocido da 400 en vez de ignorarse en
- * silencio.
+ * Query of GET /api/scenarios. Strict: an unknown filter returns 400 instead of being silently
+ * ignored.
  */
 export const savedScenariosQuerySchema = z.strictObject({
-  /** Filtra por calculadora (p. ej. `?slug=fire-basico`). */
+  /** Filters by calculator (e.g. `?slug=fire-basico`). */
   slug: calculatorSlugSchema.optional(),
 });
 

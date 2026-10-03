@@ -15,10 +15,9 @@ import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
 
 /**
- * El servidor MCP de verdad, conectado a un cliente MCP de verdad por un transporte en memoria.
- * Los servicios de datos son dobles: aquí se prueba el cableado de las tools (registro,
- * esquemas, auditoría y el cálculo sobre los datos del usuario), no la BD, que ya tiene sus
- * propios tests.
+ * The real MCP server, connected to a real MCP client over an in-memory transport. The data
+ * services are test doubles: this tests the tool wiring (registration, schemas, auditing and the
+ * computation over the user's data), not the DB, which has its own tests.
  */
 
 const USER = 'user-1';
@@ -115,7 +114,7 @@ function makeService() {
   };
   const positionsService = { findAllByUser: vi.fn().mockResolvedValue(positions) };
   const lotsService = { findAllByUser: vi.fn().mockResolvedValue(lots) };
-  // El informe de verdad sobre los mismos dobles: `get_realised_gains` lo compone `TaxReturnService`.
+  // The real report over the same doubles: `get_realised_gains` is built by `TaxReturnService`.
   const taxReturn = new TaxReturnService(
     positionsService as never,
     lotsService as never,
@@ -149,7 +148,7 @@ function parse(result: unknown): unknown {
   const { content, isError } = result as CallToolResult;
   expect(isError).toBeFalsy();
   const [first] = content;
-  if (first?.type !== 'text') throw new Error('Se esperaba un resultado de texto');
+  if (first?.type !== 'text') throw new Error('Expected a text result');
   return JSON.parse(first.text);
 }
 
@@ -160,7 +159,7 @@ afterEach(async () => {
 });
 
 describe('McpService', () => {
-  it('anuncia las tools de cartera, de análisis y las dos genéricas de calculadoras', async () => {
+  it('advertises the portfolio and analysis tools and the two generic calculator tools', async () => {
     client = await connect(makeService().service);
     const { tools } = await client.listTools();
     const names = tools.map((t) => t.name);
@@ -183,7 +182,7 @@ describe('McpService', () => {
     );
     expect(names.filter((n) => n.startsWith('calculate_'))).toEqual([]);
     expect(new Set(names).size).toBe(names.length);
-    // Las calculadoras son de solo lectura y no tocan el mundo exterior.
+    // The calculators are read-only and do not touch the outside world.
     for (const name of ['list_calculators', 'calculate']) {
       expect(tools.find((t) => t.name === name)?.annotations).toMatchObject({
         readOnlyHint: true,
@@ -193,7 +192,7 @@ describe('McpService', () => {
     expect(tools.find((t) => t.name === 'calculate')?.inputSchema.required).toEqual(['calculator', 'inputs']);
   });
 
-  it('lista todas las calculadoras con su esquema de entrada', async () => {
+  it('lists every calculator with its input schema', async () => {
     const { service, audit } = makeService();
     client = await connect(service);
 
@@ -214,7 +213,7 @@ describe('McpService', () => {
     expect((tax as unknown[]).length).toBeGreaterThan(1);
   });
 
-  it('ejecuta una calculadora y deja la llamada auditada con su slug', async () => {
+  it('runs a calculator and audits the call with its slug', async () => {
     const { service, audit } = makeService();
     client = await connect(service);
 
@@ -225,7 +224,7 @@ describe('McpService', () => {
       }),
     );
 
-    // Tipo 0: 100.000 € en 120 cuotas iguales.
+    // 0% rate: €100,000 in 120 equal instalments.
     expect((result as { monthlyPayment: number }).monthlyPayment).toBeCloseTo(833.33, 2);
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate:hipoteca-fija', 'ok');
 
@@ -239,7 +238,7 @@ describe('McpService', () => {
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate:roi', 'ok');
   });
 
-  it('un slug desconocido es error de tool y se audita sin el slug del cliente', async () => {
+  it('an unknown slug is a tool error and is audited without the client slug', async () => {
     const { service, audit } = makeService();
     client = await connect(service);
     const result = (await client.callTool({
@@ -248,11 +247,12 @@ describe('McpService', () => {
     })) as CallToolResult;
 
     expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain('Unknown calculator: ');
     expect(JSON.stringify(result.content)).toContain('list_calculators');
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate', 'error');
   });
 
-  it('rechaza una entrada fuera de rango, de otro tipo o desconocida como error de tool, sin calcular', async () => {
+  it('rejects an out-of-range, wrongly typed or unknown input as a tool error, without computing', async () => {
     const { service, audit } = makeService();
     client = await connect(service);
     const call = async (calculator: string, inputs: Record<string, unknown>) =>
@@ -269,7 +269,7 @@ describe('McpService', () => {
     };
     const tooMany = await call('simulador-montecarlo', { ...montecarlo, paths: 10_000_000 });
     expect(tooMany.isError).toBe(true);
-    expect(JSON.stringify(tooMany.content)).toContain('paths');
+    expect(JSON.stringify(tooMany.content)).toContain('Invalid input for simulador-montecarlo: paths');
 
     expect((await call('simulador-montecarlo', { ...montecarlo, extra: 1 })).isError).toBe(true);
     expect((await call('hipoteca-fija', { principal: 'mucho', annualRate: 3, years: 10 })).isError).toBe(true);
@@ -278,7 +278,7 @@ describe('McpService', () => {
     expect(audit.record).not.toHaveBeenCalledWith(USER, 'client-1', expect.any(String), 'ok');
   });
 
-  it('calcula las plusvalías por ejercicio con FIFO a partir de los lotes del usuario', async () => {
+  it("computes the capital gains per tax year with FIFO from the user's lots", async () => {
     client = await connect(makeService().service);
 
     const all = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
@@ -286,9 +286,9 @@ describe('McpService', () => {
     };
     expect(all.years.map((y) => y.year)).toEqual([2025]);
     const [year] = all.years;
-    // EUR: 5 × 120 − 1 de comisión − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20 USD al tipo de la venta.
+    // EUR: 5 × 120 − 1 commission − 5 × 100 = 99. USD: 2 × 140 − 2 × 150 = −20 USD at the sale-date rate.
     expect(year?.net).toBeCloseTo(99 - 20 / 1.04, 6);
-    // Los 300 USD invertidos valen menos euros al vender que al comprar.
+    // The 300 USD invested are worth fewer euros at the sale than at the purchase.
     expect(year?.fxDifference).toBeCloseTo(300 / 1.04 - 300 / 1.03, 6);
     expect(year?.unconverted).toEqual([]);
 
@@ -296,7 +296,7 @@ describe('McpService', () => {
     expect(none).toEqual({ years: [], ratesLoaded: true });
   });
 
-  it('get_realised_gains da las mismas cifras que el informe de la Renta (un único cálculo)', async () => {
+  it('get_realised_gains returns the same figures as the tax return report (a single computation)', async () => {
     const { service, taxReturn } = makeService();
     client = await connect(service);
 
@@ -306,7 +306,7 @@ describe('McpService', () => {
     expect(tool).toEqual({ years: [report.gains], ratesLoaded: true });
   });
 
-  it('get_realised_gains degrada si cae el BCE: ventas en divisa sin convertir y ratesLoaded false', async () => {
+  it('get_realised_gains degrades if the ECB is down: foreign-currency sales unconverted and ratesLoaded false', async () => {
     const { service, referenceRates, audit } = makeService();
     referenceRates.getRates.mockRejectedValueOnce(new Error('ECB request failed: timeout'));
     client = await connect(service);
@@ -318,14 +318,14 @@ describe('McpService', () => {
 
     expect(result.ratesLoaded).toBe(false);
     const [year] = result.years;
-    // La venta en euros sigue calculada; la de USD queda fuera de los totales.
+    // The euro sale is still computed; the USD one is left out of the totals.
     expect(year?.net).toBeCloseTo(99, 6);
     // USD: 2 × 140 − 2 × 150 = −20 USD.
     expect(year?.unconverted).toEqual([{ currency: 'USD', sales: 1, gain: -20 }]);
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_realised_gains', 'ok');
   });
 
-  it('sirve el informe de la Renta del ejercicio pedido o, sin él, el del último con datos', async () => {
+  it('serves the tax return report for the requested year or, without one, the latest year with data', async () => {
     const { service, taxReturn, audit } = makeService();
     const build = vi.spyOn(taxReturn, 'build').mockResolvedValue({
       year: 2025,
@@ -350,7 +350,7 @@ describe('McpService', () => {
     expect(invalid.isError).toBe(true);
   });
 
-  it('mide el objetivo FIRE con el valor de mercado real de la cartera', async () => {
+  it('measures the FIRE goal against the real market value of the portfolio', async () => {
     const { service, valuation } = makeService();
     client = await connect(service);
 
@@ -388,7 +388,7 @@ describe('McpService', () => {
     expect(simulated).toHaveProperty('simulation.successRate');
   });
 
-  it('mide también un objetivo de cantidad en un plazo', async () => {
+  it('also measures an amount goal within a time frame', async () => {
     const { service } = makeService();
     client = await connect(service);
 
@@ -398,7 +398,7 @@ describe('McpService', () => {
         arguments: { targetAmount: 1_200_000, targetYears: 10, contribution: 0, annualReturn: 0, display: 'USD' },
       }),
     );
-    // 600.000 de cartera sin aportar ni rentabilidad: no llega, y necesita 5.000 al mes.
+    // A 600,000 portfolio with no contributions or returns: it falls short and needs 5,000 a month.
     expect(result).toMatchObject({
       mode: 'amount',
       target: 1_200_000,
@@ -410,7 +410,7 @@ describe('McpService', () => {
     expect((result as { requiredContribution: number }).requiredContribution).toBeCloseTo(5000, 6);
   });
 
-  it('rechaza mezclar los dos modos o dejar uno a medias', async () => {
+  it('rejects mixing both modes or leaving one half-filled', async () => {
     const { service } = makeService();
     client = await connect(service);
 
@@ -431,7 +431,7 @@ describe('McpService', () => {
     }
   });
 
-  it('delega el reparto y los escenarios en sus servicios, con el usuario del token', async () => {
+  it('delegates the breakdown and the scenarios to their services, with the token user', async () => {
     const { service, valuation, scenarios } = makeService();
     client = await connect(service);
 
@@ -445,7 +445,7 @@ describe('McpService', () => {
     expect(listed).toMatchObject({ scenarios: [{ id: 's1' }] });
   });
 
-  it('no reenvía al host el texto de un error interno: solo una referencia', async () => {
+  it('does not forward the text of an internal error to the host: only a reference', async () => {
     const { service, valuation, audit } = makeService();
     valuation.breakdown.mockRejectedValueOnce(
       new Error('Failed query: select "email" from "users" where "id" = $1\nparams: secreto@example.com'),
@@ -461,11 +461,11 @@ describe('McpService', () => {
     const text = JSON.stringify(result.content);
     expect(text).not.toContain('Failed query');
     expect(text).not.toContain('secreto@example.com');
-    expect(text).toMatch(/Error interno al ejecutar la operación \(ref\. [0-9a-f-]{36}\)/);
+    expect(text).toMatch(/Internal error while running the operation \(ref\. [0-9a-f-]{36}\)/);
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_portfolio_breakdown', 'error');
   });
 
-  it('sí reenvía el mensaje (y el código) de los errores de dominio de Nest', async () => {
+  it('does forward the message (and code) of Nest domain errors', async () => {
     const { service, valuation } = makeService();
     valuation.breakdown.mockRejectedValueOnce(
       new NotFoundException({ message: 'Posición no encontrada', code: 'POSITION_NOT_FOUND' }),
@@ -481,34 +481,36 @@ describe('McpService', () => {
     expect(JSON.stringify(result.content)).toContain('Posición no encontrada (POSITION_NOT_FOUND)');
   });
 
-  it('valida las escrituras con el esquema REST completo, refinamientos incluidos (paridad REST/MCP)', async () => {
+  it('validates writes with the full REST schema, refinements included (REST/MCP parity)', async () => {
     const { service, income } = makeService();
     client = await connect(service, [SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE]);
     const call = async (name: string, args: Record<string, unknown>) =>
       (await defined(client).callTool({ name, arguments: args })) as CallToolResult;
 
-    // "Al menos un campo" de PATCH /api/income/:id: REST lo rechaza y MCP también.
+    // The "at least one field" rule of PATCH /api/income/:id: REST rejects it and so does MCP.
     expect(updateIncomeSchema.safeParse({}).success).toBe(false);
     const empty = await call('update_income', { id: 'i1' });
     expect(empty.isError).toBe(true);
     expect(JSON.stringify(empty.content)).toContain('no hay ningún campo que actualizar');
 
-    // "Las retenciones no superan el íntegro" de POST /api/income.
+    // The "withholdings do not exceed the gross amount" rule of POST /api/income.
     const tooMuch = { kind: 'dividend', paidAt: '2025-05-01', gross: 1, withholdingSpain: 2 };
     expect(createIncomeSchema.safeParse(tooMuch).success).toBe(false);
     const rejected = await call('add_income', tooMuch);
     expect(rejected.isError).toBe(true);
-    expect(JSON.stringify(rejected.content)).toContain('las retenciones no pueden superar el íntegro');
+    expect(JSON.stringify(rejected.content)).toContain(
+      'Invalid input: gross: las retenciones no pueden superar el íntegro',
+    );
 
     expect(income.update).not.toHaveBeenCalled();
     expect(income.create).not.toHaveBeenCalled();
 
-    // Lo válido sí llega al servicio, ya normalizado por el esquema.
+    // Valid input does reach the service, already normalised by the schema.
     expect((await call('update_income', { id: 'i1', gross: 10 })).isError).toBeFalsy();
     expect(income.update).toHaveBeenCalledWith(USER, 'i1', { gross: 10 });
   });
 
-  it('reenvía los errores de dominio con su código, igual que REST', async () => {
+  it('forwards domain errors with their code, just like REST', async () => {
     const { service, valuation } = makeService();
     valuation.breakdown.mockRejectedValueOnce(
       new LotAggregateError('NEGATIVE_QUANTITY', 'La cantidad de la posición quedaría en negativo'),
@@ -526,14 +528,14 @@ describe('McpService', () => {
     );
   });
 
-  it('exige portfolio:read para las tools de lectura y audita el rechazo', async () => {
+  it('requires portfolio:read for the read tools and audits the rejection', async () => {
     const { service, audit } = makeService();
     client = await connect(service, []);
 
     const result = (await client.callTool({ name: 'list_positions', arguments: {} })) as CallToolResult;
 
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result.content)).toContain('portfolio:read');
+    expect(JSON.stringify(result.content)).toContain('This action requires read permission (portfolio:read)');
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'list_positions', 'denied_scope');
   });
 });

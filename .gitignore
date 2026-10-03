@@ -1,11 +1,11 @@
-# === Documentación / notas locales (NO subir) ===
+# === Local docs / notes (do NOT commit) ===
 _local/
 *.local.md
 CLAUDE.md
 .claude/
 HANDOFF.md
 
-# === Variables de entorno (claves reales) ===
+# === Environment variables (real keys) ===
 .env
 .env.*
 !.env.example
@@ -34,13 +34,13 @@ coverage/
 .eslintcache
 *.tsbuildinfo
 
-# === Bases de datos locales ===
+# === Local databases ===
 *.sqlite
 *.sqlite3
 *.db
 /data/
 
-# === Sistema operativo / editores ===
+# === Operating system / editors ===
 .DS_Store
 Thumbs.db
 .idea/

@@ -25,7 +25,7 @@ const RATES: ReferenceRates = {
   ],
 };
 
-describe('TaxReturnService (integración con Postgres)', () => {
+describe('TaxReturnService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: TaxReturnService;
@@ -36,7 +36,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
   beforeAll(() => {
     ({ db, close } = createTestDb());
     const lots = new PositionLotsService(db, new EventEmitter2());
-    // `PositionsService` solo se usa aquí para leer: el precio en caliente no interviene.
+    // `PositionsService` is only used here for reads: the live price plays no part.
     const positionsService = new PositionsService(db, {} as never, lots, new EventEmitter2());
     income = new IncomeService(db);
     pending = new PendingBalancesService(db);
@@ -77,7 +77,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     );
   }
 
-  it('coincide con lo que calcula el core con los mismos datos (ventas, cobros y saldo pendiente)', async () => {
+  it('matches what the core computes from the same data (sales, payments and pending balance)', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const eur = await seedPositionId(userId, 'IWDA', 'EUR');
     const usd = await seedPositionId(userId, 'AAPL', 'USD');
@@ -100,7 +100,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
       positionId: usd,
     });
     await income.create(userId, { kind: 'interest', paidAt: '2025-12-31', gross: 40 });
-    // Pérdida de 2023 pendiente de compensar, introducida a mano.
+    // 2023 loss pending offset, entered by hand.
     await pending.replace(userId, { balances: [{ originYear: 2023, kind: 'gains', amount: 300 }] });
     getRates.mockResolvedValue(RATES);
 
@@ -108,7 +108,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
 
     expect(getRates).toHaveBeenCalledWith(['USD'], '2024-03-01');
 
-    // Lo mismo, calculado a mano con el core sobre los datos leídos de la base.
+    // The same, computed by hand with the core on the data read from the database.
     const lotRows = await new PositionLotsService(db, new EventEmitter2()).findAllByUser(userId);
     const input: RealisedGainsPosition[] = [
       { id: eur, ticker: 'IWDA', name: null, currency: 'EUR', lots: lotRows.filter((l) => l.positionId === eur) },
@@ -131,19 +131,19 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(report.savings).toEqual(expected);
     expect(report.gains).toEqual(gains[0]);
     expect(report.income).toEqual(incomeYears[0]);
-    // Sanity: las ventas, los cobros y el saldo pendiente influyen de verdad en el resultado.
+    // Sanity: the sales, payments and pending balance really affect the result.
     expect(report.gains?.sales).toHaveLength(2);
     expect(report.incomeEvents.map((e) => e.grossSource)).toEqual(['manual', 'manual']);
     expect(report.savings?.savingsBase.pending).toBeDefined();
     expect(report.savings?.gainsBalance).toBeCloseTo(itemAt(gains, 0).total, 9);
-    // Procedencia de las ventas: tipo del BCE aplicado.
+    // Provenance of the sales: the applied ECB rate.
     expect(report.gains?.sales.find((s) => s.currency === 'USD')?.eur?.sellRate).toMatchObject({
       unitsPerEur: 1.04,
       date: '2025-02-10',
     });
   });
 
-  it('sin ejercicio pedido usa el último con datos; sin datos o en un año vacío devuelve null', async () => {
+  it('without a requested year it uses the latest with data; with no data or an empty year it returns null', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const empty = await service.build(userId);
     expect(empty).toMatchObject({
@@ -169,14 +169,14 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(gap).toMatchObject({ year: 2023, gains: null, income: null, savings: null, incomeEvents: [] });
   });
 
-  it('si fallan los tipos del BCE el informe sale con lo en divisa sin convertir', async () => {
+  it('if the ECB rates fail the report still renders with foreign-currency amounts unconverted', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const usd = await seedPositionId(userId, 'AAPL', 'USD');
     await seedLots(userId, usd, [
       { kind: 'buy', quantity: 1, price: 100, tradedAt: '2025-01-10' },
       { kind: 'sell', quantity: 1, price: 120, tradedAt: '2025-02-10' },
     ]);
-    getRates.mockRejectedValue(new Error('ECB caído'));
+    getRates.mockRejectedValue(new Error('ECB down'));
 
     const report = await service.build(userId, 2025);
     expect(report.ratesLoaded).toBe(false);
@@ -184,7 +184,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(report.savings?.incomplete).toBe(true);
   });
 
-  it('aísla los datos por usuario', async () => {
+  it('isolates data per user', async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     await income.create(a, { kind: 'interest', paidAt: '2025-06-30', gross: 12 });

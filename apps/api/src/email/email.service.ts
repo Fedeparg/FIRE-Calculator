@@ -1,10 +1,10 @@
 import type { EmailLocale, FireMilestoneEmail } from './templates/fire-milestone.js';
 
-/** Contrato de envío de email; permite intercambiar el transporte (dev/Resend). */
+/** Email sending contract; lets the transport be swapped (dev/Resend). */
 export interface EmailService {
-  /** `locale`: idioma de la web desde la que se pidió el enlace (el del email). */
+  /** `locale`: language of the site the link was requested from (the email's language). */
   sendMagicLink(to: string, link: string, locale: EmailLocale): Promise<void>;
-  /** `oneClickUnsubscribeUrl` va a la cabecera `List-Unsubscribe` (baja por POST, RFC 8058), distinta de la página de baja del cuerpo. */
+  /** `oneClickUnsubscribeUrl` goes in the `List-Unsubscribe` header (POST unsubscribe, RFC 8058), unlike the unsubscribe page in the body. */
   sendFireMilestone(to: string, email: FireMilestoneEmail, oneClickUnsubscribeUrl: string): Promise<void>;
 }
 

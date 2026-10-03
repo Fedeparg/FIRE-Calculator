@@ -1,20 +1,20 @@
-// Casillas del modelo 100 (IRPF) por ejercicio, para presentar cada cifra con la casilla en la
-// que se declara. Cambian cada año: un ejercicio sin tabla se muestra sin números de casilla.
-// Fuente y criterio: ver ./README.md, sección `tax-boxes.ts`.
+// Boxes (casillas) of form 100 (modelo 100, IRPF) per tax year, to show each figure with the box
+// it is reported in. They change every year: a tax year without a table is shown without box
+// numbers. Source and criterion: see ./README.md, section `tax-boxes.ts`.
 
-/** Casillas de la base del ahorro que usa el informe. */
+/** Savings base (base del ahorro) boxes used by the report. */
 export interface TaxBoxes {
-  /** Disposición que aprueba el modelo del ejercicio. */
+  /** Regulation approving the tax year's form. */
   source: string;
   interest: string;
   dividends: string;
-  /** Gastos de administración y depósito de valores negociables. */
+  /** Administration and custody expenses for transferable securities. */
   custodyFees: string;
-  /** Retenciones e ingresos a cuenta del capital mobiliario. */
+  /** Withholdings and payments on account on capital income (capital mobiliario). */
   capitalWithholding: string;
-  /** Acciones admitidas a negociación, por entidad emisora. */
+  /** Shares admitted to trading, per issuing entity. */
   shares: { entity: string; transferValue: string; acquisitionValue: string; gains: string; losses: string };
-  /** Fondos y ETF (IIC) no sujetos a retención: típicamente extranjeros (art. 75.3.j RIRPF). */
+  /** Funds and ETFs (IIC) not subject to withholding: typically foreign (art. 75.3.j RIRPF). */
   fundsWithoutWithholding: {
     name: string;
     transferValue: string;
@@ -22,19 +22,19 @@ export interface TaxBoxes {
     gains: string;
     losses: string;
   };
-  /** Otros elementos patrimoniales: rango del bloque (aquí van los derivados, por exclusión). */
+  /** Other assets: the block's range (derivatives go here, by exclusion). */
   otherAssets: string;
-  /** Compensación del saldo negativo de rendimientos con ganancias (25 %) y al revés. */
+  /** Offsetting the negative capital income balance against gains (25%) and vice versa. */
   crossCompensation: { capitalIncomeWithGains: string; gainsWithCapitalIncome: string };
-  /** Saldos negativos pendientes de los cuatro ejercicios anteriores, del más antiguo al más reciente. */
+  /** Pending negative balances from the four previous tax years, from oldest to newest. */
   pendingGains: readonly string[];
   pendingCapitalIncome: readonly string[];
   doubleTaxation: string;
 }
 
 /**
- * Por ejercicio. 2025: Orden HAC/277/2026, de 25 de marzo (BOE-A-2026-7041), números leídos del
- * propio formulario del modelo y contrastados con el Manual práctico de Renta 2025 de la AEAT.
+ * Per tax year. 2025: Orden HAC/277/2026, de 25 de marzo (BOE-A-2026-7041), numbers read from the
+ * form itself and cross-checked against the AEAT's Manual práctico de Renta 2025.
  */
 const TAX_BOXES: Readonly<Record<number, TaxBoxes>> = {
   2025: {
@@ -59,7 +59,7 @@ const TAX_BOXES: Readonly<Record<number, TaxBoxes>> = {
   },
 };
 
-/** Casillas del ejercicio, o `null` si no están verificadas para ese año. */
+/** The tax year's boxes, or `null` if they are not verified for that year. */
 export function taxBoxesFor(year: number): TaxBoxes | null {
   return TAX_BOXES[year] ?? null;
 }

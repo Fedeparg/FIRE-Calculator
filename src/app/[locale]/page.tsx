@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     og: { kind: "page", page: "home" },
     title: t("title"),
     description: t("description"),
-    // El título de la home ya incluye la marca; no la dupliques con la plantilla.
+    // The home title already includes the brand; do not duplicate it through the template.
     titleAbsolute: true,
   });
 }
@@ -33,7 +33,7 @@ export default async function Landing({ params }: Props) {
   setRequestLocale(locale);
   const l = asLocale(locale);
 
-  // Categorías reales del registro, con el nº de calculadoras de cada una.
+  // Actual registry categories, with the number of calculators in each.
   const categories: LandingCategory[] = getUsedCategories().map((id) => ({
     id,
     label: CATEGORIES[id][l],

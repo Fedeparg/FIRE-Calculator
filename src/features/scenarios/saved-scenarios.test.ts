@@ -49,7 +49,7 @@ describe("classifyScenariosQuery", () => {
     expect(classifyScenariosQuery({ status: "loading" })).toEqual({ status: "loading", loadError: null });
     expect(classifyScenariosQuery({ status: "ready", data: [] })).toEqual({ status: "ready", loadError: null });
     expect(classifyScenariosQuery({ status: "error", error: new ApiError(401) }).status).toBe("anonymous");
-    // Sin respuesta no se afirma que haya sesión.
+    // Without a response we do not assume there is a session.
     expect(classifyScenariosQuery({ status: "error", error: new ApiError(0) }).status).toBe("anonymous");
     expect(classifyScenariosQuery({ status: "error", error: new ApiError(500) })).toEqual({
       status: "error",
@@ -97,7 +97,7 @@ describe("local list corrections", () => {
     const local = applyScenarioChange(null, loaded, () => []);
     const refetched = [scenario("a"), scenario("z")];
     expect(currentScenarios(local, refetched)).toBe(refetched);
-    // Un cambio posterior parte de los datos nuevos, no de la corrección obsoleta.
+    // A later change starts from the new data, not from the stale correction.
     const next = applyScenarioChange(local, refetched, (list) => [...list]);
     expect(next.list.map((s) => s.id)).toEqual(["a", "z"]);
   });
@@ -146,11 +146,11 @@ describe("requests", () => {
 describe("activeScenario", () => {
   const plan = (id: string, updatedAt: string) => ({ id, updatedAt });
 
-  it("devuelve null sin planes", () => {
+  it("returns null when there are no plans", () => {
     expect(activeScenario([])).toBeNull();
   });
 
-  it("elige el actualizado más recientemente, sin fiarse del orden de la lista", () => {
+  it("picks the most recently updated one, without relying on the list order", () => {
     const plans = [
       plan("a", "2026-09-01T10:00:00.000Z"),
       plan("b", "2026-10-01T09:00:00.000Z"),
@@ -159,7 +159,7 @@ describe("activeScenario", () => {
     expect(activeScenario(plans)?.id).toBe("b");
   });
 
-  it("con la misma fecha se queda con el primero de la lista", () => {
+  it("keeps the first one in the list when dates are equal", () => {
     const at = "2026-10-01T09:00:00.000Z";
     expect(activeScenario([plan("a", at), plan("b", at)])?.id).toBe("a");
   });

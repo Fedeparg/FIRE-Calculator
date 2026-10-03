@@ -1,12 +1,13 @@
-// Parser de la "Exportación de transacciones" (CSV) de Trade Republic. Lógica pura: recibe el
-// texto y devuelve operaciones normalizadas, filas descartadas con su motivo y avisos.
+// Parser for Trade Republic's "Exportación de transacciones" (transaction export, CSV). Pure
+// logic: takes the text and returns normalized trades, skipped rows with their reason, and
+// warnings.
 //
-// Privacidad: el export trae columnas con datos de terceros (contraparte, IBAN, referencia de
-// pago, MCC) y un texto libre por fila (`description`). Aquí no se leen: se accede a las
-// columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
-// `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
+// Privacy: the export has columns with third-party data (counterparty, IBAN, payment reference,
+// MCC) and a free-text field per row (`description`). They are not read here: columns are accessed
+// by name and only the ones needed, so that data dies with each record's `fields` array and never
+// reaches any result, log or error message.
 //
-// Este fichero orquesta; cada tipo de fila tiene su módulo en `trade-republic/`.
+// This file orchestrates; each row type has its own module in `trade-republic/`.
 
 import { compareStrings } from "../compare.js";
 import { resolveBonusIssues } from "./trade-republic/bonus.js";
@@ -24,27 +25,28 @@ export {
 } from "./trade-republic/header.js";
 
 /**
- * Parsea el export de transacciones de Trade Republic.
+ * Parses Trade Republic's transaction export.
  *
- * Reglas (verificadas contra un export real):
- * - Se importan `BUY` y `SELL`. El importe bruto es `cantidad × precio`; la columna `amount`
- *   no se usa (hay una compra antigua con `amount` y `fee` vacíos que sigue siendo válida).
- * - `fee` es coste de la operación y se guarda en valor absoluto. `tax` no se suma al coste. En
- *   las compras de un saveback es la retención del 19 % de la recompensa y pasa a su cobro (ver
- *   `resolveIncome`); del resto solo se avisa de cuántas operaciones la traen.
- * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK`, `STOCKPERK` y `DIVIDEND` son cobros (`income`). La
- *   recompensa llega además como una `BUY` aparte por el mismo importe: esa compra entra con su
- *   coste. Las retenciones de un dividendo se reparten con `resolveFromBroker`.
- * - `date` manda sobre `datetime` como fecha de operación: puede diferir del día UTC.
- * - Las `MIGRATION` (cambio de custodia) vienen en parejas salida/entrada con el mismo ISIN y
- *   cantidad, a pocos milisegundos entre sí, y efecto neto cero: se ignoran las parejas y se avisa de las sueltas.
- * - Las `BONUS_ISSUE` (ampliación liberada: acciones nuevas gratis) entran como compra a precio
- *   0; una `BONUS_ISSUE_CANCELLED` anula la emisión anterior del mismo ISIN y cantidad (TR a
- *   veces cancela una y la vuelve a emitir). Ver `resolveBonusIssues`.
- * - El resto de tipos, los cripto y las divisas distintas de EUR se descartan con motivo; un
- *   tipo desconocido nunca hace fallar la importación.
+ * Rules (verified against a real export):
+ * - `BUY` and `SELL` are imported. The gross amount is `quantity × price`; the `amount` column is
+ *   not used (there is an old buy with empty `amount` and `fee` that is still valid).
+ * - `fee` is a trade cost and is stored as an absolute value. `tax` is not added to the cost. On
+ *   saveback buys it is the 19% withholding on the reward and moves to its payout (see
+ *   `resolveIncome`); for the rest we only warn how many trades carry it.
+ * - `INTEREST_PAYMENT`, `BENEFITS_SAVEBACK`, `STOCKPERK` and `DIVIDEND` are payouts (`income`).
+ *   The reward also arrives as a separate `BUY` for the same amount: that buy is imported with its
+ *   cost. A dividend's withholdings are split with `resolveFromBroker`.
+ * - `date` takes precedence over `datetime` as the trade date: it may differ from the UTC day.
+ * - `MIGRATION` rows (custody change) come in outbound/inbound pairs with the same ISIN and
+ *   quantity, a few milliseconds apart, with zero net effect: pairs are ignored and unpaired ones
+ *   trigger a warning.
+ * - `BONUS_ISSUE` rows (bonus issue: free new shares) are imported as a buy at price 0; a
+ *   `BONUS_ISSUE_CANCELLED` voids the earlier issue with the same ISIN and quantity (TR sometimes
+ *   cancels one and issues it again). See `resolveBonusIssues`.
+ * - Every other type, crypto and currencies other than EUR are skipped with a reason; an unknown
+ *   type never makes the import fail.
  *
- * @throws {TradeRepublicParseError} si el fichero entero no es utilizable.
+ * @throws {TradeRepublicParseError} if the file as a whole is unusable.
  */
 export function parseTradeRepublicCsv(text: string): ImportParseResult {
   const dataRecords = readDataRecords(text);
@@ -81,17 +83,17 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     }
   }
 
-  // El orden importa: cada resolutor reclama los `transaction_id` que acepta (ver `ImportContext`).
+  // Order matters: each resolver claims the `transaction_id`s it accepts (see `ImportContext`).
   parsed.push(...resolveBonusIssues(bonusIssues, context));
   const { income, buysWithBenefitTax } = resolveIncome(incomeRows, migrations, taxedBuys, context);
 
   const warnings: ImportWarning[] = [...resolveMigrations(migrations, context.skip)];
-  // La retención de un saveback que TR anota en la compra asociada ya está en el cobro: no se avisa.
+  // The saveback withholding TR records on the associated buy is already in the payout: no warning.
   if (tradesWithTax - buysWithBenefitTax > 0) {
     warnings.push({ code: "trade_tax_ignored", count: tradesWithTax - buysWithBenefitTax });
   }
 
-  // Estable: ante el mismo instante, el orden del fichero.
+  // Stable: for the same instant, file order.
   parsed.sort((a, b) => compareStrings(a.trade.executedAt, b.trade.executedAt) || a.line - b.line);
   const trades = parsed.map(({ trade }) => trade);
   skipped.sort((a, b) => a.line - b.line);

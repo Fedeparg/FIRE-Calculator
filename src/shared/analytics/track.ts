@@ -1,6 +1,6 @@
 /**
- * Lista cerrada: un evento nuevo se añade aquí y en la política de privacidad. Sus datos
- * no llevan cifras ni datos personales (importes, emails, tickers), como mucho el slug.
+ * Closed list: a new event is added here and to the privacy policy. Its data carries no figures
+ * or personal data (amounts, emails, tickers); at most the slug.
  */
 export type AnalyticsEvent =
   | { name: "share-link-copied"; data: { calculator: string } }
@@ -23,13 +23,13 @@ function tracker(): UmamiTracker | null {
   return typeof umami?.track === "function" ? umami : null;
 }
 
-/** No-op si la analítica está apagada o bloqueada: medir nunca debe romper la acción. */
+/** No-op if analytics is off or blocked: tracking must never break the action. */
 export function trackEvent(event: AnalyticsEvent): void {
   const umami = tracker();
   if (!umami) return;
   try {
     umami.track(event.name, "data" in event ? event.data : undefined);
   } catch {
-    // El tracker es código externo: un fallo suyo no debe propagarse a la UI.
+    // The tracker is third-party code: its failures must not reach the UI.
   }
 }

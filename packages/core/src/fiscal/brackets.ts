@@ -1,30 +1,30 @@
-// Núcleo fiscal compartido: escalas oficiales y motor de tramos progresivos. Core puro.
-// Alcance y supuestos: ver ./README.md. Cifras orientativas del ejercicio `FISCAL_YEAR`.
+// Shared tax core: official scales and the progressive-bracket engine. Pure core module.
+// Scope and assumptions: see ./README.md. Indicative figures for tax year `FISCAL_YEAR`.
 
 import { lastItem } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
 
-/** Ejercicio fiscal de referencia de las escalas de este módulo. */
+/** Reference tax year for the scales in this module. */
 export const FISCAL_YEAR = 2026;
 
-/** `FISCAL_YEAR` como cadena: evita que el formato numérico del idioma lo pinte «2.026». */
+/** `FISCAL_YEAR` as a string: keeps locale number formatting from rendering it as "2.026". */
 export const FISCAL_YEAR_LABEL = String(FISCAL_YEAR);
 
 /**
- * Fecha (`YYYY-MM-DD`) a partir de la cual hay que revisar las cifras de `FISCAL_YEAR`: escalas,
- * mínimos, Seguridad Social y `withholding-rates.ts`. Coincide con el arranque de la campaña de
- * Renta. Un test falla desde ese día: es un recordatorio ejecutable, no una caducidad del cálculo.
- * Al revisar, se actualizan `FISCAL_YEAR` y esta fecha.
+ * Date (`YYYY-MM-DD`) from which the `FISCAL_YEAR` figures must be reviewed: scales, minimums,
+ * Social Security and `withholding-rates.ts`. It matches the start of the Renta (tax return)
+ * campaign. A test fails from that day on: it is an executable reminder, not an expiry of the
+ * calculation. When reviewing, update `FISCAL_YEAR` and this date.
  */
 export const FISCAL_REVIEW_BY = "2027-04-01";
 
-/** Tramo de una escala: `upTo` es el límite superior incluido (`null` = último); `rate` en % (19 = 19 %). */
+/** A scale bracket: `upTo` is the inclusive upper limit (`null` = last); `rate` in % (19 = 19%). */
 export interface Bracket {
   readonly upTo: number | null;
   readonly rate: number;
 }
 
-/** Cuota de una base según una escala progresiva: cada tramo grava solo su porción de base. */
+/** Tax on a base under a progressive scale: each bracket taxes only its slice of the base. */
 export function applyProgressiveBrackets(base: number, brackets: readonly Bracket[]): number {
   const b = nonNegative(base);
   let tax = 0;
@@ -41,7 +41,7 @@ export function applyProgressiveBrackets(base: number, brackets: readonly Bracke
   return tax;
 }
 
-/** Tipo marginal (%) aplicable al último euro de la base dada. */
+/** Marginal rate (%) applicable to the last euro of the given base. */
 export function marginalRate(base: number, brackets: readonly Bracket[]): number {
   const b = nonNegative(base);
   for (const bracket of brackets) {
@@ -57,8 +57,8 @@ export function effectiveRate(base: number, brackets: readonly Bracket[]): numbe
 }
 
 /**
- * IRPF — escala estatal de la base liquidable general (art. 63.1.1º LIRPF). Se aplica
- * tal cual, sin factor 0,5: la ley ya la da dividida por dos. Fuente: AEAT, Manual
+ * IRPF — state scale for the general taxable base (base liquidable general, art. 63.1.1º LIRPF).
+ * Applied as is, with no 0.5 factor: the law already gives it halved. Source: AEAT, Manual
  * práctico de Renta 2025.
  */
 export const IRPF_STATE_SCALE: readonly Bracket[] = [
@@ -71,10 +71,11 @@ export const IRPF_STATE_SCALE: readonly Bracket[] = [
 ];
 
 /**
- * IRPF — escala autonómica supletoria (art. 65 LIRPF). No es idéntica a la estatal:
- * su último tramo es un 22,50 % plano desde 60.000 €, sin el 24,50 % desde 300.000 €
- * (confundirlas daría 49 % en vez de 47 %). Rige para Ceuta y Melilla (DA 32ª LIRPF)
- * y no residentes, y es la que se usa sin comunidad (ver `regions.ts`).
+ * IRPF — default regional scale (escala autonómica supletoria, art. 65 LIRPF). It is not
+ * identical to the state scale: its last bracket is a flat 22.50% from €60,000, without the
+ * 24.50% from €300,000 (mixing them up would give 49% instead of 47%). It applies to Ceuta and
+ * Melilla (DA 32ª LIRPF) and non-residents, and it is the one used with no region (see
+ * `regions.ts`).
  */
 export const IRPF_DEFAULT_REGIONAL_SCALE: readonly Bracket[] = [
   { upTo: 12450, rate: 9.5 },
@@ -85,8 +86,8 @@ export const IRPF_DEFAULT_REGIONAL_SCALE: readonly Bracket[] = [
 ];
 
 /**
- * IRPF — escala general: suma tramo a tramo de la estatal y la supletoria (47 % =
- * 24,50 + 22,50). Se aplica sin comunidad; cada comunidad tiene la suya. Fuente: AEAT 2026.
+ * IRPF — general scale: bracket-by-bracket sum of the state and default regional scales (47% =
+ * 24.50 + 22.50). Applied with no region; each region has its own. Source: AEAT 2026.
  */
 export const IRPF_GENERAL_SCALE: readonly Bracket[] = [
   { upTo: 12450, rate: 19 },
@@ -97,7 +98,7 @@ export const IRPF_GENERAL_SCALE: readonly Bracket[] = [
   { upTo: null, rate: 47 },
 ];
 
-/** IRPF — escala del ahorro (intereses, dividendos, ganancias patrimoniales). Fuente: AEAT 2026. */
+/** IRPF — savings scale (interest, dividends, capital gains). Source: AEAT 2026. */
 export const IRPF_SAVINGS_SCALE: readonly Bracket[] = [
   { upTo: 6000, rate: 19 },
   { upTo: 50000, rate: 21 },
@@ -106,7 +107,7 @@ export const IRPF_SAVINGS_SCALE: readonly Bracket[] = [
   { upTo: null, rate: 30 },
 ];
 
-/** Impuesto sobre el Patrimonio — escala estatal (supletoria de las CCAA). Ley 19/1991, art. 30. */
+/** Wealth Tax (Impuesto sobre el Patrimonio) — state scale (fallback for the regions). Ley 19/1991, art. 30. */
 export const WEALTH_TAX_STATE_SCALE: readonly Bracket[] = [
   { upTo: 167129.45, rate: 0.2 },
   { upTo: 334252.88, rate: 0.3 },
@@ -118,13 +119,13 @@ export const WEALTH_TAX_STATE_SCALE: readonly Bracket[] = [
   { upTo: null, rate: 3.5 },
 ];
 
-/** Patrimonio — mínimo exento estatal (Ley 19/1991, art. 28); varias CCAA fijan otro. */
+/** Wealth Tax — state exempt minimum (Ley 19/1991, art. 28); several regions set a different one. */
 export const WEALTH_TAX_EXEMPT_MINIMUM = 700000;
 
-/** Patrimonio — exención de la vivienda habitual, hasta este importe (Ley 19/1991, art. 4.Nueve). */
+/** Wealth Tax — primary-residence exemption, up to this amount (Ley 19/1991, art. 4.Nueve). */
 export const WEALTH_TAX_PRIMARY_RESIDENCE_EXEMPTION = 300000;
 
-/** Sucesiones y Donaciones — tarifa estatal (supletoria de las CCAA). Ley 29/1987, art. 21. */
+/** Inheritance and Gift Tax (Sucesiones y Donaciones) — state rate table (regional fallback). Ley 29/1987, art. 21. */
 export const GIFT_TAX_STATE_SCALE: readonly Bracket[] = [
   { upTo: 7993.46, rate: 7.65 },
   { upTo: 15980.91, rate: 8.5 },
@@ -145,21 +146,22 @@ export const GIFT_TAX_STATE_SCALE: readonly Bracket[] = [
 ];
 
 /**
- * Cotización del trabajador a la SS (indefinido), en %: contingencias comunes 4,70 +
- * desempleo 1,55 + FP 0,10 + MEI 0,15. Fuente: Orden de cotización 2026.
+ * Employee Social Security (SS) contribution (permanent contract), in %: common contingencies
+ * 4.70 + unemployment 1.55 + vocational training (FP) 0.10 + MEI 0.15. Source: Orden de
+ * cotización 2026.
  */
 export const SS_EMPLOYEE_RATE = 6.5;
 
-/** Cotización del trabajador con contrato temporal (desempleo 1,60 % en lugar de 1,55 %). */
+/** Employee contribution on a temporary contract (unemployment 1.60% instead of 1.55%). */
 export const SS_EMPLOYEE_RATE_TEMPORAL = 6.55;
 
-/** Base máxima de cotización a la Seguridad Social: 5.101,20 €/mes × 12. Fuente: 2026. */
+/** Maximum Social Security contribution base: €5,101.20/month × 12. Source: 2026. */
 export const SS_MAX_BASE_ANNUAL = 61214.4;
 
-/** Otros gastos deducibles del rendimiento del trabajo (art. 19.2.f LIRPF). */
+/** Other deductible expenses from employment income (art. 19.2.f LIRPF). */
 export const WORK_OTHER_EXPENSES = 2000;
 
-/** Mínimo personal del contribuyente (general, < 65 años). Art. 57 LIRPF. */
+/** Taxpayer's personal minimum (general, under 65). Art. 57 LIRPF. */
 export const PERSONAL_MINIMUM = 5550;
 
 export const PERSONAL_MINIMUM_65 = 6700;
@@ -167,12 +169,12 @@ export const PERSONAL_MINIMUM_65 = 6700;
 export const PERSONAL_MINIMUM_75 = 8100;
 
 /**
- * Mínimo por descendientes (art. 58 LIRPF) por orden de hijo (1.º, 2.º, 3.º, 4.º y
- * siguientes). Se asume que el contribuyente computa el 100 % (compartido, la mitad).
+ * Minimum for descendants (art. 58 LIRPF) by child order (1st, 2nd, 3rd, 4th and
+ * subsequent). The taxpayer is assumed to claim 100% (if shared, half).
  */
 export const DESCENDANT_MINIMUMS = [2400, 2700, 4000, 4500] as const;
 
-/** Incremento del mínimo por cada descendiente menor de 3 años. */
+/** Minimum increase for each descendant under 3. */
 export const DESCENDANT_UNDER_3_MINIMUM = 2800;
 
 export const ASCENDANT_MINIMUM = 1150;
@@ -181,15 +183,15 @@ export const DISABILITY_MINIMUM_33 = 3000;
 export const DISABILITY_MINIMUM_65 = 9000;
 
 /**
- * Sucesiones y Donaciones — umbrales (€) de patrimonio preexistente de los cuatro tramos del
- * coeficiente multiplicador (Ley 29/1987, art. 22.2); el límite superior entra en su tramo.
+ * Inheritance and Gift Tax — pre-existing wealth thresholds (€) of the four tiers of the
+ * multiplier coefficient (Ley 29/1987, art. 22.2); the upper limit belongs to its tier.
  */
 export const GIFT_TAX_WEALTH_TIERS = [402678.11, 2007380.43, 4020770.98] as const;
 
 /**
- * Sucesiones y Donaciones — coeficiente multiplicador por grupo de parentesco y tramo de patrimonio
- * preexistente (Ley 29/1987, art. 22.2). Grupos I y II: cónyuge, descendientes y ascendientes; III:
- * colaterales de 2.º y 3.º grado y afines; IV: resto.
+ * Inheritance and Gift Tax — multiplier coefficient by kinship group and pre-existing wealth tier
+ * (Ley 29/1987, art. 22.2). Groups I and II: spouse, descendants and ascendants; III: 2nd- and
+ * 3rd-degree collateral relatives and in-laws; IV: everyone else.
  */
 export const GIFT_TAX_KINSHIP_COEFFICIENTS = {
   grupoI_II: [1.0, 1.05, 1.1, 1.2],
@@ -197,34 +199,35 @@ export const GIFT_TAX_KINSHIP_COEFFICIENTS = {
   grupoIV: [2.0, 2.1, 2.2, 2.4],
 } as const;
 
-/** Reducción en la base por tributación conjunta (unidad familiar biparental). */
+/** Base reduction for joint taxation (tributación conjunta, two-parent family unit). */
 export const JOINT_RETURN_REDUCTION = 3400;
 
-/** Límite anual de aportación individual a planes de pensiones con reducción. Art. 52 LIRPF. */
+/** Annual limit on individual pension-plan contributions that reduce the base. Art. 52 LIRPF. */
 export const PENSION_INDIVIDUAL_LIMIT = 1500;
 
-/** Incremento del límite por contribuciones empresariales a planes de empleo (art. 52.1 LIRPF). */
+/** Limit increase for employer contributions to occupational pension plans (art. 52.1 LIRPF). */
 export const PENSION_EMPLOYER_LIMIT = 8500;
 
-/** Límite conjunto (individual + empresa) con reducción en la base (art. 52.1 LIRPF); además, 30 % de los rendimientos netos. */
+/** Joint limit (individual + employer) that reduces the base (art. 52.1 LIRPF); also capped at 30% of net income. */
 export const PENSION_JOINT_LIMIT = 10000;
 
-/** Tope de las aportaciones a planes de pensiones: 30 % de los rendimientos netos del trabajo y de actividades (art. 52.1 LIRPF). */
+/** Cap on pension-plan contributions: 30% of net employment and business income (art. 52.1 LIRPF). */
 export const PENSION_NET_INCOME_CAP_RATE = 30;
 
 /**
- * Estimación directa simplificada — gastos de difícil justificación: 5 % del
- * rendimiento neto positivo previo (art. 30 RIRPF, RD 439/2007). El 7 % fue excepcional de 2023.
+ * Simplified direct assessment (estimación directa simplificada) — hard-to-justify expenses
+ * (gastos de difícil justificación): 5% of the prior positive net income (art. 30 RIRPF,
+ * RD 439/2007). The 7% was a one-off for 2023.
  */
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE = 5;
 
-/** Tope anual de los gastos de difícil justificación (estimación directa simplificada). */
+/** Annual cap on hard-to-justify expenses (simplified direct assessment). */
 export const SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP = 2000;
 
 /**
- * Reducción por rendimientos del trabajo (art. 20 LIRPF), decreciente en tres tramos:
- * máximo hasta `FULL_LIMIT`; hasta `TIER2_LIMIT`, máximo − `TIER2_SLOPE` × exceso;
- * hasta `TIER3_LIMIT`, `TIER3_BASE` − `TIER3_SLOPE` × exceso; después, 0. Fuente: AEAT.
+ * Employment income reduction (art. 20 LIRPF), decreasing over three tiers: the maximum up to
+ * `FULL_LIMIT`; up to `TIER2_LIMIT`, maximum − `TIER2_SLOPE` × excess; up to `TIER3_LIMIT`,
+ * `TIER3_BASE` − `TIER3_SLOPE` × excess; above that, 0. Source: AEAT.
  */
 export const WORK_INCOME_REDUCTION_FULL_LIMIT = 14852;
 export const WORK_INCOME_REDUCTION_MAX = 7302;

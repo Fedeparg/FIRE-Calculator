@@ -14,15 +14,15 @@ import { buildMetadata } from "@/shared/seo/seo";
 import Breadcrumbs from "@/shared/seo/Breadcrumbs";
 import JsonLd from "@/shared/seo/JsonLd";
 
-// ISR + dynamicParams: las rutas conocidas se prerenderizan; slugs nuevos
-// (artículos añadidos sin redeploy) se generan bajo demanda y se cachean.
+// ISR + dynamicParams: known routes are prerendered; new slugs (articles added
+// without a redeploy) are generated on demand and cached.
 export const revalidate = 3600;
 export const dynamicParams = true;
 
 type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateStaticParams() {
-  // Los slugs son compartidos entre idiomas (mismo fichero, distinto sufijo).
+  // Slugs are shared across locales (same file, different suffix).
   const slugSets = await Promise.all(routing.locales.map((locale) => getArticleSlugs(locale)));
   const slugs = [...new Set(slugSets.flat())];
   return slugs.map((slug) => ({ slug }));
@@ -81,7 +81,7 @@ export default async function ArticlePage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: article.html }}
       />
 
-      {/* Enlazado interno: calculadoras que usan este concepto. */}
+      {/* Internal linking: calculators that use this concept. */}
       <ArticleRelatedCalculators calculators={relatedCalculators} />
     </article>
   );

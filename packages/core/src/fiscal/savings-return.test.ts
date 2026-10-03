@@ -30,7 +30,7 @@ function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "gro
   };
 }
 
-/** Un ejercicio con un saldo de ventas dado: una compra a 0 y una venta a ese precio. */
+/** A tax year with a given sales balance: one buy at 0 and one sale at that price. */
 function gainsYear(total: number) {
   return buildRealisedGainsReport(
     [
@@ -50,11 +50,11 @@ function gainsYear(total: number) {
 }
 
 describe("buildSavingsReturn", () => {
-  it("reproduce el ejemplo del plan: compensa pérdidas pendientes, aplica la escala y la doble imposición", () => {
+  it("reproduces the plan's example: offsets pending losses, applies the scale and double taxation", () => {
     const income = [
       event({ kind: "interest", gross: 286.4 }),
       event({ kind: "dividend", gross: 372.8, country: "US", withholdingOrigin: 55.92 }),
-      // Suiza retiene el 35 %; el convenio solo deja deducir el 15 %.
+      // Switzerland withholds 35%; the treaty only allows deducting 15%.
       event({ kind: "dividend", gross: 40, country: "CH", withholdingOrigin: 14 }),
     ];
     const result = buildSavingsReturn({
@@ -78,7 +78,7 @@ describe("buildSavingsReturn", () => {
     expect(result.incomplete).toBe(false);
   });
 
-  it("resta las retenciones españolas para dar lo que aporta al resultado de la declaración", () => {
+  it("subtracts Spanish withholdings to give the contribution to the tax return's result", () => {
     const income = [event({ kind: "interest", gross: 100, withholdingSpain: 19 })];
     const result = buildSavingsReturn({
       year: 2025,
@@ -93,7 +93,7 @@ describe("buildSavingsReturn", () => {
     expect(result.result).toBeCloseTo(0, 10);
   });
 
-  it("compensa una pérdida de ventas con los rendimientos hasta el 25 % y marca lo incompleto", () => {
+  it("offsets a sales loss against capital income up to 25% and flags what is incomplete", () => {
     const income = [
       event({ kind: "interest", gross: 1000 }),
       event({ kind: "dividend", gross: 10, country: "DE", withholdingOrigin: null }),
@@ -110,7 +110,7 @@ describe("buildSavingsReturn", () => {
     expect(result.incomplete).toBe(true);
   });
 
-  it("lo que no pagó impuesto fuera no amplía el límite de la doble imposición", () => {
+  it("income that paid no foreign tax does not widen the double-taxation limit", () => {
     const income = [
       event({ kind: "interest", gross: 1000, country: "DE", withholdingOrigin: 0 }),
       event({ kind: "dividend", gross: 100, country: "DK", withholdingOrigin: 35 }),
@@ -123,11 +123,11 @@ describe("buildSavingsReturn", () => {
       rates: {},
       pending: [],
     });
-    // Límite: tipo medio (19 %) × 100 de renta gravada en Dinamarca, no × 1.100.
+    // Limit: average rate (19%) × 100 of income taxed in Denmark, not × 1,100.
     expect(result.doubleTaxation.deduction).toBeCloseTo(19, 2);
   });
 
-  it("sin ventas ni cobros, todo es 0", () => {
+  it("with no sales or payments, everything is 0", () => {
     const result = buildSavingsReturn({
       year: 2025,
       gains: undefined,
@@ -141,7 +141,7 @@ describe("buildSavingsReturn", () => {
 });
 
 describe("buildSavingsReturns", () => {
-  it("arrastra la pérdida de un año al siguiente y la compensa", () => {
+  it("carries one year's loss forward to the next and offsets it", () => {
     const losing = buildRealisedGainsReport(
       [
         {
@@ -164,11 +164,11 @@ describe("buildSavingsReturns", () => {
     expect(results.map((r) => r.year)).toEqual([2025, 2023]);
     const [y2025, y2023] = takeItems(results, 2);
     expect(y2023.savingsBase.pending).toEqual([{ originYear: 2023, kind: "gains", amount: 400 }]);
-    // 2024 sin datos se recorre igualmente; en 2025 la pérdida de 2023 compensa la ganancia.
+    // 2024 has no data but is still walked through; in 2025 the 2023 loss offsets the gain.
     expect(y2025.savingsBase.base).toBeCloseTo(600, 10);
   });
 
-  it("aplica los saldos manuales de años que Sextante no calcula y los deja caducar a los cuatro años", () => {
+  it("applies manual balances for years Sextante does not compute and lets them expire after four years", () => {
     const income = [
       event({ kind: "interest", gross: 100, paidAt: "2021-06-01" }),
       event({ kind: "interest", gross: 100, paidAt: "2026-06-01" }),
@@ -182,11 +182,11 @@ describe("buildSavingsReturns", () => {
     });
     const [y2026, y2021] = takeItems(results, 2);
     expect(y2021.savingsBase.base).toBe(0);
-    // Quedaban 400 de 2020: caducan en 2025 (cuatro años: 2021-2024).
+    // 400 from 2020 were left: they expire in 2025 (four years: 2021-2024).
     expect(y2026.savingsBase.base).toBeCloseTo(100, 10);
   });
 
-  it("sin datos no hay ejercicios", () => {
+  it("has no tax years without data", () => {
     expect(buildSavingsReturns({ gains: [], income: [], incomeEvents: [], rates: {}, manualPending: [] })).toEqual([]);
   });
 });

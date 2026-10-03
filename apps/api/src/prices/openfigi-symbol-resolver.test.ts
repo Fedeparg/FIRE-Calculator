@@ -17,12 +17,12 @@ import {
 import type { PriceProvider, Quote } from './price-provider.interface.js';
 import { stub } from '../../test/factories.js';
 
-/** Tope de candidatos que aplica el resolver (`MAX_CANDIDATES`). */
+/** Candidate cap the resolver applies (`MAX_CANDIDATES`). */
 const MAX_CANDIDATES = 12;
 
 /**
- * Listados reales de OpenFIGI para Amazon (US0231351067), recortados: la búsqueda de Yahoo falló
- * y el fallback probaba "AMZN" con sufijos europeos, y `AMZN.AS` es un ETP sobre Amazon (~7 €).
+ * Real OpenFIGI listings for Amazon (US0231351067), trimmed: Yahoo search failed and the fallback
+ * tried "AMZN" with European suffixes, and `AMZN.AS` is an ETP on Amazon (~€7).
  */
 const AMAZON_LISTINGS: OpenFigiListing[] = [
   { exchCode: 'US', ticker: 'AMZN' },
@@ -42,25 +42,25 @@ const AMAZON_LISTINGS: OpenFigiListing[] = [
 ];
 
 describe('isinCandidates', () => {
-  it('prueba cada ticker solo con el sufijo de su bolsa, EUR primero y EE. UU. al final', () => {
+  it('tries each ticker only with its exchange suffix, EUR first and US last', () => {
     expect(isinCandidates(AMAZON_LISTINGS)).toEqual(['AMZ.DE', '1AMZN.MI', 'AMZN.SW', 'AMZNUSD.SW', '0R1O.L', 'AMZN']);
   });
 
-  it('no inventa un listado que OpenFIGI no tiene (AMZN.AS es otro producto)', () => {
+  it('does not invent a listing OpenFIGI does not have (AMZN.AS is another product)', () => {
     expect(isinCandidates(AMAZON_LISTINGS)).not.toContain('AMZN.AS');
   });
 
-  it('ignora los compuestos y los códigos sin bolsa de Yahoo', () => {
+  it('ignores composites and codes without a Yahoo exchange', () => {
     expect(isinCandidates([{ exchCode: 'EO', ticker: 'X' }, { exchCode: 'XH', ticker: 'X' }, { ticker: 'X' }])).toEqual(
       [],
     );
   });
 
-  it('normaliza a mayúsculas y quita espacios', () => {
+  it('uppercases and trims whitespace', () => {
     expect(isinCandidates([{ exchCode: ' na ', ticker: ' iwda ' }])).toEqual(['IWDA.AS']);
   });
 
-  it('en un mismo sufijo prioriza el ticker más repetido', () => {
+  it('prefers the most repeated ticker within the same suffix', () => {
     const candidates = isinCandidates([
       { exchCode: 'GY', ticker: 'RARO' },
       { exchCode: 'GY', ticker: 'EUNL' },
@@ -70,7 +70,7 @@ describe('isinCandidates', () => {
     expect(candidates).toEqual(['EUNL.DE', 'RARO.DE']);
   });
 
-  it('acota el número de candidatos y no repite ninguno', () => {
+  it('caps the number of candidates and repeats none', () => {
     const listings = Array.from({ length: MAX_CANDIDATES + 5 }, (_, i) => ({ exchCode: 'GY', ticker: `T${i}` }));
     const candidates = isinCandidates([...listings, ...listings]);
 
@@ -78,14 +78,14 @@ describe('isinCandidates', () => {
     expect(new Set(candidates).size).toBe(candidates.length);
   });
 
-  it('devuelve lista vacía sin listados (o solo con basura)', () => {
+  it('returns an empty list with no listings (or only junk)', () => {
     expect(isinCandidates([])).toEqual([]);
     expect(isinCandidates([{ exchCode: 'GY', ticker: '   ' }])).toEqual([]);
   });
 });
 
 describe('tickerCandidates', () => {
-  it('prueba el bare primero y luego los sufijos de mercado', () => {
+  it('tries the bare ticker first and then the market suffixes', () => {
     expect(tickerCandidates('SAN')).toEqual([
       'SAN',
       'SAN.AS',
@@ -98,24 +98,24 @@ describe('tickerCandidates', () => {
     ]);
   });
 
-  it('no inventa sufijos si ya parece un símbolo de Yahoo', () => {
+  it('does not invent suffixes if it already looks like a Yahoo symbol', () => {
     expect(tickerCandidates('EUNL.DE')).toEqual(['EUNL.DE']);
     expect(tickerCandidates('BTC-USD')).toEqual(['BTC-USD']);
   });
 
-  it('fuerza el par -USD en cripto conocida y NO cae al bare', () => {
-    // "BTC" suelto cotiza como un ETF real: resolverlo al bare daría un precio erróneo.
+  it('forces the -USD pair for known crypto and does NOT fall back to the bare ticker', () => {
+    // Bare "BTC" is quoted as a real ETF: resolving to the bare ticker would give a wrong price.
     expect(tickerCandidates('BTC')).toEqual(['BTC-USD']);
     expect(tickerCandidates('ETH')).toEqual(['ETH-USD']);
   });
 
-  it('cubre todas las criptos de la lista con el mismo criterio', () => {
+  it('applies the same rule to every crypto in the list', () => {
     for (const ticker of CRYPTO_TICKERS) {
       expect(tickerCandidates(ticker)).toEqual([`${ticker}-USD`]);
     }
   });
 
-  it('nunca devuelve más candidatos que el tope', () => {
+  it('never returns more candidates than the cap', () => {
     expect(tickerCandidates('AAPL').length).toBeLessThanOrEqual(MAX_CANDIDATES);
   });
 });
@@ -128,17 +128,17 @@ const result = (symbol: string, type: InstrumentSearchResult['type'] = 'etf'): I
 });
 
 describe('searchCandidates', () => {
-  it('prefiere los mercados en euros y deja el resto en el orden de Yahoo', () => {
+  it('prefers euro markets and keeps the rest in Yahoo order', () => {
     expect(
       searchCandidates([result('VAPU.L'), result('IE00BK5BQZ41.SG', 'fund'), result('VWCE.DE'), result('VWCE.AS')]),
     ).toEqual(['VWCE.AS', 'VWCE.DE', 'VAPU.L', 'IE00BK5BQZ41.SG']);
   });
 
-  it('acepta valores fuera de Europa (Hong Kong) cuando es lo único que hay', () => {
+  it('accepts non-European securities (Hong Kong) when that is all there is', () => {
     expect(searchCandidates([result('1810.HK', 'equity')])).toEqual(['1810.HK']);
   });
 
-  it('descarta lo que no puede ser el instrumento de un ISIN y no repite', () => {
+  it('drops what cannot be an ISIN instrument and repeats none', () => {
     expect(
       searchCandidates([
         result('^GSPC', 'index'),
@@ -149,7 +149,7 @@ describe('searchCandidates', () => {
     ).toEqual(['AAPL']);
   });
 
-  it('acota el número de candidatos a validar', () => {
+  it('caps the number of candidates to validate', () => {
     expect(searchCandidates(Array.from({ length: 20 }, (_, i) => result(`X${i}.PA`)))).toHaveLength(5);
   });
 });
@@ -182,7 +182,7 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
     return { resolver, search };
   }
 
-  it('resuelve con la búsqueda de Yahoo sin llamar a OpenFIGI, y lo cachea', async () => {
+  it('resolves via Yahoo search without calling OpenFIGI, and caches it', async () => {
     const openFigi = vi.fn();
     vi.stubGlobal('fetch', openFigi);
     const { resolver, search } = makeResolver([result('VAPU.L'), result('VWCE.DE')], ['VAPU.L', 'VWCE.DE']);
@@ -195,7 +195,7 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
     expect(row).toMatchObject({ symbol: 'VWCE.DE', source: 'yahoo_search' });
   });
 
-  it('salta a OpenFIGI si ningún resultado de la búsqueda cotiza', async () => {
+  it('falls back to OpenFIGI if no search result has a quote', async () => {
     const openFigi = vi
       .fn()
       .mockResolvedValue(
@@ -208,7 +208,7 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
     expect(openFigi).toHaveBeenCalledOnce();
   });
 
-  it('en el fallback no acepta un ticker que cotiza en una bolsa donde OpenFIGI no lo lista', async () => {
+  it('in the fallback, rejects a ticker quoted on an exchange where OpenFIGI does not list it', async () => {
     const listings = [
       { ticker: 'AMZN', exchCode: 'US' },
       { ticker: 'AMZ', exchCode: 'GY' },
@@ -218,7 +218,7 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
       'fetch',
       vi.fn().mockResolvedValue(new Response(JSON.stringify([{ data: listings }]), { status: 200 })),
     );
-    // `AMZN.AS` cotiza (es el ETP), pero Amazon no está listada en Amsterdam.
+    // `AMZN.AS` has a quote (it is the ETP), but Amazon is not listed in Amsterdam.
     const { resolver } = makeResolver([], ['AMZN.AS', 'AMZ.DE', 'AMZN']);
 
     await expect(resolver.resolve('US0231351067')).resolves.toBe('AMZ.DE');
@@ -241,7 +241,7 @@ describe('OpenFigiSymbolResolver.resolveManyCached', () => {
     await close();
   });
 
-  it('resuelve muchos de la caché en una consulta, sin tocar la red, conservando la entrada original', async () => {
+  it('resolves many from the cache in one query, without network, keeping the original input', async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     const now = new Date();
@@ -272,7 +272,7 @@ describe('OpenFigiSymbolResolver.resolveManyCached', () => {
   });
 });
 
-describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
+describe('OpenFigiSymbolResolver.resolve — negative cache', () => {
   const HOUR = 60 * 60_000;
   let db: Database;
   let close: () => Promise<void>;
@@ -288,7 +288,7 @@ describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
     await close();
   });
 
-  it('no reintenta un ticker sin cotización hasta que vence su espera, que crece y se olvida al resolver', async () => {
+  it('does not retry an unquoted ticker until its backoff expires; the backoff grows and resets on resolve', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2026-10-01T10:00:00Z'));
     let priced = false;
@@ -304,7 +304,7 @@ describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
     await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();
     expect(getQuotes).toHaveBeenCalledTimes(1);
 
-    // Vence la primera espera (1 h): reintenta, vuelve a fallar y la siguiente es de 2 h.
+    // The first backoff (1 h) expires: it retries, fails again and the next one is 2 h.
     vi.setSystemTime(Date.now() + HOUR + 1);
     await resolver.resolve('NOPE.DE');
     expect(getQuotes).toHaveBeenCalledTimes(2);

@@ -9,22 +9,22 @@ import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js'
 import type { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
 
 /**
- * Tope de tamaño de `inputs`, medido en bytes UTF-8 del JSON serializado. 8 KiB sobran para
- * el formulario más largo de las calculadoras (decenas de campos numéricos) y cierran la
- * puerta a usar la cuenta como almacén de ficheros.
+ * Size cap for `inputs`, measured in UTF-8 bytes of the serialized JSON. 8 KiB is plenty for
+ * the longest calculator form (dozens of numeric fields) and shuts the door on using the
+ * account as file storage.
  */
 export const MAX_INPUTS_BYTES = 8 * 1024;
 
 /**
- * Escenarios guardados de calculadora. Mismo patrón de aislamiento que `positions`: el
- * `userId` viene siempre del JWT y toda consulta filtra por él; por id, 404 tanto si no existe como
- * si es de otro usuario.
+ * Saved calculator scenarios. Same isolation pattern as `positions`: the `userId` always comes
+ * from the JWT and every query filters by it; by id, 404 both when it does not exist and when it
+ * belongs to another user.
  */
 @Injectable()
 export class SavedScenariosService {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  /** Escenarios del usuario, más recientes primero; opcionalmente los de una calculadora. */
+  /** The user's scenarios, most recent first; optionally only those of one calculator. */
   async findAllByUser(userId: string, slug?: string): Promise<SavedScenarioResponse[]> {
     const conditions = [eq(savedScenarios.userId, userId)];
     if (slug) conditions.push(eq(savedScenarios.slug, slug));
@@ -38,14 +38,14 @@ export class SavedScenariosService {
     return rows.map((row) => toResponse(row));
   }
 
-  /** Guarda un escenario nuevo, aplicando los límites de tamaño y de cantidad. */
+  /** Saves a new scenario, enforcing the size and count limits. */
   async create(userId: string, dto: CreateSavedScenarioDto): Promise<SavedScenarioResponse> {
     this.assertInputsSize(dto.inputs);
 
-    // Contar y luego insertar es check-then-act: dos altas simultáneas verían el mismo recuento y
-    // superarían el tope. Un cerrojo transaccional por usuario las serializa. Clave de dos partes
-    // (espacio 'saved_scenarios' + usuario) para no chocar con otros cerrojos por usuario, como
-    // el de los snapshots.
+    // Counting and then inserting is check-then-act: two concurrent creates would see the same
+    // count and exceed the cap. A per-user transactional lock serializes them. Two-part key
+    // ('saved_scenarios' namespace + user) so it does not collide with other per-user locks, such
+    // as the snapshots one.
     const row = await this.db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext('saved_scenarios'), hashtext(${userId}))`);
       await this.assertQuotaAvailable(tx, userId);
@@ -61,7 +61,7 @@ export class SavedScenariosService {
     return toResponse(row);
   }
 
-  /** Renombra o actualiza los `inputs` de un escenario del usuario. */
+  /** Renames a user's scenario or updates its `inputs`. */
   async update(userId: string, id: string, dto: UpdateSavedScenarioDto): Promise<SavedScenarioResponse> {
     const current = await this.findOwned(userId, id);
     if (dto.inputs !== undefined) this.assertInputsSize(dto.inputs);
@@ -75,13 +75,13 @@ export class SavedScenariosService {
       })
       .where(ownedScenario(userId, id))
       .returning();
-    // Borrado entre la comprobación de propiedad y la escritura.
+    // Deleted between the ownership check and the write.
     if (!row) throw scenarioNotFound();
 
     return toResponse(row);
   }
 
-  /** Borra un escenario del usuario (404 si no existe o es de otro). */
+  /** Deletes a user's scenario (404 if it does not exist or belongs to someone else). */
   async remove(userId: string, id: string): Promise<void> {
     const deleted = await this.db
       .delete(savedScenarios)
@@ -90,7 +90,7 @@ export class SavedScenariosService {
     if (deleted.length === 0) throw scenarioNotFound();
   }
 
-  /** Localiza un escenario verificando propiedad. Centraliza el scoping por usuario. */
+  /** Looks up a scenario, checking ownership. Centralizes the per-user scoping. */
   private async findOwned(userId: string, id: string): Promise<SavedScenario> {
     const [row] = await this.db.select().from(savedScenarios).where(ownedScenario(userId, id));
     if (!row) {
@@ -100,9 +100,9 @@ export class SavedScenariosService {
   }
 
   /**
-   * Rechaza un `inputs` demasiado grande. Se mide sobre el JSON serializado en UTF-8, que es
-   * exactamente lo que ocupará en la columna `jsonb`; medir claves o profundidad sería más
-   * frágil y no acota el coste real.
+   * Rejects an oversized `inputs`. It is measured on the UTF-8 serialized JSON, which is exactly
+   * what it will take up in the `jsonb` column; measuring keys or depth would be more brittle and
+   * would not bound the real cost.
    */
   private assertInputsSize(inputs: Record<string, unknown>): void {
     const bytes = Buffer.byteLength(JSON.stringify(inputs), 'utf8');
@@ -114,7 +114,7 @@ export class SavedScenariosService {
     }
   }
 
-  /** Rechaza el alta si el usuario ya está en su tope de escenarios. */
+  /** Rejects the create when the user is already at their scenario cap. */
   private async assertQuotaAvailable(tx: DatabaseOrTransaction, userId: string): Promise<void> {
     const row = firstItem(
       await tx.select({ total: count() }).from(savedScenarios).where(eq(savedScenarios.userId, userId)),
@@ -141,8 +141,8 @@ function toResponse(row: SavedScenario): SavedScenarioResponse {
 }
 
 /**
- * Condición "el escenario `id` es de `userId`". Lecturas y escrituras por id la llevan siempre,
- * no solo la comprobación previa: defensa en profundidad entre usuarios.
+ * Condition "scenario `id` belongs to `userId`". Every read and write by id carries it, not just
+ * the preliminary check: defence in depth between users.
  */
 function ownedScenario(userId: string, id: string): SQL {
   return and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)) as SQL;

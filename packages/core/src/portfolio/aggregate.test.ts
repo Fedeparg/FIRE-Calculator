@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { aggregatePortfolio, valueInDisplay } from "./aggregate.js";
 
-// USD por unidad: 1 EUR = 1,10 USD; 1 GBP = 1,25 USD; USD = 1.
+// USD per unit: 1 EUR = 1.10 USD; 1 GBP = 1.25 USD; USD = 1.
 const RATES = { USD: 1, EUR: 1.1, GBP: 1.25 };
 
 describe("valueInDisplay", () => {
-  it("convierte coste y valor desde sus divisas, o null si falta alguna tasa", () => {
+  it("converts cost and value from their currencies, or null if a rate is missing", () => {
     const position = { quantity: 2, avgPrice: 50, currency: "EUR" };
     const valued = valueInDisplay(position, { close: 66, currency: "USD" }, RATES, "EUR");
     expect(valued?.invested).toBeCloseTo(100, 6);
@@ -19,17 +19,17 @@ describe("valueInDisplay", () => {
 describe("aggregatePortfolio", () => {
   const display = "EUR";
 
-  it("agrega posiciones convirtiendo cada importe a la divisa elegida", () => {
+  it("aggregates positions converting each amount to the chosen currency", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
       positions: [
-        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // coste 800 €
-        { ticker: "AAPL", quantity: 5, avgPrice: 100, currency: "USD", isDerivative: false }, // coste 500 $ → 500/1,1 €
+        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // cost €800
+        { ticker: "AAPL", quantity: 5, avgPrice: 100, currency: "USD", isDerivative: false }, // cost $500 → €500/1.1
       ],
       prices: {
-        "EUNL.DE": { close: 90, currency: "EUR" }, // valor 900 €
-        AAPL: { close: 120, currency: "USD" }, // valor 600 $ → 600/1,1 €
+        "EUNL.DE": { close: 90, currency: "EUR" }, // value €900
+        AAPL: { close: 120, currency: "USD" }, // value $600 → €600/1.1
       },
     });
 
@@ -43,8 +43,8 @@ describe("aggregatePortfolio", () => {
     expect(result.pnlPct).toBeCloseTo((result.pnlAbs / result.invested) * 100, 6);
   });
 
-  it("convierte vía FX una posición cuyo precio cotiza en otra divisa que la del coste", () => {
-    // Coste declarado en EUR (lo que se pagó), pero el instrumento cotiza en USD.
+  it("converts via FX a position whose price is quoted in a currency other than its cost", () => {
+    // Cost declared in EUR (what was paid), but the instrument is quoted in USD.
     const result = aggregatePortfolio({
       display, // EUR
       rates: RATES,
@@ -52,21 +52,21 @@ describe("aggregatePortfolio", () => {
       prices: { "BTC-USD": { close: 60_000, currency: "USD" } },
     });
 
-    // Invertido: 50 000 € (ya en display). Valor: 60 000 $ → 60 000/1,1 €.
+    // Invested: €50,000 (already in display). Value: $60,000 → €60,000/1.1.
     expect(result.valued).toBe(1);
     expect(result.invested).toBeCloseTo(50_000, 6);
     expect(result.marketValue).toBeCloseTo(60_000 / 1.1, 6);
     expect(result.pnlAbs).toBeCloseTo(60_000 / 1.1 - 50_000, 6);
   });
 
-  it("excluye posiciones sin precio (pero las de divisa distinta SÍ entran, convertidas)", () => {
+  it("excludes positions without a price (but those in another currency ARE included, converted)", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
       positions: [
-        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // valorada
-        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // sin precio → fuera
-        { ticker: "USDPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // precio en USD → dentro
+        { ticker: "EUNL.DE", quantity: 10, avgPrice: 80, currency: "EUR", isDerivative: false }, // valued
+        { ticker: "NOPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // no price → excluded
+        { ticker: "USDPRICE", quantity: 1, avgPrice: 10, currency: "EUR", isDerivative: false }, // USD price → included
       ],
       prices: {
         "EUNL.DE": { close: 90, currency: "EUR" },
@@ -76,12 +76,12 @@ describe("aggregatePortfolio", () => {
 
     expect(result.valued).toBe(2);
     expect(result.total).toBe(3);
-    // Invertido: 800 € + 10 € = 810 €. Valor: 900 € + 12 $/1,1.
+    // Invested: €800 + €10 = €810. Value: €900 + $12/1.1.
     expect(result.invested).toBeCloseTo(810, 6);
     expect(result.marketValue).toBeCloseTo(900 + 12 / 1.1, 6);
   });
 
-  it("excluye posiciones cuya divisa no es convertible (sin tasa)", () => {
+  it("excludes positions whose currency is not convertible (no rate)", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
@@ -94,7 +94,7 @@ describe("aggregatePortfolio", () => {
     expect(result.pnlPct).toBeNull();
   });
 
-  it("deja pnlPct en null cuando lo invertido es 0", () => {
+  it("leaves pnlPct null when the invested amount is 0", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,
@@ -106,7 +106,7 @@ describe("aggregatePortfolio", () => {
     expect(result.pnlPct).toBeNull();
   });
 
-  it("deja los derivados fuera del total, aunque tengan precio", () => {
+  it("keeps derivatives out of the total, even when they have a price", () => {
     const result = aggregatePortfolio({
       display,
       rates: RATES,

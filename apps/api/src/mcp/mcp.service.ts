@@ -19,11 +19,11 @@ import { registerWriteTools } from './tools/write.js';
 export type { McpContext } from './tools/tool-runner.js';
 
 /**
- * Construye, por petición, el servidor MCP con las tools de Sextante. Se crea fresco con el
- * contexto del usuario autenticado para que las tools cierren sobre SU `userId` y nunca
- * puedan acceder a datos de otro. Las tools (en `tools/`, una por grupo) reutilizan los
- * servicios existentes (sin duplicar lógica de negocio) y, en escritura, los MISMOS DTOs que
- * la API REST (sin drift de validación).
+ * Builds, per request, the MCP server with Sextante's tools. It is created fresh with the
+ * authenticated user's context so the tools close over THEIR `userId` and can never reach
+ * anyone else's data. The tools (in `tools/`, one file per group) reuse the existing services
+ * (no duplicated business logic) and, for writes, the SAME DTOs as the REST API (no validation
+ * drift).
  */
 @Injectable()
 export class McpService {
@@ -44,28 +44,27 @@ export class McpService {
       { name: 'sextante', version: '0.1.0' },
       {
         instructions:
-          'Sextante es una suite de finanzas personales e independencia financiera (FIRE) ' +
-          'centrada en la fiscalidad española, con un agregador de cartera. Tiene dos tipos ' +
-          'de herramientas. (1) Calculadoras: cálculo puro sobre lo que envíes, con el mismo ' +
-          'motor que la web (IRPF por comunidad, hipotecas, FIRE, Monte Carlo, impuestos de ' +
-          'patrimonio y donaciones…); no leen datos del usuario. Flujo: llama a ' +
-          '`list_calculators` (opcionalmente filtrando por `category` o `slug`) para ver los ' +
-          'slugs y el esquema de entrada de cada una, y luego a `calculate` con ' +
-          '`{ calculator: <slug>, inputs: {...} }`. Los porcentajes van en base 100. ' +
-          '(2) Cartera: leer, analizar y (con permiso de ' +
-          'escritura) modificar las posiciones del usuario autenticado, incluidas las ' +
-          'plusvalías realizadas por ejercicio para la declaración de la Renta, los dividendos e ' +
-          'intereses cobrados (`list_income`), el informe de la base del ahorro de un ejercicio para ' +
-          'rellenar la Renta WEB (`get_tax_return_report`: ventas, cobros, compensaciones, cuota y ' +
-          'procedencia de cada cifra), el reparto por ' +
-          'activo/bróker/divisa y el progreso hacia su objetivo FIRE. Los escenarios que el ' +
-          'usuario guardó en las calculadoras están en `list_saved_scenarios`. Todo es ' +
-          'orientativo y no constituye asesoramiento. Los importes de cada posición están en su ' +
-          'divisa nativa; el agregado de `get_portfolio_valuation` se convierte a la divisa ' +
-          '`display` elegida. Cada posición tiene además sus LOTES (compras y ventas con ' +
-          'fecha), de los que se derivan su cantidad y su precio medio, y la cartera tiene un ' +
-          'HISTÓRICO diario de valoración en EUR. Para dar de alta un símbolo, búscalo antes ' +
-          'con `search_instruments` en vez de deducir el ticker.',
+          'Sextante is a personal finance and financial independence (FIRE) suite focused on ' +
+          'the Spanish tax system, with a portfolio aggregator. It has two kinds of tools. ' +
+          '(1) Calculators: pure computation over what you send, with the same engine as the ' +
+          'website (IRPF income tax by autonomous community, mortgages, FIRE, Monte Carlo, ' +
+          'wealth and gift taxes…); they read no user data. Flow: call `list_calculators` ' +
+          '(optionally filtering by `category` or `slug`) to see the slugs and the input schema ' +
+          'of each one, then `calculate` with `{ calculator: <slug>, inputs: {...} }`. ' +
+          'Percentages are on a base of 100. (2) Portfolio: read, analyse and (with write ' +
+          "permission) modify the authenticated user's positions, including the realised " +
+          'capital gains by tax year for the Renta (Spanish income tax return), the dividends ' +
+          'and interest received (`list_income`), the savings base (base del ahorro) report of ' +
+          'a tax year to fill in Renta WEB (`get_tax_return_report`: sales, payments, offsets, ' +
+          'tax due and the source of every figure), the breakdown by asset/broker/currency and ' +
+          'the progress towards their FIRE goal. The scenarios the user saved in the ' +
+          'calculators are in `list_saved_scenarios`. Everything is indicative and does not ' +
+          "constitute advice. Each position's amounts are in its native currency; the " +
+          '`get_portfolio_valuation` aggregate is converted to the chosen `display` currency. ' +
+          'Each position also has its LOTS (dated buys and sells), from which its quantity and ' +
+          'average price are derived, and the portfolio has a daily valuation HISTORY in EUR. ' +
+          'To add a symbol, look it up first with `search_instruments` instead of guessing the ' +
+          'ticker.',
       },
     );
 

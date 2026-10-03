@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
 
 /**
- * El reparto es `buildBreakdown` de `@sextante/core` (con sus propios tests); aquí solo se
- * prueba lo que añade el servicio: qué posiciones le pasa y con qué precios y tasas.
+ * The breakdown is `buildBreakdown` from `@sextante/core` (with its own tests); this only tests
+ * what the service adds: which positions it passes in, and with which prices and rates.
  */
 function makeService() {
   const positions = [
@@ -42,7 +42,7 @@ function makeService() {
   const prices = new Map([
     ['IWDA.AS', { close: 100, currency: 'EUR', date: '2026-10-01' }],
     ['AAPL', { close: 220, currency: 'USD', date: '2026-10-01' }],
-    // Aunque un derivado tuviera precio, no se usa.
+    // Even if a derivative had a price, it is not used.
     ['DE000KO1', { close: 50, currency: 'EUR', date: '2026-10-01' }],
   ]);
   return new PortfolioValuationService(
@@ -55,10 +55,10 @@ function makeService() {
 }
 
 describe('PortfolioValuationService.breakdown', () => {
-  it('reparte por bróker en la divisa pedida y deja fuera los derivados', async () => {
+  it('breaks down by broker in the requested currency and leaves derivatives out', async () => {
     const result = await makeService().breakdown('user-1', 'EUR', 'broker');
 
-    // TR: 10 × 100 € = 1.000 €. Sin bróker: 220 $ / 1,1 = 200 €. El knock-out no cuenta.
+    // TR: 10 × 100 € = 1,000 €. No broker: 220 $ / 1.1 = 200 €. The knock-out does not count.
     expect(result.total).toBeCloseTo(1200, 6);
     expect(result.included).toBe(2);
     expect(result.excluded).toBe(0);
@@ -69,7 +69,7 @@ describe('PortfolioValuationService.breakdown', () => {
     expect(result).toMatchObject({ display: 'EUR', fxAsOf: '2026-10-01' });
   });
 
-  it('marca los derivados en la valoración por posición y no los suma al total', async () => {
+  it('flags derivatives in the per-position valuation and leaves them out of the total', async () => {
     const valuation = await makeService().valuate('user-1', 'EUR');
 
     expect(valuation.positions.find((p) => p.id === 'p3')?.isDerivative).toBe(true);

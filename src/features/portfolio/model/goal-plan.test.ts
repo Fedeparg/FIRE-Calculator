@@ -10,7 +10,7 @@ const scenario = {
 };
 
 describe("goalPlanReducer", () => {
-  it("cargar un escenario aplica sus cifras, recuerda sus inputs y remonta los campos", () => {
+  it("loading a scenario applies its figures, remembers its inputs and remounts the fields", () => {
     const state = goalPlanReducer(initialGoalPlan("EUR"), { type: "applyScenario", scenario });
 
     expect(state.amounts).toMatchObject({ annualExpenses: 30000, contribution: 1000 });
@@ -18,7 +18,7 @@ describe("goalPlanReducer", () => {
     expect(state).toMatchObject({ selectedId: "s1", name: "Plan", loadedInputs: scenario.inputs, version: 1 });
   });
 
-  it("pasar a modo cantidad sin cifra propone la de ejemplo en la divisa que se ve", () => {
+  it("switching to amount mode without a figure proposes the example in the viewed currency", () => {
     const shown = { annualExpenses: 24000, contribution: 800, targetAmount: 0 };
     const state = goalPlanReducer(initialGoalPlan("EUR"), { type: "setMode", mode: "amount", display: "USD", shown });
 
@@ -27,7 +27,7 @@ describe("goalPlanReducer", () => {
     expect(state.version).toBe(1);
   });
 
-  it("con cifra ya puesta, cambiar de modo no toca los importes", () => {
+  it("with a figure already set, switching mode leaves the amounts alone", () => {
     const initial = initialGoalPlan("EUR");
     const shown = { annualExpenses: 24000, contribution: 800, targetAmount: 5000 };
     const state = goalPlanReducer(initial, { type: "setMode", mode: "amount", display: "EUR", shown });
@@ -36,7 +36,7 @@ describe("goalPlanReducer", () => {
     expect(state.version).toBe(0);
   });
 
-  it("guardar fija el escenario cargado sin cambiar las cifras", () => {
+  it("saving pins the loaded scenario without changing the figures", () => {
     const initial = initialGoalPlan("EUR");
     const state = goalPlanReducer(initial, { type: "saved", scenario });
 

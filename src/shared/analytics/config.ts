@@ -1,16 +1,16 @@
-// Umami propio. Script y eventos van por el mismo origen (`/stats/*`, rewrites de
-// next.config): el CSP sigue en 'self'. El ID de sitio es público (viaja en el script).
+// Self-hosted Umami. Script and events go through the same origin (`/stats/*`, next.config
+// rewrites): the CSP stays at 'self'. The website ID is public (it ships in the script).
 
-// Única fuente de la ruta: la usan los rewrites de next.config. El `matcher` de proxy.ts tiene
-// que ser un literal (Next lo analiza estáticamente), así que lo comprueba un test.
+// Single source of the path: the next.config rewrites use it. The `matcher` in proxy.ts has to
+// be a literal (Next analyzes it statically), so a test checks it.
 export const ANALYTICS_PATH_PREFIX = "/stats";
 
-// Umami envía los eventos a `<directorio del script>/api/send`.
+// Umami sends events to `<script directory>/api/send`.
 export const ANALYTICS_SCRIPT_SRC = `${ANALYTICS_PATH_PREFIX}/script.js`;
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** ID de sitio si es un UUID válido; si no, `null` (evita emitir un script roto). */
+/** Website ID if it is a valid UUID; otherwise `null` (avoids emitting a broken script). */
 export function parseWebsiteId(raw: string | undefined): string | null {
   const value = raw?.trim();
   return value && UUID_PATTERN.test(value) ? value.toLowerCase() : null;

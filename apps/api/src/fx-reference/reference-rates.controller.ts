@@ -8,8 +8,8 @@ import { referenceRatesQuerySchema, type ReferenceRatesQueryDto } from './dto/re
 import { ReferenceRatesService } from './reference-rates.service.js';
 
 /**
- * Tipos de referencia del BCE para el informe fiscal. Con sesión, aunque sean datos públicos:
- * una petición puede acabar en una descarga al BCE y no queremos un disparador anónimo.
+ * ECB reference rates for the tax report. Session required, even though the data is public: a
+ * request may trigger a download from the ECB and we don't want an anonymous trigger.
  */
 @Controller('fx/reference-rates')
 @UseGuards(JwtAuthGuard)

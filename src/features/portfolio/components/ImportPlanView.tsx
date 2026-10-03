@@ -16,7 +16,7 @@ type Props = {
   onConfirm: () => void;
 };
 
-/** Vista previa de una importación: qué posiciones se crean o amplían y con cuántas operaciones. */
+/** Import preview: which positions are created or topped up, and with how many trades. */
 export default function ImportPlanView({ plan, importing, onConfirm }: Props) {
   const t = useTranslations("portfolio.import.preview");
   const { formatCurrency, formatQuantity } = useFormat();
@@ -64,7 +64,7 @@ export default function ImportPlanView({ plan, importing, onConfirm }: Props) {
       header: t("colAvgPrice"),
       align: "right",
       cellClassName: amount,
-      // El importador solo admite operaciones en EUR (ver el parser).
+      // The importer only accepts trades in EUR (see the parser).
       cell: (p) => (p.resultingAvgPrice === null ? "—" : formatCurrency(p.resultingAvgPrice, "EUR")),
     },
   ];

@@ -4,8 +4,8 @@ import { itemAt } from "./arrays.js";
 
 const relClose = (a: number, b: number) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
 
-describe("project (motor genérico)", () => {
-  it("aporta el número correcto de veces por año según la frecuencia", () => {
+describe("project (generic engine)", () => {
+  it("contributes the right number of times per year for each frequency", () => {
     for (const [freq, ppy] of Object.entries(PERIODS_PER_YEAR)) {
       const r = project({
         initial: 0,
@@ -18,7 +18,7 @@ describe("project (motor genérico)", () => {
     }
   });
 
-  it("descompone valor = aportado + intereses en cada punto", () => {
+  it("splits value = contributed + interest at every point", () => {
     const r = project({
       initial: 1000,
       contribution: 100,
@@ -31,18 +31,18 @@ describe("project (motor genérico)", () => {
     }
   });
 
-  it("a mayor frecuencia de capitalización, mayor valor final (mismo total aportado/año)", () => {
+  it("a higher compounding frequency gives a higher final value (same total contributed per year)", () => {
     const annual = project({ initial: 0, contribution: 1200, frequency: "annual", annualRate: 8, years: 30 });
     const monthly = project({ initial: 0, contribution: 100, frequency: "monthly", annualRate: 8, years: 30 });
-    // Ambos aportan 1200 €/año; la mensual capitaliza más a menudo.
+    // Both contribute €1,200/year; the monthly one compounds more often.
     expect(monthly.totalContributed).toBeCloseTo(annual.totalContributed, 6);
     expect(monthly.finalValue).toBeGreaterThan(annual.finalValue);
   });
 
-  describe("capitalización independiente de la frecuencia de aportación", () => {
+  describe("compounding independent of the contribution frequency", () => {
     const RATES = [0, 3, 7, 12.5, -2, -50];
 
-    it("sin aportaciones el resultado no depende de la frecuencia de aportación", () => {
+    it("without contributions the result does not depend on the contribution frequency", () => {
       for (const compounding of [undefined, ...COMPOUNDING_FREQUENCIES]) {
         for (const annualRate of RATES) {
           const values = FREQUENCIES.map(
@@ -54,7 +54,7 @@ describe("project (motor genérico)", () => {
       }
     });
 
-    it("lo mismo en varios años, y también con inflación y comisión", () => {
+    it("the same over several years, and also with inflation and fees", () => {
       for (const years of [1, 7, 30]) {
         const results = FREQUENCIES.map((frequency) =>
           project({
@@ -75,14 +75,14 @@ describe("project (motor genérico)", () => {
       }
     });
 
-    it("por defecto la capitalización es anual: la tasa es la rentabilidad anual efectiva", () => {
+    it("compounding is annual by default: the rate is the effective annual return", () => {
       for (const frequency of FREQUENCIES) {
         const r = project({ initial: 10000, contribution: 0, frequency, annualRate: 7, years: 1 });
         expect(r.finalValue).toBeCloseTo(10700, 8);
       }
     });
 
-    it("la capitalización mensual a un tipo nominal r da (1 + r/12)^12 en un año", () => {
+    it("monthly compounding at a nominal rate r gives (1 + r/12)^12 in one year", () => {
       for (const frequency of FREQUENCIES) {
         const r = project({
           initial: 10000,
@@ -96,7 +96,7 @@ describe("project (motor genérico)", () => {
       }
     });
 
-    it("más capitalización intra-anual da más, con la misma tasa nominal", () => {
+    it("more intra-year compounding yields more, with the same nominal rate", () => {
       const final = (compounding: "annual" | "semiannual" | "quarterly" | "monthly") =>
         project({ initial: 1000, contribution: 0, frequency: "monthly", compounding, annualRate: 8, years: 10 })
           .finalValue;
@@ -105,7 +105,7 @@ describe("project (motor genérico)", () => {
       expect(final("monthly")).toBeGreaterThan(final("quarterly"));
     });
 
-    it("con aportaciones, la frecuencia solo cambia cuándo se aporta: mismo total anual, diferencia pequeña", () => {
+    it("with contributions, the frequency only changes when they are made: same annual total, small difference", () => {
       const final = (frequency: "annual" | "monthly", contribution: number) =>
         project({ initial: 0, contribution, frequency, annualRate: 8, years: 30 }).finalValue;
       const ratio = final("monthly", 100) / final("annual", 1200);
@@ -113,14 +113,14 @@ describe("project (motor genérico)", () => {
       expect(ratio).toBeLessThan(1.05);
     });
 
-    it("la inflación anual a un año descuenta exactamente 1 + i, con cualquier frecuencia", () => {
+    it("one year of annual inflation discounts exactly 1 + i, with any frequency", () => {
       for (const frequency of FREQUENCIES) {
         const r = project({ initial: 1000, contribution: 0, frequency, annualRate: 0, years: 1, inflationRate: 4 });
         expect(r.finalRealValue).toBeCloseTo(1000 / 1.04, 9);
       }
     });
 
-    it("una rentabilidad de −100 % o menos anula el capital sin dar NaN (capitalización anual)", () => {
+    it("a return of −100% or less wipes out the capital without giving NaN (annual compounding)", () => {
       for (const frequency of FREQUENCIES) {
         for (const annualRate of [-100, -150, -1e9]) {
           const r = project({ initial: 1000, contribution: 0, frequency, annualRate, years: 3 });
@@ -129,7 +129,7 @@ describe("project (motor genérico)", () => {
       }
     });
 
-    it("una tasa nominal muy negativa con capitalización mensual tampoco da NaN", () => {
+    it("a very negative nominal rate with monthly compounding does not give NaN either", () => {
       const r = project({
         initial: 1000,
         contribution: 0,
