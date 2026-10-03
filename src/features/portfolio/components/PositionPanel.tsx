@@ -39,12 +39,18 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
   const isSheet = !useMediaQuery(DESKTOP_QUERY);
 
   // Solo al montar y desmontar: guarda quién tenía el foco, lo pasa al panel y lo devuelve al
-  // cerrar. Va aparte del efecto de Escape para no repetirse cuando cambia `onClose`.
+  // cerrar. Va aparte del efecto de Escape para no repetirse cuando cambia `onClose`. Al cerrar,
+  // React limpia los efectos en orden de declaración, así que este corre ANTES de que el efecto
+  // de la hoja quite el `inert` del resto de la página, y el navegador no deja enfocar algo
+  // inerte (el foco caería en `body`). Por eso se devuelve en una microtarea: para entonces todas
+  // las limpiezas del desmontaje ya han corrido.
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus();
     return () => {
-      if (previous?.isConnected) previous.focus();
+      queueMicrotask(() => {
+        if (previous?.isConnected) previous.focus();
+      });
     };
   }, []);
 

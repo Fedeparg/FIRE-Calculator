@@ -73,6 +73,27 @@ describe("PositionPanel", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
+  it("en móvil devuelve el foco a quien lo abrió cuando ya no es inerte", async () => {
+    setDesktop(false);
+    const user = userEvent.setup();
+    renderWithIntl(<Page />);
+    const opener = screen.getByRole("button", { name: "abrir" });
+    await user.click(opener);
+
+    // jsdom no impide enfocar un elemento inerte, pero el navegador sí: se comprueba que, en el
+    // momento de devolver el foco, el botón ya no está dentro de un subárbol `inert`.
+    const focusedWhileInert: boolean[] = [];
+    const focus = HTMLElement.prototype.focus;
+    vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, options) {
+      if (this === opener) focusedWhileInert.push(this.closest("[inert]") !== null);
+      focus.call(this, options);
+    });
+
+    await user.keyboard("{Escape}");
+    await vi.waitFor(() => expect(opener).toHaveFocus());
+    expect(focusedWhileInert).toEqual([false]);
+  });
+
   it("en escritorio no toca el resto de la página (la lista sigue usable al lado)", async () => {
     setDesktop(true);
     const user = userEvent.setup();
