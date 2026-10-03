@@ -206,7 +206,13 @@
     "moreInfo": "More information",
     "copy": "Copy",
     "copied": "Copied",
-    "copyLabel": "Copy {label}"
+    "copyLabel": "Copy {label}",
+    "apiError": {
+      "network": "Could not reach the server. Check your connection and try again.",
+      "server": "A server error occurred. Please try again in a moment.",
+      "session": "Your session has expired. Sign in again to continue.",
+      "generic": "The operation could not be completed. Please try again."
+    }
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
@@ -1142,12 +1148,8 @@
       "confirmDelete": "Confirm",
       "deleting": "Deleting…",
       "quotaReached": "You've reached the maximum number of saved scenarios. Delete one to save another.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the scenario name: it cannot be empty.",
-      "errorServer": "A server error occurred. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again.",
       "errorTooLarge": "This calculation is too large to save.",
       "errorQuota": "You've reached the maximum number of saved scenarios. Delete one to save another."
     }
@@ -1340,12 +1342,8 @@
       "save": "Save changes",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "errorNetwork": "Couldn't reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the form: a field has an invalid value.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "Couldn't complete the operation. Please try again.",
       "duplicate": "You already have {ticker} at {broker}.",
       "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
       "combine": "Combine with existing",
@@ -1445,14 +1443,10 @@
       "add": "Add trade",
       "save": "Save changes",
       "saving": "Saving…",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired. Sign in again to continue.",
       "errorNotFound": "This trade no longer exists. Reload the page to see the current history.",
       "errorNegative": "That sell would leave the position negative: you cannot sell more units than you hold on that date.",
       "errorOverflow": "The result of these trades exceeds the maximum a position can hold.",
-      "errorInvalid": "Check the trade details: some value is not valid.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again."
+      "errorInvalid": "Check the trade details: some value is not valid."
     },
     "sale": {
       "title": "What if I sell?",
@@ -1597,10 +1591,7 @@
       "errorEmpty": "The file contains no transactions.",
       "errorMalformed": "The file is not a valid CSV.",
       "errorTooManyRows": "The file has too many rows (the maximum is 20,000).",
-      "errorSession": "Your session has expired. Please sign in again.",
       "errorRateLimit": "Too many attempts in a row. Wait a minute and try again.",
-      "errorNetwork": "Could not connect. Check your connection and try again.",
-      "errorServer": "There was a problem on the server. Please try again in a few minutes.",
       "errorGeneric": "The file could not be processed. Please try again.",
       "preview": {
         "title": "This is what will be imported",
@@ -1790,9 +1781,6 @@
       "deleteItem": "Delete {item}",
       "confirmDeleteItem": "Yes, delete {item}",
       "cancel": "Cancel",
-      "errorSession": "Your session has expired. Sign in again to continue.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorServer": "The server failed. Try again in a moment.",
       "errorInvalid": "Check the data: something is not valid.",
       "errorGeneric": "It could not be saved. Try again.",
       "grossShort": "Gross",
@@ -1849,9 +1837,6 @@
       "saving": "Saving…",
       "saved": "Saved",
       "duplicated": "Each year and type can only appear once.",
-      "errorSession": "Your session has expired. Sign in again to continue.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorServer": "The server failed. Try again in a moment.",
       "errorInvalid": "Check the data: something is not valid.",
       "errorGeneric": "It could not be saved. Try again."
     },
@@ -1917,11 +1902,7 @@
       "deleting": "Deleting…",
       "success": "Your account has been deleted. Taking you home…"
     },
-    "errorNetwork": "We couldn't reach the server. Check your connection and try again.",
-    "errorSession": "Your session has expired.",
     "errorSessionLink": "Sign in again",
-    "errorServer": "A server error occurred. Please try again in a few moments.",
-    "errorGeneric": "We couldn't complete the operation. Please try again.",
     "notifications": {
       "title": "Email notices",
       "intro": "We email you when your portfolio crosses 25, 50, 75 and 100% of your financial independence goal. One notice per milestone, never repeated, calculated every night with closing prices.",

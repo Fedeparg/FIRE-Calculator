@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import type { PendingNegative, SavingsGroup } from "@sextante/core/fiscal/savings-base";
 import { savePendingBalances } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import { validatePendingBalances } from "@/features/portfolio/model/form-validation";
 import { formatDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
@@ -30,6 +31,7 @@ type Props = {
  */
 export default function PendingBalancesForm({ balances, firstYear }: Props) {
   const t = useTranslations("portfolio.pendingBalances");
+  const errorText = useApiErrorText(t);
   const router = useRouter();
   const uid = useId();
   const { decimalSeparator } = useFormat();
@@ -132,7 +134,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
         {duplicated && <p className="text-sm text-warning">{t("duplicated")}</p>}
         {save.errorKey && (
           <p role="alert" className="text-sm text-warning">
-            {t(save.errorKey)}
+            {errorText(save.errorKey)}
           </p>
         )}
 

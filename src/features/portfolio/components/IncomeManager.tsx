@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
 import type { ApiErrorKey } from "@/shared/api/client";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import { useEditableCollection } from "@/shared/ui/use-editable-collection";
 import IncomeForm from "./IncomeForm";
 import IncomeList from "./IncomeList";
@@ -20,6 +21,7 @@ type Props = {
 /** Lista de cobros con su formulario de alta y edición; lo comparten el panel de la posición y la pestaña fiscal. */
 export default function IncomeManager({ income, defaults, submitting, errorKey, save, remove }: Props) {
   const t = useTranslations("portfolio.income");
+  const errorText = useApiErrorText(t);
   const rows = useEditableCollection<IncomeEvent, IncomePayload>({ save, remove });
 
   return (
@@ -36,7 +38,7 @@ export default function IncomeManager({ income, defaults, submitting, errorKey, 
       />
       {errorKey && (
         <p role="alert" className="text-sm text-warning">
-          {t(errorKey)}
+          {errorText(errorKey)}
         </p>
       )}
       {/* El `key` fuerza un remount al cambiar de cobro editado (o volver al alta). */}

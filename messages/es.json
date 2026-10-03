@@ -206,7 +206,13 @@
     "moreInfo": "Más información",
     "copy": "Copiar",
     "copied": "Copiado",
-    "copyLabel": "Copiar {label}"
+    "copyLabel": "Copiar {label}",
+    "apiError": {
+      "network": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "server": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "session": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "generic": "No se pudo completar la operación. Inténtalo de nuevo."
+    }
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -1142,12 +1148,8 @@
       "confirmDelete": "Confirmar",
       "deleting": "Borrando…",
       "quotaReached": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el nombre del escenario: no puede estar vacío.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "errorTooLarge": "Este cálculo ocupa demasiado para guardarlo.",
       "errorQuota": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro."
     }
@@ -1340,12 +1342,8 @@
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "cancel": "Cancelar",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el formulario: hay algún campo con un valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "duplicate": "Ya tienes {ticker} en {broker}.",
       "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
       "combine": "Combinar con la existente",
@@ -1445,14 +1443,10 @@
       "add": "Añadir operación",
       "save": "Guardar cambios",
       "saving": "Guardando…",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
       "errorNotFound": "Esta operación ya no existe. Recarga la página para ver el histórico actualizado.",
       "errorNegative": "Esa venta dejaría la posición en negativo: no puedes vender más participaciones de las que tienes en esa fecha.",
       "errorOverflow": "El resultado de las operaciones excede el máximo que admite una posición.",
-      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido."
     },
     "sale": {
       "title": "¿Qué pasaría si vendo?",
@@ -1597,10 +1591,7 @@
       "errorEmpty": "El fichero no contiene operaciones.",
       "errorMalformed": "El fichero no es un CSV válido.",
       "errorTooManyRows": "El fichero tiene demasiadas filas (el máximo es 20.000).",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
       "errorRateLimit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
-      "errorNetwork": "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "Ha habido un problema en el servidor. Inténtalo de nuevo en unos minutos.",
       "errorGeneric": "No se pudo procesar el fichero. Inténtalo de nuevo.",
       "preview": {
         "title": "Esto es lo que se importará",
@@ -1790,9 +1781,6 @@
       "deleteItem": "Eliminar {item}",
       "confirmDeleteItem": "Sí, eliminar {item}",
       "cancel": "Cancelar",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
       "errorInvalid": "Revisa los datos: alguno no es válido.",
       "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo.",
       "grossShort": "Íntegro",
@@ -1849,9 +1837,6 @@
       "saving": "Guardando…",
       "saved": "Guardado",
       "duplicated": "Cada ejercicio y tipo solo puede aparecer una vez.",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
       "errorInvalid": "Revisa los datos: alguno no es válido.",
       "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
     },
@@ -1917,11 +1902,7 @@
       "deleting": "Borrando…",
       "success": "Tu cuenta ha sido borrada. Te llevamos al inicio…"
     },
-    "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-    "errorSession": "Tu sesión ha caducado.",
     "errorSessionLink": "Vuelve a iniciar sesión",
-    "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
     "notifications": {
       "title": "Avisos por email",
       "intro": "Te escribimos cuando tu cartera cruza el 25, 50, 75 y 100 % de tu objetivo de independencia financiera. Un aviso por hito, nunca repetido, calculado cada noche con los precios del cierre.",

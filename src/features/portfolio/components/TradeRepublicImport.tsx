@@ -10,6 +10,7 @@ import { trackEvent } from "@/shared/analytics/track";
 import Notice from "@/shared/ui/Notice";
 import { importErrorKey, type ImportErrorKey } from "@/features/portfolio/model/import-errors";
 import { apiJson } from "@/shared/api/client";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 import ImportPlanView from "./ImportPlanView";
 import ImportResultView from "./ImportResultView";
@@ -41,6 +42,7 @@ const fileInputClass = `${inputClass} text-sm file:mr-3 file:rounded-md file:bor
  */
 export default function TradeRepublicImport() {
   const t = useTranslations("portfolio.import");
+  const errorText = useApiErrorText(t);
   const router = useRouter();
   const uid = useId();
 
@@ -152,7 +154,7 @@ export default function TradeRepublicImport() {
         </div>
         {errorKey && (
           <p role="alert" className="text-sm text-warning">
-            {t(errorKey)}
+            {errorText(errorKey)}
           </p>
         )}
       </section>

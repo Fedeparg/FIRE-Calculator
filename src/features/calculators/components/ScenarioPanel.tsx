@@ -11,6 +11,7 @@ import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 import { useCalculatorState } from "./CalculatorState";
 import { inputClass } from "@/shared/ui/field-classes";
 import Button from "@/shared/ui/Button";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 
 const inputClassSm = `${inputClass} text-sm`;
 
@@ -32,6 +33,7 @@ const inputClassSm = `${inputClass} text-sm`;
  */
 export default function ScenarioPanel() {
   const t = useTranslations("calculator.scenarios");
+  const errorText = useApiErrorText(t);
   const nameId = useId();
   const state = useCalculatorState();
   const slug = state?.slug;
@@ -218,7 +220,7 @@ export default function ScenarioPanel() {
 
       {errorKey && (
         <p className="text-sm text-warning">
-          {t(errorKey)}
+          {errorText(errorKey)}
           {errorKey === "errorSession" && (
             <>
               {" "}

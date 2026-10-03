@@ -8,6 +8,7 @@ import Button from "@/shared/ui/Button";
 import Notice from "@/shared/ui/Notice";
 import { downloadBlob } from "@/shared/format/download";
 import { apiFetch, createApiErrorMapper } from "@/shared/api/client";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 
 /**
@@ -28,6 +29,7 @@ type Props = {
  */
 export default function AccountDangerZone({ email }: Props) {
   const t = useTranslations("account");
+  const errorText = useApiErrorText(t);
   const confirmId = useId();
   const router = useRouter();
 
@@ -120,7 +122,7 @@ export default function AccountDangerZone({ email }: Props) {
 
         {deleteError && (
           <p className="text-sm text-warning">
-            {t(deleteError)}
+            {errorText(deleteError)}
             {deleteError === "errorSession" && (
               <>
                 {" "}

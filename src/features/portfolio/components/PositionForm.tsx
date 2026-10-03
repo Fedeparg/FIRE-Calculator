@@ -18,6 +18,7 @@ import {
   type PositionErrorKey,
 } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import PositionFormFields, { type PositionFormValues } from "./PositionFormFields";
 import Button from "@/shared/ui/Button";
 
@@ -70,6 +71,7 @@ function toCurrency(value: string | undefined): SupportedCurrency {
  */
 export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.form");
+  const errorText = useApiErrorText(t);
   const isEditing = Boolean(editing);
   const { decimalSeparator } = useFormat();
 
@@ -179,7 +181,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
       {problem?.kind === "error" && (
         <p className="text-sm text-warning">
-          {t(problem.key)}
+          {errorText(problem.key)}
           {problem.key === "errorSession" && (
             <>
               {" "}

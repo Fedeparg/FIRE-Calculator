@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { LotPayload, PositionLot } from "@sextante/core/portfolio/types";
 import type { usePositionLots } from "@/features/portfolio/use-position-lots";
 import { useEditableCollection } from "@/shared/ui/use-editable-collection";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import LotList from "./LotList";
 import PositionLotForm from "./PositionLotForm";
 
@@ -19,6 +20,7 @@ type Props = {
 /** Vista "Operaciones" del detalle: el histórico de lotes y el formulario de alta y edición. */
 export default function PositionLotsView({ ticker, currency, lots }: Props) {
   const t = useTranslations("portfolio.lots");
+  const errorText = useApiErrorText(t);
   const rows = useEditableCollection<PositionLot, LotPayload>({ save: lots.save, remove: lots.remove });
 
   return (
@@ -38,7 +40,7 @@ export default function PositionLotsView({ ticker, currency, lots }: Props) {
 
       {lots.errorKey && (
         <p role="alert" className="text-sm text-warning">
-          {t(lots.errorKey)}
+          {errorText(lots.errorKey)}
         </p>
       )}
 

@@ -8,6 +8,7 @@ import { useGoalPlan, usePlanPersistence } from "@/features/portfolio/use-goal-p
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";
 import ToggleGroup from "@/shared/ui/ToggleGroup";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import PortfolioGoalFields from "./PortfolioGoalFields";
 import PortfolioGoalPlanForm from "./PortfolioGoalPlanForm";
 import PortfolioGoalResults from "./PortfolioGoalResults";
@@ -53,6 +54,7 @@ type Props = {
 export default function PortfolioGoal({ marketValue, valued, total, display, rates }: Props) {
   const t = useTranslations("portfolio.goal");
   const ts = useTranslations("calculator.scenarios");
+  const scenarioErrorText = useApiErrorText(ts);
   const goalPlan = useGoalPlan(display, rates, marketValue);
   const { plan, dispatch, shown, goal, updateAmounts, patchParams, changeMode } = goalPlan;
   const persistence = usePlanPersistence(goalPlan, display);
@@ -134,7 +136,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         />
       )}
 
-      {persistence.errorKey && <p className="text-sm text-warning">{ts(persistence.errorKey)}</p>}
+      {persistence.errorKey && <p className="text-sm text-warning">{scenarioErrorText(persistence.errorKey)}</p>}
 
       {/* Guardar y cargar cambian cifras de golpe: se anuncia, no solo se ve. */}
       <p role="status" aria-live="polite" className="sr-only">
