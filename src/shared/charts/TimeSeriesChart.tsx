@@ -241,7 +241,7 @@ export default function TimeSeriesChart({
               {tc("growth")}: {formatValue(summary.growth)}
             </span>
             {summary.interest !== null && (
-              <span className="font-medium" style={{ color: "var(--accent)" }}>
+              <span className="font-medium text-accent-text">
                 {tc("interest")}: {formatValue(summary.interest)}
               </span>
             )}

@@ -17,7 +17,7 @@ const CATEGORY_STYLES: Record<HealthCategory, string> = {
   critical: "border-warning-border bg-warning-soft text-warning",
   fragile: "border-warning-border bg-warning-soft text-warning",
   stable: "border-brand bg-brand-soft text-brand",
-  strong: "border-accent bg-accent-soft text-accent",
+  strong: "border-accent bg-accent-soft text-accent-text",
 };
 
 /**
