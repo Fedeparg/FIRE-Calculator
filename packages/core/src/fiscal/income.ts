@@ -181,7 +181,9 @@ export function buildIncomeReport(events: readonly IncomeEvent[], rates: Referen
   for (const event of events) {
     const year = Number(event.paidAt.slice(0, 4));
     if (!Number.isInteger(year)) continue;
-    byYear.set(year, [...(byYear.get(year) ?? []), event]);
+    const existing = byYear.get(year);
+    if (existing) existing.push(event);
+    else byYear.set(year, [event]);
   }
   const years = [...byYear.entries()].sort(([a], [b]) => b - a).map(([year, list]) => buildYear(year, list, rates));
   return { years };

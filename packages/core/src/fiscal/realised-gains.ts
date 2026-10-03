@@ -170,7 +170,9 @@ export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]
   for (const position of positions) {
     if (position.currency === TAX_CURRENCY) continue;
     const key = securityKey(position);
-    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+    const existing = bySecurity.get(key);
+    if (existing) existing.push(position);
+    else bySecurity.set(key, [position]);
   }
 
   const currencies = new Set<string>();
@@ -228,7 +230,9 @@ export function buildRealisedGainsReport(
   const bySecurity = new Map<string, RealisedGainsPosition[]>();
   for (const position of positions) {
     const key = securityKey(position);
-    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+    const existing = bySecurity.get(key);
+    if (existing) existing.push(position);
+    else bySecurity.set(key, [position]);
   }
 
   const byYear = new Map<number, RealisedGainsSale[]>();
@@ -268,7 +272,9 @@ export function buildRealisedGainsReport(
 
     for (const sale of groupSales) {
       const year = fiscalYear(sale.tradedAt);
-      byYear.set(year, [...(byYear.get(year) ?? []), sale]);
+      const existing = byYear.get(year);
+      if (existing) existing.push(sale);
+      else byYear.set(year, [sale]);
     }
   }
 
