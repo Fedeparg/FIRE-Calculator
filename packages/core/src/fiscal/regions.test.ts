@@ -73,8 +73,8 @@ describe("region catalogue", () => {
   });
 
   it("there is not a single foral figure: the Basque Country and Navarra only exist as disabled options", () => {
-    const foral = UNSUPPORTED_REGIONS.filter((r) => r.reason === "foral").map((r) => r.code);
-    expect(foral).toEqual(["alava", "bizkaia", "gipuzkoa", "navarra"]);
+    const foralCodes = UNSUPPORTED_REGIONS.filter((r) => r.reason === "foral").map((r) => r.code);
+    expect(foralCodes).toEqual(["alava", "bizkaia", "gipuzkoa", "navarra"]);
   });
 
   it("toSupportedRegion filters out the empty value and unsupported territories", () => {

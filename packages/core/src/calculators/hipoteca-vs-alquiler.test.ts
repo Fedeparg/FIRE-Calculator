@@ -28,14 +28,14 @@ describe("computeBuyVsRent", () => {
   });
 
   it("high appreciation tips the balance towards buying", () => {
-    const compra = computeBuyVsRent({ ...base, appreciationRate: 6 });
-    expect(compra.buyNetCost).toBeLessThan(compra.rentNetCost);
-    expect(compra.cheaper).toBe("buy");
+    const buy = computeBuyVsRent({ ...base, appreciationRate: 6 });
+    expect(buy.buyNetCost).toBeLessThan(buy.rentNetCost);
+    expect(buy.cheaper).toBe("buy");
   });
 
   it("a high investment return favors renting", () => {
-    const alquila = computeBuyVsRent({ ...base, appreciationRate: 0, investmentReturn: 9 });
-    expect(alquila.cheaper === "rent" || alquila.difference < 0).toBe(true);
+    const rent = computeBuyVsRent({ ...base, appreciationRate: 0, investmentReturn: 9 });
+    expect(rent.cheaper === "rent" || rent.difference < 0).toBe(true);
   });
 
   it("the difference is consistent with the net costs", () => {
@@ -44,9 +44,9 @@ describe("computeBuyVsRent", () => {
   });
 
   it("selling costs reduce net equity and make buying more expensive", () => {
-    const sinVenta = computeBuyVsRent(base);
-    const conVenta = computeBuyVsRent({ ...base, sellingCostsRate: 5 });
-    expect(conVenta.buyEquityEnd).toBeLessThan(sinVenta.buyEquityEnd);
-    expect(conVenta.buyNetCost).toBeGreaterThan(sinVenta.buyNetCost);
+    const withoutSellingCosts = computeBuyVsRent(base);
+    const withSellingCosts = computeBuyVsRent({ ...base, sellingCostsRate: 5 });
+    expect(withSellingCosts.buyEquityEnd).toBeLessThan(withoutSellingCosts.buyEquityEnd);
+    expect(withSellingCosts.buyNetCost).toBeGreaterThan(withoutSellingCosts.buyNetCost);
   });
 });

@@ -27,24 +27,24 @@ describe("computeSelfEmployedTax", () => {
   });
 
   it("family circumstances raise the minimum and lower the IRPF", () => {
-    const solo = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
-    const familia = computeSelfEmployedTax({
+    const single = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
+    const family = computeSelfEmployedTax({
       income: 40000,
       expenses: 8000,
       socialSecurity: 4000,
       children: 2,
       childrenUnder3: 1,
     });
-    expect(familia.personalMinimum).toBe(13450); // 5550 + 2400 + 2700 + 2800
-    expect(familia.incomeTax).toBe(3960);
-    expect(familia.incomeTax).toBeLessThan(solo.incomeTax);
+    expect(family.personalMinimum).toBe(13450); // 5550 + 2400 + 2700 + 2800
+    expect(family.incomeTax).toBe(3960);
+    expect(family.incomeTax).toBeLessThan(single.incomeTax);
   });
 
   it("joint filing reduces the base by €3,400", () => {
-    const ind = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
-    const conj = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, jointReturn: true });
-    expect(conj.taxableBase).toBe(ind.taxableBase - 3400);
-    expect(conj.incomeTax).toBeLessThan(ind.incomeTax);
+    const individual = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
+    const joint = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, jointReturn: true });
+    expect(joint.taxableBase).toBe(individual.taxableBase - 3400);
+    expect(joint.incomeTax).toBeLessThan(individual.incomeTax);
   });
 
   it("does not allow a negative net income", () => {
@@ -54,14 +54,14 @@ describe("computeSelfEmployedTax", () => {
   });
 
   it("contributing to a pension plan reduces the IRPF", () => {
-    const sin = computeSelfEmployedTax({ income: 40000, expenses: 5000, socialSecurity: 4000 });
-    const con = computeSelfEmployedTax({
+    const withoutPlan = computeSelfEmployedTax({ income: 40000, expenses: 5000, socialSecurity: 4000 });
+    const withPlan = computeSelfEmployedTax({
       income: 40000,
       expenses: 5000,
       socialSecurity: 4000,
       pensionContribution: 1500,
     });
-    expect(con.incomeTax).toBeLessThan(sin.incomeTax);
+    expect(withPlan.incomeTax).toBeLessThan(withoutPlan.incomeTax);
   });
 
   it("exposes consistent effective and marginal rates", () => {
@@ -93,12 +93,12 @@ describe("computeSelfEmployedTax", () => {
 
   it("hard-to-justify expenses reduce the IRPF", () => {
     const normal = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
-    const simplificada = computeSelfEmployedTax({
+    const simplified = computeSelfEmployedTax({
       income: 40000,
       expenses: 8000,
       socialSecurity: 4000,
       simplifiedRegime: true,
     });
-    expect(simplificada.incomeTax).toBeLessThan(normal.incomeTax);
+    expect(simplified.incomeTax).toBeLessThan(normal.incomeTax);
   });
 });

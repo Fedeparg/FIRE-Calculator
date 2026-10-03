@@ -60,17 +60,17 @@ describe("computeCompound", () => {
   });
 
   it("the annual fee (TER) reduces the net return", () => {
-    const sin = computeCompound({ initial: 10000, contribution: 0, annualRate: 7, years: 20 });
-    const con = computeCompound({ initial: 10000, contribution: 0, annualRate: 7, years: 20, annualFee: 1 });
-    expect(con.finalValue).toBeLessThan(sin.finalValue);
+    const withoutFee = computeCompound({ initial: 10000, contribution: 0, annualRate: 7, years: 20 });
+    const withFee = computeCompound({ initial: 10000, contribution: 0, annualRate: 7, years: 20, annualFee: 1 });
+    expect(withFee.finalValue).toBeLessThan(withoutFee.finalValue);
     // With the fee, it is equivalent to a 6% net return.
-    const neto = computeCompound({ initial: 10000, contribution: 0, annualRate: 6, years: 20 });
-    expect(con.finalValue).toBeCloseTo(neto.finalValue, 4);
+    const netEquivalent = computeCompound({ initial: 10000, contribution: 0, annualRate: 6, years: 20 });
+    expect(withFee.finalValue).toBeCloseTo(netEquivalent.finalValue, 4);
   });
 
   it("contribution growth increases the amount contributed", () => {
-    const fija = computeCompound({ initial: 0, contribution: 100, frequency: "annual", annualRate: 0, years: 5 });
-    const creciente = computeCompound({
+    const fixed = computeCompound({ initial: 0, contribution: 100, frequency: "annual", annualRate: 0, years: 5 });
+    const growing = computeCompound({
       initial: 0,
       contribution: 100,
       frequency: "annual",
@@ -78,7 +78,7 @@ describe("computeCompound", () => {
       years: 5,
       contributionGrowth: 10,
     });
-    expect(creciente.totalContributed).toBeGreaterThan(fija.totalContributed);
+    expect(growing.totalContributed).toBeGreaterThan(fixed.totalContributed);
   });
 
   it("effective annual inflation discounts the real value as (1 + i)^years", () => {

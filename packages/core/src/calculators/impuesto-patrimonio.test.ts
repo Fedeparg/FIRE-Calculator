@@ -39,8 +39,8 @@ describe("computeWealthTax", () => {
 
   it("the regional rebate reduces the tax", () => {
     const base = computeWealthTax({ totalWealth: 2000000, primaryResidenceValue: 0 });
-    const madrid = computeWealthTax({ totalWealth: 2000000, primaryResidenceValue: 0, regionalRebate: 100 });
-    expect(madrid.tax).toBe(0);
+    const fullRebate = computeWealthTax({ totalWealth: 2000000, primaryResidenceValue: 0, regionalRebate: 100 });
+    expect(fullRebate.tax).toBe(0);
     expect(base.tax).toBeGreaterThan(0);
   });
 });

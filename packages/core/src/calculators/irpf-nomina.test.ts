@@ -18,9 +18,9 @@ describe("computePayrollWithholding", () => {
   });
 
   it("family circumstances reduce the withholding", () => {
-    const solo = computePayrollWithholding({ grossAnnual: 30000, age: 30 });
-    const familia = computePayrollWithholding({ grossAnnual: 30000, age: 30, children: 2, childrenUnder3: 1 });
-    expect(familia.annualWithholding).toBeLessThan(solo.annualWithholding);
+    const single = computePayrollWithholding({ grossAnnual: 30000, age: 30 });
+    const family = computePayrollWithholding({ grossAnnual: 30000, age: 30, children: 2, childrenUnder3: 1 });
+    expect(family.annualWithholding).toBeLessThan(single.annualWithholding);
   });
 
   it("spreads the annual withholding across the payments", () => {
@@ -30,9 +30,9 @@ describe("computePayrollWithholding", () => {
   });
 
   it("the withholding rate rises with the salary", () => {
-    const bajo = computePayrollWithholding({ grossAnnual: 18000 });
-    const alto = computePayrollWithholding({ grossAnnual: 60000 });
-    expect(alto.withholdingRate).toBeGreaterThan(bajo.withholdingRate);
+    const low = computePayrollWithholding({ grossAnnual: 18000 });
+    const high = computePayrollWithholding({ grossAnnual: 60000 });
+    expect(high.withholdingRate).toBeGreaterThan(low.withholdingRate);
   });
 
   it("net = gross − SS − IRPF per payment", () => {
