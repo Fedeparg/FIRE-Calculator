@@ -89,7 +89,8 @@ export class TaxReturnService {
       availableYears,
       gains: gains.find((y) => y.year === selected) ?? null,
       income: income.find((y) => y.year === selected) ?? null,
-      incomeEvents: incomeEvents.filter((e) => e.paidAt.startsWith(String(selected))),
+      // Sin ejercicio seleccionado no hay cobros: `String(null)` compararía con "null".
+      incomeEvents: incomeEvents.filter((e) => selected !== null && Number(e.paidAt.slice(0, 4)) === selected),
       savings: returns.find((r) => r.year === selected) ?? null,
       ratesLoaded,
     };

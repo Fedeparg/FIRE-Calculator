@@ -142,7 +142,14 @@ describe('TaxReturnService (integración con Postgres)', () => {
   it('sin ejercicio pedido usa el último con datos; sin datos o en un año vacío devuelve null', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const empty = await service.build(userId);
-    expect(empty).toMatchObject({ year: null, availableYears: [], gains: null, income: null, savings: null });
+    expect(empty).toMatchObject({
+      year: null,
+      availableYears: [],
+      gains: null,
+      income: null,
+      savings: null,
+      incomeEvents: [],
+    });
     expect(getRates).not.toHaveBeenCalled();
 
     await income.create(userId, { kind: 'interest', paidAt: '2024-06-30', gross: 12 });
@@ -152,6 +159,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(latest.availableYears).toEqual([2024, 2022]);
     expect(latest.gains).toBeNull();
     expect(latest.savings?.capitalIncomeBalance).toBe(12);
+    expect(latest.incomeEvents.map((e) => e.paidAt)).toEqual(['2024-06-30']);
 
     const gap = await service.build(userId, 2023);
     expect(gap).toMatchObject({ year: 2023, gains: null, income: null, savings: null, incomeEvents: [] });

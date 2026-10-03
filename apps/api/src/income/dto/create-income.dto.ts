@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { INCOME_KINDS } from '@sextante/core/fiscal/income';
+import { INCOME_KINDS, withholdingsFitGross } from '@sextante/core/fiscal/income';
 import { amountSchema, currencySchema, trimmedText } from '../../positions/dto/create-position.dto.js';
 
 /** Campos de un cobro, sin las reglas que cruzan campos (las comparte la actualización parcial). */
@@ -37,14 +37,14 @@ export const incomeFieldsSchema = z.strictObject({
   reportedToAeat: z.boolean().optional().describe('El pagador ya lo comunicó a Hacienda (sale en el borrador).'),
 });
 
-/** Las retenciones no pueden superar el íntegro. */
+/** Las retenciones no pueden superar el íntegro (comparado en micro-unidades, ver `withholdingsFitGross`). */
 export function withholdingsWithinGross(value: {
   gross?: number;
   withholdingOrigin?: number | null;
   withholdingSpain?: number;
 }): boolean {
   if (value.gross === undefined) return true;
-  return (value.withholdingOrigin ?? 0) + (value.withholdingSpain ?? 0) <= value.gross;
+  return withholdingsFitGross(value.gross, value.withholdingOrigin, value.withholdingSpain);
 }
 
 /** Cuerpo de POST /api/income. */

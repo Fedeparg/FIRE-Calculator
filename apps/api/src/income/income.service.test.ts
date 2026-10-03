@@ -90,6 +90,17 @@ describe('IncomeService (integración con Postgres)', () => {
     await expect(service.update(userId, created.id, { gross: 0.05 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('acepta retenciones que suman exactamente el íntegro aunque en coma flotante no cuadre (0,1 + 0,2 = 0,3)', async () => {
+    const exact = { ...dividend, gross: 0.3, withholdingOrigin: 0.1, withholdingSpain: 0.2 };
+    expect(createIncomeSchema.safeParse(exact).success).toBe(true);
+
+    const userId = await insertUser(db, 'a@example.com');
+    const created = await service.create(userId, exact);
+    await expect(service.update(userId, created.id, { gross: 0.6, withholdingOrigin: 0.4 })).resolves.toMatchObject({
+      gross: 0.6,
+    });
+  });
+
   it('borrar la posición deja el cobro sin posición, no lo borra', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const positionId = await positionFor(userId);

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIncomeReport, incomeCategoryOf, incomeRatesNeeded, type IncomeEvent } from "./income.js";
+import {
+  buildIncomeReport,
+  incomeCategoryOf,
+  incomeRatesNeeded,
+  withholdingsFitGross,
+  type IncomeEvent,
+} from "./income.js";
 
 let seq = 0;
 function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "paidAt" | "gross">): IncomeEvent {
@@ -167,5 +173,25 @@ describe("incomeRatesNeeded", () => {
       ]),
     ).toEqual({ currencies: ["HKD", "USD"], from: "2024-07-29" });
     expect(incomeRatesNeeded([event({ kind: "interest", paidAt: "2020-01-01", gross: 1 })])).toBeNull();
+  });
+});
+
+describe("withholdingsFitGross", () => {
+  it("acepta retenciones que suman exactamente el íntegro aunque en coma flotante no cuadre", () => {
+    // 0.1 + 0.2 === 0.30000000000000004 > 0.3; 0.4 + 0.2 === 0.6000000000000001 > 0.6.
+    expect(withholdingsFitGross(0.3, 0.1, 0.2)).toBe(true);
+    expect(withholdingsFitGross(0.6, 0.4, 0.2)).toBe(true);
+    // El 15 % en origen de 7,33 (1,0995) más el resto retenido en España: justo el íntegro.
+    expect(withholdingsFitGross(7.33, 7.33 * 0.15, 6.2305)).toBe(true);
+  });
+
+  it("rechaza retenciones que superan el íntegro, aunque sea por una micro-unidad", () => {
+    expect(withholdingsFitGross(10, 5, 5.000001)).toBe(false);
+    expect(withholdingsFitGross(1, 1.5, 0)).toBe(false);
+  });
+
+  it("trata las retenciones ausentes como 0", () => {
+    expect(withholdingsFitGross(10, null, undefined)).toBe(true);
+    expect(withholdingsFitGross(10, undefined, 10)).toBe(true);
   });
 });

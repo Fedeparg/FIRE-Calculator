@@ -3,7 +3,13 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { INCOME_KINDS, type IncomeEvent, type IncomeKind, type IncomePayload } from "@sextante/core/fiscal/income";
+import {
+  INCOME_KINDS,
+  withholdingsFitGross,
+  type IncomeEvent,
+  type IncomeKind,
+  type IncomePayload,
+} from "@sextante/core/fiscal/income";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
@@ -58,7 +64,7 @@ export default function IncomeForm({ editing, defaults, submitting, onSubmit, on
     Number.isFinite(grossNum) &&
     grossNum > 0 &&
     withholdingsValid &&
-    (originNum ?? 0) + spainNum <= grossNum &&
+    withholdingsFitGross(grossNum, originNum, spainNum) &&
     (countryCode === "" || /^[A-Z]{2}$/.test(countryCode)) &&
     /^\d{4}-\d{2}-\d{2}$/.test(paidAt);
 
