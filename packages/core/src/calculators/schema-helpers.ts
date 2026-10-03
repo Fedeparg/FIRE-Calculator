@@ -1,7 +1,7 @@
-// Bloques comunes de los esquemas zod de las calculadoras (`*.schema.ts`). Solo los usa el
-// servidor (MCP): el frontend NO debe importarlos, para no meter zod en el bundle de Next (lo
-// impide una regla de ESLint). Los topes son holgados para cualquier caso real y evitan entradas
-// absurdas (1e300 €, 10.000 años) que solo sirven para hacer trabajar al servidor.
+// Shared building blocks for the calculators' zod schemas (`*.schema.ts`). Only the server (MCP)
+// uses them: the frontend must NOT import them, to keep zod out of the Next bundle (an ESLint rule
+// enforces this). The caps are generous for any real case and reject absurd inputs (€1e300,
+// 10,000 years) whose only effect would be to make the server do pointless work.
 
 import { z } from "zod";
 
@@ -14,7 +14,7 @@ const MAX_AMOUNT = 1e12;
 
 export const amount = (description: string) => z.number().min(0).max(MAX_AMOUNT).describe(description);
 export const percent = (description: string, min = 0, max = 100) => z.number().min(min).max(max).describe(description);
-/** Tope por defecto de los campos de plazo; los que necesitan otro lo pasan como `max`. */
+/** Default cap for term fields; fields that need a different one pass it as `max`. */
 export const horizon = (description: string, max = MAX_HORIZON_YEARS) =>
   z.number().min(0).max(max).describe(description);
 export const count = (description: string, max: number) => z.number().int().min(0).max(max).describe(description);
@@ -40,7 +40,7 @@ export const region = z
       "País Vasco, Navarra y Ceuta/Melilla no están soportados.",
   );
 
-/** Circunstancias personales del IRPF, comunes a nómina, salario neto y autónomos. */
+/** Personal circumstances for IRPF, shared by payroll withholding, net salary and self-employed. */
 export const personalCircumstances = {
   age: count("Edad del contribuyente (afecta al mínimo personal).", 120).optional(),
   contractType: z.enum(CONTRACT_TYPES).optional().describe("Tipo de contrato (cambia la cotización por desempleo)."),

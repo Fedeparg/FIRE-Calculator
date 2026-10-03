@@ -1,4 +1,4 @@
-// ROI con costes, rentas cobradas, ROI anualizado (CAGR) y neto tras impuestos. Core puro.
+// ROI with costs, income received, annualized ROI (CAGR) and net after tax. Pure core.
 
 import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
 
@@ -8,7 +8,7 @@ export interface RoiInput {
   years?: number;
   costs?: number;
   income?: number;
-  /** Impuesto sobre la ganancia, en base 100. Por defecto 19 % (base del ahorro). */
+  /** Tax on the gain, in base 100. Defaults to 19% (savings base, base del ahorro). */
   taxRate?: number;
 }
 
@@ -36,11 +36,11 @@ export function computeRoi(input: RoiInput): RoiResult {
   let annualized: number | null = null;
   if (input.years && input.years > 0 && invested > 0 && final + income > 0) {
     const rate = (Math.pow((final + income) / invested, 1 / input.years) - 1) * 100;
-    // Un plazo minúsculo (1e-300 años) desborda la potencia: sin respuesta, como sin plazo.
+    // A tiny term (1e-300 years) overflows the power: no answer, as if there were no term.
     annualized = Number.isFinite(rate) ? rate : null;
   }
 
-  // El impuesto solo grava la ganancia positiva.
+  // Tax only applies to a positive gain.
   const tax = gain > 0 ? gain * taxRate : 0;
   const netGain = gain - tax;
   const netRoi = invested !== 0 ? (netGain / invested) * 100 : 0;

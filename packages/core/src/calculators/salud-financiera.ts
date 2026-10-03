@@ -1,14 +1,14 @@
-// Test de salud financiera: cuestionario ponderado → puntuación 0-100 y categoría. Core puro.
+// Financial health check: weighted questionnaire → 0-100 score and category. Pure core.
 
 export type HealthCategory = "critical" | "fragile" | "stable" | "strong";
 
 export interface FinancialHealthQuestion {
   id: string;
-  /** Peso de la pregunta sobre el total (los pesos suman 1). */
+  /** Weight of the question in the total (weights sum to 1). */
   weight: number;
 }
 
-/** Preguntas y pesos (suman 1); el orden fija el de la UI. Cada respuesta puntúa de 0 a 1. */
+/** Questions and weights (summing to 1); this order sets the UI order. Each answer scores from 0 to 1. */
 export const FINANCIAL_HEALTH_QUESTIONS: readonly FinancialHealthQuestion[] = [
   { id: "emergencyFund", weight: 0.22 },
   { id: "savingsRate", weight: 0.18 },
@@ -32,7 +32,7 @@ export function categoryForScore(score: number): HealthCategory {
   return "critical";
 }
 
-/** Salud financiera a partir de respuestas 0..1 por pregunta; las que falten cuentan 0. */
+/** Financial health from 0..1 answers per question; missing answers count as 0. */
 export function computeFinancialHealth(answers: readonly number[]): FinancialHealthResult {
   let weighted = 0;
   FINANCIAL_HEALTH_QUESTIONS.forEach((q, i) => {
@@ -43,12 +43,12 @@ export function computeFinancialHealth(answers: readonly number[]): FinancialHea
   return { score, category: categoryForScore(score) };
 }
 
-/** Puntuación (0..1) por índice de opción (0 = peor); compartida por la web y el MCP. */
+/** Score (0..1) per option index (0 = worst); shared by the website and MCP. */
 export const FINANCIAL_HEALTH_OPTION_SCORES: readonly number[] = [0, 0.34, 0.67, 1];
 
 export const FINANCIAL_HEALTH_OPTIONS = FINANCIAL_HEALTH_OPTION_SCORES.length;
 
-/** Salud financiera a partir del índice de la opción elegida por pregunta; fuera de rango puntúa 0. */
+/** Financial health from the index of the option chosen per question; out-of-range indices score 0. */
 export function scoreFinancialHealthOptions(options: readonly number[]): FinancialHealthResult {
   return computeFinancialHealth(options.map((i) => FINANCIAL_HEALTH_OPTION_SCORES[i] ?? 0));
 }

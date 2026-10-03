@@ -1,4 +1,5 @@
-// Amortización anticipada: compara reducir cuota (mismo plazo) o plazo (misma cuota), con la comisión por amortización anticipada. Core puro.
+// Early mortgage repayment: compares lowering the payment (same term) or the term (same payment), including
+// the early-repayment fee. Pure core.
 
 import { amortizationSchedule, monthlyRate } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
@@ -9,7 +10,10 @@ export interface EarlyRepaymentInput {
   annualRate: number;
   remainingYears: number;
   extraPayment: number;
-  /** Comisión como % del capital amortizado (la ley la limita, p. ej. 2 % en tipo fijo los 10 primeros años); se paga aparte. Por defecto 0. */
+  /**
+   * Fee as a % of the repaid principal (capped by law, e.g. 2% on fixed rates during the first 10 years); paid
+   * separately. Defaults to 0.
+   */
   compensationRate?: number;
 }
 
@@ -17,9 +21,9 @@ export interface EarlyRepaymentResult {
   monthlyPaymentBefore: number;
   totalInterestBefore: number;
   prepaymentFee: number;
-  /** Opción A: misma duración, cuota más baja. */
+  /** Option A: same term, lower payment. */
   reducePayment: { newMonthlyPayment: number; interestSaved: number; netSaved: number };
-  /** Opción B: misma cuota, menos meses. */
+  /** Option B: same payment, fewer months. */
   reduceTerm: { newMonths: number; monthsSaved: number; interestSaved: number; netSaved: number };
 }
 
@@ -41,7 +45,7 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
   const monthlyPaymentBefore = base.monthlyPayment;
   const totalInterestBefore = base.totalInterest;
 
-  // Opción A: reducir cuota (mismo plazo)
+  // Option A: lower the payment (same term)
   const afterPayment = computeMortgage({
     principal: newPrincipal,
     annualRate: input.annualRate,
@@ -54,7 +58,7 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
     netSaved: reducePaymentInterestSaved - prepaymentFee,
   };
 
-  // Opción B: reducir plazo; se simula mes a mes (último pago parcial) para que meses e intereses sean coherentes
+  // Option B: shorten the term; simulated month by month (partial last payment) so months and interest agree
   let newMonths = 0;
   let interestAfterTerm = 0;
   for (const { balanceBefore, interest, principalPart } of amortizationSchedule(
@@ -63,8 +67,8 @@ export function computeEarlyRepayment(input: EarlyRepaymentInput): EarlyRepaymen
     monthlyPaymentBefore,
     totalMonths,
   )) {
-    if (!(balanceBefore > 0.005)) break; // saldo liquidado
-    if (principalPart <= 0) break; // la cuota no cubre ni los intereses
+    if (!(balanceBefore > 0.005)) break; // balance paid off
+    if (principalPart <= 0) break; // the payment does not even cover the interest
     interestAfterTerm += interest;
     newMonths++;
   }

@@ -1,4 +1,5 @@
-// Comprar con hipoteca vs alquilar: coste neto en un horizonte. Core puro. Orientativo: depende mucho de la revalorización y la rentabilidad supuestas.
+// Buying with a mortgage vs renting: net cost over a horizon. Pure core. Indicative only: it depends heavily on
+// the assumed appreciation and return.
 
 import { computeMortgage } from "./hipoteca.js";
 import { clampYears } from "../inputs.js";
@@ -15,7 +16,7 @@ export interface BuyVsRentInput {
   rentGrowthRate: number;
   investmentReturn: number;
   horizonYears: number;
-  /** Gastos de venta al final (% del valor: agencia, plusvalía municipal…); reducen el patrimonio recuperado. */
+  /** Selling costs at the end (% of value: agency, municipal capital gains tax…); they reduce recovered equity. */
   sellingCostsRate?: number;
 }
 
@@ -26,7 +27,7 @@ export interface BuyVsRentResult {
   totalMortgagePaid: number;
   totalRentPaid: number;
   investmentGain: number;
-  /** Alquiler − comprar: positivo = comprar sale mejor. */
+  /** Rent − buy: positive = buying comes out ahead. */
   difference: number;
   cheaper: "buy" | "rent" | "tie";
 }
@@ -53,7 +54,7 @@ export function computeBuyVsRent(input: BuyVsRentInput): BuyVsRentResult {
 
   const balanceEnd = horizon >= term ? 0 : (mortgage.schedule[horizon - 1]?.balance ?? loan);
   const homeValueEnd = price * Math.pow(1 + appreciation, horizon);
-  // Patrimonio neto si vendieras: valor de mercado − gastos de venta − deuda.
+  // Net equity if you sold: market value − selling costs − debt.
   const buyEquityEnd = homeValueEnd * (1 - sellingCostsRate) - balanceEnd;
 
   const buyNetCost = initialOutlay + totalMortgagePaid + ownershipCosts - buyEquityEnd;

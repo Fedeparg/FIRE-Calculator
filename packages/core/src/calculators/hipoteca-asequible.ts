@@ -1,5 +1,5 @@
-// ¿Qué hipoteca me puedo permitir? Combina la regla del esfuerzo, el LTV máximo del banco y el
-// ahorro, que debe cubrir entrada y gastos de compra. Core puro.
+// How much mortgage can I afford? Combines the debt-to-income (effort) rule, the bank's maximum LTV
+// and savings, which must cover the down payment and purchase costs. Pure core.
 
 import { monthlyRate, presentValueOfPayments } from "./amortization.js";
 import { computeMortgage } from "./hipoteca.js";
@@ -9,14 +9,14 @@ export interface AffordabilityInput {
   netMonthlyIncome: number;
   monthlyDebts: number;
   downPayment: number;
-  /** TIN anual de la hipoteca, en base 100 (3 = 3 %). */
+  /** Annual mortgage TIN (nominal rate), in base 100 (3 = 3%). */
   annualRate: number;
   termYears: number;
-  /** Ratio de esfuerzo máximo, en base 100. Por defecto 35 % (criterio del BdE). */
+  /** Maximum debt-to-income (effort) ratio, in base 100. Defaults to 35% (Banco de España guideline). */
   effortRatio?: number;
-  /** Porcentaje máximo del precio que financia el banco. Por defecto 80 %. */
+  /** Maximum percentage of the price the bank finances. Defaults to 80%. */
   maxLtv?: number;
-  /** Gastos de compra (ITP/IVA, notaría…) como % del precio. Por defecto 12 %. */
+  /** Purchase costs (ITP/VAT, notary…) as a % of the price. Defaults to 12%. */
   purchaseCostsRate?: number;
 }
 
@@ -43,24 +43,24 @@ export function computeAffordability(input: AffordabilityInput): AffordabilityRe
   const term = clampYears(input.termYears, 1);
   const n = term * 12;
 
-  // 1) Préstamo máximo por capacidad de pago (regla del esfuerzo).
+  // 1) Maximum loan from repayment capacity (effort rule).
   const maxMonthlyPayment = Math.max(0, income * effort - debts);
   const maxLoanByPayment = presentValueOfPayments(maxMonthlyPayment, i, n);
 
-  // 2) Precio máximo: mayor P con efectivo(P) = P·(1 + gastos) − préstamo(P) ≤ ahorro, siendo
-  //    préstamo(P) = min(maxLoanByPayment, ltv·P); efectivo es monótono creciente.
-  const effLow = 1 + costsRate - ltv; // pendiente del efectivo mientras manda el LTV
+  // 2) Maximum price: the largest P with cash(P) = P·(1 + costs) − loan(P) ≤ savings, where
+  //    loan(P) = min(maxLoanByPayment, ltv·P); cash is monotonically increasing.
+  const effLow = 1 + costsRate - ltv; // slope of cash while the LTV is the binding limit
   const breakpoint = ltv > 0 ? maxLoanByPayment / ltv : Number.POSITIVE_INFINITY;
   const cashAtBreakpoint = Number.isFinite(breakpoint) ? breakpoint * effLow : Number.POSITIVE_INFINITY;
 
   let maxPrice: number;
   let binding: AffordabilityBinding;
   if (savings <= cashAtBreakpoint) {
-    // manda el LTV + ahorro
+    // LTV + savings is the binding limit
     maxPrice = effLow > 0 ? savings / effLow : breakpoint;
     binding = "savings";
   } else {
-    // manda la capacidad de pago
+    // repayment capacity is the binding limit
     maxPrice = (savings + maxLoanByPayment) / (1 + costsRate);
     binding = "income";
   }

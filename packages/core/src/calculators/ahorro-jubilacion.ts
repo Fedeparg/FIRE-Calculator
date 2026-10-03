@@ -1,6 +1,6 @@
-// Ahorro para la jubilación sobre el motor de proyección; renta mensual con la regla del 4 %. Core puro.
-// A diferencia de FIRE, la rentabilidad es nominal y la inflación va aparte; la renta se calcula
-// sobre el valor real para no mostrar euros futuros inflados.
+// Retirement savings on top of the projection engine; monthly income via the 4% rule. Pure core.
+// Unlike FIRE, the return is nominal and inflation is handled separately; the income is computed
+// on the real value so we do not show inflated future euros.
 
 import { project, type ProjectionResult } from "../projection.js";
 import { SAFE_WITHDRAWAL_RATE_PERCENT } from "./fire.js";
@@ -10,7 +10,7 @@ export interface RetirementInput {
   retirementAge: number;
   currentSavings: number;
   monthlySavings: number;
-  /** Rentabilidad anual nominal esperada, en base 100 (6 = 6 %). */
+  /** Expected nominal annual return, in base 100 (6 = 6%). */
   annualReturn: number;
   inflationRate?: number;
   annualFee?: number;
@@ -19,9 +19,9 @@ export interface RetirementInput {
 
 export interface RetirementResult extends ProjectionResult {
   yearsToRetirement: number;
-  /** Renta mensual (regla del 4 %) en euros de hoy. */
+  /** Monthly income (4% rule) in today's euros. */
   monthlyIncome: number;
-  /** Renta mensual (regla del 4 %) en euros nominales del futuro. */
+  /** Monthly income (4% rule) in nominal future euros. */
   monthlyIncomeNominal: number;
 }
 
@@ -39,7 +39,7 @@ export function computeRetirement(input: RetirementInput): RetirementResult {
     contributionGrowth: input.contributionGrowth,
   });
 
-  // Regla del 4 %: renta anual segura = 4 % del patrimonio.
+  // 4% rule: safe annual income = 4% of net worth.
   const withdrawalRate = SAFE_WITHDRAWAL_RATE_PERCENT / 100;
   const monthlyIncome = (projection.finalRealValue * withdrawalRate) / 12;
   const monthlyIncomeNominal = (projection.finalValue * withdrawalRate) / 12;

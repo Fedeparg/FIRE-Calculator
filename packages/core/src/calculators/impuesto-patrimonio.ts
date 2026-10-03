@@ -1,5 +1,5 @@
-// Impuesto sobre el Patrimonio. Estimación con la escala estatal supletoria.
-// Core puro. Orientativo: muchas CCAA bonifican o modifican la escala.
+// Wealth tax (Impuesto sobre el Patrimonio). Estimate using the fallback state scale.
+// Pure core. Indicative only: many CCAA grant rebates or modify the scale.
 
 import {
   WEALTH_TAX_STATE_SCALE,
@@ -11,9 +11,9 @@ import {
 export interface WealthTaxInput {
   totalWealth: number;
   primaryResidenceValue: number;
-  /** Mínimo exento (varía por CCAA). Por defecto 700.000 €. */
+  /** Tax-exempt minimum (varies by CCAA). Defaults to €700,000. */
   exemptMinimum?: number;
-  /** Bonificación autonómica sobre la cuota (%), p. ej. Madrid ~100. */
+  /** Regional rebate on the tax due (%), e.g. Madrid ~100. */
   regionalRebate?: number;
 }
 

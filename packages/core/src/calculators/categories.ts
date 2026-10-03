@@ -1,6 +1,6 @@
-// Familias de calculadoras. Fuente única de los ids: la web les pone etiqueta localizada
-// (`Record<CalculatorCategory, Localized>`, así que un id que falte o sobre no compila) y el
-// servidor MCP los usa como filtro de `list_calculators`.
+// Calculator families. Single source of truth for the ids: the website gives them localized labels
+// (`Record<CalculatorCategory, Localized>`, so a missing or extra id does not compile) and the MCP
+// server uses them as the `list_calculators` filter.
 
 export const CALCULATOR_CATEGORIES = [
   "inversion",

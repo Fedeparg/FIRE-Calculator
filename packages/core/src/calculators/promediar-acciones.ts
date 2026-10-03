@@ -1,4 +1,5 @@
-// Promediar acciones (DCA): precio medio ponderado con comisiones y valoración opcional a precio actual. Core puro.
+// Share price averaging (DCA): weighted average price with commissions and optional valuation at the current
+// price. Pure core.
 
 export interface SharePurchase {
   price: number;
@@ -17,7 +18,7 @@ export interface AveragePriceResult {
   totalCommission: number;
   totalCost: number;
   averagePrice: number;
-  /** Precio de equilibrio por acción (incluye comisiones): a partir de aquí ganas. */
+  /** Break-even price per share (commissions included): above it you are in profit. */
   breakEvenPrice: number;
   marketValue: number | null;
   unrealizedGain: number | null;

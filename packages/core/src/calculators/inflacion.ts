@@ -1,5 +1,5 @@
-// Inflación (IPC): erosión del poder adquisitivo con una tasa media anual. Core puro. Compara el
-// dinero parado con el invertido a una rentabilidad nominal, para ver por qué hay que batir a la inflación.
+// Inflation (IPC, the Spanish CPI): erosion of purchasing power at an average annual rate. Pure core.
+// Compares idle money with money invested at a nominal return, to show why you need to beat inflation.
 
 import { clampYears } from "../inputs.js";
 
@@ -7,16 +7,16 @@ export interface InflationInput {
   amount: number;
   annualRate: number;
   years: number;
-  /** Rentabilidad nominal anual a la que se coloca el dinero, en base 100; 0 = parado. */
+  /** Nominal annual return the money is invested at, in base 100; 0 = idle. */
   nominalReturn?: number;
 }
 
 export interface InflationPoint {
   year: number;
   nominalNeeded: number;
-  /** Poder adquisitivo del importe parado. */
+  /** Purchasing power of the idle amount. */
   realValue: number;
-  /** Poder adquisitivo del importe invertido a `nominalReturn`. */
+  /** Purchasing power of the amount invested at `nominalReturn`. */
   realValueInvested: number;
 }
 
@@ -51,8 +51,8 @@ export function computeInflation(input: InflationInput): InflationResult {
   const realValue = finalFactor !== 0 ? amount / finalFactor : amount;
   const realValueInvested = finalFactor !== 0 ? (amount * Math.pow(1 + ret, years)) / finalFactor : amount;
 
-  // Rentabilidad real anualizada (efecto Fisher exacto): (1+r)/(1+i) − 1. Con una inflación
-  // ≤ −100 % el factor se anula y, como en `realValue`, no se ajusta: queda la nominal.
+  // Annualized real return (exact Fisher equation): (1+r)/(1+i) − 1. With inflation ≤ −100%
+  // the factor drops to zero and, as in `realValue`, no adjustment is made: the nominal remains.
   const realReturn = 1 + rate > 0 ? ((1 + ret) / (1 + rate) - 1) * 100 : ret * 100;
 
   return {

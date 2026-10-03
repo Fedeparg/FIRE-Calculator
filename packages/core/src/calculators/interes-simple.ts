@@ -1,4 +1,4 @@
-// Interés simple (sobre el capital inicial, sin reinvertir), como un depósito español con retención. Core puro.
+// Simple interest (on the initial principal, not reinvested), like a Spanish deposit with withholding. Pure core.
 
 import type { ProjectionPoint } from "../projection.js";
 import { clampYears } from "../inputs.js";
@@ -8,11 +8,11 @@ export interface SimpleInterestInput {
   principal: number;
   annualRate: number;
   years: number;
-  /** Retención sobre los intereses, en base 100; por defecto 19 % (capital mobiliario). */
+  /** Withholding on interest, in base 100; defaults to 19% (investment income, capital mobiliario). */
   withholdingRate?: number;
 }
 
-// misma forma que el motor genérico: compatible con TimeSeriesChart
+// same shape as the generic engine: compatible with TimeSeriesChart
 export type SimpleInterestPoint = ProjectionPoint;
 
 export interface SimpleInterestResult {
