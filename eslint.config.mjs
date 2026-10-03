@@ -27,6 +27,8 @@ const FEATURE_EXCEPTIONS = {
   portfolio: ["scenarios"],
   // La landing compone el widget de donaciones.
   landing: ["donations"],
+  // El mapa calculadora → artículos de la wiki se indexa por el slug tipado del catálogo.
+  wiki: ["calculators"],
 };
 
 const NEXT_LINK = {

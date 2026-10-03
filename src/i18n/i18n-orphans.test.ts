@@ -21,6 +21,8 @@ import { flattenMessages, loadMessages, ROOT } from "./messages-fixtures";
 const DYNAMIC_PREFIXES: readonly string[] = [
   // Compuestas con una plantilla: t(`items.${key}.title`), t(`level.${level}`)…
   "landing.pillars.items.",
+  // Nombre y descripción de cada calculadora: t(`${slug}.name`) sobre el catálogo.
+  "catalog.",
   "wiki.level.",
   "frequency.",
   "region.name.",

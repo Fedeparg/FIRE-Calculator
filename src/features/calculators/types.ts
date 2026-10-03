@@ -19,9 +19,7 @@ export type CategoryId = CalculatorCategory;
 export interface CalculatorMeta {
   /** Identificador y, si está activa, ruta bajo /calculadoras/<slug>. */
   slug: string;
-  name: Localized;
   category: CategoryId;
-  description: Localized;
-  /** Palabras clave (es+en) para el buscador del selector. */
-  keywords: string[];
+  /** Palabras clave (es+en) para el buscador del selector. El nombre y la descripción están en i18n. */
+  keywords: readonly string[];
 }

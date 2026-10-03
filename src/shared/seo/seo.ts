@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { asLocale, LOCALES, type Locale } from "@/i18n/types";
+import { asLocale, DEFAULT_LOCALE, LOCALES, type Locale } from "@/i18n/types";
 import { SITE_NAME } from "./site";
 
 /**
@@ -14,12 +14,12 @@ import { SITE_NAME } from "./site";
 
 /**
  * Ruta pública de una página para un idioma, respetando `localePrefix: as-needed`
- * (es sin prefijo, en con `/en`). `path` debe empezar por `/` y no incluir el
+ * (el idioma por defecto sin prefijo, el resto con `/<locale>`). `path` debe empezar por `/` y no incluir el
  * prefijo de idioma; usa `/` para la home.
  */
 export function localizedPath(locale: Locale, path: string): string {
   const clean = path === "/" ? "" : path;
-  return locale === "es" ? clean || "/" : `/en${clean}`;
+  return locale === DEFAULT_LOCALE ? clean || "/" : `/${locale}${clean}`;
 }
 
 /** Mapa hreflang completo (es, en y x-default → es) para `alternates.languages`. */
@@ -30,7 +30,7 @@ function languageAlternates(path: string): Record<string, string> {
   }
   // x-default apunta al idioma por defecto (castellano): es la versión que se
   // sirve cuando el navegador no coincide con ningún idioma declarado.
-  languages["x-default"] = localizedPath("es", path);
+  languages["x-default"] = localizedPath(DEFAULT_LOCALE, path);
   return languages;
 }
 

@@ -1,3 +1,5 @@
+import { CALCULATORS, type CalculatorSlug } from "@/features/calculators/registry";
+
 /**
  * Mapeo declarativo y central: calculadora → artículos de la wiki relacionados.
  *
@@ -14,7 +16,7 @@
  * - Si una calculadora no aparece aquí (o su lista está vacía), no se
  *   renderiza ningún chip: degradación elegante, sin tocar lógica.
  */
-export const RELATED_ARTICLES: Record<string, readonly string[]> = {
+const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   // Inversión e interés compuesto
   "interes-compuesto": [
     "interes-compuesto",
@@ -93,7 +95,7 @@ export const RELATED_ARTICLES: Record<string, readonly string[]> = {
 };
 
 /** Slugs de artículos relacionados con una calculadora (vacío si no hay). */
-export function getRelatedArticleSlugs(calcSlug: string): readonly string[] {
+export function getRelatedArticleSlugs(calcSlug: CalculatorSlug): readonly string[] {
   return RELATED_ARTICLES[calcSlug] ?? [];
 }
 
@@ -103,10 +105,6 @@ export function getRelatedArticleSlugs(calcSlug: string): readonly string[] {
  * interno bidireccional (desde el artículo de la wiki hacia sus calculadoras),
  * reutilizando el mismo mapeo central como única fuente de verdad.
  */
-export function getRelatedCalculatorSlugs(articleSlug: string): string[] {
-  const calcSlugs: string[] = [];
-  for (const [calcSlug, articleSlugs] of Object.entries(RELATED_ARTICLES)) {
-    if (articleSlugs.includes(articleSlug)) calcSlugs.push(calcSlug);
-  }
-  return calcSlugs;
+export function getRelatedCalculatorSlugs(articleSlug: string): CalculatorSlug[] {
+  return CALCULATORS.map((c) => c.slug).filter((slug) => RELATED_ARTICLES[slug]?.includes(articleSlug));
 }

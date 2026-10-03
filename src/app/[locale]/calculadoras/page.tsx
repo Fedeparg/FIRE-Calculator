@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { CALCULATORS } from "@/features/calculators/registry";
-import { CATEGORIES, type CategoryId } from "@/features/calculators/types";
-import type { Locale } from "@/i18n/types";
+import { CALCULATORS, getUsedCategories } from "@/features/calculators/registry";
+import { CATEGORIES } from "@/features/calculators/types";
+import { asLocale } from "@/i18n/types";
 import { buildMetadata } from "@/shared/seo/seo";
 import Selector, { type SelectorItem } from "@/features/calculators/components/Selector";
 import RouteMessages from "@/i18n/RouteMessages";
@@ -23,19 +23,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function CalculatorsIndex({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const l = locale as Locale;
+  const l = asLocale(locale);
   const t = await getTranslations("selector");
+  const tCatalog = await getTranslations("catalog");
 
-  const items: SelectorItem[] = CALCULATORS.map((c) => ({
-    slug: c.slug,
-    name: c.name[l],
-    description: c.description[l],
-    category: c.category,
-    search: [c.name[l], c.description[l], ...c.keywords].join(" "),
-  }));
+  const items: SelectorItem[] = CALCULATORS.map((c) => {
+    const name = tCatalog(`${c.slug}.name`);
+    const description = tCatalog(`${c.slug}.description`);
+    return {
+      slug: c.slug,
+      name,
+      description,
+      category: c.category,
+      search: [name, description, ...c.keywords].join(" "),
+    };
+  });
 
-  const usedCategories = [...new Set(CALCULATORS.map((c) => c.category))] as CategoryId[];
-  const categories = usedCategories.map((id) => ({ id, label: CATEGORIES[id][l] }));
+  const categories = getUsedCategories().map((id) => ({ id, label: CATEGORIES[id][l] }));
 
   return (
     <RouteMessages route="calculadoras">

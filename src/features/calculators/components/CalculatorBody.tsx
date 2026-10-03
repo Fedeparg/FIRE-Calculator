@@ -3,15 +3,18 @@
 import dynamic from "next/dynamic";
 import type { ComponentType } from "react";
 
+import type { CalculatorSlug } from "@/features/calculators/registry";
+
 /**
  * Componente de cada calculadora, por slug. Una sola ruta (`calculadoras/[slug]`) sirve las 27:
  * `next/dynamic` en un componente de CLIENTE parte el JS por calculadora (desde un componente de
  * servidor no habría división automática, según la guía de lazy loading de Next) y mantiene el
  * SSR. `import()` tiene que ir escrito literalmente dentro de `dynamic()` para que Next lo enlace.
  *
- * Para añadir una calculadora: una línea aquí (además del registry, i18n y explainer).
+ * Para añadir una calculadora: una línea aquí (además del registry, i18n y explainer). El tipo
+ * `Record<CalculatorSlug, …>` hace que olvidarla (o dejar una de más) sea un error de compilación.
  */
-export const CALCULATOR_COMPONENTS: Record<string, ComponentType> = {
+export const CALCULATOR_COMPONENTS = {
   "ahorro-jubilacion": dynamic(() => import("./RetirementCalculator")),
   "amortizacion-anticipada": dynamic(() => import("./EarlyRepaymentCalculator")),
   "cuenta-remunerada": dynamic(() => import("./SavingsAccountCalculator")),
@@ -39,9 +42,9 @@ export const CALCULATOR_COMPONENTS: Record<string, ComponentType> = {
   "salud-financiera": dynamic(() => import("./FinancialHealthQuiz")),
   "simulador-montecarlo": dynamic(() => import("./MonteCarloCalculator")),
   staking: dynamic(() => import("./StakingCalculator")),
-};
+} satisfies Record<CalculatorSlug, ComponentType>;
 
-export default function CalculatorBody({ slug }: { slug: string }) {
+export default function CalculatorBody({ slug }: { slug: CalculatorSlug }) {
   const Calculator = CALCULATOR_COMPONENTS[slug];
-  return Calculator ? <Calculator /> : null;
+  return <Calculator />;
 }

@@ -89,6 +89,116 @@
     "open": "Open",
     "resultsCount": "{count, plural, =0 {No results} =1 {1 calculator} other {# calculators}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Compound interest",
+      "description": "Project your investment growth with regular contributions."
+    },
+    "independencia-financiera": {
+      "name": "Financial independence (FIRE)",
+      "description": "Work out your FIRE number and how many years until you can live off your assets."
+    },
+    "simulador-montecarlo": {
+      "name": "FIRE Monte Carlo simulator",
+      "description": "Probability of reaching FIRE and of your money lasting through retirement, across thousands of scenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Fixed-rate mortgage",
+      "description": "Monthly payment, total interest and amortization schedule."
+    },
+    "interes-simple": {
+      "name": "Simple interest",
+      "description": "Basic simple-interest calculation."
+    },
+    "promediar-acciones": {
+      "name": "Average down (DCA)",
+      "description": "Weighted average price of your purchases."
+    },
+    "dividendos": {
+      "name": "Stock dividends",
+      "description": "Dividend income and withholding."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Return on investment."
+    },
+    "staking": {
+      "name": "Staking interest (crypto)",
+      "description": "Yield from crypto staking."
+    },
+    "ahorro-jubilacion": {
+      "name": "Retirement savings",
+      "description": "How much to save for retirement."
+    },
+    "presupuesto-mensual": {
+      "name": "Monthly budget",
+      "description": "Organize income and expenses (50/30/20 rule)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "How much mortgage can I afford?",
+      "description": "Maximum amount based on your income."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Buy vs rent",
+      "description": "Buying or renting: a comparison."
+    },
+    "amortizacion-anticipada": {
+      "name": "Early repayment",
+      "description": "Reduce payment or term by repaying early."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rental yield",
+      "description": "Gross and net yield of a property."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Holiday rental yield",
+      "description": "Yield of a holiday let."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Fixed-term deposit",
+      "description": "Interest on a bank deposit."
+    },
+    "cuenta-remunerada": {
+      "name": "High-yield account",
+      "description": "Return of a high-yield savings account."
+    },
+    "impuesto-donaciones": {
+      "name": "Gift tax",
+      "description": "Estimate by region and kinship."
+    },
+    "impuesto-patrimonio": {
+      "name": "Wealth tax",
+      "description": "Estimate by wealth and region."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Pension plan tax relief",
+      "description": "Tax savings from pension contributions."
+    },
+    "salario-bruto-neto": {
+      "name": "Gross to net salary",
+      "description": "From gross to net monthly salary."
+    },
+    "irpf-nomina": {
+      "name": "Payroll income tax",
+      "description": "Income-tax withholding on payroll."
+    },
+    "irpf-autonomos": {
+      "name": "Self-employed income tax",
+      "description": "Income tax for the self-employed."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Credit card interest",
+      "description": "Cost of revolving debt."
+    },
+    "inflacion": {
+      "name": "Inflation (CPI)",
+      "description": "Purchasing power over time."
+    },
+    "salud-financiera": {
+      "name": "Financial health test",
+      "description": "A quiz about your finances."
+    }
+  },
   "common": {
     "back": "Back to calculators",
     "disclaimerShort": "Information, not tax or financial advice.",

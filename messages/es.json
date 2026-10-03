@@ -89,6 +89,116 @@
     "open": "Abrir",
     "resultsCount": "{count, plural, =0 {Sin resultados} =1 {1 calculadora} other {# calculadoras}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Interés compuesto",
+      "description": "Proyecta el crecimiento de tus inversiones con aportaciones periódicas."
+    },
+    "independencia-financiera": {
+      "name": "Independencia financiera (FIRE)",
+      "description": "Calcula tu número FIRE y en cuántos años puedes vivir de tus rentas."
+    },
+    "simulador-montecarlo": {
+      "name": "Simulador FIRE Monte Carlo",
+      "description": "Probabilidad de alcanzar FIRE y de que tu dinero dure toda la jubilación, en miles de escenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Hipoteca a tipo fijo",
+      "description": "Cuota mensual, intereses totales y cuadro de amortización."
+    },
+    "interes-simple": {
+      "name": "Interés simple",
+      "description": "Cálculo básico de interés simple."
+    },
+    "promediar-acciones": {
+      "name": "Promediar acciones (DCA)",
+      "description": "Precio medio ponderado de tus compras."
+    },
+    "dividendos": {
+      "name": "Dividendos de acciones",
+      "description": "Ingresos por dividendos y retención."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Retorno de la inversión."
+    },
+    "staking": {
+      "name": "Intereses de staking (cripto)",
+      "description": "Rendimiento de staking en criptoactivos."
+    },
+    "ahorro-jubilacion": {
+      "name": "Ahorro para la jubilación",
+      "description": "Cuánto necesitas ahorrar para tu jubilación."
+    },
+    "presupuesto-mensual": {
+      "name": "Presupuesto mensual",
+      "description": "Organiza ingresos y gastos (regla 50/30/20)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "¿Qué hipoteca me puedo permitir?",
+      "description": "Importe máximo según tus ingresos."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Hipoteca vs alquiler",
+      "description": "Comprar o alquilar: comparativa."
+    },
+    "amortizacion-anticipada": {
+      "name": "Amortización anticipada",
+      "description": "Reducir cuota o plazo amortizando antes."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rentabilidad de alquiler",
+      "description": "Rentabilidad bruta y neta de un inmueble."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Rentabilidad alquiler vacacional",
+      "description": "Rentabilidad de un alquiler turístico."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Depósito a plazo fijo",
+      "description": "Intereses de un depósito bancario."
+    },
+    "cuenta-remunerada": {
+      "name": "Cuenta remunerada",
+      "description": "Rentabilidad de una cuenta remunerada."
+    },
+    "impuesto-donaciones": {
+      "name": "Impuesto de donaciones",
+      "description": "Estimación por CCAA y parentesco."
+    },
+    "impuesto-patrimonio": {
+      "name": "Impuesto sobre el patrimonio",
+      "description": "Estimación según patrimonio y CCAA."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Desgravación plan de pensiones",
+      "description": "Ahorro fiscal por aportar a un plan."
+    },
+    "salario-bruto-neto": {
+      "name": "Salario bruto a neto",
+      "description": "De salario bruto a neto mensual."
+    },
+    "irpf-nomina": {
+      "name": "IRPF nómina",
+      "description": "Retención de IRPF en nómina."
+    },
+    "irpf-autonomos": {
+      "name": "IRPF autónomos",
+      "description": "IRPF para autónomos."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Intereses de tarjeta de crédito",
+      "description": "Coste de la deuda revolving."
+    },
+    "inflacion": {
+      "name": "Inflación (IPC)",
+      "description": "Poder adquisitivo a lo largo del tiempo."
+    },
+    "salud-financiera": {
+      "name": "Test de salud financiera",
+      "description": "Cuestionario sobre tus finanzas."
+    }
+  },
   "common": {
     "back": "Volver a las calculadoras",
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
