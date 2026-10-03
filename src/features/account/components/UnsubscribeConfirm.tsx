@@ -8,10 +8,10 @@ import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
 
 /**
- * Confirmación de baja de los avisos por email. La baja es un POST explícito tras pulsar el
- * botón, nunca al abrir la página: los escáneres de enlaces del correo abren todo lo que ven y
- * darían de baja a la gente sin querer. El token del enlace es la identidad (no hace falta
- * sesión) y la API responde igual sea válido o no, así que aquí no se distingue.
+ * Confirmation for unsubscribing from email alerts. Unsubscribing is an explicit POST after the
+ * button is pressed, never on page load: email link scanners open everything they see and would
+ * unsubscribe people unintentionally. The link's token is the identity (no session needed) and
+ * the API responds the same whether it is valid or not, so no distinction is made here.
  */
 export default function UnsubscribeConfirm({ token }: { token: string | null }) {
   const t = useTranslations("unsubscribe");

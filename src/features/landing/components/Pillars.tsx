@@ -8,7 +8,7 @@ const PILLARS = [
   { key: "learn", Icon: IconLearn },
 ] as const;
 
-/** Propuesta de valor: cuatro pilares con ilustración. */
+/** Value proposition: four illustrated pillars. */
 export default function Pillars() {
   const t = useTranslations("landing.pillars");
 

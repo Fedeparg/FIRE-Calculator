@@ -15,7 +15,7 @@ const variants = {
   secondary: "border border-border bg-surface text-foreground hover:border-brand",
 } as const;
 
-/** Botón-enlace reutilizable del landing (consciente del locale). */
+/** Reusable landing link styled as a button (locale-aware). */
 export default function CtaLink({ href, children, variant = "primary", className = "" }: Props) {
   return (
     <Link href={href} className={`${base} ${variants[variant]} ${className}`}>

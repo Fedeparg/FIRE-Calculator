@@ -10,21 +10,21 @@ import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 const NOTIFICATIONS_PATH = "/api/account/notifications";
-// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
+// Module-level constant: `useApiQuery` requires options that are stable across renders.
 
 /**
- * Avisos por email de los hitos del objetivo FIRE (25/50/75/100 %). Opt-in: la casilla arranca
- * desmarcada hasta que el usuario la activa. Al activarlos se guarda el idioma de la interfaz,
- * que es en el que llegarán los correos.
+ * Email alerts for FIRE goal milestones (25/50/75/100 %). Opt-in: the checkbox starts unchecked
+ * until the user enables it. Enabling them stores the interface language, which is the language
+ * the emails will be sent in.
  *
- * Solo refleja lo que diga la API: la preferencia la decide y la guarda el servidor.
+ * It only reflects what the API says: the server decides and stores the preference.
  */
 export default function NotificationSettings() {
   const t = useTranslations("account.notifications");
   const alertsId = useId();
   const locale = useLocale() === "en" ? "en" : "es";
   const query = useApiQuery<NotificationSettingsResponse>(NOTIFICATIONS_PATH, { init: NO_STORE });
-  // Lo guardado (respuesta del PATCH) manda sobre la carga inicial.
+  // The saved value (the PATCH response) takes precedence over the initial load.
   const [saved, setSaved] = useState<NotificationSettingsResponse | null>(null);
   const save = useApiMutation();
 

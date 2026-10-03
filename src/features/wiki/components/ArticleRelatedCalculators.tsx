@@ -3,17 +3,16 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
 type Props = {
-  /** Calculadoras relacionadas, ya resueltas (con el nombre en el idioma activo) por la ruta. */
+  /** Related calculators, already resolved by the route (with names in the active locale). */
   calculators: readonly { slug: string; name: string }[];
 };
 
 /**
- * Enlazado interno inverso: desde un artículo hacia las calculadoras que lo
- * referencian (la ruta resuelve el mapeo de `related-articles.ts` contra el registry, para que
- * la wiki no dependa de las calculadoras). Complementa los chips de
- * "sigue aprendiendo" que van en sentido calculadora → artículo, cerrando el
- * círculo de enlaces. Degradación elegante: si no hay calculadoras
- * relacionadas, no se renderiza nada.
+ * Reverse internal linking: from an article to the calculators that reference it (the route
+ * resolves the `related-articles.ts` mapping against the registry, so the wiki does not depend
+ * on the calculators). It complements the "sigue aprendiendo" (keep learning) chips that go from
+ * calculator → article, closing the link loop. Graceful degradation: if there are no related
+ * calculators, nothing is rendered.
  */
 export default async function ArticleRelatedCalculators({ calculators }: Props) {
   if (calculators.length === 0) return null;

@@ -1,18 +1,18 @@
-/** Hosts de loopback a los que se permite volver por `http:` (clientes nativos, RFC 8252 §7.3). */
+/** Loopback hosts we may return to over `http:` (native clients, RFC 8252 §7.3). */
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
-/** Fallback cuando no hay una `redirect_uri` de confianza: la portada, en nuestro origen. */
+/** Fallback when there is no trusted `redirect_uri`: the home page, on our origin. */
 const SAFE_FALLBACK = "/";
 
 /**
- * Destino del botón "Denegar" de la pantalla de consentimiento: la `redirect_uri` del flujo con
- * `error=access_denied` (y el `state`), como manda OAuth 2.1, o `/` si no es de confianza.
+ * Target of the consent screen's "Denegar" (Deny) button: the flow's `redirect_uri` with
+ * `error=access_denied` (and the `state`), as OAuth 2.1 requires, or `/` if it is not trusted.
  *
- * `authorizeParams` llega en la query de `/oauth/consent`, que controla quien envía el enlace,
- * así que su `redirect_uri` no se cree sin más: tiene que ser EXACTAMENTE una de las registradas
- * por el cliente (lo mismo que exige el servidor en el camino de aprobación) y usar `https:`, o
- * `http:` solo en loopback. Así se cierran el `javascript:` (XSS en nuestro origen) y el open
- * redirect a un dominio arbitrario. Sin lista registrada (la API no respondió) se va a `/`.
+ * `authorizeParams` arrives in the `/oauth/consent` query, which whoever sends the link controls,
+ * so its `redirect_uri` is not taken at face value: it must be EXACTLY one of those registered by
+ * the client (the same check the server applies on the approval path) and use `https:`, or
+ * `http:` only on loopback. This closes both `javascript:` (XSS on our origin) and the open
+ * redirect to an arbitrary domain. Without a registered list (the API did not respond) it goes to `/`.
  */
 export function denyRedirectTarget(
   authorizeParams: string,
@@ -21,7 +21,7 @@ export function denyRedirectTarget(
 ): string {
   const params = new URLSearchParams(authorizeParams);
   const redirectUri = params.get("redirect_uri");
-  // La lista registrada es la de `clientId`: una query que hable de otro cliente no vale.
+  // The registered list belongs to `clientId`: a query naming another client is rejected.
   if (!redirectUri || params.get("client_id") !== clientId || !registeredRedirectUris.includes(redirectUri)) {
     return SAFE_FALLBACK;
   }

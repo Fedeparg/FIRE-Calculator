@@ -10,9 +10,9 @@ import Button from "@/shared/ui/Button";
 type Props = {
   clientId: string;
   scopes: string[];
-  /** Query original de `/authorize` para reanudar el flujo tras aprobar. */
+  /** Original `/authorize` query, used to resume the flow after approval. */
   authorizeParams: string;
-  /** `redirect_uris` registradas por el cliente (vacía si la API no respondió). */
+  /** `redirect_uris` registered by the client (empty if the API did not respond). */
   redirectUris: readonly string[];
 };
 
@@ -22,27 +22,27 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 /**
- * Acciones de la pantalla de consentimiento. Al permitir, registra el consentimiento en la
- * API y reanuda el flujo de `/authorize` (que emitirá el código). Al denegar, devuelve el
- * control al cliente con `error=access_denied` si su `redirect_uri` está registrada. Ver `_local/mcp-integracion.md`.
+ * Consent screen actions. On allow, it records the consent in the API and resumes the
+ * `/authorize` flow (which will issue the code). On deny, it hands control back to the client
+ * with `error=access_denied` if its `redirect_uri` is registered. See `_local/mcp-integracion.md`.
  */
 export default function ConsentClient({ clientId, scopes, authorizeParams, redirectUris }: Props) {
   const t = useTranslations("oauth.consent");
   const consent = useApiMutation();
-  // `success` cuenta como trabajando: el botón sigue deshabilitado hasta que la navegación termine.
+  // `success` counts as busy: the button stays disabled until the navigation completes.
   const working = consent.status === "pending" || consent.status === "success";
 
   async function allow() {
     const result = await consent.run(() =>
       apiFetch("/api/oauth/consent", { method: "POST", body: { clientId, scopes } }),
     );
-    // Reanuda en NUESTRO origen (no es redirect abierto): el AS emitirá el código.
+    // Resume on OUR origin (not an open redirect): the AS will issue the code.
     if (result.ok) window.location.assign(`/authorize?${authorizeParams}`);
   }
 
   function deny() {
-    // Devuelve el control al cliente con error=access_denied (flujo OAuth correcto), pero solo
-    // a una redirect_uri registrada: la query no es de fiar (ver `denyRedirectTarget`).
+    // Hand control back to the client with error=access_denied (the correct OAuth flow), but
+    // only to a registered redirect_uri: the query is untrusted (see `denyRedirectTarget`).
     window.location.assign(denyRedirectTarget(authorizeParams, clientId, redirectUris));
   }
 

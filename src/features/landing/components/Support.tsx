@@ -5,9 +5,9 @@ import { DONATIONS_ENABLED } from "@/features/donations/config";
 import { Link } from "@/i18n/navigation";
 
 /**
- * Bloque de apoyo del landing: explica que Sextante es gratis y obra de una persona,
- * y ofrece el widget de donación. Solo se renderiza si las donaciones están activas
- * (NEXT_PUBLIC_DONATIONS_ENABLED=1); si no, no aparece nada.
+ * Landing support block: explains that Sextante is free and built by one person, and offers
+ * the donation widget. It only renders when donations are enabled
+ * (NEXT_PUBLIC_DONATIONS_ENABLED=1); otherwise nothing is shown.
  */
 export default function Support() {
   const t = useTranslations("donations.landing");
