@@ -72,7 +72,7 @@ export const loginTokens = pgTable(
   },
   (table) => [
     index('login_tokens_email_created_at_idx').on(table.email, table.createdAt),
-    // La poda horaria del reaper borra por antigüedad: sin él, un seq scan cada hora.
+    // La poda horaria de `jobs/data-retention.ts` borra por antigüedad: sin él, un seq scan cada hora.
     index('login_tokens_created_at_idx').on(table.createdAt),
   ],
 );
@@ -502,7 +502,7 @@ export const oauthAuthCodes = pgTable(
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  // La poda horaria del reaper borra los caducados.
+  // La poda horaria de `jobs/data-retention.ts` borra los caducados.
   (table) => [index('oauth_auth_codes_expires_at_idx').on(table.expiresAt)],
 );
 
@@ -533,7 +533,7 @@ export const oauthTokens = pgTable(
   (table) => [
     index('oauth_tokens_user_id_idx').on(table.userId),
     index('oauth_tokens_user_client_idx').on(table.userId, table.clientId),
-    // La poda horaria del reaper borra los caducados.
+    // La poda horaria de `jobs/data-retention.ts` borra los caducados.
     index('oauth_tokens_expires_at_idx').on(table.expiresAt),
   ],
 );
@@ -554,7 +554,7 @@ export const mcpAuditLog = pgTable(
   },
   (table) => [
     index('mcp_audit_log_user_id_idx').on(table.userId),
-    // La tabla crece sin límite y el reaper de retención la poda por fecha: sin este índice
+    // La tabla crece sin límite y `jobs/data-retention.ts` la poda por fecha: sin este índice
     // esa purga y las consultas por rango harían seq scan. Descendente: se consulta lo reciente.
     index('mcp_audit_log_created_at_idx').on(table.createdAt.desc()),
   ],

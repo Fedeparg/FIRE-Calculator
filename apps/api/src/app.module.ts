@@ -12,6 +12,7 @@ import { DatabaseModule } from './db/database.module.js';
 import { DonationsModule } from './donations/donations.module.js';
 import { EmailModule } from './email/email.module.js';
 import { DailyJobsModule } from './jobs/daily-jobs.module.js';
+import { DataRetentionModule } from './jobs/data-retention.module.js';
 import { parseEnv } from './config/env.js';
 import { ErrorTranslationFilter } from './common/error-translation.filter.js';
 import { FxReferenceModule } from './fx-reference/fx-reference.module.js';
@@ -51,6 +52,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
     PortfolioModule,
     ScenariosModule,
     DailyJobsModule,
+    DataRetentionModule,
     OauthModule,
     McpModule,
     AccountModule,

@@ -51,8 +51,8 @@ Se lanzan con `pnpm --filter @sextante/api <script>` desde la raíz.
 | `src/portfolio/` | Valoración y P&L de la cartera (`valuation.ts`) e histórico diario de valoración (`portfolio-snapshots.service.ts`). |
 | `src/scenarios/` | Escenarios guardados de calculadora (jsonb acotado en tamaño y cantidad). |
 | `src/notifications/` | Avisos por email al cruzar el 25/50/75/100 % del objetivo FIRE, con baja en un clic. |
-| `src/jobs/` | Crons: refresco nocturno de precios → captura de snapshots, y refresco de precios intradía. |
-| `src/oauth/` | Authorization Server OAuth 2.1 del MCP: clientes, grants, códigos, tokens y reaper. |
+| `src/jobs/` | Crons: refresco nocturno de precios → captura de snapshots, refresco de precios intradía y poda de datos caducados (`data-retention.ts`: tokens, magic links, auditoría MCP y clientes DCR abandonados). |
+| `src/oauth/` | Authorization Server OAuth 2.1 del MCP: clientes, grants, códigos y tokens. |
 | `src/mcp/` | Servidor MCP remoto (Streamable HTTP): 21 tools de cartera y las 2 genéricas de calculadoras, `list_calculators` + `calculate` (`mcp.service.ts`), el registro de calculadoras con sus esquemas zod (`calculator-tools.ts`) y el log de auditoría. |
 | `src/account/` | Cuenta del usuario: apps conectadas, export y borrado (RGPD). |
 | `src/donations/` | Sesión de Stripe Checkout para las donaciones. |

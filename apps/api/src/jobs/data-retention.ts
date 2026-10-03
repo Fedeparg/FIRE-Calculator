@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
-import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -12,6 +12,12 @@ import { errorMessage } from '../common/errors.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
 const DEFAULT_CRON = '0 15 * * * *';
+
+/**
+ * Filas por `DELETE`. Borrar por lotes acota la duración de cada sentencia (y de sus cerrojos)
+ * y el WAL de una sola transacción si se acumula mucho, p. ej. tras subir una retención.
+ */
+export const RETENTION_BATCH_SIZE = 10_000;
 
 /**
  * Retenciones (defecto en `config/env.ts`), en días. Criterios:
@@ -35,7 +41,9 @@ export interface ReapSummary {
 
 /**
  * Poda periódica de las tablas que crecen sin límite. Higiene de la base de datos y
- * minimización de datos (RGPD): nada que ya no sirva debe seguir almacenado.
+ * minimización de datos (RGPD): nada que ya no sirva debe seguir almacenado. Vive en `jobs/`
+ * y no en `oauth/` porque poda también tablas que no son de OAuth (`login_tokens`,
+ * `mcp_audit_log`).
  *
  * Qué borra y por qué:
  *  1. Códigos de autorización y tokens OAuth caducados (`expiresAt < now`). Se borran solo
@@ -46,12 +54,12 @@ export interface ReapSummary {
  *  3. `mcp_audit_log` más antiguo que la retención configurada.
  *  4. `oauth_clients` registrados por DCR, antiguos y ABANDONADOS.
  *
- * Análogo al `DailyJobsScheduler`. Configurable con `OAUTH_REAPER_CRON` y con las variables
- * `*_RETENTION_DAYS` (ver `.env.example`).
+ * Configurable con `OAUTH_REAPER_CRON` (se conserva el nombre de la variable para no tocar el
+ * entorno de producción) y con las variables `*_RETENTION_DAYS` (ver `.env.example`).
  */
 @Injectable()
-export class OAuthReaper implements OnModuleInit {
-  private readonly logger = new Logger(OAuthReaper.name);
+export class DataRetentionJob implements OnModuleInit {
+  private readonly logger = new Logger(DataRetentionJob.name);
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -61,7 +69,7 @@ export class OAuthReaper implements OnModuleInit {
 
   onModuleInit(): void {
     const cronTime = scheduleFromEnv(this.registry, {
-      name: 'oauth-reaper',
+      name: 'data-retention',
       cronTime: this.config.get('OAUTH_REAPER_CRON', { infer: true }),
       defaultCron: DEFAULT_CRON,
       handler: () => void this.runSafely(),
@@ -105,20 +113,36 @@ export class OAuthReaper implements OnModuleInit {
     return summary;
   }
 
-  private async reapExpiredAuthCodes(now: Date): Promise<number> {
-    const rows = await this.db
-      .delete(oauthAuthCodes)
-      .where(lt(oauthAuthCodes.expiresAt, now))
-      .returning({ codeHash: oauthAuthCodes.codeHash });
-    return rows.length;
+  private reapExpiredAuthCodes(now: Date): Promise<number> {
+    const where = lt(oauthAuthCodes.expiresAt, now);
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthAuthCodes)
+        .where(
+          inArray(
+            oauthAuthCodes.codeHash,
+            this.db
+              .select({ key: oauthAuthCodes.codeHash })
+              .from(oauthAuthCodes)
+              .where(where)
+              .limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
   }
 
-  private async reapExpiredTokens(now: Date): Promise<number> {
-    const rows = await this.db
-      .delete(oauthTokens)
-      .where(lt(oauthTokens.expiresAt, now))
-      .returning({ tokenHash: oauthTokens.tokenHash });
-    return rows.length;
+  private reapExpiredTokens(now: Date): Promise<number> {
+    const where = lt(oauthTokens.expiresAt, now);
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthTokens)
+        .where(
+          inArray(
+            oauthTokens.tokenHash,
+            this.db.select({ key: oauthTokens.tokenHash }).from(oauthTokens).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
   }
 
   /**
@@ -126,27 +150,36 @@ export class OAuthReaper implements OnModuleInit {
    * retención. La condición de antigüedad va sobre `createdAt`, no sobre `expiresAt`: es la
    * fecha que fija de verdad cuánto tiempo llevamos guardando el dato.
    */
-  private async reapLoginTokens(now: Date): Promise<number> {
+  private reapLoginTokens(now: Date): Promise<number> {
     const cutoff = this.cutoff(now, 'LOGIN_TOKEN_RETENTION_DAYS');
-    const rows = await this.db
-      .delete(loginTokens)
-      .where(
-        and(
-          lt(loginTokens.createdAt, cutoff),
-          or(lt(loginTokens.expiresAt, now), sql`${loginTokens.consumedAt} is not null`),
+    const where = and(
+      lt(loginTokens.createdAt, cutoff),
+      or(lt(loginTokens.expiresAt, now), sql`${loginTokens.consumedAt} is not null`),
+    );
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(loginTokens)
+        .where(
+          inArray(
+            loginTokens.id,
+            this.db.select({ key: loginTokens.id }).from(loginTokens).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
         ),
-      )
-      .returning({ id: loginTokens.id });
-    return rows.length;
+    );
   }
 
-  private async reapAuditLog(now: Date): Promise<number> {
-    const cutoff = this.cutoff(now, 'MCP_AUDIT_RETENTION_DAYS');
-    const rows = await this.db
-      .delete(mcpAuditLog)
-      .where(lt(mcpAuditLog.createdAt, cutoff))
-      .returning({ id: mcpAuditLog.id });
-    return rows.length;
+  private reapAuditLog(now: Date): Promise<number> {
+    const where = lt(mcpAuditLog.createdAt, this.cutoff(now, 'MCP_AUDIT_RETENTION_DAYS'));
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(mcpAuditLog)
+        .where(
+          inArray(
+            mcpAuditLog.id,
+            this.db.select({ key: mcpAuditLog.id }).from(mcpAuditLog).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
   }
 
   /**
@@ -159,30 +192,48 @@ export class OAuthReaper implements OnModuleInit {
    * escribía hasta ahora, así que todas las filas existentes lo tienen a NULL y solo el
    * criterio "sin grants ni tokens" las salva. Un cliente en uso real siempre tiene grant.
    */
-  private async reapAbandonedClients(now: Date): Promise<number> {
+  private reapAbandonedClients(now: Date): Promise<number> {
     const cutoff = this.cutoff(now, 'OAUTH_CLIENT_RETENTION_DAYS');
-    const rows = await this.db
-      .delete(oauthClients)
-      .where(
-        and(
-          lt(oauthClients.createdAt, cutoff),
-          or(isNull(oauthClients.lastUsedAt), lt(oauthClients.lastUsedAt, cutoff)),
-          notExists(
-            this.db
-              .select({ one: sql`1` })
-              .from(oauthGrants)
-              .where(eq(oauthGrants.clientId, oauthClients.clientId)),
-          ),
-          notExists(
-            this.db
-              .select({ one: sql`1` })
-              .from(oauthTokens)
-              .where(eq(oauthTokens.clientId, oauthClients.clientId)),
+    const where = and(
+      lt(oauthClients.createdAt, cutoff),
+      or(isNull(oauthClients.lastUsedAt), lt(oauthClients.lastUsedAt, cutoff)),
+      notExists(
+        this.db
+          .select({ one: sql`1` })
+          .from(oauthGrants)
+          .where(eq(oauthGrants.clientId, oauthClients.clientId)),
+      ),
+      notExists(
+        this.db
+          .select({ one: sql`1` })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.clientId, oauthClients.clientId)),
+      ),
+    );
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthClients)
+        .where(
+          inArray(
+            oauthClients.clientId,
+            this.db.select({ key: oauthClients.clientId }).from(oauthClients).where(where).limit(RETENTION_BATCH_SIZE),
           ),
         ),
-      )
-      .returning({ clientId: oauthClients.clientId });
-    return rows.length;
+    );
+  }
+
+  /**
+   * Repite el `DELETE` de un lote hasta que borra menos de `RETENTION_BATCH_SIZE` filas. Cuenta
+   * con el `count` que devuelve postgres-js, sin `RETURNING` (que traería las claves solo para
+   * contarlas).
+   */
+  private async deleteInBatches(deleteBatch: () => PromiseLike<{ count: number }>): Promise<number> {
+    let total = 0;
+    for (;;) {
+      const { count } = await deleteBatch();
+      total += count;
+      if (count < RETENTION_BATCH_SIZE) return total;
+    }
   }
 
   /** Fecha de corte para una retención configurable (ya validada, con su defecto, en `config/env.ts`). */

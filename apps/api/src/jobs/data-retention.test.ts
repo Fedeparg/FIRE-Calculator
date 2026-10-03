@@ -2,14 +2,14 @@ import { randomBytes } from 'node:crypto';
 
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { OAuthReaper } from './oauth-reaper.js';
+import { DataRetentionJob, RETENTION_BATCH_SIZE } from './data-retention.js';
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -23,7 +23,7 @@ const clientData = (clientId: string): OAuthClientInformationFull => ({
   redirect_uris: ['http://localhost:9999/callback'],
 });
 
-describe('OAuthReaper (integración con Postgres)', () => {
+describe('DataRetentionJob (integración con Postgres)', () => {
   let db: Database;
   let close: () => Promise<void>;
 
@@ -40,11 +40,11 @@ describe('OAuthReaper (integración con Postgres)', () => {
   });
 
   /**
-   * Construye el reaper con las variables de entorno indicadas. NO se llama a
+   * Construye el trabajo de limpieza con las variables de entorno indicadas. NO se llama a
    * `onModuleInit()` en los tests: registraría un CronJob real.
    */
-  function reaper(env: Record<string, string> = {}): OAuthReaper {
-    return new OAuthReaper(db, fakeConfig(env), {} as SchedulerRegistry);
+  function reaper(env: Record<string, string> = {}): DataRetentionJob {
+    return new DataRetentionJob(db, fakeConfig(env), {} as SchedulerRegistry);
   }
 
   async function insertClient(clientId: string, opts: { createdAt: Date; lastUsedAt?: Date }) {
@@ -185,6 +185,19 @@ describe('OAuthReaper (integración con Postgres)', () => {
         .values({ userId, clientId: 'c1', tool: 'list', outcome: 'ok', createdAt: daysAgo(10) });
 
       expect((await reaper({ MCP_AUDIT_RETENTION_DAYS: '5' }).run()).auditEntries).toBe(1);
+    });
+
+    it('borra por lotes cuando hay más filas que el tamaño de lote', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const total = RETENTION_BATCH_SIZE * 2 + 5;
+      await db.execute(sql`
+        insert into mcp_audit_log (user_id, client_id, tool, outcome, created_at)
+        select ${userId}, 'c1', 'list', 'ok', now() - interval '200 days'
+        from generate_series(1, ${total})
+      `);
+
+      expect((await reaper().run()).auditEntries).toBe(total);
+      expect(await db.select().from(mcpAuditLog)).toHaveLength(0);
     });
 
     it('ignora una retención inválida y cae al valor por defecto', async () => {
