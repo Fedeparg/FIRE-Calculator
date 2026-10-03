@@ -6,29 +6,29 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { portfolioSnapshots } from '../db/schema.js';
 import type { DatabaseOrTransaction } from '../positions/position-access.js';
 
-/** Filas por sentencia al escribir el histórico reconstruido (evita una sentencia por día). */
+/** Rows per statement when writing the rebuilt history (avoids one statement per day). */
 const CHUNK_SIZE = 200;
 
-/** Fila de `portfolio_snapshots` lista para insertar: los valores del día, de quién y si es estimada. */
+/** A `portfolio_snapshots` row ready to insert: the day's values, whose they are and whether estimated. */
 export type SnapshotInsert = StoredSnapshot & { userId: string };
 
-/** Fila completa de `portfolio_snapshots`. */
+/** A full `portfolio_snapshots` row. */
 type SnapshotRow = typeof portfolioSnapshots.$inferSelect;
 
-/** Fila guardada con lo que necesita el diff de la reconstrucción y la regla de obsolescencia. */
+/** A stored row with what the rebuild diff and the staleness rule need. */
 export type ExistingSnapshot = StoredSnapshot & { updatedAt: Date };
 
 /**
- * Acceso a `portfolio_snapshots`: las lecturas y escrituras de SQL del histórico, para que
- * `PortfolioSnapshotsService` quede en la orquestación (qué capturar y qué reconstruir) y la
- * decisión de qué escribir sea pura (`planSnapshotWrites`). Las operaciones de la reconstrucción
- * reciben la transacción del llamante, que tiene el cerrojo del usuario.
+ * Access to `portfolio_snapshots`: the history's SQL reads and writes, so that
+ * `PortfolioSnapshotsService` stays on orchestration (what to capture and what to rebuild) and
+ * the decision of what to write stays pure (`planSnapshotWrites`). The rebuild operations
+ * receive the caller's transaction, which holds the user's lock.
  */
 @Injectable()
 export class SnapshotRepository {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
 
-  /** Captura real de un día: sustituye cualquier fila de esa fecha, estimada o no. */
+  /** A real capture of one day: replaces any row for that date, estimated or not. */
   async upsertCapture(row: SnapshotInsert): Promise<void> {
     await this.db
       .insert(portfolioSnapshots)
@@ -48,9 +48,9 @@ export class SnapshotRepository {
   }
 
   /**
-   * Lo guardado de un usuario, solo con las columnas que compara el diff. `fx_rates` (jsonb) se
-   * sigue trayendo: compararlo en SQL por hash exigiría reproducir en JS el texto canónico de
-   * jsonb, y un desajuste haría que cada noche se reescribiera todo como "cambiado".
+   * A user's stored rows, with only the columns the diff compares. `fx_rates` (jsonb) is still
+   * fetched: comparing it in SQL by hash would require reproducing jsonb's canonical text in JS,
+   * and any mismatch would make every night rewrite everything as "changed".
    */
   loadExisting(tx: DatabaseOrTransaction, userId: string): Promise<ExistingSnapshot[]> {
     return tx
@@ -69,9 +69,9 @@ export class SnapshotRepository {
   }
 
   /**
-   * Escribe las filas de la reconstrucción por bloques. Una estimada se pisa siempre; una real
-   * solo si es de `staleReal` y no ha cambiado desde `readAt` (carrera con la captura nocturna,
-   * que la habría reescrito fresca después de leerla).
+   * Writes the rebuild rows in chunks. An estimated row is always overwritten; a real one only
+   * if it is in `staleReal` and has not changed since `readAt` (race with the nightly capture,
+   * which would have rewritten it fresh after it was read).
    */
   async upsertReconstructed(
     tx: DatabaseOrTransaction,
@@ -111,7 +111,7 @@ export class SnapshotRepository {
     }
   }
 
-  /** Retira estimaciones por fecha, por bloques. Nunca toca una captura real. */
+  /** Removes estimates by date, in chunks. Never touches a real capture. */
   async deleteEstimated(tx: DatabaseOrTransaction, userId: string, dates: readonly string[]): Promise<void> {
     for (let i = 0; i < dates.length; i += CHUNK_SIZE) {
       await tx
@@ -126,7 +126,7 @@ export class SnapshotRepository {
     }
   }
 
-  /** Serie de un usuario desde `from` (incluido), de la más antigua a la más reciente. */
+  /** A user's series from `from` (inclusive), oldest first. */
   listSince(userId: string, from: string): Promise<SnapshotRow[]> {
     return this.db
       .select()

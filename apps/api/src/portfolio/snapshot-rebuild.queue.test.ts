@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SnapshotRebuildQueue, type RebuildBatch } from './snapshot-rebuild.queue.js';
 
-/** Promesa que el test resuelve a mano, para dejar una reconstrucción "en curso". */
+/** A promise the test resolves by hand, to leave a rebuild "in progress". */
 function deferred(): { promise: Promise<void>; resolve: () => void } {
   let resolve!: () => void;
   const promise = new Promise<void>((r) => {
@@ -12,7 +12,7 @@ function deferred(): { promise: Promise<void>; resolve: () => void } {
 }
 
 describe('SnapshotRebuildQueue', () => {
-  it('con una reconstrucción en curso solo anota, y al terminar repite UNA vez con todo lo anotado', async () => {
+  it('while a rebuild is running only records, and when it finishes runs ONCE more with everything recorded', async () => {
     const queue = new SnapshotRebuildQueue();
     const batches: RebuildBatch[] = [];
     const first = deferred();
@@ -33,12 +33,12 @@ describe('SnapshotRebuildQueue', () => {
 
     expect(batches).toEqual([
       { positionIds: ['p1'], invalidateFrom: null },
-      // La fecha más antigua de las anotadas, y cada posición una sola vez.
+      // The earliest of the recorded dates, and each position only once.
       { positionIds: ['p2', 'p3'], invalidateFrom: '2026-03-01' },
     ]);
   });
 
-  it('los usuarios no se esperan entre sí', async () => {
+  it('users do not wait for each other', async () => {
     const queue = new SnapshotRebuildQueue();
     const seen: string[] = [];
     const blocked = deferred();
@@ -63,7 +63,7 @@ describe('SnapshotRebuildQueue', () => {
     await a;
   });
 
-  it('un fallo se entrega a onError y no impide la tanda siguiente ni una nueva reconstrucción', async () => {
+  it('a failure is passed to onError and blocks neither the next batch nor a new rebuild', async () => {
     const queue = new SnapshotRebuildQueue();
     const errors: unknown[] = [];
     const first = deferred();

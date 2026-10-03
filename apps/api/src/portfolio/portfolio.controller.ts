@@ -8,7 +8,7 @@ import { portfolioHistoryQuerySchema, type PortfolioHistoryQueryDto } from './dt
 import type { PortfolioHistoryDto } from '@sextante/core/portfolio/types';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 
-/** Histórico de la cartera: siempre el del `userId` del JWT, nunca un id de la URL. */
+/** Portfolio history: always that of the JWT's `userId`, never an id from the URL. */
 @Controller('portfolio')
 @UseGuards(JwtAuthGuard)
 export class PortfolioController {

@@ -29,17 +29,17 @@ import { addDays, isoDate, todayUtc } from '../common/dates.js';
 import { errorMessage } from '../common/errors.js';
 
 /**
- * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
- * de la divisa seleccionada el día de la captura. Otra divisa se reexpresa con las tasas FX
- * que cada snapshot guardó de su día (ver `history`).
+ * Base currency of the history: `portfolio_snapshots` is always stored in euros so it does not
+ * depend on the currency selected on the capture day. Any other currency is re-expressed with
+ * the FX rates each snapshot stored for its day (see `history`).
  */
 export const SNAPSHOT_BASE_CURRENCY = 'EUR';
 
-/** Rango por defecto del histórico, en días (el máximo vive en `price-history.service.ts`). */
+/** Default history range, in days (the maximum lives in `price-history.service.ts`). */
 export const HISTORY_DEFAULT_DAYS = 365;
 export { HISTORY_MAX_DAYS };
 
-/** Resumen de una ejecución de la captura diaria (para los logs del cron). */
+/** Summary of one run of the daily capture (for the cron logs). */
 export interface SnapshotSummary {
   date: string;
   users: number;
@@ -47,23 +47,23 @@ export interface SnapshotSummary {
   failed: number;
 }
 
-/** Tope de `numeric(20,8)`: 12 dígitos enteros. */
+/** Upper bound of `numeric(20,8)`: 12 integer digits. */
 const MAX_SNAPSHOT_AMOUNT = 1e12;
 
-/** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
+/** Formats for `numeric(20,8)`; `null` if not finite or it does not fit (better not to store than to invent or crash the driver). */
 function toNumeric(value: number): string | null {
   if (!Number.isFinite(value) || Math.abs(value) >= MAX_SNAPSHOT_AMOUNT) return null;
   return value.toFixed(8);
 }
 
 /**
- * Histórico de valoración: una fila por usuario y día. Reutiliza `PortfolioValuationService`,
- * así que el punto de hoy coincide siempre con el total que muestra la cartera.
+ * Valuation history: one row per user and day. Reuses `PortfolioValuationService`, so today's
+ * point always matches the total the portfolio shows.
  */
 @Injectable()
 export class PortfolioSnapshotsService {
   private readonly logger = new Logger(PortfolioSnapshotsService.name);
-  /** Coalescencia de las reconstrucciones por usuario tras cambiar lotes (ver `onLotChanged`). */
+  /** Per-user coalescing of rebuilds after lot changes (see `onLotChanged`). */
   private readonly rebuilds = new SnapshotRebuildQueue();
 
   constructor(
@@ -76,14 +76,14 @@ export class PortfolioSnapshotsService {
   ) {}
 
   /**
-   * Captura el snapshot de hoy de todos los usuarios con posiciones (job diario, tras el
-   * refresco de precios). Cada usuario va en su `try`: uno con datos raros no impide el resto.
-   * Los usuarios sin posiciones se omiten: una fila de ceros ensuciaría su serie.
+   * Captures today's snapshot for every user with positions (daily job, after the price
+   * refresh). Each user runs in its own `try`: one with odd data does not block the rest.
+   * Users without positions are skipped: a row of zeros would pollute their series.
    */
   async captureAll(): Promise<SnapshotSummary> {
     const date = todayUtc();
     const userIds = await this.usersWithPositions();
-    // Precios y FX de toda la pasada en una lectura, no dos consultas por usuario.
+    // Prices and FX for the whole pass in one read, not two queries per user.
     const tickers = await this.db.selectDistinct({ ticker: positions.ticker }).from(positions);
     const market = await this.valuation.loadMarketData(tickers.map((row) => row.ticker));
 
@@ -95,21 +95,20 @@ export class PortfolioSnapshotsService {
         captured += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
+        this.logger.warn(`Portfolio snapshot failed (user ${userId}): ${errorMessage(error)}`);
       }
     }
 
     const summary: SnapshotSummary = { date, users: userIds.length, captured, failed };
     this.logger.log(
-      `Snapshots de cartera ${date}: ${captured}/${userIds.length} capturados` +
-        (failed ? ` — ${failed} con error` : ''),
+      `Portfolio snapshots ${date}: ${captured}/${userIds.length} captured` + (failed ? ` — ${failed} failed` : ''),
     );
     return summary;
   }
 
   /**
-   * Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`.
-   * `market`: precios y FX ya leídos para toda la pasada (ver `captureAll`).
+   * Captures a user's snapshot for a date. Idempotent: upsert by `(userId, date)`.
+   * `market`: prices and FX already read for the whole pass (see `captureAll`).
    */
   async captureUser(userId: string, date: string = todayUtc(), market?: MarketData): Promise<void> {
     const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY, market);
@@ -118,7 +117,7 @@ export class PortfolioSnapshotsService {
     const invested = toNumeric(valuation.aggregate.invested);
     const marketValue = toNumeric(valuation.aggregate.marketValue);
     if (invested === null || marketValue === null) {
-      throw new Error('La valoración no cabe en el snapshot (importe no finito o desbordado)');
+      throw new Error('The valuation does not fit in the snapshot (non-finite or overflowing amount)');
     }
 
     const row: SnapshotInsert = {
@@ -129,7 +128,7 @@ export class PortfolioSnapshotsService {
       valuedPositions: valuation.aggregate.valued,
       totalPositions: valuation.aggregate.total,
       fxRates: rates,
-      // Captura real: nunca es estimación y sustituye cualquier fila estimada de ese día.
+      // Real capture: never an estimate, and it replaces any estimated row for that day.
       estimated: false,
     };
 
@@ -137,45 +136,45 @@ export class PortfolioSnapshotsService {
   }
 
   /**
-   * Reconstruye el histórico de un usuario desde su primera operación (tope `HISTORY_MAX_DAYS`)
-   * hasta ayer, valorando cada día la cantidad y el coste que había ese día (sin inventar
-   * historia). La lógica pura vive en `@sextante/core/portfolio/history-reconstruction`, que documenta también
-   * los splits y sus límites. Solo escribe lo que cambió (nada, en la pasada nocturna normal),
-   * así que se lanza siempre: alta, importación, lote editado, arranque y cron.
+   * Rebuilds a user's history from their first trade (capped at `HISTORY_MAX_DAYS`) up to
+   * yesterday, valuing each day the quantity and cost held on that day (without inventing
+   * history). The pure logic lives in `@sextante/core/portfolio/history-reconstruction`, which also
+   * documents splits and their limits. It only writes what changed (nothing, on a normal nightly
+   * pass), so it always runs: on creation, import, lot edit, startup and cron.
    *
-   * "Estimado" = anterior a `trackingSince` (fecha UTC del `created_at` más antiguo de sus
-   * posiciones); cada fila lleva `estimated = (date < trackingSince)`. Desde esa fecha la serie
-   * se considera fiable aunque la rehaga la reconstrucción: el usuario ya usaba Sextante y el
-   * valor es en lo sustancial lo que habría capturado el cron. Por eso los huecos posteriores
-   * que rellena el backfill quedan `estimated = false` (trade-off aceptado: no distinguimos
-   * "cron caído" de "captura real"). Frontend y MCP lo señalan.
+   * "Estimated" = before `trackingSince` (UTC date of the oldest `created_at` among their
+   * positions); each row carries `estimated = (date < trackingSince)`. From that date on the series
+   * is considered reliable even if the rebuild redoes it: the user was already using Sextante and
+   * the value is essentially what the cron would have captured. That is why later gaps filled by
+   * the backfill stay `estimated = false` (accepted trade-off: we do not tell "cron down" apart
+   * from "real capture"). Frontend and MCP flag it.
    *
-   * Reparación automática: una fila estimada cuyo `estimated` no cumple la regla cuenta como
-   * cambiada y se corrige en la primera pasada; las estimadas que ya no salen de la
-   * reconstrucción se retiran. Si esta sale vacía (aún sin precios porque `primeSymbol` sigue
-   * trayendo histórico) no se toca nada.
+   * Self-repair: an estimated row whose `estimated` breaks the rule counts as changed and is
+   * fixed on the first pass; estimates that no longer come out of the rebuild are removed. If
+   * the rebuild comes out empty (no prices yet because `primeSymbol` is still fetching
+   * history) nothing is touched.
    *
-   * Capturas reales obsoletas: una real solo se respeta mientras sea una foto fiel. Si después
-   * se registró una operación con fecha <= la de la captura, esa captura mostraría un escalón
-   * falso y se sustituye por la reconstrucción (regla en `@sextante/core/portfolio/staleness`).
-   * El borrado de un lote no deja marca, así que el llamante pasa `invalidateFrom`. Las reales
-   * no obsoletas no se tocan nunca, y si un día obsoleto no sale de la reconstrucción se
-   * conserva la real: mejor un dato desfasado que borrar uno que no podemos rehacer.
+   * Stale real captures: a real one is only kept while it is a faithful snapshot. If a trade dated
+   * <= the capture date was recorded afterwards, that capture would show a false step and is
+   * replaced by the rebuild (rule in `@sextante/core/portfolio/staleness`). Deleting a lot leaves
+   * no trace, so the caller passes `invalidateFrom`. Non-stale real rows are never touched, and if
+   * a stale day does not come out of the rebuild the real one is kept: better an outdated value
+   * than deleting one we cannot redo.
    *
-   * Un ticker o divisa sin cierre/tasa un día deja esa posición sin valorar (`valuedPositions <
-   * totalPositions`), como la captura diaria.
+   * A ticker or currency without a close/rate on a given day leaves that position unvalued
+   * (`valuedPositions < totalPositions`), like the daily capture.
    */
   async backfillUser(userId: string, options: { invalidateFrom?: string | null } = {}): Promise<void> {
-    // La resolución ticker → símbolo va antes de abrir la transacción: dentro pediría una
-    // segunda conexión y con el pool agotado se bloquearía.
+    // Ticker → symbol resolution happens before opening the transaction: inside it, it would
+    // request a second connection and would deadlock with an exhausted pool.
     const tickers = (
       await this.db.select({ ticker: positions.ticker }).from(positions).where(eq(positions.userId, userId))
     ).map((p) => p.ticker);
     const tickerToSymbol = await this.prices.resolveCachedTickers([...new Set(tickers)]);
 
-    // Cerrojo consultivo por usuario: dos reconstrucciones concurrentes leerían lotes distintos y
-    // la última en escribir podría dejar el estado antiguo. Se libera al terminar la
-    // transacción; los lotes se leen dentro para ver lo último confirmado.
+    // Per-user advisory lock: two concurrent rebuilds would read different lots and the last one
+    // to write could leave the old state. It is released when the transaction ends; lots are read
+    // inside it to see the latest committed data.
     await this.db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${userId}))`);
 
@@ -186,7 +185,7 @@ export class PortfolioSnapshotsService {
         .select()
         .from(positionLots)
         .where(eq(positionLots.userId, userId))
-        // Orden canónico de `compareLots`: el desempate del mismo día importa.
+        // Canonical `compareLots` order: the same-day tie-break matters.
         .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
       const lotsByPosition = new Map<string, HistoryLot[]>();
       for (const row of lotRows) {
@@ -204,7 +203,7 @@ export class PortfolioSnapshotsService {
         ticker: p.ticker,
         currency: p.currency,
         isDerivative: p.isDerivative,
-        // Sin lotes (anterior al modelo de lotes): una única compra el día de alta.
+        // No lots (predates the lot model): a single buy on the creation date.
         lots: lotsByPosition.get(p.id) ?? [
           {
             kind: 'buy',
@@ -215,14 +214,14 @@ export class PortfolioSnapshotsService {
         ],
       }));
 
-      // Inicio del seguimiento en Sextante, no de las operaciones.
+      // Start of tracking in Sextante, not of the trades.
       const trackingSince = isoDate(new Date(Math.min(...owned.map((p) => p.createdAt.getTime()))));
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
       const floor = addDays(todayUtc(), -HISTORY_MAX_DAYS);
       const from = earliest > floor ? earliest : floor;
-      const to = addDays(todayUtc(), -1); // ayer: hoy es del cron
+      const to = addDays(todayUtc(), -1); // yesterday: today belongs to the cron
       if (from > to) return;
 
       const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
@@ -239,7 +238,7 @@ export class PortfolioSnapshotsService {
       const rows = days.flatMap(({ date, aggregate, rates }) => {
         const invested = toNumeric(aggregate.invested);
         const marketValue = toNumeric(aggregate.marketValue);
-        if (invested === null || marketValue === null) return []; // desbordado: se salta ese día
+        if (invested === null || marketValue === null) return []; // overflow: skip that day
         return [
           {
             userId,
@@ -254,9 +253,9 @@ export class PortfolioSnapshotsService {
       });
       if (rows.length === 0) return;
 
-      // Solo se escribe la diferencia con lo guardado (`planSnapshotWrites`). `readAt` es previo a
-      // la lectura: una real reescrita por la captura nocturna después de leerla es fresca y no
-      // debe pisarse (ver `upsertReconstructed`).
+      // Only the difference from what is stored gets written (`planSnapshotWrites`). `readAt` is
+      // taken before the read: a real row rewritten by the nightly capture after it was read is
+      // fresh and must not be overwritten (see `upsertReconstructed`).
       const readAt = new Date();
       const existing = await this.repository.loadExisting(tx, userId);
       const staleReal = staleSnapshotDates({
@@ -276,7 +275,7 @@ export class PortfolioSnapshotsService {
     });
   }
 
-  /** Backfill de todos los usuarios con posiciones, aislado por usuario. */
+  /** Backfill for every user with positions, isolated per user. */
   async backfillAll(): Promise<void> {
     const userIds = await this.usersWithPositions();
     let backfilled = 0;
@@ -287,25 +286,23 @@ export class PortfolioSnapshotsService {
         backfilled += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
+        this.logger.warn(`Portfolio backfill failed (user ${userId}): ${errorMessage(error)}`);
       }
     }
-    this.logger.log(
-      `Backfill de histórico: ${backfilled}/${userIds.length} usuarios` + (failed ? ` — ${failed} con error` : ''),
-    );
+    this.logger.log(`History backfill: ${backfilled}/${userIds.length} users` + (failed ? ` — ${failed} failed` : ''));
   }
 
-  /** Reconstruye el histórico tras un alta (ver `position-events.ts`). Nunca debe romper el flujo que disparó el evento. */
+  /** Rebuilds the history after a creation (see `position-events.ts`). Must never break the flow that fired the event. */
   @OnEvent(POSITION_CREATED_EVENT)
   async onPositionCreated({ userId }: PositionCreatedEvent): Promise<void> {
     try {
       await this.backfillUser(userId);
     } catch (error) {
-      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${errorMessage(error)}`);
+      this.logger.warn(`Backfill after position creation failed (user ${userId}): ${errorMessage(error)}`);
     }
   }
 
-  /** Un lote cambió: pide el histórico de precios que falte y reconstruye la evolución. Tolerante a fallos. */
+  /** A lot changed: fetches any missing price history and rebuilds the series. Fault-tolerant. */
   @OnEvent(LOT_CHANGED_EVENT)
   async onLotChanged({ userId, positionId, invalidateFrom }: LotChangedEvent): Promise<void> {
     await this.rebuilds.enqueue(
@@ -315,8 +312,7 @@ export class PortfolioSnapshotsService {
         for (const id of positionIds) await this.ensureLotHistory(id);
         await this.backfillUser(userId, { invalidateFrom: from });
       },
-      (error) =>
-        this.logger.warn(`Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${errorMessage(error)}`),
+      (error) => this.logger.warn(`Rebuild after a lot change failed (user ${userId}): ${errorMessage(error)}`),
     );
   }
 
@@ -332,9 +328,9 @@ export class PortfolioSnapshotsService {
   }
 
   /**
-   * Serie de los últimos `days` días, de la más antigua a la más reciente, reexpresada a
-   * `display` con las tasas que guardó cada snapshot (no las de hoy): la gráfica refleja lo
-   * que valía la cartera aquel día en esa divisa.
+   * Series of the last `days` days, oldest first, re-expressed in `display` with the rates each
+   * snapshot stored (not today's): the chart reflects what the portfolio was worth on that day
+   * in that currency.
    */
   async history(
     userId: string,
@@ -365,7 +361,7 @@ export class PortfolioSnapshotsService {
     return { display, base: SNAPSHOT_BASE_CURRENCY, points };
   }
 
-  /** Usuarios con al menos una posición. */
+  /** Users with at least one position. */
   private async usersWithPositions(): Promise<string[]> {
     const rows = await this.db.selectDistinct({ userId: positions.userId }).from(positions);
     return rows.map((row) => row.userId);
