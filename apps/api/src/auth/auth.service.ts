@@ -7,6 +7,7 @@ import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, users, type User } from '../db/schema.js';
 import { EMAIL_SERVICE, type EmailService } from '../email/email.service.js';
+import type { EmailLocale } from '../email/templates/fire-milestone.js';
 import { randomToken, sha256Hex } from '../common/crypto.js';
 import { LOGIN_LINK_TTL_MINUTES } from './session.constants.js';
 
@@ -36,9 +37,10 @@ export class AuthService {
 
   /**
    * Genera un magic link y lo envía. No revela si el email ya existe (passwordless:
-   * el usuario se crea/loguea al verificar). Idempotente de cara al cliente.
+   * el usuario se crea/loguea al verificar). Idempotente de cara al cliente. `locale` decide el
+   * idioma del email y de la página a la que lleva el enlace (`/en/...` en inglés).
    */
-  async requestLink(rawEmail: string): Promise<void> {
+  async requestLink(rawEmail: string, locale: EmailLocale = 'es'): Promise<void> {
     const email = this.normalizeEmail(rawEmail);
 
     // Token en claro para el enlace; en BD solo su hash.
@@ -70,8 +72,10 @@ export class AuthService {
     }
 
     const appUrl = this.config.getOrThrow('APP_URL', { infer: true });
-    const link = `${appUrl}/auth/verify?token=${token}`;
-    await this.email.sendMagicLink(email, link);
+    // Castellano sin prefijo (`as-needed` de next-intl); inglés con `/en`.
+    const localePrefix = locale === 'es' ? '' : `/${locale}`;
+    const link = `${appUrl}${localePrefix}/auth/verify?token=${token}`;
+    await this.email.sendMagicLink(email, link, locale);
   }
 
   /**

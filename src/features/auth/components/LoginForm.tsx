@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { trackEvent } from "@/shared/analytics/track";
 import { apiFetch } from "@/shared/api/client";
@@ -12,6 +12,8 @@ import Button from "@/shared/ui/Button";
 /** Formulario de login por magic link: pide el email y solicita el enlace. */
 export default function LoginForm() {
   const t = useTranslations("auth.login");
+  // El email y la página del enlace salen en el idioma de esta página.
+  const locale = useLocale();
   const [email, setEmail] = useState("");
   const request = useApiMutation();
 
@@ -25,7 +27,7 @@ export default function LoginForm() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const result = await request.run(() => apiFetch("/api/auth/request", { method: "POST", body: { email } }));
+    const result = await request.run(() => apiFetch("/api/auth/request", { method: "POST", body: { email, locale } }));
     if (result.ok) trackEvent({ name: "login-link-requested" });
   }
 

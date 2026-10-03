@@ -71,7 +71,7 @@ describe('AuthController (HTTP)', () => {
   let db: Database;
   let closeDb: () => Promise<void>;
   /** Enlaces mágicos "enviados": el transporte de dev se sustituye para capturarlos. */
-  let sentLinks: { to: string; link: string }[];
+  let sentLinks: { to: string; link: string; locale: string }[];
 
   /** Token en claro del último enlace enviado (el que llegaría al buzón del usuario). */
   const lastToken = (): string => {
@@ -118,8 +118,8 @@ describe('AuthController (HTTP)', () => {
   beforeEach(async () => {
     await resetDb(db);
     sentLinks = [];
-    vi.spyOn(DevEmailService.prototype, 'sendMagicLink').mockImplementation((to, link) => {
-      sentLinks.push({ to, link });
+    vi.spyOn(DevEmailService.prototype, 'sendMagicLink').mockImplementation((to, link, locale) => {
+      sentLinks.push({ to, link, locale });
       return Promise.resolve();
     });
   });
@@ -192,6 +192,22 @@ describe('AuthController (HTTP)', () => {
       expect(sentLinks[0].to).toBe('a@example.com');
       const [row] = await db.select().from(loginTokens);
       expect(row.email).toBe('a@example.com');
+    });
+
+    it('envía el enlace en el idioma pedido (castellano por defecto), apuntando a la web en ese idioma', async () => {
+      await postJson(`${baseUrl}/request`, { email: 'a@example.com' });
+      await postJson(`${baseUrl}/request`, { email: 'b@example.com', locale: 'en' });
+
+      expect(sentLinks.map((sent) => sent.locale)).toEqual(['es', 'en']);
+      expect(sentLinks[0].link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
+      expect(sentLinks[1].link.startsWith(`${APP_URL}/en/auth/verify?token=`)).toBe(true);
+    });
+
+    it('rechaza un idioma no soportado con 400', async () => {
+      const res = await postJson(`${baseUrl}/request`, { email: 'a@example.com', locale: 'fr' });
+
+      expect(res.status).toBe(400);
+      expect(sentLinks).toHaveLength(0);
     });
 
     it('rechaza un email no válido con 400 y no envía nada', async () => {

@@ -33,7 +33,7 @@ export class AuthController {
     @Req() req: Request,
   ): Promise<{ ok: true }> {
     this.logDetectedIp(req);
-    await this.auth.requestLink(dto.email);
+    await this.auth.requestLink(dto.email, dto.locale ?? 'es');
     // Siempre 202, sin revelar si el email existe (evita enumeración de usuarios).
     return { ok: true };
   }
