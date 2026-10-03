@@ -22,44 +22,44 @@ import SortHeader from "./SortHeader";
 
 type Props = {
   positions: Position[];
-  /** Último precio conocido por ticker (desde nuestra DB). Vacío mientras carga o sin datos. */
+  /** Last known price per ticker (from our DB). Empty while loading or without data. */
   prices: Record<string, PriceInfo>;
-  /** USD por unidad de cada divisa. */
+  /** USD per unit of each currency. */
   rates: Record<string, number>;
-  /** Divisa del total: el peso de cada fila se calcula en ella. */
+  /** Currency of the total: each row's weight is computed in it. */
   display: string;
-  /** Valor de mercado total de la cartera en `display` (denominador del peso). */
+  /** Total portfolio market value in `display` (the weight's denominator). */
   total: number;
-  /** Posición con el panel abierto, o null. */
+  /** Position whose panel is open, or null. */
   selectedId: string | null;
   onSelect: (id: string) => void;
-  /** Ids de las posiciones cuyo precio aún se está buscando (ver `isPricePending`). */
+  /** Ids of the positions whose price is still being fetched (see `isPricePending`). */
   pendingIds: ReadonlySet<string>;
-  /** Id del panel de detalle, para `aria-controls`. */
+  /** Id of the detail panel, for `aria-controls`. */
   panelId: string;
 };
 
-/** Las dos opciones del conmutador, en el orden en que se ofrecen. */
+/** The toggle's two options, in the order they are offered. */
 const GAIN_MODES: readonly GainMode[] = ["today", "total"];
 
-/** Criterios de orden del selector de móvil, en el orden en que se ofrecen. */
+/** Sort criteria of the mobile selector, in the order they are offered. */
 const SORT_OPTIONS: readonly SortKey[] = ["invested", "name", "marketValue", "pnl"];
 
-/** Columnas de la lista en escritorio: activo, peso, valor y ganancia. */
+/** Desktop list columns: asset, weight, value and gain. */
 const COLUMNS = "md:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.2fr)]";
 
 /**
- * Lista de posiciones: activo, peso, valor actual y ganancia. Lo demás (cantidad, precio medio,
- * invertido, operaciones) vive en el panel de detalle, que se abre pulsando la fila: así la
- * lista responde a lo que se mira a diario y cabe en un móvil sin scroll horizontal.
+ * Position list: asset, weight, current value and gain. Everything else (quantity, average price,
+ * invested, trades) lives in the detail panel, which opens by clicking the row: this way the list
+ * answers what people check daily and fits on a phone without horizontal scrolling.
  *
- * Es una lista de botones y no una `<table>`: cada fila es UNA acción (abrir el detalle), y en
- * móvil la misma fila se apila como tarjeta sin duplicar marcado. Los importes van en la divisa
- * de cada posición (convertidos si el precio cotiza en otra); el peso, en la divisa del total.
+ * It is a list of buttons and not a `<table>`: each row is ONE action (open the detail), and on
+ * mobile the same row stacks as a card without duplicating markup. Amounts are in each position's
+ * currency (converted if the price is quoted in another); the weight, in the total's currency.
  *
- * Ordenación: por defecto, por lo invertido de mayor a menor, que es el único dato que existe
- * antes de que lleguen los precios (así la lista no se reordena sola al cargar). Las columnas
- * se ordenan pulsando su cabecera; en móvil, con el selector.
+ * Sorting: by default, by amount invested from highest to lowest, which is the only data that
+ * exists before prices arrive (so the list does not reorder itself while loading). Columns are
+ * sorted by clicking their header; on mobile, with the selector.
  */
 export default function PositionList({
   positions,
@@ -79,7 +79,7 @@ export default function PositionList({
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
   const [gainMode, setGainMode] = useState<GainMode>("total");
 
-  // Primer clic en una columna: de mayor a menor. Clics siguientes: alterna el sentido.
+  // First click on a column: highest first. Subsequent clicks: toggle the direction.
   function handleSort(key: SortKey) {
     if (key === sortKey) {
       setSortDir((d) => (d === "desc" ? "asc" : "desc"));
@@ -89,7 +89,7 @@ export default function PositionList({
     }
   }
 
-  // Referencia de frescura: la fecha del precio más reciente de la cartera.
+  // Freshness reference: the date of the portfolio's most recent price.
   const latestDate = useMemo(() => latestPriceDate(prices), [prices]);
 
   const rows = useMemo(
@@ -109,7 +109,7 @@ export default function PositionList({
           options={GAIN_MODES.map((mode) => ({ value: mode, label: t(`gainMode.${mode}`) }))}
           onChange={setGainMode}
         />
-        {/* Móvil: no hay cabeceras de columna, así que se ordena con un selector. */}
+        {/* Mobile: there are no column headers, so sorting uses a selector. */}
         <div className="flex items-center gap-2 md:hidden">
           <label htmlFor={sortId} className="text-xs text-muted">
             {t("sortLabel")}
@@ -165,7 +165,7 @@ export default function PositionList({
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="truncate text-sm font-semibold text-foreground">{p.name ?? p.ticker}</span>
                   <span className="truncate text-xs text-muted">
-                    {/* En móvil no hay columna de peso: va aquí, delante del símbolo. */}
+                    {/* On mobile there is no weight column: it goes here, before the symbol. */}
                     {row.weight !== null && (
                       <span className="md:hidden">{formatPercent(Math.round(row.weight))} · </span>
                     )}
@@ -193,7 +193,7 @@ export default function PositionList({
                   <>
                     <span className="hidden items-center justify-end gap-1 text-sm tabular-nums text-foreground md:flex">
                       {formatCurrency(row.marketValue, p.currency)}
-                      {/* `stale` implica que hay precio y una fecha más reciente con la que compararlo. */}
+                      {/* `stale` implies there is a price and a more recent date to compare it with. */}
                       {row.stale && row.price && latestDate && (
                         <StaleBadge
                           label={t("stalePrice", {
@@ -204,7 +204,7 @@ export default function PositionList({
                       )}
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-0.5 tabular-nums">
-                      {/* En móvil el valor encabeza esta columna; en escritorio tiene la suya. */}
+                      {/* On mobile the value heads this column; on desktop it has its own. */}
                       <span className="text-sm text-foreground md:hidden">
                         {formatCurrency(row.marketValue, p.currency)}
                       </span>

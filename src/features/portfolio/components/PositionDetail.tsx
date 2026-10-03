@@ -18,38 +18,39 @@ export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
 
 type Props = {
   position: Position;
-  /** Último precio conocido del instrumento. */
+  /** Last known price of the instrument. */
   price: PriceInfo | undefined;
   rates: Record<string, number>;
-  /** El precio aún se está buscando (alta reciente). */
+  /** The price is still being fetched (recently created). */
   pricePending: boolean;
   /**
-   * Se llama tras CADA mutación de lotes. Es obligatorio: el backend reescribe `quantity` y
-   * `avgPrice` de la posición en la misma transacción, así que sin esto la lista y el total
-   * seguirían mostrando la foto anterior.
+   * Called after EVERY lot mutation. Required: the backend rewrites the position's `quantity` and
+   * `avgPrice` in the same transaction, so without this the list and the total would keep
+   * showing the previous snapshot.
    */
   onMutated: () => void;
-  /** Abrir el formulario de edición de la posición. */
+  /** Opens the position's edit form. */
   onEdit: () => void;
-  /** La posición se ha borrado. */
+  /** The position has been deleted. */
   onDeleted: (id: string) => void;
 };
 
-/** Las vistas del detalle. */
+/** The detail's views. */
 type View = "lots" | "income" | "sale";
 
 const VIEWS: readonly View[] = ["lots", "income", "sale"];
 const VIEW_LABELS = { lots: "viewLots", income: "viewIncome", sale: "viewSale" } as const;
 
 /**
- * Detalle de una posición, dentro del panel: cuánto vale y cuánto gana, sus datos clave, sus
- * operaciones (lotes), sus cobros (dividendos) o la simulación fiscal de una venta, y editar o
- * eliminar la posición.
+ * Detail of a position, inside the panel: what it is worth and how much it gains, its key data,
+ * its trades (lots), its income (dividends) or the tax simulation of a sale, and editing or
+ * deleting the position.
  *
- * LA IDEA QUE DEBE QUEDAR CLARA: la posición es la FOTO (cuánto tengo y a qué precio medio) y
- * los lotes son la PELÍCULA (cada compra y cada venta). Al tocar un lote, el servidor reagrega
- * el histórico y reescribe la cantidad y el precio medio en la misma transacción; por eso aquí
- * no se toca nunca la posición a mano y tras cada mutación se pide al padre que resincronice.
+ * THE IDEA THAT MUST STAY CLEAR: the position is the SNAPSHOT (how much I hold and at what
+ * average price) and the lots are the FILM (every purchase and every sale). When a lot is touched,
+ * the server re-aggregates the history and rewrites the quantity and average price in the same
+ * transaction; that is why the position is never touched by hand here, and after every mutation
+ * the parent is asked to re-sync.
  */
 export default function PositionDetail({ position, price, rates, pricePending, onMutated, onEdit, onDeleted }: Props) {
   const t = useTranslations("portfolio.lots");
@@ -59,16 +60,16 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const income = usePositionIncome(position.id);
   const [view, setView] = useState<View>("lots");
 
-  // Los lotes ya se cargan aquí: no hace falta otra consulta para saber si hay ventas. Mientras
-  // cargan o si fallan vale `null` ("no se sabe"), y el aviso fuerte de borrado se muestra igual.
+  // The lots are already loaded here: no extra query is needed to know whether there are sales.
+  // While loading or on failure it is `null` ("unknown"), and the strong delete warning shows anyway.
   const hasSales = positionHasSales(lots.loadState, lots.lots);
 
   return (
     <div className="flex flex-col gap-5">
       <PositionDetailSummary position={position} price={price} rates={rates} pricePending={pricePending} />
 
-      {/* Tres vistas del mismo panel: botones de alternancia (`aria-pressed`), no un `tablist`,
-          que exigiría además navegación con flechas. */}
+      {/* Three views of the same panel: toggle buttons (`aria-pressed`), not a `tablist`, which
+          would also require arrow-key navigation. */}
       <ToggleGroup
         label={tDetail("viewLabel")}
         value={view}

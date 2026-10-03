@@ -10,13 +10,13 @@ import RowActions from "@/shared/ui/RowActions";
 type Props = {
   lots: readonly PositionLot[];
   ticker: string;
-  /** Los importes de un lote van siempre en la divisa de su posición. */
+  /** A lot's amounts are always in its position's currency. */
   currency: string;
-  /** Lote que se está editando en el formulario (se resalta). */
+  /** Lot being edited in the form (highlighted). */
   editingId: string | null;
-  /** Lote pendiente de confirmar su borrado. */
+  /** Lot pending delete confirmation. */
   confirmingId: string | null;
-  /** Hay una mutación en curso: se bloquean los botones de confirmación. */
+  /** A mutation is in progress: the confirmation buttons are disabled. */
   submitting: boolean;
   onEdit: (lot: PositionLot) => void;
   onAskDelete: (lotId: string) => void;
@@ -24,7 +24,7 @@ type Props = {
   onConfirmDelete: (lotId: string) => void;
 };
 
-/** Histórico de operaciones de una posición, con editar y borrar (con confirmación) por lote. */
+/** Trade history of a position, with edit and delete (with confirmation) per lot. */
 export default function LotList({
   lots,
   ticker,

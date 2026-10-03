@@ -32,24 +32,24 @@ import { yearOf } from "@sextante/core/dates";
 
 type Props = {
   positions: RealisedGainsPosition[];
-  /** Dividendos, intereses y recompensas. */
+  /** Dividends, interest and rewards. */
   income: IncomeEvent[];
-  /** Saldos negativos pendientes de años que Sextante no calcula. */
+  /** Pending negative balances from years Sextante does not compute. */
   pendingBalances: PendingNegative[];
-  /** Clase de activo de cada posición: decide el bloque de la declaración de sus ventas. */
+  /** Asset class of each position: decides which tax-return block its sales go to. */
   assetClasses: Record<string, AssetClass | null>;
-  /** Tipos de referencia del BCE de las divisas con ventas. */
+  /** ECB reference rates for the currencies with sales. */
   rates: ReferenceRates;
-  /** `false` si hacían falta tipos y no se pudieron cargar. */
+  /** `false` if rates were needed and could not be loaded. */
   ratesLoaded: boolean;
 };
 
 /**
- * Informe anual de ganancias y pérdidas REALIZADAS: las ventas registradas en la cartera,
- * emparejadas por FIFO, pasadas a euros y compensadas dentro de cada ejercicio.
+ * Annual report of REALISED gains and losses: the sales recorded in the portfolio, matched by
+ * FIFO, converted to euros and offset within each tax year.
  *
- * El cálculo es `buildRealisedGainsReport` (core puro y testeado); aquí solo se elige el
- * ejercicio, se pinta y se exporta. Los tipos del BCE llegan ya cargados del servidor.
+ * The computation is `buildRealisedGainsReport` (pure, tested core); this component only picks
+ * the tax year, renders and exports. The ECB rates arrive already loaded from the server.
  */
 export default function RealisedGainsReport({
   positions,
@@ -67,14 +67,14 @@ export default function RealisedGainsReport({
 
   const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
   const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
-  // Ejercicios con ventas o con cobros; sin ninguno, el actual (para poder anotar el primer cobro).
+  // Tax years with sales or income; with none, the current one (so the first income entry can be recorded).
   const years = useMemo(
     () => taxYears([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)], currentYear),
     [report, incomeReport, currentYear],
   );
   const [selectedYear, setSelectedYear] = useTaxYear(years, currentYear);
   const csv = useCsvDownload();
-  // Se mide si el informe se usa (sin cifras): decide si merece la pena seguir invirtiendo en él.
+  // We measure whether the report is used (no figures): it decides whether it is worth investing more in it.
   useEffect(() => trackEvent({ name: "tax-report-viewed" }), []);
 
   function changeYear(value: string) {
@@ -89,7 +89,7 @@ export default function RealisedGainsReport({
   const year = report.years.find((y) => y.year === selectedYear);
   const incomeEvents = income.filter((event) => event.paidAt.startsWith(String(selectedYear)));
   const incomeSummary = incomeReport.years.find((y) => y.year === selectedYear);
-  // Todos los ejercicios encadenados: los saldos negativos pasan de uno a otro (art. 49 LIRPF).
+  // Every tax year chained: negative balances carry over from one to the next (art. 49 LIRPF).
   const savingsReturns = useMemo(
     () =>
       buildSavingsReturns({

@@ -9,14 +9,14 @@ import Button from "@/shared/ui/Button";
 type Props = {
   name: string;
   onNameChange: (name: string) => void;
-  /** El nombre coincide con el del plan cargado: guardar lo actualiza en vez de crear otro. */
+  /** The name matches the loaded plan's: saving updates it instead of creating another one. */
   updating: boolean;
   quotaReached: boolean;
   saving: boolean;
   onSubmit: (event: React.FormEvent) => void;
 };
 
-/** Guardar el objetivo como plan (escenario de la calculadora FIRE): actualizar el cargado o crear uno nuevo. */
+/** Saves the goal as a plan (a FIRE calculator scenario): updates the loaded one or creates a new one. */
 export default function PortfolioGoalPlanForm({ name, onNameChange, updating, quotaReached, saving, onSubmit }: Props) {
   const t = useTranslations("portfolio.goal");
   const nameId = useId();

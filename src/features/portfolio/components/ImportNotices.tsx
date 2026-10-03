@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import Notice from "@/shared/ui/Notice";
 
-/** Avisos y filas descartadas de una importación; los comparten la vista previa y el resultado. */
+/** Warnings and discarded rows of an import; shared by the preview and the result. */
 export default function ImportNotices({ plan }: { plan: ImportPlan | ImportResult }) {
   return (
     <>

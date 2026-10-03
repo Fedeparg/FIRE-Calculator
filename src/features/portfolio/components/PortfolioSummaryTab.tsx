@@ -10,7 +10,7 @@ import PortfolioHistoryChart from "./PortfolioHistoryChart";
 import PortfolioMovers from "./PortfolioMovers";
 import PortfolioSummary from "./PortfolioSummary";
 
-/** Pestaña Resumen: cómo va la cartera, sin tabla ni formularios. */
+/** Summary tab: how the portfolio is doing, with no table or forms. */
 export default function PortfolioSummaryTab() {
   const t = useTranslations("portfolio");
   const { positions, prices, rates, display, agg, fxAsOf } = usePortfolioData();
@@ -40,9 +40,9 @@ export default function PortfolioSummaryTab() {
         pricesCheckedAt={pricesCheckedAt}
         display={display}
       />
-      {/* `grid-cols-1` (minmax(0, 1fr)) y no la columna implícita `auto`: esa crece hasta el
-          ancho intrínseco de la gráfica, y en WebKit (todo navegador de iOS) la caja se salía
-          de la pantalla. */}
+      {/* `grid-cols-1` (minmax(0, 1fr)) rather than the implicit `auto` column: that one grows to the
+          chart's intrinsic width, and in WebKit (every iOS browser) the box overflowed the
+          screen. */}
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="min-w-0 lg:col-span-2">
           <PortfolioHistoryChart display={display} />

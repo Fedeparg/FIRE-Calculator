@@ -23,24 +23,24 @@ import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Props = {
-  /** Divisa elegida en el resumen: la serie se pide ya reexpresada a ella. */
+  /** Currency chosen in the summary: the series is requested already re-expressed in it. */
   display: string;
 };
 
 type Status = "loading" | "ready" | "error";
 
 /**
- * Evolución diaria de la cartera.
+ * Daily evolution of the portfolio.
  *
- * La serie NO se calcula aquí: la sirve `GET /api/portfolio/history`, que guarda un punto por
- * día EN EUROS junto con las tasas FX de ese día y lo reexpresa a la divisa pedida usando las
- * tasas de ENTONCES. Por eso cambiar de divisa vuelve a pedir la serie en lugar de convertir
- * el resultado: convertir aquí con las tasas de hoy contaría como ganancia una variación del
- * tipo de cambio que no ocurrió.
+ * The series is NOT computed here: it is served by `GET /api/portfolio/history`, which stores one
+ * point per day IN EUROS together with that day's FX rates and re-expresses it in the requested
+ * currency using the rates of THAT day. That is why changing currency re-requests the series
+ * instead of converting the result: converting here at today's rates would count as a gain an
+ * exchange-rate move that never happened.
  *
- * Cuando todavía no hay dos puntos —una cuenta recién creada no tiene ninguno hasta la captura
- * de esta noche— no se dibuja una gráfica vacía: se explica que la serie se construye a
- * diario, que es información útil, a diferencia de un lienzo en blanco.
+ * While there are fewer than two points (a newly created account has none until tonight's
+ * snapshot) no empty chart is drawn: we explain that the series is built daily, which is useful
+ * information, unlike a blank canvas.
  */
 export default function PortfolioHistoryChart({ display }: Props) {
   const t = useTranslations("portfolio.history");
@@ -55,8 +55,8 @@ export default function PortfolioHistoryChart({ display }: Props) {
   const history = query.status === "ready" ? query.data : null;
   const status: Status = query.status;
 
-  // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
-  // la serie en el día de hoy para que la gráfica no se quede en ayer.
+  // Today's snapshot is written overnight: the live valuation (the same as the Summary's) closes
+  // the series on today so the chart does not stop at yesterday.
   const { agg } = usePortfolioData();
   const today = useTodayUtc();
   const series = useMemo(() => {
@@ -80,19 +80,19 @@ export default function PortfolioHistoryChart({ display }: Props) {
     value: (row) => (row.estimated ? t("estimatedYes") : t("estimatedNo")),
   };
 
-  // Último valor de la serie: en el móvil sustituye al eje Y como referencia de escala.
+  // Last value of the series: on mobile it replaces the Y axis as the scale reference.
   const lastPoint = series.points.at(-1);
   const lastValue = typeof lastPoint?.marketValue === "number" ? lastPoint.marketValue : null;
 
   const changeColor = signedTone(series.changeAbs);
 
   return (
-    // `min-w-0` + `overflow-hidden`: la caja no puede ser más ancha que su columna, pase lo que
-    // pase dentro (en un iPhone real la gráfica llegó a sacarla de la pantalla).
+    // `min-w-0` + `overflow-hidden`: the box can never be wider than its column, whatever happens
+    // inside (on a real iPhone the chart once pushed it off the screen).
     <section className="flex min-w-0 flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-foreground">{t("title")}</h2>
-        {/* Desplegable nativo: ocupa poco, y en el móvil abre el selector del sistema. */}
+        {/* Native select: it takes little space, and on mobile it opens the system picker. */}
         <select
           aria-label={t("rangeLabel")}
           value={range}
@@ -120,8 +120,8 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
       {status === "ready" && !series.insufficient && (
         <>
-          {/* La variación del periodo, en una sola línea: el importe manda y el rango de fechas
-              acompaña. */}
+          {/* The change over the period, on a single line: the amount leads and the date range
+              follows. */}
           {lastValue !== null && (
             <p className="text-2xl font-semibold tabular-nums text-foreground">{formatCurrency(lastValue, display)}</p>
           )}
@@ -141,23 +141,23 @@ export default function PortfolioHistoryChart({ display }: Props) {
 
           <TimeSeriesChart
             title={t("chartTitle")}
-            // El título del bloque ya dice de qué va esto: el de la gráfica queda solo para
-            // lectores de pantalla y para la tabla accesible.
+            // The block title already says what this is about: the chart's title is kept only for
+            // screen readers and the accessible table.
             hideTitle
-            // La leyenda propia (abajo) explica cada serie; la de Recharts solo repetiría el nombre.
+            // Our own legend (below) explains each series; Recharts' would only repeat the name.
             showLegend={false}
             data={series.points}
             xKey="date"
             valueKey="marketValue"
-            // El valor de mercado va como área (una sola serie: no hay nada que apilar) y el
-            // coste como línea de referencia punteada, que es justo lo que es.
+            // Market value is an area (a single series: nothing to stack) and the
+            // cost is a dashed reference line, which is exactly what it is.
             stack={[{ key: "marketValue", name: t("marketValue"), color: "var(--brand)" }]}
             lines={[{ key: "invested", name: t("invested"), color: "var(--accent)" }]}
             xLabel={t("date")}
             currency={display}
             xFormat={(value) => formatIsoDate(String(value))}
-            // El eje X es una fecha, no una magnitud continua: seleccionar un tramo por
-            // arrastre no tendría sentido, y el total del tooltip duplicaría la única serie.
+            // The X axis is a date, not a continuous magnitude: selecting a range by
+            // dragging would make no sense, and the tooltip total would duplicate the only series.
             selectable={false}
             showTotal={false}
             xMinTickGap={48}
@@ -168,16 +168,16 @@ export default function PortfolioHistoryChart({ display }: Props) {
               label: t("estimatedShadeLabel"),
             }))}
             extraColumns={[estimatedColumn]}
-            // Un valor base alto con poca variación se aplana pegado al 0: se ajusta el eje
-            // al rango real de la cartera en vez de forzar el suelo en cero.
+            // A high base value with little variation flattens against 0: the axis is fitted
+            // to the portfolio's actual range instead of forcing the floor to zero.
             yDomain="fit"
-            // En el móvil, sin eje Y: el valor y la variación van encima, y el tooltip da cada día.
+            // On mobile, no Y axis: the value and the change sit on top, and the tooltip gives each day.
             yAxis="fromSm"
           />
 
           {series.estimatedRanges.length > 0 && (
             <p className="flex items-center gap-2 text-xs text-muted">
-              {/* Misma tinta que la zona sombreada de la gráfica (`--warning` al 10 %). */}
+              {/* Same ink as the chart's shaded area (`--warning` at 10 %). */}
               <span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-sm border border-border bg-warning/10" />
               {t("estimatedNotice")}
             </p>

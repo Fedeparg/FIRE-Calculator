@@ -11,22 +11,22 @@ import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 type Props = {
   positions: Position[];
   prices: Record<string, PriceInfo>;
-  /** Tasas FX (USD por unidad de divisa) para llevar cada valor a la divisa elegida. */
+  /** FX rates (USD per currency unit) to bring each value into the chosen currency. */
   rates: Record<string, number>;
   display: string;
 };
 
-/** Grupos que se nombran uno a uno; el resto se suma en "N más". */
+/** Groups that are named one by one; the rest are summed into "N more". */
 const VISIBLE_GROUPS = 3;
 
 /**
- * Composición de la cartera por activo, bróker o divisa, como una barra apilada con los grupos
- * más pesados debajo. Cabe en una columna estrecha y se lee de un vistazo, que es lo que pide el
- * Resumen; el detalle de cada posición está en Posiciones.
+ * Portfolio composition by asset, broker or currency, as a stacked bar with the heaviest groups
+ * below. It fits in a narrow column and reads at a glance, which is what the Summary needs; each
+ * position's detail lives in Positions.
  *
- * Reparte el VALOR DE MERCADO (no el coste): lo que responde es a qué está expuesta hoy la
- * cartera. Las posiciones sin precio o con una divisa no convertible se excluyen y se dicen
- * aparte, en lugar de repartir un total incompleto como si fuera el bueno.
+ * It splits the MARKET VALUE (not the cost): what it answers is what the portfolio is exposed to
+ * today. Positions without a price or with a non-convertible currency are excluded and called out
+ * separately, instead of splitting an incomplete total as if it were the right one.
  */
 export default function PortfolioBreakdown({ positions, prices, rates, display }: Props) {
   const t = useTranslations("portfolio.breakdown");
@@ -41,8 +41,8 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
     [positions, prices, rates, display, groupBy, unknownBrokerLabel],
   );
 
-  // Plegado: los más pesados y una fila "N más" con su peso sumado. Desplegado: todos los grupos
-  // (la barra de arriba ya los dibuja todos; la lista es la que se lee).
+  // Collapsed: the heaviest ones and an "N more" row with their combined weight. Expanded: every group
+  // (the bar above already draws them all; the list is what gets read).
   const rest = breakdown.slices.slice(VISIBLE_GROUPS);
   const shown = expanded ? breakdown.slices : breakdown.slices.slice(0, VISIBLE_GROUPS);
   const restShare = rest.reduce((sum, slice) => sum + slice.share, 0);
@@ -71,7 +71,7 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
         <p className="text-sm text-muted">{t("noData")}</p>
       ) : (
         <>
-          {/* Decorativa: la misma información va en la lista de debajo, que es la que se lee. */}
+          {/* Decorative: the same information is in the list below, which is what gets read. */}
           <div aria-hidden="true" className="flex h-3 overflow-hidden rounded-full bg-surface-2">
             {breakdown.slices.map((slice, index) => (
               <span
@@ -105,7 +105,7 @@ export default function PortfolioBreakdown({ positions, prices, rates, display }
             )}
           </ul>
           {rest.length > 0 && (
-            // Botón de alternancia con `aria-expanded`: anuncia si la lista está completa o plegada.
+            // Toggle button with `aria-expanded`: announces whether the list is full or collapsed.
             <button
               type="button"
               onClick={() => setExpanded((open) => !open)}

@@ -11,13 +11,13 @@ import PositionLotForm from "./PositionLotForm";
 
 type Props = {
   ticker: string;
-  /** Los importes de un lote van siempre en la divisa de su posición. */
+  /** A lot's amounts are always in its position's currency. */
   currency: string;
-  /** Lotes y mutaciones de `usePositionLots` (los carga el detalle: también los usan la venta y el borrado). */
+  /** Lots and mutations from `usePositionLots` (the detail loads them: the sale and the delete use them too). */
   lots: ReturnType<typeof usePositionLots>;
 };
 
-/** Vista "Operaciones" del detalle: el histórico de lotes y el formulario de alta y edición. */
+/** The detail's "Trades" view: the lot history and the create/edit form. */
 export default function PositionLotsView({ ticker, currency, lots }: Props) {
   const t = useTranslations("portfolio.lots");
   const errorText = useApiErrorText(t);
@@ -44,7 +44,7 @@ export default function PositionLotsView({ ticker, currency, lots }: Props) {
         </p>
       )}
 
-      {/* El `key` fuerza un remount al cambiar de lote editado (o volver al alta). */}
+      {/* The `key` forces a remount when switching the edited lot (or going back to create). */}
       <PositionLotForm
         key={rows.editing?.id ?? "add"}
         editing={rows.editing}

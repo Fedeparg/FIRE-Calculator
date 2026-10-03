@@ -9,11 +9,11 @@ import IncomeManager from "./IncomeManager";
 
 type Props = {
   position: Position;
-  /** Cobros y mutaciones de `usePositionIncome` (los carga el detalle al abrirse). */
+  /** Income and mutations from `usePositionIncome` (the detail loads them on open). */
   income: ReturnType<typeof usePositionIncome>;
 };
 
-/** Vista "Cobros" del detalle: dividendos de la posición, con su carga y su formulario. */
+/** The detail's "Income" view: the position's dividends, with their loading state and form. */
 export default function PositionIncomeView({ position, income }: Props) {
   const t = useTranslations("portfolio.detail");
 

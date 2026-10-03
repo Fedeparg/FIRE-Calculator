@@ -15,7 +15,7 @@ import {
 import InstrumentSearchField from "./InstrumentSearchField";
 import { inputClass } from "@/shared/ui/field-classes";
 
-/** Lo que el usuario teclea en el formulario de posición (las cantidades, como texto). */
+/** What the user types into the position form (quantities as text). */
 export type PositionFormValues = {
   ticker: string;
   name: string;
@@ -23,11 +23,11 @@ export type PositionFormValues = {
   avgPrice: string;
   broker: string;
   currency: SupportedCurrency;
-  /** Clase de activo deducida del buscador; `undefined` si el usuario escribió el símbolo a mano. */
+  /** Asset class inferred from the search; `undefined` if the user typed the symbol by hand. */
   assetClass?: AssetClass;
 };
 
-/** Tipo del buscador → clase de activo de la declaración. */
+/** Search type → tax-return asset class. */
 const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
   equity: "stock",
   etf: "fund",
@@ -41,20 +41,20 @@ const ASSET_CLASS_OF: Record<InstrumentType, AssetClass> = {
 type Props = {
   values: PositionFormValues;
   onChange: (patch: Partial<PositionFormValues>) => void;
-  /** El símbolo ya existe y el bróker está vacío: hay que indicar uno para distinguirlo. */
+  /** The symbol already exists and the broker is empty: one must be given to tell them apart. */
   brokerRequired: boolean;
-  /** Al editar, intento de vaciar un bróker que la posición ya tenía (no se permite). */
+  /** When editing, an attempt to clear a broker the position already had (not allowed). */
   brokerEmptied: boolean;
 };
 
-/** Campos del formulario de posición. Presentacional: el estado y el envío viven en `PositionForm`. */
+/** Position form fields. Presentational: state and submission live in `PositionForm`. */
 export default function PositionFormFields({ values, onChange, brokerRequired, brokerEmptied }: Props) {
   const t = useTranslations("portfolio.form");
   const { currencyLabel } = useFormat();
 
   function handleSelect(result: InstrumentSearchResult) {
-    // Prefill del nombre solo si el usuario no escribió uno propio. Truncado a 100:
-    // el `longname` de Yahoo puede excederlo y el DTO (@MaxLength(100)) daría 400.
+    // Prefill the name only if the user did not type their own. Truncated to 100:
+    // Yahoo's `longname` can exceed it and the DTO (@MaxLength(100)) would return 400.
     onChange({
       ticker: result.symbol,
       name: values.name || result.name.slice(0, 100),

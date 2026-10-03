@@ -1,11 +1,11 @@
 "use client";
 
-// Estado del precio de una fila de la lista de posiciones: rezagado o aún buscándose.
+// Price status of a row in the positions list: stale or still being fetched.
 
 /**
- * Marca de precio rezagado: la fila se valora con un precio anterior al del último refresco
- * (típicamente un fondo con valor liquidativo diferido junto a activos cotizados al día). La
- * explicación va en un `sr-only`: un `title` no llega a teclado ni a lector de pantalla.
+ * Stale price marker: the row is valued with a price older than the last refresh (typically a
+ * fund with a delayed NAV alongside assets quoted daily). The explanation lives in an `sr-only`:
+ * a `title` does not reach keyboard or screen reader users.
  */
 export function StaleBadge({ label }: { label: string }) {
   return (
@@ -23,8 +23,8 @@ export function StaleBadge({ label }: { label: string }) {
 }
 
 /**
- * Estado "buscando precio": un punto que pulsa (solo si el usuario no pide menos movimiento)
- * más texto visible. `role="status"` lo anuncia una vez; la explicación larga va en `sr-only`.
+ * "Fetching price" status: a pulsing dot (only if the user does not ask for reduced motion) plus
+ * visible text. `role="status"` announces it once; the long explanation goes in `sr-only`.
  */
 export function PendingPrice({ label, hint }: { label: string; hint: string }) {
   return (

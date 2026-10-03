@@ -9,17 +9,17 @@ import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
 
 type Props = {
-  /** Divisa que se está viendo: etiqueta de los importes. */
+  /** Currency being viewed: label for the amounts. */
   display: string;
-  /** Importes ya expresados en `display`. */
+  /** Amounts already expressed in `display`. */
   shown: ShownAmounts;
   params: GoalParams;
-  /** Escribir un importe lo fija en la divisa que se está viendo (ver `useGoalPlan`). */
+  /** Typing an amount pins it to the currency being viewed (see `useGoalPlan`). */
   onAmountsChange: (next: Partial<Omit<GoalAmounts, "currency">>) => void;
   onParamsChange: (patch: Partial<GoalParams>) => void;
 };
 
-/** Campos editables del objetivo; los que se ven dependen del modo (FIRE o cantidad). */
+/** Editable goal fields; which ones are visible depends on the mode (FIRE or amount). */
 export default function PortfolioGoalFields({ display, shown, params, onAmountsChange, onParamsChange }: Props) {
   const t = useTranslations("portfolio.goal");
   const tf = useTranslations("frequency");

@@ -23,16 +23,16 @@ import PositionForm, { POSITION_FORM_TITLE_ID } from "./PositionForm";
 import PositionList from "./PositionList";
 import PositionPanel from "./PositionPanel";
 
-/** Id del panel lateral (lo referencian las filas con `aria-controls`). */
+/** Id of the side panel (referenced by the rows via `aria-controls`). */
 const PANEL_ID = "position-panel";
 
-/** Qué muestra el panel lateral. */
+/** What the side panel shows. */
 type PanelState = { kind: "closed" } | { kind: "detail"; id: string } | { kind: "add" } | { kind: "edit"; id: string };
 
 /**
- * Pestaña Posiciones: buscador y filtro pegados a la lista, y un panel para el detalle, el alta
- * y la edición. El panel se abre JUNTO a la fila en escritorio y como hoja inferior en móvil, en
- * vez de debajo de toda la tabla o al final de la página.
+ * Positions tab: search and filter attached to the list, and a panel for the detail, creating and
+ * editing. The panel opens NEXT to the row on desktop and as a bottom sheet on mobile, instead of
+ * below the whole table or at the end of the page.
  */
 export default function PortfolioPositionsTab() {
   const t = useTranslations("portfolio");
@@ -43,15 +43,15 @@ export default function PortfolioPositionsTab() {
   const [query, setQuery] = useState("");
   const [panel, setPanel] = useState<PanelState>({ kind: "closed" });
 
-  // "Añadir posición" de la cabecera llega con `?nueva=1`: abre el alta y limpia la URL, para
-  // que recargar o volver atrás no la reabra.
+  // The header's "Add position" arrives with `?nueva=1`: it opens the create form and cleans the
+  // URL, so reloading or going back does not reopen it.
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const addRequested = searchParams.get(ADD_POSITION_PARAM) === "1";
-  // Se ajusta el estado DURANTE el render al ver el parámetro (el patrón de React para
-  // "estado que depende de una prop"), no en un efecto: así no hay un render intermedio con
-  // el panel cerrado. `seenAdd` evita reabrirlo mientras la URL aún no se ha limpiado.
+  // State is adjusted DURING render on seeing the parameter (React's pattern for
+  // "state that depends on a prop"), not in an effect: that way there is no intermediate render
+  // with the panel closed. `seenAdd` avoids reopening it while the URL has not been cleaned yet.
   const [seenAdd, setSeenAdd] = useState(false);
   if (addRequested !== seenAdd) {
     setSeenAdd(addRequested);
@@ -67,8 +67,8 @@ export default function PortfolioPositionsTab() {
     [positions, filter, query],
   );
 
-  // El panel guarda ids, no posiciones: así, cuando `refresh()` trae la cantidad y el precio
-  // medio reagregados, o la posición desaparece porque la borró otro cliente (MCP), cuadra solo.
+  // The panel stores ids, not positions: so when `refresh()` brings the re-aggregated quantity and
+  // average price, or the position disappears because another client (MCP) deleted it, it just works.
   const selected =
     panel.kind === "detail" || panel.kind === "edit" ? (positions.find((p) => p.id === panel.id) ?? null) : null;
   const panelOpen = panel.kind === "add" || selected !== null;
@@ -76,13 +76,13 @@ export default function PortfolioPositionsTab() {
   const closePanel = useCallback(() => setPanel({ kind: "closed" }), []);
 
   function handleCreated(position: Position) {
-    // Más recientes primero, igual que el orden del backend. Se abre su detalle: es lo que
-    // se quiere ver justo después de darla de alta.
+    // Most recent first, same as the backend order. Its detail opens: that is what one
+    // wants to see right after creating it.
     addPosition(position);
     setPanel({ kind: "detail", id: position.id });
   }
 
-  // Edición o combinación: reemplaza la posición y vuelve a su detalle.
+  // Edit or merge: replaces the position and goes back to its detail.
   function handleSaved(position: Position) {
     replacePosition(position);
     setPanel({ kind: "detail", id: position.id });
@@ -191,7 +191,7 @@ export default function PortfolioPositionsTab() {
       {panel.kind === "detail" && selected && (
         <PositionPanel id={PANEL_ID} labelledBy={POSITION_DETAIL_TITLE_ID} onClose={closePanel}>
           <PositionDetail
-            // Al cambiar de posición se remonta: las operaciones y la simulación parten de cero.
+            // Switching position remounts: trades and the simulation start from scratch.
             key={selected.id}
             position={selected}
             price={prices[selected.ticker]}

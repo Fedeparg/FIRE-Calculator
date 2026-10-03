@@ -32,7 +32,7 @@ const plan = (
 });
 
 describe("summarisePlan", () => {
-  it("cuenta altas, ampliaciones y operaciones sin las posiciones bloqueadas", () => {
+  it("counts new positions, top-ups and trades, excluding blocked positions", () => {
     const summary = summarisePlan(
       plan([
         position({ action: "create", newBuys: 2, newSells: 1 }),
@@ -44,13 +44,13 @@ describe("summarisePlan", () => {
     expect(summary).toEqual({ created: 1, extended: 1, lotsToImport: 6, incomeInFile: 0, canConfirm: true });
   });
 
-  it("solo con cobros nuevos también se puede confirmar", () => {
+  it("income alone can also be confirmed", () => {
     const summary = summarisePlan(plan([], { created: 2, duplicates: 1, reportedToAeat: 0 }));
 
     expect(summary).toMatchObject({ lotsToImport: 0, incomeInFile: 3, canConfirm: true });
   });
 
-  it("un fichero ya importado no tiene nada que confirmar", () => {
+  it("an already imported file has nothing to confirm", () => {
     const summary = summarisePlan(
       plan([position({ duplicates: 4 })], { created: 0, duplicates: 2, reportedToAeat: 0 }),
     );

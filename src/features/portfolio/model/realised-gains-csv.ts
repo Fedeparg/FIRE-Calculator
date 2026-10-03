@@ -1,9 +1,8 @@
 /**
- * CSV del informe de ganancias realizadas: una fila por VENTA del ejercicio, que es el nivel
- * de detalle que pide la declaración (cada transmisión con su valor de transmisión y de
- * adquisición). Los importes van en la divisa de la posición y en euros con el tipo del BCE del
- * día de la venta; sin ese tipo, las columnas en euros quedan vacías. Dialecto, escapado y BOM:
- * `src/shared/format/csv.ts`.
+ * CSV of the realised gains report: one row per SALE in the tax year, which is the level of detail
+ * the tax return asks for (each disposal with its transfer and acquisition values). Amounts are in
+ * the position's currency and in euros at the ECB rate on the sale date; without that rate, the
+ * euro columns are left empty. Dialect, escaping and BOM: `src/shared/format/csv.ts`.
  */
 
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
@@ -11,7 +10,7 @@ import type { Locale } from "@/i18n/types";
 import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
 import { roundCents } from "@sextante/core/money";
 
-/** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */
+/** File columns, in order. It is also the order of `RealisedGainsCsvHeaders`. */
 export const REALISED_GAINS_CSV_COLUMNS = [
   "date",
   "ticker",
@@ -35,12 +34,12 @@ export const REALISED_GAINS_CSV_COLUMNS = [
 
 type RealisedGainsCsvColumn = (typeof REALISED_GAINS_CSV_COLUMNS)[number];
 
-/** Cabeceras YA traducidas. */
+/** Headers ALREADY translated. */
 export type RealisedGainsCsvHeaders = Readonly<Record<RealisedGainsCsvColumn, string>>;
 
 /**
- * Cabeceras traducidas con el `t` del namespace `portfolio.realisedGains`: cada columna es la
- * clave `csv.<columna>`. Viven junto al CSV para que una columna nueva no se olvide en la UI.
+ * Headers translated with `t` from the `portfolio.realisedGains` namespace: each column is the key
+ * `csv.<column>`. They live next to the CSV so a new column is not forgotten in the UI.
  */
 export function realisedGainsCsvHeaders(t: (key: `csv.${RealisedGainsCsvColumn}`) => string): RealisedGainsCsvHeaders {
   const headers = {} as Record<RealisedGainsCsvColumn, string>;
@@ -54,7 +53,7 @@ export function buildRealisedGainsCsv(
   locale: Locale,
 ): string {
   const rows: CsvCell[][] = year.sales.map((sale) => [
-    // Fecha en ISO: la reconocen todas las hojas de cálculo y ordena bien como texto.
+    // ISO date: every spreadsheet recognizes it and it sorts correctly as text.
     sale.tradedAt,
     sale.ticker,
     sale.name ?? "",

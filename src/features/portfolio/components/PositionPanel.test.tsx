@@ -7,7 +7,7 @@ import { renderWithIntl } from "@/test/render";
 
 import PositionPanel from "./PositionPanel";
 
-/** Página mínima: un botón que abre el panel y otro contenido fuera de él. */
+/** Minimal page: a button that opens the panel and other content outside it. */
 function Page() {
   const [open, setOpen] = useState(false);
   return (
@@ -25,7 +25,7 @@ function Page() {
   );
 }
 
-/** Simula una pantalla de escritorio (`lg`) o de móvil. */
+/** Simulates a desktop (`lg`) or mobile screen. */
 function setDesktop(desktop: boolean) {
   vi.spyOn(window, "matchMedia").mockImplementation(
     (query: string) =>
@@ -44,7 +44,7 @@ describe("PositionPanel", () => {
     document.body.style.overflow = "";
   });
 
-  it("recibe el foco al abrirse y lo devuelve a quien lo abrió al cerrarse", async () => {
+  it("receives focus on open and returns it to the opener on close", async () => {
     setDesktop(true);
     const user = userEvent.setup();
     renderWithIntl(<Page />);
@@ -58,7 +58,7 @@ describe("PositionPanel", () => {
     expect(opener).toHaveFocus();
   });
 
-  it("en móvil vuelve inerte el resto de la página y bloquea el scroll mientras está abierto", async () => {
+  it("on mobile makes the rest of the page inert and locks scrolling while open", async () => {
     setDesktop(false);
     const user = userEvent.setup();
     renderWithIntl(<Page />);
@@ -73,15 +73,15 @@ describe("PositionPanel", () => {
     expect(document.body.style.overflow).toBe("");
   });
 
-  it("en móvil devuelve el foco a quien lo abrió cuando ya no es inerte", async () => {
+  it("on mobile returns focus to the opener once it is no longer inert", async () => {
     setDesktop(false);
     const user = userEvent.setup();
     renderWithIntl(<Page />);
     const opener = screen.getByRole("button", { name: "abrir" });
     await user.click(opener);
 
-    // jsdom no impide enfocar un elemento inerte, pero el navegador sí: se comprueba que, en el
-    // momento de devolver el foco, el botón ya no está dentro de un subárbol `inert`.
+    // jsdom does not prevent focusing an inert element, but the browser does: we check that, at the
+    // moment focus is returned, the button is no longer inside an `inert` subtree.
     const focusedWhileInert: boolean[] = [];
     const focus = HTMLElement.prototype.focus;
     vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, options) {
@@ -94,7 +94,7 @@ describe("PositionPanel", () => {
     expect(focusedWhileInert).toEqual([false]);
   });
 
-  it("en escritorio no toca el resto de la página (la lista sigue usable al lado)", async () => {
+  it("on desktop leaves the rest of the page alone (the list stays usable alongside)", async () => {
     setDesktop(true);
     const user = userEvent.setup();
     renderWithIntl(<Page />);

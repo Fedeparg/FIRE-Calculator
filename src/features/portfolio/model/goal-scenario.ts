@@ -1,7 +1,7 @@
-// Lectura de un escenario guardado del objetivo FIRE. Core puro (sin React), testeable.
+// Reading a saved FIRE goal scenario. Pure core (no React), testable.
 //
-// La comparten el bloque completo del objetivo (pestaña Objetivo FIRE) y la tarjeta resumida
-// de la pestaña Resumen, para que las dos lean el mismo escenario de la misma manera.
+// Shared by the full goal block (FIRE goal tab) and the compact card on the Summary tab, so
+// both read the same scenario the same way.
 
 import { convertCurrency } from "@sextante/core/fx";
 import {
@@ -16,14 +16,13 @@ import { decodeCalculatorInputs, type FieldSpecs } from "@/shared/url-state/url-
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
 
 /**
- * Campos del objetivo, con las MISMAS claves que la calculadora de independencia financiera
- * (`FireCalculator`), para que un escenario guardado en cualquiera de los dos sitios se cargue
- * en el otro. `currentSavings` no se declara a propósito: aquí el patrimonio actual no se
- * teclea, lo pone la cartera.
+ * Goal fields, with the SAME keys as the financial independence calculator (`FireCalculator`), so
+ * a scenario saved in either place loads in the other. `currentSavings` is deliberately not
+ * declared: here the current net worth is not typed in, the portfolio provides it.
  *
- * `goalCurrency` es una clave PROPIA del objetivo: la calculadora no la registra, así que
- * `decodeCalculatorInputs` la ignora allí. Sirve para saber en qué divisa se guardaron los
- * importes; si falta (escenario creado en la calculadora, que es solo en euros) se asume EUR.
+ * `goalCurrency` is a key OWNED by the goal: the calculator does not register it, so
+ * `decodeCalculatorInputs` ignores it there. It records the currency the amounts were saved in;
+ * if it is missing (a scenario created in the calculator, which is euro-only) EUR is assumed.
  */
 export const GOAL_FIELD_SPECS: FieldSpecs = {
   annualExpenses: { kind: "number", defaultValue: 24000 },
@@ -31,31 +30,31 @@ export const GOAL_FIELD_SPECS: FieldSpecs = {
   frequency: { kind: "option", defaultValue: "monthly", allowed: FREQUENCIES },
   annualReturn: { kind: "number", defaultValue: 5 },
   withdrawalRate: { kind: "number", defaultValue: 4 },
-  // Mismas claves que el simulador Monte Carlo: la calculadora FIRE no las registra.
+  // Same keys as the Monte Carlo simulator: the FIRE calculator does not register them.
   volatility: { kind: "number", defaultValue: 15 },
   retirementYears: { kind: "number", defaultValue: 40 },
   goalCurrency: { kind: "option", defaultValue: "EUR", allowed: SUPPORTED_CURRENCIES },
-  // Modo "X en N años": claves propias del objetivo, que la calculadora ignora.
+  // "X in N years" mode: keys owned by the goal, which the calculator ignores.
   goalMode: { kind: "option", defaultValue: "fire", allowed: GOAL_MODES },
   targetAmount: { kind: "number", defaultValue: 100000 },
   targetYears: { kind: "number", defaultValue: 10 },
 };
 
-/** Lo que define un objetivo, tal y como se guardó (importes en `currency`). */
+/** What defines a goal, as it was saved (amounts in `currency`). */
 export interface GoalSettings {
   mode: GoalMode;
   currency: string;
   annualExpenses: number;
-  /** Aportación por periodo (`frequency`). */
+  /** Contribution per period (`frequency`). */
   contribution: number;
   frequency: Frequency;
   annualReturn: number;
   withdrawalRate: number;
   volatility: number;
   retirementYears: number;
-  /** Modo cantidad: cifra a reunir, en `currency`. */
+  /** Amount mode: figure to reach, in `currency`. */
   targetAmount: number;
-  /** Modo cantidad: plazo en años enteros. */
+  /** Amount mode: term in whole years. */
   targetYears: number;
 }
 
@@ -66,9 +65,9 @@ function isFrequency(value: unknown): value is Frequency {
 const number = (value: unknown, fallback: number): number => (typeof value === "number" ? value : fallback);
 
 /**
- * Objetivo a partir de los `inputs` de un escenario. Un campo ausente o inválido toma el valor
- * por defecto de `GOAL_FIELD_SPECS`, salvo los importes, que pasan a 0: inventar un gasto o una
- * aportación que el usuario no escribió daría un objetivo que no es el suyo.
+ * Goal from a scenario's `inputs`. A missing or invalid field takes its default from
+ * `GOAL_FIELD_SPECS`, except the amounts, which become 0: making up an expense or a contribution
+ * the user did not write would yield a goal that is not theirs.
  */
 export function goalSettingsFromInputs(inputs: unknown): GoalSettings {
   const values = decodeCalculatorInputs(inputs, GOAL_FIELD_SPECS);
@@ -88,9 +87,9 @@ export function goalSettingsFromInputs(inputs: unknown): GoalSettings {
 }
 
 /**
- * Progreso de la cartera hacia un objetivo guardado, en la divisa `display`. `null` si los
- * importes del objetivo no se pueden convertir a esa divisa (falta la tasa): comparar importes
- * de divisas distintas daría un porcentaje falso.
+ * Portfolio progress towards a saved goal, in the `display` currency. `null` if the goal amounts
+ * cannot be converted into that currency (missing rate): comparing amounts in different
+ * currencies would give a false percentage.
  */
 export function goalProgress(
   settings: GoalSettings,

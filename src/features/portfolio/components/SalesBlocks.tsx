@@ -15,7 +15,7 @@ import { formatTaxBox } from "@sextante/core/money";
 import ClassifySelect from "./ClassifySelect";
 import { EntityName, WashSaleNote } from "./SaleRowParts";
 
-/** Bloques de la declaración en que van las ventas, en el orden del modelo 100. */
+/** Tax-return blocks the sales go into, in modelo 100 (Spanish income tax return) order. */
 type Block = "shares" | "funds" | "other" | "unclassified";
 
 const BLOCK_OF: Record<AssetClass, Block> = { stock: "shares", fund: "funds", derivative: "other", other: "other" };
@@ -29,9 +29,9 @@ type Props = {
 };
 
 /**
- * Ventas del ejercicio en euros, agrupadas por el bloque de la declaración en que se declaran:
- * acciones admitidas a negociación (por entidad), fondos y ETF, y otros elementos patrimoniales
- * (derivados). Cada importe lleva su casilla y un botón para copiarlo.
+ * Sales for the tax year in euros, grouped by the tax-return block they are declared in: shares
+ * admitted to trading (per issuer), funds and ETFs, and other capital assets (derivatives). Each
+ * amount carries its box (casilla) and a button to copy it.
  */
 export default function SalesBlocks({ year, showFx, assetClasses, boxes }: Props) {
   const t = useTranslations("portfolio.realisedGains");
@@ -109,7 +109,7 @@ function BlockTable({
 }) {
   const t = useTranslations("portfolio.realisedGains");
   const { formatQuantity } = useFormat();
-  // Casillas de valor de transmisión y de adquisición del bloque, si el modelo las da por valor.
+  // Transfer and acquisition value boxes for the block, if the form provides them per security.
   const columns = block === "shares" ? boxes?.shares : block === "funds" ? boxes?.fundsWithoutWithholding : undefined;
   const entityBox = block === "shares" ? boxes?.shares.entity : undefined;
   const boxLabel = (box: string | undefined) =>
@@ -186,7 +186,7 @@ function BlockTable({
       : []),
   ];
 
-  /** En pantallas estrechas, una tarjeta por valor: la tabla obligaría a deslizar para ver las cifras. */
+  /** On narrow screens, one card per security: the table would force scrolling to see the figures. */
   const renderCard = (row: RealisedGainsRow) => (
     <>
       <div className="flex flex-wrap items-baseline justify-between gap-2">

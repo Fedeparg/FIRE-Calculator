@@ -13,12 +13,12 @@ type Props = {
   prices: Record<string, PriceInfo>;
 };
 
-/** Posiciones que se nombran en la franja. */
+/** Positions named in the strip. */
 const MOVERS = 3;
 
 /**
- * Franja con las posiciones que más se han movido en la última sesión y el enlace a la lista
- * completa. Es la variación del precio respecto al cierre anterior (ver `dailyMovers`).
+ * Strip with the positions that moved the most in the last session and the link to the full
+ * list. It is the price change vs the previous close (see `dailyMovers`).
  */
 export default function PortfolioMovers({ positions, prices }: Props) {
   const t = useTranslations("portfolio.movers");

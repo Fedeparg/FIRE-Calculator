@@ -30,7 +30,7 @@ const event = (overrides: Partial<IncomeEvent>): IncomeEvent => ({
 });
 
 describe("buildIncomeCsv", () => {
-  it("una fila por cobro, ordenadas por fecha, con la procedencia y la retención desconocida vacía", () => {
+  it("one row per income entry, sorted by date, with the source and the unknown withholding left empty", () => {
     const csv = buildIncomeCsv(
       [
         event({}),
@@ -59,7 +59,7 @@ describe("buildIncomeCsv", () => {
 });
 
 describe("incomeCsvTexts", () => {
-  it("usa las etiquetas del formulario y, sin campo, las de csv.*; el ISIN también se traduce", () => {
+  it("uses the form labels and, without a field, the csv.* ones; the ISIN is translated too", () => {
     const { headers, labels } = incomeCsvTexts((key) => `[${key}]`);
 
     expect(Object.keys(headers)).toEqual([...INCOME_CSV_COLUMNS]);

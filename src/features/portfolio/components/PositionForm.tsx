@@ -22,15 +22,15 @@ import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import PositionFormFields, { type PositionFormValues } from "./PositionFormFields";
 import Button from "@/shared/ui/Button";
 
-/** Id del título: da nombre al panel que contiene el formulario. */
+/** Title id: names the panel that contains the form. */
 export const POSITION_FORM_TITLE_ID = "position-form-title";
 
 /**
- * Lo que impide guardar, como UNA unión en vez de cinco booleanos que podían contradecirse:
- * - `duplicate`: en alta, ya existe ese símbolo+bróker (se ofrece combinar);
- * - `brokerRequired`: el símbolo ya existe y falta el bróker para distinguirlo;
- * - `brokerEmptied`: al editar, se intenta vaciar un bróker que la posición ya tenía;
- * - `error`: cualquier otro fallo, con su mensaje.
+ * What prevents saving, as ONE union instead of five booleans that could contradict each other:
+ * - `duplicate`: on create, that symbol+broker already exists (merging is offered);
+ * - `brokerRequired`: the symbol already exists and the broker is missing to tell them apart;
+ * - `brokerEmptied`: when editing, an attempt to clear a broker the position already had;
+ * - `error`: any other failure, with its message.
  */
 type Problem =
   | { kind: "duplicate"; existing: Position }
@@ -38,10 +38,10 @@ type Problem =
   | { kind: "brokerEmptied" }
   | { kind: "error"; key: PositionErrorKey };
 
-/** Problema que deja un fallo de la API al guardar o al combinar. */
+/** Problem left by an API failure when saving or merging. */
 function problemFromError(error: unknown, isEditing: boolean): Problem {
-  // 409: BROKER_REQUIRED y DUPLICATE (solo en alta) tienen su propia reacción; HAS_SALES y el
-  // resto de fallos salen como mensaje (sesión, datos, servidor…).
+  // 409: BROKER_REQUIRED and DUPLICATE (create only) have their own reaction; HAS_SALES and the
+  // remaining failures surface as a message (session, data, server…).
   const conflict = positionConflict(error);
   if (conflict?.kind === "brokerRequired") return { kind: "brokerRequired" };
   if (conflict?.kind === "duplicate" && !isEditing) return { kind: "duplicate", existing: conflict.existing };
@@ -49,13 +49,13 @@ function problemFromError(error: unknown, isEditing: boolean): Problem {
 }
 
 type Props = {
-  /** Si viene una posición, el formulario está en modo edición; si no, en modo alta. */
+  /** If a position is given, the form is in edit mode; otherwise, in create mode. */
   editing?: Position | null;
-  /** Alta correcta (201). */
+  /** Successful create (201). */
   onCreated: (position: Position) => void;
-  /** Edición o combinación correctas: reemplaza la posición existente en la lista. */
+  /** Successful edit or merge: replaces the existing position in the list. */
   onSaved: (position: Position) => void;
-  /** Cancelar la edición y volver al modo alta. */
+  /** Cancels editing and goes back to create mode. */
   onCancelEdit: () => void;
 };
 
@@ -64,10 +64,10 @@ function toCurrency(value: string | undefined): SupportedCurrency {
 }
 
 /**
- * Formulario de posición, reutilizado para alta y edición. En alta, si el símbolo ya
- * existe con el mismo bróker, la API responde 409 y mostramos un aviso con la opción de
- * combinar (media ponderada) sin perder lo escrito. El `key` del padre fuerza un remount
- * al cambiar de posición editada, así que el estado inicial siempre parte de `editing`.
+ * Position form, reused for create and edit. On create, if the symbol already exists with the
+ * same broker, the API responds 409 and we show a warning offering to merge (weighted average)
+ * without losing what was typed. The parent's `key` forces a remount when the edited position
+ * changes, so the initial state always starts from `editing`.
  */
 export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.form");
@@ -78,7 +78,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   const [values, setValues] = useState<PositionFormValues>({
     ticker: editing?.ticker ?? "",
     name: editing?.name ?? "",
-    // `formatDecimalInput` y no `String(n)`: este daría "1e-7", que el saneado leería como 17.
+    // `formatDecimalInput` and not `String(n)`: the latter would give "1e-7", which sanitizing would read as 17.
     quantity: editing ? formatDecimalInput(editing.quantity, decimalSeparator) : "",
     avgPrice: editing ? formatDecimalInput(editing.avgPrice, decimalSeparator) : "",
     broker: editing?.broker ?? "",
@@ -86,8 +86,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     assetClass: editing?.assetClass ?? undefined,
   });
   const { ticker, name, quantity, avgPrice, broker, currency, assetClass } = values;
-  // Dos mutaciones: guardar (alta o edición) y combinar con la posición duplicada. El problema
-  // se DERIVA de sus errores (no se copia a otro estado), salvo el de validación local.
+  // Two mutations: save (create or edit) and merge into the duplicate position. The problem
+  // is DERIVED from their errors (not copied into other state), except the local validation one.
   const save = useApiMutation();
   const combine = useApiMutation();
   const [brokerEmptied, setBrokerEmptied] = useState(false);
@@ -97,12 +97,12 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     : combine.status === "error"
       ? { kind: "error", key: positionErrorKey(combine.error) }
       : saveProblem;
-  // El aviso de duplicado sigue a la vista mientras se combina (y si combinar falla).
+  // The duplicate warning stays visible while merging (and if merging fails).
   const duplicate = saveProblem?.kind === "duplicate" ? saveProblem.existing : null;
   const submitting = save.status === "pending";
   const combining = combine.status === "pending";
 
-  // El bróker es opcional al añadir; la API lo exige solo si el símbolo ya existe.
+  // The broker is optional when adding; the API only requires it if the symbol already exists.
   const amounts = validatePositionForm({ ticker, quantity, avgPrice });
 
   function resetForm() {
@@ -116,11 +116,11 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     event.preventDefault();
     setBrokerEmptied(false);
     combine.reset();
-    // El botón está deshabilitado mientras no es válido (y sin botón activo no hay envío
-    // implícito con Enter): esto solo estrecha los tipos.
+    // The button is disabled while the form is invalid (and with no active button there is no
+    // implicit submit on Enter): this only narrows the types.
     if (!amounts) return;
-    // No se puede vaciar el bróker de una posición que ya lo tenía (el alta sí permite
-    // crearla sin bróker; quitarlo después haría ambiguo el modelo de duplicados).
+    // A broker cannot be cleared from a position that already had one (creating allows a
+    // position without a broker; removing it later would make the duplicates model ambiguous).
     if (isEditing && Boolean(editing?.broker) && broker.trim() === "") {
       save.reset();
       setBrokerEmptied(true);
@@ -145,7 +145,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     }
   }
 
-  /** Combina la compra actual con la posición existente que colisiona (media ponderada). */
+  /** Merges the current purchase into the colliding existing position (weighted average). */
   async function handleCombine() {
     if (!duplicate || !amounts) return;
     const result = await combine.run(() => combinePosition(duplicate.id, { ...amounts, currency }));

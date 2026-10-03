@@ -1,6 +1,6 @@
-// Estado del bloque "Tu objetivo" de la cartera como un reductor puro: qué importes y
-// parámetros tiene el plan, qué escenario guardado está cargado y con qué nombre se guardará.
-// Sin React: se prueba en node. El hook `useGoalPlan` lo conecta con `useReducer`.
+// State of the portfolio's "Your goal" block as a pure reducer: which amounts and
+// parameters the plan has, which saved scenario is loaded and under what name it will be saved.
+// No React: tested in node. The `useGoalPlan` hook wires it to `useReducer`.
 
 import {
   DEFAULT_TARGET_AMOUNT,
@@ -11,30 +11,30 @@ import {
 } from "@/features/portfolio/model/goal-amounts";
 import { goalSettingsFromInputs } from "@/features/portfolio/model/goal-scenario";
 
-/** Lo mínimo de un escenario guardado que necesita el plan. */
+/** The minimum of a saved scenario the plan needs. */
 type ScenarioLike = { id: string; name: string; inputs: Record<string, unknown> };
 
 export type GoalPlanState = {
   /**
-   * Importes CON la divisa en la que se introdujeron (o en la que se guardó el escenario). No
-   * se reescriben al cambiar la divisa de la cartera: la conversión se deriva al pintar.
+   * Amounts WITH the currency they were entered in (or the one the scenario was saved in). They
+   * are not rewritten when the portfolio currency changes: conversion is derived at render time.
    */
   amounts: GoalAmounts;
   params: GoalParams;
   /**
-   * Cambia cada vez que los importes se aplican de golpe (cargar un escenario, proponer la cifra
-   * de ejemplo) y sirve de `key` de los campos, forzando su remontaje con los valores nuevos.
+   * Changes whenever the amounts are applied in one go (loading a scenario, proposing the example
+   * figure) and serves as the fields' `key`, forcing them to remount with the new values.
    */
   version: number;
-  /** Escenario cargado (`""` si ninguno). */
+  /** Loaded scenario (`""` if none). */
   selectedId: string;
   /**
-   * `inputs` completos del escenario cargado. Se conservan para que al actualizarlo no se
-   * pierdan las claves que este bloque no edita (p. ej. el crecimiento del ahorro que sí tiene
-   * la calculadora): se guarda el original con los campos de aquí sobrescritos.
+   * Full `inputs` of the loaded scenario. Kept so that updating it does not lose the keys this
+   * block does not edit (e.g. the savings growth the calculator does have): the original is saved
+   * with the fields from here overwritten.
    */
   loadedInputs: Record<string, unknown>;
-  /** Nombre con el que se guardará. */
+  /** Name it will be saved under. */
   name: string;
 };
 
@@ -42,12 +42,12 @@ export type GoalPlanAction =
   | { type: "applyScenario"; scenario: ScenarioLike }
   | { type: "setAmounts"; amounts: GoalAmounts }
   | { type: "patchParams"; patch: Partial<GoalParams> }
-  /** Cambia de modo; al pasar a cantidad sin cifra, propone la de ejemplo (`shown`: importes que se ven). */
+  /** Changes mode; switching to amount without a figure proposes the example (`shown`: amounts on screen). */
   | { type: "setMode"; mode: GoalParams["mode"]; display: string; shown: Omit<GoalAmounts, "currency"> }
   | { type: "setName"; name: string }
   | { type: "saved"; scenario: ScenarioLike };
 
-/** Valores iniciales de la calculadora FIRE (los mismos que `GOAL_FIELD_SPECS`). */
+/** Initial values of the FIRE calculator (the same as `GOAL_FIELD_SPECS`). */
 export const DEFAULT_GOAL_PARAMS: GoalParams = {
   mode: "fire",
   frequency: "monthly",
@@ -72,7 +72,7 @@ export function initialGoalPlan(display: string): GoalPlanState {
 export function goalPlanReducer(state: GoalPlanState, action: GoalPlanAction): GoalPlanState {
   switch (action.type) {
     case "applyScenario": {
-      // Los importes se guardan en SU divisa (`goalCurrency`, o EUR si viene de la calculadora).
+      // Amounts are stored in THEIR currency (`goalCurrency`, or EUR if it comes from the calculator).
       const settings = goalSettingsFromInputs(action.scenario.inputs);
       return {
         amounts: amountsFromSettings(settings),
@@ -89,8 +89,8 @@ export function goalPlanReducer(state: GoalPlanState, action: GoalPlanAction): G
       return { ...state, params: { ...state.params, ...action.patch } };
     case "setMode": {
       const params = { ...state.params, mode: action.mode };
-      // Un plan FIRE no trae cifra objetivo: al pasar a modo cantidad se propone la de ejemplo
-      // en vez de un objetivo de 0 que se daría por alcanzado.
+      // A FIRE plan carries no target figure: switching to amount mode proposes the example one
+      // instead of a target of 0 that would count as already reached.
       if (action.mode !== "amount" || action.shown.targetAmount > 0) return { ...state, params };
       return {
         ...state,

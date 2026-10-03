@@ -5,32 +5,33 @@ import { useTranslations } from "next-intl";
 
 import { useMediaQuery } from "@/shared/ui/use-media-query";
 
-/** A partir de `lg` (64rem) el panel es lateral; por debajo, una hoja modal. */
+/** From `lg` (64rem) up the panel is a side panel; below that, a modal sheet. */
 const DESKTOP_QUERY = "(min-width: 64rem)";
 
 type Props = {
-  /** Id del panel (lo referencian las filas con `aria-controls`). */
+  /** Panel id (referenced by the rows via `aria-controls`). */
   id: string;
-  /** Id del título del contenido, que da nombre al panel. */
+  /** Id of the content title, which names the panel. */
   labelledBy: string;
   onClose: () => void;
   children: ReactNode;
 };
 
 /**
- * Contenedor del detalle, el alta y la edición de una posición. Es el MISMO componente en dos
- * presentaciones, decididas solo con CSS:
+ * Container for a position's detail, create and edit views. It is the SAME component in two
+ * presentations, chosen purely with CSS:
  *
- * - Escritorio (`lg`): un panel lateral pegajoso junto a la lista, para ver la fila y su detalle
- *   a la vez.
- * - Móvil: una hoja que sube desde abajo sobre un fondo oscurecido; tocar el fondo la cierra.
+ * - Desktop (`lg`): a sticky side panel next to the list, to see the row and its detail at the
+ *   same time.
+ * - Mobile: a sheet that slides up from the bottom over a dimmed backdrop; tapping the backdrop
+ *   closes it.
  *
- * Al abrirse recibe el foco (para que teclado y lector de pantalla lleguen a él sin recorrer la
- * lista), Escape lo cierra y al cerrarse devuelve el foco a donde estaba (la fila o el botón que
- * lo abrió). No es `aria-modal`: en escritorio la lista sigue siendo usable a su lado, y marcarlo
- * modal escondería esa lista a los lectores de pantalla. En móvil, en cambio, la hoja tapa la
- * página: el resto se marca `inert` (ni foco ni lector de pantalla ni clics pueden llegar detrás)
- * y se bloquea el scroll del fondo mientras está abierta.
+ * On open it receives focus (so keyboard and screen reader reach it without walking the list),
+ * Escape closes it, and on close it returns focus to where it was (the row or the button that
+ * opened it). It is not `aria-modal`: on desktop the list stays usable beside it, and marking it
+ * modal would hide that list from screen readers. On mobile, however, the sheet covers the page:
+ * everything else is marked `inert` (no focus, screen reader or clicks can reach behind it) and
+ * background scrolling is locked while it is open.
  */
 export default function PositionPanel({ id, labelledBy, onClose, children }: Props) {
   const t = useTranslations("portfolio.panel");
@@ -38,12 +39,12 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
   const scrimRef = useRef<HTMLButtonElement>(null);
   const isSheet = !useMediaQuery(DESKTOP_QUERY);
 
-  // Solo al montar y desmontar: guarda quién tenía el foco, lo pasa al panel y lo devuelve al
-  // cerrar. Va aparte del efecto de Escape para no repetirse cuando cambia `onClose`. Al cerrar,
-  // React limpia los efectos en orden de declaración, así que este corre ANTES de que el efecto
-  // de la hoja quite el `inert` del resto de la página, y el navegador no deja enfocar algo
-  // inerte (el foco caería en `body`). Por eso se devuelve en una microtarea: para entonces todas
-  // las limpiezas del desmontaje ya han corrido.
+  // Only on mount and unmount: remembers who had focus, moves it to the panel and returns it on
+  // close. It is separate from the Escape effect so it does not rerun when `onClose` changes. On
+  // close, React cleans up effects in declaration order, so this one runs BEFORE the sheet effect
+  // removes `inert` from the rest of the page, and the browser does not allow focusing something
+  // inert (focus would land on `body`). That is why it is returned in a microtask: by then every
+  // unmount cleanup has already run.
   useEffect(() => {
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus();
@@ -54,9 +55,9 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
     };
   }, []);
 
-  // Hoja modal en móvil: `inert` en todo lo que no sea el panel (subiendo por sus ancestros hasta
-  // `body`, para no tocar la cadena que lo contiene) y sin scroll detrás. El fondo oscurecido
-  // queda fuera porque tocarlo cierra la hoja.
+  // Modal sheet on mobile: `inert` on everything except the panel (walking up its ancestors to
+  // `body`, so the chain that contains it is left alone) and no scrolling behind. The dimmed
+  // backdrop is excluded because tapping it closes the sheet.
   useEffect(() => {
     const panel = panelRef.current;
     if (!isSheet || !panel) return;
@@ -64,8 +65,8 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
     for (let node: HTMLElement = panel; node !== document.body && node.parentElement; node = node.parentElement) {
       for (const sibling of node.parentElement.children) {
         if (sibling !== node && sibling !== scrimRef.current && !sibling.hasAttribute("inert")) {
-          // Atributo y no la propiedad `inert`: es lo mismo para el navegador, y el compilador
-          // de React no admite asignar propiedades a valores que salen de una ref.
+          // Attribute rather than the `inert` property: it is the same to the browser, and the React
+          // compiler does not allow assigning properties to values that come from a ref.
           sibling.setAttribute("inert", "");
           inerted.push(sibling);
         }
@@ -81,7 +82,7 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      // `defaultPrevented`: un control interno (el desplegable de búsqueda) ya consumió el Escape.
+      // `defaultPrevented`: an inner control (the search dropdown) already consumed the Escape.
       if (event.key === "Escape" && !event.defaultPrevented) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
@@ -90,9 +91,9 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
 
   return (
     <>
-      {/* Fondo de la hoja en móvil. Es un botón (no un div con onClick) para que sea una acción
-          real; fuera del orden de tabulación y oculto a los lectores de pantalla porque el botón
-          de cerrar ya cubre el teclado y la accesibilidad: aquí sería un control duplicado. */}
+      {/* Sheet backdrop on mobile. It is a button (not a div with onClick) so it is a real
+          action; out of the tab order and hidden from screen readers because the close
+          button already covers keyboard and accessibility: here it would be a duplicate control. */}
       <button
         ref={scrimRef}
         type="button"
