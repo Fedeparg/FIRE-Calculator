@@ -6,7 +6,7 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { oauthClients } from '../db/schema.js';
 
-/** Clientes OAuth en Postgres para el SDK MCP; soporta Dynamic Client Registration (RFC 7591) vía `registerClient`. */
+/** OAuth clients in Postgres for the MCP SDK; supports Dynamic Client Registration (RFC 7591) via `registerClient`. */
 @Injectable()
 export class OAuthClientsStore implements OAuthRegisteredClientsStore {
   constructor(@Inject(DRIZZLE) private readonly db: Database) {}
@@ -29,9 +29,9 @@ export class OAuthClientsStore implements OAuthRegisteredClientsStore {
   }
 
   /**
-   * Marca el cliente como vivo. Se llama al canjear un token, no en `getClient` (que también
-   * corre en un `/authorize` que acaba en login): así la poda de `jobs/data-retention.ts` distingue un registro DCR
-   * abandonado de uno activo.
+   * Marks the client as alive. Called when a token is redeemed, not in `getClient` (which also
+   * runs on an `/authorize` that ends in a login): that way the `jobs/data-retention.ts` pruning
+   * tells an abandoned DCR registration from an active one.
    */
   async touch(clientId: string): Promise<void> {
     await this.db.update(oauthClients).set({ lastUsedAt: new Date() }).where(eq(oauthClients.clientId, clientId));

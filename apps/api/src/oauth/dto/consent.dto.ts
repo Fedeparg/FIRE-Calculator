@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import { SCOPES_SUPPORTED } from '../oauth.constants.js';
 
-/** Cuerpo de la aprobación de consentimiento: a qué cliente y con qué scopes. */
+/** Consent approval body: which client and with which scopes. */
 export const consentSchema = z.strictObject({
   clientId: z.string(),
   scopes: z

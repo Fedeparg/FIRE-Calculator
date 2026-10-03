@@ -32,18 +32,18 @@ import {
 import { randomToken, sha256Hex } from '../common/crypto.js';
 
 /**
- * Authorization Server de Sextante para MCP, implementando la interfaz `OAuthServerProvider`
- * del SDK oficial. El SDK monta los endpoints HTTP (`/authorize`, `/token`, `/register`,
- * `/revoke`, discovery, PRM) y valida PKCE; NOSOTROS implementamos la lógica y EMITIMOS los
- * tokens. Ver `_local/mcp-integracion.md`.
+ * Sextante's Authorization Server for MCP, implementing the official SDK's `OAuthServerProvider`
+ * interface. The SDK mounts the HTTP endpoints (`/authorize`, `/token`, `/register`, `/revoke`,
+ * discovery, PRM) and validates PKCE; WE implement the logic and ISSUE the tokens. See
+ * `_local/mcp-integracion.md`.
  *
- * Invariantes de seguridad que poseemos (no las cubre el SDK):
- *  - Códigos y tokens solo se guardan hasheados (SHA-256), nunca en claro.
- *  - Códigos de un solo uso atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
- *  - Audience binding (RFC 8707): el token se emite y se VERIFICA contra el URI canónico
- *    `…/api/mcp`; un token para otro recurso se rechaza.
- *  - `authorize()` exige sesión iniciada (cookie del magic link) y consentimiento previo.
- *  - Refresh con rotación + detección de reuso (revoca la cadena).
+ * Security invariants we own (the SDK does not cover them):
+ *  - Codes and tokens are only stored hashed (SHA-256), never in plain text.
+ *  - Atomic single-use codes (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
+ *  - Audience binding (RFC 8707): the token is issued and VERIFIED against the canonical URI
+ *    `…/api/mcp`; a token for another resource is rejected.
+ *  - `authorize()` requires a signed-in session (the magic-link cookie) and prior consent.
+ *  - Refresh with rotation + reuse detection (revokes the chain).
  */
 @Injectable()
 export class SextanteOAuthProvider implements OAuthServerProvider {
@@ -62,14 +62,14 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /**
-   * Inicio del flujo de autorización (navegador). Tres caminos:
-   *  1. Sin sesión → redirige al login, que vuelve a esta misma URL de `/authorize`.
-   *  2. Con sesión pero sin consentimiento → redirige a la pantalla de consentimiento, que
-   *     tras aprobar vuelve a esta misma URL.
-   *  3. Con sesión y consentimiento → emite el código y redirige al cliente.
+   * Start of the authorization flow (browser). Three paths:
+   *  1. No session → redirects to the login, which returns to this same `/authorize` URL.
+   *  2. Session but no consent → redirects to the consent screen, which returns to this same URL
+   *     after approval.
+   *  3. Session and consent → issues the code and redirects to the client.
    */
   async authorize(client: OAuthClientInformationFull, params: AuthorizationParams, res: Response): Promise<void> {
-    // RFC 8707: el token debe ir destinado a NUESTRO servidor MCP.
+    // RFC 8707: the token must be meant for OUR MCP server.
     const audience = this.validateResource(params.resource);
     const scopes = this.effectiveScopes(params.scopes);
 
@@ -89,8 +89,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       const consentUrl = new URL('/oauth/consent', this.urls.issuer);
       consentUrl.searchParams.set('client_id', client.client_id);
       consentUrl.searchParams.set('scope', scopes.join(' '));
-      // La query original de `/authorize`, para reanudar el flujo en NUESTRO origen tras
-      // aprobar (no es un redirect abierto: el host se fija a nuestro issuer).
+      // The original `/authorize` query, to resume the flow on OUR origin after approval (not an
+      // open redirect: the host is pinned to our issuer).
       consentUrl.searchParams.set('authorize_params', here.search.replace(/^\?/, ''));
       res.redirect(consentUrl.href);
       return;
@@ -116,7 +116,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     res.redirect(target.href);
   }
 
-  /** Devuelve el `code_challenge` del código (el SDK lo usa para validar PKCE). No consume. */
+  /** Returns the code's `code_challenge` (the SDK uses it to validate PKCE). Does not consume it. */
   async challengeForAuthorizationCode(_client: OAuthClientInformationFull, authorizationCode: string): Promise<string> {
     const [row] = await this.db
       .select({ codeChallenge: oauthAuthCodes.codeChallenge })
@@ -135,7 +135,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return row.codeChallenge;
   }
 
-  /** Canjea el código por tokens. El SDK ya validó PKCE; aquí consumimos el código (atómico). */
+  /** Exchanges the code for tokens. The SDK has already validated PKCE; here we consume the code (atomically). */
   async exchangeAuthorizationCode(
     client: OAuthClientInformationFull,
     authorizationCode: string,
@@ -163,8 +163,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     if (redirectUri !== undefined && redirectUri !== code.redirectUri) {
       throw new InvalidGrantError('redirect_uri does not match the authorization request');
     }
-    // La audiencia del token = la solicitada en `/authorize` (canónica). Si el `/token`
-    // incluye `resource`, debe coincidir.
+    // The token audience = the one requested in `/authorize` (canonical). If `/token` includes
+    // `resource`, it must match.
     const audience = this.validateResource(resource);
     if (code.resource && code.resource !== audience) {
       throw new InvalidTargetError('resource does not match the authorization request');
@@ -176,7 +176,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return tokens;
   }
 
-  /** Canjea un refresh token por uno nuevo (rotación + detección de reuso). */
+  /** Exchanges a refresh token for a new one (rotation + reuse detection). */
   async exchangeRefreshToken(
     client: OAuthClientInformationFull,
     refreshToken: string,
@@ -197,7 +197,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       throw new InvalidGrantError('Refresh token was not issued to this client');
     }
     if (row.consumedAt) {
-      // Reuso de un refresh ya rotado: posible robo → revoca toda la cadena del cliente.
+      // Reuse of an already rotated refresh token: possible theft → revoke the client's whole chain.
       this.logger.warn(`Refresh token reuse detected (user=${row.userId}, client=${row.clientId}); revoking`);
       await this.grants.revoke(row.userId, row.clientId);
       throw new InvalidGrantError('Refresh token reuse detected; access revoked');
@@ -206,9 +206,9 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       throw new InvalidGrantError('Refresh token expired');
     }
 
-    // Validaciones ANTES de consumir: una petición mal formada (scopes de más, otro recurso) no
-    // debe gastar el refresh, o el cliente se quedaría sin cadena por un error suyo.
-    // Solo se pueden estrechar scopes en el refresh, nunca ampliarlos.
+    // Validate BEFORE consuming: a malformed request (extra scopes, another resource) must not
+    // spend the refresh token, or the client would lose its chain over its own mistake.
+    // A refresh can only narrow scopes, never widen them.
     let nextScopes = row.scopes;
     if (scopes && scopes.length > 0) {
       const granted = new Set(row.scopes);
@@ -219,10 +219,10 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     }
     const audience = this.validateResource(resource);
 
-    // Consumir y emitir en la MISMA transacción: si la emisión fallara después de consumir, el
-    // cliente se quedaría sin refresh válido y su reintento se tomaría por reuso (revocación).
+    // Consume and issue in the SAME transaction: if issuance failed after consuming, the client
+    // would be left without a valid refresh token and its retry would look like reuse (revocation).
     const tokens = await this.db.transaction(async (tx) => {
-      // Consumo atómico: si otra petición lo consumió primero, trátalo como reuso.
+      // Atomic consumption: if another request consumed it first, treat it as reuse.
       const [consumed] = await tx
         .update(oauthTokens)
         .set({ consumedAt: new Date() })
@@ -241,9 +241,9 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /**
-   * Verifica un access token (lo llama `requireBearerAuth`). Resuelve el Bearer → AuthInfo
-   * con el `userId` en `extra` (lo que usan las tools para scopear). BARRERA Nº1 anti-leakage:
-   * rechaza si la audiencia no es nuestro URI canónico (token emitido para otro recurso).
+   * Verifies an access token (called by `requireBearerAuth`). Resolves the Bearer → AuthInfo with
+   * the `userId` in `extra` (what the tools use for scoping). Anti-leakage BARRIER #1: rejects it
+   * if the audience is not our canonical URI (a token issued for another resource).
    */
   async verifyAccessToken(token: string): Promise<AuthInfo> {
     const [row] = await this.db
@@ -265,7 +265,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return {
       token,
       clientId: row.clientId,
-      // Los tokens emitidos antes de que `write` implicara `read` se leen con la regla actual.
+      // Tokens issued before `write` implied `read` are read with the current rule.
       scopes: withImpliedScopes(row.scopes),
       expiresAt: Math.floor(row.expiresAt.getTime() / 1000),
       resource: new URL(row.audience),
@@ -273,7 +273,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     };
   }
 
-  /** Revoca un token concreto (access o refresh) de este cliente. Idempotente. */
+  /** Revokes a specific token (access or refresh) of this client. Idempotent. */
   async revokeToken(client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest): Promise<void> {
     await this.db
       .delete(oauthTokens)
@@ -283,18 +283,18 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   /* --------------------------------- helpers -------------------------------- */
 
   /**
-   * Marca el cliente como usado (columna `lastUsedAt`, que la poda de `jobs/data-retention.ts` usa para no purgar
-   * clientes vivos). Deliberadamente sin `await`: es telemetría, no parte del contrato del
-   * canje, así que no debe sumar latencia a `/token` ni hacer fallar la emisión si el UPDATE
-   * falla. Un error solo se registra.
+   * Marks the client as used (the `lastUsedAt` column, which the `jobs/data-retention.ts` pruning
+   * uses to avoid purging live clients). Deliberately not awaited: it is telemetry, not part of the
+   * exchange contract, so it must not add latency to `/token` nor fail issuance if the UPDATE
+   * fails. An error is only logged.
    */
   private touchClient(clientId: string): void {
     void this.clients.touch(clientId).catch((error: unknown) => {
-      this.logger.warn(`No se pudo marcar el uso del cliente ${clientId}: ${String(error)}`);
+      this.logger.warn(`Could not mark client ${clientId} as used: ${String(error)}`);
     });
   }
 
-  /** Emite (y persiste hasheados) un access token + refresh token encadenados. */
+  /** Issues (and persists hashed) a chained access token + refresh token. */
   private async issueTokens(
     userId: string,
     clientId: string,
@@ -339,8 +339,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /**
-   * Valida el `resource` (RFC 8707) y devuelve siempre la audiencia canónica. Si se indica
-   * un recurso distinto del nuestro, lo rechaza (no emitimos tokens para otros servidores).
+   * Validates the `resource` (RFC 8707) and always returns the canonical audience. If a resource
+   * other than ours is given, it is rejected (we do not issue tokens for other servers).
    */
   private validateResource(resource?: URL): string {
     if (resource && resource.href.replace(/\/$/, '') !== this.urls.audience) {
@@ -349,7 +349,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return this.urls.audience;
   }
 
-  /** Normaliza/valida los scopes pedidos; por defecto, solo lectura. `write` implica `read`. */
+  /** Normalises/validates the requested scopes; read-only by default. `write` implies `read`. */
   private effectiveScopes(scopes?: string[]): string[] {
     const requested = scopes && scopes.length > 0 ? scopes : [SCOPE_PORTFOLIO_READ];
     const supported = new Set(SCOPES_SUPPORTED);
@@ -361,22 +361,22 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   }
 
   /**
-   * `userId` de la sesión del magic link, o null. Misma regla que `JwtAuthGuard` (`SessionService`):
-   * una cuenta borrada no puede autorizar clientes con un JWT que aún no ha caducado.
+   * `userId` of the magic-link session, or null. Same rule as `JwtAuthGuard` (`SessionService`): a
+   * deleted account cannot authorize clients with a JWT that has not expired yet.
    */
   private async readSession(req: Request): Promise<string | null> {
     return (await this.sessions.resolve(req))?.id ?? null;
   }
 
   /**
-   * Token aleatorio para códigos y tokens. Es un método (y no la llamada directa a `randomToken`)
-   * para que los tests puedan forzar una colisión y comprobar la atomicidad de la emisión.
+   * Random token for codes and tokens. It is a method (rather than a direct `randomToken` call) so
+   * tests can force a collision and check that issuance is atomic.
    */
   private newToken(): string {
     return randomToken();
   }
 
-  /** URL pública completa de la petición actual (sobre el issuer canónico). */
+  /** Full public URL of the current request (on the canonical issuer). */
   private currentUrl(req: Request): URL {
     return new URL(req.originalUrl, this.urls.issuer);
   }
