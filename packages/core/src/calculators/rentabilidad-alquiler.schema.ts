@@ -4,12 +4,12 @@ import type { RentalInput } from "./rentabilidad-alquiler.js";
 import { amount, percent } from "./schema-helpers.js";
 
 export const rentalYieldSchema = z.strictObject({
-  purchasePrice: amount("Precio de compra."),
-  purchaseCosts: amount("Gastos e impuestos de compra."),
-  monthlyRent: amount("Alquiler mensual."),
-  vacancyRate: percent("Impago o meses vacíos, % del año (por defecto 5 %).").optional(),
-  ibiAnnual: amount("IBI anual.").optional(),
-  communityMonthly: amount("Cuota de comunidad mensual.").optional(),
-  insuranceAnnual: amount("Seguro anual (hogar + impago).").optional(),
-  maintenanceAnnual: amount("Mantenimiento anual.").optional(),
+  purchasePrice: amount("Purchase price."),
+  purchaseCosts: amount("Purchase costs and taxes."),
+  monthlyRent: amount("Monthly rent."),
+  vacancyRate: percent("Non-payment or vacant months, % of the year (default 5%).").optional(),
+  ibiAnnual: amount("Annual IBI (property tax).").optional(),
+  communityMonthly: amount("Monthly community fee (cuota de comunidad).").optional(),
+  insuranceAnnual: amount("Annual insurance (home + rent default).").optional(),
+  maintenanceAnnual: amount("Annual maintenance.").optional(),
 }) satisfies z.ZodType<RentalInput>;

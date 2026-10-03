@@ -89,7 +89,7 @@ export function mountMcp(app: NestExpressApplication): void {
   const methodNotAllowed = (_req: Request, res: Response): void => {
     res.status(405).json({
       jsonrpc: '2.0',
-      error: { code: -32000, message: 'Method not allowed. El servidor MCP es sin estado (solo POST).' },
+      error: { code: -32000, message: 'Method not allowed. The MCP server is stateless (POST only).' },
       id: null,
     });
   };

@@ -17,7 +17,7 @@ export const financialHealthSchema = z.strictObject(
         .min(0)
         .max(FINANCIAL_HEALTH_OPTIONS - 1)
         .optional()
-        .describe(`Respuesta a ${q.id} (0–${FINANCIAL_HEALTH_OPTIONS - 1}).`),
+        .describe(`Answer to ${q.id} (0–${FINANCIAL_HEALTH_OPTIONS - 1}).`),
     ]),
   ),
 );

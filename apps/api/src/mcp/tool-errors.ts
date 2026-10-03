@@ -5,5 +5,5 @@
  */
 export class ToolUserError extends Error {}
 
-/** Tool input validation error (shown with the "Entrada no válida" prefix, i.e. "Invalid input"). */
+/** Tool input validation error (shown with the "Invalid input" prefix). */
 export class InvalidToolInputError extends ToolUserError {}

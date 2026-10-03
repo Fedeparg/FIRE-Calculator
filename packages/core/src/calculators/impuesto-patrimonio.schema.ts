@@ -4,8 +4,8 @@ import type { WealthTaxInput } from "./impuesto-patrimonio.js";
 import { amount, percent } from "./schema-helpers.js";
 
 export const wealthTaxSchema = z.strictObject({
-  totalWealth: amount("Patrimonio neto total (bienes y derechos menos deudas)."),
-  primaryResidenceValue: amount("Valor de la vivienda habitual (exenta hasta 300.000 €)."),
-  exemptMinimum: amount("Mínimo exento (por defecto 700.000 €).").optional(),
-  regionalRebate: percent("Bonificación autonómica sobre la cuota.").optional(),
+  totalWealth: amount("Total net wealth (assets and rights minus debts)."),
+  primaryResidenceValue: amount("Value of the primary residence (vivienda habitual, exempt up to €300,000)."),
+  exemptMinimum: amount("Tax-free allowance (mínimo exento, default €700,000).").optional(),
+  regionalRebate: percent("Regional rebate (bonificación autonómica) on the tax due.").optional(),
 }) satisfies z.ZodType<WealthTaxInput>;

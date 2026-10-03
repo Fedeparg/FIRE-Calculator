@@ -19,38 +19,35 @@ export const horizon = (description: string, max = MAX_HORIZON_YEARS) =>
   z.number().min(0).max(max).describe(description);
 export const count = (description: string, max: number) => z.number().int().min(0).max(max).describe(description);
 
-export const frequency = z
-  .enum(FREQUENCIES)
-  .optional()
-  .describe("Frecuencia de las aportaciones (por defecto monthly).");
+export const frequency = z.enum(FREQUENCIES).optional().describe("Contribution frequency (default monthly).");
 
 export const compounding = z
   .enum(COMPOUNDING_FREQUENCIES)
   .optional()
   .describe(
-    "Capitalización de los intereses, independiente de la frecuencia de aportación (por defecto annual). " +
-      "Con annual, annualRate es la rentabilidad anual efectiva; con otra, es un tipo nominal anual (TIN) que capitaliza ese número de veces al año.",
+    "How often interest compounds, independent of the contribution frequency (default annual). " +
+      "With annual, annualRate is the effective annual return; with any other value, it is a nominal annual rate (TIN) compounded that many times a year.",
   );
 
 export const region = z
   .enum(REGION_CODES)
   .optional()
   .describe(
-    "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. " +
-      "País Vasco, Navarra y Ceuta/Melilla no están soportados.",
+    "Autonomous community (comunidad autónoma, common regime). Without a value, the default regional scale (escala autonómica supletoria) applies. " +
+      "The Basque Country, Navarre and Ceuta/Melilla are not supported.",
   );
 
 /** Personal circumstances for IRPF, shared by payroll withholding, net salary and self-employed. */
 export const personalCircumstances = {
-  age: count("Edad del contribuyente (afecta al mínimo personal).", 120).optional(),
-  contractType: z.enum(CONTRACT_TYPES).optional().describe("Tipo de contrato (cambia la cotización por desempleo)."),
-  children: count("Hijos o descendientes a cargo.", 20).optional(),
-  childrenUnder3: count("De esos hijos, cuántos tienen menos de 3 años.", 20).optional(),
-  ascendants: count("Ascendientes mayores de 65 años a cargo.", 10).optional(),
+  age: count("Taxpayer's age (affects the personal allowance, mínimo personal).", 120).optional(),
+  contractType: z.enum(CONTRACT_TYPES).optional().describe("Contract type (changes the unemployment contribution)."),
+  children: count("Dependent children or descendants.", 20).optional(),
+  childrenUnder3: count("How many of those children are under 3.", 20).optional(),
+  ascendants: count("Dependent ascendants (parents, grandparents) over 65.", 10).optional(),
   disability: z
     .enum(DISABILITY_GRADES)
     .optional()
-    .describe("Grado de discapacidad del contribuyente: none, g33 (≥33 %) o g65 (≥65 %)."),
-  jointReturn: z.boolean().optional().describe("Tributación conjunta (unidad familiar)."),
+    .describe("Taxpayer's disability grade: none, g33 (≥33%) or g65 (≥65%)."),
+  jointReturn: z.boolean().optional().describe("Joint return (tributación conjunta, family unit)."),
   region,
 };

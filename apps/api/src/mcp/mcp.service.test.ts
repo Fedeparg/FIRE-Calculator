@@ -247,6 +247,7 @@ describe('McpService', () => {
     })) as CallToolResult;
 
     expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain('Unknown calculator: ');
     expect(JSON.stringify(result.content)).toContain('list_calculators');
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'calculate', 'error');
   });
@@ -268,7 +269,7 @@ describe('McpService', () => {
     };
     const tooMany = await call('simulador-montecarlo', { ...montecarlo, paths: 10_000_000 });
     expect(tooMany.isError).toBe(true);
-    expect(JSON.stringify(tooMany.content)).toContain('paths');
+    expect(JSON.stringify(tooMany.content)).toContain('Invalid input for simulador-montecarlo: paths');
 
     expect((await call('simulador-montecarlo', { ...montecarlo, extra: 1 })).isError).toBe(true);
     expect((await call('hipoteca-fija', { principal: 'mucho', annualRate: 3, years: 10 })).isError).toBe(true);
@@ -460,7 +461,7 @@ describe('McpService', () => {
     const text = JSON.stringify(result.content);
     expect(text).not.toContain('Failed query');
     expect(text).not.toContain('secreto@example.com');
-    expect(text).toMatch(/Error interno al ejecutar la operación \(ref\. [0-9a-f-]{36}\)/);
+    expect(text).toMatch(/Internal error while running the operation \(ref\. [0-9a-f-]{36}\)/);
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_portfolio_breakdown', 'error');
   });
 
@@ -497,7 +498,9 @@ describe('McpService', () => {
     expect(createIncomeSchema.safeParse(tooMuch).success).toBe(false);
     const rejected = await call('add_income', tooMuch);
     expect(rejected.isError).toBe(true);
-    expect(JSON.stringify(rejected.content)).toContain('las retenciones no pueden superar el íntegro');
+    expect(JSON.stringify(rejected.content)).toContain(
+      'Invalid input: gross: las retenciones no pueden superar el íntegro',
+    );
 
     expect(income.update).not.toHaveBeenCalled();
     expect(income.create).not.toHaveBeenCalled();
@@ -532,7 +535,7 @@ describe('McpService', () => {
     const result = (await client.callTool({ name: 'list_positions', arguments: {} })) as CallToolResult;
 
     expect(result.isError).toBe(true);
-    expect(JSON.stringify(result.content)).toContain('portfolio:read');
+    expect(JSON.stringify(result.content)).toContain('This action requires read permission (portfolio:read)');
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'list_positions', 'denied_scope');
   });
 });

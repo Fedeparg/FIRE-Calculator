@@ -13,7 +13,7 @@ import { ToolUserError } from './tool-errors.js';
 /** Calculator whose slug does not exist (turned into a tool error pointing to the valid ones). */
 export class UnknownCalculatorError extends ToolUserError {
   constructor(slug: string) {
-    super(`Calculadora desconocida: "${slug}". Usa list_calculators para ver los slugs disponibles.`);
+    super(`Unknown calculator: "${slug}". Use list_calculators to see the available slugs.`);
   }
 }
 
@@ -72,7 +72,7 @@ export function runCalculator(slug: string, inputs: unknown): unknown {
     return entry.run(inputs);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new ToolUserError(`Entrada no válida para ${slug}: ${describeIssues(error)}`);
+      throw new ToolUserError(`Invalid input for ${slug}: ${describeIssues(error)}`);
     }
     throw error;
   }

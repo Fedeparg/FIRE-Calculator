@@ -30,10 +30,10 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'list_positions',
     {
-      title: 'Listar posiciones de la cartera',
+      title: 'List portfolio positions',
       description:
-        'Devuelve todas las posiciones de la cartera del usuario autenticado (símbolo, ' +
-        'nombre, cantidad, precio medio, bróker y divisa). Solo lectura.',
+        "Returns every position in the authenticated user's portfolio (symbol, name, " +
+        'quantity, average price, broker and currency). Read-only.',
       annotations: { readOnlyHint: true },
     },
     () =>
@@ -46,16 +46,16 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'get_portfolio_valuation',
     {
-      title: 'Valorar la cartera (valor de mercado y P&L)',
+      title: 'Value the portfolio (market value and P&L)',
       description:
-        'Calcula el valor actual y la ganancia/pérdida (P&L) de la cartera con el último ' +
-        'precio conocido de cada posición. Devuelve el agregado convertido a la divisa ' +
-        '`display` (las posiciones sin precio o en divisa no convertible se excluyen del ' +
-        'total y se señalan) y el desglose por posición en su divisa nativa. Los derivados ' +
-        '(`isDerivative`) se registran pero Sextante no sigue su precio: nunca entran en el ' +
-        'total. Solo lectura.',
+        'Computes the current value and the profit/loss (P&L) of the portfolio with the last ' +
+        'known price of each position. Returns the aggregate converted to the `display` ' +
+        'currency (positions without a price or in a non-convertible currency are left out of ' +
+        'the total and flagged) and the per-position breakdown in its native currency. ' +
+        'Derivatives (`isDerivative`) are recorded but Sextante does not track their price: they ' +
+        'never count towards the total. Read-only.',
       inputSchema: {
-        display: z.enum(CURRENCY_VALUES).optional().describe('Divisa del total agregado (por defecto EUR).'),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Currency of the aggregate total (default EUR).'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -69,12 +69,12 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'get_position',
     {
-      title: 'Detalle y P&L de una posición',
+      title: 'Position detail and P&L',
       description:
-        'Devuelve una posición por su id, con su valor de mercado y P&L en la divisa de la ' +
-        'posición. El id se obtiene de `list_positions` o `get_portfolio_valuation`. Solo lectura.',
+        "Returns a position by its id, with its market value and P&L in the position's " +
+        'currency. Get the id from `list_positions` or `get_portfolio_valuation`. Read-only.',
       inputSchema: {
-        id: z.string().min(1).describe('Id de la posición.'),
+        id: z.string().min(1).describe('Id of the position.'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -88,15 +88,15 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'search_instruments',
     {
-      title: 'Buscar instrumentos por nombre o símbolo',
+      title: 'Search instruments by name or symbol',
       description:
-        'Busca acciones, ETFs, fondos y cripto por texto libre ("bitcoin", "apple", "world ' +
-        'etf") y devuelve el símbolo EXACTO de cada resultado, con su nombre, tipo y ' +
-        'mercado. ÚSALA SIEMPRE antes de `add_position` para obtener el símbolo correcto en ' +
-        'lugar de deducirlo: un ticker suelto es ambiguo (p. ej. "BTC" es un ETF real en ' +
-        'NYSE; Bitcoin es "BTC-USD"). Solo lectura.',
+        'Searches stocks, ETFs, funds and crypto by free text ("bitcoin", "apple", "world ' +
+        'etf") and returns the EXACT symbol of each result, with its name, type and market. ' +
+        'ALWAYS use it before `add_position` to get the right symbol instead of guessing it: a ' +
+        'bare ticker is ambiguous (e.g. "BTC" is a real ETF on NYSE; Bitcoin is "BTC-USD"). ' +
+        'Read-only.',
       inputSchema: {
-        query: z.string().min(1).max(64).describe('Texto a buscar (nombre o símbolo).'),
+        query: z.string().min(1).max(64).describe('Text to search for (name or symbol).'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -112,18 +112,17 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'get_portfolio_history',
     {
-      title: 'Histórico de valoración de la cartera',
+      title: 'Portfolio valuation history',
       description:
-        'Devuelve la serie diaria de coste y valor de mercado de la cartera (un punto por ' +
-        'día), para analizar la evolución y la rentabilidad por periodo. Los ' +
-        'importes se guardan en EUR y se reexpresan a la divisa `display` con las tasas de ' +
-        'CADA día. La serie se reconstruye desde la primera operación de la cartera (hasta 5 ' +
-        'años, con la cantidad que se tenía cada día). Los puntos anteriores a que el ' +
-        'usuario empezara a registrar su cartera en Sextante son una reconstrucción y ' +
-        'llevan `estimated: true`; desde ese momento los puntos llevan `estimated: false` ' +
-        '(captura diaria, o reconstrucción de un día que la captura no cubrió o que ' +
-        'quedó obsoleta al registrar operaciones antiguas). Una cuenta ' +
-        'recién creada tiene pocos puntos. Solo lectura.',
+        "Returns the daily series of the portfolio's cost and market value (one point per " +
+        'day), to analyse its evolution and the return over a period. Amounts are stored in ' +
+        'EUR and restated in the `display` currency with the rates of EACH day. The series is ' +
+        "rebuilt from the portfolio's first trade (up to 5 years, with the quantity held on " +
+        'each day). Points from before the user started recording their portfolio in Sextante ' +
+        'are a reconstruction and carry `estimated: true`; from then on points carry ' +
+        '`estimated: false` (a daily capture, or the reconstruction of a day the capture missed ' +
+        'or that became stale when older trades were recorded). A newly created account has ' +
+        'few points. Read-only.',
       inputSchema: {
         days: z
           .number()
@@ -131,11 +130,8 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
           .min(1)
           .max(HISTORY_MAX_DAYS)
           .optional()
-          .describe(`Ventana en días hacia atrás (por defecto ${HISTORY_DEFAULT_DAYS}).`),
-        display: z
-          .enum(CURRENCY_VALUES)
-          .optional()
-          .describe('Divisa en la que devolver los importes (por defecto EUR).'),
+          .describe(`Look-back window in days (default ${HISTORY_DEFAULT_DAYS}).`),
+        display: z.enum(CURRENCY_VALUES).optional().describe('Currency to return the amounts in (default EUR).'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -149,14 +145,14 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'list_position_lots',
     {
-      title: 'Listar las operaciones (lotes) de una posición',
+      title: 'List the trades (lots) of a position',
       description:
-        'Devuelve las compras y ventas registradas de una posición, en orden cronológico, ' +
-        'con fecha, cantidad, precio y comisiones. La cantidad y el precio medio de la ' +
-        'posición se DERIVAN de estos lotes (coste medio móvil). El id se obtiene de ' +
-        '`list_positions`. Solo lectura.',
+        'Returns the recorded buys and sells of a position, in chronological order, with ' +
+        "date, quantity, price and fees. The position's quantity and average price are " +
+        'DERIVED from these lots (moving average cost). Get the id from `list_positions`. ' +
+        'Read-only.',
       inputSchema: {
-        positionId: z.string().min(1).describe('Id de la posición.'),
+        positionId: z.string().min(1).describe('Id of the position.'),
       },
       annotations: { readOnlyHint: true },
     },
@@ -170,14 +166,15 @@ export function registerReadTools(server: McpServer, runner: ToolRunner, deps: R
   server.registerTool(
     'list_income',
     {
-      title: 'Listar dividendos, intereses y recompensas',
+      title: 'List dividends, interest and rewards',
       description:
-        'Devuelve los cobros del usuario que tributan como rendimientos del capital mobiliario: ' +
-        'dividendos (`dividend`), intereses (`interest`) y recompensas del bróker como el ' +
-        'saveback (`benefit`, que se declaran como intereses). Cada cobro trae el íntegro, la ' +
-        'retención en origen (`withholdingOrigin`, null si no se sabe) y la española, en su ' +
-        'divisa, y `reportedToAeat`: si el pagador ya lo comunicó a Hacienda y puede estar en el ' +
-        'borrador. Filtra por ejercicio (`year`) o posición. Solo lectura.',
+        "Returns the user's payments taxed as investment income (rendimientos del capital " +
+        'mobiliario): dividends (`dividend`), interest (`interest`) and broker rewards such as ' +
+        'saveback (`benefit`, declared as interest). Each payment carries the gross amount, the ' +
+        'withholding tax at source (`withholdingOrigin`, null if unknown) and the Spanish one, ' +
+        'in its currency, and `reportedToAeat`: whether the payer already reported it to the ' +
+        'Spanish tax agency (AEAT), so it may appear in the draft return (borrador). Filter by ' +
+        'tax year (`year`) or position. Read-only.',
       inputSchema: incomeQuerySchema.shape,
       annotations: { readOnlyHint: true },
     },

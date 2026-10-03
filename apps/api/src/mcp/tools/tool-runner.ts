@@ -25,11 +25,11 @@ type ToolScope = typeof SCOPE_PORTFOLIO_READ | typeof SCOPE_PORTFOLIO_WRITE;
 /** Message to the host when the token lacks the scope the tool requires (step-up). */
 const SCOPE_DENIED_MESSAGES: Record<ToolScope, string> = {
   [SCOPE_PORTFOLIO_READ]:
-    'Esta acción requiere permiso de lectura (portfolio:read). Vuelve a conectar la aplicación ' +
-    'concediendo acceso de lectura para poder consultar la cartera.',
+    'This action requires read permission (portfolio:read). Reconnect the application and ' +
+    'grant read access to view the portfolio.',
   [SCOPE_PORTFOLIO_WRITE]:
-    'Esta acción requiere permiso de escritura (portfolio:write). Vuelve a conectar la ' +
-    'aplicación concediendo acceso de escritura para poder modificar la cartera.',
+    'This action requires write permission (portfolio:write). Reconnect the application and ' +
+    'grant write access to modify the portfolio.',
 };
 
 /**
@@ -95,7 +95,7 @@ export class ToolRunner {
    */
   private toUserMessage(tool: string, error: unknown): string {
     if (error instanceof InvalidToolInputError) {
-      return `Entrada no válida: ${error.message}`;
+      return `Invalid input: ${error.message}`;
     }
     if (error instanceof ToolUserError) {
       return error.message;
@@ -110,7 +110,7 @@ export class ToolRunner {
       `Internal error in tool ${tool} (ref. ${reference})`,
       error instanceof Error ? error.stack : String(error),
     );
-    return `Error interno al ejecutar la operación (ref. ${reference}).`;
+    return `Internal error while running the operation (ref. ${reference}).`;
   }
 }
 

@@ -6,11 +6,13 @@ import { amountSchema, currencySchema, trimmedText } from '../../common/dto/prim
 
 /** A payment's fields, without the cross-field rules (shared with the partial update). */
 export const incomeFieldsSchema = z.strictObject({
-  kind: z.enum(INCOME_KINDS).describe('dividend (dividendo), interest (intereses) o benefit (recompensa del bróker).'),
+  kind: z
+    .enum(INCOME_KINDS)
+    .describe('dividend, interest or benefit (a broker reward such as saveback, declared as interest).'),
   paidAt: z.iso
     .date({ error: 'paidAt debe ser una fecha real con el formato YYYY-MM-DD' })
-    .describe('Fecha de cobro (YYYY-MM-DD): decide el ejercicio.'),
-  positionId: z.uuid().nullable().optional().describe('Posición de la que sale el cobro (opcional).'),
+    .describe('Payment date (YYYY-MM-DD): it decides the tax year.'),
+  positionId: z.uuid().nullable().optional().describe('Position the payment comes from (optional).'),
   isin: z
     .string()
     .trim()
@@ -18,8 +20,8 @@ export const incomeFieldsSchema = z.strictObject({
     .regex(ISIN_PATTERN, { error: 'isin no tiene el formato de un ISIN' })
     .nullable()
     .optional()
-    .describe('ISIN del valor (opcional).'),
-  name: trimmedText(100).nullable().optional().describe('Valor o cuenta de la que sale (opcional).'),
+    .describe('ISIN of the security (optional).'),
+  name: trimmedText(100).nullable().optional().describe('Security or account it comes from (optional).'),
   country: z
     .string()
     .trim()
@@ -27,15 +29,20 @@ export const incomeFieldsSchema = z.strictObject({
     .regex(/^[A-Z]{2}$/, { error: 'country debe ser un código ISO de dos letras' })
     .nullable()
     .optional()
-    .describe('País de la fuente, ISO de dos letras (p. ej. US). Necesario para la doble imposición.'),
-  currency: currencySchema.optional().describe('Divisa del cobro (por defecto EUR).'),
-  gross: amountSchema.positive().describe('Importe íntegro, antes de retenciones.'),
+    .describe('Source country, two-letter ISO code (e.g. US). Needed for the double taxation relief.'),
+  currency: currencySchema.optional().describe('Currency of the payment (default EUR).'),
+  gross: amountSchema.positive().describe('Gross amount, before withholding tax.'),
   withholdingOrigin: amountSchema
     .nullable()
     .optional()
-    .describe('Retención en el país de la fuente; null si no se sabe.'),
-  withholdingSpain: amountSchema.optional().describe('Retención practicada en España (por defecto 0).'),
-  reportedToAeat: z.boolean().optional().describe('El pagador ya lo comunicó a Hacienda (sale en el borrador).'),
+    .describe('Withholding tax in the source country; null if unknown.'),
+  withholdingSpain: amountSchema.optional().describe('Withholding tax applied in Spain (default 0).'),
+  reportedToAeat: z
+    .boolean()
+    .optional()
+    .describe(
+      'The payer already reported it to the Spanish tax agency (AEAT), so it appears in the draft return (borrador).',
+    ),
 });
 
 /** Withholdings cannot exceed the gross amount (compared in micro-units, see `withholdingsFitGross`). */

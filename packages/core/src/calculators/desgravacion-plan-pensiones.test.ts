@@ -18,9 +18,9 @@ describe("computePensionRelief", () => {
   });
 
   it("the higher the marginal bracket, the larger the tax saving", () => {
-    const bajo = computePensionRelief({ grossAnnual: 20000, contribution: 1500 });
-    const alto = computePensionRelief({ grossAnnual: 60000, contribution: 1500 });
-    expect(alto.taxSaving).toBeGreaterThan(bajo.taxSaving);
+    const low = computePensionRelief({ grossAnnual: 20000, contribution: 1500 });
+    const high = computePensionRelief({ grossAnnual: 60000, contribution: 1500 });
+    expect(high.taxSaving).toBeGreaterThan(low.taxSaving);
   });
 
   it("the net cost is the contribution minus the saving", () => {
@@ -36,10 +36,10 @@ describe("computePensionRelief", () => {
   });
 
   it("the employer contribution does NOT produce a direct IRPF saving", () => {
-    const sin = computePensionRelief({ grossAnnual: 60000, contribution: 1500 });
-    const con = computePensionRelief({ grossAnnual: 60000, contribution: 1500, employerContribution: 8500 });
-    expect(con.taxSaving).toBe(sin.taxSaving); // the saving depends only on the individual contribution
-    expect(con.netCost).toBe(sin.netCost);
+    const withoutEmployer = computePensionRelief({ grossAnnual: 60000, contribution: 1500 });
+    const withEmployer = computePensionRelief({ grossAnnual: 60000, contribution: 1500, employerContribution: 8500 });
+    expect(withEmployer.taxSaving).toBe(withoutEmployer.taxSaving); // the saving depends only on the individual contribution
+    expect(withEmployer.netCost).toBe(withoutEmployer.netCost);
   });
 
   it("the employer contribution is capped at €8,500 and at the €10,000 combined limit", () => {

@@ -64,9 +64,9 @@ describe("estimateNetSalary", () => {
   });
 
   it("contributing to a pension plan lowers IRPF", () => {
-    const sin = estimateNetSalary({ grossAnnual: 40000 });
-    const con = estimateNetSalary({ grossAnnual: 40000, pensionContribution: 1500 });
-    expect(con.incomeTax).toBeLessThan(sin.incomeTax);
+    const withoutPlan = estimateNetSalary({ grossAnnual: 40000 });
+    const withPlan = estimateNetSalary({ grossAnnual: 40000, pensionContribution: 1500 });
+    expect(withPlan.incomeTax).toBeLessThan(withoutPlan.incomeTax);
   });
 
   it("splits the net across the given number of payments", () => {
@@ -84,22 +84,22 @@ describe("estimateNetSalary", () => {
   });
 
   it("dependent children lower IRPF", () => {
-    const sin = estimateNetSalary({ grossAnnual: 30000 });
-    const con = estimateNetSalary({ grossAnnual: 30000, children: 2 });
-    expect(con.incomeTax).toBeLessThan(sin.incomeTax);
-    expect(con.personalMinimum).toBeGreaterThan(sin.personalMinimum);
+    const withoutChildren = estimateNetSalary({ grossAnnual: 30000 });
+    const withChildren = estimateNetSalary({ grossAnnual: 30000, children: 2 });
+    expect(withChildren.incomeTax).toBeLessThan(withoutChildren.incomeTax);
+    expect(withChildren.personalMinimum).toBeGreaterThan(withoutChildren.personalMinimum);
   });
 
   it("a temporary contract pays slightly more SS", () => {
-    const indef = estimateNetSalary({ grossAnnual: 30000, contractType: "indefinido" });
-    const temp = estimateNetSalary({ grossAnnual: 30000, contractType: "temporal" });
-    expect(temp.socialSecurity).toBeGreaterThan(indef.socialSecurity);
+    const permanent = estimateNetSalary({ grossAnnual: 30000, contractType: "indefinido" });
+    const temporary = estimateNetSalary({ grossAnnual: 30000, contractType: "temporal" });
+    expect(temporary.socialSecurity).toBeGreaterThan(permanent.socialSecurity);
   });
 
   it("a joint return (tributación conjunta) lowers the base and IRPF", () => {
-    const ind = estimateNetSalary({ grossAnnual: 30000 });
-    const conj = estimateNetSalary({ grossAnnual: 30000, jointReturn: true });
-    expect(conj.incomeTax).toBeLessThan(ind.incomeTax);
+    const individual = estimateNetSalary({ grossAnnual: 30000 });
+    const joint = estimateNetSalary({ grossAnnual: 30000, jointReturn: true });
+    expect(joint.incomeTax).toBeLessThan(individual.incomeTax);
   });
 
   it("SS contributions are capped at the maximum contribution base", () => {
@@ -258,12 +258,12 @@ describe("estimateNetSalary by region", () => {
 
   it("the region moves the net in the expected direction", () => {
     const base = { grossAnnual: 60000 };
-    const madrid = estimateNetSalary({ ...base, region: "madrid" });
-    const supletoria = estimateNetSalary(base);
-    const valencia = estimateNetSalary({ ...base, region: "valencia" });
-    expect(madrid.netAnnual).toBeGreaterThan(supletoria.netAnnual);
-    expect(valencia.netAnnual).toBeLessThan(supletoria.netAnnual);
+    const inMadrid = estimateNetSalary({ ...base, region: "madrid" });
+    const fallback = estimateNetSalary(base);
+    const inValencia = estimateNetSalary({ ...base, region: "valencia" });
+    expect(inMadrid.netAnnual).toBeGreaterThan(fallback.netAnnual);
+    expect(inValencia.netAnnual).toBeLessThan(fallback.netAnnual);
     // The reported allowance is still the state one.
-    expect(madrid.personalMinimum).toBe(supletoria.personalMinimum);
+    expect(inMadrid.personalMinimum).toBe(fallback.personalMinimum);
   });
 });

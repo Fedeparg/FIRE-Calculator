@@ -35,7 +35,7 @@ function rateLimitExceeded(_req: Request, res: Response): void {
     jsonrpc: '2.0',
     error: {
       code: -32000,
-      message: 'Rate limit exceeded. Demasiadas peticiones MCP; inténtalo en un minuto.',
+      message: 'Rate limit exceeded. Too many MCP requests; try again in a minute.',
     },
     id: null,
   });

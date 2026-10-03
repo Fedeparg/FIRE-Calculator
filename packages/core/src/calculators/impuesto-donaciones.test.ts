@@ -23,15 +23,15 @@ describe("computeGiftTax", () => {
   });
 
   it("the kinship coefficient multiplies the tax", () => {
-    const familia = computeGiftTax({ amount: 100000, kinship: "grupoI_II" });
-    const extrano = computeGiftTax({ amount: 100000, kinship: "grupoIV" });
-    expect(extrano.adjustedTax).toBeCloseTo(familia.adjustedTax * 2, 4);
+    const closeFamily = computeGiftTax({ amount: 100000, kinship: "grupoI_II" });
+    const stranger = computeGiftTax({ amount: 100000, kinship: "grupoIV" });
+    expect(stranger.adjustedTax).toBeCloseTo(closeFamily.adjustedTax * 2, 4);
   });
 
   it("the regional rebate reduces the final tax", () => {
-    const sin = computeGiftTax({ amount: 100000 });
-    const con = computeGiftTax({ amount: 100000, regionalRebate: 99 });
-    expect(con.tax).toBeCloseTo(sin.tax * 0.01, 4);
+    const withoutRebate = computeGiftTax({ amount: 100000 });
+    const withRebate = computeGiftTax({ amount: 100000, regionalRebate: 99 });
+    expect(withRebate.tax).toBeCloseTo(withoutRebate.tax * 0.01, 4);
   });
 
   it("zero gift → no tax and no division by zero", () => {
@@ -49,12 +49,12 @@ describe("computeGiftTax", () => {
   it("pre-existing wealth raises the coefficient by bracket (art. 22.2)", () => {
     const base = computeGiftTax({ amount: 100000, kinship: "grupoI_II" });
     // Bracket 2 (> €402,678.11): coefficient 1.05.
-    const tramo2 = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 1_000_000 });
-    expect(tramo2.coefficient).toBe(1.05);
-    expect(tramo2.adjustedTax).toBeCloseTo(base.grossTax * 1.05, 6);
+    const secondBracket = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 1_000_000 });
+    expect(secondBracket.coefficient).toBe(1.05);
+    expect(secondBracket.adjustedTax).toBeCloseTo(base.grossTax * 1.05, 6);
     // Bracket 4 (> €4,020,770.98): coefficient 1.20.
-    const tramo4 = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 5_000_000 });
-    expect(tramo4.coefficient).toBe(1.2);
+    const fourthBracket = computeGiftTax({ amount: 100000, kinship: "grupoI_II", preexistingWealth: 5_000_000 });
+    expect(fourthBracket.coefficient).toBe(1.2);
   });
 
   it("the upper limit of a bracket belongs to that bracket", () => {

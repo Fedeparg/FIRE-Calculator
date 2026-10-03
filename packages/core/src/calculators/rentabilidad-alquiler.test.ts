@@ -24,9 +24,9 @@ describe("computeRentalYield", () => {
   });
 
   it("vacancy reduces the effective income", () => {
-    const sinVacancy = computeRentalYield({ ...base, vacancyRate: 0 });
-    expect(sinVacancy.effectiveRentIncome).toBe(12000);
-    expect(sinVacancy.netIncome).toBeCloseTo(10300, 6);
+    const noVacancy = computeRentalYield({ ...base, vacancyRate: 0 });
+    expect(noVacancy.effectiveRentIncome).toBe(12000);
+    expect(noVacancy.netIncome).toBeCloseTo(10300, 6);
   });
 
   it("the monthly cash flow is the annual net divided by twelve", () => {

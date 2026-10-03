@@ -11,15 +11,15 @@ const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionL
  * exist in the calendar: `z.iso.date` rejects "2026-02-30".
  */
 export const createPositionLotSchema = z.strictObject({
-  kind: z.enum(POSITION_LOT_KINDS).describe('Tipo de operación: compra o venta.'),
-  quantity: quantitySchema.describe('Cantidad operada.'),
-  price: amountSchema.describe('Precio unitario de la operación.'),
+  kind: z.enum(POSITION_LOT_KINDS).describe('Trade type: buy or sell.'),
+  quantity: quantitySchema.describe('Quantity traded.'),
+  price: amountSchema.describe('Unit price of the trade.'),
   /** Trade fees. Not included in the average price; stored for tax purposes. */
-  fees: amountSchema.optional().describe('Comisiones (opcional).'),
+  fees: amountSchema.optional().describe('Fees (optional).'),
   tradedAt: z.iso
     .date({ error: 'tradedAt debe ser una fecha real con el formato YYYY-MM-DD' })
-    .describe('Fecha de la operación en formato YYYY-MM-DD.'),
-  note: trimmedText(200).optional().describe('Nota libre (opcional).'),
+    .describe('Trade date in YYYY-MM-DD format.'),
+  note: trimmedText(200).optional().describe('Free-text note (optional).'),
 });
 
 export type CreatePositionLotDto = z.infer<typeof createPositionLotSchema>;
