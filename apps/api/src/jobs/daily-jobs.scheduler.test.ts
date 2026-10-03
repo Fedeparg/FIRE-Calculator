@@ -10,6 +10,7 @@ import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots
 import type { PriceHistoryService, RefreshSummary } from '../prices/price-history.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
 import { firstItem } from '@sextante/core/arrays';
+import { stub } from '../../test/factories.js';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };
 
@@ -22,9 +23,9 @@ function deferred() {
 
 function setup(env: Record<string, string> = {}) {
   const jobs = new Map<string, CronJob>();
-  const registry = {
+  const registry = stub<SchedulerRegistry>({
     addCronJob: (name: string, job: CronJob) => jobs.set(name, job),
-  } as unknown as SchedulerRegistry;
+  });
   const prices = {
     refreshAll: vi.fn(() => Promise.resolve(SUMMARY)),
     refreshStaleSplits: vi.fn(() => Promise.resolve()),
@@ -39,11 +40,11 @@ function setup(env: Record<string, string> = {}) {
   };
   const dividends = { resolvePending: vi.fn(() => Promise.resolve(0)) };
   const scheduler = new DailyJobsScheduler(
-    prices as unknown as PriceHistoryService,
-    snapshots as unknown as PortfolioSnapshotsService,
-    fireAlerts as unknown as FireAlertsService,
-    dividends as unknown as DividendResolutionService,
-    { classifyMissing: vi.fn(() => Promise.resolve(0)) } as unknown as AssetClassBackfillService,
+    stub<PriceHistoryService>(prices),
+    stub<PortfolioSnapshotsService>(snapshots),
+    stub<FireAlertsService>(fireAlerts),
+    stub<DividendResolutionService>(dividends),
+    stub<AssetClassBackfillService>({ classifyMissing: vi.fn(() => Promise.resolve(0)) }),
     fakeConfig(env),
     registry,
   );

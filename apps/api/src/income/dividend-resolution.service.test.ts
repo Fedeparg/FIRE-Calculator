@@ -2,14 +2,15 @@ import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
-import { incomeEvents, instrumentDividends, instrumentSplits, positions } from '../db/schema.js';
+import { incomeEvents, instrumentDividends, instrumentSplits } from '../db/schema.js';
 import type { PriceReadService } from '../prices/price-read.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { DividendResolutionService } from './dividend-resolution.service.js';
 import { firstItem } from '@sextante/core/arrays';
+import { makeIncome, seedPosition, stub } from '../../test/factories.js';
 
 /** Resolución de símbolos fija: el ISIN de la posición → símbolo de Yahoo. */
-const prices = {
+const prices = stub<PriceReadService>({
   resolveCachedTickers: (tickers: string[]) =>
     Promise.resolve(
       new Map(
@@ -18,7 +19,7 @@ const prices = {
         ),
       ),
     ),
-} as unknown as PriceReadService;
+});
 
 describe('DividendResolutionService (integración con Postgres)', () => {
   let db: Database;
@@ -37,29 +38,28 @@ describe('DividendResolutionService (integración con Postgres)', () => {
     ticker: string,
     values: Partial<typeof incomeEvents.$inferInsert>,
   ): Promise<string> {
-    const position = firstItem(
-      await db
-        .insert(positions)
-        .values({ userId, ticker, quantity: '1', avgPrice: '100', broker: 'Trade Republic' })
-        .returning(),
-    );
+    const position = await seedPosition(db, userId, {
+      ticker,
+      quantity: '1',
+      avgPrice: '100',
+      broker: 'Trade Republic',
+    });
     const row = firstItem(
       await db
         .insert(incomeEvents)
-        .values({
-          userId,
-          positionId: position.id,
-          kind: 'dividend',
-          paidAt: '2025-08-06',
-          country: ticker.slice(0, 2),
-          gross: '1.36',
-          withholdingSpain: '0.26',
-          reportedToAeat: true,
-          source: 'trade_republic',
-          grossSource: 'broker',
-          quantity: '1',
-          ...values,
-        })
+        .values(
+          makeIncome(userId, {
+            positionId: position.id,
+            country: ticker.slice(0, 2),
+            gross: '1.36',
+            withholdingSpain: '0.26',
+            reportedToAeat: true,
+            source: 'trade_republic',
+            grossSource: 'broker',
+            quantity: '1',
+            ...values,
+          }),
+        )
         .returning(),
     );
     return row.id;

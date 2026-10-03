@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fakeConfig } from '../../test/config.js';
 import { DonationsService } from './donations.service.js';
 import { firstItem } from '@sextante/core/arrays';
+import { stub } from '../../test/factories.js';
 
 const APP_URL = 'https://sextante.test';
 
@@ -13,7 +14,7 @@ function setup(session: { url: string | null } = { url: 'https://checkout.stripe
   const create = vi.fn<(params: Stripe.Checkout.SessionCreateParams) => Promise<{ url: string | null }>>(() =>
     Promise.resolve(session),
   );
-  const stripe = { checkout: { sessions: { create } } } as unknown as Stripe;
+  const stripe = stub<Stripe>({ checkout: { sessions: { create } } });
   return { service: new DonationsService(stripe, fakeConfig({ APP_URL })), create };
 }
 

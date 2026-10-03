@@ -15,6 +15,7 @@ import {
   tickerCandidates,
 } from './openfigi-symbol-resolver.js';
 import type { PriceProvider, Quote } from './price-provider.interface.js';
+import { stub } from '../../test/factories.js';
 
 /** Tope de candidatos que aplica el resolver (`MAX_CANDIDATES`). */
 const MAX_CANDIDATES = 12;
@@ -171,11 +172,11 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
 
   function makeResolver(searchResults: InstrumentSearchResult[], priced: string[]) {
     const quote = (symbol: string): Quote => ({ symbol, close: 100, currency: 'EUR', date: '2026-10-01' });
-    const provider = {
+    const provider = stub<PriceProvider>({
       getQuotes: vi.fn((symbols: string[]) =>
         Promise.resolve(new Map(symbols.filter((s) => priced.includes(s)).map((s) => [s, quote(s)]))),
       ),
-    } as unknown as PriceProvider;
+    });
     const search = { search: vi.fn().mockResolvedValue(searchResults) };
     const resolver = new OpenFigiSymbolResolver(db, provider, search, fakeConfig());
     return { resolver, search };
@@ -250,7 +251,7 @@ describe('OpenFigiSymbolResolver.resolveManyCached', () => {
       { query: 'XX0000000000', symbol: null, source: 'not_found', resolvedAt: now },
     ]);
     const getQuotes = vi.fn();
-    const provider = { getQuotes } as unknown as PriceProvider;
+    const provider = stub<PriceProvider>({ getQuotes });
     const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
 
     const resolved = await resolver.resolveManyCached([' ie00bk5bqz41 ', 'AAPL', 'XX0000000000', 'NUEVO', '']);
@@ -296,7 +297,7 @@ describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
         new Map(priced ? symbols.map((s) => [s, { symbol: s, close: 1, currency: 'EUR', date: '2026-10-01' }]) : []),
       ),
     );
-    const provider = { getQuotes } as unknown as PriceProvider;
+    const provider = stub<PriceProvider>({ getQuotes });
     const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
 
     await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();

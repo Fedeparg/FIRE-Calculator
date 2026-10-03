@@ -8,6 +8,7 @@ import { errorMessage } from './errors.js';
 import { numberOrNull } from './numeric.js';
 import { scheduleFromEnv } from './schedule.js';
 import { firstItem } from '@sextante/core/arrays';
+import { stub } from '../../test/factories.js';
 
 describe('dates', () => {
   afterEach(() => vi.useRealTimers());
@@ -48,7 +49,7 @@ describe('scheduleFromEnv', () => {
     const registry = {
       addCronJob: vi.fn((_name: string, job: CronJob) => started.push(job)),
     };
-    return { registry, asRegistry: registry as unknown as SchedulerRegistry };
+    return { registry, asRegistry: stub<SchedulerRegistry>(registry) };
   }
 
   it('usa el valor por defecto si la variable falta o está vacía', () => {

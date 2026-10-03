@@ -5,8 +5,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { Database } from './database.module.js';
-import { DB_ENUM_VALUES, incomeEvents, positionLots, positions } from './schema.js';
-import { firstItem } from '@sextante/core/arrays';
+import { DB_ENUM_VALUES, incomeEvents, positionLots } from './schema.js';
+import { seedPosition } from '../../test/factories.js';
 
 /** Constraints de la migración 0027 (`0027_check_closed_unions_not_valid.sql`). */
 const NEW_CHECKS = [
@@ -47,19 +47,14 @@ describe('CHECK de las uniones cerradas', () => {
       await close();
     });
 
-    async function seedPosition(): Promise<{ userId: string; positionId: string }> {
+    async function seedUserPosition(): Promise<{ userId: string; positionId: string }> {
       const userId = await insertUser(db, 'a@example.com');
-      const position = firstItem(
-        await db
-          .insert(positions)
-          .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '1', broker: '' })
-          .returning({ id: positions.id }),
-      );
+      const position = await seedPosition(db, userId, { quantity: '1', avgPrice: '1', broker: '' });
       return { userId, positionId: position.id };
     }
 
     it('rechaza un lote con un kind desconocido o con cantidad, precio o comisión fuera de rango', async () => {
-      const { userId, positionId } = await seedPosition();
+      const { userId, positionId } = await seedUserPosition();
       const lot = { userId, positionId, kind: 'buy' as const, quantity: '1', price: '10', tradedAt: '2026-01-02' };
 
       await expect(db.insert(positionLots).values({ ...lot, kind: 'Buy' as 'buy' })).rejects.toMatchObject(
@@ -97,9 +92,9 @@ describe('CHECK de las uniones cerradas', () => {
     });
 
     it('se crean NOT VALID: no se han comprobado las filas existentes', async () => {
-      const rows = (await db.execute(
+      const rows = await db.execute<{ conname: string; convalidated: boolean }>(
         sql`select conname, convalidated from pg_constraint where contype = 'c' order by conname`,
-      )) as unknown as { conname: string; convalidated: boolean }[];
+      );
       const ours = rows.filter((row) => NEW_CHECKS.includes(row.conname));
 
       expect(ours.map((row) => row.conname)).toEqual(NEW_CHECKS);

@@ -1,6 +1,7 @@
 import type { ConfigService } from '@nestjs/config';
 
 import { parseEnv, type Env } from '../src/config/env.js';
+import { stub } from './factories.js';
 
 /**
  * `ConfigService` mínimo para tests unitarios, respaldado por el esquema real: así los
@@ -13,8 +14,8 @@ export function fakeConfig(overrides: Record<string, string> = {}): ConfigServic
     APP_URL: 'https://sextante.test',
     ...overrides,
   });
-  return {
+  return stub<ConfigService<Env, true>>({
     get: <K extends keyof Env>(key: K) => env[key],
     getOrThrow: <K extends keyof Env>(key: K) => env[key],
-  } as unknown as ConfigService<Env, true>;
+  });
 }

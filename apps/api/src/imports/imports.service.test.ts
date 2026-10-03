@@ -17,9 +17,10 @@ import { TradeImportWriter } from './trade-import.writer.js';
 import { TRADE_REPUBLIC_BROKER } from './trade-republic-import.model.js';
 import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
 import { firstItem, itemAt } from '@sextante/core/arrays';
+import { stub } from '../../test/factories.js';
 
 /** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */
-const dividendsStub = { resolvePending: () => Promise.resolve(0) } as unknown as DividendResolutionService;
+const dividendsStub = stub<DividendResolutionService>({ resolvePending: () => Promise.resolve(0) });
 
 /** El grafo de la importación tal y como lo cablea Nest, con precios y dividendos en no-op. */
 function buildImportsService(db: Database, events: EventEmitter2 = new EventEmitter2()): ImportsService {

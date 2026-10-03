@@ -9,6 +9,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { JwtAuthGuard, type AuthedRequest } from './jwt-auth.guard.js';
 import { SessionService } from './session.service.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
+import { stub } from '../../test/factories.js';
 
 const SECRET = 'test-secret';
 
@@ -17,10 +18,10 @@ function contextWith(cookies: Record<string, string>): {
   ctx: ExecutionContext;
   request: AuthedRequest;
 } {
-  const request = { cookies } as unknown as AuthedRequest;
-  const ctx = {
+  const request = stub<AuthedRequest>({ cookies });
+  const ctx = stub<ExecutionContext>({
     switchToHttp: () => ({ getRequest: () => request }),
-  } as unknown as ExecutionContext;
+  });
   return { ctx, request };
 }
 

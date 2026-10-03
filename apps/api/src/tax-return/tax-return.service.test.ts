@@ -7,14 +7,15 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { Database } from '../db/database.module.js';
-import { positionLots, positions } from '../db/schema.js';
+import { positionLots } from '../db/schema.js';
 import type { ReferenceRatesService } from '../fx-reference/reference-rates.service.js';
 import { IncomeService } from '../income/income.service.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnService } from './tax-return.service.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
+import { itemAt } from '@sextante/core/arrays';
+import { makeLot, seedPosition, stub } from '../../test/factories.js';
 
 const RATES: ReferenceRates = {
   USD: [
@@ -39,9 +40,15 @@ describe('TaxReturnService (integración con Postgres)', () => {
     const positionsService = new PositionsService(db, {} as never, lots, new EventEmitter2());
     income = new IncomeService(db);
     pending = new PendingBalancesService(db);
-    service = new TaxReturnService(positionsService, lots, income, pending, {
-      getRates,
-    } as unknown as ReferenceRatesService);
+    service = new TaxReturnService(
+      positionsService,
+      lots,
+      income,
+      pending,
+      stub<ReferenceRatesService>({
+        getRates,
+      }),
+    );
   });
   afterEach(async () => {
     getRates.mockReset();
@@ -49,11 +56,8 @@ describe('TaxReturnService (integración con Postgres)', () => {
   });
   afterAll(() => close());
 
-  async function seedPosition(userId: string, ticker: string, currency: 'EUR' | 'USD') {
-    const row = firstItem(
-      await db.insert(positions).values({ userId, ticker, quantity: '0', avgPrice: '0', currency }).returning(),
-    );
-    return row.id;
+  async function seedPositionId(userId: string, ticker: string, currency: 'EUR' | 'USD'): Promise<string> {
+    return (await seedPosition(db, userId, { ticker, currency })).id;
   }
 
   async function seedLots(
@@ -62,21 +66,21 @@ describe('TaxReturnService (integración con Postgres)', () => {
     rows: { kind: 'buy' | 'sell'; quantity: number; price: number; tradedAt: string }[],
   ) {
     await db.insert(positionLots).values(
-      rows.map((r) => ({
-        userId,
-        positionId,
-        kind: r.kind,
-        quantity: String(r.quantity),
-        price: String(r.price),
-        tradedAt: r.tradedAt,
-      })),
+      rows.map((r) =>
+        makeLot(userId, positionId, {
+          kind: r.kind,
+          quantity: String(r.quantity),
+          price: String(r.price),
+          tradedAt: r.tradedAt,
+        }),
+      ),
     );
   }
 
   it('coincide con lo que calcula el core con los mismos datos (ventas, cobros y saldo pendiente)', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    const eur = await seedPosition(userId, 'IWDA', 'EUR');
-    const usd = await seedPosition(userId, 'AAPL', 'USD');
+    const eur = await seedPositionId(userId, 'IWDA', 'EUR');
+    const usd = await seedPositionId(userId, 'AAPL', 'USD');
     await seedLots(userId, eur, [
       { kind: 'buy', quantity: 10, price: 100, tradedAt: '2023-05-01' },
       { kind: 'sell', quantity: 10, price: 90, tradedAt: '2025-03-01' },
@@ -167,7 +171,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
 
   it('si fallan los tipos del BCE el informe sale con lo en divisa sin convertir', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    const usd = await seedPosition(userId, 'AAPL', 'USD');
+    const usd = await seedPositionId(userId, 'AAPL', 'USD');
     await seedLots(userId, usd, [
       { kind: 'buy', quantity: 1, price: 100, tradedAt: '2025-01-10' },
       { kind: 'sell', quantity: 1, price: 120, tradedAt: '2025-02-10' },
