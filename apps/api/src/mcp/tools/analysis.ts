@@ -50,10 +50,13 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         'invertida va aparte (`fxDifference`), suponiendo que el bróker cambia a euros al ' +
         'comprar y al vender. Las ventas sin tipo publicado van en `unconverted`, fuera de ' +
         'los totales; si `ratesLoaded` es false, no se pudieron cargar los tipos del BCE y las ' +
-        'ventas en divisa quedan todas sin convertir: avisa al usuario. Sirve para preparar las casillas de ganancias patrimoniales. Compensa ' +
-        'las ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
-        'ejercicios anteriores, la compensación del 25 % con dividendos e intereses ni la ' +
-        'regla de los dos meses. Solo lectura.',
+        'ventas en divisa quedan todas sin convertir: avisa al usuario. Sirve para preparar ' +
+        'las casillas de ganancias patrimoniales. Aplica la regla de los dos meses (art. 33.5.f ' +
+        'LIRPF): la pérdida de una venta con recompra homogénea en la ventana se difiere ' +
+        '(`deferredLoss`) y se integra al vender esa recompra (`integratedLoss`). Compensa las ' +
+        'ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
+        'ejercicios anteriores ni la compensación del 25 % con dividendos e intereses (para ' +
+        'eso, `get_tax_return_report`). Solo lectura.',
       inputSchema: {
         year: fiscalYearSchema
           .optional()
