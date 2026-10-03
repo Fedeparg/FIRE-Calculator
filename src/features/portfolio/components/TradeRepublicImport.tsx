@@ -9,10 +9,10 @@ import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import { trackEvent } from "@/shared/analytics/track";
 import Notice from "@/shared/ui/Notice";
 import { importErrorKey, type ImportErrorKey } from "@/features/portfolio/model/import-errors";
-import { useFormat } from "@/shared/format/use-format";
 import { apiJson } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
-import { PlanView, ResultView } from "./TradeRepublicImportViews";
+import ImportPlanView from "./ImportPlanView";
+import ImportResultView from "./ImportResultView";
 import { inputClass } from "@/shared/ui/field-classes";
 
 /** Slug del bróker para la analítica (sin datos del usuario). */
@@ -41,7 +41,6 @@ const fileInputClass = `${inputClass} text-sm file:mr-3 file:rounded-md file:bor
  */
 export default function TradeRepublicImport() {
   const t = useTranslations("portfolio.import");
-  const { formatQuantity } = useFormat();
   const router = useRouter();
   const uid = useId();
 
@@ -159,15 +158,10 @@ export default function TradeRepublicImport() {
       </section>
 
       {(step.kind === "preview" || step.kind === "importing") && (
-        <PlanView
-          plan={step.plan}
-          importing={step.kind === "importing"}
-          onConfirm={handleConfirm}
-          formatQuantity={formatQuantity}
-        />
+        <ImportPlanView plan={step.plan} importing={step.kind === "importing"} onConfirm={handleConfirm} />
       )}
 
-      {step.kind === "done" && <ResultView result={step.result} formatQuantity={formatQuantity} />}
+      {step.kind === "done" && <ImportResultView result={step.result} />}
 
       <Notice variant="info">{t("disclaimer")}</Notice>
     </div>
