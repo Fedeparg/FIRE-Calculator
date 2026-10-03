@@ -1,15 +1,15 @@
 /**
- * Tipos de la cartera, compartidos por el server component y el island de cliente. No debe importar
- * `server-only` ni `next/headers` para poder cargarse en el bundle del cliente.
+ * Portfolio types, shared by the server component and the client island. It must not import
+ * `server-only` or `next/headers` so it can be loaded in the client bundle.
  */
 
-/** Precio tal como lo sirve `GET /api/prices`. */
+/** Price as served by `GET /api/prices`. */
 export type PriceInfo = {
   symbol: string;
   close: number;
   currency: string;
   date: string;
-  /** Instante ISO de lectura; con refresco intradía cambia en el día. */
+  /** ISO read instant; with intraday refreshes it changes during the day. */
   fetchedAt: string;
   previousClose: number | null;
 };
@@ -29,9 +29,10 @@ export type InstrumentSearchResult = {
 };
 
 /**
- * Clase de activo, para saber en qué bloque de la declaración van sus ventas: acciones (casillas
- * de acciones admitidas a negociación), fondos y ETF (instituciones de inversión colectiva),
- * derivados (otros elementos patrimoniales) u otros. `null` mientras no se sepa.
+ * Asset class, to know which block of the tax return its sales go in: stocks (boxes for shares
+ * admitted to trading, "acciones admitidas a negociación"), funds and ETFs (collective investment
+ * undertakings, "instituciones de inversión colectiva"), derivatives (other assets, "otros
+ * elementos patrimoniales") or other. `null` while unknown.
  */
 export const ASSET_CLASSES = ["stock", "fund", "derivative", "other"] as const;
 export type AssetClass = (typeof ASSET_CLASSES)[number];
@@ -44,7 +45,7 @@ export type Position = {
   avgPrice: number;
   broker: string | null;
   currency: string;
-  /** Derivado: se registra pero no se valora ni entra en los totales. */
+  /** Derivative: recorded but neither valued nor included in the totals. */
   isDerivative: boolean;
   assetClass: AssetClass | null;
   createdAt: string;
@@ -53,23 +54,23 @@ export type Position = {
 export type PositionLotKind = "buy" | "sell";
 
 /**
- * Operación de una posición (`GET /api/positions/:positionId/lots`). No lleva divisa propia: sus
- * importes están en la de su posición, lo que permite sumarlos sin convertir.
+ * Trade of a position (`GET /api/positions/:positionId/lots`). It has no currency of its own: its
+ * amounts are in its position's currency, so they can be summed without converting.
  */
 export type PositionLot = {
   id: string;
   positionId: string;
   kind: PositionLotKind;
-  /** Participaciones; siempre > 0 (el signo lo da `kind`). */
+  /** Units; always > 0 (`kind` gives the sign). */
   quantity: number;
-  /** Precio unitario de la operación. */
+  /** Unit price of the trade. */
   price: number;
-  /** Comisiones y gastos: no entran en el precio medio, sí en la fiscalidad. */
+  /** Fees and costs: excluded from the average price, included for tax purposes. */
   fees: number;
-  /** Fecha de la operación (`YYYY-MM-DD`). */
+  /** Trade date (`YYYY-MM-DD`). */
   tradedAt: string;
   note: string | null;
-  /** Instante de alta en la BD (ISO); desempata operaciones del mismo día. */
+  /** DB creation instant (ISO); breaks ties between same-day trades. */
   createdAt: string;
 };
 
@@ -100,13 +101,13 @@ export interface HistoryPointDto {
   pnlPct: number | null;
   valuedPositions: number;
   totalPositions: number;
-  /** `true` si el punto es anterior al seguimiento en Sextante: reconstrucción desde los lotes (ver `portfolio-snapshots.service.ts`). */
+  /** `true` if the point predates tracking in Sextante: reconstructed from the lots (see `portfolio-snapshots.service.ts`). */
   estimated: boolean;
 }
 
 export interface PortfolioHistoryDto {
   display: string;
-  /** Divisa de almacenamiento (EUR). */
+  /** Storage currency (EUR). */
   base: string;
   points: HistoryPointDto[];
 }

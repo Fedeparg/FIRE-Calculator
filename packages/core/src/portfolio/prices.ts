@@ -1,8 +1,8 @@
-// Frescura de los precios de la cartera: qué filas se valoran con un precio anterior al último refresco.
+// Freshness of portfolio prices: which rows are valued with a price older than the last refresh.
 //
-// Se usa el máximo de las fechas recibidas porque `GET /api/prices` da una fecha por símbolo y no
-// hay marca global de refresco. Si todos los precios son igual de viejos no se marca ninguna fila:
-// sin referencia externa no se puede saber que ese día no era el bueno.
+// The maximum of the received dates is used because `GET /api/prices` returns one date per symbol
+// and there is no global refresh marker. If all prices are equally old no row is flagged: without an
+// external reference there is no way to know that day was not the right one.
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -10,7 +10,7 @@ export interface DatedPrice {
   date: string;
 }
 
-/** Fecha del precio más reciente (ISO, comparada como texto), o `null`; ignora formatos ilegibles. */
+/** Date of the most recent price (ISO, compared as text), or `null`; ignores unreadable formats. */
 export function latestPriceDate(prices: Record<string, DatedPrice | undefined>): string | null {
   let latest: string | null = null;
   for (const price of Object.values(prices)) {
@@ -22,8 +22,8 @@ export function latestPriceDate(prices: Record<string, DatedPrice | undefined>):
 }
 
 /**
- * `true` si el precio es anterior al último refresco. Sin precio, sin referencia o con fecha
- * ilegible devuelve `false`: la ausencia de precio ya se muestra como "—".
+ * `true` if the price predates the last refresh. Without a price, without a reference or with an
+ * unreadable date it returns `false`: a missing price is already shown as "—".
  */
 export function isStalePrice(price: DatedPrice | undefined, latest: string | null): boolean {
   if (!price || !latest) return false;
@@ -31,14 +31,14 @@ export function isStalePrice(price: DatedPrice | undefined, latest: string | nul
   return price.date < latest;
 }
 
-/** Lo mínimo para saber cuándo se leyó un precio: el instante ISO en que se obtuvo. */
+/** The minimum needed to know when a price was read: the ISO instant it was fetched. */
 export interface FetchedPrice {
   fetchedAt?: string;
 }
 
 /**
- * Instante ISO de la lectura más reciente. Con refresco intradía `date` no cambia en todo el día,
- * pero este sí.
+ * ISO instant of the most recent read. With intraday refreshes `date` stays the same all day, but
+ * this one does not.
  */
 export function latestFetchedAt(prices: Record<string, FetchedPrice | undefined>): string | null {
   let latest: string | null = null;
@@ -55,8 +55,8 @@ export function latestFetchedAt(prices: Record<string, FetchedPrice | undefined>
 }
 
 /**
- * Ventana en la que una posición sin precio es "buscando precio". Resolver un ISIN (Yahoo + OpenFIGI)
- * tarda de segundos a un par de minutos; 10 evita un spinner eterno.
+ * Window during which a position without a price counts as "looking up the price". Resolving an ISIN
+ * (Yahoo + OpenFIGI) takes from seconds to a couple of minutes; 10 minutes avoids an endless spinner.
  */
 export const PENDING_PRICE_WINDOW_MS = 10 * 60_000;
 
@@ -66,9 +66,10 @@ export interface PendingPricePosition {
 }
 
 /**
- * `true` si aún no hay precio pero la posición es reciente y el servidor lo busca en segundo plano.
- * Se usa la edad porque la API no distingue "pendiente" de "no existe". Un `createdAt` ilegible no
- * es pendiente; una edad negativa (reloj desajustado) cuenta como recién creada. Los derivados nunca.
+ * `true` if there is no price yet but the position is recent and the server is looking it up in the
+ * background. Age is used because the API does not tell "pending" from "does not exist". An
+ * unreadable `createdAt` is not pending; a negative age (clock skew) counts as just created.
+ * Derivatives never are.
  */
 export function isPricePending(
   position: PendingPricePosition,

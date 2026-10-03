@@ -15,17 +15,17 @@ function position(overrides: Partial<Position> & Pick<Position, "ticker">): Posi
   };
 }
 
-/** EUR y USD convertibles; GBP deliberadamente ausente para probar la exclusión. */
+/** EUR and USD convertible; GBP deliberately missing to test the exclusion. */
 const RATES = { USD: 1, EUR: 1.1 };
 
 const BASE = {
   rates: RATES,
   display: "EUR",
-  unknownBrokerLabel: "Sin bróker",
+  unknownBrokerLabel: "No broker",
 } as const;
 
 describe("buildBreakdown", () => {
-  it("agrupa por activo y calcula el peso de cada uno", () => {
+  it("groups by asset and computes the weight of each one", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -48,7 +48,7 @@ describe("buildBreakdown", () => {
     expect(result.excluded).toBe(0);
   });
 
-  it("usa el ticker como etiqueta cuando la posición no tiene nombre", () => {
+  it("uses the ticker as the label when the position has no name", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -59,7 +59,7 @@ describe("buildBreakdown", () => {
     expect(itemAt(result.slices, 0).label).toBe("AAPL");
   });
 
-  it("suma en un solo grupo el mismo activo en brókeres distintos", () => {
+  it("sums the same asset held at different brokers into a single group", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -75,9 +75,9 @@ describe("buildBreakdown", () => {
     expect(itemAt(result.slices, 0).positions).toBe(2);
   });
 
-  it("excluye, como aggregatePortfolio, una posición cuya divisa no se puede convertir", () => {
-    // Precio en EUR (convertible) pero posición en GBP (sin tasa): el total del Resumen la deja
-    // fuera, así que el reparto también, o los pesos no cuadrarían.
+  it("excludes, like aggregatePortfolio, a position whose currency cannot be converted", () => {
+    // Price in EUR (convertible) but position in GBP (no rate): the Summary total leaves it out,
+    // so the breakdown does too, or the weights would not add up.
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -90,7 +90,7 @@ describe("buildBreakdown", () => {
     expect(result.slices.map((s) => s.key)).toEqual(["B"]);
   });
 
-  it("agrupa por bróker y etiqueta las posiciones sin bróker", () => {
+  it("groups by broker and labels positions without a broker", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "broker",
@@ -104,26 +104,26 @@ describe("buildBreakdown", () => {
       },
     });
 
-    expect(result.slices.map((s) => s.label)).toEqual(["MyInvestor", "Sin bróker"]);
+    expect(result.slices.map((s) => s.label)).toEqual(["MyInvestor", "No broker"]);
     expect(itemAt(result.slices, 1).value).toBe(100);
   });
 
-  it("agrupa por divisa de la posición, no por la del precio", () => {
+  it("groups by the position's currency, not the price's", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "currency",
-      // Comprada en EUR pero cotizada en USD: cuenta como EUR.
+      // Bought in EUR but quoted in USD: counts as EUR.
       positions: [position({ ticker: "AAPL", quantity: 1, currency: "EUR" })],
       prices: { AAPL: { close: 110, currency: "USD" } },
     });
 
     expect(result.slices).toHaveLength(1);
     expect(itemAt(result.slices, 0).label).toBe("EUR");
-    // 110 USD → 100 EUR con rates(EUR) = 1,1 USD/EUR.
+    // 110 USD → 100 EUR with rates(EUR) = 1.1 USD/EUR.
     expect(itemAt(result.slices, 0).value).toBeCloseTo(100, 10);
   });
 
-  it("excluye las posiciones sin precio", () => {
+  it("excludes positions without a price", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -136,14 +136,14 @@ describe("buildBreakdown", () => {
     expect(result.total).toBe(100);
   });
 
-  it("excluye las posiciones cuya divisa de precio no es convertible", () => {
+  it("excludes positions whose price currency is not convertible", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
       positions: [position({ ticker: "A", quantity: 1 }), position({ ticker: "B", quantity: 1 })],
       prices: {
         A: { close: 100, currency: "EUR" },
-        // GBP no está en `rates`: no hay forma honesta de convertirlo.
+        // GBP is not in `rates`: there is no honest way to convert it.
         B: { close: 100, currency: "GBP" },
       },
     });
@@ -153,7 +153,7 @@ describe("buildBreakdown", () => {
     expect(result.slices).toHaveLength(1);
   });
 
-  it("una cartera sin nada valorable devuelve un reparto vacío, no ceros repartidos", () => {
+  it("a portfolio with nothing valuable returns an empty breakdown, not zero-valued slices", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -166,7 +166,7 @@ describe("buildBreakdown", () => {
     expect(result.excluded).toBe(1);
   });
 
-  it("los pesos suman 100 % cuando hay algo que repartir", () => {
+  it("weights add up to 100% when there is something to split", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -185,7 +185,7 @@ describe("buildBreakdown", () => {
     expect(result.slices.reduce((sum, s) => sum + s.share, 0)).toBeCloseTo(100, 10);
   });
 
-  it("ordena de mayor a menor y desempata por etiqueta", () => {
+  it("sorts from largest to smallest and breaks ties by label", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
@@ -204,7 +204,7 @@ describe("buildBreakdown", () => {
     expect(result.slices.map((s) => s.label)).toEqual(["M", "A", "Z"]);
   });
 
-  it("descarta un valor no finito en lugar de contaminar el total", () => {
+  it("discards a non-finite value instead of polluting the total", () => {
     const result = buildBreakdown({
       ...BASE,
       groupBy: "asset",
