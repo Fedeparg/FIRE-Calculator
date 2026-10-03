@@ -6,17 +6,19 @@
 // Criterio y fuentes: ver ./README.md, sección `dividend-resolution.ts`.
 
 import { roundCents } from "../money.js";
+import { countryColumn, SPAIN_SAVINGS_WITHHOLDING_PCT } from "./countries.js";
 import type { ValueSource } from "./income.js";
 
-/** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF). */
-export const SPANISH_WITHHOLDING_RATE = 0.19;
+/** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF), en tanto por uno. */
+export const SPANISH_WITHHOLDING_RATE = SPAIN_SAVINGS_WITHHOLDING_PCT / 100;
 
 /**
- * Retención en origen que el bróker aplica de hecho y coincide con el convenio, para deshacer la
- * mezcla de retenciones del export de Trade Republic: EE. UU. con el W-8BEN (confirmado con 21
- * dividendos reales contra el informe fiscal de TR) y Países Bajos (ASML), 15 %.
+ * Retención en origen que el bróker aplica de hecho, en tanto por uno, para deshacer la mezcla de
+ * retenciones del export de Trade Republic. Datos y fuente: `brokerAppliedPct` en `countries.ts`.
  */
-const BROKER_ORIGIN_RATES: Readonly<Record<string, number>> = { US: 0.15, NL: 0.15 };
+const BROKER_ORIGIN_RATES: Readonly<Record<string, number>> = countryColumn((rates) =>
+  rates.brokerAppliedPct !== undefined ? rates.brokerAppliedPct / 100 : undefined,
+);
 
 /** Margen para comparar importes que el bróker redondea a céntimos en cada paso. */
 const CENT_TOLERANCE = 0.011;

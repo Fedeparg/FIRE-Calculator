@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { estimateSavingsTax, type TradeLot } from "./plusvalias.js";
+import type { TradeLot } from "./plusvalias.js";
+import { estimateSavingsTax } from "./savings-tax.js";
 import type { ReferenceRates } from "./fx-reference.js";
 import { buildRealisedGainsReport, referenceRatesNeeded, type RealisedGainsPosition } from "./realised-gains.js";
 

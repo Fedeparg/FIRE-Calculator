@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { computeSavingsBase, savingsTax, type PendingNegative } from "./savings-base.js";
+import { computeSavingsBase, type PendingNegative } from "./savings-base.js";
 
 const run = (gainsBalance: number, capitalIncomeBalance: number, pending: PendingNegative[] = [], year = 2025) =>
   computeSavingsBase({ year, gainsBalance, capitalIncomeBalance, pending });
@@ -88,17 +88,7 @@ describe("computeSavingsBase", () => {
   });
 });
 
-describe("savingsTax", () => {
-  it("base 0: cuota 0 y tipo medio null", () => {
-    expect(savingsTax(0)).toEqual({ tax: 0, averageRatePct: null });
-  });
-
-  it("aplica la escala del ahorro por tramos", () => {
-    const { tax, averageRatePct } = savingsTax(10000);
-    expect(tax).toBeCloseTo(6000 * 0.19 + 4000 * 0.21, 9);
-    expect(averageRatePct).toBeCloseTo((tax / 10000) * 100, 9);
-  });
-
+describe("computeSavingsBase: casos del manual", () => {
   it("reproduce el caso práctico del Manual de Renta 2025 de la AEAT (cap. 12): base del ahorro 200", () => {
     // https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/irpf-2025/c12-integracion-compensacion-rentas/caso-practico.html
     const r = computeSavingsBase({

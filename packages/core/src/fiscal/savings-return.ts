@@ -1,19 +1,14 @@
 // La base del ahorro de un ejercicio completa: ganancias y pérdidas por venta, rendimientos del
 // capital mobiliario, compensación (art. 49 LIRPF), cuota, deducción por doble imposición
 // internacional (art. 80 LIRPF) y retenciones españolas. Core puro: une `realised-gains.ts`,
-// `income.ts`, `savings-base.ts` y `double-taxation.ts`. Ver ./README.md.
+// `income.ts`, `savings-base.ts`, `savings-tax.ts` y `double-taxation.ts`. Ver ./README.md.
 
 import { computeDoubleTaxationDeduction, type DoubleTaxationResult } from "./double-taxation.js";
 import { referenceRateOn, toEur, type ReferenceRates } from "./fx-reference.js";
 import type { IncomeEvent, IncomeYear } from "./income.js";
 import type { RealisedGainsYear } from "./realised-gains.js";
-import {
-  computeSavingsBase,
-  savingsTax,
-  type PendingNegative,
-  type SavingsBaseResult,
-  type SavingsTax,
-} from "./savings-base.js";
+import { computeSavingsBase, type PendingNegative, type SavingsBaseResult } from "./savings-base.js";
+import { savingsTax, type SavingsTax } from "./savings-tax.js";
 
 export interface SavingsReturnInput {
   year: number;

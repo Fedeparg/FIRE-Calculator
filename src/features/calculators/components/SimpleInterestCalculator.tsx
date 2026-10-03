@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeSimpleInterest } from "@sextante/core/calculators/interes-simple";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
@@ -19,7 +20,7 @@ export default function SimpleInterestCalculator() {
   const [principal, setPrincipal] = useNumberField("principal", 10000);
   const [annualRate, setAnnualRate] = useNumberField("annualRate", 4);
   const [years, setYears] = useNumberField("years", 15);
-  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
 
   const result = useMemo(
     () => computeSimpleInterest({ principal, annualRate, years, withholdingRate }),

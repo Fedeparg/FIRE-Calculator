@@ -1,6 +1,7 @@
 // Depósito a plazo fijo: capitaliza a la TAE y aplica la retención española sobre los intereses. Core puro.
 
 import { MAX_HORIZON_YEARS } from "../inputs.js";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
 
 export interface DepositInput {
   principal: number;
@@ -27,7 +28,7 @@ export function computeDeposit(input: DepositInput): DepositResult {
   const apr = (input.apr || 0) / 100;
   // Sin redondear (un depósito puede ser a 6 meses), pero acotado como el resto de plazos.
   const years = Math.min(MAX_HORIZON_YEARS, Math.max(0, input.years || 0));
-  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
+  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? SPAIN_SAVINGS_WITHHOLDING_PCT)) / 100;
   const inflation = (input.inflationRate || 0) / 100;
 
   // Con una TAE o una inflación ≤ −100 % el factor se anula (como en `projection.ts`) en vez de dar NaN.

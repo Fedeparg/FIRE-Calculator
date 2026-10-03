@@ -2,43 +2,14 @@
 // Core puro: los avisos son códigos, no texto. Alcance y fuentes: ver ./README.md.
 
 import { nonNegative } from "../inputs.js";
+import { countryColumn } from "./countries.js";
 
 /**
  * Tipo máximo (%) que el convenio de doble imposición permite al país de la fuente sobre
- * dividendos pagados a un residente en España (columna «General», no matriz-filial).
- * Fuente: DGT, «Límites de imposición sobre dividendos, intereses y cánones resultantes de
- * los CDI suscritos por España» (actualización 01/01/2018),
- * https://www.hacienda.gob.es/SGT/NormativaDoctrina/Tributaria/CDI/Documentacion/Limites_Imposicion_CDI.pdf
- * Solo entran países con tipo único y sin nota al pie en esa columna; un país ausente no
- * tiene dato confirmado. La tabla es de 2018 y se contrasta con los convenios posteriores:
- * - Japón: 5 % desde el convenio de 2018, en vigor el 01/05/2021 (BOE-A-2021-2977, art. 10.2).
- * - Irlanda: 0 %. El art. 10.1.c) del convenio exime en Irlanda los dividendos del residente en
- *   España; el 15 % de la tabla es la letra b) (régimen de crédito fiscal). Lo que retenga Irlanda
- *   (25 % de DWT) no se deduce en España: se reclama a Revenue con el formulario V2A.
+ * dividendos pagados a un residente en España. Vista de `COUNTRY_DIVIDEND_RATES` (countries.ts),
+ * donde están el dato y sus fuentes; un país ausente no tiene dato confirmado.
  */
-export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
-  AT: 15,
-  AU: 15,
-  BE: 15,
-  CA: 15,
-  CH: 15,
-  CN: 10,
-  DE: 15,
-  FI: 15,
-  FR: 15,
-  GB: 10,
-  HK: 10,
-  IE: 0,
-  IT: 15,
-  JP: 5,
-  KR: 15,
-  LU: 15,
-  NL: 15,
-  NO: 15,
-  PT: 15,
-  SE: 15,
-  US: 15,
-};
+export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = countryColumn((rates) => rates.treatyPct);
 
 /**
  * Países sin convenio con España: la deducción del art. 80 LIRPF no tiene el límite de un convenio

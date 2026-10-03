@@ -1,12 +1,11 @@
 // Ganancias y pérdidas patrimoniales por transmisión de valores homogéneos: emparejamiento
-// FIFO de lotes y estimación de la cuota en la escala del ahorro. Core puro.
+// FIFO de lotes. Core puro. La cuota del ahorro vive en `savings-tax.ts`.
 // Lo usan la simulación de venta y el informe `realised-gains.ts`, con las mismas reglas.
 // Alcance fiscal (qué modela y qué no): ver ./README.md. Resultado solo orientativo.
 
 import { finiteOr, QUANTITY_EPSILON } from "../inputs.js";
 import type { PositionLot } from "../portfolio/types.js";
 import { compareStrings } from "../compare.js";
-import { applyProgressiveBrackets, effectiveRate, IRPF_AHORRO, marginalRate } from "./brackets.js";
 
 /**
  * Operación del histórico de una posición, como la sirve `GET /api/positions/:id/lots`, en la
@@ -67,20 +66,6 @@ export interface SaleSimulation {
   remainingQuantity: number;
   /** Precio medio de coste de lo que quedaría (comisiones aparte), o 0 si no queda nada. */
   remainingAvgPrice: number;
-}
-
-/** Estimación de la cuota del ahorro de una ganancia patrimonial aislada. */
-export interface SavingsTaxEstimate {
-  /** Base del ahorro considerada: la ganancia, o 0 si la operación da pérdida. */
-  base: number;
-  /** Cuota estimada aplicando `IRPF_AHORRO` por tramos. */
-  tax: number;
-  /** Ganancia después de impuestos (`gain − tax`). Con pérdida, la propia pérdida. */
-  net: number;
-  /** Tipo efectivo en %, o `null` si no hay base positiva sobre la que calcularlo. */
-  effectiveRate: number | null;
-  /** Tipo marginal en % del último euro de la base. */
-  marginal: number;
 }
 
 /**
@@ -308,21 +293,5 @@ export function simulateSale({ lots, quantity, price, fees = 0 }: SaleSimulation
     matched: sale.matched,
     remainingQuantity,
     remainingAvgPrice: remainingQuantity > 0 ? remainingCost / remainingQuantity : 0,
-  };
-}
-
-/** Cuota del IRPF del ahorro de una ganancia aislada, en euros; una pérdida da 0 (no se compensa, ver README). */
-export function estimateSavingsTax(gain: number): SavingsTaxEstimate {
-  if (!Number.isFinite(gain)) {
-    return { base: NaN, tax: NaN, net: NaN, effectiveRate: null, marginal: NaN };
-  }
-  const base = Math.max(0, gain);
-  const tax = applyProgressiveBrackets(base, IRPF_AHORRO);
-  return {
-    base,
-    tax,
-    net: gain - tax,
-    effectiveRate: base > 0 ? effectiveRate(base, IRPF_AHORRO) : null,
-    marginal: marginalRate(base, IRPF_AHORRO),
   };
 }

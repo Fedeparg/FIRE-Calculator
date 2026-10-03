@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeRoi } from "@sextante/core/calculators/roi";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
@@ -19,7 +20,7 @@ export default function RoiCalculator() {
   const [years, setYears] = useNumberField("years", 5);
   const [costs, setCosts] = useNumberField("costs", 20);
   const [income, setIncome] = useNumberField("income", 50);
-  const [taxRate, setTaxRate] = useNumberField("taxRate", 19);
+  const [taxRate, setTaxRate] = useNumberField("taxRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
 
   const result = useMemo(
     () => computeRoi({ initial, final, years: years > 0 ? years : undefined, costs, income, taxRate }),

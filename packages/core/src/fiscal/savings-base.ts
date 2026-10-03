@@ -1,8 +1,7 @@
 // Integración y compensación de la base imponible del ahorro (arts. 46, 48 y 49 LIRPF).
 // Core puro: no traduce, los resultados son cifras y códigos. Alcance: ver ./README.md.
 
-import { finiteOr, nonNegative } from "../inputs.js";
-import { applyProgressiveBrackets, IRPF_AHORRO } from "./brackets.js";
+import { finiteOr } from "../inputs.js";
 
 /** Grupo de renta del ahorro: ganancias y pérdidas patrimoniales (GPP) o rendimientos del capital mobiliario (RCM). */
 export type SavingsGroup = "gains" | "capitalIncome";
@@ -154,19 +153,4 @@ export function computeSavingsBase(input: SavingsBaseInput): SavingsBaseResult {
     pending,
     expired,
   };
-}
-
-export interface SavingsTax {
-  /** Cuota íntegra de la escala del ahorro. */
-  readonly tax: number;
-  /** Tipo medio efectivo en % (cuota / base × 100); `null` si la base es 0. */
-  readonly averageRatePct: number | null;
-}
-
-/** Aplica la escala del ahorro (`IRPF_AHORRO`) a la base liquidable. */
-export function savingsTax(base: number): SavingsTax {
-  const b = nonNegative(base);
-  if (b === 0) return { tax: 0, averageRatePct: null };
-  const tax = applyProgressiveBrackets(b, IRPF_AHORRO);
-  return { tax, averageRatePct: (tax / b) * 100 };
 }

@@ -110,7 +110,7 @@ régimen común.
 ## `plusvalias.ts`
 
 Ganancias y pérdidas patrimoniales por transmisión de valores homogéneos:
-emparejamiento FIFO de lotes y estimación de la cuota en la escala del ahorro.
+emparejamiento FIFO de lotes (la cuota va aparte, en `savings-tax.ts`).
 Lo consumen la simulación "¿qué pasaría si vendo?" y el informe de ganancias
 realizadas (`realised-gains.ts`), con las mismas reglas.
 
@@ -121,7 +121,6 @@ realizadas (`realised-gains.ts`), con las mismas reglas.
 - Valor de adquisición = importe + gastos y comisiones de compra (art. 35.1); las
   comisiones del lote se prorratean entre las participaciones vivas.
 - Valor de transmisión = importe recibido − gastos y comisiones de venta (art. 35.2).
-- Escala del ahorro (`IRPF_AHORRO`) aplicada por tramos.
 - **Ampliaciones liberadas** (art. 37.1.a LIRPF): el coste total de las acciones antiguas se
   reparte entre antiguas y nuevas, y las nuevas heredan la antigüedad de las antiguas. Una
   compra a **precio 0 y sin comisiones** se interpreta como acciones totalmente liberadas (así las
@@ -304,13 +303,23 @@ Reparte un dividendo importado en íntegro, retención en origen y retención es
 dividendos de valores sin dato de mercado en la divisa de pago (quedan como estimación o sin
 saber, con aviso).
 
+## `countries.ts`
+
+Registro único, por país (ISO 3166-1 alfa-2) y **en %**, de los tipos sobre dividendos: el del
+convenio (`treatyPct`), la retención que aplica de hecho el país (`statutory`, con su fuente) y la
+que aplica el bróker (`brokerAppliedPct`). `TREATY_DIVIDEND_RATES` (en %),
+`STATUTORY_DIVIDEND_WITHHOLDING` y la tabla del bróker de `dividend-resolution.ts` (en tanto por
+uno) son vistas de este registro, cada una con su unidad en el borde. También fija
+`SPAIN_SAVINGS_WITHHOLDING_PCT` (19 %, art. 90 RIRPF), que usan la resolución de dividendos y el
+valor por defecto de las calculadoras.
+
 ## `withholding-rates.ts`
 
 Retención que aplica de hecho cada país a los dividendos de una persona física residente en
 España. Solo sirve para **estimar** la retención en origen cuando faltan el dato del bróker y el de
 mercado; lo que sale de aquí se marca como estimación y la pantalla lo avisa.
 
-- Fuentes por país en el propio fichero: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
+- Fuentes por país en `countries.ts`: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
   Worldwide Tax Summaries (fuente secundaria: confianza media). Las autoridades fiscales de
   Alemania, Suiza, Países Bajos, Italia, Noruega, Canadá y Japón no se pudieron consultar.
 - Fuera: Irlanda (25 % o 0 % con declaración de no residente) y Australia (30 % o 0 % según el
@@ -338,8 +347,7 @@ tabla verificada se muestra sin números de casilla, nunca con los de otro año.
 
 ## `savings-base.ts`
 
-Integración y compensación de la base imponible del ahorro y cuota por la escala del
-ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
+Integración y compensación de la base imponible del ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
 
 - **Qué modela** (arts. 46, 48 y 49 LIRPF): dos grupos, ganancias y pérdidas
   patrimoniales por transmisión (art. 49.1.b) y rendimientos del capital mobiliario
@@ -356,14 +364,29 @@ ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
   positivo del ejercicio antes de compensar), compartido por el propio ejercicio y los arrastres
   («límite conjunto», según el manual). El orden entre pendientes del mismo grupo de años
   distintos no lo fija ninguna fuente: el más antiguo primero, para que caduque lo menos posible.
-- `savingsTax(base)` aplica `IRPF_AHORRO` y devuelve cuota íntegra y tipo medio
-  efectivo en % (`null` con base 0).
+- La cuota de la base resultante la calcula `savingsTax` (`savings-tax.ts`).
 - **No modela**: la reducción del art. 55 LIRPF (remanente que reduce la base del
   ahorro, art. 50.2), deducciones ni rentas exentas. Un test reproduce el caso práctico del
   capítulo 12 del Manual práctico de Renta 2025 (base del ahorro de 200 €).
 - **Fuentes**: Ley 35/2006, arts. 46, 48, 49 y 50.2 (art. 49 en la redacción de la
   Ley 26/2014, de 27 de noviembre),
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
+
+## `savings-tax.ts`
+
+La única implementación de la cuota de la escala del ahorro (`IRPF_AHORRO`, arts. 66 y 76 LIRPF).
+
+- `savingsTax(base)`: cuota íntegra y tipo medio efectivo en % (`null` con base 0). La usa la
+  base del ahorro del informe de la Renta (`savings-return.ts`).
+- `estimateSavingsTax(gain)`: la cuota de una ganancia aislada (una pérdida da 0), con el tipo
+  medio y el marginal; se apoya en `savingsTax`. La usan el simulador de venta y el resumen de
+  `realised-gains.ts`.
+
+## `report-inputs.ts`
+
+Entradas del informe fiscal que comparten la web, la API (`TaxReturnService`) y el MCP, para que
+los tres canales lo monten igual: `toRealisedGainsPositions` reparte las operaciones entre sus
+posiciones y `referenceRatesRequest` une los tipos del BCE que necesitan ventas y cobros.
 
 ## `double-taxation.ts`
 
@@ -385,7 +408,7 @@ extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,
   acreditable es mín(retención, tipo del convenio × íntegro); la retención por encima
   del convenio se devuelve como `excessReclaimable` (se reclama en origen, no se
   deduce en España). El tipo medio se redondea a dos decimales (art. 80.2).
-- **Tabla `TREATY_DIVIDEND_RATES`**: tipo «General» de dividendos de la tabla de la DGT
+- **Tabla `TREATY_DIVIDEND_RATES`** (vista de `countries.ts`): tipo «General» de dividendos de la tabla de la DGT
   (actualización 01/01/2018), solo países con un único tipo sin nota al pie. No incluye
   la cláusula matriz-filial ni cambios de convenio posteriores a 2018. Revisar al
   cambiar de ejercicio.

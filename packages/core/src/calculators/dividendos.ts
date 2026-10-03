@@ -1,6 +1,7 @@
 // Dividendos: ingreso anual, retención española y proyección con crecimiento. Core puro.
 
 import { clampYears } from "../inputs.js";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
 
 export interface DividendInput {
   shares: number;
@@ -35,7 +36,7 @@ export interface DividendResult {
 export function computeDividends(input: DividendInput): DividendResult {
   const shares = Math.max(0, input.shares || 0);
   const dividendPerShare = Math.max(0, input.dividendPerShare || 0);
-  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
+  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? SPAIN_SAVINGS_WITHHOLDING_PCT)) / 100;
   const growth = Math.max(0, input.annualGrowth || 0) / 100;
   const years = clampYears(input.years);
 

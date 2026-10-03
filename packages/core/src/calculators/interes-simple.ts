@@ -2,6 +2,7 @@
 
 import type { ProjectionPoint } from "../projection.js";
 import { clampYears } from "../inputs.js";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
 
 export interface SimpleInterestInput {
   principal: number;
@@ -27,7 +28,7 @@ export function computeSimpleInterest(input: SimpleInterestInput): SimpleInteres
   const principal = Math.max(0, input.principal || 0);
   const rate = (input.annualRate || 0) / 100;
   const years = clampYears(input.years);
-  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
+  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? SPAIN_SAVINGS_WITHHOLDING_PCT)) / 100;
 
   const series: SimpleInterestPoint[] = [];
   for (let year = 0; year <= years; year++) {

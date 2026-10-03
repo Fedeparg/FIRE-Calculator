@@ -4,13 +4,8 @@
 
 import { compareStrings } from "../compare.js";
 import { referenceRateOn, TAX_CURRENCY, toEur, type AppliedRate, type ReferenceRates } from "./fx-reference.js";
-import {
-  walkLots,
-  estimateSavingsTax,
-  type RealisedSale,
-  type SavingsTaxEstimate,
-  type TradeLot,
-} from "./plusvalias.js";
+import { walkLots, type RealisedSale, type TradeLot } from "./plusvalias.js";
+import { estimateSavingsTax, type SavingsTaxEstimate } from "./savings-tax.js";
 import { computeWashSales, type WashSaleIntegration } from "./wash-sale.js";
 
 /** Una posición con su histórico, tal y como la tiene la cartera. */

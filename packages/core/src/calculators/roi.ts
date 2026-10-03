@@ -1,5 +1,7 @@
 // ROI con costes, rentas cobradas, ROI anualizado (CAGR) y neto tras impuestos. Core puro.
 
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
+
 export interface RoiInput {
   initial: number;
   final: number;
@@ -25,7 +27,7 @@ export function computeRoi(input: RoiInput): RoiResult {
   const final = input.final || 0;
   const costs = Math.max(0, input.costs || 0);
   const income = input.income || 0;
-  const taxRate = Math.min(100, Math.max(0, input.taxRate ?? 19)) / 100;
+  const taxRate = Math.min(100, Math.max(0, input.taxRate ?? SPAIN_SAVINGS_WITHHOLDING_PCT)) / 100;
 
   const invested = initial + costs;
   const gain = final + income - invested;
