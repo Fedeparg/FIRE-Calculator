@@ -170,6 +170,7 @@ function BlockTable({
                 </>
               )}
             </dl>
+            <WashSaleNote row={row} eur={eur} />
             {block === "unclassified" && <ClassifySelect positionId={row.positionId} ticker={row.ticker} />}
           </li>
         ))}
@@ -241,6 +242,22 @@ function BlockTable({
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Pérdidas que la regla de los dos meses deja sin computar (o integra) en esta entidad: Renta WEB
+ * separa el importe obtenido del computable, así que hay que verlas valor a valor.
+ */
+function WashSaleNote({ row, eur }: { row: RealisedGainsRow; eur: (value: number) => string }) {
+  const t = useTranslations("portfolio.realisedGains");
+  if (row.deferredLoss >= 0 && row.integratedLoss >= 0) return null;
+  return (
+    <span className="block text-xs text-warning">
+      {row.deferredLoss < 0 && t("rowDeferred", { amount: eur(-row.deferredLoss) })}
+      {row.deferredLoss < 0 && row.integratedLoss < 0 && " · "}
+      {row.integratedLoss < 0 && t("rowIntegrated", { amount: eur(-row.integratedLoss) })}
+    </span>
   );
 }
 

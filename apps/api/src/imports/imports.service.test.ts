@@ -449,10 +449,25 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
   });
 
   it('guarda la clase de activo del bróker en las posiciones, también en las que no la tenían', async () => {
+    const FIRST_ETF_ID = '00000000-0000-0000-0000-00000000e7f1';
+    const FIRST_DERIVATIVE_ID = '00000000-0000-0000-0000-00000000de71';
     const userId = await insertUser(db, 'a@example.com');
-    await service.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1), trade('BUY', DERIVATIVE, '1', '10', 1)));
-    await db.update(positions).set({ assetClass: null }).where(eq(positions.ticker, ETF));
-    await service.confirm(userId, csv(trade('BUY', ETF, '1', '100', 2)));
+    await service.confirm(
+      userId,
+      csv(
+        trade('BUY', ETF, '1', '100', 1, { transaction_id: FIRST_ETF_ID }),
+        trade('BUY', DERIVATIVE, '1', '10', 1, { transaction_id: FIRST_DERIVATIVE_ID }),
+      ),
+    );
+    await db.update(positions).set({ assetClass: null });
+    // El mismo fichero otra vez: no hay operaciones nuevas, pero la clase de activo se completa.
+    await service.confirm(
+      userId,
+      csv(
+        trade('BUY', ETF, '1', '100', 1, { transaction_id: FIRST_ETF_ID }),
+        trade('BUY', DERIVATIVE, '1', '10', 1, { transaction_id: FIRST_DERIVATIVE_ID }),
+      ),
+    );
 
     const byTicker = new Map((await positionsOf(userId)).map((p) => [p.ticker, p.assetClass]));
     expect(byTicker.get(ETF)).toBe('fund');

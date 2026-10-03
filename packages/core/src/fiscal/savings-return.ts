@@ -65,9 +65,11 @@ export function buildSavingsReturn(input: SavingsReturnInput): SavingsReturn {
   });
   const tax = savingsTax(savingsBase.base);
 
-  // Rendimientos de fuente extranjera, cobro a cobro y en euros (la retención puede no saberse).
+  // Rendimientos gravados en el extranjero (art. 80.1.b), cobro a cobro y en euros. Lo que no pagó
+  // nada fuera (intereses de la cuenta alemana de TR) no entra: inflaría el límite del tipo medio.
+  // Con la retención desconocida sí, para que la doble imposición avise de que falta.
   const foreign = input.incomeEvents.flatMap((event) => {
-    if (!event.country || event.country === "ES") return [];
+    if (!event.country || event.country === "ES" || event.withholdingOrigin === 0) return [];
     const rate = referenceRateOn(input.rates, event.currency, event.paidAt);
     if (!rate) return [];
     return [

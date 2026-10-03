@@ -109,6 +109,23 @@ describe("buildSavingsReturn", () => {
     expect(result.incomplete).toBe(true);
   });
 
+  it("lo que no pagó impuesto fuera no amplía el límite de la doble imposición", () => {
+    const income = [
+      event({ kind: "interest", gross: 1000, country: "DE", withholdingOrigin: 0 }),
+      event({ kind: "dividend", gross: 100, country: "DK", withholdingOrigin: 35 }),
+    ];
+    const result = buildSavingsReturn({
+      year: 2025,
+      gains: undefined,
+      income: buildIncomeReport(income, {}).years[0],
+      incomeEvents: income,
+      rates: {},
+      pending: [],
+    });
+    // Límite: tipo medio (19 %) × 100 de renta gravada en Dinamarca, no × 1.100.
+    expect(result.doubleTaxation.deduction).toBeCloseTo(19, 2);
+  });
+
   it("sin ventas ni cobros, todo es 0", () => {
     const result = buildSavingsReturn({
       year: 2025,

@@ -199,10 +199,9 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
 
 **No modela** (el informe lo avisa en pantalla)
 
-- Saldos negativos de los cuatro ejercicios anteriores (art. 49.1.b, último
-  párrafo): un año con pérdida neta da cuota 0 y no se arrastra.
-- Compensación cruzada del 25 % con rendimientos del capital mobiliario (la cartera
-  no registra dividendos ni intereses).
+- La compensación con rendimientos del capital mobiliario (25 %) y el arrastre de saldos
+  negativos de los cuatro ejercicios anteriores no están aquí: los hace `savings-base.ts`
+  sobre el saldo de este informe y los cobros (`savings-return.ts`).
 - Comisiones en una divisa distinta de la de la posición: se suponen en la divisa de la
   posición, como el resto de importes del lote.
 

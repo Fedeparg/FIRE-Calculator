@@ -129,6 +129,8 @@ export class ImportsService {
 
     for (const group of groups) {
       if (group.fresh.length === 0) {
+        // Reimportar el mismo fichero también completa la clase de activo que falte.
+        await this.backfillAssetClass(this.db, userId, group);
         results.push(resultOf(group, 'unchanged', 0, null, null));
         continue;
       }
@@ -273,14 +275,7 @@ export class ImportsService {
         .returning();
     }
 
-    // Una posición importada antes de guardar la clase de activo la recibe ahora.
-    if (!wasCreated && position.assetClass === null) {
-      [position] = await tx
-        .update(positions)
-        .set({ assetClass: group.assetClass })
-        .where(eq(positions.id, position.id))
-        .returning();
-    }
+    if (!wasCreated) position = (await this.backfillAssetClass(tx, userId, group)) ?? position;
 
     const { inserted } = await this.lots.appendImported(tx, {
       positionId: position.id,
@@ -314,6 +309,22 @@ export class ImportsService {
         `Refresco de precios tras importar falló: ${error instanceof Error ? error.name : 'error desconocido'}`,
       );
     }
+  }
+
+  /** Da la clase de activo del bróker a una posición importada antes de que se guardara; devuelve la posición. */
+  private async backfillAssetClass(
+    db: DatabaseOrTransaction,
+    userId: string,
+    group: InstrumentGroup,
+  ): Promise<Position | undefined> {
+    const position = await this.findPosition(db, userId, group.isin);
+    if (!position || position.assetClass !== null) return position;
+    const [updated] = await db
+      .update(positions)
+      .set({ assetClass: group.assetClass })
+      .where(eq(positions.id, position.id))
+      .returning();
+    return updated;
   }
 
   /** Completa los dividendos con los datos de mercado ya cacheados; un fallo no afecta a la importación. */
