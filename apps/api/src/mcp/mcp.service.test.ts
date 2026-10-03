@@ -6,7 +6,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CALCULATORS } from '@sextante/core/calculators/schemas';
 
-import { SCOPE_PORTFOLIO_READ } from '../oauth/oauth.constants.js';
+import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
+import { createIncomeSchema } from '../income/dto/create-income.dto.js';
+import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
 import { McpService } from './mcp.service.js';
 
 /**
@@ -103,6 +105,11 @@ function makeService() {
       ],
     }),
   };
+  const income = {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn().mockResolvedValue({ id: 'i1' }),
+    update: vi.fn().mockResolvedValue({ id: 'i1' }),
+  };
   const taxReturn = {
     build: vi.fn().mockResolvedValue({ year: 2025, availableYears: [2025], savings: null }),
   };
@@ -114,11 +121,11 @@ function makeService() {
     scenarios as never,
     {} as never,
     referenceRates as never,
-    { list: vi.fn().mockResolvedValue([]) } as never,
+    income as never,
     taxReturn as never,
     audit as never,
   );
-  return { service, audit, valuation, scenarios, taxReturn };
+  return { service, audit, valuation, scenarios, taxReturn, income };
 }
 
 async function connect(service: McpService, scopes: string[] = [SCOPE_PORTFOLIO_READ]): Promise<Client> {
@@ -429,6 +436,33 @@ describe('McpService', () => {
 
     expect(result.isError).toBe(true);
     expect(JSON.stringify(result.content)).toContain('Posición no encontrada (POSITION_NOT_FOUND)');
+  });
+
+  it('valida las escrituras con el esquema REST completo, refinamientos incluidos (paridad REST/MCP)', async () => {
+    const { service, income } = makeService();
+    client = await connect(service, [SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE]);
+    const call = async (name: string, args: Record<string, unknown>) =>
+      (await client!.callTool({ name, arguments: args })) as CallToolResult;
+
+    // "Al menos un campo" de PATCH /api/income/:id: REST lo rechaza y MCP también.
+    expect(updateIncomeSchema.safeParse({}).success).toBe(false);
+    const empty = await call('update_income', { id: 'i1' });
+    expect(empty.isError).toBe(true);
+    expect(JSON.stringify(empty.content)).toContain('no hay ningún campo que actualizar');
+
+    // "Las retenciones no superan el íntegro" de POST /api/income.
+    const tooMuch = { kind: 'dividend', paidAt: '2025-05-01', gross: 1, withholdingSpain: 2 };
+    expect(createIncomeSchema.safeParse(tooMuch).success).toBe(false);
+    const rejected = await call('add_income', tooMuch);
+    expect(rejected.isError).toBe(true);
+    expect(JSON.stringify(rejected.content)).toContain('las retenciones no pueden superar el íntegro');
+
+    expect(income.update).not.toHaveBeenCalled();
+    expect(income.create).not.toHaveBeenCalled();
+
+    // Lo válido sí llega al servicio, ya normalizado por el esquema.
+    expect((await call('update_income', { id: 'i1', gross: 10 })).isError).toBeFalsy();
+    expect(income.update).toHaveBeenCalledWith(USER, 'i1', { gross: 10 });
   });
 
   it('exige portfolio:read para las tools de lectura y audita el rechazo', async () => {
