@@ -1,25 +1,24 @@
-// Ilustraciones SVG propias, integradas inline. Estilo flat/línea con temática
-// náutica sutil (sextante, brújula, estrellas, olas, rumbo). Usan SIEMPRE las
-// variables CSS de color del tema mediante utilidades de Tailwind
-// (fill-*/stroke-*/text-*), de modo que funcionan en claro y oscuro sin colores
-// hardcodeados. Todas son decorativas: aria-hidden + focusable={false}.
+// Custom inline SVG illustrations. Flat/line style with a subtle nautical theme (sextant,
+// compass, stars, waves, heading). They ALWAYS use the theme's CSS color variables through
+// Tailwind utilities (fill-*/stroke-*/text-*), so they work in light and dark mode without
+// hard-coded colors. All are decorative: aria-hidden + focusable={false}.
 
 type SvgProps = {
   className?: string;
 };
 
 /**
- * Sextante estilizado para el hero. Dibuja las piezas reconocibles de un sextante
- * de navegación: ojal, brazo central, cuña con bastidor, limbo graduado, catalejo
- * con anillos y tambor con lente. Metáfora del producto: orientarte con tu dinero.
+ * Stylized sextant for the hero. Draws the recognizable parts of a navigation sextant: eyelet,
+ * index arm, braced frame wedge, graduated arc, telescope with rings and a drum with a lens.
+ * The product metaphor: finding your bearings with your money.
  */
 export function HeroSextant({ className }: SvgProps) {
   return (
     <svg viewBox="0 0 400 384" role="presentation" aria-hidden="true" focusable="false" className={className}>
-      {/* Halo suave de fondo */}
+      {/* Soft background halo */}
       <circle cx="200" cy="198" r="160" className="fill-brand-soft" />
 
-      {/* Astro avistado + estrellas de orientación */}
+      {/* Sighted celestial body + navigation stars */}
       <g className="fill-accent">
         <Star cx={100} cy={110} r={14} />
         <Star cx={300} cy={96} r={11} />
@@ -30,22 +29,22 @@ export function HeroSextant({ className }: SvgProps) {
         <Star cx={66} cy={150} r={7} />
       </g>
 
-      {/* Instrumento (reducido para dejar margen con el borde del halo) */}
+      {/* Instrument (scaled down to leave room before the halo's edge) */}
       <g transform="translate(200 198) scale(0.84) translate(-200 -198)">
-        {/* Lados del marco (la cuña del sextante) */}
+        {/* Frame sides (the sextant's wedge) */}
         <g className="stroke-brand" strokeWidth="16" strokeLinecap="round">
           <line x1="200" y1="98" x2="58" y2="292" />
           <line x1="200" y1="98" x2="342" y2="292" />
         </g>
 
-        {/* Bastidor interior: arcos que rigidizan el marco, concéntricos con el limbo */}
+        {/* Inner bracing: arcs that stiffen the frame, concentric with the graduated arc */}
         <g fill="none" className="stroke-brand" strokeWidth="9" strokeLinecap="round">
           <path d="M92 276 A237 237 0 0 0 308 276" />
           <path d="M126 256 A205 205 0 0 0 274 256" />
         </g>
 
-        {/* Limbo: arco graduado ancho en la base. Su centro es la perilla del
-          vértice (200,66), así que la curvatura se aleja de ella. */}
+        {/* Graduated arc: wide scale at the base. Its center is the knob at the
+          apex (200,66), so the curve bends away from it. */}
         <path
           d="M54 292 A270 270 0 0 0 346 292"
           fill="none"
@@ -54,7 +53,7 @@ export function HeroSextant({ className }: SvgProps) {
           strokeLinecap="round"
         />
 
-        {/* Catalejo: cilindro horizontal con anillos y boca, montado junto al vértice */}
+        {/* Telescope: horizontal cylinder with rings and a mouth, mounted next to the apex */}
         <g strokeLinejoin="round" strokeLinecap="round">
           <rect x="208" y="106" width="150" height="26" rx="13" className="fill-brand stroke-surface" strokeWidth="3" />
           <g className="stroke-surface" strokeWidth="5">
@@ -64,14 +63,14 @@ export function HeroSextant({ className }: SvgProps) {
           <rect x="352" y="100" width="14" height="38" rx="5" className="fill-brand stroke-surface" strokeWidth="3" />
         </g>
 
-        {/* Brazo central (alidada): del vértice al tambor */}
+        {/* Index arm (alidade): from the apex to the drum */}
         <rect x="187" y="72" width="26" height="248" rx="11" className="fill-brand" />
 
-        {/* Perilla / ojal en el vértice, con su agujero */}
+        {/* Knob / eyelet at the apex, with its hole */}
         <circle cx="200" cy="66" r="26" className="fill-brand" />
         <circle cx="200" cy="60" r="10" className="fill-surface" />
 
-        {/* Tambor micrométrico con lente, montado sobre el limbo al pie de la alidada */}
+        {/* Micrometer drum with a lens, mounted on the arc at the foot of the alidade */}
         <rect x="174" y="300" width="52" height="48" rx="15" className="fill-brand stroke-surface" strokeWidth="4" />
         <circle cx="200" cy="322" r="14" className="fill-accent stroke-surface" strokeWidth="3" />
       </g>
@@ -80,14 +79,14 @@ export function HeroSextant({ className }: SvgProps) {
 }
 
 /**
- * Brújula compacta para la marca del header. La aguja se gira ~27° a la derecha:
- * la punta norte apunta ligeramente al noreste.
+ * Compact compass for the header brand mark. The needle is rotated ~27° clockwise: the north
+ * tip points slightly north-east.
  */
 export function BrandCompass({ className }: SvgProps) {
   return (
     <svg viewBox="0 0 32 32" role="presentation" aria-hidden="true" focusable="false" className={className}>
       <circle cx="16" cy="16" r="13" fill="none" className="stroke-current" strokeWidth="2.5" />
-      {/* Aguja (rumbo), girada 27° en sentido horario */}
+      {/* Needle (heading), rotated 27° clockwise */}
       <g transform="rotate(27 16 16)">
         <path d="M16 6 L20 16 L16 26 L12 16 Z" className="fill-current" />
       </g>
@@ -96,7 +95,7 @@ export function BrandCompass({ className }: SvgProps) {
   );
 }
 
-/** Suite completa de calculadoras: capas/rejilla de herramientas. */
+/** Full calculator suite: layers/grid of tools. */
 export function IconSuite({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
@@ -110,7 +109,7 @@ export function IconSuite({ className }: SvgProps) {
   );
 }
 
-/** Enfoque fiscal español: balanza / equilibrio. */
+/** Spanish tax focus: scales / balance. */
 export function IconTax({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
@@ -118,7 +117,7 @@ export function IconTax({ className }: SvgProps) {
         <line x1="36" y1="16" x2="36" y2="54" />
         <line x1="20" y1="54" x2="52" y2="54" />
         <line x1="18" y1="26" x2="54" y2="26" />
-        {/* Platillos */}
+        {/* Pans */}
         <path d="M12 26 L24 26 L18 40 Z" className="fill-brand-soft" />
         <path d="M48 26 L60 26 L54 40 Z" className="fill-brand-soft" />
       </g>
@@ -127,7 +126,7 @@ export function IconTax({ className }: SvgProps) {
   );
 }
 
-/** Aprende: libro abierto con estrella de orientación. */
+/** Learn: open book with a guiding star. */
 export function IconLearn({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
@@ -142,19 +141,19 @@ export function IconLearn({ className }: SvgProps) {
   );
 }
 
-/** Tu cartera en un sitio: gráfica al alza con estrella de rumbo. */
+/** Your portfolio in one place: rising chart with a heading star. */
 export function IconPortfolio({ className }: SvgProps) {
   return (
     <PillarFrame className={className}>
       <g className="stroke-brand" strokeWidth="3.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-        {/* Ejes */}
+        {/* Axes */}
         <path d="M16 14 L16 56 L58 56" />
-        {/* Barras */}
+        {/* Bars */}
         <rect x="24" y="40" width="8" height="16" rx="2" className="fill-brand-soft" />
         <rect x="38" y="32" width="8" height="24" rx="2" className="fill-brand-soft" />
         <rect x="52" y="24" width="8" height="32" rx="2" className="fill-brand-soft" />
       </g>
-      {/* Línea de tendencia */}
+      {/* Trend line */}
       <path
         d="M22 44 L36 34 L50 28 L60 18"
         fill="none"
@@ -170,7 +169,7 @@ export function IconPortfolio({ className }: SvgProps) {
   );
 }
 
-/** Icono de nav: calculadora (line-art, hereda el color del texto). */
+/** Nav icon: calculator (line art, inherits the text color). */
 export function IconNavCalculator({ className }: SvgProps) {
   return (
     <NavIcon className={className}>
@@ -186,7 +185,7 @@ export function IconNavCalculator({ className }: SvgProps) {
   );
 }
 
-/** Icono de nav: libro abierto (line-art, hereda el color del texto). */
+/** Nav icon: open book (line art, inherits the text color). */
 export function IconNavLearn({ className }: SvgProps) {
   return (
     <NavIcon className={className}>
@@ -196,7 +195,7 @@ export function IconNavLearn({ className }: SvgProps) {
   );
 }
 
-/** Icono de nav: perfil de usuario (line-art, hereda el color del texto). */
+/** Nav icon: user profile (line art, inherits the text color). */
 export function IconNavProfile({ className }: SvgProps) {
   return (
     <NavIcon className={className}>
@@ -206,7 +205,7 @@ export function IconNavProfile({ className }: SvgProps) {
   );
 }
 
-/** Onda decorativa de separación (rumbo / mar). */
+/** Decorative divider wave (heading / sea). */
 export function WaveDivider({ className }: SvgProps) {
   return (
     <svg
@@ -222,7 +221,7 @@ export function WaveDivider({ className }: SvgProps) {
   );
 }
 
-// --- Helpers internos ---
+// --- Internal helpers ---
 
 function PillarFrame({ className, children }: SvgProps & { children: React.ReactNode }) {
   return (
@@ -252,7 +251,7 @@ function NavIcon({ className, children }: SvgProps & { children: React.ReactNode
 }
 
 function Star({ cx, cy, r }: { cx: number; cy: number; r: number }) {
-  // Estrella de 4 puntas (rosa de los vientos), dibujada como rombo afilado.
+  // Four-pointed star (compass rose), drawn as a sharp rhombus.
   const d = `M${cx} ${cy - r} Q${cx + r * 0.25} ${cy - r * 0.25} ${cx + r} ${cy} Q${
     cx + r * 0.25
   } ${cy + r * 0.25} ${cx} ${cy + r} Q${cx - r * 0.25} ${cy + r * 0.25} ${cx - r} ${cy} Q${

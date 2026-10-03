@@ -1,17 +1,16 @@
-/** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
+/** Padding of the "fit" domain, as a fraction of the chart's highest/lowest value. */
 const FIT_DOMAIN_PADDING_RATIO = 0.01;
 
 const toNumber = (value: unknown): number => (value === undefined ? 0 : Number(value));
 
 /**
- * Dominio del eje de valores ajustado al rango real de los datos, con un 1 % de margen arriba y
- * abajo. Cuenta el total APILADO de cada fila (`stackKeys`) y cada serie superpuesta
- * (`overlayKeys`: líneas y extremos de bandas). Con todos los valores iguales abre un margen
- * alrededor (o de ±1 si son 0); sin datos finitos devuelve `undefined` y el eje se queda en el
- * dominio por defecto.
+ * Value-axis domain fitted to the actual data range, with a 1% margin above and below. It
+ * counts the STACKED total of each row (`stackKeys`) and every overlaid series (`overlayKeys`:
+ * lines and band edges). When all values are equal it opens a margin around them (±1 if they are
+ * 0); with no finite data it returns `undefined` and the axis keeps its default domain.
  *
- * Se calcula a mano porque Recharts fuerza el mínimo de un `Area` apilado a 0 (su baseline)
- * antes de que una función de `domain` pueda tocarlo.
+ * Computed by hand because Recharts forces the minimum of a stacked `Area` to 0 (its baseline)
+ * before a `domain` function can touch it.
  */
 export function fitYDomain<T extends object>(
   data: readonly T[],

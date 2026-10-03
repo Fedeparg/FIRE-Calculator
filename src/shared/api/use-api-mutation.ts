@@ -10,9 +10,9 @@ export type ApiMutationState =
 export type ApiMutationResult<T> = { ok: true; data: T } | { ok: false; error: unknown };
 
 /**
- * Ejecuta una mutación y vuelca `pending` → `success | error` en `sink`. Nunca lanza: el
- * llamador decide qué hacer con el resultado. Separada del hook para poder probarla sin DOM
- * (como `runApiQuery`).
+ * Runs a mutation and reports `pending` → `success | error` to `sink`. It never throws: the
+ * caller decides what to do with the result. Kept apart from the hook so it can be tested
+ * without a DOM (like `runApiQuery`).
  */
 export async function runApiMutation<T>(
   action: () => Promise<T>,
@@ -30,14 +30,14 @@ export async function runApiMutation<T>(
 }
 
 /**
- * Estado de una mutación (POST/PATCH/DELETE) disparada por el usuario: sustituye al trío
- * `saving` / `error` / `try-catch` que cada componente repetía.
+ * State of a user-triggered mutation (POST/PATCH/DELETE): replaces the `saving` / `error` /
+ * `try-catch` trio every component used to repeat.
  *
- * `run(() => apiFetch(...))` devuelve `{ ok, data | error }`, así que los efectos de éxito
- * (navegar, actualizar la lista) se escriben justo después, sin anidarlos en un `try`.
- * `status` se queda en `success` hasta el siguiente `run` o `reset`: hace falta cuando el
- * éxito navega fuera y el botón debe seguir deshabilitado hasta que la página cambie.
- * `errorKey` es la clave i18n común; los componentes con `code` propios usan `error`.
+ * `run(() => apiFetch(...))` returns `{ ok, data | error }`, so success effects (navigating,
+ * updating the list) are written right after it, without nesting them in a `try`.
+ * `status` stays `success` until the next `run` or `reset`: needed when success navigates away
+ * and the button must remain disabled until the page changes.
+ * `errorKey` is the common i18n key; components with their own `code`s use `error`.
  */
 export function useApiMutation() {
   const [state, setState] = useState<ApiMutationState>({ status: "idle" });

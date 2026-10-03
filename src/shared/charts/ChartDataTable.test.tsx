@@ -11,20 +11,20 @@ type Row = { year: number; value: number };
 const rows: Row[] = Array.from({ length: 3 }, (_, i) => ({ year: 2020 + i, value: i * 100 }));
 const columns = [
   { label: "Año", value: (row: Row) => String(row.year) },
-  // Dos columnas con la misma cabecera: la clave por posición no las confunde.
+  // Two columns with the same header: keying by position does not mix them up.
   { label: "Valor", value: (row: Row) => `${row.value} €` },
   { label: "Valor", value: (row: Row) => `${row.value * 2} €` },
 ];
 
 describe("ChartDataTable", () => {
-  it("no monta la tabla hasta que se abre", () => {
+  it("does not mount the table until it is opened", () => {
     const { container } = renderWithIntl(<ChartDataTable title="Patrimonio" columns={columns} rows={rows} />);
 
     expect(screen.getByText("Ver los datos de la gráfica: Patrimonio")).toBeInTheDocument();
     expect(container.querySelector("table")).toBeNull();
   });
 
-  it("al abrirla enseña todas las filas y columnas", () => {
+  it("shows every row and column once opened", () => {
     const { container } = renderWithIntl(<ChartDataTable title="Patrimonio" columns={columns} rows={rows} />);
     const details = defined(container.querySelector("details"));
 

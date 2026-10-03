@@ -4,16 +4,16 @@ import path from "node:path";
 import matter from "gray-matter";
 
 /**
- * Primitivas del contenido Markdown con sufijo de idioma (`<slug>.<locale>.md`) que comparten la
- * wiki, los textos legales, los explainers y las novedades. Sin `server-only` ni dependencias de
- * Next: leen del disco y se prueban contra un directorio temporal. Renderizar a HTML
- * (`renderMarkdown`) se deja a quien llama, porque los metadatos se leen a menudo sin el cuerpo.
+ * Primitives for locale-suffixed Markdown content (`<slug>.<locale>.md`) shared by the wiki, the
+ * legal pages, the explainers and the changelog. No `server-only` and no Next dependencies: they
+ * read from disk and are tested against a temporary directory. Rendering to HTML
+ * (`renderMarkdown`) is left to the caller, because metadata is often read without the body.
  */
 
 /**
- * Slug válido por defecto: minúsculas, dígitos y guiones (todo el contenido cumple). Las novedades
- * lo restringen aún más, a una fecha ISO. Que el listado y la lectura usen la misma regla evita
- * prerenderizar un slug que luego no se puede leer.
+ * Default valid slug: lowercase letters, digits and hyphens (all content complies). The changelog
+ * narrows it further, to an ISO date. Using the same rule for listing and reading avoids
+ * prerendering a slug that cannot be read afterwards.
  */
 const SAFE_SLUG = "[a-z0-9-]+";
 const SAFE_SLUG_RE = new RegExp(`^${SAFE_SLUG}$`);
@@ -23,20 +23,20 @@ const LOCALE_RE = new RegExp(`^(${LOCALE_SUFFIX})$`);
 export interface LocalizedFile {
   slug: string;
   locale: string;
-  /** Nombre del fichero dentro de su directorio. */
+  /** File name within its directory. */
   fileName: string;
 }
 
 export interface ParsedMarkdown {
-  /** Frontmatter YAML (vacío si no hay). */
+  /** YAML frontmatter (empty if there is none). */
   data: Record<string, unknown>;
   content: string;
 }
 
 /**
- * Ficheros `<slug>.<es|en>.md` de un directorio, en cualquier idioma. Un directorio que no
- * existe equivale a ninguno: el contenido es opcional y la degradación, silenciosa. Los
- * subdirectorios (p. ej. `explainers/`) se ignoran.
+ * `<slug>.<es|en>.md` files in a directory, in any locale. A missing directory counts as an
+ * empty one: content is optional and degrades silently. Subdirectories (e.g. `explainers/`) are
+ * ignored.
  */
 export async function listLocalizedFiles(dir: string, slugPattern: string = SAFE_SLUG): Promise<LocalizedFile[]> {
   let entries: import("node:fs").Dirent[];
@@ -52,13 +52,13 @@ export async function listLocalizedFiles(dir: string, slugPattern: string = SAFE
     if (!entry.isFile()) continue;
     const match = fileRe.exec(entry.name);
     const [, slug, locale] = match ?? [];
-    // Los dos grupos son obligatorios en `fileRe`: si hay `match`, están.
+    // Both groups are mandatory in `fileRe`: if there is a `match`, they are present.
     if (slug !== undefined && locale !== undefined) files.push({ slug, locale, fileName: entry.name });
   }
   return files;
 }
 
-/** Slugs disponibles en un idioma, ordenados alfabéticamente. */
+/** Slugs available in a locale, sorted alphabetically. */
 export async function listLocalizedSlugs(
   dir: string,
   locale: string,
@@ -71,7 +71,7 @@ export async function listLocalizedSlugs(
     .sort();
 }
 
-/** Lee y parsea un `.md`; `null` si no se puede leer. Un frontmatter YAML roto sí lanza. */
+/** Reads and parses an `.md`; `null` if it cannot be read. A broken YAML frontmatter does throw. */
 export async function readMarkdownFile(filePath: string): Promise<ParsedMarkdown | null> {
   let raw: string;
   try {
@@ -84,9 +84,9 @@ export async function readMarkdownFile(filePath: string): Promise<ParsedMarkdown
 }
 
 /**
- * `<dir>/<slug>.<locale>.md` parseado, o `null` si no existe (sin fallback a otro idioma). El slug
- * y el idioma llegan de la URL (`dynamicParams`), así que se validan ANTES de tocar el disco: con
- * `../` o separadores, `path.join` saldría del directorio de contenido.
+ * Parsed `<dir>/<slug>.<locale>.md`, or `null` if it does not exist (no fallback to another
+ * locale). The slug and locale come from the URL (`dynamicParams`), so they are validated BEFORE
+ * touching the disk: with `../` or separators, `path.join` would escape the content directory.
  */
 export async function readLocalizedMarkdown(dir: string, slug: string, locale: string): Promise<ParsedMarkdown | null> {
   if (!SAFE_SLUG_RE.test(slug) || !LOCALE_RE.test(locale)) return null;
@@ -94,10 +94,9 @@ export async function readLocalizedMarkdown(dir: string, slug: string, locale: s
 }
 
 /**
- * Normaliza una fecha de frontmatter a `YYYY-MM-DD`. `gray-matter` convierte a
- * `Date` los valores sin comillas (YAML los tipa como fecha) y deja `string` los
- * entrecomillados, así que hay que aceptar ambos. Cualquier otra cosa se descarta:
- * es preferible no publicar `lastmod` a publicar uno inventado.
+ * Normalizes a frontmatter date to `YYYY-MM-DD`. `gray-matter` turns unquoted values into
+ * `Date` (YAML types them as dates) and leaves quoted ones as `string`, so both must be
+ * accepted. Anything else is discarded: publishing no `lastmod` beats publishing a made-up one.
  */
 export function normalizeDate(value: unknown): string | undefined {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {

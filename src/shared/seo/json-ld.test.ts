@@ -4,7 +4,7 @@ import { absoluteUrl } from "./site";
 import { articleSchema, breadcrumbSchema, calculatorSchema, organizationSchema, websiteSchema } from "./json-ld";
 
 describe("json-ld", () => {
-  it("organizationSchema lleva contexto, URL absoluta y logo", () => {
+  it("organizationSchema has a context, an absolute URL and a logo", () => {
     const org = organizationSchema();
     expect(org["@context"]).toBe("https://schema.org");
     expect(org["@type"]).toBe("Organization");
@@ -12,12 +12,12 @@ describe("json-ld", () => {
     expect(org.logo.url).toBe(absoluteUrl("/email-logo.png"));
   });
 
-  it("websiteSchema apunta a la home del idioma", () => {
+  it("websiteSchema points to the locale's home page", () => {
     expect(websiteSchema("es").url).toBe(absoluteUrl("/"));
     expect(websiteSchema("en")).toMatchObject({ url: absoluteUrl("/en"), inLanguage: "en" });
   });
 
-  it("articleSchema usa la URL localizada y no inventa fechas ni valoraciones", () => {
+  it("articleSchema uses the localized URL and invents no dates or ratings", () => {
     const schema = articleSchema({ locale: "en", slug: "fire", title: "T", description: "D" });
     expect(schema).toMatchObject({
       "@type": "Article",
@@ -30,7 +30,7 @@ describe("json-ld", () => {
     expect(schema).not.toHaveProperty("aggregateRating");
   });
 
-  it("calculatorSchema es una aplicación web gratuita", () => {
+  it("calculatorSchema is a free web application", () => {
     const schema = calculatorSchema({ locale: "es", slug: "roi", name: "ROI", description: "D" });
     expect(schema).toMatchObject({
       "@type": "WebApplication",
@@ -40,7 +40,7 @@ describe("json-ld", () => {
     });
   });
 
-  it("breadcrumbSchema numera desde 1 y localiza cada ruta", () => {
+  it("breadcrumbSchema numbers from 1 and localizes each path", () => {
     const schema = breadcrumbSchema(
       [
         { name: "Inicio", path: "/" },

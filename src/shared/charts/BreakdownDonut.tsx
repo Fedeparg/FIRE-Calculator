@@ -11,22 +11,21 @@ type Props = {
   data: DonutSlice[];
   centerLabel: string;
   /**
-   * Divisa de los importes. Si se omite se formatea en euros sin decimales, igual que
-   * siempre; la cartera la pasa para mostrar la divisa que el usuario haya elegido.
+   * Currency of the amounts. If omitted, amounts are formatted in euros without decimals, as
+   * before; the portfolio passes it to show the currency the user picked.
    */
   currency?: string;
 };
 
 /**
- * Donut de composición (p.ej. aportado vs intereses) con leyenda y porcentajes.
+ * Composition donut (e.g. contributions vs interest) with a legend and percentages.
  *
- * Accesibilidad: aquí NO hace falta una tabla oculta como en `TimeSeriesChart`.
- * La leyenda visible ya lista cada porción con su nombre, su importe y su
- * porcentaje, y el centro muestra el total: un lector de pantalla lee todos los
- * datos del gráfico como texto normal. Lo único que sobra es el SVG, que sin
- * `<title>` solo aportaría ruido, así que se marca `role="img"` con una
- * etiqueta corta y sus nodos internos quedan fuera del árbol de accesibilidad.
- * Duplicar esos mismos números en una tabla `sr-only` los haría oír dos veces.
+ * Accessibility: unlike `TimeSeriesChart`, NO hidden table is needed here. The visible legend
+ * already lists each slice with its name, amount and percentage, and the center shows the
+ * total: a screen reader reads all of the chart's data as regular text. The only thing left
+ * over is the SVG, which without a `<title>` would only add noise, so it is marked `role="img"`
+ * with a short label and its inner nodes stay out of the accessibility tree. Repeating the same
+ * numbers in an `sr-only` table would make them heard twice.
  */
 export default function BreakdownDonut({ title, data, centerLabel, currency }: Props) {
   const { formatCurrency, formatEUR } = useFormat();
@@ -42,8 +41,8 @@ export default function BreakdownDonut({ title, data, centerLabel, currency }: P
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
         <div className="relative h-[200px] w-[200px] shrink-0">
           {/*
-            `role="img"` envuelve SOLO el SVG: el rótulo central es hermano y
-            debe seguir siendo texto legible para el lector de pantalla.
+            `role="img"` wraps ONLY the SVG: the center label is a sibling and
+            must remain readable text for screen readers.
           */}
           <div className="h-full w-full" role="img" aria-label={tc("imageLabel", { title })}>
             <ResponsiveContainer>

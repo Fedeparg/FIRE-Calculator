@@ -3,18 +3,18 @@ import { absoluteUrl, SITE_NAME } from "./site";
 import { localizedPath } from "./seo";
 
 /**
- * Builders de datos estructurados (schema.org / JSON-LD). Devuelven objetos
- * planos que el componente `<JsonLd>` serializa. Todas las URLs son absolutas
- * (los datos estructurados no se benefician de `metadataBase`).
+ * Structured data builders (schema.org / JSON-LD). They return plain objects that the
+ * `<JsonLd>` component serializes. All URLs are absolute (structured data does not benefit from
+ * `metadataBase`).
  *
- * Principio: no se inventan datos. No emitimos `aggregateRating` (no tenemos
- * reseñas) ni `FAQPage` (los explainers son prosa, no pares pregunta/respuesta
- * visibles) ni `datePublished` (el frontmatter no lleva fechas).
+ * Principle: no made-up data. We emit no `aggregateRating` (we have no reviews), no `FAQPage`
+ * (the explainers are prose, not visible question/answer pairs) and no `datePublished` (the
+ * frontmatter has no dates).
  */
 
 const LOGO_URL = absoluteUrl("/email-logo.png");
 
-/** Identidad de la marca, reutilizada como autor/publicador. */
+/** Brand identity, reused as author/publisher. */
 function organization() {
   return {
     "@type": "Organization",
@@ -24,12 +24,12 @@ function organization() {
   } as const;
 }
 
-/** Organización del sitio (una vez, en el layout). */
+/** Site organization (once, in the layout). */
 export function organizationSchema() {
   return { "@context": "https://schema.org", ...organization() };
 }
 
-/** Sitio web (una vez, en el layout). */
+/** Website (once, in the layout). */
 export function websiteSchema(locale: Locale) {
   return {
     "@context": "https://schema.org",
@@ -41,7 +41,7 @@ export function websiteSchema(locale: Locale) {
   };
 }
 
-/** Artículo de la wiki. */
+/** Wiki article. */
 export function articleSchema(args: { locale: Locale; slug: string; title: string; description: string }) {
   const { locale, slug, title, description } = args;
   const url = absoluteUrl(localizedPath(locale, `/aprende/${slug}`));
@@ -58,7 +58,7 @@ export function articleSchema(args: { locale: Locale; slug: string; title: strin
   };
 }
 
-/** Calculadora como aplicación web gratuita. */
+/** Calculator as a free web application. */
 export function calculatorSchema(args: { locale: Locale; slug: string; name: string; description: string }) {
   const { locale, slug, name, description } = args;
   return {
@@ -78,11 +78,11 @@ export function calculatorSchema(args: { locale: Locale; slug: string; name: str
 
 export interface BreadcrumbItem {
   name: string;
-  /** Ruta sin prefijo de idioma, empezando por `/`. */
+  /** Path without the locale prefix, starting with `/`. */
   path: string;
 }
 
-/** Migas de pan (la versión visible vive en `<Breadcrumbs>`). */
+/** Breadcrumbs (the visible version lives in `<Breadcrumbs>`). */
 export function breadcrumbSchema(items: BreadcrumbItem[], locale: Locale) {
   return {
     "@context": "https://schema.org",

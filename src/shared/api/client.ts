@@ -1,22 +1,23 @@
 /**
- * Cliente HTTP del frontend contra la API (same-origin, vía el BFF de Next).
+ * Frontend HTTP client for the API (same-origin, via the Next BFF).
  *
- * Centraliza lo que antes cada componente reimplementaba: lanzar un error tipado cuando la
- * respuesta no es 2xx, distinguir el fallo de red del de servidor y traducir ambos a una clave
- * i18n común. La autorización la decide siempre la API; aquí solo se transporta y se clasifica.
+ * Centralizes what every component used to reimplement: throwing a typed error when the
+ * response is not 2xx, telling network failures from server failures, and translating both
+ * into a common i18n key. The API always decides authorization; this only transports and
+ * classifies.
  */
 
-/** Claves i18n comunes que cada namespace de UI define con ese mismo nombre. */
+/** Common i18n keys that every UI namespace defines under the same name. */
 export type ApiErrorKey = "errorSession" | "errorNetwork" | "errorServer" | "errorInvalid" | "errorGeneric";
 
 export type ApiErrorOptions = ErrorOptions & { body?: unknown };
 
-/** Error de una llamada a la API. `status` es 0 cuando ni siquiera hubo respuesta (red). */
+/** Error from an API call. `status` is 0 when there was no response at all (network). */
 export class ApiError extends Error {
   readonly status: number;
-  /** Código de dominio que la API devuelve en el cuerpo de los 4xx (`{ code }`), si existe. */
+  /** Domain code the API returns in the body of 4xx responses (`{ code }`), if any. */
   readonly code?: string;
-  /** Cuerpo JSON del error tal cual llegó (sin validar), p. ej. `{ code, existing }` de un 409. */
+  /** The error's JSON body as received (unvalidated), e.g. `{ code, existing }` of a 409. */
   readonly body?: unknown;
 
   constructor(status: number, code?: string, options?: ApiErrorOptions) {
@@ -27,18 +28,18 @@ export class ApiError extends Error {
     this.body = options?.body;
   }
 
-  /** `true` si el navegador no pudo completar la petición (sin conexión, DNS, CORS…). */
+  /** `true` if the browser could not complete the request (offline, DNS, CORS…). */
   get isNetwork(): boolean {
     return this.status === 0;
   }
 }
 
-/** Una cancelación (`AbortController`) no es un fallo: se propaga tal cual para que el llamador la ignore. */
+/** An abort (`AbortController`) is not a failure: it propagates as is so the caller can ignore it. */
 export function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === "AbortError";
 }
 
-/** Lee el cuerpo de un error de la API sin fiarse de su forma: el `code` (si lo hay) y el JSON crudo. */
+/** Reads an API error body without trusting its shape: the `code` (if any) and the raw JSON. */
 async function readErrorBody(res: Response): Promise<{ code?: string; body?: unknown }> {
   try {
     const body: unknown = await res.json();
@@ -47,29 +48,29 @@ async function readErrorBody(res: Response): Promise<{ code?: string; body?: unk
     }
     return { body };
   } catch {
-    return {}; // cuerpo vacío o no JSON: no hay código
+    return {}; // empty or non-JSON body: no code
   }
 }
 
-/** Cuerpos que viajan tal cual (p. ej. un CSV): el llamador pone su `Content-Type`. */
+/** Bodies sent as is (e.g. a CSV): the caller sets its `Content-Type`. */
 function isRawBody(body: unknown): body is Blob | string {
   return typeof body === "string" || body instanceof Blob;
 }
 
 /**
- * Opciones de las llamadas: como `RequestInit`, pero `body` es un valor JSON (se serializa
- * aquí) o, si es un `Blob`/`string`, se envía sin tocar.
+ * Call options: like `RequestInit`, but `body` is a JSON value (serialized here) or, if it is a
+ * `Blob`/`string`, sent untouched.
  */
 export type ApiJsonInit = Omit<RequestInit, "body"> & { body?: unknown };
 
-/** Opciones de `fetch` para lecturas que no deben servirse de caché (constante: estable entre renders). */
+/** `fetch` options for reads that must not be served from cache (a constant: stable across renders). */
 export const NO_STORE = { cache: "no-store" } as const;
 
 /**
- * `fetch` same-origin que lanza `ApiError` si la respuesta no es 2xx o si hay fallo de red.
- * Si hay `body` JSON, lo serializa y añade `Content-Type: application/json`. Devuelve la `Response`
- * para los casos en que no interesa el cuerpo (acciones que solo confirman) o no es JSON
- * (descargas en blob).
+ * Same-origin `fetch` that throws `ApiError` if the response is not 2xx or on a network failure.
+ * With a JSON `body`, it serializes it and adds `Content-Type: application/json`. Returns the
+ * `Response` for cases where the body does not matter (actions that only acknowledge) or is not
+ * JSON (blob downloads).
  */
 export async function apiFetch(path: string, init?: ApiJsonInit): Promise<Response> {
   const { body, headers, ...rest } = init ?? {};
@@ -83,7 +84,7 @@ export async function apiFetch(path: string, init?: ApiJsonInit): Promise<Respon
     });
   } catch (error) {
     if (isAbortError(error)) throw error;
-    // La promesa de fetch solo rechaza por fallo de red/conexión.
+    // The fetch promise only rejects on a network/connection failure.
     throw new ApiError(0, undefined, { cause: error });
   }
   if (!res.ok) {
@@ -94,8 +95,8 @@ export async function apiFetch(path: string, init?: ApiJsonInit): Promise<Respon
 }
 
 /**
- * Llama a la API y parsea el JSON. Una respuesta sin contenido (204) devuelve `undefined`:
- * usa `apiJson<void>` en esos casos.
+ * Calls the API and parses the JSON. A no-content response (204) returns `undefined`: use
+ * `apiJson<void>` in those cases.
  */
 export async function apiJson<T>(path: string, init?: ApiJsonInit): Promise<T> {
   const res = await apiFetch(path, init);
@@ -103,14 +104,14 @@ export async function apiJson<T>(path: string, init?: ApiJsonInit): Promise<T> {
   try {
     return (await res.json()) as T;
   } catch (error) {
-    // 2xx con cuerpo no JSON: la API rompió el contrato; se trata como fallo del servidor.
+    // 2xx with a non-JSON body: the API broke the contract; treated as a server failure.
     throw new ApiError(500, undefined, { cause: error });
   }
 }
 
 /**
- * Clave i18n común para un fallo. Cada componente la usa tal cual o, antes de llamarla,
- * resuelve sus `code` propios (`error.code === "DUPLICATE"`…) y delega aquí el resto.
+ * Common i18n key for a failure. Each component uses it as is or, before calling it, resolves
+ * its own `code`s (`error.code === "DUPLICATE"`…) and delegates the rest here.
  */
 export function apiErrorKey(error: unknown): ApiErrorKey {
   if (!(error instanceof ApiError)) return "errorGeneric";
@@ -121,27 +122,27 @@ export function apiErrorKey(error: unknown): ApiErrorKey {
   return "errorGeneric";
 }
 
-/** Clave común que un mapeador puede devolver además de las suyas: todas menos `errorInvalid`, que se sustituye por `invalidFallback`. */
+/** Common key a mapper may return besides its own: all but `errorInvalid`, which is replaced by `invalidFallback`. */
 type CommonErrorKey = Exclude<ApiErrorKey, "errorInvalid">;
 
-/** Configuración de `createApiErrorMapper`. */
+/** Configuration for `createApiErrorMapper`. */
 export type ApiErrorMapperConfig<K extends string, F extends string> = {
-  /** Códigos de dominio (`{ code }` del cuerpo) con mensaje propio. Mandan sobre el status. */
+  /** Domain codes (the body's `{ code }`) with their own message. They take precedence over the status. */
   codes?: Readonly<Record<string, K>>;
-  /** Status HTTP con mensaje propio (p. ej. 404, 413, 429), cuando no hay código conocido. */
+  /** HTTP statuses with their own message (e.g. 404, 413, 429), when there is no known code. */
   statuses?: Readonly<Partial<Record<number, K>>>;
   /**
-   * Clave para un 400/422 sin código propio. `"errorInvalid"` ("revisa los datos") donde hay un
-   * formulario; `"errorGeneric"` donde no lo hay (un fichero, un botón) y ese mensaje confundiría.
+   * Key for a 400/422 without its own code. `"errorInvalid"` ("check the data") where there is a
+   * form; `"errorGeneric"` where there is none (a file, a button) and that message would confuse.
    */
   invalidFallback: F;
 };
 
 /**
- * Crea la función `error → clave i18n` de un namespace. Sustituye a las `xxxErrorKey` que cada
- * feature escribía a mano con el mismo orden de reglas: primero el código de dominio, luego el
- * status propio y, al final, el mapeo común de `apiErrorKey` (red, sesión, servidor…). Solo
- * viaja el `code`, nunca el `message` del servidor: está en castellano y rompería el inglés.
+ * Creates a namespace's `error → i18n key` function. Replaces the `xxxErrorKey` helpers each
+ * feature hand-wrote with the same rule order: first the domain code, then the feature's own
+ * status, and finally the common `apiErrorKey` mapping (network, session, server…). Only the
+ * `code` is used, never the server's `message`: it is in Spanish and would break English.
  */
 export function createApiErrorMapper<K extends string, F extends string>({
   codes,
@@ -150,7 +151,7 @@ export function createApiErrorMapper<K extends string, F extends string>({
 }: ApiErrorMapperConfig<K, F>): (error: unknown) => K | F | CommonErrorKey {
   return (error) => {
     if (error instanceof ApiError) {
-      // `hasOwn`: un `code` como "toString" no debe encontrar el prototipo del objeto.
+      // `hasOwn`: a `code` such as "toString" must not hit the object's prototype.
       const byCode =
         codes && error.code !== undefined && Object.hasOwn(codes, error.code) ? codes[error.code] : undefined;
       if (byCode !== undefined) return byCode;

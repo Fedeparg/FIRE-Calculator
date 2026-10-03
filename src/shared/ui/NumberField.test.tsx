@@ -7,7 +7,7 @@ import { renderWithIntl } from "@/test/render";
 
 import NumberField from "./NumberField";
 
-/** Campo controlado, como lo usan las calculadoras, con su valor numérico visible. */
+/** Controlled field, as the calculators use it, with its numeric value shown. */
 function Controlled({ initial = 10 }: { initial?: number }) {
   const [value, setValue] = useState(initial);
   return (
@@ -19,7 +19,7 @@ function Controlled({ initial = 10 }: { initial?: number }) {
 }
 
 describe("NumberField", () => {
-  it("acepta la coma decimal del castellano y emite el número", async () => {
+  it("accepts the Spanish decimal comma and emits the number", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled />);
     const field = screen.getByRole("spinbutton", { name: "Tipo" });
@@ -31,7 +31,7 @@ describe("NumberField", () => {
     expect(screen.getByLabelText("valor")).toHaveTextContent("3.25");
   });
 
-  it("permite vaciar el campo mientras se edita y al salir lo deja en 0", async () => {
+  it("allows clearing the field while editing and sets it to 0 on blur", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled />);
     const field = screen.getByRole("spinbutton", { name: "Tipo" });
@@ -44,7 +44,7 @@ describe("NumberField", () => {
     expect(screen.getByLabelText("valor")).toHaveTextContent("0");
   });
 
-  it("no deja escribir letras", async () => {
+  it("does not allow typing letters", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled />);
     const field = screen.getByRole("spinbutton", { name: "Tipo" });
@@ -55,7 +55,7 @@ describe("NumberField", () => {
     expect(field).toHaveValue("12");
   });
 
-  it("resincroniza el texto cuando el valor cambia desde fuera, sin remontar", async () => {
+  it("resyncs the text when the value changes from outside, without remounting", async () => {
     const user = userEvent.setup();
     function External() {
       const [value, setValue] = useState(10);
@@ -74,11 +74,11 @@ describe("NumberField", () => {
     await user.click(screen.getByRole("button", { name: "externo" }));
 
     expect(field).toHaveValue("42,5");
-    // Es el mismo nodo: no se ha remontado.
+    // Same node: it has not remounted.
     expect(screen.getByRole("spinbutton", { name: "Tipo" })).toBe(field);
   });
 
-  it("no pisa lo que se está tecleando cuando el valor es su propio eco", async () => {
+  it("does not overwrite what is being typed when the value is its own echo", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled />);
     const field = screen.getByRole("spinbutton", { name: "Tipo" });
@@ -90,7 +90,7 @@ describe("NumberField", () => {
     expect(screen.getByLabelText("valor")).toHaveTextContent("3");
   });
 
-  it("las flechas suben y bajan el paso, sin bajar del mínimo", async () => {
+  it("arrow keys step up and down, without going below the minimum", async () => {
     const user = userEvent.setup();
     renderWithIntl(<Controlled initial={0.5} />);
     const field = screen.getByRole("spinbutton", { name: "Tipo" });

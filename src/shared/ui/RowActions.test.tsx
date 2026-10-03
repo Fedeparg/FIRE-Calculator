@@ -15,7 +15,7 @@ const labels = (item: string) => ({
   confirmLabel: `Sí, eliminar ${item}`,
 });
 
-/** Dos filas con el estado de confirmación arriba, como en `LotList`. */
+/** Two rows with the confirmation state lifted up, as in `LotList`. */
 function Rows({ onEdit = vi.fn(), onConfirm = vi.fn() }) {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   return (
@@ -38,7 +38,7 @@ function Rows({ onEdit = vi.fn(), onConfirm = vi.fn() }) {
 }
 
 describe("RowActions", () => {
-  it("cada botón lleva el nombre de su fila", async () => {
+  it("names each button after its row", async () => {
     const onEdit = vi.fn();
     render(<Rows onEdit={onEdit} />);
 
@@ -48,7 +48,7 @@ describe("RowActions", () => {
     expect(screen.getAllByRole("button", { name: /^Eliminar / })).toHaveLength(2);
   });
 
-  it("al pedir el borrado lleva el foco a confirmar, y al cancelar lo devuelve a eliminar", async () => {
+  it("moves focus to confirm on delete request, and back to delete on cancel", async () => {
     const user = userEvent.setup();
     render(<Rows />);
 
@@ -59,7 +59,7 @@ describe("RowActions", () => {
     expect(screen.getByRole("button", { name: "Eliminar Compra · 01/03/2025" })).toHaveFocus();
   });
 
-  it("confirmar llama a su fila", async () => {
+  it("confirm calls back with its own row", async () => {
     const onConfirm = vi.fn();
     const user = userEvent.setup();
     render(<Rows onConfirm={onConfirm} />);

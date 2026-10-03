@@ -10,7 +10,7 @@ const locale = fc.constantFrom(...LOCALES);
 const nonFinite = fc.constantFrom(Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY);
 const finite = fc.double({ noNaN: true, noDefaultInfinity: true, min: -1e15, max: 1e15 });
 
-/** Todos los formateadores numéricos, con la divisa fijada donde hace falta. */
+/** Every numeric formatter, with the currency fixed where needed. */
 function numericFormatters(l: (typeof LOCALES)[number]): ((n: number) => string)[] {
   const f = getFormatters(l);
   return [
@@ -26,15 +26,15 @@ function numericFormatters(l: (typeof LOCALES)[number]): ((n: number) => string)
   ];
 }
 
-describe("format — propiedades", () => {
-  it("un valor no finito se muestra siempre como «—», en todos los formateadores e idiomas", () => {
+describe("format — properties", () => {
+  it("always shows a non-finite value as «—», in every formatter and locale", () => {
     fc.assert(
       fc.property(locale, nonFinite, (l, n) => numericFormatters(l).every((format) => format(n) === NON_FINITE)),
       PROPERTY_PARAMS,
     );
   });
 
-  it("un valor finito nunca se muestra como «—» ni como NaN/Infinity", () => {
+  it("never shows a finite value as «—» or as NaN/Infinity", () => {
     fc.assert(
       fc.property(locale, finite, (l, n) =>
         numericFormatters(l).every((format) => {

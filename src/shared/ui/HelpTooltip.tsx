@@ -4,20 +4,20 @@ import { useEffect, useId, useRef, useState, type FocusEvent, type PointerEvent 
 import { useTranslations } from "next-intl";
 
 /**
- * Botón "?" reutilizable con un popover explicativo.
+ * Reusable "?" button with an explanatory popover.
  *
- * Decisiones de accesibilidad:
- * - El nombre accesible del botón es corto y traducido ("Más información"). Usar
- *   el texto completo como `aria-label` obligaba a escuchar el párrafo entero
- *   solo para saber qué es el control.
- * - El texto largo se expone como DESCRIPCIÓN vía `aria-describedby`, que es la
- *   forma en que un lector de pantalla anuncia una ayuda contextual.
- * - El contenido está SIEMPRE en el DOM (oculto con `sr-only` cuando está
- *   cerrado) para que `aria-describedby` resuelva siempre a un nodo existente:
- *   una referencia a un nodo desmontado se ignora y la descripción se pierde.
- * - Se abre también con click/toque: en móvil no hay hover, así que antes el
- *   texto era sencillamente inalcanzable.
- * - Se cierra con `Escape`, al perder el foco y al pulsar fuera.
+ * Accessibility decisions:
+ * - The button's accessible name is short and translated ("More information"). Using the full
+ *   text as the `aria-label` forced users to hear the whole paragraph just to learn what the
+ *   control is.
+ * - The long text is exposed as a DESCRIPTION via `aria-describedby`, which is how a screen
+ *   reader announces contextual help.
+ * - The content is ALWAYS in the DOM (hidden with `sr-only` when closed) so `aria-describedby`
+ *   always resolves to an existing node: a reference to an unmounted node is ignored and the
+ *   description is lost.
+ * - It also opens on click/tap: there is no hover on mobile, so the text used to be simply
+ *   unreachable.
+ * - It closes on `Escape`, on blur and on an outside click.
  */
 export default function HelpTooltip({ text }: { text: string }) {
   const t = useTranslations("common");
@@ -31,7 +31,7 @@ export default function HelpTooltip({ text }: { text: string }) {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
-    // Pulsar fuera cierra: en táctil el `blur` del botón no es fiable.
+    // An outside click closes it: on touch devices the button's `blur` is unreliable.
     function handlePointerDown(event: globalThis.PointerEvent) {
       const target = event.target;
       if (target instanceof Node && containerRef.current?.contains(target)) return;
@@ -46,8 +46,8 @@ export default function HelpTooltip({ text }: { text: string }) {
     };
   }, [open]);
 
-  // Solo el puntero de ratón abre por hover: en táctil el navegador emula
-  // `pointerenter` justo antes del click, y el toggle del click lo cerraría.
+  // Only a mouse pointer opens on hover: on touch the browser emulates
+  // `pointerenter` right before the click, and the click's toggle would close it.
   function handlePointerEnter(event: PointerEvent<HTMLSpanElement>) {
     if (event.pointerType === "mouse") setOpen(true);
   }
@@ -55,8 +55,8 @@ export default function HelpTooltip({ text }: { text: string }) {
     if (event.pointerType === "mouse") setOpen(false);
   }
 
-  // Solo el foco por teclado abre. Con ratón o toque el foco llega junto al
-  // click, que ya gobierna la apertura.
+  // Only keyboard focus opens it. With mouse or touch, focus arrives together with
+  // the click, which already controls opening.
   function handleFocus(event: FocusEvent<HTMLButtonElement>) {
     if (event.target.matches(":focus-visible")) setOpen(true);
   }

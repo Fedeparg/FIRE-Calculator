@@ -59,7 +59,7 @@ describe("trackEvent", () => {
 });
 
 describe("ANALYTICS_PATH_PREFIX", () => {
-  it("está excluido del proxy de i18n (el matcher de proxy.ts tiene que ser un literal)", () => {
+  it("is excluded from the i18n proxy (the proxy.ts matcher has to be a literal)", () => {
     const proxy = readFileSync(new URL("../../proxy.ts", import.meta.url), "utf8");
     const segment = ANALYTICS_PATH_PREFIX.replace(/^\//, "");
     expect(proxy).toMatch(new RegExp(`matcher: \\[".*\\|${segment}\\|`));

@@ -10,7 +10,7 @@ import { localizeHref } from "@/i18n/localize-href";
 import type { Locale } from "@/i18n/types";
 import { isSafeHref } from "@/shared/content/safe-href";
 
-/** Nodo mínimo del árbol HTML (hast) que recorre `rehypeLocalizeLinks`. */
+/** Minimal HTML tree (hast) node that `rehypeLocalizeLinks` walks. */
 type HastNode = {
   type: string;
   tagName?: string;
@@ -19,10 +19,10 @@ type HastNode = {
 };
 
 /**
- * Plugin de rehype: prefija con el idioma los enlaces internos (`<a href="/…">`), para que un
- * artículo en inglés no mande al lector a la versión en español (la regla está en
- * `localizeHref`, pura y testeada), y QUITA el `href` de los enlaces con un esquema peligroso
- * (`javascript:`, `data:`…; ver `isSafeHref`): el texto se conserva, sin enlace.
+ * rehype plugin: prefixes internal links (`<a href="/…">`) with the locale, so an English
+ * article does not send the reader to the Spanish version (the rule lives in `localizeHref`,
+ * pure and tested), and REMOVES the `href` of links with a dangerous scheme (`javascript:`,
+ * `data:`…; see `isSafeHref`): the text is kept, without the link.
  */
 function rehypeLocalizeLinks(locale: Locale) {
   const visit = (node: HastNode): void => {
@@ -39,10 +39,9 @@ function rehypeLocalizeLinks(locale: Locale) {
 }
 
 /**
- * Pipeline: remark (parse + GFM para tablas/listas) → rehype → enlaces internos
- * con el prefijo del idioma → HTML string. No se permite HTML embebido en el
- * Markdown (remark-rehype lo descarta por defecto): el contenido es de confianza
- * y solo necesita Markdown puro.
+ * Pipeline: remark (parse + GFM for tables/lists) → rehype → internal links with the locale
+ * prefix → HTML string. Embedded HTML is not allowed in the Markdown (remark-rehype drops it by
+ * default): the content is trusted and only needs plain Markdown.
  */
 function buildProcessor(locale: Locale) {
   return unified()
@@ -55,9 +54,9 @@ function buildProcessor(locale: Locale) {
 }
 
 /**
- * Un procesador congelado por idioma, creado la primera vez que se pide: montar el pipeline
- * (cargar y configurar los plugins) en cada página era trabajo repetido. Va por idioma porque
- * el plugin de enlaces depende de él.
+ * One frozen processor per locale, created on first request: building the pipeline (loading and
+ * configuring the plugins) on every page was repeated work. It is per locale because the link
+ * plugin depends on it.
  */
 const processors = new Map<Locale, ReturnType<typeof buildProcessor>>();
 
@@ -71,8 +70,8 @@ function processorFor(locale: Locale): ReturnType<typeof buildProcessor> {
 }
 
 /**
- * Compila Markdown a HTML en runtime (sin paso de build), de modo que el
- * contenido de la wiki pueda editarse en el servidor sin redesplegar la app.
+ * Compiles Markdown to HTML at runtime (no build step), so the wiki content can be edited on
+ * the server without redeploying the app.
  */
 export async function renderMarkdown(markdown: string, locale: Locale): Promise<string> {
   return String(await processorFor(locale).process(markdown));

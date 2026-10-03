@@ -3,20 +3,20 @@ import type { ReactNode } from "react";
 type Option<T extends string> = { value: T; label: ReactNode };
 
 /**
- * Cómo ocupa el espacio:
- * - `inline`: tan ancho como sus opciones (conmutadores de una gráfica o un formulario);
- * - `fill`: ocupa todo el ancho, con las opciones a partes iguales (vistas de un panel);
- * - `fillOnMobile`: como `fill` en móvil y como `inline` desde `sm` (filtros de una lista).
+ * How it takes up space:
+ * - `inline`: as wide as its options (toggles in a chart or a form);
+ * - `fill`: full width, with equally sized options (views of a panel);
+ * - `fillOnMobile`: like `fill` on mobile and like `inline` from `sm` up (list filters).
  */
 type Layout = "inline" | "fill" | "fillOnMobile";
 
 type Props<T extends string> = {
-  /** Nombre accesible del grupo. */
+  /** Accessible name of the group. */
   label: string;
   value: T;
   options: readonly Option<T>[];
   onChange: (value: T) => void;
-  /** Tamaño de las opciones en `inline`; los diseños que llenan el ancho tienen el suyo. */
+  /** Option size in `inline`; the full-width layouts have their own. */
   size?: "sm" | "md";
   layout?: Layout;
 };
@@ -35,9 +35,9 @@ const OPTION_CLASS: Record<Layout | "inlineMd", string> = {
 };
 
 /**
- * Conmutador de pocas opciones excluyentes. Son botones de alternancia (`aria-pressed`) en un
- * `group`, no un `tablist`: no hay paneles que cambiar con flechas, solo cómo se muestra lo de
- * alrededor.
+ * Switch between a few mutually exclusive options. These are toggle buttons (`aria-pressed`) in
+ * a `group`, not a `tablist`: there are no panels to switch with the arrow keys, only how the
+ * surrounding content is shown.
  */
 export default function ToggleGroup<T extends string>({
   label,

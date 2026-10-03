@@ -4,13 +4,13 @@ import { useEffect, useRef } from "react";
 
 import Button from "@/shared/ui/Button";
 
-/** Textos de las acciones. Los `*Label` son el nombre accesible, con el elemento de la fila. */
+/** Action texts. The `*Label` ones are the accessible name, including the row's item. */
 export type RowActionsLabels = {
   edit: string;
   delete: string;
   confirm: string;
   cancel: string;
-  /** p. ej. "Editar Compra · 01/03/2025": el lector de pantalla sabe QUÉ fila se edita. */
+  /** e.g. "Edit Purchase · 01/03/2025": the screen reader knows WHICH row is being edited. */
   editLabel: string;
   deleteLabel: string;
   confirmLabel: string;
@@ -18,9 +18,9 @@ export type RowActionsLabels = {
 
 type Props = {
   labels: RowActionsLabels;
-  /** La fila está pidiendo confirmación de borrado. */
+  /** The row is asking for delete confirmation. */
   confirming: boolean;
-  /** Hay una mutación en curso: se bloquean los botones de confirmación. */
+  /** A mutation is in flight: the confirmation buttons are disabled. */
   busy: boolean;
   onEdit: () => void;
   onAskDelete: () => void;
@@ -31,12 +31,12 @@ type Props = {
 const linkButton = "rounded-md px-2 py-1.5 font-medium hover:bg-surface-2 hover:text-foreground";
 
 /**
- * Editar y borrar (con confirmación) de una fila de una lista.
+ * Edit and delete (with confirmation) for a list row.
  *
- * Accesibilidad: cada botón lleva el nombre de su fila (sin él, una lista de lotes sonaría
- * "Editar, Editar, Editar"). Al pedir el borrado, el foco pasa al botón de confirmar; al
- * cancelar, vuelve al de borrar. Sin esto el foco caería en `<body>`, porque el botón pulsado
- * desaparece del DOM al cambiar de modo, y quien navega con teclado perdería su sitio.
+ * Accessibility: each button carries its row's name (without it, a list of lots would read
+ * "Edit, Edit, Edit"). On a delete request, focus moves to the confirm button; on cancel, it
+ * returns to the delete button. Otherwise focus would fall to `<body>`, because the clicked
+ * button leaves the DOM when the mode changes, and keyboard users would lose their place.
  */
 export default function RowActions({
   labels,
@@ -49,11 +49,11 @@ export default function RowActions({
 }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null);
   const deleteRef = useRef<HTMLButtonElement>(null);
-  // Solo se devuelve el foco tras CANCELAR (no al montar la fila ni tras un borrado fallido).
+  // Focus is only returned after CANCEL (not when the row mounts or after a failed delete).
   const returnFocus = useRef(false);
 
-  // Efecto y no código en el manejador: el botón de destino aún no existe cuando se pulsa, solo
-  // tras el render que cambia de modo.
+  // An effect rather than handler code: the target button does not exist yet at click time, only
+  // after the render that switches mode.
   useEffect(() => {
     if (confirming) {
       confirmRef.current?.focus();

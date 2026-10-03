@@ -7,21 +7,21 @@ import { getPathname, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
 /**
- * Cambio de idioma. Son ENLACES (`<a hrefLang>`), no botones: llevan a la misma página en el otro
- * idioma, se pueden abrir en otra pestaña y los buscadores los entienden.
+ * Language switcher. These are LINKS (`<a hrefLang>`), not buttons: they lead to the same page in
+ * the other language, can be opened in a new tab and search engines understand them.
  *
- * Es un `<a>` normal y no el `Link` de next-intl a propósito: la navegación es una recarga
- * completa, que conserva el SSG y evita que el `<script>` de tema se re-renderice en cliente
- * (warning de React 19). El prefijo de cada idioma lo calcula `getPathname` con la configuración
- * de `routing` (nada de `/en` a mano).
+ * It is a plain `<a>` rather than next-intl's `Link` on purpose: navigation is a full reload,
+ * which keeps SSG and prevents the theme `<script>` from re-rendering on the client (a React 19
+ * warning). `getPathname` computes each locale's prefix from the `routing` config (no hand-written
+ * `/en`).
  */
 export default function LanguageSwitcher() {
   const locale = useLocale();
-  const pathname = usePathname(); // ruta sin prefijo de idioma (p.ej. "/calculadoras/...")
+  const pathname = usePathname(); // path without the locale prefix (e.g. "/calculadoras/...")
 
-  // Al pulsar se añaden la query y el hash ACTUALES: así se conservan los valores de una
-  // calculadora, que viven en la query y se escriben con `history.replaceState` (por eso se leen
-  // en el clic y no al renderizar). El navegador sigue el `href` ya actualizado.
+  // On click, the CURRENT query and hash are appended: this keeps a calculator's values, which
+  // live in the query and are written with `history.replaceState` (hence they are read on click,
+  // not on render). The browser follows the already-updated `href`.
   function keepQueryAndHash(event: MouseEvent<HTMLAnchorElement>) {
     const { search, hash } = window.location;
     event.currentTarget.href = `${event.currentTarget.pathname}${search}${hash}`;
