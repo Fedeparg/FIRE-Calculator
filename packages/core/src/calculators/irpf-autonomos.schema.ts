@@ -4,13 +4,13 @@ import type { SelfEmployedInput } from "./irpf-autonomos.js";
 import { amount, personalCircumstances } from "./schema-helpers.js";
 
 export const selfEmployedSchema = z.strictObject({
-  income: amount("Ingresos anuales de la actividad."),
-  expenses: amount("Gastos deducibles anuales (sin la cuota de autónomos)."),
-  socialSecurity: amount("Cuota anual de autónomos."),
-  pensionContribution: amount("Aportación anual a plan de pensiones.").optional(),
+  income: amount("Annual business income."),
+  expenses: amount("Annual deductible expenses (excluding the self-employed social security fee, cuota de autónomos)."),
+  socialSecurity: amount("Annual self-employed social security fee (cuota de autónomos)."),
+  pensionContribution: amount("Annual pension plan contribution.").optional(),
   simplifiedRegime: z
     .boolean()
     .optional()
-    .describe("Estimación directa simplificada (5 % de gastos de difícil justificación)."),
+    .describe("Simplified direct assessment (estimación directa simplificada: 5% for hard-to-justify expenses)."),
   ...personalCircumstances,
 }) satisfies z.ZodType<SelfEmployedInput>;

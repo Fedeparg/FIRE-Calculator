@@ -7,13 +7,13 @@ export const averagePriceSchema = z.strictObject({
   purchases: z
     .array(
       z.object({
-        price: amount("Precio por acción de la compra."),
-        shares: amount("Número de acciones (admite fracciones)."),
-        commission: amount("Comisión de la compra.").optional(),
+        price: amount("Price per share of the purchase."),
+        shares: amount("Number of shares (fractions allowed)."),
+        commission: amount("Purchase fee.").optional(),
       }),
     )
     .min(1)
     .max(500)
-    .describe("Compras realizadas."),
-  currentPrice: amount("Precio actual por acción (opcional).").optional(),
+    .describe("Purchases made."),
+  currentPrice: amount("Current price per share (optional).").optional(),
 }) satisfies z.ZodType<AveragePriceInput>;
