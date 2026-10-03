@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@sextante/core/contracts';
@@ -32,7 +31,6 @@ export class AuthService {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(EMAIL_SERVICE) private readonly email: EmailService,
-    private readonly jwt: JwtService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -103,11 +101,6 @@ export class AuthService {
 
     const user = await this.upsertUser(row.email);
     return { id: user.id, email: user.email };
-  }
-
-  /** Firma el JWT de sesión para un usuario. */
-  signSession(user: SessionUser): Promise<string> {
-    return this.jwt.signAsync({ sub: user.id, email: user.email });
   }
 
   /**

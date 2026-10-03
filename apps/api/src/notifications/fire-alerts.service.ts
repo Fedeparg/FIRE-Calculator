@@ -22,8 +22,6 @@ export interface FireAlertsSummary {
 
 type Outcome = 'sent' | 'skipped';
 
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que los snapshots. */
-
 /**
  * Evalúa los hitos del objetivo FIRE de cada usuario con alertas activas, justo después de la
  * captura nocturna de snapshots, y envía un email por cada hito nuevo alcanzado.

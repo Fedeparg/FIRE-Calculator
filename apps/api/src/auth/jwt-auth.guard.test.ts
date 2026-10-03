@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { JwtAuthGuard, type AuthedRequest } from './jwt-auth.guard.js';
+import { SessionService } from './session.service.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 
 const SECRET = 'test-secret';
@@ -32,7 +33,7 @@ describe('JwtAuthGuard (integración con Postgres)', () => {
   beforeAll(() => {
     ({ db, close } = createTestDb());
     jwt = new JwtService({ secret: SECRET });
-    guard = new JwtAuthGuard(jwt, db);
+    guard = new JwtAuthGuard(new SessionService(jwt, db));
   });
 
   afterEach(async () => {

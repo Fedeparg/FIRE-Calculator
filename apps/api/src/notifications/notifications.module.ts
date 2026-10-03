@@ -9,8 +9,8 @@ import { SessionModule } from '../auth/session.module.js';
 /**
  * Alertas por email (opt-in): preferencias del usuario, baja desde el enlace y la evaluación
  * de hitos del objetivo FIRE, que lanza el trabajo nocturno (`DailyJobsModule`). Importa
- * `SessionModule`, como `AccountModule`, para que `JwtAuthGuard` valide la
- * cookie sin importar `AuthModule` (que a su vez importa este módulo para la exportación RGPD).
+ * `SessionModule` para que `JwtAuthGuard` valide la cookie de sesión. Lo importan
+ * `DailyJobsModule` (alertas) y `AccountModule` (preferencias en la exportación RGPD).
  */
 @Module({
   imports: [EmailModule, SessionModule],

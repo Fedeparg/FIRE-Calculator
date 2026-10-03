@@ -12,6 +12,7 @@ import { verifySchema, type VerifyDto } from './dto/verify.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
+import { SessionService } from './session.service.js';
 
 @Controller('auth')
 export class AuthController {
@@ -19,6 +20,7 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
+    private readonly sessions: SessionService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -44,7 +46,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<SessionUser> {
     const user = await this.auth.verify(dto.token);
-    const jwt = await this.auth.signSession(user);
+    const jwt = await this.sessions.sign(user);
     res.cookie(SESSION_COOKIE, jwt, this.cookieOptions());
     return user;
   }
