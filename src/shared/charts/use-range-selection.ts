@@ -42,6 +42,14 @@ export function useRangeSelection(enabled: boolean): { selection: RangeSelection
     const x = Number(state.activeLabel);
     setSelection((prev) => (prev ? { ...prev, end: x } : prev));
   };
+  // Con el dedo, al empezar el toque Recharts aún no ha calculado el punto activo (o trae el del
+  // toque anterior): el inicio solo limpia, el primer movimiento abre la selección y los
+  // siguientes la extienden.
+  const touchMove = (state: ChartPointerState) => {
+    if (!enabled || state?.activeLabel === undefined) return;
+    const x = Number(state.activeLabel);
+    setSelection((prev) => (prev ? { ...prev, end: x } : { start: x, end: x }));
+  };
   // Se resetea al soltar o al salir del gráfico.
   const stop = () => {
     setDragging(false);
@@ -55,8 +63,8 @@ export function useRangeSelection(enabled: boolean): { selection: RangeSelection
       onMouseMove: move,
       onMouseUp: stop,
       onMouseLeave: stop,
-      onTouchStart: start,
-      onTouchMove: move,
+      onTouchStart: stop,
+      onTouchMove: touchMove,
       onTouchEnd: stop,
     },
   };

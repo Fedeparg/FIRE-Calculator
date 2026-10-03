@@ -15,12 +15,14 @@ describe("useRangeSelection", () => {
     expect(result.current.selection).toBeNull();
   });
 
-  it("funciona igual con el dedo, y la etiqueta de texto se convierte a número", () => {
+  it("con el dedo, el primer movimiento abre la selección (no el punto que traiga el inicio)", () => {
     const { result } = renderHook(() => useRangeSelection(true));
 
-    act(() => result.current.handlers.onTouchStart({ activeLabel: "3" }));
-    act(() => result.current.handlers.onTouchMove({ activeLabel: "1" }));
-    expect(result.current.selection).toEqual({ start: 3, end: 1 });
+    // El inicio puede traer el punto activo del toque anterior: se ignora.
+    act(() => result.current.handlers.onTouchStart({ activeLabel: "20" }));
+    act(() => result.current.handlers.onTouchMove({ activeLabel: "4" }));
+    act(() => result.current.handlers.onTouchMove({ activeLabel: "9" }));
+    expect(result.current.selection).toEqual({ start: 4, end: 9 });
 
     act(() => result.current.handlers.onTouchEnd());
     expect(result.current.selection).toBeNull();
