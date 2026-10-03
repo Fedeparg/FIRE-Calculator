@@ -4,7 +4,7 @@
 # `pnpm deploy`) -> slim runtime.
 
 # ---- Shared base ----
-FROM node:24-slim AS base
+FROM node:25-slim AS base
 ENV CI=true
 RUN corepack enable
 # pnpm store at a fixed path so it can be mounted as a BuildKit cache: that way
@@ -41,7 +41,7 @@ RUN rm -rf /app/deploy/src /app/deploy/test /app/deploy/vitest.config.ts \
     /app/deploy/*.tsbuildinfo /app/deploy/drizzle.config.ts
 
 # ---- Runtime ----
-FROM node:24-slim AS runtime
+FROM node:25-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
