@@ -1,8 +1,8 @@
-import { firstItem } from '@sextante/core/arrays';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { inject } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import * as schema from '../src/db/schema.js';
 import type { Database } from '../src/db/database.module.js';

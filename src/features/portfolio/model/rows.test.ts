@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { firstItem, itemAt } from "@sextante/core/arrays";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import { buildPositionRows, toBase, type BuildRowsInput } from "./rows";
-import { firstItem, itemAt } from "@sextante/core/arrays";
 
 const position = (over: Partial<Position> & { id: string; ticker: string }): Position => ({
   name: null,

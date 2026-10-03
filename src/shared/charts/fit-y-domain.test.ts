@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "@sextante/core/assert";
 
 import { fitYDomain } from "./fit-y-domain";
-import { defined } from "@sextante/core/assert";
 
 describe("fitYDomain", () => {
   it("ajusta al total apilado con un 1 % de margen", () => {

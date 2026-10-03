@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, inject, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { fakeConfig } from '../../test/config.js';
 import { createPgClient } from './database.module.js';
-import { firstItem } from '@sextante/core/arrays';
 
 describe('createPgClient', () => {
   let client: ReturnType<typeof createPgClient> | undefined;

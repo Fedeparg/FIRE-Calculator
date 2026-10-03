@@ -1,6 +1,6 @@
+import { firstItem } from '@sextante/core/arrays';
 import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { firstItem } from '@sextante/core/arrays';
 import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';

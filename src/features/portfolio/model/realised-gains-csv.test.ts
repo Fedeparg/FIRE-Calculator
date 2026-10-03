@@ -1,6 +1,6 @@
-import { firstItem } from "@sextante/core/arrays";
 import { describe, expect, it } from "vitest";
 
+import { firstItem } from "@sextante/core/arrays";
 import type { TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { buildRealisedGainsReport } from "@sextante/core/fiscal/realised-gains";
 import {

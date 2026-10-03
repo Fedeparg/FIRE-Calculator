@@ -1,4 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { itemAt } from '@sextante/core/arrays';
 import type { ReferenceRates } from '@sextante/core/fiscal/fx-reference';
 import { buildIncomeReport, type IncomeEvent } from '@sextante/core/fiscal/income';
 import { buildRealisedGainsReport, type RealisedGainsPosition } from '@sextante/core/fiscal/realised-gains';
@@ -14,7 +15,6 @@ import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnService } from './tax-return.service.js';
-import { itemAt } from '@sextante/core/arrays';
 import { makeLot, seedPosition, stub } from '../../test/factories.js';
 
 const RATES: ReferenceRates = {

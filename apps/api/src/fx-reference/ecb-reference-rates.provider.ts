@@ -1,5 +1,5 @@
-import { firstItem } from '@sextante/core/arrays';
 import { Injectable, Logger } from '@nestjs/common';
+import { firstItem } from '@sextante/core/arrays';
 
 import { fetchText } from '../common/http.js';
 

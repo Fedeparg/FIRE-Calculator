@@ -4,6 +4,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { NotFoundException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { defined } from '@sextante/core/assert';
 import { CALCULATORS } from '@sextante/core/calculators/schemas';
 
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
@@ -12,7 +13,6 @@ import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
 import { LotAggregateError } from '../positions/lot-aggregate.js';
 import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
-import { defined } from '@sextante/core/assert';
 
 /**
  * El servidor MCP de verdad, conectado a un cliente MCP de verdad por un transporte en memoria.

@@ -1,5 +1,5 @@
-import { firstItem } from "@sextante/core/arrays";
 import { describe, expect, it } from "vitest";
+import { firstItem } from "@sextante/core/arrays";
 
 import { buildMetadata, localizedPath, ogImagePath, privateMetadata } from "./seo";
 

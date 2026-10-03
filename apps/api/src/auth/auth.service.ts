@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { firstItem } from '@sextante/core/arrays';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 
+import { firstItem } from '@sextante/core/arrays';
 import type { SessionUser } from '@sextante/core/contracts';
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';

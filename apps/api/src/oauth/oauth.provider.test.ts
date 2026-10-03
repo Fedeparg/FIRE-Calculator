@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { JwtService } from '@nestjs/jwt';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
+import { firstItem } from '@sextante/core/arrays';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { and, eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
@@ -17,7 +18,6 @@ import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';
 import { SextanteOAuthProvider } from './oauth.provider.js';
 import { REFRESH_TOKEN_TTL_SECONDS, SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from './oauth.constants.js';
-import { firstItem } from '@sextante/core/arrays';
 
 const APP_URL = 'http://localhost:3000';
 const CLIENT: OAuthClientInformationFull = {

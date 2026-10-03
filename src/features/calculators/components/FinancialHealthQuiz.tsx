@@ -1,8 +1,8 @@
 "use client";
 
-import { itemAt } from "@sextante/core/arrays";
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { itemAt } from "@sextante/core/arrays";
 import {
   FINANCIAL_HEALTH_OPTION_SCORES,
   FINANCIAL_HEALTH_QUESTIONS,

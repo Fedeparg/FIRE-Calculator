@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { firstItem } from '@sextante/core/arrays';
 import { and, eq, inArray } from 'drizzle-orm';
+import { firstItem } from '@sextante/core/arrays';
 import type { ImportedIncome, ImportFailureCode, ImportIncomeSummary } from '@sextante/core/imports/types';
 
 import { isPgError, PG_UNIQUE_VIOLATION } from '../common/pg-error.js';

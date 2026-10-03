@@ -6,6 +6,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { positionLots, positions } from '../db/schema.js';
@@ -16,7 +17,6 @@ import { aggregateLots } from './lot-aggregate.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
 import type { PositionLotsService } from './position-lots.service.js';
 import type { PositionsService } from './positions.service.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */
 

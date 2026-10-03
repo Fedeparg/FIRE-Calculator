@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
@@ -16,7 +17,6 @@ import { DevEmailService } from '../email/dev-email.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /**
  * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al

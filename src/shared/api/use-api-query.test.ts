@@ -1,5 +1,5 @@
-import { firstItem } from "@sextante/core/arrays";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { firstItem } from "@sextante/core/arrays";
 
 import { ApiError } from "./client";
 import { runApiQuery, type ApiQueryState } from "./use-api-query";

@@ -1,12 +1,12 @@
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { oauthClients } from '../db/schema.js';
 import { createTestDb, resetDb } from '../../test/db.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
-import { firstItem } from '@sextante/core/arrays';
 
 const CLIENT: OAuthClientInformationFull = {
   client_id: 'client-1',

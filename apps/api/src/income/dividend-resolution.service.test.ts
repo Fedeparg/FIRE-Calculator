@@ -1,12 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits } from '../db/schema.js';
 import type { PriceReadService } from '../prices/price-read.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { DividendResolutionService } from './dividend-resolution.service.js';
-import { firstItem } from '@sextante/core/arrays';
 import { makeIncome, seedPosition, stub } from '../../test/factories.js';
 
 /** Resolución de símbolos fija: el ISIN de la posición → símbolo de Yahoo. */

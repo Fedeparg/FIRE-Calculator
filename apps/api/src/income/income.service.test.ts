@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { incomeEvents, positions } from '../db/schema.js';
@@ -8,7 +9,6 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { createIncomeSchema } from './dto/create-income.dto.js';
 import { updateIncomeSchema } from './dto/update-income.dto.js';
 import { IncomeService } from './income.service.js';
-import { firstItem } from '@sextante/core/arrays';
 
 describe('IncomeService (integración con Postgres)', () => {
   let db: Database;

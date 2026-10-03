@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { itemAt } from '@sextante/core/arrays';
 
 import {
   epochToUtcDate,
@@ -8,7 +9,6 @@ import {
   parseYahooSplits,
   YahooPriceProvider,
 } from './yahoo-price.provider.js';
-import { itemAt } from '@sextante/core/arrays';
 
 /** Construye una respuesta de Yahoo con el `meta` indicado. */
 const chart = (meta: Record<string, unknown>): unknown => ({ chart: { result: [{ meta }] } });

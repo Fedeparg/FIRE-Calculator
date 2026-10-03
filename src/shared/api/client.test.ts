@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { firstItem, itemAt } from "@sextante/core/arrays";
 
 import { ApiError, apiErrorKey, apiFetch, apiJson, createApiErrorMapper } from "./client";
-import { firstItem, itemAt } from "@sextante/core/arrays";
 
 function mockFetch(impl: (path: string, init?: RequestInit) => Promise<Response> | Response) {
   const fn = vi.fn(async (path: string, init?: RequestInit) => impl(path, init));

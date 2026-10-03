@@ -1,8 +1,8 @@
 "use client";
 
-import { lastItem } from "@sextante/core/arrays";
 import { useEffect, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { lastItem } from "@sextante/core/arrays";
 
 import Notice from "@/shared/ui/Notice";
 import SelectField from "@/shared/ui/SelectField";

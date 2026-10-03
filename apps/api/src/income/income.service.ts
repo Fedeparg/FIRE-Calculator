@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { firstItem } from '@sextante/core/arrays';
 import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 
+import { firstItem } from '@sextante/core/arrays';
 import type { IncomeEvent } from '@sextante/core/fiscal/income';
 import type { ImportedIncome } from '@sextante/core/imports/types';
 import { DRIZZLE, type Database } from '../db/database.module.js';

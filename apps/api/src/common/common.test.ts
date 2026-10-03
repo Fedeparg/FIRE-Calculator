@@ -1,13 +1,13 @@
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { randomToken, sha256Hex } from './crypto.js';
 import { isoDate, todayUtc } from './dates.js';
 import { errorMessage } from './errors.js';
 import { numberOrNull } from './numeric.js';
 import { scheduleFromEnv } from './schedule.js';
-import { firstItem } from '@sextante/core/arrays';
 import { stub } from '../../test/factories.js';
 
 describe('dates', () => {

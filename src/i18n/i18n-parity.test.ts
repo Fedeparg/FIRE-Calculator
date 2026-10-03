@@ -5,8 +5,9 @@
 // deja la UI con el identificador crudo en el otro.
 
 import { describe, expect, it } from "vitest";
-import { flattenMessages, LOCALES, loadMessages, type Locale } from "./messages-fixtures";
 import { defined } from "@sextante/core/assert";
+
+import { flattenMessages, LOCALES, loadMessages, type Locale } from "./messages-fixtures";
 
 /**
  * Nombres de los argumentos ICU de un mensaje ("{year}" → "year";

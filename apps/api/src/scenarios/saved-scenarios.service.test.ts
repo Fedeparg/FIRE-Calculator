@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto';
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
 import { MAX_INPUTS_BYTES, SavedScenariosService } from './saved-scenarios.service.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 function dto(partial: Partial<CreateSavedScenarioDto> = {}): CreateSavedScenarioDto {
   return {

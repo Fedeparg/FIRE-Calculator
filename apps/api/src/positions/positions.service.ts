@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { firstItem } from '@sextante/core/arrays';
 import { and, desc, eq, ne } from 'drizzle-orm';
+import { firstItem } from '@sextante/core/arrays';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';

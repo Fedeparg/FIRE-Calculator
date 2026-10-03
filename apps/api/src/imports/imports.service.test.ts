@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 import { TRADE_REPUBLIC_HEADER } from '@sextante/core/imports/trade-republic';
 import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -16,7 +17,6 @@ import { PostImportTasks } from './post-import.tasks.js';
 import { TradeImportWriter } from './trade-import.writer.js';
 import { TRADE_REPUBLIC_BROKER } from './trade-republic-import.model.js';
 import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 import { stub } from '../../test/factories.js';
 
 /** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */

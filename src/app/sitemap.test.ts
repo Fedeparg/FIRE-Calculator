@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defined } from "@sextante/core/assert";
 
 // El sitemap lee de disco vía los módulos de contenido (`server-only`); aquí se sustituyen por
 // datos fijos para probar solo cómo se compone: slugs, hreflang y `lastModified` condicional.
@@ -16,7 +17,6 @@ vi.mock("@/features/changelog/content", () => ({
 import { CALCULATORS } from "@/features/calculators/registry";
 import { absoluteUrl } from "@/shared/seo/site";
 import sitemap from "./sitemap";
-import { defined } from "@sextante/core/assert";
 
 let entries: Awaited<ReturnType<typeof sitemap>>;
 const byPath = (path: string) => entries.find((e) => e.url === absoluteUrl(path));

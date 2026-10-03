@@ -1,10 +1,10 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import type Stripe from 'stripe';
 import { describe, expect, it, vi } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { fakeConfig } from '../../test/config.js';
 import { DonationsService } from './donations.service.js';
-import { firstItem } from '@sextante/core/arrays';
 import { stub } from '../../test/factories.js';
 
 const APP_URL = 'https://sextante.test';

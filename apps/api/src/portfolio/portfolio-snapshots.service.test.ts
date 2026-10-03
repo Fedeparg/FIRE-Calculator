@@ -1,6 +1,7 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import {
@@ -21,7 +22,6 @@ import { buildPositionsStack } from '../../test/positions-stack.js';
 import { SnapshotRepository } from './snapshot.repository.js';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /**
  * Resolutor identidad: el ticker ES el símbolo. Evita salir a OpenFIGI en los tests, igual

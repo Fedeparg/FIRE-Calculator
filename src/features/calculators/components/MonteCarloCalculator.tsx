@@ -1,8 +1,8 @@
 "use client";
 
-import { firstItem, lastItem } from "@sextante/core/arrays";
 import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { firstItem, lastItem } from "@sextante/core/arrays";
 import {
   MAX_RETIREMENT_YEARS,
   MAX_VOLATILITY,

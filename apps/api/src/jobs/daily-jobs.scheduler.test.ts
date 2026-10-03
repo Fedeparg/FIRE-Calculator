@@ -1,6 +1,7 @@
 import type { SchedulerRegistry } from '@nestjs/schedule';
 import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import { fakeConfig } from '../../test/config.js';
 import type { AssetClassBackfillService } from '../positions/asset-class-backfill.service.js';
@@ -9,7 +10,6 @@ import type { FireAlertsService } from '../notifications/fire-alerts.service.js'
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import type { PriceHistoryService, RefreshSummary } from '../prices/price-history.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
-import { firstItem } from '@sextante/core/arrays';
 import { stub } from '../../test/factories.js';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };

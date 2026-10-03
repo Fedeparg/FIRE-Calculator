@@ -2,12 +2,12 @@ import { randomBytes } from 'node:crypto';
 
 import { and, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 const randomHash = (): string => randomBytes(16).toString('hex');
 

@@ -5,6 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, inject, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { mcpAuditLog, oauthTokens, positions } from '../db/schema.js';
@@ -12,7 +13,6 @@ import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.cons
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { mountMcp } from './mount-mcp.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /**
  * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al

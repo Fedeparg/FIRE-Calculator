@@ -1,5 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { instrumentPrices, instrumentSplitChecks, instrumentSplits, positionLots, positions } from '../db/schema.js';
@@ -8,7 +9,6 @@ import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-pro
 import { PriceHistoryService } from './price-history.service.js';
 import { PriceReadService } from './price-read.service.js';
 import type { SymbolResolver } from './symbol-resolver.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /** Resolutor identidad: el ticker ES el símbolo (el caso del buscador, sin OpenFIGI). */
 const identityResolver: SymbolResolver = {

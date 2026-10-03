@@ -1,10 +1,10 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { defined } from "@sextante/core/assert";
 
 import { renderWithIntl } from "@/test/render";
 
 import ChartDataTable from "./ChartDataTable";
-import { defined } from "@sextante/core/assert";
 
 type Row = { year: number; value: number };
 

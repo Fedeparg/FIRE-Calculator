@@ -23,11 +23,11 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "@sextante/core/assert";
 import { CALCULATORS } from "@/features/calculators/registry";
 import { loadMessages, LOCALES, ROOT } from "./messages-fixtures";
 import { pickMessages } from "./pick-messages";
 import { CHROME_NAMESPACES, ROUTE_NAMESPACES, type RouteKey } from "./route-namespaces";
-import { defined } from "@sextante/core/assert";
 
 const SRC = path.join(ROOT, "src");
 const APP = path.join(SRC, "app", "[locale]");

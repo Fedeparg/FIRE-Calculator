@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { itemAt } from "@sextante/core/arrays";
 
 import { UTF8_BOM } from "@/shared/format/csv";
 
 import { buildPortfolioCsv, CSV_COLUMNS, type PortfolioCsvHeaders, type PortfolioCsvInput } from "./portfolio-csv";
-import { itemAt } from "@sextante/core/arrays";
 
 type CsvPosition = PortfolioCsvInput["positions"][number];
 

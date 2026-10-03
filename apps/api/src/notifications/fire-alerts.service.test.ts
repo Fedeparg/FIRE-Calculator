@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 import { FIRE_CALCULATOR_SLUG } from '@sextante/core/portfolio/goal';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -11,7 +12,6 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { FireAlertsService } from './fire-alerts.service.js';
 import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
-import { firstItem, itemAt } from '@sextante/core/arrays';
 
 const DATE = '2026-09-28';
 const SECRET = 'test-secret';

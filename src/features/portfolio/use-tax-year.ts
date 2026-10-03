@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-
 import { firstItem } from "@sextante/core/arrays";
 
 import { defaultTaxYear } from "@/features/portfolio/model/tax-year";
