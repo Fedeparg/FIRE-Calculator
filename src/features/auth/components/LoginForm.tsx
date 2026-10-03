@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { trackEvent } from "@/shared/analytics/track";
 import { apiFetch } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { safeReturnTo } from "@/shared/navigation/safe-return-to";
 import Button from "@/shared/ui/Button";
 
 /** Formulario de login por magic link: pide el email y solicita el enlace. */
@@ -15,12 +16,11 @@ export default function LoginForm() {
   const request = useApiMutation();
 
   // Si se llega aquí desde un flujo OAuth (?returnTo=/authorize…), recuérdalo para
-  // volver tras canjear el magic link. Solo rutas relativas (anti open-redirect).
+  // volver tras canjear el magic link. Solo rutas de nuestro origen (anti open-redirect).
   useEffect(() => {
-    const returnTo = new URLSearchParams(window.location.search).get("returnTo");
-    if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
-      window.localStorage.setItem("sextante_return_to", returnTo);
-    }
+    const raw = new URLSearchParams(window.location.search).get("returnTo");
+    const returnTo = raw ? safeReturnTo(raw, window.location.origin) : null;
+    if (returnTo) window.localStorage.setItem("sextante_return_to", returnTo);
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {

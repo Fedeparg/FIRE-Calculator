@@ -3,14 +3,21 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Revalidación bajo demanda de la wiki: un webhook llama aquí tras editar el Markdown y el
-// contenido queda en vivo sin redesplegar. Token en cabecera `x-revalidate-token` o `?token=`;
-// `?path=` revalida además una ruta. REVALIDATE_TOKEN vive en `.env`, nunca en el cliente.
+// Revalidación bajo demanda del contenido Markdown (wiki, explainers, legales y novedades): un
+// webhook llama aquí tras editarlo y queda en vivo sin redesplegar. El token va SOLO en la
+// cabecera `x-revalidate-token`: en la query acabaría en los logs de acceso del proxy. `?path=`
+// revalida además una ruta. REVALIDATE_TOKEN vive en `.env`, nunca en el cliente.
 
-const WIKI_ROUTE_PATTERNS = ["/[locale]/aprende", "/[locale]/aprende/[slug]", "/[locale]/calculadoras/[slug]"] as const;
+const CONTENT_ROUTE_PATTERNS = [
+  "/[locale]/aprende",
+  "/[locale]/aprende/[slug]",
+  "/[locale]/calculadoras/[slug]",
+  "/[locale]/legal/[slug]",
+  "/[locale]/novedades",
+] as const;
 
 function getToken(request: NextRequest): string | null {
-  return request.headers.get("x-revalidate-token") ?? request.nextUrl.searchParams.get("token");
+  return request.headers.get("x-revalidate-token");
 }
 
 // Tiempo constante (sin filtrar longitud ni prefijo por timing); se comparan hashes
@@ -32,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ revalidated: false, message: "Invalid or missing token." }, { status: 401 });
   }
 
-  for (const pattern of WIKI_ROUTE_PATTERNS) {
+  for (const pattern of CONTENT_ROUTE_PATTERNS) {
     revalidatePath(pattern, "page");
   }
 

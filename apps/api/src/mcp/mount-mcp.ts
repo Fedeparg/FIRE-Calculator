@@ -8,7 +8,12 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import { SCOPES_SUPPORTED } from '../oauth/oauth.constants.js';
 import { OAuthUrls } from '../oauth/oauth-urls.js';
 import { SextanteOAuthProvider } from '../oauth/oauth.provider.js';
-import { createMcpRateLimiter, MCP_RATE_LIMIT_MAX } from './mcp-rate-limit.js';
+import {
+  createMcpIpRateLimiter,
+  createMcpTokenRateLimiter,
+  MCP_IP_RATE_LIMIT_MAX,
+  MCP_TOKEN_RATE_LIMIT_MAX,
+} from './mcp-rate-limit.js';
 import { McpService } from './mcp.service.js';
 
 /**
@@ -70,11 +75,13 @@ export function mountMcp(app: NestExpressApplication): void {
     next();
   });
 
-  // Rate limit del endpoint MCP. Va después del CORS (para que el 429 lleve sus cabeceras y
-  // un cliente de navegador pueda leerlo) y antes de los handlers, incluidos el bearer y los
-  // 405: el orden de registro es el orden de ejecución en Express, así que montarlo al final
-  // dejaría rutas sin limitar. Ver `mcp-rate-limit.ts` para la elección de clave.
-  server_.use('/api/mcp', createMcpRateLimiter());
+  // Rate limit del endpoint MCP, en dos pasos (ver `mcp-rate-limit.ts`). El de IP va después
+  // del CORS (para que el 429 lleve sus cabeceras y un cliente de navegador pueda leerlo) y
+  // antes de los handlers, incluidos el bearer y los 405: el orden de registro es el orden de
+  // ejecución en Express, así que montarlo al final dejaría rutas sin limitar. El de token va
+  // en la ruta POST, detrás del bearer, para contar por identidad ya verificada.
+  server_.use('/api/mcp', createMcpIpRateLimiter());
+  const tokenRateLimiter = createMcpTokenRateLimiter();
 
   // Servidor sin estado: no hay stream SSE servidor→cliente ni sesión que cerrar. Tras el
   // initialize, los clientes abren un GET para el stream; respondemos 405 (no 404) para que
@@ -90,7 +97,7 @@ export function mountMcp(app: NestExpressApplication): void {
   server_.delete('/api/mcp', methodNotAllowed);
 
   // Endpoint MCP (Streamable HTTP, sin estado: un transporte por petición).
-  server_.post('/api/mcp', bearer, async (req: Request, res: Response) => {
+  server_.post('/api/mcp', bearer, tokenRateLimiter, async (req: Request, res: Response) => {
     const auth = req.auth;
     const userId = auth?.extra && typeof auth.extra.userId === 'string' ? auth.extra.userId : undefined;
     if (!auth || !userId) {
@@ -120,5 +127,8 @@ export function mountMcp(app: NestExpressApplication): void {
     }
   });
 
-  logger.log(`Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_RATE_LIMIT_MAX} req/min por token)`);
+  logger.log(
+    `Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_TOKEN_RATE_LIMIT_MAX} req/min por token, ` +
+      `${MCP_IP_RATE_LIMIT_MAX} por IP)`,
+  );
 }

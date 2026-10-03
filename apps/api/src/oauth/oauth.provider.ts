@@ -28,6 +28,7 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   SCOPE_PORTFOLIO_READ,
   SCOPES_SUPPORTED,
+  withImpliedScopes,
 } from './oauth.constants.js';
 import { randomToken, sha256Hex } from '../common/crypto.js';
 
@@ -259,7 +260,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return {
       token,
       clientId: row.clientId,
-      scopes: row.scopes,
+      // Los tokens emitidos antes de que `write` implicara `read` se leen con la regla actual.
+      scopes: withImpliedScopes(row.scopes),
       expiresAt: Math.floor(row.expiresAt.getTime() / 1000),
       resource: new URL(row.audience),
       extra: { userId: row.userId },
@@ -341,7 +343,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return this.urls.audience;
   }
 
-  /** Normaliza/valida los scopes pedidos; por defecto, solo lectura. */
+  /** Normaliza/valida los scopes pedidos; por defecto, solo lectura. `write` implica `read`. */
   private effectiveScopes(scopes?: string[]): string[] {
     const requested = scopes && scopes.length > 0 ? scopes : [SCOPE_PORTFOLIO_READ];
     const supported = new Set(SCOPES_SUPPORTED);
@@ -349,7 +351,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     if (unknown.length > 0) {
       throw new InvalidScopeError(`Unsupported scope(s): ${unknown.join(', ')}`);
     }
-    return Array.from(new Set(requested));
+    return withImpliedScopes(requested);
   }
 
   /** Lee la sesión del magic link (cookie JWT) y devuelve el `userId`, o null. */

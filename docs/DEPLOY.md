@@ -123,6 +123,10 @@ build del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret
 > `JWT_SECRET` debe ser **fijo y estable**: si lo cambias, invalidas todas las
 > sesiones. Defínelo una vez.
 
+> Con `NODE_ENV=production` la API **se niega a arrancar** si `JWT_SECRET` es el de
+> desarrollo o tiene menos de 32 caracteres, si `COOKIE_SECURE` no es `true` o si
+> `APP_URL` no empieza por `https://` (`apps/api/src/config/env.ts`).
+
 ## 3. Email (Resend)
 
 El login es passwordless: la API envía un magic link por email. `EMAIL_TRANSPORT`

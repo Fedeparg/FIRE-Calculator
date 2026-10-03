@@ -24,11 +24,15 @@ export class ConsentController {
     private readonly grants: OAuthGrantsService,
   ) {}
 
-  /** Datos del cliente para mostrar en la pantalla (nombre legible, URL). */
+  /**
+   * Datos del cliente para la pantalla: nombre legible, URL y sus `redirect_uris` registradas.
+   * La pantalla solo devuelve el control (al denegar) a una de esas URIs: la query de
+   * `/oauth/consent` la controla quien envía el enlace y no es de fiar.
+   */
   @Get('client/:clientId')
   async clientInfo(
     @Param('clientId') clientId: string,
-  ): Promise<{ clientName: string | null; clientUri: string | null }> {
+  ): Promise<{ clientName: string | null; clientUri: string | null; redirectUris: string[] }> {
     const client = await this.clients.getClient(clientId);
     if (!client) {
       throw new NotFoundException('Cliente no encontrado');
@@ -36,6 +40,7 @@ export class ConsentController {
     return {
       clientName: client.client_name ?? null,
       clientUri: client.client_uri ?? null,
+      redirectUris: client.redirect_uris,
     };
   }
 

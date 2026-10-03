@@ -62,6 +62,8 @@ const nextConfig: NextConfig = {
   // Salida autocontenida (server.js + node_modules mínimo) para la imagen Docker
   // de producción. Ver Dockerfile.web.
   output: "standalone",
+  // Sin `X-Powered-By: Next.js`: no anunciar el framework (ni facilitar buscar sus CVE).
+  poweredByHeader: false,
   async headers() {
     // Cabeceras de seguridad en todas las rutas. Defensa en profundidad: la app
     // inyecta Markdown como HTML (descartando el HTML embebido).
