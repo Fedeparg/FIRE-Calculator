@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildOpenLots, simulateSale, walkLots, type TradeLot } from "./plusvalias.js";
 import { estimateSavingsTax } from "./savings-tax.js";
 import { firstItem, itemAt } from "../arrays.js";
+import { defined } from "../assert.js";
 
 /** Constructor breve de lotes: los tests solo fijan lo que les importa. */
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
@@ -89,21 +90,23 @@ describe("simulateSale", () => {
     });
 
     expect(sim).not.toBeNull();
-    expect(sim!.quantitySold).toBe(4);
-    expect(sim!.grossProceeds).toBe(600);
-    expect(sim!.acquisitionValue).toBe(400);
-    expect(sim!.gain).toBe(200);
-    expect(sim!.remainingQuantity).toBe(6);
-    expect(sim!.remainingAvgPrice).toBe(100);
-    expect(sim!.insufficient).toBe(false);
+    expect(sim?.quantitySold).toBe(4);
+    expect(sim?.grossProceeds).toBe(600);
+    expect(sim?.acquisitionValue).toBe(400);
+    expect(sim?.gain).toBe(200);
+    expect(sim?.remainingQuantity).toBe(6);
+    expect(sim?.remainingAvgPrice).toBe(100);
+    expect(sim?.insufficient).toBe(false);
   });
 
   it("venta total deja la posición a cero", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100 })],
-      quantity: 10,
-      price: 120,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100 })],
+        quantity: 10,
+        price: 120,
+      }),
+    );
 
     expect(sim.quantitySold).toBe(10);
     expect(sim.gain).toBe(200);
@@ -112,14 +115,16 @@ describe("simulateSale", () => {
   });
 
   it("consume varios lotes por FIFO y recalcula el precio medio de lo que queda", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
-      ],
-      quantity: 15,
-      price: 250,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
+        ],
+        quantity: 15,
+        price: 250,
+      }),
+    );
 
     // FIFO: 10 de "a" a 100 + 5 de "b" a 200 = 2.000 de coste.
     expect(sim.acquisitionValue).toBe(2000);
@@ -135,38 +140,44 @@ describe("simulateSale", () => {
   });
 
   it("el desglose por lote suma exactamente la ganancia total", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 3, price: 33.33, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 4, price: 41.17, tradedAt: "2024-02-01" }),
-      ],
-      quantity: 6,
-      price: 77.77,
-      fees: 3.21,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 3, price: 33.33, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 4, price: 41.17, tradedAt: "2024-02-01" }),
+        ],
+        quantity: 6,
+        price: 77.77,
+        fees: 3.21,
+      }),
+    );
 
     const sum = sim.matched.reduce((acc, m) => acc + m.gain, 0);
     expect(sum).toBeCloseTo(sim.gain, 10);
   });
 
   it("una venta por debajo del precio de compra da pérdida", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100 })],
-      quantity: 10,
-      price: 60,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100 })],
+        quantity: 10,
+        price: 60,
+      }),
+    );
 
     expect(sim.gain).toBe(-400);
     expect(estimateSavingsTax(sim.gain).tax).toBe(0);
   });
 
   it("las comisiones de compra suben el coste y las de venta bajan el ingreso", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
-      quantity: 10,
-      price: 150,
-      fees: 30,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
+        quantity: 10,
+        price: 150,
+        fees: 30,
+      }),
+    );
 
     // Adquisición 1.000 + 20; transmisión 1.500 − 30 → ganancia 450 (no 500).
     expect(sim.acquisitionValue).toBe(1020);
@@ -175,11 +186,13 @@ describe("simulateSale", () => {
   });
 
   it("prorratea las comisiones de compra en una venta parcial", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
-      quantity: 4,
-      price: 100,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 10, price: 100, fees: 20 })],
+        quantity: 4,
+        price: 100,
+      }),
+    );
 
     // Solo 4/10 de la comisión de compra entra en el coste → pérdida de 8.
     expect(sim.acquisitionValue).toBeCloseTo(408, 10);
@@ -187,11 +200,13 @@ describe("simulateSale", () => {
   });
 
   it("admite cantidades fraccionarias (cripto, fondos)", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 0.5, price: 20000 })],
-      quantity: 0.125,
-      price: 40000,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 0.5, price: 20000 })],
+        quantity: 0.125,
+        price: 40000,
+      }),
+    );
 
     expect(sim.grossProceeds).toBeCloseTo(5000, 10);
     expect(sim.acquisitionValue).toBeCloseTo(2500, 10);
@@ -200,15 +215,17 @@ describe("simulateSale", () => {
   });
 
   it("tiene en cuenta las ventas ya registradas en el histórico", () => {
-    const sim = simulateSale({
-      lots: [
-        lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
-        lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
-        lot({ id: "s", kind: "sell", quantity: 10, price: 150, tradedAt: "2024-03-01" }),
-      ],
-      quantity: 5,
-      price: 300,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [
+          lot({ id: "a", quantity: 10, price: 100, tradedAt: "2024-01-01" }),
+          lot({ id: "b", quantity: 10, price: 200, tradedAt: "2024-02-01" }),
+          lot({ id: "s", kind: "sell", quantity: 10, price: 150, tradedAt: "2024-03-01" }),
+        ],
+        quantity: 5,
+        price: 300,
+      }),
+    );
 
     // La venta previa se comió el lote "a": lo que se vende ahora sale de "b" a 200.
     expect(sim.availableQuantity).toBe(10);
@@ -218,11 +235,13 @@ describe("simulateSale", () => {
   });
 
   it("marca insufficient si se piden vender más participaciones de las que hay", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 3, price: 100 })],
-      quantity: 10,
-      price: 120,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 3, price: 100 })],
+        quantity: 10,
+        price: 120,
+      }),
+    );
 
     expect(sim.insufficient).toBe(true);
     expect(sim.availableQuantity).toBe(3);
@@ -230,7 +249,7 @@ describe("simulateSale", () => {
   });
 
   it("sin lotes vivos no hay nada que vender", () => {
-    const sim = simulateSale({ lots: [], quantity: 1, price: 100 })!;
+    const sim = defined(simulateSale({ lots: [], quantity: 1, price: 100 }));
 
     expect(sim.availableQuantity).toBe(0);
     expect(sim.quantitySold).toBe(0);
@@ -240,11 +259,13 @@ describe("simulateSale", () => {
   });
 
   it("una venta a precio cero es válida y da una pérdida igual al coste", () => {
-    const sim = simulateSale({
-      lots: [lot({ id: "a", quantity: 2, price: 50 })],
-      quantity: 2,
-      price: 0,
-    })!;
+    const sim = defined(
+      simulateSale({
+        lots: [lot({ id: "a", quantity: 2, price: 50 })],
+        quantity: 2,
+        price: 0,
+      }),
+    );
 
     expect(sim.gain).toBe(-100);
   });

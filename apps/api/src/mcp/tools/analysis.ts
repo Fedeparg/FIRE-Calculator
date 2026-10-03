@@ -10,9 +10,9 @@ import {
 import { z } from 'zod';
 
 import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
-import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
-import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
-import { TaxReturnService } from '../../tax-return/tax-return.service.js';
+import type { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
+import type { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
+import type { TaxReturnService } from '../../tax-return/tax-return.service.js';
 import { jsonResult } from '../mcp-results.js';
 import { InvalidToolInputError } from '../tool-errors.js';
 import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-schemas.js';

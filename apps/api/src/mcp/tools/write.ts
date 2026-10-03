@@ -3,13 +3,13 @@ import { z } from 'zod';
 
 import { createIncomeSchema, incomeFieldsSchema } from '../../income/dto/create-income.dto.js';
 import { updateIncomeSchema } from '../../income/dto/update-income.dto.js';
-import { IncomeService } from '../../income/income.service.js';
+import type { IncomeService } from '../../income/income.service.js';
 import { combinePositionSchema } from '../../positions/dto/combine-position.dto.js';
 import { createPositionSchema } from '../../positions/dto/create-position.dto.js';
 import { createPositionLotSchema } from '../../positions/dto/create-position-lot.dto.js';
 import { updatePositionSchema } from '../../positions/dto/update-position.dto.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
+import type { PositionLotsService } from '../../positions/position-lots.service.js';
+import type { PositionsService } from '../../positions/positions.service.js';
 import { jsonResult } from '../mcp-results.js';
 import { InvalidToolInputError } from '../tool-errors.js';
 import type { ToolRunner } from './tool-runner.js';

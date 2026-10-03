@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { type ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 

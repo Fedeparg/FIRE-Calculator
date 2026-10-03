@@ -5,7 +5,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 import { DomainError, domainErrorToHttp } from '../../common/domain-error.js';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../../oauth/oauth.constants.js';
-import { McpAuditService } from '../mcp-audit.service.js';
+import type { McpAuditService } from '../mcp-audit.service.js';
 import { errorResult } from '../mcp-results.js';
 import { InvalidToolInputError, ToolUserError } from '../tool-errors.js';
 

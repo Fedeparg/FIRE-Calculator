@@ -14,8 +14,8 @@ import { buildPositionsStack } from '../../test/positions-stack.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { aggregateLots } from './lot-aggregate.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
-import { PositionLotsService } from './position-lots.service.js';
-import { PositionsService } from './positions.service.js';
+import type { PositionLotsService } from './position-lots.service.js';
+import type { PositionsService } from './positions.service.js';
 import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /** `primeSymbol` solo refresca precio en caliente; en tests es un no-op. */

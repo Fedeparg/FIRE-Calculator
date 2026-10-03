@@ -27,6 +27,7 @@ import { CALCULATORS } from "@/features/calculators/registry";
 import { loadMessages, LOCALES, ROOT } from "./messages-fixtures";
 import { pickMessages } from "./pick-messages";
 import { CHROME_NAMESPACES, ROUTE_NAMESPACES, type RouteKey } from "./route-namespaces";
+import { defined } from "@sextante/core/assert";
 
 const SRC = path.join(ROOT, "src");
 const APP = path.join(SRC, "app", "[locale]");
@@ -64,13 +65,13 @@ function parse(file: string): SourceInfo {
   if (cached) return cached;
   const source = readFileSync(file, "utf8");
   const imports = [...source.matchAll(/(?:from\s+|import\s*\(\s*|import\s+)["']([^"']+)["']/g)]
-    .map((m) => resolveImport(file, m[1]!))
+    .map((m) => resolveImport(file, defined(m[1])))
     .filter((f): f is string => f !== null);
   const namespaces: string[] = [];
   const unsupported: string[] = [];
   for (const [, arg = ""] of source.matchAll(/useTranslations\(([^)]*)\)/g)) {
     const literal = /^\s*["']([\w.-]+)["']\s*$/.exec(arg);
-    if (literal) namespaces.push(literal[1]!);
+    if (literal) namespaces.push(defined(literal[1]));
     else if (/^\s*`calc\.\$\{calculatorSlug\}`\s*$/.test(arg)) namespaces.push(CALC_OWN);
     else if (/^\s*`calc\.\$\{\w+\}`\s*$/.test(arg)) namespaces.push(CALC_TEMPLATE);
     else unsupported.push(`useTranslations(${arg.trim()})`);
@@ -155,7 +156,7 @@ describe("mensajes por ruta", () => {
     const body = readFileSync(CALCULATOR_BODY, "utf8");
     const components = new Map(
       [...body.matchAll(/^\s*"?([\w-]+)"?:\s*dynamic\(\(\)\s*=>\s*import\("([^"]+)"\)\)/gm)].map(
-        (m) => [m[1]!, resolveImport(CALCULATOR_BODY, m[2]!)!] as const,
+        (m) => [defined(m[1]), defined(resolveImport(CALCULATOR_BODY, defined(m[2])))] as const,
       ),
     );
 

@@ -12,6 +12,7 @@ import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
 import { LotAggregateError } from '../positions/lot-aggregate.js';
 import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
+import { defined } from '@sextante/core/assert';
 
 /**
  * El servidor MCP de verdad, conectado a un cliente MCP de verdad por un transporte en memoria.
@@ -255,7 +256,7 @@ describe('McpService', () => {
     const { service, audit } = makeService();
     client = await connect(service);
     const call = async (calculator: string, inputs: Record<string, unknown>) =>
-      (await client!.callTool({ name: 'calculate', arguments: { calculator, inputs } })) as CallToolResult;
+      (await defined(client).callTool({ name: 'calculate', arguments: { calculator, inputs } })) as CallToolResult;
 
     const montecarlo = {
       annualExpenses: 1,
@@ -484,7 +485,7 @@ describe('McpService', () => {
     const { service, income } = makeService();
     client = await connect(service, [SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE]);
     const call = async (name: string, args: Record<string, unknown>) =>
-      (await client!.callTool({ name, arguments: args })) as CallToolResult;
+      (await defined(client).callTool({ name, arguments: args })) as CallToolResult;
 
     // "Al menos un campo" de PATCH /api/income/:id: REST lo rechaza y MCP también.
     expect(updateIncomeSchema.safeParse({}).success).toBe(false);

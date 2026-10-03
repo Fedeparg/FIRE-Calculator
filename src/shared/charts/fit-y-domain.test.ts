@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fitYDomain } from "./fit-y-domain";
+import { defined } from "@sextante/core/assert";
 
 describe("fitYDomain", () => {
   it("ajusta al total apilado con un 1 % de margen", () => {
@@ -16,7 +17,7 @@ describe("fitYDomain", () => {
       { x: 1, v: 100, low: 90, high: 130 },
       { x: 2, v: 110, low: 95, high: 140 },
     ];
-    const [min, max] = fitYDomain(data, ["v"], ["low", "high"])!;
+    const [min, max] = defined(fitYDomain(data, ["v"], ["low", "high"]));
     expect(min).toBeCloseTo(90 - 0.9);
     expect(max).toBeCloseTo(140 + 1.4);
   });

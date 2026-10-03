@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { incomeFieldsSchema } from './create-income.dto.js';
 

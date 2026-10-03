@@ -50,7 +50,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
 
     const row = await readClient(CLIENT.client_id);
     expect(row.lastUsedAt).not.toBeNull();
-    expect(row.lastUsedAt!.getTime()).toBeGreaterThanOrEqual(before - 1_000);
+    expect(row.lastUsedAt?.getTime()).toBeGreaterThanOrEqual(before - 1_000);
   });
 
   it('touch de un cliente inexistente no lanza (se invoca fire-and-forget)', async () => {

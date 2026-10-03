@@ -157,7 +157,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h2 id={POSITION_FORM_TITLE_ID} className="pr-14 text-lg font-semibold text-foreground lg:pr-12">
-        {isEditing ? t("editTitle", { ticker: editing!.ticker }) : t("title")}
+        {editing ? t("editTitle", { ticker: editing.ticker }) : t("title")}
       </h2>
 
       <PositionFormFields

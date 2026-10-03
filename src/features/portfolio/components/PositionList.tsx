@@ -193,11 +193,12 @@ export default function PositionList({
                   <>
                     <span className="hidden items-center justify-end gap-1 text-sm tabular-nums text-foreground md:flex">
                       {formatCurrency(row.marketValue, p.currency)}
-                      {row.stale && (
+                      {/* `stale` implica que hay precio y una fecha más reciente con la que compararlo. */}
+                      {row.stale && row.price && latestDate && (
                         <StaleBadge
                           label={t("stalePrice", {
-                            date: formatIsoDate(row.price!.date),
-                            latest: formatIsoDate(latestDate!),
+                            date: formatIsoDate(row.price.date),
+                            latest: formatIsoDate(latestDate),
                           })}
                         />
                       )}

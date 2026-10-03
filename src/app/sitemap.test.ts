@@ -16,6 +16,7 @@ vi.mock("@/features/changelog/content", () => ({
 import { CALCULATORS } from "@/features/calculators/registry";
 import { absoluteUrl } from "@/shared/seo/site";
 import sitemap from "./sitemap";
+import { defined } from "@sextante/core/assert";
 
 let entries: Awaited<ReturnType<typeof sitemap>>;
 const byPath = (path: string) => entries.find((e) => e.url === absoluteUrl(path));
@@ -48,8 +49,8 @@ describe("sitemap", () => {
   it("emite lastModified solo cuando hay una fecha real", () => {
     expect(byPath("/aprende/a")?.lastModified).toBe("2026-09-03");
     expect(byPath("/novedades")?.lastModified).toBe("2026-10-01");
-    expect(byPath("/aprende/b") && "lastModified" in byPath("/aprende/b")!).toBe(false);
-    expect("lastModified" in byPath("/legal/privacidad")!).toBe(false);
-    expect("lastModified" in byPath("/")!).toBe(false);
+    expect("lastModified" in defined(byPath("/aprende/b"))).toBe(false);
+    expect("lastModified" in defined(byPath("/legal/privacidad"))).toBe(false);
+    expect("lastModified" in defined(byPath("/"))).toBe(false);
   });
 });

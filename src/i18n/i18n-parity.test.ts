@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import { flattenMessages, LOCALES, loadMessages, type Locale } from "./messages-fixtures";
+import { defined } from "@sextante/core/assert";
 
 /**
  * Nombres de los argumentos ICU de un mensaje ("{year}" → "year";
@@ -29,8 +30,8 @@ const messages = new Map<Locale, Map<string, string>>(
 
 /** Claves presentes en `from` que faltan en `to`. */
 function missingKeys(from: Locale, to: Locale): string[] {
-  const target = messages.get(to)!;
-  return [...messages.get(from)!.keys()].filter((key) => !target.has(key)).sort();
+  const target = defined(messages.get(to));
+  return [...defined(messages.get(from)).keys()].filter((key) => !target.has(key)).sort();
 }
 
 describe("paridad de mensajes es/en", () => {
@@ -42,19 +43,19 @@ describe("paridad de mensajes es/en", () => {
   });
 
   it("ambos idiomas tienen el mismo número de claves", () => {
-    expect(messages.get("en")!.size).toBe(messages.get("es")!.size);
+    expect(defined(messages.get("en")).size).toBe(defined(messages.get("es")).size);
   });
 
   it("cada clave usa los mismos argumentos ICU en ambos idiomas", () => {
-    const es = messages.get("es")!;
-    const en = messages.get("en")!;
+    const es = defined(messages.get("es"));
+    const en = defined(messages.get("en"));
 
     const mismatches = [...es.entries()]
       .filter(([key]) => en.has(key))
       .map(([key, esMessage]) => ({
         key,
         es: icuArguments(esMessage),
-        en: icuArguments(en.get(key)!),
+        en: icuArguments(defined(en.get(key))),
       }))
       .filter(({ es: esArgs, en: enArgs }) => esArgs.join("|") !== enArgs.join("|"));
 
@@ -63,7 +64,7 @@ describe("paridad de mensajes es/en", () => {
 
   it("ninguna clave tiene un mensaje vacío", () => {
     for (const locale of LOCALES) {
-      const empty = [...messages.get(locale)!.entries()]
+      const empty = [...defined(messages.get(locale)).entries()]
         .filter(([, message]) => message.trim() === "")
         .map(([key]) => key);
       expect({ locale, empty }).toEqual({ locale, empty: [] });

@@ -9,7 +9,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
-import { PositionsService } from './positions.service.js';
+import type { PositionsService } from './positions.service.js';
 import { firstItem, itemAt } from '@sextante/core/arrays';
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {

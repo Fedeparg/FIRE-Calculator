@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 
 import { estimateNetSalary } from "../fiscal/irpf.js";
 import { computeRetirement } from "./ahorro-jubilacion.js";

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { renderWithIntl } from "@/test/render";
 
 import ChartDataTable from "./ChartDataTable";
+import { defined } from "@sextante/core/assert";
 
 type Row = { year: number; value: number };
 
@@ -25,7 +26,7 @@ describe("ChartDataTable", () => {
 
   it("al abrirla enseña todas las filas y columnas", () => {
     const { container } = renderWithIntl(<ChartDataTable title="Patrimonio" columns={columns} rows={rows} />);
-    const details = container.querySelector("details")!;
+    const details = defined(container.querySelector("details"));
 
     details.open = true;
     fireEvent(details, new Event("toggle"));

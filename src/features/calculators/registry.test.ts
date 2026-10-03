@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import { CALCULATOR_COMPONENTS } from "./components/CalculatorBody";
 import { CALCULATORS } from "./registry";
+import { defined } from "@sextante/core/assert";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const EXPLAINERS_DIR = path.join(ROOT, "content", "wiki", "explainers");
@@ -46,7 +47,7 @@ describe("registry: coherencia del catálogo", () => {
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su namespace calc.<slug> en %s", (locale) => {
-    const namespaces = calcNamespaces.get(locale)!;
+    const namespaces = defined(calcNamespaces.get(locale));
     const missing = [...allSlugs].filter((slug) => !namespaces.has(slug));
     expect(missing).toEqual([]);
   });
@@ -73,7 +74,7 @@ describe("registry: sin material huérfano", () => {
   });
 
   it.each(LOCALES)("no hay namespaces calc.* fuera del registry en %s", (locale) => {
-    const orphans = [...calcNamespaces.get(locale)!].filter((ns) => !allSlugs.has(ns));
+    const orphans = [...defined(calcNamespaces.get(locale))].filter((ns) => !allSlugs.has(ns));
     expect(orphans).toEqual([]);
   });
 
