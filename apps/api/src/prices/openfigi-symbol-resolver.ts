@@ -53,6 +53,22 @@ const SUFFIX_ORDER = [...YAHOO_SUFFIXES, ''];
 const MAX_CANDIDATES = 12;
 /** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
 const VALIDATION_DELAY_MS = 400;
+/**
+ * Caché negativa en memoria de las consultas que no se resolvieron SIN dejar fila en
+ * `instruments` (fallo transitorio, hueco de cobertura, ticker sin cotización). Sin ella, el
+ * refresco horario las reintentaba contra OpenFIGI y Yahoo cada hora para siempre. Espera
+ * exponencial: 1 h, 2 h, 4 h… hasta 24 h; se olvida al resolver. Se pierde al reiniciar, que es
+ * aceptable: lo peor es un reintento de más.
+ */
+const NEGATIVE_BACKOFF_BASE_MS = 60 * 60_000;
+const NEGATIVE_BACKOFF_MAX_MS = 24 * 60 * 60_000;
+/** Tope de entradas para que una avalancha de consultas basura no haga crecer la memoria. */
+const NEGATIVE_CACHE_MAX_ENTRIES = 1_000;
+
+interface NegativeEntry {
+  failures: number;
+  nextTryAt: number;
+}
 
 /** Resultado de consultar OpenFIGI por un ISIN. Distingue el "vacío" real del fallo transitorio. */
 type OpenFigiOutcome =
@@ -178,6 +194,7 @@ export function tickerCandidates(query: string): string[] {
 export class OpenFigiSymbolResolver implements SymbolResolver {
   private readonly logger = new Logger(OpenFigiSymbolResolver.name);
   private readonly apiKey: string | undefined;
+  private readonly negative = new Map<string, NegativeEntry>();
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -213,6 +230,30 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     const cached = await this.lookup(query);
     if (cached !== undefined) return cached; // hit: símbolo resuelto o null (no encontrado).
 
+    const backoff = this.negative.get(query);
+    if (backoff && Date.now() < backoff.nextTryAt) return null;
+
+    const symbol = await this.resolveUncached(query);
+    if (symbol) this.negative.delete(query);
+    else this.recordFailure(query);
+    return symbol;
+  }
+
+  /** Apunta un fallo sin fila en caché y aplaza el siguiente intento (espera exponencial). */
+  private recordFailure(query: string): void {
+    const failures = (this.negative.get(query)?.failures ?? 0) + 1;
+    const waitMs = Math.min(NEGATIVE_BACKOFF_BASE_MS * 2 ** (failures - 1), NEGATIVE_BACKOFF_MAX_MS);
+    // Reinsertar la mueve al final: el `Map` conserva el orden, así que la primera es la más antigua.
+    this.negative.delete(query);
+    this.negative.set(query, { failures, nextTryAt: Date.now() + waitMs });
+    if (this.negative.size > NEGATIVE_CACHE_MAX_ENTRIES) {
+      const oldest = this.negative.keys().next().value;
+      if (oldest !== undefined) this.negative.delete(oldest);
+    }
+  }
+
+  /** Resolución contra las fuentes externas de una consulta sin fila en caché. */
+  private async resolveUncached(query: string): Promise<string | null> {
     if (isIsin(query)) {
       // La búsqueda nunca lanza: ante un fallo devuelve [] y se sigue con OpenFIGI.
       const searched = await this.firstThatPrices(searchCandidates(await this.search.search(query)));

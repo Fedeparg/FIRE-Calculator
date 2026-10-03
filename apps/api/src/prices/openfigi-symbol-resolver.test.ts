@@ -270,3 +270,50 @@ describe('OpenFigiSymbolResolver.resolveManyCached', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
+  const HOUR = 60 * 60_000;
+  let db: Database;
+  let close: () => Promise<void>;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+  });
+  afterEach(async () => {
+    vi.useRealTimers();
+    await resetDb(db);
+  });
+  afterAll(async () => {
+    await close();
+  });
+
+  it('no reintenta un ticker sin cotización hasta que vence su espera, que crece y se olvida al resolver', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00Z'));
+    let priced = false;
+    const getQuotes = vi.fn((symbols: string[]) =>
+      Promise.resolve(
+        new Map(priced ? symbols.map((s) => [s, { symbol: s, close: 1, currency: 'EUR', date: '2026-10-01' }]) : []),
+      ),
+    );
+    const provider = { getQuotes } as unknown as PriceProvider;
+    const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
+
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();
+    expect(getQuotes).toHaveBeenCalledTimes(1);
+
+    // Vence la primera espera (1 h): reintenta, vuelve a fallar y la siguiente es de 2 h.
+    vi.setSystemTime(Date.now() + HOUR + 1);
+    await resolver.resolve('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(2);
+    vi.setSystemTime(Date.now() + HOUR + 1);
+    await resolver.resolve('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(2);
+
+    vi.setSystemTime(Date.now() + HOUR);
+    priced = true;
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBe('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(3);
+  });
+});
