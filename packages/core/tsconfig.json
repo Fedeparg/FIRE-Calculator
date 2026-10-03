@@ -1,15 +1,15 @@
 {
-  // `nodenext` porque lo consume la API (ESM en Node): obliga a escribir los imports
-  // relativos con `.js`, que el bundler de Next también entiende. Así un mismo
-  // código compila igual para los dos consumidores.
+  // `nodenext` because the API consumes it (ESM on Node): it forces relative imports to be
+  // written with `.js`, which the Next bundler also understands. That way the same code
+  // compiles the same for both consumers.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2023"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
-    // `lista[i]` se tipa `T | undefined`: cada índice que puede faltar se decide a la vista
-    // (guarda, valor por defecto o `itemAt` de `arrays.ts` si el rango es una invariante).
+    // `list[i]` is typed `T | undefined`: every index that may be missing is handled in plain
+    // sight (a guard, a default value, or `itemAt` from `arrays.ts` if the bounds are an invariant).
     "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
@@ -21,7 +21,7 @@
     "rootDir": "./src",
     "outDir": "./dist"
   },
-  // `tsc --noEmit` (typecheck) cubre también los tests; el build los excluye.
+  // `tsc --noEmit` (typecheck) also covers the tests; the build excludes them.
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,10 +1,10 @@
-// Constantes compartidas con la API: duplicarlas daría 400 si la UI y la API se desfasan.
+// Constants shared with the API: duplicating them would cause 400s if the UI and the API drift.
 
-/** Las 10 divisas más negociadas (turnover FX, BIS); EUR primero (por defecto). */
+/** The 10 most traded currencies (FX turnover, BIS); EUR first (the default). */
 export const SUPPORTED_CURRENCIES = ["EUR", "USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY", "HKD", "SGD"] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
-/** Tope de escenarios por usuario; la API lo aplica y la UI solo avisa. */
+/** Per-user scenario cap; the API enforces it and the UI only warns. */
 export const MAX_SCENARIOS_PER_USER = 50;
 
 export const SCENARIO_NAME_MAX_LENGTH = 100;
@@ -13,14 +13,14 @@ export const MIN_INSTRUMENT_QUERY_LENGTH = 2;
 
 export const SESSION_COOKIE = "sextante_session";
 
-// Forma de las respuestas de la API tal y como viajan por JSON (fechas como ISO string). La API las
-// declara como tipo de retorno y el frontend las consume con `useApiQuery<T>`: si una cambia, falla
-// el typecheck en los dos lados.
+// Shape of the API responses as they travel over JSON (dates as ISO strings). The API declares them
+// as return types and the frontend consumes them with `useApiQuery<T>`: if one changes, the
+// typecheck fails on both sides.
 
 /** `GET /api/auth/me`. */
 export type SessionUser = { id: string; email: string };
 
-/** Escenario guardado de calculadora (`/api/scenarios`). */
+/** Saved calculator scenario (`/api/scenarios`). */
 export type SavedScenarioResponse = {
   id: string;
   slug: string;
@@ -30,7 +30,7 @@ export type SavedScenarioResponse = {
   updatedAt: string;
 };
 
-/** Aplicación OAuth/MCP conectada (`GET /api/account/connections`). */
+/** Connected OAuth/MCP application (`GET /api/account/connections`). */
 export type ConnectedApp = {
   clientId: string;
   clientName: string | null;
@@ -43,15 +43,15 @@ export type ConnectedApp = {
 export const NOTIFICATION_LOCALES = ["es", "en"] as const;
 export type NotificationLocale = (typeof NOTIFICATION_LOCALES)[number];
 
-/** Preferencias de avisos por email (`/api/account/notifications`). */
+/** Email notification preferences (`/api/account/notifications`). */
 export type NotificationSettingsResponse = {
   fireAlertsEnabled: boolean;
   locale: NotificationLocale;
-  /** Último hito avisado (25/50/75/100), o null si aún no hay referencia. */
+  /** Last milestone notified (25/50/75/100), or null if there is no reference yet. */
   lastFireMilestone: number | null;
   /**
-   * Objetivo que vigilan las alertas: el escenario FIRE actualizado más recientemente. `null`
-   * si el usuario no ha guardado ninguno (las alertas no pueden avisar de nada).
+   * Goal the alerts watch: the most recently updated FIRE scenario. `null` if the user has not
+   * saved any (the alerts have nothing to notify about).
    */
   goal: { name: string; updatedAt: string } | null;
 };

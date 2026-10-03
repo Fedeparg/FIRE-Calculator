@@ -1,13 +1,13 @@
-// Conversión de divisas. Core puro. Compartido por el frontend y la API (valoración diaria, tool
-// MCP `get_portfolio_valuation`) para que den el mismo número. La agregación de la cartera vive en
+// Currency conversion. Pure core. Shared by the frontend and the API (daily valuation, MCP tool
+// `get_portfolio_valuation`) so they produce the same number. Portfolio aggregation lives in
 // `portfolio/aggregate.ts`.
 
-/** Divisa pivote de las tasas: `rates[CCY]` son USD por unidad de CCY. */
+/** Pivot currency of the rates: `rates[CCY]` is USD per unit of CCY. */
 const FX_PIVOT = "USD";
 
 /**
- * USD por unidad de `currency`, o `null` si no hay una tasa utilizable (falta, no es finita o es 0).
- * El pivote vale siempre 1, venga o no en `rates`.
+ * USD per unit of `currency`, or `null` if there is no usable rate (missing, non-finite or 0).
+ * The pivot is always 1, whether or not it comes in `rates`.
  */
 function usableRate(currency: string, rates: Readonly<Record<string, number | undefined>>): number | null {
   const rate = currency === FX_PIVOT ? 1 : rates[currency];
@@ -15,16 +15,16 @@ function usableRate(currency: string, rates: Readonly<Record<string, number | un
 }
 
 /**
- * ¿Se puede convertir de `from` a `to` con estas tasas? Lo mismo que `convertCurrency(…) !== null`,
- * sin tener que convertir un importe de prueba.
+ * Can `from` be converted to `to` with these rates? Same as `convertCurrency(…) !== null`, without
+ * having to convert a dummy amount.
  */
 export function canConvert(from: string, to: string, rates: Readonly<Record<string, number>>): boolean {
   return from === to || (usableRate(from, rates) !== null && usableRate(to, rates) !== null);
 }
 
 /**
- * Convierte `amount` de `from` a `to`. `rates[CCY]` = USD por unidad (USD = 1, implícito). Devuelve
- * `null` si falta una tasa: es preferible excluir la posición del total a inventar un número.
+ * Converts `amount` from `from` to `to`. `rates[CCY]` = USD per unit (USD = 1, implicit). Returns
+ * `null` if a rate is missing: leaving the position out of the total beats making up a number.
  */
 export function convertCurrency(
   amount: number,
