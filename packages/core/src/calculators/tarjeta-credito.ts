@@ -18,8 +18,6 @@ export interface CreditCardInput {
 }
 
 export interface CreditCardPoint {
-  // firma de índice numérica: consumible como dato de gráfica
-  [key: string]: number;
   month: number;
   balance: number;
   interestPaid: number;

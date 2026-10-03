@@ -1,9 +1,7 @@
 /** Margen del dominio "fit", como fracción del valor más alto/bajo del gráfico. */
 const FIT_DOMAIN_PADDING_RATIO = 0.01;
 
-type Row = Readonly<Record<string, number | string | boolean>>;
-
-const toNumber = (value: number | string | boolean | undefined): number => (value === undefined ? 0 : Number(value));
+const toNumber = (value: unknown): number => (value === undefined ? 0 : Number(value));
 
 /**
  * Dominio del eje de valores ajustado al rango real de los datos, con un 1 % de margen arriba y
@@ -15,10 +13,10 @@ const toNumber = (value: number | string | boolean | undefined): number => (valu
  * Se calcula a mano porque Recharts fuerza el mínimo de un `Area` apilado a 0 (su baseline)
  * antes de que una función de `domain` pueda tocarlo.
  */
-export function fitYDomain(
-  data: readonly Row[],
-  stackKeys: readonly string[],
-  overlayKeys: readonly string[],
+export function fitYDomain<T extends object>(
+  data: readonly T[],
+  stackKeys: readonly (keyof T & string)[],
+  overlayKeys: readonly (keyof T & string)[],
 ): [number, number] | undefined {
   let min = Infinity;
   let max = -Infinity;

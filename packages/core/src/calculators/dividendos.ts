@@ -14,7 +14,6 @@ export interface DividendInput {
 }
 
 export interface DividendYearPoint {
-  [key: string]: number;
   year: number;
   grossAnnual: number;
   netAnnual: number;

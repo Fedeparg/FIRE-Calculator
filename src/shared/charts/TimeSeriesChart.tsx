@@ -21,8 +21,14 @@ import ChartTooltip from "./ChartTooltip";
 import { fitYDomain } from "./fit-y-domain";
 import { useRangeSelection } from "./use-range-selection";
 
-export type SeriesDef = {
-  key: string;
+/**
+ * Clave de una fila de datos `T`: las series, las bandas y los ejes se refieren a columnas que
+ * existen de verdad en el tipo de punto (una errata como `"valu"` no compila).
+ */
+type DataKey<T> = keyof T & string;
+
+export type SeriesDef<T> = {
+  key: DataKey<T>;
   name: string;
   color: string;
   /** Solo para `lines`: trazo discontinuo (por defecto) o continuo. */
@@ -33,29 +39,29 @@ export type SeriesDef = {
  * Banda entre dos series (p. ej. los percentiles 10 y 90 de una simulación). Se pinta como un
  * área rellena entre `lowKey` y `highKey`, sin apilar sobre el resto.
  */
-export type BandDef = { lowKey: string; highKey: string; name: string; color: string };
+export type BandDef<T> = { lowKey: DataKey<T>; highKey: DataKey<T>; name: string; color: string };
 
 /**
- * Una fila de datos. El eje X admite texto (una fecha ISO) además de número; las series
- * siempre son numéricas, pero la firma de índice no puede distinguirlas. `boolean` se admite
- * además para columnas extra de la tabla accesible (p.ej. "estimado") que no se pintan en el
- * propio gráfico.
+ * Fila de datos genérica, para quien construye sus puntos al vuelo (la cartera). El eje X admite
+ * texto (una fecha ISO) además de número; `boolean` se admite para columnas extra de la tabla
+ * accesible (p. ej. "estimado") que no se pintan en el propio gráfico. Las calculadoras pasan sus
+ * tipos de punto de core, sin firma de índice.
  */
 export type DataRow = Record<string, number | string | boolean>;
 
-type Props = {
+type Props<T extends object> = {
   title: string;
-  data: DataRow[];
-  xKey: string;
+  data: readonly T[];
+  xKey: DataKey<T>;
   /** Series apiladas (p.ej. aportado + intereses). */
-  stack: SeriesDef[];
+  stack: readonly SeriesDef<T>[];
   /** Líneas superpuestas opcionales (p.ej. objetivo FIRE). */
-  lines?: SeriesDef[];
+  lines?: readonly SeriesDef<T>[];
   /** Bandas opcionales entre dos series (p.ej. un abanico de percentiles). */
-  bands?: BandDef[];
-  valueKey: string;
-  contributedKey?: string;
-  interestKey?: string;
+  bands?: readonly BandDef<T>[];
+  valueKey: DataKey<T>;
+  contributedKey?: DataKey<T>;
+  interestKey?: DataKey<T>;
   /** Nombre del eje X (cabecera de la tabla accesible y prefijo del tooltip). Por defecto, "Año". */
   xLabel?: string;
   height?: number;
@@ -93,12 +99,12 @@ type Props = {
    * significa un tramo, solo lo pinta — para que cualquier calculadora lo reutilice; hoy lo
    * usa la cartera para marcar los puntos `estimated` del histórico.
    */
-  shadedRanges?: { from: string | number; to: string | number; label?: string }[];
+  shadedRanges?: readonly { from: string | number; to: string | number; label?: string }[];
   /**
    * Columnas extra de la tabla accesible, además del eje X y las series (`stack`/`lines`).
    * Igual que `shadedRanges`, mantiene el componente ajeno al significado del dato.
    */
-  extraColumns?: ChartTableColumn<DataRow>[];
+  extraColumns?: readonly ChartTableColumn<T>[];
   /**
    * Dominio del eje de valores. `"zero"` (por defecto) es el de siempre: arranca en 0, que es
    * lo correcto para una proyección que crece desde cero. `"fit"` ajusta el eje al rango real
@@ -122,20 +128,30 @@ type Props = {
 
 // Valores por defecto de las props opcionales como constantes de módulo: un `= []` en la firma
 // crea un array nuevo en cada render, y los `useMemo` que dependen de él se recalcularían siempre.
-const NO_SERIES: SeriesDef[] = [];
-const NO_BANDS: BandDef[] = [];
-const NO_RANGES: NonNullable<Props["shadedRanges"]> = [];
-const NO_COLUMNS: ChartTableColumn<DataRow>[] = [];
+// Un array vacío y congelado vale para cualquier `T`.
+const NO_ITEMS: readonly never[] = Object.freeze([]);
 
-const toNum = (v: string | number | boolean | undefined) => (v === undefined ? 0 : Number(v));
+/**
+ * Tipo de fila con el que se instancian los componentes de Recharts que reciben una clave como
+ * texto. Su `TypedDataKey<T>` es un tipo condicional que TypeScript no puede resolver mientras `T`
+ * sea genérico; la clave ya está comprobada contra `T` en las props de este componente.
+ */
+type RechartsRow = Record<string, unknown>;
 
-export default function TimeSeriesChart({
+const toNum = (v: unknown) => (v === undefined ? 0 : Number(v));
+
+/** Valor del eje X de una fila: número (años) o texto (fecha ISO). */
+function xValueOf(value: unknown): string | number {
+  return typeof value === "number" || typeof value === "string" ? value : String(value);
+}
+
+export default function TimeSeriesChart<T extends object>({
   title,
   data,
   xKey,
   stack,
-  lines = NO_SERIES,
-  bands = NO_BANDS,
+  lines = NO_ITEMS,
+  bands = NO_ITEMS,
   valueKey,
   contributedKey,
   interestKey,
@@ -147,13 +163,13 @@ export default function TimeSeriesChart({
   showTotal = true,
   xMinTickGap = 5,
   xInterval = "preserveEnd",
-  shadedRanges = NO_RANGES,
-  extraColumns = NO_COLUMNS,
+  shadedRanges = NO_ITEMS,
+  extraColumns = NO_ITEMS,
   yDomain = "zero",
   hideTitle = false,
   showLegend = true,
   yAxis = "always",
-}: Props) {
+}: Props<T>) {
   const isSmUp = useMediaQuery("(min-width: 640px)", true);
   const showYAxis = yAxis === "always" || isSmUp;
   const { formatCompactCurrency, formatCompactEUR, formatCurrency, formatEUR, formatNumber } = useFormat();
@@ -187,8 +203,8 @@ export default function TimeSeriesChart({
 
   const totalKeys = stack.map((s) => s.key);
 
-  function pointAt(x: number): DataRow | undefined {
-    return data.find((d) => d[xKey] === x);
+  function pointAt(x: number): T | undefined {
+    return data.find((d) => xValueOf(d[xKey]) === x);
   }
 
   const summary = (() => {
@@ -207,15 +223,15 @@ export default function TimeSeriesChart({
     };
   })();
 
-  const tableColumns: ChartTableColumn<DataRow>[] = [
-    { label: axisX, value: (row) => formatX(row[xKey] as string | number) },
+  const tableColumns: ChartTableColumn<T>[] = [
+    { label: axisX, value: (row) => formatX(xValueOf(row[xKey])) },
     ...[...stack, ...lines].map((series) => ({
       label: series.name,
-      value: (row: DataRow) => formatValue(Number(row[series.key])),
+      value: (row: T) => formatValue(Number(row[series.key])),
     })),
     ...bands.map((band) => ({
       label: band.name,
-      value: (row: DataRow) => `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
+      value: (row: T) => `${formatValue(Number(row[band.lowKey]))} – ${formatValue(Number(row[band.highKey]))}`,
     })),
     ...extraColumns,
   ];
@@ -264,7 +280,7 @@ export default function TimeSeriesChart({
             {...selectionHandlers}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-            <XAxis
+            <XAxis<RechartsRow>
               dataKey={xKey}
               // En el modo compacto tampoco hay eje X: quien lo pide enseña el rango de fechas
               // encima, y así la gráfica ocupa todo el ancho sin etiquetas cortadas.
@@ -300,7 +316,7 @@ export default function TimeSeriesChart({
             />
             {showLegend && <Legend />}
             {stack.map((s) => (
-              <Area
+              <Area<RechartsRow>
                 key={s.key}
                 type="monotone"
                 dataKey={s.key}
@@ -317,7 +333,7 @@ export default function TimeSeriesChart({
                 key={`${b.lowKey}-${b.highKey}`}
                 type="monotone"
                 // Recharts pinta un área de rango cuando `dataKey` devuelve [mínimo, máximo].
-                dataKey={(row: DataRow) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
+                dataKey={(row: T) => [toNum(row[b.lowKey]), toNum(row[b.highKey])]}
                 name={b.name}
                 stroke="none"
                 fill={b.color}

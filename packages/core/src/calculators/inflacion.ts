@@ -12,8 +12,6 @@ export interface InflationInput {
 }
 
 export interface InflationPoint {
-  // firma de índice numérica: consumible como dato genérico de gráfica
-  [key: string]: number;
   year: number;
   nominalNeeded: number;
   /** Poder adquisitivo del importe parado. */

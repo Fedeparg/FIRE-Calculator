@@ -57,7 +57,6 @@ export interface MonteCarloPoint {
   p90: number;
   deterministic: number;
   target: number;
-  [key: string]: number;
 }
 
 export interface MonteCarloResult {

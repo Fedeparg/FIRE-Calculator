@@ -47,8 +47,6 @@ export interface ProjectionInput {
 }
 
 export interface ProjectionPoint {
-  // firma de índice: permite usar los puntos como datos de gráfica (Record<string, number>) sin casts
-  [key: string]: number;
   year: number;
   contributed: number;
   interest: number;
