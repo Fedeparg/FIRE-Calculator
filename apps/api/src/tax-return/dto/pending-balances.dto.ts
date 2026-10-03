@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
-import { amountSchema } from '../../positions/dto/create-position.dto.js';
+import { amountSchema } from '../../common/dto/primitives.js';
 
 /** Un saldo negativo pendiente de un ejercicio que Sextante no calcula. */
 export const pendingBalanceSchema = z.strictObject({

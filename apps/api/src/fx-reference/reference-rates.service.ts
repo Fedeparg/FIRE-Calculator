@@ -10,12 +10,9 @@ import {
 import { addDays, todayUtc } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { fxReferenceCoverage, fxReferenceRates } from '../db/schema.js';
+import { ECB_FIRST_DATE } from './constants.js';
 import { REFERENCE_RATES_PROVIDER, type EcbRate, type ReferenceRatesProvider } from './ecb-reference-rates.provider.js';
 
-/** Primera publicación del BCE (el euro nace el 1 de enero de 1999). */
-export const ECB_FIRST_DATE = '1999-01-04';
-/** Tope de divisas por petición: una cartera real tiene unas pocas. */
-export const MAX_REFERENCE_CURRENCIES = 10;
 /** Cada cuánto se vuelve a mirar el final de la serie, como mucho. */
 const TAIL_REFRESH_MS = 6 * 3_600_000;
 

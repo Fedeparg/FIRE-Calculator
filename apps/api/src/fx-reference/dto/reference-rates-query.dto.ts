@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { ECB_FIRST_DATE, MAX_REFERENCE_CURRENCIES } from '../reference-rates.service.js';
+import { ECB_FIRST_DATE, MAX_REFERENCE_CURRENCIES } from '../constants.js';
 
 /**
  * Query de GET /api/fx/reference-rates. `currencies` es una lista separada por comas de códigos

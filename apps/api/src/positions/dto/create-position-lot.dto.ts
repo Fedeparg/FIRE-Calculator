@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { PositionLotKind } from '../../db/schema.js';
-import { amountSchema, quantitySchema, trimmedText } from './create-position.dto.js';
+import { amountSchema, quantitySchema, trimmedText } from '../../common/dto/primitives.js';
 
 const POSITION_LOT_KINDS = ['buy', 'sell'] as const satisfies readonly PositionLotKind[];
 
