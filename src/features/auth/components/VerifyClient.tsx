@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { apiFetch } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { safeReturnTo } from "@/shared/navigation/safe-return-to";
 
 /** Canjea el token del magic link y redirige a la cartera, o muestra el error. */
 export default function VerifyClient() {
@@ -25,12 +26,13 @@ export default function VerifyClient() {
     void (async () => {
       const result = await runVerify(() => apiFetch("/api/auth/verify", { method: "POST", body: { token } }));
       if (result.ok) {
-        // Si veníamos de un flujo OAuth, retoma ahí (ruta relativa validada);
-        // si no, a la cartera. `window.location` para salir a /authorize (no es
-        // ruta localizada de next-intl).
-        const returnTo = window.localStorage.getItem("sextante_return_to");
+        // Si veníamos de un flujo OAuth, retoma ahí (se revalida al leer: localStorage lo
+        // puede escribir cualquier script del origen); si no, a la cartera. `window.location`
+        // para salir a /authorize (no es ruta localizada de next-intl).
+        const stored = window.localStorage.getItem("sextante_return_to");
         window.localStorage.removeItem("sextante_return_to");
-        if (returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")) {
+        const returnTo = stored ? safeReturnTo(stored, window.location.origin) : null;
+        if (returnTo) {
           window.location.assign(returnTo);
         } else {
           router.replace("/portfolio");
