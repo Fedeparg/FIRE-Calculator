@@ -17,7 +17,9 @@ import { flattenMessages, LOCALES, loadMessages, type Locale } from "./messages-
  * parser de next-intl en un test de core.
  */
 function icuArguments(message: string): string[] {
-  const names = [...message.matchAll(/\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]/g)].map((m) => m[1]);
+  const names = [...message.matchAll(/\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]/g)].flatMap((m) =>
+    m[1] === undefined ? [] : [m[1]],
+  );
   return [...new Set(names)].sort();
 }
 

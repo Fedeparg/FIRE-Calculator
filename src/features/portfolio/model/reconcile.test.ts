@@ -43,7 +43,7 @@ describe("reconcileRecord", () => {
 
     expect(next).not.toBe(prev);
     expect(next.X).toBe(p);
-    expect(next.Y.close).toBe(6);
+    expect(next.Y?.close).toBe(6);
     expect(reconcileRecord(prev, { X: { ...p } })).toEqual({ X: p });
     expect(reconcileRecord({ X: p }, { X: { ...p }, Z: { ...p } })).toHaveProperty("Z");
   });

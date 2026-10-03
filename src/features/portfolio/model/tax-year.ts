@@ -1,3 +1,4 @@
+import { firstItem } from "@sextante/core/arrays";
 // Qué ejercicios ofrece el informe fiscal y cuál abre por defecto. Puro, testeable en node.
 
 /**
@@ -12,9 +13,9 @@ export function taxYears(withData: Iterable<number>, currentYear: number): numbe
 
 /**
  * Ejercicio que abre el informe: el que se declara ahora (el año pasado) si tiene datos, porque
- * el actual aún no ha terminado; si no, el más reciente.
+ * el actual aún no ha terminado; si no, el más reciente. `years` nunca está vacía (ver `taxYears`).
  */
 export function defaultTaxYear(years: readonly number[], currentYear: number): number {
   const lastClosed = currentYear - 1;
-  return years.includes(lastClosed) ? lastClosed : years[0];
+  return years.includes(lastClosed) ? lastClosed : firstItem(years);
 }

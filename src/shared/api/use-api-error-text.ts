@@ -31,7 +31,8 @@ export function useApiErrorText(t: FeatureTranslator): (key: string) => string {
   const tCommon = useTranslations("common");
   return useCallback(
     (key: string) => {
-      if (Object.hasOwn(COMMON_ERROR_MESSAGES, key)) return tCommon(COMMON_ERROR_MESSAGES[key]);
+      const common = Object.hasOwn(COMMON_ERROR_MESSAGES, key) ? COMMON_ERROR_MESSAGES[key] : undefined;
+      if (common !== undefined) return tCommon(common);
       if (key === "errorGeneric" && !t.has(key)) return tCommon("apiError.generic");
       return t(key);
     },

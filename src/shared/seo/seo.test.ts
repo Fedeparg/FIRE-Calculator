@@ -1,3 +1,4 @@
+import { firstItem } from "@sextante/core/arrays";
 import { describe, expect, it } from "vitest";
 
 import { buildMetadata, localizedPath, ogImagePath, privateMetadata } from "./seo";
@@ -40,7 +41,7 @@ describe("buildMetadata", () => {
   });
 
   it("la imagen OG identifica la tarjeta por slug y nunca lleva el título en claro", () => {
-    const url = (buildMetadata(base).twitter?.images as string[])[0];
+    const url = firstItem(buildMetadata(base).twitter?.images as string[]);
     const params = new URL(url, "http://x").searchParams;
     expect(params.get("article")).toBe("fire");
     expect(params.get("locale")).toBe("en");

@@ -1,5 +1,6 @@
 "use client";
 
+import { firstItem, itemAt } from "@sextante/core/arrays";
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -62,7 +63,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   async function handleSave() {
     if (!amounts) return;
     const result = await save.run(() =>
-      savePendingBalances(rows.map(({ originYear, kind }, i) => ({ originYear, kind, amount: amounts[i] }))),
+      savePendingBalances(rows.map(({ originYear, kind }, i) => ({ originYear, kind, amount: itemAt(amounts, i) }))),
     );
     if (!result.ok) return;
     setSaved(true);
@@ -144,7 +145,10 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
             disabled={rows.length >= 8}
             onClick={() => {
               setSaved(false);
-              setRows((current) => [...current, { key: nextKey, originYear: years[0], kind: "gains", amount: "" }]);
+              setRows((current) => [
+                ...current,
+                { key: nextKey, originYear: firstItem(years), kind: "gains", amount: "" },
+              ]);
               setNextKey((k) => k + 1);
             }}
           >

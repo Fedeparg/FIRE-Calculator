@@ -1,5 +1,6 @@
 "use client";
 
+import { itemAt } from "@sextante/core/arrays";
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -43,7 +44,7 @@ export default function FinancialHealthQuiz() {
           <SelectField
             key={q.id}
             label={t(`questions.${q.id}.label`)}
-            value={answers[i]}
+            value={itemAt(answers, i)}
             onChange={(v) => setAnswer(i, v)}
             options={FINANCIAL_HEALTH_OPTION_SCORES.map((_, oi) => ({
               value: String(oi),

@@ -204,7 +204,8 @@ export function useOptionFields<T extends string>(
   );
   const set = useCallback(
     (index: number, next: T) => {
-      if (index >= 0 && index < keys.length) setValue(keys[index], next);
+      const key = keys[index];
+      if (key !== undefined) setValue(key, next);
     },
     [setValue, keys],
   );

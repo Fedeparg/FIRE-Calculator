@@ -134,7 +134,9 @@ export default function InstrumentSearchField({
       setActiveIndex((i) => (i <= 0 ? results.length - 1 : i - 1));
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
-      pick(results[activeIndex]);
+      // Si la lista se ha acortado, el índice activo puede haber quedado fuera: no se elige nada.
+      const result = results[activeIndex];
+      if (result) pick(result);
     }
   }
 

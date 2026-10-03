@@ -253,7 +253,7 @@ const longDateFormatters = new Map<Locale, Intl.DateTimeFormat>();
  * si no es una fecha parseable, para no inventar un día.
  */
 export const formatLongDate = (iso: string, locale: Locale): string => {
-  const [y, m, d] = iso.split("-").map(Number);
+  const [y = NaN, m = NaN, d = NaN] = iso.split("-").map(Number);
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return iso;
 
   const timestamp = Date.UTC(y, m - 1, d);

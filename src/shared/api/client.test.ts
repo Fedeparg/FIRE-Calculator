@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError, apiErrorKey, apiFetch, apiJson, createApiErrorMapper } from "./client";
+import { firstItem, itemAt } from "@sextante/core/arrays";
 
 function mockFetch(impl: (path: string, init?: RequestInit) => Promise<Response> | Response) {
   const fn = vi.fn(async (path: string, init?: RequestInit) => impl(path, init));
@@ -24,7 +25,7 @@ describe("apiJson", () => {
   it("serializes the body and sets the JSON content type", async () => {
     const fn = mockFetch(() => Response.json({}));
     await apiJson("/api/x", { method: "POST", body: { n: 2 }, headers: { "X-Test": "1" } });
-    const [, init] = fn.mock.calls[0];
+    const [, init] = firstItem(fn.mock.calls);
     expect(init?.body).toBe('{"n":2}');
     expect(init?.headers).toEqual({ "Content-Type": "application/json", "X-Test": "1" });
     expect(init?.method).toBe("POST");
@@ -33,7 +34,7 @@ describe("apiJson", () => {
   it("does not add a content type without body", async () => {
     const fn = mockFetch(() => Response.json({}));
     await apiJson("/api/x");
-    expect(fn.mock.calls[0][1]?.headers).toBeUndefined();
+    expect(itemAt(fn.mock.calls, 0)[1]?.headers).toBeUndefined();
   });
 
   it("throws ApiError with status and the code of the error body", async () => {
@@ -53,7 +54,7 @@ describe("apiJson", () => {
     const fn = mockFetch(() => Response.json({}));
     const csv = new Blob(["a,b"], { type: "text/csv" });
     await apiJson("/api/x", { method: "POST", body: csv, headers: { "Content-Type": "text/csv" } });
-    const [, init] = fn.mock.calls[0];
+    const [, init] = firstItem(fn.mock.calls);
     expect(init?.body).toBe(csv);
     expect(init?.headers).toEqual({ "Content-Type": "text/csv" });
   });

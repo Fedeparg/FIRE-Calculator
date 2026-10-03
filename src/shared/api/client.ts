@@ -151,7 +151,9 @@ export function createApiErrorMapper<K extends string, F extends string>({
   return (error) => {
     if (error instanceof ApiError) {
       // `hasOwn`: un `code` como "toString" no debe encontrar el prototipo del objeto.
-      if (codes && error.code !== undefined && Object.hasOwn(codes, error.code)) return codes[error.code];
+      const byCode =
+        codes && error.code !== undefined && Object.hasOwn(codes, error.code) ? codes[error.code] : undefined;
+      if (byCode !== undefined) return byCode;
       const byStatus = statuses?.[error.status];
       if (byStatus !== undefined) return byStatus;
     }

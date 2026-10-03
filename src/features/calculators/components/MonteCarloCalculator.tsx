@@ -1,5 +1,6 @@
 "use client";
 
+import { firstItem, lastItem } from "@sextante/core/arrays";
 import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import {
@@ -24,8 +25,8 @@ type ModelKind = (typeof MODELS)[number];
 
 /** Vidas de la tabla de sensibilidad: cinco simulaciones seguidas, así que menos que la principal. */
 const SENSITIVITY_PATHS = 2000;
-const FIRST_YEAR = HISTORICAL_RETURNS[0].year;
-const LAST_YEAR = HISTORICAL_RETURNS[HISTORICAL_RETURNS.length - 1].year;
+const FIRST_YEAR = firstItem(HISTORICAL_RETURNS).year;
+const LAST_YEAR = lastItem(HISTORICAL_RETURNS).year;
 
 export default function MonteCarloCalculator() {
   const t = useTranslations("calc.simulador-montecarlo");

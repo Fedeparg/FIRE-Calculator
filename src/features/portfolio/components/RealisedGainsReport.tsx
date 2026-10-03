@@ -1,5 +1,6 @@
 "use client";
 
+import { lastItem } from "@sextante/core/arrays";
 import { useEffect, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -191,7 +192,7 @@ export default function RealisedGainsReport({
         <SavingsReturnSection result={savingsReturn} boxes={boxes} inProgress={selectedYear >= currentYear} />
       )}
 
-      <PendingBalancesForm balances={pendingBalances} firstYear={years[years.length - 1]} />
+      <PendingBalancesForm balances={pendingBalances} firstYear={lastItem(years)} />
 
       <Notice variant="info">{t("model720")}</Notice>
 

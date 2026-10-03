@@ -1,3 +1,4 @@
+import { firstItem } from "@sextante/core/arrays";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "./client";
@@ -42,7 +43,7 @@ describe("runApiQuery", () => {
 
     await runApiQuery("/api/x", undefined, new AbortController().signal, sink);
 
-    const state = states[0];
+    const state = firstItem(states);
     expect(state.status).toBe("error");
     expect(state.status === "error" && state.error).toBeInstanceOf(ApiError);
     expect(state.status === "error" && state.error.isNetwork).toBe(true);
