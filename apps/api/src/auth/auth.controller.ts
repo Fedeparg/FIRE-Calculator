@@ -51,10 +51,30 @@ export class AuthController {
     return user;
   }
 
-  /** Cierra la sesión borrando la cookie. */
+  /**
+   * Cierra la sesión: invalida el JWT en el servidor (sube la versión de sesión del usuario) y
+   * borra la cookie. Sin lo primero, quien se hubiera quedado con el JWT podría seguir usándolo
+   * hasta que caducara. Como la versión es por usuario, cierra también sus otras sesiones. Sin
+   * sesión válida solo borra la cookie (idempotente, sin 401).
+   */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  logout(@Res({ passthrough: true }) res: Response): { ok: true } {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<{ ok: true }> {
+    const user = await this.sessions.resolve(req);
+    if (user) await this.sessions.revokeAll(user.id);
+    res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
+    return { ok: true };
+  }
+
+  /** Cierra todas las sesiones abiertas del usuario, en todos sus dispositivos, incluida esta. */
+  @Post('sessions/revoke')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async revokeSessions(
+    @CurrentUser() user: SessionUser,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ ok: true }> {
+    await this.sessions.revokeAll(user.id);
     res.clearCookie(SESSION_COOKIE, { ...this.cookieOptions(), maxAge: undefined });
     return { ok: true };
   }

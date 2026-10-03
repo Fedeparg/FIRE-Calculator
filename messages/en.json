@@ -1777,6 +1777,13 @@
       "step3": "Done: ask it to analyse your portfolio. You can revoke access here at any time.",
       "howToNote": "ChatGPT also supports MCP connectors, but support is more limited depending on your plan; Claude is currently the most complete option."
     },
+    "sessions": {
+      "title": "Open sessions",
+      "description": "Sign out on every device where you have signed in, including this one. Use it if you signed in on someone else's computer or think someone may be using your account.",
+      "button": "Sign out everywhere",
+      "revoking": "Signing out…",
+      "error": "Couldn't sign out your sessions. Please try again."
+    },
     "danger": {
       "title": "Danger zone"
     },

@@ -1777,6 +1777,13 @@
       "step3": "Listo: pídele que analice tu cartera. Puedes revocar el acceso desde aquí cuando quieras.",
       "howToNote": "ChatGPT también admite conectores MCP, pero su soporte es más limitado según el plan; Claude es hoy el camino más completo."
     },
+    "sessions": {
+      "title": "Sesiones abiertas",
+      "description": "Cierra la sesión en todos los dispositivos donde hayas entrado, este incluido. Úsalo si has iniciado sesión en un equipo ajeno o crees que alguien puede estar usando tu cuenta.",
+      "button": "Cerrar todas las sesiones",
+      "revoking": "Cerrando sesiones…",
+      "error": "No se pudieron cerrar las sesiones. Inténtalo de nuevo."
+    },
     "danger": {
       "title": "Zona de peligro"
     },

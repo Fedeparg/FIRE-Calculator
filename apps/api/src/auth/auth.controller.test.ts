@@ -341,6 +341,8 @@ describe('AuthController (HTTP)', () => {
 
       expect(payload.sub).toBe(user.id);
       expect(payload.email).toBe('a@example.com');
+      // Versión de sesión del usuario al firmar (0 para un usuario recién creado).
+      expect(payload).toHaveProperty('ver', 0);
       expect(payload.exp - payload.iat).toBe(SESSION_TTL_SECONDS);
       await expect(new JwtService({ secret: 'otro-secreto' }).verifyAsync(jwt)).rejects.toThrow();
     });
@@ -433,6 +435,86 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).toMatch(/Expires=Thu, 01 Jan 1970/i);
       expect(setCookie).toMatch(/;\s*HttpOnly/i);
       expect(setCookie).toMatch(/;\s*Path=\//i);
+    });
+  });
+
+  describe('revocación de sesiones', () => {
+    /** Abre sesión por el flujo real y devuelve el JWT de la cookie. */
+    const login = async (email: string): Promise<string> => {
+      const token = await requestToken(email);
+      const res = await postJson(`${baseUrl}/verify`, { token });
+      return cookieValue(sessionSetCookie(res) ?? '');
+    };
+    const me = (jwt: string): Promise<Response> =>
+      fetch(`${baseUrl}/me`, { headers: { Cookie: `${SESSION_COOKIE}=${jwt}` } });
+    const postWithSession = (path: string, jwt: string): Promise<Response> =>
+      fetch(`${baseUrl}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE}=${jwt}` },
+        body: '{}',
+      });
+
+    it('tras cerrar sesión, el JWT anterior deja de valer aunque no haya caducado', async () => {
+      const jwt = await login('a@example.com');
+      expect((await me(jwt)).status).toBe(200);
+
+      expect((await postWithSession('logout', jwt)).status).toBe(200);
+
+      expect((await me(jwt)).status).toBe(401);
+    });
+
+    it('cerrar sesión invalida también las otras sesiones del usuario, no las de otros', async () => {
+      const laptop = await login('a@example.com');
+      const phone = await login('a@example.com');
+      const other = await login('b@example.com');
+
+      await postWithSession('logout', laptop);
+
+      expect((await me(phone)).status).toBe(401);
+      expect((await me(other)).status).toBe(200);
+    });
+
+    it('un nuevo login tras cerrar sesión funciona', async () => {
+      await postWithSession('logout', await login('a@example.com'));
+
+      expect((await me(await login('a@example.com'))).status).toBe(200);
+    });
+
+    it('POST /auth/sessions/revoke cierra todas las sesiones y borra la cookie', async () => {
+      const laptop = await login('a@example.com');
+      const phone = await login('a@example.com');
+
+      const res = await postWithSession('sessions/revoke', laptop);
+
+      expect(res.status).toBe(200);
+      expect(cookieValue(sessionSetCookie(res) ?? 'x')).toBe('');
+      expect((await me(laptop)).status).toBe(401);
+      expect((await me(phone)).status).toBe(401);
+    });
+
+    it('POST /auth/sessions/revoke exige sesión', async () => {
+      expect((await postJson(`${baseUrl}/sessions/revoke`, {})).status).toBe(401);
+    });
+
+    it('un JWT emitido antes de la versión de sesión (sin `ver`) sigue valiendo mientras no se cierre', async () => {
+      const id = await insertUser(db, 'a@example.com');
+      const legacy = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
+
+      expect((await me(legacy)).status).toBe(200);
+      await postWithSession('logout', legacy);
+      expect((await me(legacy)).status).toBe(401);
+    });
+
+    it('borrar la cuenta deja sin valor sus sesiones', async () => {
+      const jwt = await login('a@example.com');
+
+      const res = await fetch(`${baseUrl}/account`, {
+        method: 'DELETE',
+        headers: { Cookie: `${SESSION_COOKIE}=${jwt}` },
+      });
+
+      expect(res.status).toBe(204);
+      expect((await me(jwt)).status).toBe(401);
     });
   });
 

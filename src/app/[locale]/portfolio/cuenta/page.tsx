@@ -4,6 +4,7 @@ import { routing } from "@/i18n/routing";
 import { getSessionUser } from "@/shared/api/session";
 import { Link } from "@/i18n/navigation";
 import AccountDangerZone from "@/features/account/components/AccountDangerZone";
+import AccountSessions from "@/features/account/components/AccountSessions";
 import ConnectedApps from "@/features/account/components/ConnectedApps";
 import NotificationSettings from "@/features/account/components/NotificationSettings";
 
@@ -33,6 +34,7 @@ export default async function AccountPage({ params }: Props) {
       </div>
       <NotificationSettings />
       <ConnectedApps />
+      <AccountSessions />
       <AccountDangerZone email={user.email} />
     </div>
   );

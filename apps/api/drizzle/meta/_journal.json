@@ -197,6 +197,13 @@
       "when": 1790995645003,
       "tag": "0027_check_closed_unions_not_valid",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790997332621,
+      "tag": "0028_users_session_version",
+      "breakpoints": true
     }
   ]
 }

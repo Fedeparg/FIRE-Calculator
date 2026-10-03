@@ -49,6 +49,9 @@ function oneOf(column: AnyPgColumn, values: readonly string[]) {
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
+  // Versión de sesión: va en el JWT (`ver`) y subirla invalida todos los JWT ya emitidos
+  // (cerrar sesión, "cerrar todas las sesiones"). Ver `SessionService`.
+  sessionVersion: integer('session_version').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
