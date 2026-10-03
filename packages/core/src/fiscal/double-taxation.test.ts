@@ -24,10 +24,9 @@ describe("computeDoubleTaxationDeduction", () => {
   });
 
   it("el tope del convenio va por cobro: el exceso de uno no se compensa con el hueco de otro", () => {
-    // Fija el comportamiento actual (pregunta abierta para el asesor, hallazgo CO2 de la auditoría):
-    // dos cobros de EE. UU. (convenio 15 %), uno retenido al 30 % y otro sin retención. Agregados,
+    // Dos cobros de EE. UU. (convenio 15 %), uno retenido al 30 % y otro sin retención. Agregados,
     // 300 € cabrían en el 15 % de 2.000 €; por cobro, solo se acreditan 150 € y 150 € se reclaman en
-    // origen. El límite del art. 80 se aplica después sobre TODO el íntegro extranjero.
+    // origen.
     const r = computeDoubleTaxationDeduction(
       [
         { country: "US", gross: 1000, withholdingOrigin: 300 },
@@ -43,6 +42,25 @@ describe("computeDoubleTaxationDeduction", () => {
     });
     expect(r.limit).toBe(380);
     expect(r.deduction).toBe(150);
+  });
+
+  it("el límite del tipo medio va por país: la holgura de uno no cubre el exceso de otro", () => {
+    // Al 10 %: EE. UU. acredita 150 € con un límite de 100 €; Irlanda, nada con un límite de 100 €.
+    // Agregado saldrían 150 € (límite 200 €); país a país, 100 €.
+    const r = computeDoubleTaxationDeduction(
+      [
+        { country: "US", gross: 1000, withholdingOrigin: 150 },
+        { country: "IE", gross: 1000, withholdingOrigin: 0 },
+      ],
+      10,
+    );
+    expect(r.countries.map((c) => [c.country, c.limit, c.deduction])).toEqual([
+      ["IE", 100, 0],
+      ["US", 100, 100],
+    ]);
+    expect(r.limit).toBe(200);
+    expect(r.deduction).toBe(100);
+    expect(r.limitedByAverageRate).toBe(true);
   });
 
   it("el tipo medio efectivo limita la deducción", () => {

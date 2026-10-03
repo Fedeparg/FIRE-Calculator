@@ -406,8 +406,12 @@ Deducción por doble imposición internacional (art. 80 LIRPF) para dividendos d
 extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,
 `excess_withholding`) con país e importe.
 
-- **Qué modela**: deducción total = mín(a) impuesto satisfecho en el extranjero, b) tipo
-  medio efectivo × renta gravada en el extranjero), art. 80.1. Por país, lo
+- **Qué modela**: deducción = mín(a) impuesto satisfecho en el extranjero, b) tipo
+  medio efectivo × renta gravada en el extranjero), art. 80.1, **país a país** y sumada.
+  La ley no dice si el límite b) va por país o en conjunto; el art. 80.1.a) habla del impuesto
+  «sobre dichos rendimientos» (renta a renta, como la DGT en V2393-25) y nada autoriza a compensar
+  el exceso de un país con la holgura de otro. Agregado daría igual o más: el criterio por país
+  es el prudente (confianza media). Por país, lo
   acreditable es mín(retención, tipo del convenio × íntegro); la retención por encima
   del convenio se devuelve como `excessReclaimable` (se reclama en origen, no se
   deduce en España). El tipo medio se redondea a dos decimales (art. 80.2).

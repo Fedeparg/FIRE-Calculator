@@ -48,6 +48,10 @@ export interface CountryDeduction {
   readonly creditable: number;
   /** Retención por encima del convenio, reclamable al fisco del país de origen. */
   readonly excessReclaimable: number;
+  /** Límite b) del art. 80.1 para este país: tipo medio efectivo × su íntegro. */
+  readonly limit: number;
+  /** Deducción del país: mín(acreditable, límite). */
+  readonly deduction: number;
 }
 
 export interface DoubleTaxationResult {
@@ -55,10 +59,11 @@ export interface DoubleTaxationResult {
   readonly creditableTotal: number;
   /** Tipo medio efectivo aplicado, en % y con dos decimales (art. 80.2 LIRPF). */
   readonly averageRatePct: number;
-  /** Límite b) del art. 80.1: tipo medio efectivo × íntegro extranjero. */
+  /** Suma de los límites b) del art. 80.1 de cada país. */
   readonly limit: number;
-  /** Deducción total: mín(acreditable total, límite). */
+  /** Deducción total: suma de las de cada país. */
   readonly deduction: number;
+  /** El tipo medio recorta lo acreditable de algún país. */
   readonly limitedByAverageRate: boolean;
   readonly warnings: readonly DoubleTaxationWarning[];
 }
@@ -79,12 +84,21 @@ interface Acc {
  * Decisión de prudencia: la deducción a) se acota al tipo del convenio (lo demás se debe
  * reclamar en origen, no es impuesto «efectivamente debido»). Sin tipo confirmado en
  * `TREATY_DIVIDEND_RATES` no se deduce nada y se avisa (`no_treaty_rate`); con retención
- * desconocida tampoco (`origin_unknown`). El límite se calcula sobre todo el íntegro extranjero.
+ * desconocida tampoco (`origin_unknown`).
+ *
+ * El límite b) se aplica país a país y se suman las deducciones: el art. 80.1.a) habla del
+ * impuesto satisfecho «sobre dichos rendimientos», renta a renta (también la DGT, V2393-25), y nada
+ * autoriza a compensar el exceso de un país caro con la holgura de otro. Agregarlo todo daría una
+ * deducción igual o mayor; el criterio por país es el prudente. Ver ./README.md.
  */
 export function computeDoubleTaxationDeduction(
   incomes: readonly ForeignIncome[],
   averageRatePct: number | null,
 ): DoubleTaxationResult {
+  const rate =
+    averageRatePct !== null && Number.isFinite(averageRatePct)
+      ? Math.max(0, Math.round(averageRatePct * 100) / 100)
+      : 0;
   const byCountry = new Map<string, Acc>();
 
   for (const income of incomes) {
@@ -121,6 +135,7 @@ export function computeDoubleTaxationDeduction(
   const countries: CountryDeduction[] = [];
   const warnings: DoubleTaxationWarning[] = [];
   for (const [country, acc] of [...byCountry.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const limit = (rate / 100) * acc.gross;
     countries.push({
       country,
       gross: acc.gross,
@@ -129,6 +144,8 @@ export function computeDoubleTaxationDeduction(
       treatyRatePct: TREATY_DIVIDEND_RATES[country] ?? null,
       creditable: acc.creditable,
       excessReclaimable: acc.excess,
+      limit,
+      deduction: Math.min(acc.creditable, limit),
     });
     if (acc.unknownGross > 0) warnings.push({ code: "origin_unknown", country, amount: acc.unknownGross });
     if (acc.noTreatyWithholding > 0)
@@ -137,20 +154,13 @@ export function computeDoubleTaxationDeduction(
   }
 
   const creditableTotal = countries.reduce((s, c) => s + c.creditable, 0);
-  const grossTotal = countries.reduce((s, c) => s + c.gross, 0);
-  const rate =
-    averageRatePct !== null && Number.isFinite(averageRatePct)
-      ? Math.max(0, Math.round(averageRatePct * 100) / 100)
-      : 0;
-  const limit = (rate / 100) * grossTotal;
-  const deduction = Math.min(creditableTotal, limit);
   return {
     countries,
     creditableTotal,
     averageRatePct: rate,
-    limit,
-    deduction,
-    limitedByAverageRate: limit < creditableTotal,
+    limit: countries.reduce((s, c) => s + c.limit, 0),
+    deduction: countries.reduce((s, c) => s + c.deduction, 0),
+    limitedByAverageRate: countries.some((c) => c.limit < c.creditable),
     warnings,
   };
 }
