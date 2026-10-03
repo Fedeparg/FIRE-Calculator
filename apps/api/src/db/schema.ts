@@ -49,7 +49,11 @@ export const loginTokens = pgTable(
     consumedAt: timestamp('consumed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index('login_tokens_email_created_at_idx').on(table.email, table.createdAt)],
+  (table) => [
+    index('login_tokens_email_created_at_idx').on(table.email, table.createdAt),
+    // La poda horaria del reaper borra por antigüedad: sin él, un seq scan cada hora.
+    index('login_tokens_created_at_idx').on(table.createdAt),
+  ],
 );
 
 /**
@@ -85,8 +89,8 @@ export const positions = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
+  // Sin índice propio de `user_id`: el único `(user_id, ticker, …)` ya sirve a las búsquedas por usuario.
   (table) => [
-    index('positions_user_id_idx').on(table.userId),
     uniqueIndex('positions_user_ticker_broker_idx').on(
       table.userId,
       table.ticker,
@@ -132,14 +136,14 @@ export const positionLots = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => [
-    index('position_lots_position_id_idx').on(table.positionId),
+    // El orden canónico de los lotes de una posición (`compareLots`): lectura ya ordenada por índice.
+    index('position_lots_position_order_idx').on(table.positionId, table.tradedAt, table.createdAt, table.id),
     // Único por usuario: dos usuarios pueden importar el mismo id sin colisionar, y un id no
     // puede acabar en dos posiciones del mismo usuario. Parcial: los manuales (NULL) no entran.
     uniqueIndex('position_lots_user_external_id_idx')
       .on(table.userId, table.externalId)
       .where(sql`${table.externalId} is not null`),
     index('position_lots_user_id_idx').on(table.userId),
-    index('position_lots_traded_at_idx').on(table.tradedAt),
   ],
 );
 
@@ -287,10 +291,8 @@ export const savedScenarios = pgTable(
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  (table) => [
-    index('saved_scenarios_user_id_idx').on(table.userId),
-    index('saved_scenarios_user_slug_idx').on(table.userId, table.slug),
-  ],
+  // `(user_id, slug)` sirve también a las búsquedas solo por usuario.
+  (table) => [index('saved_scenarios_user_slug_idx').on(table.userId, table.slug)],
 );
 
 export type SavedScenario = typeof savedScenarios.$inferSelect;
@@ -445,21 +447,26 @@ export const oauthGrants = pgTable(
  * cambió entre `/authorize` y `/token`. El SDK valida el `code_verifier`; nosotros lo demás y
  * el single-use atómico (`UPDATE … WHERE consumedAt IS NULL … RETURNING`).
  */
-export const oauthAuthCodes = pgTable('oauth_auth_codes', {
-  codeHash: text('code_hash').primaryKey(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  clientId: text('client_id').notNull(),
-  scopes: jsonb('scopes').$type<string[]>().notNull(),
-  codeChallenge: text('code_challenge').notNull(),
-  redirectUri: text('redirect_uri').notNull(),
-  // URI canónico del recurso (RFC 8707) pedido en `/authorize`; se propaga al token.
-  resource: text('resource'),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  consumedAt: timestamp('consumed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const oauthAuthCodes = pgTable(
+  'oauth_auth_codes',
+  {
+    codeHash: text('code_hash').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    clientId: text('client_id').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull(),
+    codeChallenge: text('code_challenge').notNull(),
+    redirectUri: text('redirect_uri').notNull(),
+    // URI canónico del recurso (RFC 8707) pedido en `/authorize`; se propaga al token.
+    resource: text('resource'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  // La poda horaria del reaper borra los caducados.
+  (table) => [index('oauth_auth_codes_expires_at_idx').on(table.expiresAt)],
+);
 
 /**
  * Access y refresh tokens, solo hasheados. `verifyAccessToken` resuelve el Bearer a `userId` y
@@ -488,6 +495,8 @@ export const oauthTokens = pgTable(
   (table) => [
     index('oauth_tokens_user_id_idx').on(table.userId),
     index('oauth_tokens_user_client_idx').on(table.userId, table.clientId),
+    // La poda horaria del reaper borra los caducados.
+    index('oauth_tokens_expires_at_idx').on(table.expiresAt),
   ],
 );
 

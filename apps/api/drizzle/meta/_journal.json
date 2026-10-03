@@ -183,6 +183,13 @@
       "when": 1790991348341,
       "tag": "0025_login_tokens_email_index",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790995450394,
+      "tag": "0026_prune_and_cleanup_indexes",
+      "breakpoints": true
     }
   ]
 }
