@@ -2,41 +2,41 @@ import { describe, expect, it } from "vitest";
 import { computeDividends } from "./dividendos.js";
 
 describe("computeDividends", () => {
-  it("calcula dividendo bruto, retención (19%) y neto", () => {
+  it("computes gross dividend, withholding (19%) and net", () => {
     const r = computeDividends({ shares: 100, dividendPerShare: 2 });
     expect(r.gross).toBe(200);
     expect(r.withheld).toBeCloseTo(38, 6); // 200 * 0.19
     expect(r.net).toBeCloseTo(162, 6);
   });
 
-  it("calcula la rentabilidad por dividendo si se da el precio", () => {
+  it("computes the dividend yield when the price is given", () => {
     const r = computeDividends({ shares: 100, dividendPerShare: 2, sharePrice: 50 });
     expect(r.grossYield).toBeCloseTo(4, 6); // 200 / 5000
     expect(r.netYield).toBeCloseTo(3.24, 6); // 162 / 5000
   });
 
-  it("devuelve yield null sin precio", () => {
+  it("returns a null yield without a price", () => {
     const r = computeDividends({ shares: 100, dividendPerShare: 2 });
     expect(r.grossYield).toBeNull();
     expect(r.netYield).toBeNull();
   });
 
-  it("ignora valores negativos", () => {
+  it("ignores negative values", () => {
     const r = computeDividends({ shares: -10, dividendPerShare: -1 });
     expect(r.gross).toBe(0);
     expect(r.net).toBe(0);
   });
 
-  it("proyecta el flujo neto con crecimiento anual del dividendo", () => {
+  it("projects the net cash flow with annual dividend growth", () => {
     const r = computeDividends({ shares: 100, dividendPerShare: 1, annualGrowth: 10, years: 3 });
-    // net año 1 = 81 (100*1*0.81); años: 81, 89.1, 98.01 → acumulado 268.11
-    expect(r.series).toHaveLength(4); // año 0 + 3 años
+    // net year 1 = 81 (100*1*0.81); years: 81, 89.1, 98.01 → cumulative 268.11
+    expect(r.series).toHaveLength(4); // year 0 + 3 years
     expect(r.finalYearNet).toBeCloseTo(98.01, 6);
     expect(r.cumulativeNet).toBeCloseTo(268.11, 6);
   });
 
-  // Valores por defecto de la calculadora (ver explainer).
-  it("golden: defaults 100 acc., 1,50 €, precio 50 €, 19%, +5%/año, 10 años", () => {
+  // Calculator defaults (see the explainer).
+  it("golden: defaults 100 shares, €1.50, price €50, 19%, +5%/year, 10 years", () => {
     const r = computeDividends({
       shares: 100,
       dividendPerShare: 1.5,

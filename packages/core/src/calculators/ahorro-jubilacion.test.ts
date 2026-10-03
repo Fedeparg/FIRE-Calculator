@@ -10,22 +10,22 @@ const base = {
 };
 
 describe("computeRetirement", () => {
-  it("calcula los años hasta la jubilación", () => {
+  it("computes the years to retirement", () => {
     expect(computeRetirement(base).yearsToRetirement).toBe(35);
   });
 
-  it("genera patrimonio por encima de lo aportado con rentabilidad positiva", () => {
+  it("grows wealth above the amount contributed with a positive return", () => {
     const r = computeRetirement(base);
     expect(r.finalValue).toBeGreaterThan(r.totalContributed);
   });
 
-  it("sin inflación, la renta mensual (real) sale del valor nominal con la regla del 4 %", () => {
+  it("without inflation, the (real) monthly income comes from the nominal value with the 4% rule", () => {
     const r = computeRetirement(base);
     expect(r.finalRealValue).toBeCloseTo(r.finalValue, 6);
     expect(r.monthlyIncome).toBeCloseTo((r.finalRealValue * 0.04) / 12, 6);
   });
 
-  it("la inflación reduce el valor real y separa la renta real de la nominal", () => {
+  it("inflation lowers the real value and separates real from nominal income", () => {
     const r = computeRetirement({ ...base, inflationRate: 2.5 });
     expect(r.finalRealValue).toBeLessThan(r.finalValue);
     expect(r.monthlyIncome).toBeLessThan(r.monthlyIncomeNominal);
@@ -33,17 +33,17 @@ describe("computeRetirement", () => {
     expect(r.monthlyIncomeNominal).toBeCloseTo((r.finalValue * 0.04) / 12, 6);
   });
 
-  it("las comisiones (TER) reducen el patrimonio final", () => {
+  it("fees (TER) reduce the final wealth", () => {
     const withFee = computeRetirement({ ...base, annualFee: 1 });
     expect(withFee.finalValue).toBeLessThan(computeRetirement(base).finalValue);
   });
 
-  it("el crecimiento del ahorro aumenta lo aportado", () => {
+  it("savings growth increases the amount contributed", () => {
     const grown = computeRetirement({ ...base, contributionGrowth: 3 });
     expect(grown.totalContributed).toBeGreaterThan(computeRetirement(base).totalContributed);
   });
 
-  it("golden: valores por defecto del componente (6% anual efectivo, 2,5% inflación, 0,3% TER)", () => {
+  it("golden: component defaults (6% effective annual, 2.5% inflation, 0.3% TER)", () => {
     const r = computeRetirement({
       currentAge: 30,
       retirementAge: 67,
@@ -61,7 +61,7 @@ describe("computeRetirement", () => {
     expect(r.monthlyIncome).toBeCloseTo(742.9, 2);
   });
 
-  it("si ya estás en edad de jubilación, no proyecta (años 0)", () => {
+  it("at or past retirement age, it does not project (0 years)", () => {
     const r = computeRetirement({ ...base, currentAge: 67, retirementAge: 65 });
     expect(r.yearsToRetirement).toBe(0);
     expect(r.finalValue).toBe(base.currentSavings);

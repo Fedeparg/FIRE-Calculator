@@ -1,12 +1,12 @@
-// Casos de referencia de la matemática de préstamos que comparten hipoteca, amortización
-// anticipada, hipoteca asequible y tarjeta de crédito: estándar, tipo 0, plazo 0, importe 0,
-// tipos enormes y negativos, y pagos que no cubren los intereses. Sustituye a la huella SHA-256
-// que sirvió de red al refactor de `amortization.ts` (G6): esta dice QUÉ caso cambió.
+// Reference cases for the loan math shared by the mortgage, early repayment, affordable mortgage
+// and credit card calculators: standard, zero rate, zero term, zero amount, huge and negative
+// rates, and payments that do not cover the interest. Replaces the SHA-256 fingerprint that served
+// as a safety net for the `amortization.ts` refactor (G6): this one says WHICH case changed.
 //
-// Los valores salen del código tal como estaba al escribir el test, redondeados a 10 cifras
-// significativas: `Math.pow` puede diferir en el último bit entre plataformas (macOS ARM frente
-// al Linux x64 de CI), y eso no es un cambio de cálculo. Las series se reducen a su longitud
-// (sus valores se prueban en el test de cada calculadora).
+// The values come from the code as it was when the test was written, rounded to 10 significant
+// digits: `Math.pow` may differ in the last bit across platforms (macOS ARM versus CI's Linux
+// x64), and that is not a change in the calculation. Series are reduced to their length (their
+// values are tested in each calculator's own test).
 
 import { describe, expect, it } from "vitest";
 import { computeEarlyRepayment } from "./amortizacion-anticipada.js";
@@ -16,7 +16,7 @@ import { computeCreditCard } from "./tarjeta-credito.js";
 
 type Summary = { [key: string]: number | string | boolean | null | Summary };
 
-/** Resultado con los números a 10 cifras, los no finitos como texto y las series como longitud. */
+/** Result with numbers at 10 digits, non-finite values as text and series as their length. */
 function summarize(result: object): Summary {
   const out: Summary = {};
   for (const [key, value] of Object.entries(result) as [string, unknown][]) {
@@ -30,7 +30,7 @@ function summarize(result: object): Summary {
   return out;
 }
 
-describe("matemática de préstamos: casos de referencia", () => {
+describe("loan math: reference cases", () => {
   it.each<[Parameters<typeof computeMortgage>[0], Summary]>([
     [
       { principal: 180000, annualRate: 3, years: 30, openingFeeRate: 1, annualInsurance: 300 },

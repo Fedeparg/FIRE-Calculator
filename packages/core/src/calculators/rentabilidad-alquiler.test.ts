@@ -13,7 +13,7 @@ const base = {
 };
 
 describe("computeRentalYield", () => {
-  it("calcula ingresos, gastos, neto y rentabilidades", () => {
+  it("computes income, expenses, net and yields", () => {
     const r = computeRentalYield(base);
     expect(r.annualRentIncome).toBe(12000); // 1000 * 12
     expect(r.effectiveRentIncome).toBeCloseTo(11400, 6); // -5% vacancy
@@ -23,18 +23,18 @@ describe("computeRentalYield", () => {
     expect(r.netYield).toBeCloseTo((9700 / 220000) * 100, 6);
   });
 
-  it("la vacancy reduce los ingresos efectivos", () => {
+  it("vacancy reduces the effective income", () => {
     const sinVacancy = computeRentalYield({ ...base, vacancyRate: 0 });
     expect(sinVacancy.effectiveRentIncome).toBe(12000);
     expect(sinVacancy.netIncome).toBeCloseTo(10300, 6);
   });
 
-  it("el flujo de caja mensual es el neto anual entre doce", () => {
+  it("the monthly cash flow is the annual net divided by twelve", () => {
     const r = computeRentalYield(base);
     expect(r.monthlyNetCashflow).toBeCloseTo(9700 / 12, 6);
   });
 
-  it("sin precio de compra, rentabilidad 0 (sin dividir por cero)", () => {
+  it("without a purchase price, zero yield (no division by zero)", () => {
     const r = computeRentalYield({ ...base, purchasePrice: 0, purchaseCosts: 0 });
     expect(r.grossYield).toBe(0);
     expect(r.netYield).toBe(0);
