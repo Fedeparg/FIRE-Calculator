@@ -155,6 +155,30 @@ describe('PositionLotsService (integración con Postgres)', () => {
       expect(updated.avgPrice).toBe(150);
     });
 
+    it('dos altas de lote simultáneas suman las dos (sin lost update)', async () => {
+      // Pool de varias conexiones: las dos transacciones corren de verdad a la vez.
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const stack = buildPositionsStack(concurrent.db);
+        const userId = await insertUser(db, 'a@example.com');
+        const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 1, avgPrice: 100 });
+
+        // Varias rondas: sin el bloqueo, basta con que una se entrelace para perder una compra.
+        for (let round = 0; round < 5; round++) {
+          await Promise.all(
+            [2, 3].map((quantity) =>
+              stack.lots.create(userId, position.id, { kind: 'buy', quantity, price: 100, tradedAt: '2026-06-01' }),
+            ),
+          );
+        }
+
+        const [updated] = await service.findAllByUser(userId);
+        expect(updated.quantity).toBe(1 + 5 * (2 + 3));
+      } finally {
+        await concurrent.close();
+      }
+    });
+
     it('una venta baja la cantidad y NO mueve el precio medio', async () => {
       const userId = await insertUser(db, 'a@example.com');
       const position = await createBackdated(userId, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });

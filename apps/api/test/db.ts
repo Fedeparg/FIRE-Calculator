@@ -8,10 +8,12 @@ import type { Database } from '../src/db/database.module.js';
 
 /**
  * Conexión a la BD de test (el PostgreSQL efímero levantado en `global-setup.ts`).
- * Cada fichero de test abre la suya y la cierra al terminar.
+ * Cada fichero de test abre la suya y la cierra al terminar. Por defecto UNA conexión: las
+ * transacciones de un test se serializan. Los tests de concurrencia piden más (`max`) para que
+ * dos transacciones corran de verdad a la vez.
  */
-export function createTestDb(): { db: Database; close: () => Promise<void> } {
-  const client = postgres(inject('databaseUrl'), { max: 1 });
+export function createTestDb(options: { max?: number } = {}): { db: Database; close: () => Promise<void> } {
+  const client = postgres(inject('databaseUrl'), { max: options.max ?? 1 });
   const db = drizzle(client, { schema });
   return { db, close: () => client.end({ timeout: 5 }) };
 }

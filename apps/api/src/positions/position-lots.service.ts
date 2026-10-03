@@ -300,6 +300,13 @@ export class PositionLotsService {
 
   /** Reagrega los lotes y escribe el resultado en `positions`: único sitio que lo sincroniza; llamar dentro de la transacción de la mutación. */
   async recompute(tx: DatabaseOrTransaction, positionId: string): Promise<LotAggregate> {
+    // Bloquea la fila de la posición antes de releer los lotes: sin esto, dos mutaciones
+    // simultáneas (web + MCP, importación + edición) leen cada una los lotes sin el INSERT de la
+    // otra y la última `UPDATE` gana (lost update). Con el bloqueo, la segunda espera y, en READ
+    // COMMITTED, su `SELECT` siguiente ya ve lo que confirmó la primera. `NO KEY UPDATE` y no
+    // `UPDATE`: el INSERT del lote ya tiene un `KEY SHARE` sobre la posición (por la FK), que
+    // `FOR UPDATE` no admite (interbloqueo entre las dos); `NO KEY UPDATE` sí.
+    await tx.select({ id: positions.id }).from(positions).where(eq(positions.id, positionId)).for('no key update');
     const lots = await this.selectLots(tx, positionId);
     const aggregate = this.aggregate(lots);
 
