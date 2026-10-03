@@ -12,6 +12,7 @@ import type { SymbolResolver } from './symbol-resolver.js';
 const identityResolver: SymbolResolver = {
   resolve: (ticker) => Promise.resolve(ticker),
   resolveCached: (ticker) => Promise.resolve(ticker),
+  resolveManyCached: (tickers) => Promise.resolve(new Map(tickers.map((ticker) => [ticker, ticker]))),
 };
 
 /**
@@ -241,6 +242,36 @@ describe('PricesService — caché de histórico (integración con Postgres)', (
     await service.primeSymbol('IWDA');
 
     expect((await service.getPrices(['IWDA'])).get('IWDA')?.previousClose).toBeNull();
+  });
+
+  it('getPrices toma, de cada símbolo por separado, su último cierre y el anterior', async () => {
+    makeService();
+    const row = (symbol: string, date: string, close: string) => ({
+      symbol,
+      date,
+      close,
+      currency: 'EUR',
+      source: 'stub',
+      fetchedAt: new Date(`${date}T18:00:00Z`),
+    });
+    await db
+      .insert(instrumentPrices)
+      .values([
+        row('IWDA', '2026-03-10', '90'),
+        row('IWDA', '2026-03-12', '92'),
+        row('IWDA', '2026-03-11', '91'),
+        row('EUNL', '2026-03-13', '50'),
+        row('EUNL', '2026-03-09', '48'),
+        row('SOLO', '2026-03-01', '7'),
+      ]);
+
+    const prices = await service.getPrices(['IWDA', 'EUNL', 'SOLO', 'SIN-DATOS']);
+
+    expect(prices.get('IWDA')).toMatchObject({ close: 92, previousClose: 91, date: '2026-03-12' });
+    expect(prices.get('EUNL')).toMatchObject({ close: 50, previousClose: 48, date: '2026-03-13' });
+    expect(prices.get('SOLO')).toMatchObject({ close: 7, previousClose: null });
+    expect(prices.get('IWDA')?.fetchedAt).toBe('2026-03-12T18:00:00.000Z');
+    expect(prices.has('SIN-DATOS')).toBe(false);
   });
 
   it('getPrices expone cuándo se leyó el precio (fetchedAt), para el "actualizado hace…"', async () => {

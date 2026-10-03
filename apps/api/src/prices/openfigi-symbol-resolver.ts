@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { isIsin } from '@sextante/core/portfolio/isin';
 import type { Env } from '../config/env.js';
@@ -16,7 +16,6 @@ import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.j
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
 import { fetchJson, sleep } from '../common/http.js';
 
-/** Forma de un ISIN: 2 letras (país) + 9 alfanuméricos + 1 dígito de control. */
 /** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
@@ -190,10 +189,21 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
   }
 
   async resolveCached(tickerOrIsin: string): Promise<string | null> {
-    const query = normalizeQuery(tickerOrIsin);
-    if (!query) return null;
-    const cached = await this.lookup(query);
-    return cached ?? null;
+    return (await this.resolveManyCached([tickerOrIsin])).get(tickerOrIsin) ?? null;
+  }
+
+  async resolveManyCached(tickersOrIsins: readonly string[]): Promise<Map<string, string | null>> {
+    const queryByInput = new Map(tickersOrIsins.map((input) => [input, normalizeQuery(input)]));
+    const queries = [...new Set(queryByInput.values())].filter(Boolean);
+    const rows =
+      queries.length === 0
+        ? []
+        : await this.db
+            .select({ query: instruments.query, symbol: instruments.symbol })
+            .from(instruments)
+            .where(inArray(instruments.query, queries));
+    const symbolByQuery = new Map(rows.map((row) => [row.query, row.symbol]));
+    return new Map([...queryByInput].map(([input, query]) => [input, symbolByQuery.get(query) ?? null]));
   }
 
   async resolve(tickerOrIsin: string): Promise<string | null> {

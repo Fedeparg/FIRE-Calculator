@@ -225,3 +225,48 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
     expect(row).toMatchObject({ symbol: 'AMZ.DE', source: 'openfigi' });
   });
 });
+
+describe('OpenFigiSymbolResolver.resolveManyCached', () => {
+  let db: Database;
+  let close: () => Promise<void>;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+  });
+  afterEach(async () => {
+    await resetDb(db);
+  });
+  afterAll(async () => {
+    await close();
+  });
+
+  it('resuelve muchos de la caché en una consulta, sin tocar la red, conservando la entrada original', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const now = new Date();
+    await db.insert(instruments).values([
+      { query: 'IE00BK5BQZ41', symbol: 'VWCE.DE', source: 'yahoo_search', resolvedAt: now },
+      { query: 'AAPL', symbol: 'AAPL', source: 'identity', resolvedAt: now },
+      { query: 'XX0000000000', symbol: null, source: 'not_found', resolvedAt: now },
+    ]);
+    const getQuotes = vi.fn();
+    const provider = { getQuotes } as unknown as PriceProvider;
+    const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
+
+    const resolved = await resolver.resolveManyCached([' ie00bk5bqz41 ', 'AAPL', 'XX0000000000', 'NUEVO', '']);
+
+    expect(resolved).toEqual(
+      new Map([
+        [' ie00bk5bqz41 ', 'VWCE.DE'],
+        ['AAPL', 'AAPL'],
+        ['XX0000000000', null],
+        ['NUEVO', null],
+        ['', null],
+      ]),
+    );
+    await expect(resolver.resolveCached('aapl')).resolves.toBe('AAPL');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(getQuotes).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});

@@ -27,6 +27,7 @@ import { PortfolioValuationService } from './portfolio-valuation.service.js';
 const identityResolver: SymbolResolver = {
   resolve: (ticker) => Promise.resolve(ticker),
   resolveCached: (ticker) => Promise.resolve(ticker),
+  resolveManyCached: (tickers) => Promise.resolve(new Map(tickers.map((ticker) => [ticker, ticker]))),
 };
 
 /** Proveedor mudo: los snapshots leen precios de NUESTRA base de datos, nunca de la fuente. */

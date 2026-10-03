@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, desc, eq, gte, inArray, min, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, min, sql } from 'drizzle-orm';
 import {
   MAX_CARRY_FORWARD_DAYS,
   type FxPoint,
@@ -129,19 +129,34 @@ export class PricesService {
     return { symbols: symbols.length, fetched: quotes.size, missing };
   }
 
-  /** Último cierre conocido por símbolo (y el anterior, para `previousClose`). */
+  /**
+   * Último cierre conocido por símbolo (y el anterior, para `previousClose`). Es la ruta caliente
+   * (precios, FX, valoración, snapshots, alertas): `ROW_NUMBER()` por símbolo deja que Postgres
+   * lea solo las DOS filas más recientes de cada uno por la PK `(symbol, date)`, en vez de traer
+   * años de histórico para quedarse con dos.
+   */
   private async latestBySymbol(symbols: string[]): Promise<Map<string, PriceInfo>> {
     const out = new Map<string, PriceInfo>();
     if (symbols.length === 0) return out;
 
-    const rows = await this.db
-      .select()
+    const ranked = this.db
+      .select({
+        symbol: instrumentPrices.symbol,
+        close: instrumentPrices.close,
+        currency: instrumentPrices.currency,
+        date: instrumentPrices.date,
+        fetchedAt: instrumentPrices.fetchedAt,
+        rank: sql<number>`row_number() over (partition by ${instrumentPrices.symbol} order by ${instrumentPrices.date} desc)`.as(
+          'rank',
+        ),
+      })
       .from(instrumentPrices)
       .where(inArray(instrumentPrices.symbol, symbols))
-      .orderBy(instrumentPrices.symbol, desc(instrumentPrices.date));
+      .as('ranked');
+    const rows = await this.db.select().from(ranked).where(lte(ranked.rank, 2)).orderBy(ranked.symbol, ranked.rank);
 
     // Por símbolo y de más reciente a más antigua: la primera fila es el precio vigente y la
-    // segunda, el cierre anterior.
+    // segunda (si la hay), el cierre anterior. La PK impide dos filas con la misma fecha.
     for (const row of rows) {
       const current = out.get(row.symbol);
       if (!current) {
@@ -153,7 +168,7 @@ export class PricesService {
           fetchedAt: row.fetchedAt.toISOString(),
           previousClose: null,
         });
-      } else if (current.previousClose === null && row.date < current.date) {
+      } else {
         current.previousClose = Number(row.close);
       }
     }
@@ -247,11 +262,11 @@ export class PricesService {
     return { prices, fx, splits };
   }
 
-  /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa). */
+  /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa), en una consulta. */
   async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
+    const resolved = await this.resolver.resolveManyCached(tickers);
     const out = new Map<string, string>();
-    for (const ticker of tickers) {
-      const symbol = await this.resolver.resolveCached(ticker);
+    for (const [ticker, symbol] of resolved) {
       if (symbol) out.set(ticker, symbol);
     }
     return out;
