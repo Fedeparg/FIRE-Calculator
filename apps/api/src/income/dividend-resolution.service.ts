@@ -12,7 +12,7 @@ import { roundCents } from '@sextante/core/money';
 import { addDays } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
 
 /** Margen máximo entre la fecha ex-dividendo y la de pago. */
 const MAX_EX_TO_PAY_DAYS = 100;
@@ -34,7 +34,7 @@ export class DividendResolutionService {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
   ) {}
 
   /** Resuelve los dividendos pendientes de un usuario (o de todos). Devuelve cuántos ha completado. */

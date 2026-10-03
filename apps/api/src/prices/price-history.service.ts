@@ -1,14 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { and, eq, gte, inArray, lte, min, sql } from 'drizzle-orm';
-import {
-  MAX_CARRY_FORWARD_DAYS,
-  type FxPoint,
-  type PricePoint,
-  type SplitPoint,
-} from '@sextante/core/portfolio/history-reconstruction';
+import { eq, inArray, min, sql } from 'drizzle-orm';
 
+import { addDays, MS_PER_DAY, todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import type { DatabaseOrTransaction } from '../positions/position-access.js';
 import {
   instrumentDividends,
   instrumentPrices,
@@ -17,7 +12,7 @@ import {
   positionLots,
   positions,
 } from '../db/schema.js';
-import { SUPPORTED_CURRENCIES } from '@sextante/core/contracts';
+import { FX_QUOTE, FX_SYMBOLS, fxSymbol } from './fx-symbols.js';
 import {
   PRICE_PROVIDER,
   type DividendEvent,
@@ -25,12 +20,9 @@ import {
   type PriceProvider,
   type Quote,
 } from './price-provider.interface.js';
+import { PriceReadService } from './price-read.service.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
-import { addDays, MS_PER_DAY, todayUtc } from '../common/dates.js';
-import { errorMessage } from '../common/errors.js';
 
-/** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
-const FX_QUOTE = 'USD';
 /** Tope de espera de `primeSymbol`: protege de un ISIN nuevo con resolución larga para que el POST no agote el proxy. */
 const PRIME_MAX_WAIT_MS = 9_000;
 /** Filas por sentencia al cachear un histórico. */
@@ -43,33 +35,19 @@ const COVERAGE_TOLERANCE_DAYS = 7;
 const SPLITS_REFRESH_DAYS = 7;
 /** Tope por pasada de `refreshStaleSplits` (los vencimientos nacen el mismo día). */
 const SPLITS_REFRESH_MAX_PER_RUN = 40;
+/** Pausa entre históricos seguidos: Yahoo rate-limita por IP (429). */
+const HISTORY_REQUEST_DELAY_MS = 500;
+
 /** `YYYY-MM-DD` (UTC) de hace `days` días. */
 function daysAgo(days: number): string {
   return addDays(todayUtc(), -days);
 }
-/** Pausa entre históricos seguidos: Yahoo rate-limita por IP (429). */
-const HISTORY_REQUEST_DELAY_MS = 500;
+
 /** El timer va `unref` para que, usado como tope en un `Promise.race`, no mantenga vivo el proceso. */
 const delay = (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms).unref();
   });
-/** Símbolo de Yahoo del par CCY→USD (= USD por unidad de CCY). USD consigo mismo es 1. */
-function fxSymbol(currency: string): string {
-  return `${currency}${FX_QUOTE}=X`;
-}
-
-/** Precio de un instrumento tal y como lo consume el frontend (lectura desde nuestra DB). */
-export interface PriceInfo {
-  symbol: string;
-  close: number;
-  currency: string;
-  date: string;
-  /** Instante (ISO) de la lectura: el refresco intradía reescribe la fila del día. */
-  fetchedAt: string;
-  /** Cierre anterior a `date` (`null` si es el primer dato), para la variación del día. */
-  previousClose: number | null;
-}
 
 export interface RefreshSummary {
   symbols: number;
@@ -78,18 +56,14 @@ export interface RefreshSummary {
 }
 
 /**
- * Tasas de cambio para el total agregado de la cartera. `rates[CCY]` = USD por unidad de
- * esa divisa (USD = 1), de modo que convertir A→B es `importe * rates[A] / rates[B]`.
+ * ESCRITURAS de la caché de precios desde la fuente externa: refresco de cotizaciones (cron),
+ * histórico al dar de alta un símbolo (`primeSymbol`), guard de cobertura (`ensureHistory*`) y
+ * splits y dividendos que llegan con el histórico. Es lo único que habla con el proveedor; las
+ * lecturas viven en `PriceReadService`.
  */
-export interface FxRates {
-  rates: Record<string, number>;
-  /** Fecha (YYYY-MM-DD) del dato más reciente entre las tasas, o null si no hay ninguna. */
-  asOf: string | null;
-}
-
 @Injectable()
-export class PricesService {
-  private readonly logger = new Logger(PricesService.name);
+export class PriceHistoryService {
+  private readonly logger = new Logger(PriceHistoryService.name);
   /** Público para que los tests la pongan a 0. */
   historyRequestDelayMs = HISTORY_REQUEST_DELAY_MS;
 
@@ -97,6 +71,7 @@ export class PricesService {
     @Inject(DRIZZLE) private readonly db: Database,
     @Inject(PRICE_PROVIDER) private readonly provider: PriceProvider,
     @Inject(SYMBOL_RESOLVER) private readonly resolver: SymbolResolver,
+    private readonly reads: PriceReadService,
   ) {}
 
   /** Refresca los símbolos en uso desde la fuente externa (cron diario; nunca al navegar). Uno que falle no rompe el resto. */
@@ -104,7 +79,7 @@ export class PricesService {
     const tickers = await this.distinctTickers();
     const instrumentSymbols = await this.resolveSymbols(tickers);
     // Los pares FX siempre: el total agregado de la cartera los necesita para convertir.
-    const symbols = [...new Set([...instrumentSymbols, ...this.fxSymbols()])];
+    const symbols = [...new Set([...instrumentSymbols, ...FX_SYMBOLS])];
 
     if (symbols.length === 0) {
       this.logger.log('Refresco de precios: no hay símbolos que actualizar');
@@ -130,169 +105,6 @@ export class PricesService {
   }
 
   /**
-   * Último cierre conocido por símbolo (y el anterior, para `previousClose`). Es la ruta caliente
-   * (precios, FX, valoración, snapshots, alertas): `ROW_NUMBER()` por símbolo deja que Postgres
-   * lea solo las DOS filas más recientes de cada uno por la PK `(symbol, date)`, en vez de traer
-   * años de histórico para quedarse con dos.
-   */
-  private async latestBySymbol(symbols: string[]): Promise<Map<string, PriceInfo>> {
-    const out = new Map<string, PriceInfo>();
-    if (symbols.length === 0) return out;
-
-    const ranked = this.db
-      .select({
-        symbol: instrumentPrices.symbol,
-        close: instrumentPrices.close,
-        currency: instrumentPrices.currency,
-        date: instrumentPrices.date,
-        fetchedAt: instrumentPrices.fetchedAt,
-        rank: sql<number>`row_number() over (partition by ${instrumentPrices.symbol} order by ${instrumentPrices.date} desc)`.as(
-          'rank',
-        ),
-      })
-      .from(instrumentPrices)
-      .where(inArray(instrumentPrices.symbol, symbols))
-      .as('ranked');
-    const rows = await this.db.select().from(ranked).where(lte(ranked.rank, 2)).orderBy(ranked.symbol, ranked.rank);
-
-    // Por símbolo y de más reciente a más antigua: la primera fila es el precio vigente y la
-    // segunda (si la hay), el cierre anterior. La PK impide dos filas con la misma fecha.
-    for (const row of rows) {
-      const current = out.get(row.symbol);
-      if (!current) {
-        out.set(row.symbol, {
-          symbol: row.symbol,
-          close: Number(row.close),
-          currency: row.currency,
-          date: row.date,
-          fetchedAt: row.fetchedAt.toISOString(),
-          previousClose: null,
-        });
-      } else {
-        current.previousClose = Number(row.close);
-      }
-    }
-    return out;
-  }
-
-  /** Último precio cacheado de cada ticker pedido, indexado por el ticker original. */
-  async getPrices(tickers: string[]): Promise<Map<string, PriceInfo>> {
-    const tickerToSymbol = await this.resolveCachedTickers(tickers);
-    const latest = await this.latestBySymbol([...new Set(tickerToSymbol.values())]);
-
-    const out = new Map<string, PriceInfo>();
-    for (const [ticker, symbol] of tickerToSymbol) {
-      const price = latest.get(symbol);
-      if (price) out.set(ticker, price);
-    }
-    return out;
-  }
-
-  /**
-   * Series de cierres, FX y splits desde `from` para `backfillUser`. `tickerToSymbol` llega ya
-   * resuelto para no pedir otra conexión dentro de una transacción. Se leen
-   * `MAX_CARRY_FORWARD_DAYS` días de más para que el primer día arrastre el cierre anterior.
-   */
-  async getSeriesSince(
-    tickerToSymbol: ReadonlyMap<string, string>,
-    from: string,
-    executor: DatabaseOrTransaction = this.db,
-  ): Promise<{
-    prices: Record<string, PricePoint[]>;
-    fx: Record<string, FxPoint[]>;
-    splits: Record<string, SplitPoint[]>;
-  }> {
-    const currencyBySymbol = new Map<string, string>();
-    for (const c of SUPPORTED_CURRENCIES) {
-      if (c !== FX_QUOTE) currencyBySymbol.set(fxSymbol(c), c);
-    }
-    const symbols = [...new Set([...tickerToSymbol.values(), ...currencyBySymbol.keys()])];
-
-    const start = addDays(from, -MAX_CARRY_FORWARD_DAYS);
-    const rows =
-      symbols.length === 0
-        ? []
-        : await executor
-            .select()
-            .from(instrumentPrices)
-            .where(and(inArray(instrumentPrices.symbol, symbols), gte(instrumentPrices.date, start)))
-            .orderBy(instrumentPrices.symbol, instrumentPrices.date);
-
-    const bySymbol = new Map<string, PricePoint[]>();
-    for (const row of rows) {
-      const close = Number(row.close);
-      if (!Number.isFinite(close) || close <= 0) continue;
-      const list = bySymbol.get(row.symbol) ?? [];
-      list.push({ date: row.date, close, currency: row.currency });
-      bySymbol.set(row.symbol, list);
-    }
-
-    const prices: Record<string, PricePoint[]> = {};
-    for (const [ticker, symbol] of tickerToSymbol) {
-      const series = bySymbol.get(symbol);
-      if (series) prices[ticker] = series;
-    }
-    const fx: Record<string, FxPoint[]> = {};
-    for (const [symbol, currency] of currencyBySymbol) {
-      const series = bySymbol.get(symbol);
-      if (series) fx[currency] = series.map(({ date, close }) => ({ date, rate: close }));
-    }
-
-    // Los splits se leen enteros, no desde `from`: un lote anterior a la ventana puede ser
-    // anterior a un split de dentro. Son pocas filas por símbolo.
-    const splitRows =
-      tickerToSymbol.size === 0
-        ? []
-        : await executor
-            .select()
-            .from(instrumentSplits)
-            .where(inArray(instrumentSplits.symbol, [...new Set(tickerToSymbol.values())]))
-            .orderBy(instrumentSplits.symbol, instrumentSplits.date);
-    const splitsBySymbol = new Map<string, SplitPoint[]>();
-    for (const row of splitRows) {
-      const list = splitsBySymbol.get(row.symbol) ?? [];
-      list.push({ date: row.date, ratio: Number(row.ratio) });
-      splitsBySymbol.set(row.symbol, list);
-    }
-    const splits: Record<string, SplitPoint[]> = {};
-    for (const [ticker, symbol] of tickerToSymbol) {
-      const list = splitsBySymbol.get(symbol);
-      if (list) splits[ticker] = list;
-    }
-    return { prices, fx, splits };
-  }
-
-  /** Ticker → símbolo resuelto, solo de caché (nunca dispara OpenFIGI ni la fuente externa), en una consulta. */
-  async resolveCachedTickers(tickers: string[]): Promise<Map<string, string>> {
-    const resolved = await this.resolver.resolveManyCached(tickers);
-    const out = new Map<string, string>();
-    for (const [ticker, symbol] of resolved) {
-      if (symbol) out.set(ticker, symbol);
-    }
-    return out;
-  }
-
-  /** Tasas FX cacheadas (USD por unidad, USD = 1); una divisa sin tasa no aparece y el frontend excluye esas posiciones. */
-  async getFxRates(): Promise<FxRates> {
-    const currencyBySymbol = new Map<string, string>();
-    for (const c of SUPPORTED_CURRENCIES) {
-      if (c !== FX_QUOTE) currencyBySymbol.set(fxSymbol(c), c);
-    }
-    const rates: Record<string, number> = { [FX_QUOTE]: 1 };
-    let asOf: string | null = null;
-
-    const latest = await this.latestBySymbol([...currencyBySymbol.keys()]);
-    for (const [symbol, price] of latest) {
-      const currency = currencyBySymbol.get(symbol);
-      if (currency && Number.isFinite(price.close) && price.close > 0) {
-        rates[currency] = price.close;
-        if (asOf === null || price.date > asOf) asOf = price.date;
-      }
-    }
-    return { rates, asOf };
-  }
-
-  /**
    * Resuelve y cachea el precio de un ticker recién dado de alta o editado para que se valore
    * al instante; es la única ruta del usuario que dispara fetch externo a propósito. No
    * propaga errores: el precio llega en el siguiente refresco.
@@ -306,6 +118,77 @@ export class PricesService {
   async primeSymbol(ticker: string, currency?: string): Promise<void> {
     // El trabajo se lanza entero; solo se acota cuánto se espera.
     await Promise.race([this.primeNow(ticker, currency), delay(PRIME_MAX_WAIT_MS)]);
+  }
+
+  /** Asegura histórico hasta la fecha de cada símbolo pidiendo solo a los que no lo cubren; `alsoSymbols` se piden además. Uno que falle no bloquea el resto. */
+  async ensureHistory(required: ReadonlyMap<string, string>, alsoSymbols: readonly string[] = []): Promise<void> {
+    const missing = [...new Set([...(await this.symbolsNeedingHistory(required)), ...alsoSymbols])];
+    for (const [i, symbol] of missing.entries()) {
+      if (i > 0 && this.historyRequestDelayMs > 0) await delay(this.historyRequestDelayMs);
+      try {
+        await this.primeHistory(symbol);
+      } catch (error) {
+        this.logger.warn(`Histórico de "${symbol}" no se pudo completar: ${errorMessage(error)}`);
+      }
+    }
+  }
+
+  /**
+   * Pasada de arranque: histórico de todos los símbolos en uso desde la primera operación de
+   * cualquier usuario (tope 5 años) y de los pares FX desde la más antigua. Barata si ya existe;
+   * repara posiciones cuyo `primeSymbol` falló sin esperar al cron.
+   */
+  async ensureHistoryForActivePositions(): Promise<void> {
+    const floor = daysAgo(HISTORY_MAX_DAYS);
+    // Left join: una posición sin lotes también entra, con su fecha de alta como primera operación.
+    const rows = await this.db
+      .select({
+        ticker: positions.ticker,
+        firstTrade: min(sql<string>`coalesce(${positionLots.tradedAt}, ${positions.createdAt}::date)`),
+      })
+      .from(positions)
+      .leftJoin(positionLots, eq(positions.id, positionLots.positionId))
+      .groupBy(positions.ticker);
+
+    const required = new Map<string, string>();
+    let earliest: string | null = null;
+    for (const { ticker, firstTrade } of rows) {
+      const since = firstTrade && firstTrade > floor ? firstTrade : floor;
+      if (earliest === null || since < earliest) earliest = since;
+      const symbol = await this.resolver.resolve(ticker);
+      if (!symbol) continue;
+      const current = required.get(symbol);
+      if (current === undefined || since < current) required.set(symbol, since);
+    }
+    for (const pair of FX_SYMBOLS) required.set(pair, earliest ?? floor);
+
+    // Los símbolos sin marca de splits (o vencida) se reconsultan aunque la cobertura de
+    // fechas baste: es la única forma de cargar sus splits.
+    const stale = await this.symbolsWithStaleSplits(
+      [...required.keys()].filter((symbol) => !FX_SYMBOLS.includes(symbol)),
+    );
+    await this.ensureHistory(required, stale);
+  }
+
+  /** Histórico de un ticker hasta `since` (tope 5 años) al añadir un lote anterior a lo cacheado; solo resolución cacheada (un ticker sin resolver lo traerá `primeSymbol`). */
+  async ensureHistoryForTicker(ticker: string, since: string): Promise<void> {
+    const symbol = await this.resolver.resolveCached(ticker);
+    if (!symbol) return;
+    const floor = daysAgo(HISTORY_MAX_DAYS);
+    const required = new Map([[symbol, since > floor ? since : floor]]);
+    // Los pares FX también deben llegar hasta esa fecha para convertir los días antiguos.
+    for (const pair of FX_SYMBOLS) required.set(pair, since > floor ? since : floor);
+    await this.ensureHistory(required);
+  }
+
+  /**
+   * Reconsulta splits vencidos (los más antiguos primero, con tope para escalonar) desde el cron
+   * nocturno. El upsert es `DO UPDATE`: los cierres antiguos se reajustan tras un split.
+   */
+  async refreshStaleSplits(): Promise<void> {
+    const tickerToSymbol = await this.reads.resolveCachedTickers(await this.distinctTickers());
+    const stale = await this.symbolsWithStaleSplits([...new Set(tickerToSymbol.values())]);
+    await this.ensureHistory(new Map(), stale.slice(0, SPLITS_REFRESH_MAX_PER_RUN));
   }
 
   /**
@@ -352,67 +235,6 @@ export class PricesService {
       .map(([symbol]) => symbol);
   }
 
-  /** Asegura histórico hasta la fecha de cada símbolo pidiendo solo a los que no lo cubren; `alsoSymbols` se piden además. Uno que falle no bloquea el resto. */
-  async ensureHistory(required: ReadonlyMap<string, string>, alsoSymbols: readonly string[] = []): Promise<void> {
-    const missing = [...new Set([...(await this.symbolsNeedingHistory(required)), ...alsoSymbols])];
-    for (const [i, symbol] of missing.entries()) {
-      if (i > 0 && this.historyRequestDelayMs > 0) await delay(this.historyRequestDelayMs);
-      try {
-        await this.primeHistory(symbol);
-      } catch (error) {
-        this.logger.warn(`Histórico de "${symbol}" no se pudo completar: ${errorMessage(error)}`);
-      }
-    }
-  }
-
-  /**
-   * Pasada de arranque: histórico de todos los símbolos en uso desde la primera operación de
-   * cualquier usuario (tope 5 años) y de los pares FX desde la más antigua. Barata si ya existe;
-   * repara posiciones cuyo `primeSymbol` falló sin esperar al cron.
-   */
-  async ensureHistoryForActivePositions(): Promise<void> {
-    const floor = daysAgo(HISTORY_MAX_DAYS);
-    // Left join: una posición sin lotes también entra, con su fecha de alta como primera operación.
-    const rows = await this.db
-      .select({
-        ticker: positions.ticker,
-        firstTrade: min(sql<string>`coalesce(${positionLots.tradedAt}, ${positions.createdAt}::date)`),
-      })
-      .from(positions)
-      .leftJoin(positionLots, eq(positions.id, positionLots.positionId))
-      .groupBy(positions.ticker);
-
-    const required = new Map<string, string>();
-    let earliest: string | null = null;
-    for (const { ticker, firstTrade } of rows) {
-      const since = firstTrade && firstTrade > floor ? firstTrade : floor;
-      if (earliest === null || since < earliest) earliest = since;
-      const symbol = await this.resolver.resolve(ticker);
-      if (!symbol) continue;
-      const current = required.get(symbol);
-      if (current === undefined || since < current) required.set(symbol, since);
-    }
-    for (const pair of this.fxSymbols()) required.set(pair, earliest ?? floor);
-
-    // Los símbolos sin marca de splits (o vencida) se reconsultan aunque la cobertura de
-    // fechas baste: es la única forma de cargar sus splits.
-    const stale = await this.symbolsWithStaleSplits(
-      [...required.keys()].filter((symbol) => !this.fxSymbols().includes(symbol)),
-    );
-    await this.ensureHistory(required, stale);
-  }
-
-  /** Histórico de un ticker hasta `since` (tope 5 años) al añadir un lote anterior a lo cacheado; solo resolución cacheada (un ticker sin resolver lo traerá `primeSymbol`). */
-  async ensureHistoryForTicker(ticker: string, since: string): Promise<void> {
-    const symbol = await this.resolver.resolveCached(ticker);
-    if (!symbol) return;
-    const floor = daysAgo(HISTORY_MAX_DAYS);
-    const required = new Map([[symbol, since > floor ? since : floor]]);
-    // Los pares FX también deben llegar hasta esa fecha para convertir los días antiguos.
-    for (const pair of this.fxSymbols()) required.set(pair, since > floor ? since : floor);
-    await this.ensureHistory(required);
-  }
-
   /** Cachea el histórico; si la fuente no devuelve serie cae al último cierre para no dejar la posición sin precio. */
   private async primeHistory(symbol: string): Promise<void> {
     const { quotes, splits, dividends }: PriceHistory = await this.provider.getHistory(symbol);
@@ -449,16 +271,6 @@ export class PricesService {
     // Los nunca consultados primero y después los de marca más antigua.
     const time = (symbol: string): number => checkedAt.get(symbol)?.getTime() ?? 0;
     return symbols.filter((symbol) => time(symbol) < cutoff.getTime()).sort((a, b) => time(a) - time(b));
-  }
-
-  /**
-   * Reconsulta splits vencidos (los más antiguos primero, con tope para escalonar) desde el cron
-   * nocturno. El upsert es `DO UPDATE`: los cierres antiguos se reajustan tras un split.
-   */
-  async refreshStaleSplits(): Promise<void> {
-    const tickerToSymbol = await this.resolveCachedTickers(await this.distinctTickers());
-    const stale = await this.symbolsWithStaleSplits([...new Set(tickerToSymbol.values())]);
-    await this.ensureHistory(new Map(), stale.slice(0, SPLITS_REFRESH_MAX_PER_RUN));
   }
 
   /** Upsert de los splits de un símbolo (PK `(symbol, date)`): reprimar no duplica filas. */
@@ -529,11 +341,6 @@ export class PricesService {
           },
         });
     }
-  }
-
-  /** Cada divisa soportada contra USD (USD no necesita par). */
-  private fxSymbols(): string[] {
-    return SUPPORTED_CURRENCIES.filter((c) => c !== FX_QUOTE).map(fxSymbol);
   }
 
   /** `ticker` distintos de todas las posiciones (símbolos en uso, compartidos entre usuarios). */

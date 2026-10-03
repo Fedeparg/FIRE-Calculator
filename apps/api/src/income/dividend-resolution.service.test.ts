@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions } from '../db/schema.js';
-import type { PricesService } from '../prices/prices.service.js';
+import type { PriceReadService } from '../prices/price-read.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { DividendResolutionService } from './dividend-resolution.service.js';
 
@@ -17,7 +17,7 @@ const prices = {
         ),
       ),
     ),
-} as unknown as PricesService;
+} as unknown as PriceReadService;
 
 describe('DividendResolutionService (integración con Postgres)', () => {
   let db: Database;

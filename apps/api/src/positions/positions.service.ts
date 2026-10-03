@@ -5,7 +5,7 @@ import { and, desc, eq, ne } from 'drizzle-orm';
 import type { AssetClass } from '@sextante/core/portfolio/types';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
 import type { CombinePositionDto } from './dto/combine-position.dto.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import type { UpdatePositionDto } from './dto/update-position.dto.js';
@@ -39,7 +39,7 @@ export type PositionResponse = {
 export class PositionsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly prices: PricesService,
+    private readonly prices: PriceHistoryService,
     private readonly lots: PositionLotsService,
     private readonly events: EventEmitter2,
   ) {}

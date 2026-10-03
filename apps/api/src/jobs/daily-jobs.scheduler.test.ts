@@ -7,7 +7,7 @@ import type { AssetClassBackfillService } from '../positions/asset-class-backfil
 import type { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
-import type { PricesService, RefreshSummary } from '../prices/prices.service.js';
+import type { PriceHistoryService, RefreshSummary } from '../prices/price-history.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };
@@ -38,7 +38,7 @@ function setup(env: Record<string, string> = {}) {
   };
   const dividends = { resolvePending: vi.fn(() => Promise.resolve(0)) };
   const scheduler = new DailyJobsScheduler(
-    prices as unknown as PricesService,
+    prices as unknown as PriceHistoryService,
     snapshots as unknown as PortfolioSnapshotsService,
     fireAlerts as unknown as FireAlertsService,
     dividends as unknown as DividendResolutionService,

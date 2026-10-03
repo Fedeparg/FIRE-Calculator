@@ -11,7 +11,8 @@ import {
   type PositionCreatedEvent,
 } from '../positions/position-events.js';
 import { PositionsService } from '../positions/positions.service.js';
-import { HISTORY_MAX_DAYS, PricesService } from '../prices/prices.service.js';
+import { HISTORY_MAX_DAYS, PriceHistoryService } from '../prices/price-history.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
 import { PortfolioValuationService, type MarketData } from './portfolio-valuation.service.js';
 import { convertCurrency } from '@sextante/core/fx';
 import {
@@ -32,7 +33,7 @@ import { errorMessage } from '../common/errors.js';
  */
 export const SNAPSHOT_BASE_CURRENCY = 'EUR';
 
-/** Rango por defecto del histórico, en días (el máximo vive en `prices.service.ts`). */
+/** Rango por defecto del histórico, en días (el máximo vive en `price-history.service.ts`). */
 export const HISTORY_DEFAULT_DAYS = 365;
 export { HISTORY_MAX_DAYS };
 
@@ -75,7 +76,8 @@ export class PortfolioSnapshotsService {
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly valuation: PortfolioValuationService,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
+    private readonly priceHistory: PriceHistoryService,
     private readonly positionsService: PositionsService,
   ) {}
 
@@ -439,7 +441,7 @@ export class PortfolioSnapshotsService {
       .from(positionLots)
       .where(eq(positionLots.positionId, positionId));
     if (position && first?.firstTrade) {
-      await this.prices.ensureHistoryForTicker(position.ticker, first.firstTrade);
+      await this.priceHistory.ensureHistoryForTicker(position.ticker, first.firstTrade);
     }
   }
 

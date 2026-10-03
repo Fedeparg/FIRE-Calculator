@@ -5,14 +5,16 @@ import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { pricesQuerySchema, type PricesQueryDto } from './dto/prices-query.dto.js';
-import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
+import { PriceHistoryService, type RefreshSummary } from './price-history.service.js';
+import { PriceReadService, type FxRates, type PriceInfo } from './price-read.service.js';
 
 /** Precios: la lectura sale de nuestra DB; a la fuente externa solo va el cron diario (o el refresco manual de dev). */
 @Controller('prices')
 @UseGuards(JwtAuthGuard)
 export class PricesController {
   constructor(
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
+    private readonly history: PriceHistoryService,
     private readonly config: ConfigService<Env, true>,
   ) {}
 
@@ -41,6 +43,6 @@ export class PricesController {
     if (this.config.get('NODE_ENV', { infer: true }) === 'production') {
       throw new ForbiddenException('El refresco manual está deshabilitado en producción');
     }
-    return this.prices.refreshAll();
+    return this.history.refreshAll();
   }
 }

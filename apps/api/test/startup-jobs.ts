@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 import { DailyJobsScheduler } from '../src/jobs/daily-jobs.scheduler.js';
 import { PortfolioSnapshotsService } from '../src/portfolio/portfolio-snapshots.service.js';
-import { PricesService } from '../src/prices/prices.service.js';
+import { PriceHistoryService } from '../src/prices/price-history.service.js';
 
 /**
  * Anula la pasada de arranque de `DailyJobsScheduler` (backfill de precios y snapshots).
@@ -17,7 +17,7 @@ import { PricesService } from '../src/prices/prices.service.js';
  * Los spies se deshacen con `vi.restoreAllMocks()`.
  */
 export function disableStartupBackfill(): void {
-  vi.spyOn(PricesService.prototype, 'ensureHistoryForActivePositions').mockResolvedValue();
+  vi.spyOn(PriceHistoryService.prototype, 'ensureHistoryForActivePositions').mockResolvedValue();
   vi.spyOn(PortfolioSnapshotsService.prototype, 'backfillAll').mockResolvedValue();
 }
 

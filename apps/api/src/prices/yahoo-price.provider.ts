@@ -41,7 +41,7 @@ type ChartOutcome = { ok: true; body: unknown } | { ok: false; outage: boolean }
 /**
  * Cinco años de cierres diarios (~1.280 barras, ~135 kB) caben en una llamada al mismo
  * endpoint con otro `range`/`interval`, al mismo coste en peticiones que un solo cierre. Es el
- * tope de la reconstrucción de la cartera (`HISTORY_MAX_DAYS` en `prices.service.ts`).
+ * tope de la reconstrucción de la cartera (`HISTORY_MAX_DAYS` en `price-history.service.ts`).
  */
 const HISTORY_RANGE = '5y';
 const HISTORY_INTERVAL = '1d';
@@ -164,7 +164,7 @@ export function parseYahooDividends(symbol: string, body: unknown): DividendEven
 export class YahooPriceProvider implements PriceProvider {
   readonly name = 'yahoo';
   private readonly logger = new Logger(YahooPriceProvider.name);
-  /** Públicos para que los tests los acorten (como `historyRequestDelayMs` en `PricesService`). */
+  /** Públicos para que los tests los acorten (como `historyRequestDelayMs` en `PriceHistoryService`). */
   requestDelayMs = REQUEST_DELAY_MS;
   batchBudgetMs = QUOTES_BATCH_BUDGET_MS;
   retry: RetryPolicy = RETRY;

@@ -13,7 +13,8 @@ import {
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import type { PositionsService } from '../positions/positions.service.js';
 import type { PriceProvider } from '../prices/price-provider.interface.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
 import type { SymbolResolver } from '../prices/symbol-resolver.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
@@ -45,13 +46,21 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   let close: () => Promise<void>;
   let snapshots: PortfolioSnapshotsService;
   let positions: PositionsService;
-  let prices: PricesService;
+  let prices: PriceReadService;
+  let priceHistory: PriceHistoryService;
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    prices = new PricesService(db, silentProvider, identityResolver);
-    positions = buildPositionsStack(db, { prices }).positions;
-    snapshots = new PortfolioSnapshotsService(db, new PortfolioValuationService(positions, prices), prices, positions);
+    prices = new PriceReadService(db, identityResolver);
+    priceHistory = new PriceHistoryService(db, silentProvider, identityResolver, prices);
+    positions = buildPositionsStack(db, { prices: priceHistory }).positions;
+    snapshots = new PortfolioSnapshotsService(
+      db,
+      new PortfolioValuationService(positions, prices),
+      prices,
+      priceHistory,
+      positions,
+    );
   });
 
   // Reloj congelado (solo `Date`): una ejecución que cruce la medianoche UTC no debe cambiar el
@@ -450,8 +459,7 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
         const events = new EventEmitter2();
         const emitted: unknown[] = [];
         events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-        const prices = new PricesService(db, silentProvider, identityResolver);
-        const editor = buildPositionsStack(db, { prices, positionsEvents: events }).positions;
+        const editor = buildPositionsStack(db, { prices: priceHistory, positionsEvents: events }).positions;
 
         // Mismos importes que ya tiene la posición, como hace `PositionForm`.
         await editor.update(userId, id, { name: 'Renamed', broker: 'Other', quantity: 10, avgPrice: 100 });

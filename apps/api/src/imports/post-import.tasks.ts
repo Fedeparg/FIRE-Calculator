@@ -4,7 +4,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { Position } from '../db/schema.js';
 import { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { POSITION_CREATED_EVENT, type PositionCreatedEvent } from '../positions/position-events.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
 
 /**
  * Trabajo posterior a una importación que no hace esperar la respuesta: precios e histórico de
@@ -16,7 +16,7 @@ export class PostImportTasks {
   private readonly logger = new Logger(PostImportTasks.name);
 
   constructor(
-    private readonly prices: PricesService,
+    private readonly prices: PriceHistoryService,
     private readonly events: EventEmitter2,
     private readonly dividends: DividendResolutionService,
   ) {}

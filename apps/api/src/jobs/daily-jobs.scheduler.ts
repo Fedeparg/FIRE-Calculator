@@ -7,7 +7,7 @@ import { AssetClassBackfillService } from '../positions/asset-class-backfill.ser
 import { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceHistoryService } from '../prices/price-history.service.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 import { errorMessage } from '../common/errors.js';
 
@@ -44,7 +44,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   private current: Promise<void> | null = null;
 
   constructor(
-    private readonly prices: PricesService,
+    private readonly prices: PriceHistoryService,
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly fireAlerts: FireAlertsService,
     private readonly dividends: DividendResolutionService,

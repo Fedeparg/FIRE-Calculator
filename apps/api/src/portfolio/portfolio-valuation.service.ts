@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
-import { PricesService, type FxRates, type PriceInfo } from '../prices/prices.service.js';
+import { PriceReadService, type FxRates, type PriceInfo } from '../prices/price-read.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/portfolio/aggregate';
 import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio/breakdown';
 
@@ -62,14 +62,14 @@ export interface PortfolioValuation {
 
 /**
  * Valor de mercado y P&L de la cartera sobre `PositionsService` (scoping por usuario) y
- * `PricesService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
+ * `PriceReadService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
  * a las tools MCP de lectura (`_local/mcp-integracion.md`).
  */
 @Injectable()
 export class PortfolioValuationService {
   constructor(
     private readonly positions: PositionsService,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
   ) {}
 
   /** `market`: precios y FX ya leídos (ver `MarketData`); sin él, se leen para este usuario. */
