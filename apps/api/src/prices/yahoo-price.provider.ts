@@ -3,7 +3,8 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import type { DividendEvent, PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
 import { isoDate, todayUtc } from '../common/dates.js';
-import { errorMessage } from '../common/errors.js';
+import { fetchJson, sleep, type RetryPolicy } from '../common/http.js';
+import { YAHOO_USER_AGENT } from './yahoo-http.js';
 
 /** Endpoint público v8 `chart` de Yahoo: funciona por símbolo sin crumb ni cookie. */
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
@@ -13,13 +14,12 @@ const REQUEST_DELAY_MS = 500;
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 1_000;
 const REQUEST_TIMEOUT_MS = 12_000;
-
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
-/**
- * User-Agent mínimo a propósito: se comprobó empíricamente que Yahoo rate-limita (429) los UA
- * que imitan un navegador o `curl` desde IPs de datacenter, pero deja pasar uno mínimo.
- */
-const USER_AGENT = 'Mozilla/5.0';
+/** Reintentos ante 429 / 5xx y ante fallos de red, con espera lineal. */
+const RETRY: RetryPolicy = {
+  max: MAX_RETRIES,
+  baseMs: RETRY_BASE_MS,
+  retryOn: (status) => status === 429 || status >= 500,
+};
 
 /**
  * Cinco años de cierres diarios (~1.280 barras, ~135 kB) caben en una llamada al mismo
@@ -154,7 +154,7 @@ export class YahooPriceProvider implements PriceProvider {
 
     // Secuencial con pausa: el volumen es bajo y así se evita el 429.
     for (let i = 0; i < unique.length; i++) {
-      if (i > 0) await delay(REQUEST_DELAY_MS);
+      if (i > 0) await sleep(REQUEST_DELAY_MS);
       const quote = await this.fetchOne(unique[i]);
       if (quote) result.set(quote.symbol, quote);
     }
@@ -194,44 +194,19 @@ export class YahooPriceProvider implements PriceProvider {
    * que un símbolo malo no rompa el lote. Devuelve el cuerpo sin parsear (`unknown`).
    */
   private async fetchChart(symbol: string, range: string, interval: string, events?: string): Promise<unknown> {
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-      try {
-        const url =
-          `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}` +
-          `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}` +
-          (events ? `&events=${encodeURIComponent(events)}` : '');
-        const res = await fetch(url, {
-          headers: { 'User-Agent': USER_AGENT },
-          signal: controller.signal,
-        });
+    const url =
+      `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}` +
+      `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}` +
+      (events ? `&events=${encodeURIComponent(events)}` : '');
+    const result = await fetchJson(url, {
+      timeoutMs: REQUEST_TIMEOUT_MS,
+      headers: { 'User-Agent': YAHOO_USER_AGENT },
+      retry: RETRY,
+    });
+    if (result.ok) return result.body;
 
-        if (res.status === 429 || res.status >= 500) {
-          if (attempt < MAX_RETRIES) {
-            await delay(RETRY_BASE_MS * attempt);
-            continue;
-          }
-          this.logger.warn(`Yahoo ${symbol}: HTTP ${res.status} (sin reintentos restantes)`);
-          return null;
-        }
-        if (!res.ok) {
-          this.logger.warn(`Yahoo ${symbol}: HTTP ${res.status}`);
-          return null;
-        }
-
-        return await res.json();
-      } catch (error) {
-        if (attempt < MAX_RETRIES) {
-          await delay(RETRY_BASE_MS * attempt);
-          continue;
-        }
-        this.logger.warn(`Yahoo ${symbol}: ${errorMessage(error)}`);
-        return null;
-      } finally {
-        clearTimeout(timeout);
-      }
-    }
+    const exhausted = result.status !== undefined && RETRY.retryOn(result.status) ? ' (sin reintentos restantes)' : '';
+    this.logger.warn(`Yahoo ${symbol}: ${result.error}${exhausted}`);
     return null;
   }
 }

@@ -2,13 +2,12 @@ import { MIN_INSTRUMENT_QUERY_LENGTH } from '@sextante/core/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { InstrumentSearchProvider, InstrumentSearchResult, InstrumentType } from './instrument-search.js';
-import { errorMessage } from '../common/errors.js';
+import { fetchJson } from '../common/http.js';
+import { YAHOO_USER_AGENT } from './yahoo-http.js';
 
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const QUOTES_COUNT = 8;
 const REQUEST_TIMEOUT_MS = 8_000;
-/** User-Agent mínimo a propósito, como en el proveedor de precios: Yahoo rate-limita los que imitan un navegador desde datacenters. */
-const USER_AGENT = 'Mozilla/5.0';
 
 /** `quoteType` de Yahoo → tipo normalizado; los no contemplados caen en 'other'. */
 const TYPE_MAP: Record<string, InstrumentType> = {
@@ -66,25 +65,13 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
     const q = query.trim();
     if (q.length < MIN_INSTRUMENT_QUERY_LENGTH) return [];
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    try {
-      const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` + `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
-      const res = await fetch(url, {
-        headers: { 'User-Agent': USER_AGENT },
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        this.logger.warn(`Yahoo search "${q}": HTTP ${res.status}`);
-        return [];
-      }
-      return parseYahooSearch(await res.json());
-    } catch (error) {
+    const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` + `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
+    const result = await fetchJson(url, { timeoutMs: REQUEST_TIMEOUT_MS, headers: { 'User-Agent': YAHOO_USER_AGENT } });
+    if (!result.ok) {
       // Degrada a "sin resultados" para no romper la UI.
-      this.logger.warn(`Yahoo search "${q}": ${errorMessage(error)}`);
+      this.logger.warn(`Yahoo search "${q}": ${result.error}`);
       return [];
-    } finally {
-      clearTimeout(timeout);
     }
+    return parseYahooSearch(result.body);
   }
 }

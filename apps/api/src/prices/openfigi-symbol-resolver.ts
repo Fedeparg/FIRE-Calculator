@@ -14,7 +14,7 @@ import {
 } from './instrument-search.js';
 import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.js';
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
-import { errorMessage } from '../common/errors.js';
+import { fetchJson, sleep } from '../common/http.js';
 
 /** Forma de un ISIN: 2 letras (país) + 9 alfanuméricos + 1 dígito de control. */
 /** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
@@ -54,8 +54,6 @@ const SUFFIX_ORDER = [...YAHOO_SUFFIXES, ''];
 const MAX_CANDIDATES = 12;
 /** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
 const VALIDATION_DELAY_MS = 400;
-
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Resultado de consultar OpenFIGI por un ISIN. Distingue el "vacío" real del fallo transitorio. */
 type OpenFigiOutcome =
@@ -241,7 +239,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
   /** Primer candidato que cotiza en la fuente (el orden es la prioridad), o null. */
   private async firstThatPrices(candidates: string[]): Promise<string | null> {
     for (let i = 0; i < candidates.length; i++) {
-      if (i > 0) await delay(VALIDATION_DELAY_MS);
+      if (i > 0) await sleep(VALIDATION_DELAY_MS);
       const quotes = await this.provider.getQuotes([candidates[i]]);
       if (quotes.has(candidates[i])) return candidates[i];
     }
@@ -271,37 +269,28 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
 
   /** Consulta OpenFIGI v3 por ISIN. Separa "sin coincidencias" (cachear) de "fallo" (reintentar). */
   private async mapIsin(isin: string): Promise<OpenFigiOutcome> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), OPENFIGI_TIMEOUT_MS);
-    try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (this.apiKey) headers['X-OPENFIGI-APIKEY'] = this.apiKey;
-      const res = await fetch(OPENFIGI_MAPPING_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        this.logger.warn(`OpenFIGI ${isin}: HTTP ${res.status}`);
-        return { kind: 'error' };
-      }
-      const body = (await res.json()) as OpenFigiResultItem[];
-      const item = Array.isArray(body) ? body[0] : undefined;
-      const data = item?.data;
-      if (!data || data.length === 0) return { kind: 'empty' };
-      // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
-      const listings = data.flatMap(({ ticker, exchCode }) =>
-        typeof ticker === 'string' && ticker
-          ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]
-          : [],
-      );
-      return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
-    } catch (error) {
-      this.logger.warn(`OpenFIGI ${isin}: ${errorMessage(error)}`);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.apiKey) headers['X-OPENFIGI-APIKEY'] = this.apiKey;
+    const result = await fetchJson(OPENFIGI_MAPPING_URL, {
+      timeoutMs: OPENFIGI_TIMEOUT_MS,
+      method: 'POST',
+      headers,
+      body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
+    });
+    if (!result.ok) {
+      this.logger.warn(`OpenFIGI ${isin}: ${result.error}`);
       return { kind: 'error' };
-    } finally {
-      clearTimeout(timeout);
     }
+    const body = result.body as OpenFigiResultItem[];
+    const item = Array.isArray(body) ? body[0] : undefined;
+    const data = item?.data;
+    if (!data || data.length === 0) return { kind: 'empty' };
+    // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
+    const listings = data.flatMap(({ ticker, exchCode }) =>
+      typeof ticker === 'string' && ticker
+        ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]
+        : [],
+    );
+    return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
   }
 }

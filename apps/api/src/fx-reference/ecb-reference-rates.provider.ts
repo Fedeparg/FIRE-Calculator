@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { fetchText } from '../common/http.js';
+
 /**
  * API de datos del BCE (ECB Data Portal, SDMX): series diarias `EXR.D.<DIVISA>.EUR.SP00.A`,
  * "ECB reference exchange rate", publicadas hacia las 16:00 CET. Sin clave ni rate-limit
@@ -70,13 +72,14 @@ export class EcbReferenceRatesProvider implements ReferenceRatesProvider {
       `${ECB_DATA_URL}/D.${valid.join('+')}.EUR.SP00.A` +
       `?startPeriod=${from}&endPeriod=${to}&format=csvdata&detail=dataonly`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    const result = await fetchText(url, { timeoutMs: REQUEST_TIMEOUT_MS });
+    if (result.ok) return parseEcbCsv(result.body);
     // 404 = ninguna de las series existe en ese tramo: no es un error, es "sin datos".
-    if (response.status === 404) return [];
-    if (!response.ok) {
-      this.logger.warn(`ECB respondió ${response.status} para ${valid.join(',')} ${from}..${to}`);
-      throw new Error(`ECB responded ${response.status}`);
-    }
-    return parseEcbCsv(await response.text());
+    if (result.status === 404) return [];
+    // Lanza: quien llama distingue "no hay datos" de "no se pudieron cargar" (`ratesLoaded`).
+    this.logger.warn(`ECB: ${result.error} para ${valid.join(',')} ${from}..${to}`);
+    throw new Error(
+      result.status === undefined ? `ECB request failed: ${result.error}` : `ECB responded ${result.status}`,
+    );
   }
 }
