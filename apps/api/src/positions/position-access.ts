@@ -1,10 +1,10 @@
 import { NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 
-import type { Database } from '../db/database.module.js';
+import type { DatabaseOrTransaction } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 
-export type DatabaseOrTransaction = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
+export type { DatabaseOrTransaction } from '../db/database.module.js';
 
 /**
  * Localiza una posición verificando propiedad (404 tanto si no existe como si es de

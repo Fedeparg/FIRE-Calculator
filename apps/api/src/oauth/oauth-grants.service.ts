@@ -30,25 +30,29 @@ export class OAuthGrantsService {
 
   /**
    * Registra/actualiza el consentimiento. Hace UNIÓN con lo ya concedido (step-up: pedir
-   * un scope nuevo no debe perder los anteriores). Marca `lastUsedAt`.
+   * un scope nuevo no debe perder los anteriores), conservando el orden de concesión. Marca
+   * `lastUsedAt`. Es una sola sentencia (`INSERT … ON CONFLICT`): con leer y luego escribir, dos
+   * aprobaciones simultáneas chocaban en el índice único o se pisaban la unión.
    */
   async recordConsent(userId: string, clientId: string, scopes: string[]): Promise<void> {
-    const [existing] = await this.db
-      .select({ id: oauthGrants.id, scopes: oauthGrants.scopes })
-      .from(oauthGrants)
-      .where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)))
-      .limit(1);
-
-    if (existing) {
-      const union = Array.from(new Set([...existing.scopes, ...scopes]));
-      await this.db
-        .update(oauthGrants)
-        .set({ scopes: union, lastUsedAt: new Date() })
-        .where(eq(oauthGrants.id, existing.id));
-      return;
-    }
-
-    await this.db.insert(oauthGrants).values({ userId, clientId, scopes, lastUsedAt: new Date() });
+    const now = new Date();
+    await this.db
+      .insert(oauthGrants)
+      .values({ userId, clientId, scopes: Array.from(new Set(scopes)), lastUsedAt: now })
+      .onConflictDoUpdate({
+        target: [oauthGrants.userId, oauthGrants.clientId],
+        set: {
+          scopes: sql`(
+            select jsonb_agg(scope order by position)
+            from (
+              select scope, min(position) as position
+              from jsonb_array_elements_text(${oauthGrants.scopes} || excluded.scopes) with ordinality as t(scope, position)
+              group by scope
+            ) as granted
+          )`,
+          lastUsedAt: now,
+        },
+      });
   }
 
   /** Marca el consentimiento como usado (al emitir un token). Best-effort. */
@@ -65,8 +69,12 @@ export class OAuthGrantsService {
    * refresh. El scoping por `userId` impide revocar lo de otro.
    */
   async revoke(userId: string, clientId: string): Promise<void> {
-    await this.db.delete(oauthTokens).where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, clientId)));
-    await this.db.delete(oauthGrants).where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)));
+    // En una transacción: si fallara el segundo borrado quedaría un consentimiento sin tokens (o
+    // al revés), y la pantalla de aplicaciones conectadas mentiría.
+    await this.db.transaction(async (inner) => {
+      await inner.delete(oauthTokens).where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, clientId)));
+      await inner.delete(oauthGrants).where(and(eq(oauthGrants.userId, userId), eq(oauthGrants.clientId, clientId)));
+    });
   }
 
   /** Lista los consentimientos del usuario (para "Aplicaciones conectadas"). */

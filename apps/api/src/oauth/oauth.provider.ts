@@ -16,7 +16,7 @@ import {
   InvalidTokenError,
 } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 
-import { DRIZZLE, type Database } from '../db/database.module.js';
+import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
 import { oauthAuthCodes, oauthTokens } from '../db/schema.js';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { OAuthClientsStore } from './oauth-clients.store.js';
@@ -209,17 +209,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       throw new InvalidGrantError('Refresh token expired');
     }
 
-    // Consumo atómico: si otra petición lo consumió primero, trátalo como reuso.
-    const [consumed] = await this.db
-      .update(oauthTokens)
-      .set({ consumedAt: new Date() })
-      .where(and(eq(oauthTokens.tokenHash, refreshHash), isNull(oauthTokens.consumedAt)))
-      .returning({ tokenHash: oauthTokens.tokenHash });
-    if (!consumed) {
-      await this.grants.revoke(row.userId, row.clientId);
-      throw new InvalidGrantError('Refresh token reuse detected; access revoked');
-    }
-
+    // Validaciones ANTES de consumir: una petición mal formada (scopes de más, otro recurso) no
+    // debe gastar el refresh, o el cliente se quedaría sin cadena por un error suyo.
     // Solo se pueden estrechar scopes en el refresh, nunca ampliarlos.
     let nextScopes = row.scopes;
     if (scopes && scopes.length > 0) {
@@ -229,10 +220,27 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       }
       nextScopes = scopes;
     }
-
     const audience = this.validateResource(resource);
+
+    // Consumir y emitir en la MISMA transacción: si la emisión fallara después de consumir, el
+    // cliente se quedaría sin refresh válido y su reintento se tomaría por reuso (revocación).
+    const tokens = await this.db.transaction(async (tx) => {
+      // Consumo atómico: si otra petición lo consumió primero, trátalo como reuso.
+      const [consumed] = await tx
+        .update(oauthTokens)
+        .set({ consumedAt: new Date() })
+        .where(and(eq(oauthTokens.tokenHash, refreshHash), isNull(oauthTokens.consumedAt)))
+        .returning({ tokenHash: oauthTokens.tokenHash });
+      if (!consumed) return null;
+      return this.issueTokens(row.userId, row.clientId, nextScopes, audience, refreshHash, tx);
+    });
+    if (!tokens) {
+      await this.grants.revoke(row.userId, row.clientId);
+      throw new InvalidGrantError('Refresh token reuse detected; access revoked');
+    }
+
     this.touchClient(row.clientId);
-    return this.issueTokens(row.userId, row.clientId, nextScopes, audience, refreshHash);
+    return tokens;
   }
 
   /**
@@ -296,12 +304,13 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     scopes: string[],
     audience: string,
     parentHash?: string,
+    db: DatabaseOrTransaction = this.db,
   ): Promise<OAuthTokens> {
     const accessToken = this.randomToken();
     const refreshToken = this.randomToken();
     const now = Date.now();
 
-    await this.db.insert(oauthTokens).values([
+    await db.insert(oauthTokens).values([
       {
         tokenHash: this.hash(accessToken),
         type: 'access',

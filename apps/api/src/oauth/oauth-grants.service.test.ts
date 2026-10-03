@@ -80,8 +80,29 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
       const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
       expect(rows).toHaveLength(1);
-      expect([...rows[0].scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
+      // Orden de concesión, sin duplicados.
+      expect(rows[0].scopes).toEqual(['portfolio:read', 'portfolio:write']);
       expect(rows[0].lastUsedAt).not.toBeNull();
+    });
+
+    it('dos aprobaciones simultáneas dejan UNA fila con la unión de ambas, sin error', async () => {
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const parallel = new OAuthGrantsService(concurrent.db);
+        const userId = await insertUser(db, 'a@example.com');
+        await insertClient('c1');
+
+        await Promise.all([
+          parallel.recordConsent(userId, 'c1', ['portfolio:read']),
+          parallel.recordConsent(userId, 'c1', ['portfolio:write']),
+        ]);
+
+        const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
+        expect(rows).toHaveLength(1);
+        expect([...rows[0].scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
+      } finally {
+        await concurrent.close();
+      }
     });
   });
 

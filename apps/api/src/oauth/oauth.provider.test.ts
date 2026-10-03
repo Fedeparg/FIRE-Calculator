@@ -5,7 +5,7 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { and, eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
 import { oauthTokens } from '../db/schema.js';
@@ -180,6 +180,38 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
         .from(oauthTokens)
         .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.clientId, CLIENT.client_id)));
       expect(remaining).toHaveLength(0);
+    });
+
+    it('si la emisión falla, el refresh NO queda consumido (el cliente puede reintentar)', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const refresh = await seedToken({
+        type: 'refresh',
+        userId,
+        expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_SECONDS * 1000),
+      });
+      // Access y refresh con el mismo valor: el segundo INSERT viola el único de `token_hash`.
+      const spy = vi
+        .spyOn(provider as unknown as { randomToken: () => string }, 'randomToken')
+        .mockReturnValue('mismo-valor');
+
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).rejects.toThrow();
+      spy.mockRestore();
+
+      const [row] = await db
+        .select({ consumedAt: oauthTokens.consumedAt })
+        .from(oauthTokens)
+        .where(eq(oauthTokens.tokenHash, hash(refresh)));
+      expect(row.consumedAt).toBeNull();
+      // Y el reintento funciona, sin tomarse por reuso.
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
+    });
+
+    it('pedir más scopes de los concedidos no gasta el refresh', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const refresh = await seedToken({ type: 'refresh', userId });
+
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh, ['portfolio:write'])).rejects.toThrow(/exceed/i);
+      await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');
     });
 
     it('rechaza un refresh token de otro cliente', async () => {

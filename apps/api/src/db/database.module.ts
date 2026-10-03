@@ -10,6 +10,9 @@ export const DRIZZLE = Symbol('DRIZZLE');
 
 export type Database = PostgresJsDatabase<typeof schema>;
 
+/** La base de datos o una transacción abierta sobre ella: lo que acepta un paso que puede ir dentro de otra. */
+export type DatabaseOrTransaction = Database | Parameters<Parameters<Database['transaction']>[0]>[0];
+
 /** Cliente `postgres` crudo, para cerrarlo al apagar. */
 const PG_CLIENT = Symbol('PG_CLIENT');
 

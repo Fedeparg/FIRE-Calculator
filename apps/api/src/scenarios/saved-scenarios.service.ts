@@ -1,8 +1,8 @@
 import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module.js';
+import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
 import { savedScenarios, type SavedScenario } from '../db/schema.js';
 import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import type { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
@@ -40,12 +40,20 @@ export class SavedScenariosService {
   /** Guarda un escenario nuevo, aplicando los límites de tamaño y de cantidad. */
   async create(userId: string, dto: CreateSavedScenarioDto): Promise<SavedScenarioResponse> {
     this.assertInputsSize(dto.inputs);
-    await this.assertQuotaAvailable(userId);
 
-    const [row] = await this.db
-      .insert(savedScenarios)
-      .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
-      .returning();
+    // Contar y luego insertar es check-then-act: dos altas simultáneas verían el mismo recuento y
+    // superarían el tope. Un cerrojo transaccional por usuario las serializa. Clave de dos partes
+    // (espacio 'saved_scenarios' + usuario) para no chocar con otros cerrojos por usuario, como
+    // el de los snapshots.
+    const row = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('saved_scenarios'), hashtext(${userId}))`);
+      await this.assertQuotaAvailable(tx, userId);
+      const [inserted] = await tx
+        .insert(savedScenarios)
+        .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
+        .returning();
+      return inserted;
+    });
 
     return toResponse(row);
   }
@@ -102,11 +110,8 @@ export class SavedScenariosService {
   }
 
   /** Rechaza el alta si el usuario ya está en su tope de escenarios. */
-  private async assertQuotaAvailable(userId: string): Promise<void> {
-    const [row] = await this.db
-      .select({ total: count() })
-      .from(savedScenarios)
-      .where(eq(savedScenarios.userId, userId));
+  private async assertQuotaAvailable(tx: DatabaseOrTransaction, userId: string): Promise<void> {
+    const [row] = await tx.select({ total: count() }).from(savedScenarios).where(eq(savedScenarios.userId, userId));
 
     if (row.total >= MAX_SCENARIOS_PER_USER) {
       throw new BadRequestException({
