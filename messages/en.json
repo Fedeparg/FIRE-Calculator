@@ -1370,7 +1370,7 @@
       "transferValue": "Transfer value",
       "acquisitionValue": "Acquisition value",
       "gain": "Gain/loss",
-      "scope": "Nets the gains and losses of sales within the same tax year and applies FIFO to each security as a whole, even if you hold it with several brokers. It does not apply negative balances from the previous four years, the two-month rule or offsetting against dividends and interest. It is an aid to review your return, not a tax draft or advice.",
+      "scope": "It is an aid to prepare and review your tax return, not a tax draft or advice. Each figure says where it comes from; check estimates and boxes against the AEAT manual and your draft return.",
       "csv": {
         "date": "Sale date",
         "ticker": "Symbol",
@@ -1431,7 +1431,8 @@
         "derivative": "Derivative",
         "other": "Other"
       },
-      "print": "Print or save as PDF"
+      "print": "Print or save as PDF",
+      "model720": "Form 720: if on 31 December your accounts, securities or property abroad exceed €50,000 in any of those blocks, you must report them (it is not a tax). Sextante does not calculate it because it does not know which brokers count as foreign: for Trade Republic with its Spanish IBAN, the tax authority says the cash account no longer does (ruling V2475-25)."
     },
     "import": {
       "link": "Import from Trade Republic",

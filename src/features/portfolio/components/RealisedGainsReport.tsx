@@ -204,6 +204,8 @@ export default function RealisedGainsReport({
 
       <PendingBalancesForm balances={pendingBalances} firstYear={years[years.length - 1]} />
 
+      <Notice variant="info">{t("model720")}</Notice>
+
       <Notice variant="info">{t("scope")}</Notice>
     </div>
   );

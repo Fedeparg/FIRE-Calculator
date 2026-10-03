@@ -1370,7 +1370,7 @@
       "transferValue": "Valor de transmisión",
       "acquisitionValue": "Valor de adquisición",
       "gain": "Ganancia/pérdida",
-      "scope": "Compensa las ganancias y pérdidas de las ventas del mismo ejercicio y aplica el FIFO a cada valor entero, aunque lo tengas en varios brókers. No aplica los saldos negativos de los cuatro años anteriores, la regla de los dos meses ni la compensación con dividendos e intereses. Es una ayuda para revisar tu declaración, no un borrador fiscal ni asesoramiento.",
+      "scope": "Es una ayuda para preparar y revisar tu declaración, no un borrador fiscal ni asesoramiento. Cada cifra indica de dónde sale; contrasta las estimaciones y las casillas con el manual de la AEAT y con tu borrador.",
       "csv": {
         "date": "Fecha de venta",
         "ticker": "Símbolo",
@@ -1431,7 +1431,8 @@
         "derivative": "Derivado",
         "other": "Otro"
       },
-      "print": "Imprimir o guardar en PDF"
+      "print": "Imprimir o guardar en PDF",
+      "model720": "Modelo 720: si a 31 de diciembre tus cuentas, valores o inmuebles en el extranjero superan 50.000 € en alguno de esos bloques, tienes que informar de ellos (no es un impuesto). Sextante no lo calcula porque no sabe qué brókers cuentan como extranjeros: con Trade Republic y su IBAN español, la DGT dice que la cuenta de efectivo ya no lo es (consulta V2475-25)."
     },
     "import": {
       "link": "Importar de Trade Republic",
