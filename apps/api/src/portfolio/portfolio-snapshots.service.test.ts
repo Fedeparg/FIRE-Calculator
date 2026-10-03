@@ -796,8 +796,9 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
       await snapshots.backfillUser(userId);
       const before = await rowsOf(userId);
 
-      await new Promise((resolve) => setTimeout(resolve, 20));
-      vi.setSystemTime(new Date(Date.now() + 60_000)); // `updatedAt` cambiaría si se reescribiese
+      // `Date` es falso en este fichero: adelantar el reloj basta para que una reescritura cambiase
+      // `updatedAt` (lo pone la aplicación con `new Date()`), sin esperar tiempo real.
+      vi.setSystemTime(new Date(Date.now() + 60_000));
       await snapshots.backfillUser(userId);
 
       expect((await rowsOf(userId)).map((r) => r.updatedAt)).toEqual(before.map((r) => r.updatedAt));

@@ -1,6 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { resolve } from 'node:path';
 
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -28,26 +26,16 @@ function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePo
 const START_DATE = '2026-01-01';
 
 /**
- * Extrae del SQL de las migraciones la sentencia REAL de backfill de `position_lots`.
- *
- * Se lee del fichero (buscándolo por contenido, no por nombre fijo) en vez de reescribirla en
- * el test: así lo que se prueba es la sentencia que se ejecutará en producción. El backfill
- * se aplica en `global-setup` contra una BD vacía, así que allí es un no-op y esta es la
- * única cobertura real que puede tener.
+ * Sentencia de backfill de `position_lots` de la migración `0011_melodic_marten_broadcloak.sql`,
+ * copiada literalmente. Esa migración ya está aplicada en producción y nunca se edita, así que no
+ * puede divergir; congelarla aquí evita que el test dependa de cómo se nombran y trocean los
+ * ficheros de `drizzle/`. El backfill se aplica en `global-setup` contra una BD vacía (allí es un
+ * no-op), así que esta es la única cobertura real que tiene.
  */
-function readBackfillStatement(): string {
-  const dir = resolve(import.meta.dirname, '../../drizzle');
-  const statements = readdirSync(dir)
-    .filter((file) => file.endsWith('.sql'))
-    .flatMap((file) => readFileSync(resolve(dir, file), 'utf8').split('--> statement-breakpoint'))
-    .map((statement) => statement.trim())
-    .filter((statement) => statement.includes('INSERT INTO "position_lots"'));
-
-  // Si una renumeración o un renombrado dejase de encontrarla, el test debe FALLAR, no
-  // volverse vacío en silencio.
-  expect(statements).toHaveLength(1);
-  return firstItem(statements);
-}
+const BACKFILL_SQL = `INSERT INTO "position_lots" ("position_id", "user_id", "kind", "quantity", "price", "fees", "traded_at")
+SELECT p."id", p."user_id", 'buy', p."quantity", p."avg_price", 0, (p."created_at" AT TIME ZONE 'UTC')::date
+FROM "positions" p
+WHERE NOT EXISTS (SELECT 1 FROM "position_lots" l WHERE l."position_id" = p."id");`;
 
 describe('PositionLotsService (integración con Postgres)', () => {
   let db: Database;
@@ -98,7 +86,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
           .returning(),
       );
 
-      await db.execute(sql.raw(readBackfillStatement()));
+      await db.execute(sql.raw(BACKFILL_SQL));
 
       const rows = await db.select().from(positionLots).where(eq(positionLots.positionId, existing.id));
 
@@ -124,9 +112,8 @@ describe('PositionLotsService (integración con Postgres)', () => {
       const userId = await insertUser(db, 'a@example.com');
       await db.insert(positions).values({ userId, ticker: 'VWCE', quantity: '3', avgPrice: '110', currency: 'EUR' });
 
-      const backfill = readBackfillStatement();
-      await db.execute(sql.raw(backfill));
-      await db.execute(sql.raw(backfill));
+      await db.execute(sql.raw(BACKFILL_SQL));
+      await db.execute(sql.raw(BACKFILL_SQL));
 
       expect(await db.select().from(positionLots)).toHaveLength(1);
     });
