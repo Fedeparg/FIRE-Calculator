@@ -1,6 +1,6 @@
 import "server-only";
 
-import { apiFetch } from "@/shared/api/api.server";
+import { serverApiFetch } from "@/shared/api/api.server";
 import type { ReferenceRates } from "@sextante/core/fiscal/fx-reference";
 import type { IncomeEvent } from "@sextante/core/fiscal/income";
 import type { RealisedGainsPosition } from "@sextante/core/fiscal/realised-gains";
@@ -10,7 +10,7 @@ import type { AssetClass, Position, PositionLot } from "@sextante/core/portfolio
 
 /** Posiciones para el SSR inicial; `[]` ante cualquier fallo (la página ya está protegida). */
 export async function fetchPositions(): Promise<Position[]> {
-  return (await apiFetch<Position[]>("/api/positions")) ?? [];
+  return (await serverApiFetch<Position[]>("/api/positions")) ?? [];
 }
 
 /** Lo que necesita el informe fiscal: ventas y cobros. */
@@ -35,10 +35,10 @@ export type RealisedGainsData = {
  */
 export async function fetchRealisedGainsData(): Promise<RealisedGainsData | null> {
   const [positions, lots, income, pendingBalances] = await Promise.all([
-    apiFetch<Position[]>("/api/positions"),
-    apiFetch<PositionLot[]>("/api/positions/lots"),
-    apiFetch<IncomeEvent[]>("/api/income"),
-    apiFetch<PendingNegative[]>("/api/tax-return/pending-balances"),
+    serverApiFetch<Position[]>("/api/positions"),
+    serverApiFetch<PositionLot[]>("/api/positions/lots"),
+    serverApiFetch<IncomeEvent[]>("/api/income"),
+    serverApiFetch<PendingNegative[]>("/api/tax-return/pending-balances"),
   ]);
   if (!positions || !lots || !income || !pendingBalances) return null;
 
@@ -48,6 +48,6 @@ export async function fetchRealisedGainsData(): Promise<RealisedGainsData | null
   if (!needed) return { positions: input, income, pendingBalances, assetClasses, rates: {}, ratesLoaded: true };
 
   const query = new URLSearchParams({ currencies: needed.currencies.join(","), from: needed.from });
-  const rates = await apiFetch<ReferenceRates>(`/api/fx/reference-rates?${query.toString()}`);
+  const rates = await serverApiFetch<ReferenceRates>(`/api/fx/reference-rates?${query.toString()}`);
   return { positions: input, income, pendingBalances, assetClasses, rates: rates ?? {}, ratesLoaded: rates !== null };
 }

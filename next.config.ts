@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import { ANALYTICS_PATH_PREFIX, ANALYTICS_SCRIPT_SRC } from "./src/shared/analytics/config";
+
 const withNextIntl = createNextIntlPlugin();
 
 // URL de la API. En dev apunta a la API local (NestJS); en prod, el servicio web
@@ -98,8 +100,8 @@ const nextConfig: NextConfig = {
       // consulta por la red local). `/stats` está excluido del proxy de i18n.
       ...(ANALYTICS_URL
         ? [
-            { source: "/stats/script.js", destination: `${ANALYTICS_URL}/script.js` },
-            { source: "/stats/api/send", destination: `${ANALYTICS_URL}/api/send` },
+            { source: ANALYTICS_SCRIPT_SRC, destination: `${ANALYTICS_URL}/script.js` },
+            { source: `${ANALYTICS_PATH_PREFIX}/api/send`, destination: `${ANALYTICS_URL}/api/send` },
           ]
         : []),
     ];

@@ -1,7 +1,8 @@
 // Umami propio. Script y eventos van por el mismo origen (`/stats/*`, rewrites de
 // next.config): el CSP sigue en 'self'. El ID de sitio es público (viaja en el script).
 
-// Debe coincidir con next.config y proxy.ts.
+// Única fuente de la ruta: la usan los rewrites de next.config. El `matcher` de proxy.ts tiene
+// que ser un literal (Next lo analiza estáticamente), así que lo comprueba un test.
 export const ANALYTICS_PATH_PREFIX = "/stats";
 
 // Umami envía los eventos a `<directorio del script>/api/send`.
