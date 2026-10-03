@@ -132,7 +132,50 @@ function BlockTable({
       </div>
       {block === "unclassified" && <Notice variant="warning">{t("unclassifiedNotice")}</Notice>}
 
-      <div className="overflow-x-auto rounded-lg border border-border">
+      {/* En pantallas estrechas, una tarjeta por valor: la tabla obligaría a deslizar para ver las cifras. */}
+      <ul className="flex flex-col divide-y divide-border rounded-lg border border-border sm:hidden">
+        {rows.map((row) => (
+          <li key={row.positionId} className="flex flex-col gap-2 p-3 text-sm">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <span className="min-w-0">
+                <span className="font-medium text-foreground">{row.ticker}</span>
+                {row.currency !== TAX_CURRENCY && <span className="ml-1.5 text-xs text-muted">{row.currency}</span>}
+                {row.name && <span className="block text-xs text-muted">{row.name}</span>}
+              </span>
+              <span className={`font-semibold tabular-nums ${signColor(row.gain)}`}>{signed(row.gain)}</span>
+            </div>
+            <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-xs">
+              <dt className="text-muted">
+                {t("transferValue")}
+                {columns && ` · ${t("box", { box: columns.transferValue })}`}
+              </dt>
+              <dd className="text-right tabular-nums text-foreground">
+                {eur(row.transferValue)}
+                <CopyValue value={boxValue(row.transferValue)} label={`${row.ticker} ${t("transferValue")}`} />
+              </dd>
+              <dt className="text-muted">
+                {t("acquisitionValue")}
+                {columns && ` · ${t("box", { box: columns.acquisitionValue })}`}
+              </dt>
+              <dd className="text-right tabular-nums text-foreground">
+                {eur(row.acquisitionValue)}
+                <CopyValue value={boxValue(row.acquisitionValue)} label={`${row.ticker} ${t("acquisitionValue")}`} />
+              </dd>
+              {showFx && row.currency !== TAX_CURRENCY && (
+                <>
+                  <dt className="text-muted">{t("fxDifference")}</dt>
+                  <dd className={`text-right tabular-nums ${signColor(row.fxDifference)}`}>
+                    {signed(row.fxDifference)}
+                  </dd>
+                </>
+              )}
+            </dl>
+            {block === "unclassified" && <ClassifySelect positionId={row.positionId} ticker={row.ticker} />}
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto rounded-lg border border-border sm:block">
         <table className="w-full min-w-[44rem] text-left text-sm">
           <caption className="sr-only">{t(`blocks.${block}.title`)}</caption>
           <thead>
