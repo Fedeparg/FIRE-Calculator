@@ -13,6 +13,7 @@ import {
   type SortDir,
   type SortKey,
 } from "@/features/portfolio/model/sort";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 import ToggleGroup from "@/shared/ui/ToggleGroup";
@@ -46,12 +47,6 @@ const SORT_OPTIONS: readonly SortKey[] = ["invested", "name", "marketValue", "pn
 /** Columnas de la lista en escritorio: activo, peso, valor y ganancia. */
 const COLUMNS = "md:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.2fr)]";
 
-/** Clase de color de una ganancia o pérdida. */
-function pnlClass(value: number | null): string {
-  if (value === null || value === 0) return "text-muted";
-  return value > 0 ? "text-success" : "text-danger";
-}
-
 /**
  * Lista de posiciones: activo, peso, valor actual y ganancia. Lo demás (cantidad, precio medio,
  * invertido, operaciones) vive en el panel de detalle, que se abre pulsando la fila: así la
@@ -77,7 +72,7 @@ export default function PositionList({
   panelId,
 }: Props) {
   const t = useTranslations("portfolio.list");
-  const { formatCurrency, formatPercent } = useFormat();
+  const { formatCurrency, formatPercent, formatSignedCurrency, formatSignedPercent } = useFormat();
   const [sortKey, setSortKey] = useState<SortKey>(DEFAULT_SORT_KEY);
   const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_SORT_DIR);
   const [gainMode, setGainMode] = useState<GainMode>("total");
@@ -212,14 +207,12 @@ export default function PositionList({
                       </span>
                       {row.gain !== null ? (
                         <>
-                          <span className={`hidden text-sm md:inline ${pnlClass(row.gain.abs)}`}>
-                            {row.gain.abs > 0 ? "+" : ""}
-                            {formatCurrency(row.gain.abs, p.currency)}
+                          <span className={`hidden text-sm md:inline ${signedTone(row.gain.abs, "text-muted")}`}>
+                            {formatSignedCurrency(row.gain.abs, p.currency)}
                           </span>
                           {row.gain.pct !== null && (
-                            <span className={`text-xs ${pnlClass(row.gain.pct)}`}>
-                              {row.gain.pct > 0 ? "+" : ""}
-                              {formatPercent(Math.round(row.gain.pct * 10) / 10)}
+                            <span className={`text-xs ${signedTone(row.gain.pct, "text-muted")}`}>
+                              {formatSignedPercent(Math.round(row.gain.pct * 10) / 10)}
                             </span>
                           )}
                         </>

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { formatIsoDate } from "@/shared/format/format";
 import { dailyGain, valuePosition } from "@sextante/core/portfolio/positions";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { Position, PriceInfo } from "@sextante/core/portfolio/types";
 import DerivativesNotice from "./DerivativesNotice";
@@ -20,20 +21,11 @@ type Props = {
   pricePending: boolean;
 };
 
-/** Color de una ganancia o pérdida; gris si no hay cifra o es cero. */
-function gainClass(value: number | null | undefined): string {
-  return value === null || value === undefined || value === 0
-    ? "text-muted"
-    : value > 0
-      ? "text-success"
-      : "text-danger";
-}
-
 /** Cabecera del detalle: nombre, valor y ganancia de la posición, y sus datos clave. */
 export default function PositionDetailSummary({ position, price, rates, pricePending }: Props) {
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
-  const { formatCurrency, formatPercent, formatQuantity } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatSignedPercent, formatQuantity } = useFormat();
 
   const valuation = valuePosition(position, price, rates);
   const today = dailyGain(position, price, rates);
@@ -54,25 +46,21 @@ export default function PositionDetailSummary({ position, price, rates, pricePen
           <span className="text-3xl font-semibold tracking-tight text-foreground tabular-nums">
             {formatCurrency(valuation.marketValue, position.currency)}
           </span>
-          <span className={`text-sm tabular-nums ${gainClass(valuation.pnlAbs)}`}>
-            {valuation.pnlAbs > 0 ? "+" : ""}
-            {formatCurrency(valuation.pnlAbs, position.currency)}
+          <span className={`text-sm tabular-nums ${signedTone(valuation.pnlAbs, "text-muted")}`}>
+            {formatSignedCurrency(valuation.pnlAbs, position.currency)}
             {valuation.pnlPct !== null && (
               <>
                 {" · "}
-                {valuation.pnlPct > 0 ? "+" : ""}
-                {formatPercent(valuation.pnlPct, { minDecimals: 2 })}
+                {formatSignedPercent(valuation.pnlPct, { minDecimals: 2 })}
               </>
             )}
           </span>
           {/* La ganancia de hoy, aparte de la total: sin cierre anterior no se enseña. */}
           {today !== null && (
-            <span className={`text-xs tabular-nums ${gainClass(today.abs)}`}>
-              {tDetail("todayGain")}: {today.abs > 0 ? "+" : ""}
-              {formatCurrency(today.abs, position.currency)}
+            <span className={`text-xs tabular-nums ${signedTone(today.abs, "text-muted")}`}>
+              {tDetail("todayGain")}: {formatSignedCurrency(today.abs, position.currency)}
               {" · "}
-              {today.pct > 0 ? "+" : ""}
-              {formatPercent(today.pct, { minDecimals: 2 })}
+              {formatSignedPercent(today.pct, { minDecimals: 2 })}
             </span>
           )}
         </div>

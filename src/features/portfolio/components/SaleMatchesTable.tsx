@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import type { MatchedLot } from "@sextante/core/fiscal/plusvalias";
 import { formatIsoDate } from "@/shared/format/format";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
 /** Desglose FIFO de una venta: de qué lotes sale cada participación y cuánto se gana con cada uno. */
 export default function SaleMatchesTable({ matched, currency }: Props) {
   const t = useTranslations("portfolio.sale");
-  const { formatCurrency, formatQuantity } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatQuantity } = useFormat();
 
   return (
     <div className="overflow-x-auto rounded-lg border border-border">
@@ -54,13 +55,8 @@ export default function SaleMatchesTable({ matched, currency }: Props) {
               <td className="px-3 py-2 text-right tabular-nums text-foreground">
                 {formatCurrency(match.acquisitionValue, currency)}
               </td>
-              <td
-                className={`px-3 py-2 text-right tabular-nums ${
-                  match.gain > 0 ? "text-success" : match.gain < 0 ? "text-danger" : "text-foreground"
-                }`}
-              >
-                {match.gain > 0 ? "+" : ""}
-                {formatCurrency(match.gain, currency)}
+              <td className={`px-3 py-2 text-right tabular-nums ${signedTone(match.gain)}`}>
+                {formatSignedCurrency(match.gain, currency)}
               </td>
             </tr>
           ))}

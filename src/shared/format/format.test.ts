@@ -160,3 +160,34 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(ago(10), Number.NaN, "es")).toBe("—");
   });
 });
+
+describe("formatSignedCurrency / formatSignedPercent", () => {
+  const es = getFormatters("es");
+  const en = getFormatters("en");
+
+  it("pone + en las ganancias y deja el resto como formatCurrency", () => {
+    expect(es.formatSignedCurrency(1234.5, "EUR")).toBe(`+${es.formatCurrency(1234.5, "EUR")}`);
+    expect(en.formatSignedCurrency(12, "USD")).toBe(`+${en.formatCurrency(12, "USD")}`);
+    expect(es.formatSignedCurrency(-3, "EUR")).toBe(es.formatCurrency(-3, "EUR"));
+  });
+
+  it("el cero, el -0 y lo que redondea a cero van sin signo", () => {
+    const zero = es.formatCurrency(0, "EUR");
+    expect(es.formatSignedCurrency(0, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(-0, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(0.001, "EUR")).toBe(zero);
+    expect(es.formatSignedCurrency(-0.001, "EUR")).toBe(zero);
+  });
+
+  it("no rompe con una divisa desconocida ni con no finitos", () => {
+    expect(es.formatSignedCurrency(5, "XX1")).toBe(`+${es.formatCurrency(5, "XX1")}`);
+    expect(es.formatSignedCurrency(Number.NaN, "EUR")).toBe("—");
+  });
+
+  it("porcentajes con signo y la misma regla del cero", () => {
+    expect(es.formatSignedPercent(5.2)).toBe(`+${es.formatPercent(5.2)}`);
+    expect(es.formatSignedPercent(-5.2, { minDecimals: 2 })).toBe(es.formatPercent(-5.2, { minDecimals: 2 }));
+    expect(es.formatSignedPercent(-0)).toBe(es.formatPercent(0));
+    expect(es.formatSignedPercent(Infinity)).toBe("—");
+  });
+});

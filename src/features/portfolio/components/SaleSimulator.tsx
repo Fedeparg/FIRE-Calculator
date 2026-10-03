@@ -11,6 +11,7 @@ import { estimateSavingsTax } from "@sextante/core/fiscal/savings-tax";
 import { formatIsoDate } from "@/shared/format/format";
 import { convertCurrency } from "@sextante/core/fx";
 import { formatDecimalInput, parseDecimalInput } from "@/shared/format/number-input";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
 import SaleMatchesTable from "./SaleMatchesTable";
@@ -44,7 +45,7 @@ type Props = {
  */
 export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const t = useTranslations("portfolio.sale");
-  const { formatCurrency, formatPercent, formatQuantity, decimalSeparator } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatPercent, formatQuantity, decimalSeparator } = useFormat();
 
   const currency = position.currency;
 
@@ -107,12 +108,6 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const tax = gainInEur !== null ? estimateSavingsTax(gainInEur) : null;
 
   const showResults = simulation !== null && !simulation.insufficient;
-  const gainColor =
-    simulation && simulation.gain > 0
-      ? "text-success"
-      : simulation && simulation.gain < 0
-        ? "text-danger"
-        : "text-foreground";
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-4">
@@ -169,9 +164,8 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
             </div>
             <div className="flex flex-col gap-1">
               <dt className="text-sm text-muted">{simulation.gain < 0 ? t("loss") : t("gain")}</dt>
-              <dd className={`text-lg font-semibold tabular-nums ${gainColor}`}>
-                {simulation.gain > 0 ? "+" : ""}
-                {formatCurrency(simulation.gain, currency)}
+              <dd className={`text-lg font-semibold tabular-nums ${signedTone(simulation.gain)}`}>
+                {formatSignedCurrency(simulation.gain, currency)}
               </dd>
             </div>
           </dl>

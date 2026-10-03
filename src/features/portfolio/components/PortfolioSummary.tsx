@@ -7,6 +7,7 @@ import { formatIsoDate, formatRelativeTime } from "@/shared/format/format";
 import { gainSince } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { asLocale } from "@/i18n/types";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import { historyPath } from "@/features/portfolio/api";
 import { NO_STORE } from "@/shared/api/client";
@@ -32,11 +33,6 @@ function startOfYear(today: string): { from: string; days: number } {
   return { from, days: daysBetween(from, today) + 1 };
 }
 
-/** Clase de color de una ganancia o pérdida. */
-function pnlClass(value: number): string {
-  return value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground";
-}
-
 /**
  * Cabecera del Resumen: lo que vale hoy la cartera y cuánto gana, con lo invertido y la ganancia
  * del año al lado. Solo entran las posiciones con precio convertible a la divisa elegida; el
@@ -45,7 +41,7 @@ function pnlClass(value: number): string {
 export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesCheckedAt, display }: Props) {
   const t = useTranslations("portfolio.summary");
   const locale = asLocale(useLocale());
-  const { formatCurrency, formatPercent } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatSignedPercent } = useFormat();
 
   // La ganancia del año sale del histórico diario: se pide solo lo que va de año. Es un dato de
   // apoyo: sin histórico (error o aún cargando) simplemente no se enseña.
@@ -64,7 +60,6 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
   }
 
   const excluded = agg.total - agg.valued;
-  const sign = agg.pnlAbs > 0 ? "+" : "";
 
   return (
     <section className="flex min-w-0 flex-col gap-5 rounded-2xl border border-border bg-surface p-5 sm:p-7 lg:flex-row lg:items-end lg:justify-between">
@@ -73,12 +68,12 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
         <p className="text-4xl font-semibold tracking-tight text-foreground tabular-nums sm:text-5xl">
           {formatCurrency(agg.marketValue, display)}
         </p>
-        <p className={`text-sm font-medium tabular-nums ${pnlClass(agg.pnlAbs)}`}>
+        <p className={`text-sm font-medium tabular-nums ${signedTone(agg.pnlAbs)}`}>
           {agg.pnlPct === null
-            ? t("sincePurchaseAmount", { amount: `${sign}${formatCurrency(agg.pnlAbs, display)}` })
+            ? t("sincePurchaseAmount", { amount: formatSignedCurrency(agg.pnlAbs, display) })
             : t("sincePurchase", {
-                amount: `${sign}${formatCurrency(agg.pnlAbs, display)}`,
-                percent: `${sign}${formatPercent(agg.pnlPct, { minDecimals: 2 })}`,
+                amount: formatSignedCurrency(agg.pnlAbs, display),
+                percent: formatSignedPercent(agg.pnlPct, { minDecimals: 2 }),
               })}
         </p>
       </div>
@@ -98,9 +93,8 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
                   ? t("thisYear")
                   : t("thisYearSince", { date: formatIsoDate(gain.since) })}
               </dt>
-              <dd className={`text-xl font-semibold tabular-nums ${pnlClass(gain.gain)}`}>
-                {gain.gain > 0 ? "+" : ""}
-                {formatCurrency(gain.gain, display)}
+              <dd className={`text-xl font-semibold tabular-nums ${signedTone(gain.gain)}`}>
+                {formatSignedCurrency(gain.gain, display)}
                 {gain.estimated && <span className="sr-only"> {t("thisYearEstimated")}</span>}
               </dd>
             </div>

@@ -10,6 +10,7 @@ import type { TaxBoxes } from "@sextante/core/fiscal/tax-boxes";
 import { ASSET_CLASSES, type AssetClass } from "@sextante/core/portfolio/types";
 import { setAssetClass } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import CopyValue from "@/shared/ui/CopyValue";
 import { inputClass } from "@/shared/ui/field-classes";
@@ -21,8 +22,6 @@ type Block = "shares" | "funds" | "other" | "unclassified";
 
 const BLOCK_OF: Record<AssetClass, Block> = { stock: "shares", fund: "funds", derivative: "other", other: "other" };
 const BLOCKS: readonly Block[] = ["shares", "funds", "other", "unclassified"];
-
-const signColor = (value: number) => (value > 0 ? "text-success" : value < 0 ? "text-danger" : "text-foreground");
 
 type Props = {
   year: RealisedGainsYear;
@@ -38,9 +37,9 @@ type Props = {
  */
 export default function SalesBlocks({ year, showFx, assetClasses, boxes }: Props) {
   const t = useTranslations("portfolio.realisedGains");
-  const { formatCurrency } = useFormat();
+  const { formatCurrency, formatSignedCurrency } = useFormat();
   const eur = (value: number) => formatCurrency(value, TAX_CURRENCY);
-  const signed = (value: number) => `${value > 0 ? "+" : ""}${eur(value)}`;
+  const signed = (value: number) => formatSignedCurrency(value, TAX_CURRENCY);
 
   const byBlock = new Map<Block, RealisedGainsRow[]>();
   for (const row of year.rows) {
@@ -65,14 +64,14 @@ export default function SalesBlocks({ year, showFx, assetClasses, boxes }: Props
         {showFx && (
           <div className="flex flex-col gap-1">
             <dt className="text-sm text-muted">{t("fxDifference")}</dt>
-            <dd className={`text-lg font-semibold tabular-nums ${signColor(year.fxDifference)}`}>
+            <dd className={`text-lg font-semibold tabular-nums ${signedTone(year.fxDifference)}`}>
               {signed(year.fxDifference)}
             </dd>
           </div>
         )}
         <div className="flex flex-col gap-1">
           <dt className="text-sm text-muted">{t("net")}</dt>
-          <dd className={`text-lg font-semibold tabular-nums ${signColor(year.total)}`}>{signed(year.total)}</dd>
+          <dd className={`text-lg font-semibold tabular-nums ${signedTone(year.total)}`}>{signed(year.total)}</dd>
         </div>
       </dl>
 
@@ -139,7 +138,7 @@ function BlockTable({
               <span className="min-w-0">
                 <EntityName row={row} entityBox={block === "shares" ? boxes?.shares.entity : undefined} />
               </span>
-              <span className={`font-semibold tabular-nums ${signColor(row.gain)}`}>{signed(row.gain)}</span>
+              <span className={`font-semibold tabular-nums ${signedTone(row.gain)}`}>{signed(row.gain)}</span>
             </div>
             <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 text-xs">
               <dt className="text-muted">
@@ -164,7 +163,7 @@ function BlockTable({
               {showFx && row.currency !== TAX_CURRENCY && (
                 <>
                   <dt className="text-muted">{t("fxDifference")}</dt>
-                  <dd className={`text-right tabular-nums ${signColor(row.fxDifference)}`}>
+                  <dd className={`text-right tabular-nums ${signedTone(row.fxDifference)}`}>
                     {signed(row.fxDifference)}
                   </dd>
                 </>
@@ -231,9 +230,9 @@ function BlockTable({
                     label={`${row.ticker} ${t("acquisitionValue")}`}
                   />
                 </td>
-                <td className={`px-3 py-2 text-right tabular-nums ${signColor(row.gain)}`}>{signed(row.gain)}</td>
+                <td className={`px-3 py-2 text-right tabular-nums ${signedTone(row.gain)}`}>{signed(row.gain)}</td>
                 {showFx && (
-                  <td className={`px-3 py-2 text-right tabular-nums ${signColor(row.fxDifference)}`}>
+                  <td className={`px-3 py-2 text-right tabular-nums ${signedTone(row.fxDifference)}`}>
                     {row.currency === TAX_CURRENCY ? "—" : signed(row.fxDifference)}
                   </td>
                 )}
