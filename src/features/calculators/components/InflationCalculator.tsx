@@ -4,52 +4,35 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { computeInflation } from "@sextante/core/calculators/inflacion";
 import { useFormat } from "@/shared/format/use-format";
-import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
-import { useNumberField } from "./CalculatorState";
+import { useBoundNumberField } from "./CalculatorState";
+import NumField from "./NumField";
+import { useInputs } from "./use-inputs";
 import StatGrid from "@/shared/ui/StatGrid";
 
 export default function InflationCalculator() {
   const t = useTranslations("calc.inflacion");
   const { formatEUR, formatPercent } = useFormat();
 
-  const [amount, setAmount] = useNumberField("amount", 10000);
-  const [annualRate, setAnnualRate] = useNumberField("annualRate", 3);
-  const [years, setYears] = useNumberField("years", 20);
-  const [nominalReturn, setNominalReturn] = useNumberField("nominalReturn", 2);
+  const amount = useBoundNumberField("amount", 10000);
+  const annualRate = useBoundNumberField("annualRate", 3);
+  const years = useBoundNumberField("years", 20);
+  const nominalReturn = useBoundNumberField("nominalReturn", 2);
 
-  const result = useMemo(
-    () => computeInflation({ amount, annualRate, years, nominalReturn }),
-    [amount, annualRate, years, nominalReturn],
-  );
+  const inputs = useInputs({ amount, annualRate, years, nominalReturn });
+  const result = useMemo(() => computeInflation(inputs), [inputs]);
 
   return (
     <CalculatorLayout
       layout="sidebar"
       inputs={
         <>
-          <NumberField label={t("amount")} value={amount} onChange={setAmount} step={1000} help={t("help.amount")} />
-          <NumberField
-            label={t("annualRate")}
-            value={annualRate}
-            onChange={setAnnualRate}
-            step={0.1}
-            min={-100}
-            max={100}
-            help={t("help.annualRate")}
-          />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField
-            label={t("nominalReturn")}
-            value={nominalReturn}
-            onChange={setNominalReturn}
-            step={0.1}
-            min={0}
-            max={100}
-            help={t("help.nominalReturn")}
-          />
+          <NumField field={amount} step={1000} />
+          <NumField field={annualRate} step={0.1} min={-100} max={100} />
+          <NumField field={years} step={1} max={70} />
+          <NumField field={nominalReturn} step={0.1} min={0} max={100} />
         </>
       }
       results={

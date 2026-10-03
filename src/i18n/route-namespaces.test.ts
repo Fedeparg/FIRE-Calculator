@@ -32,6 +32,12 @@ const SRC = path.join(ROOT, "src");
 const APP = path.join(SRC, "app", "[locale]");
 const CALCULATOR_BODY = path.join(SRC, "features", "calculators", "components", "CalculatorBody.tsx");
 const CALC_TEMPLATE = "calc.*";
+/**
+ * `calc.${calculatorSlug}`: el namespace de la calculadora EN CURSO, que `NumField` lee del
+ * contexto (`useCalculatorSlug`, el slug de la ruta). Por construcción es siempre el `calc.<slug>`
+ * de la página que lo monta, así que está cubierto.
+ */
+const CALC_OWN = "calc.<own>";
 
 function listSources(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -65,6 +71,7 @@ function parse(file: string): SourceInfo {
   for (const [, arg = ""] of source.matchAll(/useTranslations\(([^)]*)\)/g)) {
     const literal = /^\s*["']([\w.-]+)["']\s*$/.exec(arg);
     if (literal) namespaces.push(literal[1]!);
+    else if (/^\s*`calc\.\$\{calculatorSlug\}`\s*$/.test(arg)) namespaces.push(CALC_OWN);
     else if (/^\s*`calc\.\$\{\w+\}`\s*$/.test(arg)) namespaces.push(CALC_TEMPLATE);
     else unsupported.push(`useTranslations(${arg.trim()})`);
   }
@@ -119,6 +126,7 @@ describe("mensajes por ruta", () => {
       const declared: readonly string[] = route ? ROUTE_NAMESPACES[route] : CHROME_NAMESPACES;
       const { used, unsupported } = clientUsage(file, false);
       used.delete(CALC_TEMPLATE); // el cuerpo de la calculadora se comprueba por slug
+      used.delete(CALC_OWN);
 
       expect(unsupported).toEqual([]);
       const missing = [...used].filter(([ns]) => !covers(declared, ns)).map(([ns, from]) => `${ns} (${from})`);
@@ -158,6 +166,7 @@ describe("mensajes por ruta", () => {
     it.each([...components])("%s: solo usa su calc.<slug> y los namespaces comunes", (slug, file) => {
       const declared = [...ROUTE_NAMESPACES["calculadoras/[slug]"], `calc.${slug}`];
       const { used, unsupported } = clientUsage(file, true);
+      used.delete(CALC_OWN);
       // `DepositLikeCalculator` recibe su namespace por props: el envoltorio del slug debe pasar el suyo.
       if (used.delete(CALC_TEMPLATE)) expect(readFileSync(file, "utf8")).toContain(`namespace="${slug}"`);
 

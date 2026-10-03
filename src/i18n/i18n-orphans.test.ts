@@ -83,7 +83,12 @@ function isUsed(key: string, sources: readonly string[]): boolean {
   // `calc.<slug>`: el namespace llega por prop o desde el registry, no como
   // literal junto a la clave. Se comprueba la clave relativa al slug en cualquier fichero.
   if (parts[0] === "calc" && parts.length > 2) {
-    return sources.some((source) => hasLiteral(source, parts.slice(2).join(".")));
+    // `<NumField>` deriva la ayuda de la clave del campo (`help.<clave>`): basta el literal de la clave.
+    const relative =
+      parts[2] === "help" && parts.length > 3
+        ? [parts.slice(2).join("."), parts.slice(3).join(".")]
+        : [parts.slice(2).join(".")];
+    return sources.some((source) => relative.some((key) => hasLiteral(source, key)));
   }
   return sources.some((source) =>
     // Cada partición posible: namespace = parts[0..i), clave relativa = parts[i..].

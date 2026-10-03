@@ -125,6 +125,11 @@ export function useCalculatorState(): CalculatorStateContextValue | null {
   return useContext(CalculatorStateContext);
 }
 
+/** Slug de la calculadora en curso (su namespace de mensajes es `calc.<slug>`). */
+export function useCalculatorSlug(): string {
+  return useRequiredCalculatorState().slug;
+}
+
 function useRequiredCalculatorState(): CalculatorStateContextValue {
   const context = useContext(CalculatorStateContext);
   if (!context) {
@@ -170,4 +175,34 @@ export function useOptionField<T extends string>(
   const set = useCallback((next: T) => setValue(key, next), [setValue, key]);
 
   return [value, set];
+}
+
+/**
+ * Campo enlazado: su clave de URL (que es también la clave de su etiqueta, por convención), su
+ * valor y su setter en un solo objeto. Lo consumen `<NumField>` (etiqueta y ayuda derivadas de la
+ * clave) y `useInputs` (entradas del cálculo), para no repetir cada campo en tres sitios.
+ */
+export type FieldBinding<T> = {
+  key: string;
+  value: T;
+  set: (value: T) => void;
+};
+
+/**
+ * `useNumberField` que devuelve el campo enlazado en vez de la tupla. El objeto se memoiza: solo
+ * cambia de identidad cuando cambia su valor, así puede ir en dependencias de `useMemo`.
+ */
+export function useBoundNumberField(key: string, defaultValue: number): FieldBinding<number> {
+  const [value, set] = useNumberField(key, defaultValue);
+  return useMemo(() => ({ key, value, set }), [key, value, set]);
+}
+
+/** `useOptionField` que devuelve el campo enlazado (ver `useBoundNumberField`). */
+export function useBoundOptionField<T extends string>(
+  key: string,
+  defaultValue: T,
+  allowed: readonly T[],
+): FieldBinding<T> {
+  const [value, set] = useOptionField(key, defaultValue, allowed);
+  return useMemo(() => ({ key, value, set }), [key, value, set]);
 }
