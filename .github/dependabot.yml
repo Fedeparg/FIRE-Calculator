@@ -1,15 +1,15 @@
 version: 2
 
 updates:
-  # Frontend (raíz del workspace pnpm). `directory: /` cubre también apps/api
-  # porque Dependabot resuelve el workspace desde el pnpm-lock.yaml de la raíz.
+  # Frontend (root of the pnpm workspace). `directory: /` also covers apps/api
+  # because Dependabot resolves the workspace from the root pnpm-lock.yaml.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      # Agrupa los parches/menores en un solo PR para no ahogar el repo.
+      # Groups patch/minor updates into a single PR so the repo is not flooded.
       minor-and-patch:
         update-types:
           - minor
@@ -25,13 +25,13 @@ updates:
     schedule:
       interval: monthly
 
-  # La imagen de la API vive en su propio directorio, que `/` no recorre.
+  # The API image lives in its own directory, which `/` does not walk.
   - package-ecosystem: docker
     directory: /apps/api
     schedule:
       interval: monthly
 
-  # Imágenes de los servicios (postgres, caddy…) en los ficheros de Compose.
+  # Service images (postgres, caddy…) in the Compose files.
   - package-ecosystem: docker-compose
     directory: /
     schedule:

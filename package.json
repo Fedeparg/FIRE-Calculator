@@ -2,7 +2,7 @@
   "name": "sextante",
   "version": "0.1.0",
   "private": true,
-  "description": "Suite de calculadoras de finanzas personales y FIRE para el sistema fiscal español, con cartera agregada y servidor MCP.",
+  "description": "Personal finance and FIRE calculator suite for the Spanish tax system, with an aggregated portfolio and an MCP server.",
   "license": "UNLICENSED",
   "author": "Federico Pardo",
   "homepage": "https://sextante.fpardo.net",

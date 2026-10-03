@@ -1,8 +1,8 @@
-# Contexto de build de Docker (contexto = raíz del repo).
-# Mantener el contexto pequeño y evitar que entren artefactos obsoletos que
-# rompan builds incrementales (p. ej. tsconfig.tsbuildinfo) o filtren secretos.
+# Docker build context (context = repo root).
+# Keep the context small and keep out stale artifacts that would break
+# incremental builds (e.g. tsconfig.tsbuildinfo) or leak secrets.
 
-# Dependencias y artefactos de build
+# Dependencies and build artifacts
 **/node_modules
 **/dist
 **/.next
@@ -10,15 +10,15 @@
 **/build
 **/coverage
 
-# Caché incremental de TypeScript: si entra obsoleto, tsc no re-emite dist.
+# TypeScript incremental cache: if a stale one gets in, tsc does not re-emit dist.
 **/*.tsbuildinfo
 
-# Secretos / entornos (nunca al contexto de build)
+# Secrets / environments (never in the build context)
 **/.env
 **/.env.*
 !**/.env.example
 
-# VCS, notas locales y temporales
+# VCS, local notes and temporary files
 .git
 _local
 .claude

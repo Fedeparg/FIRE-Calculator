@@ -5,9 +5,9 @@ import { defineConfig } from "vitest/config";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
-// `@sextante/core/*` apunta al código fuente (no a `dist/`): los tests no
-// dependen de compilar el core antes. `@/` es el mismo alias que el tsconfig,
-// para poder probar módulos que lo usan.
+// `@sextante/core/*` points at the source (not `dist/`): tests do not depend on
+// building core first. `@/` is the same alias as in tsconfig, so modules that
+// use it can be tested.
 const resolve = {
   alias: [
     { find: "@sextante/core", replacement: path.resolve(root, "packages/core/src") },
@@ -18,17 +18,17 @@ const resolve = {
 export default defineConfig({
   resolve,
   test: {
-    // Dos proyectos: la lógica (`*.test.ts`) corre en Node, sin DOM, y los tests de componentes
-    // y hooks (`*.test.tsx`) en jsdom con Testing Library. Separarlos mantiene rápida la suite
-    // pura y evita que un test de lógica dependa sin querer de `window`.
+    // Two projects: logic (`*.test.ts`) runs in Node without a DOM, and component and hook tests
+    // (`*.test.tsx`) run in jsdom with Testing Library. Splitting them keeps the pure suite fast
+    // and stops a logic test from accidentally depending on `window`.
     projects: [
       {
         resolve,
         test: {
           name: "node",
           environment: "node",
-          // Los tests del paquete compartido corren con los del frontend: un solo
-          // `pnpm test` (y `pnpm test <ruta>`) cubre las dos cosas.
+          // The shared package's tests run alongside the frontend's: a single
+          // `pnpm test` (and `pnpm test <path>`) covers both.
           include: ["src/**/*.test.ts", "packages/*/src/**/*.test.ts"],
         },
       },
@@ -39,8 +39,8 @@ export default defineConfig({
           environment: "jsdom",
           include: ["src/**/*.test.tsx"],
           setupFiles: ["src/test/setup-dom.ts"],
-          // `next-intl/navigation` importa `next/navigation` sin extensión, que Node en ESM no
-          // resuelve (Next no declara `exports`); procesándolo con Vite sí se resuelve.
+          // `next-intl/navigation` imports `next/navigation` without an extension, which Node ESM
+          // cannot resolve (Next declares no `exports`); processing it through Vite resolves it.
           server: { deps: { inline: ["next-intl"] } },
         },
       },
