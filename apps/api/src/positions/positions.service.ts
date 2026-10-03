@@ -36,7 +36,7 @@ export class PositionsService {
     private readonly events: EventEmitter2,
   ) {}
 
-  /** Crea una posición aplicando antes la regla de duplicados (`assertCanUseTickerBroker`). */
+  /** Creates a position after applying the duplicate rule (`assertCanUseTickerBroker`). */
   async create(userId: string, dto: CreatePositionDto): Promise<PositionResponse> {
     const ticker = this.normalizeTicker(dto.ticker);
     const broker = dto.broker?.trim() ?? '';
@@ -44,7 +44,7 @@ export class PositionsService {
     await this.assertCanUseTickerBroker(userId, ticker, broker);
 
     try {
-      // Alta y lote inicial en la misma transacción: sin lotes, el primer recálculo la pondría a cero.
+      // Creation and initial lot in the same transaction: without lots, the first recompute would zero it.
       const row = await this.db.transaction(async (tx) => {
         const inserted = firstItem(
           await tx
@@ -68,26 +68,26 @@ export class PositionsService {
           kind: 'buy',
           quantity: inserted.quantity,
           price: inserted.avgPrice,
-          // Como el backfill: la fecha de alta (UTC) es lo más cercano a la compra real que se conoce.
+          // Like the backfill: the creation date (UTC) is the closest known date to the real buy.
           tradedAt: isoDate(inserted.createdAt),
         });
         return inserted;
       });
 
-      // Precio en caliente, fuera de la transacción (es red); tolerante a fallos.
+      // On-the-fly price, outside the transaction (it hits the network); fault-tolerant.
       await this.prices.primeSymbol(row.ticker, row.currency);
-      // Evento sin esperar: no debe alargar la respuesta del alta (ver `position-events.ts`).
+      // Fire-and-forget event: it must not delay the creation response (see `position-events.ts`).
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
       return toPositionResponse(row);
     } catch (error) {
-      // La única FK es `userId → users.id`: JWT válido pero usuario inexistente (cuenta
-      // borrada, BD reiniciada en dev) es sesión muerta → 401, no 500.
+      // The only FK is `userId → users.id`: a valid JWT for a non-existent user (deleted
+      // account, DB reset in dev) is a dead session → 401, not 500.
       if (isPgError(error, PG_FOREIGN_KEY_VIOLATION)) {
         throw new UnauthorizedException('La sesión ya no es válida; vuelve a iniciar sesión');
       }
-      // Alta concurrente del mismo (símbolo, bróker): la comprobación previa no vio la otra fila
-      // (aún sin confirmar) y el índice único la ha parado. Se responde como si la hubiera visto:
-      // 409 DUPLICATE con la existente (o BROKER_REQUIRED), para ofrecer combinar.
+      // Concurrent creation of the same (symbol, broker): the earlier check did not see the other
+      // row (not yet committed) and the unique index stopped it. Respond as if it had been seen:
+      // 409 DUPLICATE with the existing one (or BROKER_REQUIRED), to offer combining.
       if (isPgError(error, PG_UNIQUE_VIOLATION)) {
         await this.assertCanUseTickerBroker(userId, ticker, broker);
       }
@@ -95,7 +95,7 @@ export class PositionsService {
     }
   }
 
-  /** Solo las posiciones del usuario, más recientes primero. */
+  /** Only the user's positions, newest first. */
   async findAllByUser(userId: string): Promise<PositionResponse[]> {
     const rows = await this.db
       .select()
@@ -107,9 +107,9 @@ export class PositionsService {
   }
 
   /**
-   * Combina una compra con una posición existente: la registra como lote y deja que el
-   * recálculo derive cantidad y precio medio con aritmética decimal exacta (`lot-aggregate.ts`).
-   * 400 si la divisa difiere (no se promedia EUR con USD).
+   * Combines a buy with an existing position: records it as a lot and lets the recompute derive
+   * quantity and average price with exact decimal arithmetic (`lot-aggregate.ts`).
+   * 400 if the currency differs (EUR is not averaged with USD).
    */
   async combine(userId: string, id: string, dto: CombinePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
@@ -125,7 +125,7 @@ export class PositionsService {
         kind: 'buy',
         quantity: dto.quantity.toString(),
         price: dto.avgPrice.toString(),
-        // El DTO no lleva fecha: la compra es de hoy (otra fecha, por los endpoints de lotes).
+        // The DTO has no date: the buy is today's (other dates go through the lot endpoints).
         tradedAt: todayUtc(),
       });
       return this.reread(tx, id);
@@ -134,7 +134,7 @@ export class PositionsService {
     return toPositionResponse(row);
   }
 
-  /** Edición manual; 409 si `ticker`/`broker` chocan con otra posición del usuario. */
+  /** Manual edit; 409 if `ticker`/`broker` clash with another of the user's positions. */
   async update(userId: string, id: string, dto: UpdatePositionDto): Promise<PositionResponse> {
     const current = await this.findOwned(userId, id);
 
@@ -147,8 +147,8 @@ export class PositionsService {
       await this.assertCanUseTickerBroker(userId, ticker, broker, id);
     }
 
-    // El formulario envía siempre ambos importes: solo es una declaración si alguno difiere del
-    // actual (cambiar nombre o bróker no debe tocar los lotes).
+    // The form always sends both amounts: it is only a declaration if one differs from the
+    // current value (changing the name or broker must not touch the lots).
     const declaresAmounts =
       (dto.quantity !== undefined && !sameAmount(dto.quantity.toString(), current.quantity)) ||
       (dto.avgPrice !== undefined && !sameAmount(dto.avgPrice.toString(), current.avgPrice));
@@ -168,12 +168,12 @@ export class PositionsService {
         })
         .where(ownedPosition(userId, id))
         .returning();
-      // Borrada entre la comprobación de propiedad y la escritura.
+      // Deleted between the ownership check and the write.
       if (!updated) throw positionNotFound();
 
       if (!declaresAmounts) return updated;
 
-      // Editar los importes declara el estado actual: los lotes se realinean (ver `declareState`).
+      // Editing the amounts declares the current state: the lots are realigned (see `declareState`).
       await this.lots.declareState(tx, {
         positionId: id,
         userId,
@@ -183,39 +183,39 @@ export class PositionsService {
       return this.reread(tx, id);
     });
 
-    // Símbolo nuevo: su precio puede no estar cacheado.
+    // New symbol: its price may not be cached.
     if (row.ticker !== current.ticker) {
       await this.prices.primeSymbol(row.ticker, row.currency);
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
     } else if (declaresAmounts) {
-      // Los lotes realineados cambian la reconstrucción aunque el símbolo no.
+      // Realigned lots change the rebuild even though the symbol does not.
       this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: id } satisfies LotChangedEvent);
     }
     return toPositionResponse(row);
   }
 
-  /** Borra una posición propia: 404 si no existe o es de otro usuario. */
+  /** Deletes one of the user's positions: 404 if it does not exist or belongs to another user. */
   async remove(userId: string, id: string): Promise<void> {
     const deleted = await this.db.delete(positions).where(ownedPosition(userId, id)).returning({ id: positions.id });
     if (deleted.length === 0) throw positionNotFound();
   }
 
-  /** Delega en el helper compartido con el servicio de lotes (ver `position-access.ts`). */
+  /** Delegates to the helper shared with the lots service (see `position-access.ts`). */
   private findOwned(userId: string, id: string): Promise<Position> {
     return findOwnedPosition(this.db, userId, id);
   }
 
-  /** Relee la posición tras un recálculo de lotes. */
+  /** Re-reads the position after a lot recompute. */
   private async reread(tx: DatabaseOrTransaction, id: string): Promise<Position> {
-    // La posición existe: se acaba de recalcular dentro de la misma transacción.
+    // The position exists: it was just recomputed inside the same transaction.
     return firstItem(await tx.select().from(positions).where(eq(positions.id, id)));
   }
 
   /**
-   * Regla de duplicados para `(ticker, broker)` (bróker recortado; vacío = sin bróker):
-   * 409 `BROKER_REQUIRED` si no hay bróker pero ya existe el símbolo, y 409 `DUPLICATE` (con la
-   * existente, para ofrecer combinar) si el par existe (bróker case-insensitive).
-   * `excludeId` excluye la propia fila en ediciones.
+   * Duplicate rule for `(ticker, broker)` (trimmed broker; empty = no broker):
+   * 409 `BROKER_REQUIRED` if there is no broker but the symbol already exists, and 409 `DUPLICATE`
+   * (with the existing one, to offer combining) if the pair exists (case-insensitive broker).
+   * `excludeId` excludes the row itself on edits.
    */
   private async assertCanUseTickerBroker(
     userId: string,
@@ -264,7 +264,7 @@ export class PositionsService {
     return Boolean(row);
   }
 
-  /** Normaliza el símbolo: sin espacios y en mayúsculas ("iwda" y "IWDA" son el mismo). */
+  /** Normalises the symbol: trimmed and upper-cased ("iwda" and "IWDA" are the same). */
   private normalizeTicker(ticker: string): string {
     return ticker.trim().toUpperCase();
   }
