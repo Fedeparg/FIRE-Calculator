@@ -290,6 +290,29 @@ too.
   `sextante_pgdata` volume persists; new migrations are applied automatically.
 - **Deploying by hand:** *Actions* tab → `deploy` workflow → *Run workflow*.
   It is the escape hatch for redeploying without touching code, or if the gate gets stuck.
+  The optional `ref` input deploys a given SHA, branch or tag.
+- **A deployment is green only when `api` and `web` are healthy.** After `up`, the job
+  polls their Docker healthchecks for up to 3 minutes and fails (printing the last log
+  lines) if either does not get there.
+- **Rolling back:**
+  - *Fast, no rebuild:* each deployment keeps the image it replaced as `:previous`. On
+    the NAS:
+    ```bash
+    docker image tag sextante-api:previous sextante-api:latest
+    docker image tag sextante-web:previous sextante-web:latest
+    docker compose -f docker-compose.prod.yml --env-file .env up -d --no-build api web
+    ```
+    The `.env` is deleted after each deployment, so run this from a checkout with an
+    `.env` you rebuild by hand, or prefer the next option.
+  - *Clean:* run the `deploy` workflow by hand with `ref` set to the commit to go back
+    to. It rebuilds that commit.
+  - Either way the database stays on the newer schema (see expand/contract below).
+- **Database copy before migrating:** if a deployment brings new migrations compared
+  with the deployed commit (the SHA tag on `sextante-api`), the workflow takes a
+  `pg_dump -Fc` first. It is stored at `/mnt/user/web/runner-sextante/predeploy/` on the
+  NAS (the runner's only persistent mount, readable by root only), and the last 5 dumps
+  are kept. Restore one with `pg_restore --clean --if-exists -d sextante`. It
+  complements the nightly encrypted backups (§6); it does not replace them.
 - **Red CI = no deployment.** Production stays on the previous version; fix the
   failure and push again. There is no way to skip the gate except the manual
   trigger, which is deliberately explicit.

@@ -12,7 +12,16 @@
 #   2. The checkout uses the CI run's `head_sha`, not the branch tip: if new commits
 #      landed while CI was running, EXACTLY what was validated gets deployed.
 #   3. `workflow_dispatch` is kept as a manual escape hatch (redeploy without touching
-#      code, or deploy if the gate gets stuck).
+#      code, deploy if the gate gets stuck, or go back to a given commit with `ref`).
+#
+# Deployment safety:
+#   - The job only succeeds once `api` and `web` report healthy (a crash loop fails it).
+#   - Each deployed image is tagged with its SHA, and the one it replaces is kept as
+#     `:previous`. Rollback without rebuilding: retag `:previous` as `:latest` and run
+#     `docker compose -f docker-compose.prod.yml --env-file .env up -d --no-build`, or
+#     run this workflow by hand with `ref` set to the commit to go back to.
+#   - If the commit brings new migrations, a `pg_dump` is taken before applying them, in
+#     the runner's persistent directory (host: /mnt/user/web/runner-sextante/predeploy).
 #
 # The runner must have the `sextante` label (see docs/DEPLOY.md) so it does not
 # collide with other runners that only have `self-hosted`.
@@ -32,7 +41,12 @@ on:
   workflow_run:
     workflows: [ci]
     types: [completed]
-  workflow_dispatch: {} # allows triggering it by hand from the Actions tab
+  workflow_dispatch: # allows triggering it by hand from the Actions tab
+    inputs:
+      ref:
+        description: SHA, branch or tag to deploy (empty = the branch selected above)
+        required: false
+        default: ''
 
 concurrency:
   # One deployment at a time; never cancel one halfway.
@@ -68,7 +82,11 @@ jobs:
         with:
           # The EXACT commit CI validated. On `workflow_run` the default checkout would
           # take the branch tip, which may already be a later, unvalidated commit.
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          # By hand, the given `ref` (e.g. the SHA to roll back to).
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref || github.ref }}
+          # Full history: needed to tell whether there are new migrations since the deployed
+          # commit (step "Back up the database before migrating").
+          fetch-depth: 0
 
       - name: Materialise the production .env (ephemeral)
         env:
@@ -117,12 +135,81 @@ jobs:
           NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=${NEXT_PUBLIC_ANALYTICS_WEBSITE_ID}
           EOF
 
+      - name: Keep the previous images
+        run: |
+          for image in sextante-api sextante-web; do
+            if docker image inspect "$image:latest" >/dev/null 2>&1; then
+              docker image tag "$image:latest" "$image:previous"
+            fi
+          done
+
+      # If the commit brings migrations compared with the deployed one (the SHA the running
+      # image was tagged with), take a quick database dump before `migrate` applies them.
+      # With no known SHA (the first deployment with this step) it always runs. The runner
+      # container is ephemeral: only /tmp/github-runner survives (it is a host mount).
+      # The last 5 dumps are kept.
+      - name: Back up the database before migrating
+        run: |
+          set -euo pipefail
+          current="$(git rev-parse HEAD)"
+          deployed="$(docker images sextante-api --format '{{.Tag}}' | grep -E '^[0-9a-f]{40}$' | head -n 1 || true)"
+          if [ -n "$deployed" ] && git cat-file -e "$deployed^{commit}" 2>/dev/null \
+            && git diff --quiet "$deployed" "$current" -- apps/api/drizzle; then
+            echo "No new migrations since $deployed: no dump needed."
+            exit 0
+          fi
+          if ! docker compose -f docker-compose.prod.yml --env-file .env ps --status running postgres | grep -q postgres; then
+            echo "Postgres is not running (first deployment): nothing to dump."
+            exit 0
+          fi
+          # The dump holds personal data: readable by root only.
+          umask 077
+          dir=/tmp/github-runner/predeploy
+          mkdir -p "$dir"
+          docker compose -f docker-compose.prod.yml --env-file .env exec -T postgres \
+            sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$dir/pre-migrate-$current.dump"
+          ls -1t "$dir"/pre-migrate-*.dump | tail -n +6 | xargs -r rm -f
+          echo "Dump at $dir/pre-migrate-$current.dump ($(du -h "$dir/pre-migrate-$current.dump" | cut -f1))"
+
       - name: Build and start the stack
         run: >-
           docker compose -f docker-compose.prod.yml --env-file .env
           up -d --build --remove-orphans
 
+      # `up -d` returns as soon as the containers start: without this step a deployment whose
+      # API crash-loops would end green. Polls the Docker healthchecks (not `up --wait`, which
+      # also waits on the one-shot `migrate` service).
+      - name: Wait for api and web to be healthy
+        run: |
+          set -euo pipefail
+          for service in api web; do
+            id="$(docker compose -f docker-compose.prod.yml --env-file .env ps -q "$service")"
+            status=unknown
+            for _ in $(seq 1 36); do
+              status="$(docker inspect --format '{{.State.Health.Status}}' "$id")"
+              [ "$status" = healthy ] && break
+              sleep 5
+            done
+            echo "$service: $status"
+            if [ "$status" != healthy ]; then
+              docker compose -f docker-compose.prod.yml --env-file .env logs --tail 50 "$service"
+              exit 1
+            fi
+          done
+
+      - name: Tag the images with the deployed SHA
+        run: |
+          sha="$(git rev-parse HEAD)"
+          for image in sextante-api sextante-web; do
+            docker image tag "$image:latest" "$image:$sha"
+            # Only the current SHA tag: the image it replaced stays as `:previous`.
+            docker images "$image" --format '{{.Tag}}' | grep -E '^[0-9a-f]{40}$' | grep -v "^$sha$" \
+              | xargs -r -I{} docker image rm "$image:{}"
+          done
+
+      # `if: always()`: also after a failed deployment, or the cache grows without bound.
       - name: Prune dangling images
+        if: always()
         run: docker image prune -f
 
       # `up --build` leaves each deployment's layers in the BuildKit cache (~4 GB with
@@ -130,6 +217,7 @@ jobs:
       # it grew unbounded on the NAS disk. The most recently used entries are kept up to the
       # cap, so the next build keeps reusing the dependency layers.
       - name: Cap the build cache
+        if: always()
         run: docker builder prune -f --max-used-space 8GB
 
       - name: Delete the ephemeral .env
