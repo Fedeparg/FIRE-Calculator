@@ -7,13 +7,13 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { apiFetch } from "@/shared/api/client";
 
 /**
- * Menú de la cuenta en la cabecera: Mi cuenta y Cerrar sesión. Antes eran dos botones más en
- * la cabecera de la cartera, compitiendo con las acciones de la propia cartera.
+ * Account menu in the header: My account and Sign out. These used to be two more buttons in
+ * the portfolio header, competing with the portfolio's own actions.
  *
- * Es un botón de "disclosure" (`aria-expanded` + `aria-controls`) con una lista de enlaces,
- * no un `role="menu"`: así se navega con Tab como cualquier enlace y no exige implementar las
- * flechas del patrón de menú. Se cierra con Escape (devolviendo el foco al botón) y al hacer
- * clic fuera.
+ * It is a disclosure button (`aria-expanded` + `aria-controls`) with a list of links, not a
+ * `role="menu"`: that way it is navigated with Tab like any link and does not require
+ * implementing the menu pattern's arrow keys. It closes on Escape (returning focus to the
+ * button) and on an outside click.
  */
 export default function UserMenu() {
   const t = useTranslations("auth.nav");
@@ -24,9 +24,8 @@ export default function UserMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLUListElement>(null);
-  // Por defecto el panel crece hacia la izquierda desde el botón. Si el botón cae al principio
-  // de una línea (pantallas estrechas), eso lo sacaría de la pantalla: entonces crece hacia la
-  // derecha.
+  // By default the panel grows leftwards from the button. If the button wraps to the start of
+  // a line (narrow screens), that would push it off screen: in that case it grows rightwards.
   const [alignLeft, setAlignLeft] = useState(false);
 
   useLayoutEffect(() => {
@@ -54,7 +53,7 @@ export default function UserMenu() {
   }, [open]);
 
   async function handleLogout() {
-    // Si el logout falla (sesión ya caducada, red) igualmente salimos a /entrar.
+    // If logout fails (session already expired, network), we still go to /entrar.
     await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
     setOpen(false);
     router.replace("/entrar");

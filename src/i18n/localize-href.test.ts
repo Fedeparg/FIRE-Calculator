@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 import { localizeHref } from "./localize-href";
 
 describe("localizeHref", () => {
-  it("en español (sin prefijo) no cambia nada", () => {
+  it("in Spanish (no prefix) changes nothing", () => {
     expect(localizeHref("/aprende/regla-del-4", "es")).toBe("/aprende/regla-del-4");
   });
 
-  it("en inglés prefija las rutas internas, con query y ancla", () => {
+  it("in English prefixes internal paths, with query and hash", () => {
     expect(localizeHref("/aprende/regla-del-4", "en")).toBe("/en/aprende/regla-del-4");
     expect(localizeHref("/calculadoras/simulador-montecarlo?model=historical", "en")).toBe(
       "/en/calculadoras/simulador-montecarlo?model=historical",
@@ -16,7 +16,7 @@ describe("localizeHref", () => {
     expect(localizeHref("/", "en")).toBe("/en");
   });
 
-  it("no toca enlaces externos, anclas, mailto, rutas de red ni los ya prefijados", () => {
+  it("leaves external links, hashes, mailto, protocol-relative URLs and already-prefixed paths alone", () => {
     for (const href of [
       "https://aeat.es",
       "#tramos",
@@ -30,7 +30,7 @@ describe("localizeHref", () => {
     }
   });
 
-  it("no confunde una ruta que empieza por las letras del idioma", () => {
+  it("does not mistake a path that starts with the locale letters", () => {
     expect(localizeHref("/entrar", "en")).toBe("/en/entrar");
   });
 });

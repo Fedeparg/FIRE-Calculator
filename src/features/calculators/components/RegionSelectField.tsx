@@ -10,12 +10,12 @@ type Props = {
 };
 
 /**
- * Selector de comunidad autónoma para las calculadoras de IRPF. Compartido por
- * las cuatro (bruto→neto, retención, autónomos y plan de pensiones) para que la
- * lista, el orden y los avisos sean siempre los mismos.
+ * Autonomous community (region) selector for the IRPF (Spanish income tax) calculators. Shared
+ * by all four (gross→net, withholding, self-employed and pension plan) so the list, the order
+ * and the notices are always the same.
  *
- * Los territorios forales y Ceuta/Melilla aparecen deshabilitados con el motivo:
- * omitirlos haría creer a quien vive allí que el resultado genérico le sirve.
+ * The foral territories and Ceuta/Melilla appear disabled with the reason: omitting them would
+ * lead someone living there to believe the generic result applies to them.
  */
 export default function RegionSelectField({ value, onChange }: Props) {
   const t = useTranslations("region");

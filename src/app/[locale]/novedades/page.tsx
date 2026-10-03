@@ -6,12 +6,12 @@ import { getChangelog } from "@/features/changelog/content";
 import ChangelogTimeline from "@/features/changelog/components/ChangelogTimeline";
 import { buildMetadata } from "@/shared/seo/seo";
 
-// ISR: igual que la wiki, las entregas se leen de `content/changelog/*.md` en runtime,
-// así que editar un fichero en el servidor se publica solo, sin redesplegar.
+// ISR: like the wiki, releases are read from `content/changelog/*.md` at runtime, so
+// editing a file on the server publishes itself, without a redeploy.
 export const revalidate = 3600;
 
-// El slug no se traduce, igual que `/calculadoras` y `/aprende`: una única URL por
-// página en los dos idiomas, con `/en` como prefijo del inglés.
+// The slug is not translated, just like `/calculadoras` and `/aprende`: a single URL per
+// page in both locales, with `/en` as the English prefix.
 type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

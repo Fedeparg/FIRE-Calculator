@@ -24,11 +24,11 @@ export default function CompoundCalculator() {
   const initial = useBoundNumberField("initial", 5000);
   const contribution = useBoundNumberField("contribution", 300);
   const frequency = useBoundOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
-  // Por defecto anual: la tasa se lee como rentabilidad anual y no se capitaliza dentro del año
+  // Annual by default: the rate reads as an annual return and is not compounded within the year
   const compounding = useBoundOptionField<Frequency>("compounding", "annual", COMPOUNDING_FREQUENCIES);
   const annualRate = useBoundNumberField("annualRate", 7);
   const years = useBoundNumberField("years", 25);
-  // Extras (desactivados por defecto)
+  // Extras (off by default)
   const annualFee = useBoundNumberField("annualFee", 0);
   const contributionGrowth = useBoundNumberField("contributionGrowth", 0);
   const inflationRate = useBoundNumberField("inflationRate", 0);

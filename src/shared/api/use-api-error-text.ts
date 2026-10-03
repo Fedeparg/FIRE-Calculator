@@ -3,15 +3,16 @@
 import { useCallback } from "react";
 import { useTranslations } from "next-intl";
 
-/** El traductor del namespace de una feature, con lo único que se usa aquí. */
+/** A feature namespace's translator, narrowed to what is used here. */
 type FeatureTranslator = {
   (key: string): string;
   has: (key: string) => boolean;
 };
 
 /**
- * Claves comunes de `apiErrorKey` y su mensaje en `common.apiError`: red, servidor y sesión dicen
- * lo mismo en toda la app, así que viven UNA vez en vez de copiarse en cada namespace.
+ * Common `apiErrorKey` keys and their message in `common.apiError`: network, server and session
+ * errors read the same across the app, so they live ONCE instead of being copied into every
+ * namespace.
  */
 const COMMON_ERROR_MESSAGES: Readonly<Record<string, string>> = {
   errorNetwork: "apiError.network",
@@ -20,12 +21,12 @@ const COMMON_ERROR_MESSAGES: Readonly<Record<string, string>> = {
 };
 
 /**
- * Traduce la clave de error de una llamada a la API (`apiErrorKey`/`createApiErrorMapper`): los
- * errores comunes salen de `common.apiError`; los propios de la feature (`code` de dominio,
- * `errorInvalid`, un `errorGeneric` con contexto como "no se pudo procesar el fichero") de su
- * namespace. Un `errorGeneric` que la feature no redefine cae al genérico común.
+ * Translates the error key of an API call (`apiErrorKey`/`createApiErrorMapper`): common errors
+ * come from `common.apiError`; feature-specific ones (domain `code`, `errorInvalid`, an
+ * `errorGeneric` with context such as "the file could not be processed") from the feature's
+ * namespace. An `errorGeneric` the feature does not override falls back to the common one.
  *
- * Requiere `common` entre los namespaces de la ruta (`route-namespaces.ts`).
+ * Requires `common` among the route's namespaces (`route-namespaces.ts`).
  */
 export function useApiErrorText(t: FeatureTranslator): (key: string) => string {
   const tCommon = useTranslations("common");

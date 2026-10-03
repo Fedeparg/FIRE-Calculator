@@ -13,27 +13,27 @@ import { useNumberField } from "./CalculatorState";
 import StatGrid from "@/shared/ui/StatGrid";
 
 type Props = {
-  /** Namespace de i18n ("deposito-plazo-fijo" | "cuenta-remunerada"). */
+  /** i18n namespace ("deposito-plazo-fijo" | "cuenta-remunerada"). */
   namespace: string;
-  /** Clave del primer campo: "principal" (depósito) o "balance" (cuenta). */
+  /** Key of the first field: "principal" (deposit) or "balance" (account). */
   principalKey: "principal" | "balance";
-  /** Capital/saldo inicial por defecto. */
+  /** Default initial principal/balance. */
   defaultPrincipal: number;
-  /** TAE por defecto (el depósito y la cuenta suelen diferir). */
+  /** Default APR ("TAE"; the deposit and the account usually differ). */
   defaultApr: number;
 };
 
 /**
- * Motor de UI compartido por el depósito a plazo fijo y la cuenta remunerada:
- * mismos cálculos (`computeDeposit`) y misma estructura, solo cambian las
- * etiquetas (namespace), la clave del primer campo y los valores por defecto.
- * Así no duplicamos la maquetación entre dos calculadoras casi idénticas.
+ * UI engine shared by the fixed-term deposit and the interest-bearing account: same
+ * computation (`computeDeposit`) and same structure; only the labels (namespace), the first
+ * field's key and the defaults change. This avoids duplicating the layout across two almost
+ * identical calculators.
  */
 export default function DepositLikeCalculator({ namespace, principalKey, defaultPrincipal, defaultApr }: Props) {
   const t = useTranslations(`calc.${namespace}`);
   const { formatEUR } = useFormat();
-  // La clave de la URL es la del campo ("principal" o "balance"), no un nombre fijo: el
-  // enlace compartido describe así lo que de verdad es cada calculadora.
+  // The URL key is the field's own ("principal" or "balance"), not a fixed name: that way the
+  // shared link describes what each calculator really is.
   const [principal, setPrincipal] = useNumberField(principalKey, defaultPrincipal);
   const [apr, setApr] = useNumberField("apr", defaultApr);
   const [years, setYears] = useNumberField("years", 1);

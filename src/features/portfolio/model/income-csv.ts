@@ -1,7 +1,7 @@
 /**
- * CSV de los cobros de un ejercicio: una fila por dividendo, interés o recompensa, en su divisa,
- * con las retenciones, si ya está en el borrador y de dónde sale cada cifra. Dialecto, escapado y
- * BOM: `src/shared/format/csv.ts`.
+ * CSV of a tax year's income: one row per dividend, interest or reward, in its currency, with the
+ * withholdings, whether it is already in the draft return and where each figure comes from.
+ * Dialect, escaping and BOM: `src/shared/format/csv.ts`.
  */
 
 import { compareStrings } from "@sextante/core/compare";
@@ -9,7 +9,7 @@ import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import type { Locale } from "@/i18n/types";
 import type { IncomeEvent } from "@sextante/core/fiscal/income";
 
-/** Columnas del fichero, en orden. */
+/** File columns, in order. */
 export const INCOME_CSV_COLUMNS = [
   "date",
   "kind",
@@ -27,10 +27,10 @@ export const INCOME_CSV_COLUMNS = [
 
 type IncomeCsvColumn = (typeof INCOME_CSV_COLUMNS)[number];
 
-/** Cabeceras ya traducidas. */
+/** Headers already translated. */
 export type IncomeCsvHeaders = Readonly<Record<IncomeCsvColumn, string>>;
 
-/** Clave de cada cabecera en el namespace `portfolio.income`: las del formulario, o `csv.*` si no hay campo. */
+/** Key of each header in the `portfolio.income` namespace: the form's, or `csv.*` if there is no field. */
 const INCOME_CSV_HEADER_KEYS: Readonly<Record<IncomeCsvColumn, string>> = {
   date: "csv.date",
   kind: "kind",
@@ -46,7 +46,7 @@ const INCOME_CSV_HEADER_KEYS: Readonly<Record<IncomeCsvColumn, string>> = {
   withholdingOriginSource: "csv.withholdingOriginSource",
 };
 
-/** Cabeceras y textos del CSV de cobros con el `t` del namespace `portfolio.income`. */
+/** Headers and texts of the income CSV, using `t` from the `portfolio.income` namespace. */
 export function incomeCsvTexts(t: (key: string) => string): { headers: IncomeCsvHeaders; labels: IncomeCsvLabels } {
   const headers = {} as Record<IncomeCsvColumn, string>;
   for (const column of INCOME_CSV_COLUMNS) headers[column] = t(INCOME_CSV_HEADER_KEYS[column]);
@@ -61,7 +61,7 @@ export function incomeCsvTexts(t: (key: string) => string): { headers: IncomeCsv
   };
 }
 
-/** Textos traducidos de los valores que no son números (tipo, procedencia, sí/no). */
+/** Translated texts for the non-numeric values (type, source, yes/no). */
 export type IncomeCsvLabels = {
   kind: (kind: IncomeEvent["kind"]) => string;
   source: (source: NonNullable<IncomeEvent["withholdingOriginSource"]>) => string;

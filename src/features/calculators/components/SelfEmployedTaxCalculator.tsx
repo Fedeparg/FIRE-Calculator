@@ -21,21 +21,21 @@ import CalculatorLayout from "@/features/calculators/components/CalculatorLayout
 import { useNumberField, useOptionField } from "./CalculatorState";
 import StatGrid from "@/shared/ui/StatGrid";
 
-/** Régimen de estimación de gastos que ofrece el desplegable. */
+/** Expense estimation regimes ("estimación directa simplificada" or "normal") offered by the dropdown. */
 const EXPENSE_REGIMES = ["simplificada", "normal"] as const;
 type ExpenseRegime = (typeof EXPENSE_REGIMES)[number];
 
 export default function SelfEmployedTaxCalculator() {
   const t = useTranslations("calc.irpf-autonomos");
   const { formatEUR, formatPercent } = useFormat();
-  // Datos de la actividad
+  // Business activity details
   const [income, setIncome] = useNumberField("income", 40000);
   const [expenses, setExpenses] = useNumberField("expenses", 8000);
   const [socialSecurity, setSocialSecurity] = useNumberField("socialSecurity", 4000);
   const [regime, setRegime] = useOptionField<ExpenseRegime>("regime", "simplificada", EXPENSE_REGIMES);
   const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
   const [pensionContribution, setPensionContribution] = useNumberField("pensionContribution", 0);
-  // Situación personal y familiar
+  // Personal and family situation
   const [age, setAge] = useNumberField("age", 30);
   const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>("jointReturn", "no", JOINT_RETURN_OPTIONS);
   const [children, setChildren] = useNumberField("children", 0);

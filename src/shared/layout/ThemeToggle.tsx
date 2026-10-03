@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 
-/** Avisa cuando cambia la clase de <html> (este botón u otra pestaña vía `ThemeScript`). */
+/** Notifies when the <html> class changes (this button or another tab via `ThemeScript`). */
 function subscribeToTheme(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange);
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
@@ -13,15 +13,14 @@ function subscribeToTheme(onChange: () => void): () => void {
 const isDarkTheme = (): boolean => document.documentElement.classList.contains("dark");
 
 /**
- * Conmuta el tema manipulando la clase `.dark` del <html> y persistiendo en
- * localStorage. Sin next-themes: los iconos se muestran por CSS (variante `dark:`),
- * así no hay desajuste de hidratación ni parpadeo.
+ * Toggles the theme by flipping the `.dark` class on <html> and persisting it in localStorage.
+ * No next-themes: the icons are switched by CSS (the `dark:` variant), so there is no hydration
+ * mismatch and no flash.
  *
- * Es un botón de alternancia ("Tema oscuro", pulsado o no) para que el lector de
- * pantalla anuncie el estado. Ese estado sale de la propia clase con
- * `useSyncExternalStore`: en el servidor y al hidratar vale `false` (lo que generó
- * el HTML estático) y justo después React lo corrige al valor real, sin error de
- * hidratación.
+ * It is a toggle button ("Dark theme", pressed or not) so screen readers announce its state.
+ * That state comes from the class itself via `useSyncExternalStore`: on the server and during
+ * hydration it is `false` (what the static HTML was generated with) and right afterwards React
+ * corrects it to the real value, with no hydration error.
  */
 export default function ThemeToggle() {
   const t = useTranslations("nav");
@@ -34,7 +33,7 @@ export default function ThemeToggle() {
     try {
       localStorage.setItem("theme", nextDark ? "dark" : "light");
     } catch {
-      // localStorage no disponible: el tema simplemente no se recuerda.
+      // localStorage unavailable: the theme is simply not remembered.
     }
   }
 

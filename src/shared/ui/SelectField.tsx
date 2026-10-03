@@ -5,9 +5,9 @@ import { fieldClass } from "./field-classes";
 import HelpTooltip from "./HelpTooltip";
 
 /**
- * Una opción del desplegable. `disabled` permite mostrar opciones que existen
- * pero no se pueden elegir (p. ej. territorios forales sin soporte), en vez de
- * omitirlas en silencio.
+ * A dropdown option. `disabled` shows options that exist but cannot be chosen (e.g.
+ * unsupported foral territories, the Basque Country and Navarre), instead of silently omitting
+ * them.
  */
 type Option<T extends string> = { value: T; label: string; disabled?: boolean };
 
@@ -20,10 +20,9 @@ type Props<T extends string> = {
 };
 
 /**
- * Desplegable etiquetado genérico (frecuencia, CCAA, etc.). Es genérico en el
- * tipo del valor (`T extends string`), de modo que las uniones tipadas
- * (`Frequency`, `ContractType`…) viajan con seguridad de tipos extremo a extremo
- * y no hacen falta casts en quien lo usa.
+ * Generic labelled dropdown (frequency, CCAA — autonomous community, etc.). It is generic over
+ * the value type (`T extends string`), so typed unions (`Frequency`, `ContractType`…) stay
+ * type-safe end to end and callers need no casts.
  */
 export default function SelectField<T extends string = string>({ label, value, options, onChange, help }: Props<T>) {
   const id = useId();

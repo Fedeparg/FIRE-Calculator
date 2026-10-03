@@ -6,20 +6,19 @@ import { getExplainer, getArticle } from "../content";
 import { getRelatedArticleSlugs } from "../related-articles";
 
 type Props = {
-  /** Slug de la calculadora del catálogo. */
+  /** Slug of the catalogue calculator. */
   calcSlug: CalculatorSlug;
 };
 
 type Chip = { slug: string; title: string };
 
 /**
- * Bloque divulgativo bajo cada calculadora: una explicación con ejemplo
- * trabajado (leída de `content/wiki/explainers/<calc>.<locale>.md`) y, debajo,
- * chips que enlazan a los artículos relacionados de la wiki (mapeo central en
- * `related-articles.ts`).
+ * Educational block under each calculator: an explanation with a worked example (read from
+ * `content/wiki/explainers/<calc>.<locale>.md`) and, below it, chips linking to the related
+ * wiki articles (central mapping in `related-articles.ts`).
  *
- * Degradación elegante: si la calculadora no tiene explainer NI artículos
- * relacionados, no se renderiza nada.
+ * Graceful degradation: if the calculator has neither an explainer NOR related articles,
+ * nothing is rendered.
  */
 export default async function CalculatorExplainer({ calcSlug }: Props) {
   const locale = await getLocale();
@@ -62,7 +61,7 @@ export default async function CalculatorExplainer({ calcSlug }: Props) {
   );
 }
 
-/** Resuelve los slugs relacionados a chips con el título del artículo. */
+/** Resolves the related slugs into chips with the article title. */
 async function resolveChips(calcSlug: CalculatorSlug, locale: string): Promise<Chip[]> {
   const slugs = getRelatedArticleSlugs(calcSlug);
   const resolved = await Promise.all(

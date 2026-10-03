@@ -6,7 +6,7 @@ coverage
 _local
 apps/api/drizzle
 next-env.d.ts
-# Salida de Vitest (`toMatchFileSnapshot`): la escribe el test tal cual y reformatearla la rompería.
+# Vitest output (`toMatchFileSnapshot`): the test writes it verbatim and reformatting it would break it.
 apps/api/src/mcp/__snapshots__
-# Lo gestiona Next (`next build` reescribe opciones e `include` con su propio formato).
+# Owned by Next (`next build` rewrites its options and `include` in its own format).
 /tsconfig.json

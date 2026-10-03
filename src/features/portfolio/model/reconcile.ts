@@ -1,14 +1,14 @@
 /**
- * Conservar la identidad de los datos que no han cambiado al re-sincronizar con la API.
+ * Preserve the identity of unchanged data when re-syncing with the API.
  *
- * React decide si re-renderizar (y si recalcular un `useMemo`) comparando referencias, no
- * contenidos. Cada respuesta de la API trae objetos nuevos aunque digan lo mismo, así que sin
- * esto cada auto-refresco (cada minuto, o al volver a la pestaña) invalidaría todos los cálculos
- * que dependen de las posiciones o de los precios. Solo sirve para objetos planos (campos
- * primitivos), que es lo que son `Position` y `PriceInfo`.
+ * React decides whether to re-render (and whether to recompute a `useMemo`) by comparing
+ * references, not contents. Every API response brings new objects even when they say the same
+ * thing, so without this every auto-refresh (every minute, or when returning to the tab) would
+ * invalidate every computation that depends on positions or prices. It only works for plain
+ * objects (primitive fields), which is what `Position` and `PriceInfo` are.
  */
 
-/** Igualdad superficial de dos objetos planos: mismas claves y mismos valores (`Object.is`). */
+/** Shallow equality of two plain objects: same keys and same values (`Object.is`). */
 function shallowEqual(a: object, b: object): boolean {
   const aKeys = Object.keys(a);
   if (aKeys.length !== Object.keys(b).length) return false;
@@ -19,8 +19,8 @@ function shallowEqual(a: object, b: object): boolean {
 }
 
 /**
- * `next` con los elementos de `prev` que no han cambiado (mismo `id` y mismo contenido), o el
- * propio `prev` si nada ha cambiado ni de contenido ni de orden.
+ * `next` with the items from `prev` that have not changed (same `id` and same content), or
+ * `prev` itself if nothing changed in either content or order.
  */
 export function reconcileList<T extends { id: string }>(prev: readonly T[], next: readonly T[]): T[] {
   const previous = new Map(prev.map((item) => [item.id, item]));
@@ -34,7 +34,7 @@ export function reconcileList<T extends { id: string }>(prev: readonly T[], next
   return changed ? merged : (prev as T[]);
 }
 
-/** Igual que `reconcileList` para un diccionario: el propio `prev` si ninguna entrada ha cambiado. */
+/** Same as `reconcileList` for a dictionary: `prev` itself if no entry changed. */
 export function reconcileRecord<T extends object>(
   prev: Readonly<Record<string, T>>,
   next: Readonly<Record<string, T>>,

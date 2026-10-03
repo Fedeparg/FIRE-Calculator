@@ -22,7 +22,7 @@ describe("AccountSessions", () => {
     apiFetch.mockReset();
   });
 
-  it("cierra todas las sesiones en la API y vuelve al login", async () => {
+  it("signs out all sessions in the API and returns to the login page", async () => {
     apiFetch.mockResolvedValue(new Response(JSON.stringify({ ok: true })));
     renderWithIntl(<AccountSessions />);
 
@@ -32,7 +32,7 @@ describe("AccountSessions", () => {
     await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/entrar"));
   });
 
-  it("si la API falla, avisa y no sale de la página", async () => {
+  it("warns and stays on the page if the API fails", async () => {
     apiFetch.mockRejectedValue(new Error("red caída"));
     renderWithIntl(<AccountSessions />);
 

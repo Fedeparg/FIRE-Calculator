@@ -1,20 +1,20 @@
-/** Grupo de campos con título, para calculadoras con muchas entradas de naturaleza distinta. */
+/** Titled group of fields, for calculators with many inputs of different kinds. */
 export type FieldGroup = {
-  /** Clave estable (React) del grupo. */
+  /** Stable (React) key of the group. */
   id: string;
   title: string;
   fields: React.ReactNode;
-  /** Columnas a partir de `lg` (en `sm` siempre son dos). */
+  /** Columns from `lg` up (at `sm` there are always two). */
   columns?: 2 | 3;
 };
 
 type Props =
   | {
       /**
-       * `sidebar`: pocos campos, barra lateral con los resultados al lado.
-       * `grid`: muchos campos, rejilla arriba y resultados debajo (evita una columna
-       * lateral kilométrica). Se elige a mano, no se deduce de un recuento de campos,
-       * que se desfasaba al añadir o quitar uno.
+       * `sidebar`: few fields, a sidebar with the results next to it.
+       * `grid`: many fields, a grid on top and results below (avoids a mile-long side
+       * column). Chosen by hand rather than inferred from a field count, which drifted
+       * whenever a field was added or removed.
        */
       layout: "sidebar" | "grid";
       inputs: React.ReactNode;
@@ -22,7 +22,7 @@ type Props =
       notice?: React.ReactNode;
     }
   | {
-      /** Como `grid`, pero con los campos repartidos en grupos con título (p. ej. datos básicos y personales). */
+      /** Like `grid`, but with the fields split into titled groups (e.g. basic and personal details). */
       layout: "grouped";
       groups: readonly FieldGroup[];
       results: React.ReactNode;

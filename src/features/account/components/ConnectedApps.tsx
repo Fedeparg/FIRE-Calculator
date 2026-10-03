@@ -12,7 +12,7 @@ import { useApiQuery } from "@/shared/api/use-api-query";
 import Button from "@/shared/ui/Button";
 
 const CONNECTIONS_PATH = "/api/account/connections";
-// Constante de módulo: `useApiQuery` exige opciones estables entre renders.
+// Module-level constant: `useApiQuery` requires options that are stable across renders.
 
 const SCOPE_LABELS: Record<string, string> = {
   "portfolio:read": "scopeRead",
@@ -20,26 +20,26 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 /**
- * URL pública del servidor MCP: el origen canónico del sitio + el endpoint MCP.
- * Sale de `NEXT_PUBLIC_SITE_URL` (vía `src/shared/seo/site.ts`), no de una constante
- * escrita a mano, para que un despliegue en otro dominio muestre SU url.
+ * Public URL of the MCP server: the site's canonical origin + the MCP endpoint.
+ * It comes from `NEXT_PUBLIC_SITE_URL` (via `src/shared/seo/site.ts`), not from a hand-written
+ * constant, so a deployment on another domain shows ITS URL.
  */
 const MCP_URL = absoluteUrl("/api/mcp");
 
 /**
- * Lista las aplicaciones OAuth/MCP conectadas a la cartera del usuario y permite revocarlas
- * (derecho RGPD + buena UX). La autorización y el scoping por usuario los decide SIEMPRE la
- * API (userId del JWT); aquí solo se muestra y se pide la revocación. Ver `_local/mcp-integracion.md`.
+ * Lists the OAuth/MCP apps connected to the user's portfolio and lets them be revoked (a GDPR
+ * right + good UX). Authorization and per-user scoping are ALWAYS decided by the API (userId
+ * from the JWT); here we only display and request revocation. See `_local/mcp-integracion.md`.
  */
 export default function ConnectedApps() {
   const t = useTranslations("account.connections");
   const query = useApiQuery<ConnectedApp[]>(CONNECTIONS_PATH, { init: NO_STORE });
-  // Las revocadas se ocultan sin volver a pedir la lista.
+  // Revoked ones are hidden without refetching the list.
   const [revoked, setRevoked] = useState<ReadonlySet<string>>(new Set());
   const state = query.status === "ready" ? "loaded" : query.status;
   const items = query.status === "ready" ? query.data.filter((c) => !revoked.has(c.clientId)) : [];
   const revocation = useApiMutation();
-  // Qué conexión se está revocando, para deshabilitar y rotular solo su botón.
+  // Which connection is being revoked, so only its button is disabled and relabelled.
   const [revoking, setRevoking] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -49,7 +49,7 @@ export default function ConnectedApps() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* sin portapapeles: el usuario puede seleccionar y copiar a mano */
+      /* no clipboard: the user can select and copy by hand */
     }
   }
 
@@ -108,7 +108,7 @@ export default function ConnectedApps() {
 
       {revocation.status === "error" && <p className="text-sm text-warning">{t("revokeError")}</p>}
 
-      {/* Cómo conectar un asistente de IA al servidor MCP de Sextante. */}
+      {/* How to connect an AI assistant to Sextante's MCP server. */}
       <details className="mt-1 rounded-xl border border-border bg-background p-4">
         <summary className="cursor-pointer text-sm font-medium text-foreground">{t("howToTitle")}</summary>
         <div className="mt-3 flex flex-col gap-3">

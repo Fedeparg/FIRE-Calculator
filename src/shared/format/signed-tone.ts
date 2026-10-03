@@ -1,10 +1,10 @@
-/** Clase de color de un texto de ganancia o pérdida. */
+/** Colour class for a gain or loss text. */
 export type SignedTone = "text-success" | "text-danger" | "text-foreground" | "text-muted";
 
 /**
- * Color de una cifra con signo: verde si es positiva, rojo si es negativa y `neutral` si es cero
- * (incluido el -0) o no hay cifra. El neutro cambia según el sitio: el texto normal en un total,
- * gris donde el cero es "sin novedad" (los movimientos del día).
+ * Colour of a signed figure: green if positive, red if negative and `neutral` if zero
+ * (including -0) or missing. The neutral tone depends on the context: regular text for a total,
+ * grey where zero means "nothing new" (the day's changes).
  */
 export function signedTone(
   value: number | null | undefined,

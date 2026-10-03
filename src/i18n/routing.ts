@@ -2,13 +2,13 @@ import { defineRouting } from "next-intl/routing";
 
 import { DEFAULT_LOCALE, LOCALES } from "./types";
 
-// Los idiomas salen de `types.ts` (sin dependencias de framework, lo importan también los
-// módulos puros): una sola lista para el enrutado, el SEO, el robots y el selector.
+// Locales come from `types.ts` (framework-free, so pure modules import it too): a single
+// list for routing, SEO, robots and the language switcher.
 export const routing = defineRouting({
   locales: LOCALES,
   defaultLocale: DEFAULT_LOCALE,
-  // "/" sirve castellano y "/en" inglés.
+  // "/" serves Spanish and "/en" English.
   localePrefix: "as-needed",
-  // La URL manda: sin detección por cookie/cabecera (evita rebotes al cambiar de idioma).
+  // The URL wins: no cookie/header detection (avoids bounces when switching locale).
   localeDetection: false,
 });

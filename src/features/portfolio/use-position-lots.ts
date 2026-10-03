@@ -10,20 +10,20 @@ import { useApiQuery } from "@/shared/api/use-api-query";
 const NO_LOTS: PositionLot[] = [];
 
 /**
- * Lotes de una posición (la película: cada compra y cada venta) y sus mutaciones.
+ * A position's lots (the full film: every purchase and every sale) and their mutations.
  *
- * Tras CADA mutación se llama a `onMutated` (obligatorio): el backend reescribe `quantity` y
- * `avgPrice` de la posición en la misma transacción, así que sin él la lista y el total
- * seguirían mostrando la foto anterior. Después se recarga el histórico; si esa recarga
- * fallase, la mutación SÍ se ha guardado y `loadState` pasa a `error`: es una vista desfasada,
- * no una operación fallida.
+ * `onMutated` (required) is called after EVERY mutation: the backend rewrites the position's
+ * `quantity` and `avgPrice` in the same transaction, so without it the list and the total would
+ * keep showing the previous snapshot. The history is reloaded afterwards; if that reload fails,
+ * the mutation HAS been saved and `loadState` becomes `error`: it is a stale view, not a failed
+ * operation.
  *
- * Solo viaja el `code` del cuerpo de error (`lotErrorKey`): el `message` del backend está en
- * castellano y romper la traducción en inglés por mostrarlo sería peor que un mensaje algo
- * más genérico pero traducido.
+ * Only the error body's `code` is used (`lotErrorKey`): the backend's `message` is in Spanish,
+ * and breaking the English translation to show it would be worse than a slightly more generic
+ * but translated message.
  */
 export function usePositionLots(positionId: string, onMutated: () => void) {
-  // `keepPrevious`: al recargar tras una mutación se siguen enseñando los lotes actuales.
+  // `keepPrevious`: when reloading after a mutation, the current lots stay on screen.
   const query = useApiQuery<PositionLot[]>(lotsPath(positionId), { init: NO_STORE, keepPrevious: true });
   const { refetch } = query;
   const mutation = useApiMutation();
@@ -41,7 +41,7 @@ export function usePositionLots(positionId: string, onMutated: () => void) {
     loadState: query.status,
     errorKey: mutation.error === null ? null : lotErrorKey(mutation.error),
     submitting: mutation.status === "pending",
-    /** Alta (`lotId === null`) o edición. `true` si la API lo aceptó. */
+    /** Creates (`lotId === null`) or edits. `true` if the API accepted it. */
     save: (lotId: string | null, payload: LotPayload) => mutate(() => saveLot(positionId, lotId, payload)),
     remove: (lotId: string) => mutate(() => deleteLot(positionId, lotId)),
   };

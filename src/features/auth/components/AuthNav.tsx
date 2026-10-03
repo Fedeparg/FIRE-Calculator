@@ -12,15 +12,15 @@ const LINK_CLASSES =
   "inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium sm:min-h-0 text-muted transition-colors hover:bg-surface-2 hover:text-foreground";
 
 /**
- * Enlace de cabecera que muestra "Entrar" o "Mi cartera" según haya sesión; con sesión, además,
- * el menú de la cuenta.
- * Comprueba el estado en el cliente (same-origin /api/auth/me) para no convertir
- * el Header en async. Hasta saberlo pinta un hueco invisible del tamaño del enlace de "Entrar"
- * (el caso más común): sin él, la cabecera se recolocaba al llegar la respuesta.
+ * Header link that shows "Entrar" (Sign in) or "Mi cartera" (My portfolio) depending on the
+ * session; with a session, it also shows the account menu.
+ * It checks the state on the client (same-origin /api/auth/me) so the Header does not have to
+ * become async. Until it knows, it renders an invisible placeholder the size of the "Entrar"
+ * link (the most common case): without it, the header shifted when the response arrived.
  *
- * La cabecera vive en el layout y NO se remonta al navegar: se vuelve a preguntar en cada cambio
- * de ruta, porque entrar (verify → /portfolio) o salir (logout → /entrar) cambia la sesión sin
- * recargar la página. Mientras tanto se mantiene lo último que se sabía, sin parpadeo.
+ * The header lives in the layout and is NOT remounted on navigation: it asks again on every
+ * route change, because signing in (verify → /portfolio) or out (logout → /entrar) changes the
+ * session without a page reload. Meanwhile it keeps the last known state, with no flicker.
  */
 export default function AuthNav() {
   const t = useTranslations("auth.nav");
@@ -30,7 +30,7 @@ export default function AuthNav() {
   const firstPath = useRef(pathname);
 
   useEffect(() => {
-    // En el montaje la consulta ya está en marcha: solo se repite al cambiar de ruta.
+    // On mount the query is already in flight: it is only repeated on route changes.
     if (firstPath.current === pathname) return;
     firstPath.current = pathname;
     refetch();

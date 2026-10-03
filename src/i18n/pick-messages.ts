@@ -2,10 +2,10 @@ import type { AbstractIntlMessages } from "next-intl";
 import { lastItem } from "@sextante/core/arrays";
 
 /**
- * Subconjunto del catálogo con solo los namespaces pedidos (`"nav"`, `"auth.nav"`…). Un
- * namespace con puntos conserva su ruta (`auth.nav` -> `{ auth: { nav } }`), que es lo que
- * `useTranslations("auth.nav")` espera encontrar. Lanza si un namespace no existe: es un
- * error de declaración que debe romper el build, no dejar una página con claves a medias.
+ * Subset of the catalog with only the requested namespaces (`"nav"`, `"auth.nav"`…). A dotted
+ * namespace keeps its path (`auth.nav` -> `{ auth: { nav } }`), which is what
+ * `useTranslations("auth.nav")` expects to find. Throws if a namespace does not exist: that is
+ * a declaration error that must break the build, not leave a page with half its keys.
  */
 export function pickMessages(messages: AbstractIntlMessages, namespaces: readonly string[]): AbstractIntlMessages {
   const picked: AbstractIntlMessages = {};
@@ -28,7 +28,7 @@ export function pickMessages(messages: AbstractIntlMessages, namespaces: readonl
         target = created;
       }
     }
-    // `split` nunca devuelve una lista vacía: siempre hay un último segmento.
+    // `split` never returns an empty list: there is always a last segment.
     target[lastItem(path)] = leaf;
   }
   return picked;

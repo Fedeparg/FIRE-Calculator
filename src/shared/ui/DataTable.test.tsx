@@ -22,7 +22,7 @@ const columns: DataTableColumn<Row>[] = [
 ];
 
 describe("DataTable", () => {
-  it("pinta cabeceras de columna y de fila, con la alineación y las clases de cada celda", () => {
+  it("renders column and row headers, with each cell's alignment and classes", () => {
     render(<DataTable caption="Ventas" columns={columns} rows={rows} rowKey={(r) => r.id} minWidthClass="min-w-0" />);
 
     const table = screen.getByRole("table", { name: "Ventas" });
@@ -36,7 +36,7 @@ describe("DataTable", () => {
     expect(gain).toHaveClass("text-right", "text-danger");
   });
 
-  it("con renderCard añade la lista de tarjetas para móvil y oculta la tabla por debajo de sm", () => {
+  it("with renderCard adds the mobile card list and hides the table below sm", () => {
     render(
       <DataTable
         caption="Ventas"
@@ -52,7 +52,7 @@ describe("DataTable", () => {
     expect(screen.getByRole("table").parentElement).toHaveClass("hidden", "sm:block");
   });
 
-  it("el título es solo para lectores de pantalla salvo que se pida visible", () => {
+  it("keeps the title screen-reader-only unless asked to show it", () => {
     const { rerender } = render(
       <DataTable caption="Ventas" columns={columns} rows={rows} rowKey={(r) => r.id} minWidthClass="min-w-0" />,
     );

@@ -1,26 +1,26 @@
-# Orquestación de PRODUCCIÓN de Sextante (self-hosted).
+# Sextante PRODUCTION orchestration (self-hosted).
 #
-# Diferencias con docker-compose.yml (que es de DESARROLLO):
-#   - Añade el servicio `web` (Next dockerizado, salida standalone).
-#   - NO publica postgres ni api al host: solo se hablan por la red interna de
-#     Compose. El ÚNICO puerto publicado es el del `web` (WEB_PORT), para que el
-#     proxy inverso (TLS con Let's Encrypt) lo alcance.
-#   - Espera NODE_ENV=production y secretos fuertes (sin defaults inseguros).
+# Differences from docker-compose.yml (which is for DEVELOPMENT):
+#   - Adds the `web` service (dockerised Next, standalone output).
+#   - Does NOT publish postgres or api to the host: they only talk over Compose's
+#     internal network. The ONLY published port is the `web` one (WEB_PORT), so the
+#     reverse proxy (TLS with Let's Encrypt) can reach it.
+#   - Expects NODE_ENV=production and strong secrets (no insecure defaults).
 #
-# Buen vecino en una máquina compartida con otros stacks:
-#   - `name: sextante` namespaca proyecto, red, contenedores y evita colisiones.
-#   - Volumen nombrado propio (sextante_pgdata). Puertos internos, no del host.
+# Good neighbour on a machine shared with other stacks:
+#   - `name: sextante` namespaces the project, network and containers and avoids collisions.
+#   - Its own named volume (sextante_pgdata). Internal ports, not host ones.
 #
-# Uso (lo ejecuta el runner de GitHub Actions; ver .github/workflows/deploy.yml):
+# Usage (run by the GitHub Actions runner; see .github/workflows/deploy.yml):
 #   docker compose -f docker-compose.prod.yml --env-file .env up -d --build
 #
-# Los secretos llegan vía el .env que el workflow materializa desde GitHub
-# Secrets. Variables esperadas: ver docs/DEPLOY.md §2.
+# Secrets arrive via the .env that the workflow materialises from GitHub
+# Secrets. Expected variables: see docs/DEPLOY.md §2.
 
 name: sextante
 
-# Imagen de la API, compartida por `migrate` y `api` (el mismo Dockerfile, la misma etiqueta):
-# se define una vez y cada servicio la referencia con `<<: *api-image`.
+# API image, shared by `migrate` and `api` (same Dockerfile, same tag): defined
+# once and referenced by each service with `<<: *api-image`.
 x-api-image: &api-image
   image: sextante-api:latest
   build:
@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-sextante}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD en el .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in the .env}
       POSTGRES_DB: ${POSTGRES_DB:-sextante}
     volumes:
       - sextante_pgdata:/var/lib/postgresql/data
@@ -44,7 +44,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # One-shot: aplica migraciones y termina. La API espera a que acabe OK.
+  # One-shot: applies the migrations and exits. The API waits for it to finish OK.
   migrate:
     <<: *api-image
     command: ['node', 'dist/db/migrate.js']
@@ -62,30 +62,30 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgres://${POSTGRES_USER:-sextante}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sextante}
-      # En producción la API se niega a arrancar si JWT_SECRET falta o es el de dev.
-      JWT_SECRET: ${JWT_SECRET:?define JWT_SECRET en el .env (openssl rand -base64 48)}
+      # In production the API refuses to start if JWT_SECRET is missing or is the dev one.
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in the .env (openssl rand -base64 48)}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-      APP_URL: ${APP_URL:?define APP_URL (https://sextante.fpardo.net)}
+      APP_URL: ${APP_URL:?set APP_URL (https://sextante.fpardo.net)}
       EMAIL_TRANSPORT: ${EMAIL_TRANSPORT:-resend}
-      RESEND_API_KEY: ${RESEND_API_KEY:?define RESEND_API_KEY en el .env}
-      # Sin remitente por defecto: el dominio de envío es propio de cada despliegue,
-      # así que se exige explícitamente en vez de heredar el del proyecto original.
-      EMAIL_FROM: ${EMAIL_FROM:?define EMAIL_FROM (remitente verificado en Resend)}
+      RESEND_API_KEY: ${RESEND_API_KEY:?set RESEND_API_KEY in the .env}
+      # No default sender: the sending domain belongs to each deployment, so it is
+      # required explicitly instead of inheriting the original project's.
+      EMAIL_FROM: ${EMAIL_FROM:?set EMAIL_FROM (sender verified in Resend)}
       OPENFIGI_API_KEY: ${OPENFIGI_API_KEY:-}
       PRICE_REFRESH_CRON: ${PRICE_REFRESH_CRON:-}
-      # Refresco intradía de precios (por defecto cada hora L-V); "off" lo desactiva.
+      # Intraday price refresh (hourly Mon-Fri by default); "off" disables it.
       PRICE_INTRADAY_CRON: ${PRICE_INTRADAY_CRON:-}
-      # Saltos de proxy de confianza para obtener la IP real (rate limiting). Ver
-      # apps/api/.env.example: por defecto 1; súbelo si hay más de un proxy delante
-      # y el rate limit agrupa a todos los usuarios en el mismo cubo.
+      # Trusted proxy hops to get the real client IP (rate limiting). See
+      # apps/api/.env.example: 1 by default; raise it if there is more than one proxy in
+      # front and the rate limit lumps every user into the same bucket.
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-}
-      # Poda periódica: códigos y tokens OAuth caducados, tokens de login gastados,
-      # auditoría de MCP y clientes DCR abandonados.
+      # Periodic pruning: expired OAuth codes and tokens, used login tokens, the MCP
+      # audit log and abandoned DCR clients.
       OAUTH_REAPER_CRON: ${OAUTH_REAPER_CRON:-}
       LOGIN_TOKEN_RETENTION_DAYS: ${LOGIN_TOKEN_RETENTION_DAYS:-}
       MCP_AUDIT_RETENTION_DAYS: ${MCP_AUDIT_RETENTION_DAYS:-}
       OAUTH_CLIENT_RETENTION_DAYS: ${OAUTH_CLIENT_RETENTION_DAYS:-}
-      # Clave SECRETA de Stripe (donaciones). Vacía → donaciones desactivadas.
+      # Stripe SECRET key (donations). Empty → donations disabled.
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     depends_on:
       postgres:
@@ -111,34 +111,34 @@ services:
       context: .
       dockerfile: Dockerfile.web
       args:
-        # Se hornea en build (el rewrite /api se congela en el manifiesto). En la
-        # red de Compose el web alcanza la API por el nombre de servicio.
+        # Baked in at build time (the /api rewrite is frozen into the manifest). On the
+        # Compose network the web service reaches the API by its service name.
         API_URL: http://api:3001
-        # URL canónica del sitio: se hornea en build (SEO, sitemap, robots.txt).
-        # Obligatoria: si falta, el build falla en vez de caer al fallback
-        # http://localhost:3000 (que dejaría el sitemap inservible para Google).
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?define NEXT_PUBLIC_SITE_URL (https://sextante.fpardo.net)}
-        # Interruptor público de donaciones ("1" = mostrar). Se inlinea en build.
+        # Canonical site URL: baked in at build time (SEO, sitemap, robots.txt).
+        # Required: if missing, the build fails instead of falling back to
+        # http://localhost:3000 (which would make the sitemap useless to Google).
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set NEXT_PUBLIC_SITE_URL (https://sextante.fpardo.net)}
+        # Public donations switch ("1" = show). Inlined at build time.
         NEXT_PUBLIC_DONATIONS_ENABLED: ${NEXT_PUBLIC_DONATIONS_ENABLED:-}
-        # Analítica propia: el web proxea /stats/* al servicio `analytics` por la red
-        # interna (se hornea en build, como API_URL). Sin ID de sitio (vacío hasta crear
-        # el sitio en el panel de Umami) no se emite el script.
+        # Self-hosted analytics: the web service proxies /stats/* to the `analytics` service
+        # over the internal network (baked in at build time, like API_URL). Without a site ID
+        # (empty until the site is created in the Umami dashboard) the script is not emitted.
         ANALYTICS_URL: http://analytics:3000
         NEXT_PUBLIC_ANALYTICS_WEBSITE_ID: ${NEXT_PUBLIC_ANALYTICS_WEBSITE_ID:-}
     restart: unless-stopped
     environment:
       NODE_ENV: production
       PORT: 3000
-      # Same-origin vía la red interna: el web (BFF) proxea /api al servicio api.
+      # Same-origin via the internal network: the web service (BFF) proxies /api to the api service.
       API_URL: http://api:3001
       REVALIDATE_TOKEN: ${REVALIDATE_TOKEN:-}
     ports:
-      # OJO: sin prefijo de interfaz, Docker publica en 0.0.0.0 (toda la red local),
-      # no solo en el loopback. Es deliberado: un proxy inverso que corre EN UN
-      # CONTENEDOR no alcanza el loopback del host, así que necesita IP:puerto.
-      # El proxy es la entrada pública y termina el TLS.
-      # Si tu proxy corre en el host, o lo conectas a la red `sextante` y proxeas a
-      # http://web:3000, cambia esto a '127.0.0.1:${WEB_PORT:-8790}:3000'.
+      # CAUTION: without an interface prefix, Docker publishes on 0.0.0.0 (the whole local
+      # network), not just on loopback. This is deliberate: a reverse proxy running IN A
+      # CONTAINER cannot reach the host's loopback, so it needs IP:port.
+      # The proxy is the public entry point and terminates TLS.
+      # If your proxy runs on the host, or you attach it to the `sextante` network and proxy
+      # to http://web:3000, change this to '127.0.0.1:${WEB_PORT:-8790}:3000'.
       - '${WEB_PORT:-8790}:3000'
     depends_on:
       api:
@@ -156,16 +156,16 @@ services:
       retries: 5
       start_period: 20s
 
-  # Backups cifrados: pg_dump -> gzip -> gpg (AES256) -> rclone (Google Drive).
-  # Analítica propia (Umami): sin cookies, sin terceros. Base de datos APARTE de la de
-  # Sextante: así ni el export/borrado RGPD ni los backups de la app la mezclan con
-  # datos de usuarios, y perderla no compromete nada (son métricas agregadas).
+  # Encrypted backups: pg_dump -> gzip -> gpg (AES256) -> rclone (Google Drive).
+  # Self-hosted analytics (Umami): cookieless, no third parties. A database SEPARATE from
+  # Sextante's: that way neither the GDPR export/deletion nor the app backups mix it with
+  # user data, and losing it compromises nothing (it holds aggregated metrics).
   analytics-db:
     image: postgres:17-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: umami
-      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD:?define ANALYTICS_DB_PASSWORD en el .env}
+      POSTGRES_PASSWORD: ${ANALYTICS_DB_PASSWORD:?set ANALYTICS_DB_PASSWORD in the .env}
       POSTGRES_DB: umami
     volumes:
       - sextante_analytics_pgdata:/var/lib/postgresql/data
@@ -177,33 +177,33 @@ services:
       start_period: 10s
 
   analytics:
-    # Versión fijada: el tracker y la ruta de envío (/api/send) forman parte del
-    # contrato con los rewrites de next.config; un salto de versión se prueba antes.
+    # Pinned version: the tracker and the send route (/api/send) are part of the
+    # contract with next.config's rewrites; a version bump gets tested first.
     image: ghcr.io/umami-software/umami:3.4.0
     restart: unless-stopped
     init: true
     environment:
-      DATABASE_URL: postgresql://umami:${ANALYTICS_DB_PASSWORD:?define ANALYTICS_DB_PASSWORD en el .env}@analytics-db:5432/umami
-      APP_SECRET: ${ANALYTICS_APP_SECRET:?define ANALYTICS_APP_SECRET en el .env (openssl rand -base64 48)}
-      # No avisar de versiones nuevas ni mandar telemetría a umami.is.
+      DATABASE_URL: postgresql://umami:${ANALYTICS_DB_PASSWORD:?set ANALYTICS_DB_PASSWORD in the .env}@analytics-db:5432/umami
+      APP_SECRET: ${ANALYTICS_APP_SECRET:?set ANALYTICS_APP_SECRET in the .env (openssl rand -base64 48)}
+      # Do not check for new versions or send telemetry to umami.is.
       DISABLE_UPDATES: '1'
       DISABLE_TELEMETRY: '1'
-      # El código que agrupa las visitas de una persona cambia cada DÍA (por defecto,
-      # cada mes): no se puede seguir a nadie entre días. Cuesta precisión en
-      # "visitantes únicos" mensuales; la política de privacidad lo promete así.
+      # The code that groups a person's visits rotates every DAY (monthly by default):
+      # nobody can be tracked across days. It costs accuracy in monthly "unique
+      # visitors"; the privacy policy promises exactly that.
       SALT_ROTATION: day
     ports:
-      # El PANEL solo se publica en la red local (y Tailscale), nunca por el proxy
-      # público: desde fuera solo existen /stats/script.js y /stats/api/send, que el
-      # web reenvía por la red interna. Mismo motivo que WEB_PORT para no ligarlo al
-      # loopback (ver el comentario del servicio `web`).
+      # The DASHBOARD is only published on the local network (and Tailscale), never through
+      # the public proxy: from outside only /stats/script.js and /stats/api/send exist, which
+      # the web service forwards over the internal network. Same reason as WEB_PORT for not
+      # binding it to loopback (see the comment on the `web` service).
       - '${ANALYTICS_PORT:-8791}:3000'
     depends_on:
       analytics-db:
         condition: service_healthy
 
-  # Hace un backup al arrancar y luego uno diario (cron). El cifrado ocurre ANTES
-  # de salir del servidor. Ver scripts/backup/ y docs/DEPLOY.md.
+  # Takes a backup on start and then a daily one (cron). Encryption happens BEFORE
+  # the data leaves the server. See scripts/backup/ and docs/DEPLOY.md.
   backup:
     image: sextante-backup:latest
     build:
@@ -215,8 +215,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sextante}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-sextante}
-      BACKUP_GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:?define BACKUP_GPG_PASSPHRASE en el .env}
-      RCLONE_CONF_BASE64: ${RCLONE_CONF_BASE64:?define RCLONE_CONF_BASE64 en el .env}
+      BACKUP_GPG_PASSPHRASE: ${BACKUP_GPG_PASSPHRASE:?set BACKUP_GPG_PASSPHRASE in the .env}
+      RCLONE_CONF_BASE64: ${RCLONE_CONF_BASE64:?set RCLONE_CONF_BASE64 in the .env}
       RCLONE_REMOTE: ${RCLONE_REMOTE:-gdrive:sextante-backups}
       BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-7}
       BACKUP_CRON: ${BACKUP_CRON:-0 4 * * *}

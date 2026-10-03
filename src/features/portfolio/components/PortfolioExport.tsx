@@ -11,25 +11,25 @@ import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 
 type Props = {
   positions: Position[];
-  /** Último precio conocido por ticker (desde nuestra DB). */
+  /** Last known price per ticker (from our DB). */
   prices: Record<string, PriceInfo>;
-  /** USD por unidad de cada divisa (USD = 1). */
+  /** USD per unit of each currency (USD = 1). */
   rates: Record<string, number>;
-  /** Divisa elegida: en ella va la columna de valoración. */
+  /** Chosen currency: the valuation column uses it. */
   display: string;
 };
 
-/** Nombre del fichero descargado. Fijo: identifica el origen sin exponer nada del usuario. */
+/** Name of the downloaded file. Fixed: it identifies the source without exposing anything about the user. */
 const FILE_NAME = "sextante-cartera.csv";
 
 /**
- * Descarga de la cartera en CSV. Se genera ENTERAMENTE en el cliente a partir de los datos que
- * ya están en pantalla (posiciones, precios y tasas): no hay endpoint nuevo ni una segunda
- * lectura de la API que pudiera devolver algo distinto de lo que se está viendo.
+ * Portfolio download as CSV. It is generated ENTIRELY on the client from the data already on
+ * screen (positions, prices and rates): there is no new endpoint nor a second API read that could
+ * return something different from what is being viewed.
  *
- * El texto lo construye `buildPortfolioCsv` (core puro y testeado), que decide el dialecto
- * según el idioma para que Excel lo abra bien. Aquí solo se traducen las cabeceras y se lanza
- * la descarga (`downloadBlob`).
+ * The text is built by `buildPortfolioCsv` (pure, tested core), which picks the dialect from the
+ * locale so Excel opens it correctly. This component only translates the headers and triggers
+ * the download (`downloadBlob`).
  */
 export default function PortfolioExport({ positions, prices, rates, display }: Props) {
   const t = useTranslations("portfolio.export");
@@ -45,7 +45,7 @@ export default function PortfolioExport({ positions, prices, rates, display }: P
         rates,
         display,
         locale,
-        // Las cabeceras se traducen aquí: el core no traduce (mismo criterio que el resto).
+        // Headers are translated here: the core does not translate (same rule as elsewhere).
         headers: {
           ticker: t("headers.ticker"),
           name: t("headers.name"),
@@ -59,12 +59,12 @@ export default function PortfolioExport({ positions, prices, rates, display }: P
           marketValue: t("headers.marketValue", { currency: display }),
         },
       });
-      // El BOM va delante del contenido: sin él, Excel lee el fichero en su página de códigos
-      // local y destroza los acentos.
+      // The BOM goes before the content: without it, Excel reads the file in its local code
+      // page and mangles the accents.
       downloadBlob(new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }), FILE_NAME);
     } catch {
-      // Un fallo aquí solo puede venir del navegador (memoria, descargas bloqueadas): se avisa
-      // en vez de dejar un botón que aparentemente no hace nada.
+      // A failure here can only come from the browser (memory, blocked downloads): we warn
+      // instead of leaving a button that seemingly does nothing.
       setFailed(true);
     }
   }

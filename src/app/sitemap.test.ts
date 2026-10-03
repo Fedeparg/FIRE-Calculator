@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defined } from "@sextante/core/assert";
 
-// El sitemap lee de disco vía los módulos de contenido (`server-only`); aquí se sustituyen por
-// datos fijos para probar solo cómo se compone: slugs, hreflang y `lastModified` condicional.
+// The sitemap reads from disk through the content modules (`server-only`); here they are replaced
+// with fixed data to test only how it is assembled: slugs, hreflang and conditional `lastModified`.
 vi.mock("@/features/wiki/content", () => ({
   getArticleSlugs: vi.fn(async (locale: string) => (locale === "es" ? ["b", "a"] : ["a", "c"])),
   getLegalSlugs: vi.fn(async () => ["privacidad"]),
@@ -26,7 +26,7 @@ beforeEach(async () => {
 });
 
 describe("sitemap", () => {
-  it("lista páginas fijas, calculadoras, artículos (unión de idiomas, ordenados) y legales", () => {
+  it("lists fixed pages, calculators, articles (union of locales, sorted) and legal pages", () => {
     const urls = entries.map((e) => e.url);
     expect(urls).toContain(absoluteUrl("/"));
     expect(urls).toContain(absoluteUrl("/novedades"));
@@ -37,7 +37,7 @@ describe("sitemap", () => {
     expect(new Set(urls).size).toBe(urls.length);
   });
 
-  it("cada entrada declara es, en y x-default (castellano) en alternates", () => {
+  it("every entry declares es, en and x-default (Spanish) in alternates", () => {
     const entry = byPath("/aprende/a");
     expect(entry?.alternates?.languages).toEqual({
       es: absoluteUrl("/aprende/a"),
@@ -46,7 +46,7 @@ describe("sitemap", () => {
     });
   });
 
-  it("emite lastModified solo cuando hay una fecha real", () => {
+  it("emits lastModified only when there is a real date", () => {
     expect(byPath("/aprende/a")?.lastModified).toBe("2026-09-03");
     expect(byPath("/novedades")?.lastModified).toBe("2026-10-01");
     expect("lastModified" in defined(byPath("/aprende/b"))).toBe(false);

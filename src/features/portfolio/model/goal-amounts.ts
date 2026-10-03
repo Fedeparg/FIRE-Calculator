@@ -1,7 +1,7 @@
-// Importes y cálculo del bloque "Tu objetivo" de la cartera. Core puro (sin React), testeable.
+// Amounts and computation for the portfolio's "Your goal" block. Pure core (no React), testable.
 //
-// El estado de la pantalla guarda los importes en la divisa en que se introdujeron; aquí se
-// derivan a la divisa que se está viendo y se arma el resultado y el cuerpo del escenario.
+// The screen state keeps the amounts in the currency they were entered in; here they are
+// derived into the currency being viewed, and the result and the scenario body are built.
 
 import { convertCurrency } from "@sextante/core/fx";
 import { computeGoalProgress, type GoalMode, type GoalOutcome } from "@sextante/core/portfolio/goal";
@@ -9,19 +9,19 @@ import type { Frequency } from "@sextante/core/projection";
 import { roundCents } from "@sextante/core/money";
 import type { GoalSettings } from "./goal-scenario";
 
-/** Importes del objetivo, con la divisa en la que se introdujeron o se guardaron. */
+/** Goal amounts, with the currency they were entered or saved in. */
 export type GoalAmounts = { currency: string; annualExpenses: number; contribution: number; targetAmount: number };
 
-/** Aviso sobre la divisa de los importes cuando no coincide con la que se está viendo. */
+/** Notice about the amounts' currency when it differs from the one being viewed. */
 export type CurrencyNote = { kind: "converted" | "notConvertible"; from: string; to: string } | null;
 
-/** Importes ya expresados en la divisa que se está viendo, con el aviso que toque. */
+/** Amounts already expressed in the currency being viewed, with the applicable notice. */
 export type ShownAmounts = Omit<GoalAmounts, "currency"> & { note: CurrencyNote };
 
-/** Cifra de ejemplo del modo cantidad (en la divisa que se está viendo). */
+/** Example figure for amount mode (in the currency being viewed). */
 export const DEFAULT_TARGET_AMOUNT = 100000;
 
-/** Importes de un objetivo guardado, en SU divisa (`settings.currency`). */
+/** Amounts of a saved goal, in ITS currency (`settings.currency`). */
 export function amountsFromSettings(settings: GoalSettings): GoalAmounts {
   return {
     currency: settings.currency,
@@ -31,7 +31,7 @@ export function amountsFromSettings(settings: GoalSettings): GoalAmounts {
   };
 }
 
-/** Parámetros no monetarios de un objetivo guardado. */
+/** Non-monetary parameters of a saved goal. */
 export function paramsFromSettings(settings: GoalSettings): GoalParams {
   return {
     mode: settings.mode,
@@ -45,8 +45,8 @@ export function paramsFromSettings(settings: GoalSettings): GoalParams {
 }
 
 /**
- * Importes en la divisa que se está viendo. Si falta la tasa no se inventa nada —se devuelven
- * tal cual y `note` lo dice—, en vez de comparar importes de divisas distintas.
+ * Amounts in the currency being viewed. If the rate is missing nothing is made up (they are
+ * returned as-is and `note` says so) rather than comparing amounts in different currencies.
  */
 export function showAmounts(amounts: GoalAmounts, display: string, rates: Record<string, number>): ShownAmounts {
   const { currency, ...original } = amounts;
@@ -65,7 +65,7 @@ export function showAmounts(amounts: GoalAmounts, display: string, rates: Record
   };
 }
 
-/** Parámetros no monetarios del objetivo, tal y como los edita la pantalla. */
+/** Non-monetary goal parameters, as the screen edits them. */
 export type GoalParams = {
   mode: GoalMode;
   frequency: Frequency;
@@ -76,7 +76,7 @@ export type GoalParams = {
   retirementYears: number;
 };
 
-/** Resultado del objetivo contra el valor actual de la cartera (`computeGoalProgress`). */
+/** Goal result against the portfolio's current value (`computeGoalProgress`). */
 export function computeGoal(shown: ShownAmounts, params: GoalParams, marketValue: number): GoalOutcome {
   const common = {
     currentValue: marketValue,
@@ -93,10 +93,9 @@ export function computeGoal(shown: ShownAmounts, params: GoalParams, marketValue
 }
 
 /**
- * `inputs` del escenario a guardar: los del escenario cargado (para no perder las claves que
- * este bloque no edita) con los campos del objetivo sobrescritos. El `currentSavings` es el
- * patrimonio real de la cartera, de modo que abrir el escenario en la calculadora reproduce el
- * mismo cálculo.
+ * `inputs` of the scenario to save: those of the loaded scenario (so the keys this block does
+ * not edit are not lost) with the goal fields overwritten. `currentSavings` is the portfolio's
+ * actual net worth, so opening the scenario in the calculator reproduces the same computation.
  */
 export function buildGoalInputs(
   loadedInputs: Record<string, unknown>,

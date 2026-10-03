@@ -20,28 +20,29 @@ import FormField from "@/shared/ui/FormField";
 
 type Props = {
   position: Position;
-  /** Histórico completo de la posición (compras y ventas). */
+  /** Full history of the position (purchases and sales). */
   lots: PositionLot[];
-  /** Último precio de mercado del instrumento; puede venir en OTRA divisa. */
+  /** Last market price of the instrument; it may be in ANOTHER currency. */
   price: PriceInfo | undefined;
-  /** Tasas FX (USD por unidad de divisa). */
+  /** FX rates (USD per currency unit). */
   rates: Record<string, number>;
 };
 
 /**
- * "¿Qué pasaría si vendo X participaciones a Y precio?": empareja la venta con los lotes por
- * FIFO (el criterio que exige Hacienda para valores homogéneos) y estima la cuota del ahorro.
+ * "What would happen if I sell X shares at price Y?": matches the sale against the lots by FIFO
+ * (the rule the Spanish tax agency requires for homogeneous securities) and estimates the savings
+ * tax due.
  *
- * DIVISAS. Los lotes no tienen divisa propia: van en la de la posición, así que toda la
- * aritmética de la ganancia ocurre ahí sin convertir nada. La escala del IRPF, en cambio, está
- * en euros: si la posición está en otra divisa, la ganancia se convierte con las tasas de HOY
- * (no hay otra: la venta es hipotética y no tiene fecha). Si esa conversión no es posible se
- * muestra la ganancia y se dice que no se puede estimar la cuota, en vez de dar un número
- * falso, que es el criterio del resto de la aplicación.
+ * CURRENCIES. Lots have no currency of their own: they use the position's, so all the gain
+ * arithmetic happens there without converting anything. The IRPF scale, however, is in euros: if
+ * the position is in another currency, the gain is converted at TODAY's rates (there is no
+ * alternative: the sale is hypothetical and has no date). If that conversion is not possible, the
+ * gain is shown and we say the tax cannot be estimated, instead of giving a false number, which
+ * is the rule across the rest of the app.
  *
- * El precio de venta se prellena con la última cotización CONVERTIDA a la divisa de la
- * posición; si la conversión no es posible, no se prellena nada (meter dólares en una base de
- * coste en euros daría un resultado plausible y equivocado, que es lo peor que puede pasar).
+ * The sale price is prefilled with the last quote CONVERTED to the position's currency; if the
+ * conversion is not possible, nothing is prefilled (putting dollars into a euro cost basis would
+ * give a plausible but wrong result, which is the worst thing that can happen).
  */
 export default function SaleSimulator({ position, lots, price, rates }: Props) {
   const t = useTranslations("portfolio.sale");
@@ -49,26 +50,26 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
 
   const currency = position.currency;
 
-  // Última cotización llevada a la divisa de la posición; `null` si no es convertible.
+  // Last quote converted to the position's currency; `null` if not convertible.
   const suggestedPrice = useMemo(
     () => (price ? convertCurrency(price.close, price.currency, currency, rates) : null),
     [price, currency, rates],
   );
 
-  // `useDecimalText` y no `String(n)`: este daría "1e-7" (que el saneado leería como 17) y el
-  // punto decimal en castellano.
+  // `useDecimalText` and not `String(n)`: the latter would give "1e-7" (which sanitizing would read as 17) and the
+  // wrong decimal point for Spanish.
   const [quantity, setQuantity] = useDecimalText(position.quantity);
-  // `null` = el usuario todavía no ha escrito nada, así que manda la sugerencia. Se deriva en
-  // lugar de sincronizarse con un efecto: la cotización llega de forma asíncrona y un efecto
-  // que escribiera el campo provocaría un render en cascada (y pisaría lo tecleado si el
-  // precio llegase tarde).
+  // `null` = the user has not typed anything yet, so the suggestion wins. It is derived instead
+  // of being synced through an effect: the quote arrives asynchronously, and an effect
+  // writing the field would cause a cascading render (and overwrite what was typed if the
+  // price arrived late).
   const [typedPrice, setTypedPrice] = useState<string | null>(null);
   const [fees, setFees] = useState("");
 
-  // El precio sugerido se escribe con el separador decimal del idioma, como hace
-  // `NumberField`. Con `String(...)` salía "12.214", que en castellano se lee como doce
-  // mil doscientos catorce en vez de 12,214 €: un malentendido caro en una simulación
-  // fiscal, justo donde el usuario está mirando una cifra de impuestos.
+  // The suggested price is written with the locale's decimal separator, as
+  // `NumberField` does. With `String(...)` it came out as "12.214", which in Spanish reads as twelve
+  // thousand two hundred fourteen instead of 12,214 €: a costly misunderstanding in a tax
+  // simulation, right where the user is looking at a tax figure.
   const priceText =
     typedPrice ??
     (suggestedPrice !== null ? formatDecimalInput(Number(suggestedPrice.toFixed(6)), decimalSeparator) : "");
@@ -102,7 +103,7 @@ export default function SaleSimulator({ position, lots, price, rates }: Props) {
     [tradeLots, quantityNum, priceNum, feesNum],
   );
 
-  // Ganancia llevada a euros para poder aplicar `IRPF_SAVINGS_SCALE`. `null` = no convertible.
+  // Gain converted to euros so `IRPF_SAVINGS_SCALE` can be applied. `null` = not convertible.
   const gainInEur =
     simulation && !simulation.insufficient ? convertCurrency(simulation.gain, currency, TAX_CURRENCY, rates) : null;
   const tax = gainInEur !== null ? estimateSavingsTax(gainInEur) : null;

@@ -4,7 +4,7 @@ import { useFormat } from "@/shared/format/use-format";
 
 type Entry = {
   name?: string;
-  /** Un valor, o un par [mínimo, máximo] si la serie es una banda. */
+  /** A value, or a [min, max] pair if the series is a band. */
   value?: number | string | readonly (number | string)[];
   color?: string;
   dataKey?: string | number;
@@ -15,19 +15,19 @@ type Props = {
   payload?: Entry[];
   label?: string | number;
   labelPrefix: string;
-  /** Claves cuyas magnitudes se suman para mostrar un "total". */
+  /** Keys whose magnitudes are summed to show a "total". */
   totalKeys?: string[];
   totalLabel?: string;
   /**
-   * Divisa de los importes. Si se omite se formatea en euros sin decimales, que es lo que
-   * necesitan las calculadoras; la cartera la pasa para poder mostrar la divisa elegida.
+   * Currency of the amounts. If omitted, amounts are formatted in euros without decimals, which
+   * is what the calculators need; the portfolio passes it to show the chosen currency.
    */
   currency?: string;
-  /** Formato del valor del eje X (p. ej. una fecha ISO). Por defecto se muestra tal cual. */
+  /** Format of the X-axis value (e.g. an ISO date). Shown as is by default. */
   labelFormat?: (value: string | number) => string;
 };
 
-/** Tooltip común: cada serie con su color + un total opcional (aportado + intereses). */
+/** Shared tooltip: each series with its color + an optional total (contributions + interest). */
 export default function ChartTooltip({
   active,
   payload,
@@ -39,8 +39,8 @@ export default function ChartTooltip({
   labelFormat,
 }: Props) {
   const { formatCurrency, formatEUR } = useFormat();
-  // Sin `currency` el formato es EXACTAMENTE el de siempre (euros, sin decimales): las
-  // calculadoras que ya usaban este tooltip no cambian ni un dígito.
+  // Without `currency` the format is EXACTLY the original one (euros, no decimals): the
+  // calculators that already used this tooltip do not change a single digit.
   const formatValue = currency ? (n: number) => formatCurrency(n, currency) : formatEUR;
   if (!active || !payload?.length) return null;
 

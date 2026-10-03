@@ -1,14 +1,14 @@
 type Props = {
-  /** Texto del aviso. */
+  /** Notice text. */
   children: React.ReactNode;
-  /** Variante visual. Por defecto "warning" (datos orientativos). */
+  /** Visual variant. Defaults to "warning" (indicative figures). */
   variant?: "warning" | "info";
   className?: string;
 };
 
 /**
- * Aviso destacado y reutilizable. Se usa, sobre todo, para señalar de forma
- * visible que los resultados de las calculadoras fiscales son orientativos.
+ * Reusable highlighted notice. Mainly used to flag visibly that the results of the tax
+ * calculators are indicative.
  */
 export default function Notice({ children, variant = "warning", className = "" }: Props) {
   const styles =

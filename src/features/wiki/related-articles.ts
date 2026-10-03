@@ -1,23 +1,21 @@
 import { CALCULATORS, type CalculatorSlug } from "@/features/calculators/registry";
 
 /**
- * Mapeo declarativo y central: calculadora → artículos de la wiki relacionados.
+ * Central, declarative mapping: calculator → related wiki articles.
  *
- * Es la ÚNICA fuente de verdad para los chips de "sigue aprendiendo" que
- * aparecen bajo cada calculadora. Para enlazar una calculadora nueva con la
- * wiki, añade UNA línea aquí:
+ * It is the ONLY source of truth for the "sigue aprendiendo" (keep learning) chips shown
+ * under each calculator. To link a new calculator to the wiki, add ONE line here:
  *
- *   "slug-de-la-calculadora": ["slug-articulo-1", "slug-articulo-2"],
+ *   "calculator-slug": ["article-slug-1", "article-slug-2"],
  *
- * - La clave es el `slug` de la calculadora (ver `src/features/calculators/registry.ts`).
- * - El valor es la lista de slugs de artículos (ficheros
- *   `content/wiki/<slug>.<locale>.md`), en el orden en que se mostrarán
- *   (el primero es el más relevante).
- * - Si una calculadora no aparece aquí (o su lista está vacía), no se
- *   renderiza ningún chip: degradación elegante, sin tocar lógica.
+ * - The key is the calculator's `slug` (see `src/features/calculators/registry.ts`).
+ * - The value is the list of article slugs (files `content/wiki/<slug>.<locale>.md`), in
+ *   display order (the first is the most relevant).
+ * - If a calculator is missing here (or its list is empty), no chip is rendered: graceful
+ *   degradation, with no logic changes.
  */
 const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
-  // Inversión e interés compuesto
+  // Investing and compound interest
   "interes-compuesto": [
     "interes-compuesto",
     "inflacion-y-poder-adquisitivo",
@@ -30,7 +28,7 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   roi: ["roi-rentabilidad-cagr", "asignacion-activos-glide-path", "conceptos-basicos-inversion"],
   staking: ["staking-y-cripto", "fiscalidad-del-ahorro", "diversificacion-y-riesgo"],
 
-  // FIRE y planificación
+  // FIRE and planning
   "independencia-financiera": [
     "regla-del-4",
     "riesgo-secuencia-retornos",
@@ -46,7 +44,7 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   ],
   "presupuesto-mensual": ["presupuesto-50-30-20", "ahorro-para-la-jubilacion"],
 
-  // Hipoteca y vivienda
+  // Mortgage and housing
   "hipoteca-fija": ["hipoteca-sistema-frances", "amortizacion-anticipada", "tae-vs-tin"],
   "que-hipoteca-me-puedo-permitir": ["hipoteca-sistema-frances", "comprar-vs-alquilar", "tae-vs-tin"],
   "hipoteca-vs-alquiler": [
@@ -59,7 +57,7 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   "rentabilidad-alquiler": ["rentabilidad-inmobiliaria", "socimi-reits-crowdfunding", "comprar-vs-alquilar"],
   "rentabilidad-alquiler-vacacional": ["rentabilidad-inmobiliaria", "socimi-reits-crowdfunding", "comprar-vs-alquilar"],
 
-  // Ahorro y depósitos
+  // Savings and deposits
   "deposito-plazo-fijo": [
     "depositos-y-cuentas-remuneradas",
     "escalera-de-bonos",
@@ -68,7 +66,7 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   ],
   "cuenta-remunerada": ["depositos-y-cuentas-remuneradas", "escalera-de-bonos", "tae-vs-tin", "fiscalidad-del-ahorro"],
 
-  // Fiscalidad
+  // Taxation
   "desgravacion-plan-pensiones": [
     "planes-de-pensiones",
     "rescate-plan-pensiones",
@@ -81,10 +79,10 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   "impuesto-patrimonio": ["fiscalidad-del-ahorro", "socimi-reits-crowdfunding", "diversificacion-y-riesgo"],
   "impuesto-donaciones": ["fiscalidad-del-ahorro"],
 
-  // Deuda
+  // Debt
   "intereses-tarjeta-credito": ["tarjetas-revolving"],
 
-  // Herramientas
+  // Tools
   inflacion: ["inflacion-y-poder-adquisitivo", "conceptos-basicos-inversion"],
   "salud-financiera": [
     "presupuesto-50-30-20",
@@ -94,16 +92,15 @@ const RELATED_ARTICLES: Partial<Record<CalculatorSlug, readonly string[]>> = {
   ],
 };
 
-/** Slugs de artículos relacionados con una calculadora (vacío si no hay). */
+/** Slugs of the articles related to a calculator (empty if none). */
 export function getRelatedArticleSlugs(calcSlug: CalculatorSlug): readonly string[] {
   return RELATED_ARTICLES[calcSlug] ?? [];
 }
 
 /**
- * Inverso de `RELATED_ARTICLES`: dadas las relaciones calculadora → artículos,
- * devuelve las calculadoras que enlazan a un artículo. Sirve para el enlazado
- * interno bidireccional (desde el artículo de la wiki hacia sus calculadoras),
- * reutilizando el mismo mapeo central como única fuente de verdad.
+ * Inverse of `RELATED_ARTICLES`: given the calculator → articles relations, returns the
+ * calculators that link to an article. It powers bidirectional internal linking (from the wiki
+ * article to its calculators), reusing the same central mapping as the single source of truth.
  */
 export function getRelatedCalculatorSlugs(articleSlug: string): CalculatorSlug[] {
   return CALCULATORS.map((c) => c.slug).filter((slug) => RELATED_ARTICLES[slug]?.includes(articleSlug));

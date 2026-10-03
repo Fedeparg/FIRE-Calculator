@@ -6,17 +6,17 @@ import { UTF8_BOM } from "@/shared/format/csv";
 import { downloadBlob } from "@/shared/format/download";
 
 /**
- * Descarga de CSV generados en el navegador, con el estado de fallo para avisar. Solo puede
- * fallar el navegador (memoria, descargas bloqueadas): el contenido ya está calculado.
+ * Downloads CSVs generated in the browser, with a failure state to report it. Only the browser
+ * can fail (memory, blocked downloads): the content is already computed.
  */
 export function useCsvDownload() {
   const [failed, setFailed] = useState(false);
 
-  /** Genera el CSV con `build` y lo descarga como `fileName`. `true` si salió bien. */
+  /** Builds the CSV with `build` and downloads it as `fileName`. `true` on success. */
   function download(build: () => string, fileName: string): boolean {
     setFailed(false);
     try {
-      // BOM: sin él, Excel abre en Windows-1252 y estropea las tildes y el €.
+      // BOM: without it, Excel opens the file as Windows-1252 and mangles accents and the €.
       downloadBlob(new Blob([UTF8_BOM, build()], { type: "text/csv;charset=utf-8" }), fileName);
       return true;
     } catch {

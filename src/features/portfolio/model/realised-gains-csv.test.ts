@@ -22,27 +22,27 @@ const year = firstItem(
 );
 
 describe("buildRealisedGainsCsv", () => {
-  it("una fila por venta, con el dialecto español", () => {
+  it("one row per sale, with the Spanish dialect", () => {
     const csv = buildRealisedGainsCsv(year, HEADERS, "es");
     const lines = csv.trimEnd().split("\r\n");
 
     expect(lines[0]).toBe(REALISED_GAINS_CSV_COLUMNS.join(";"));
-    // Transmisión 25 − 0,5 = 24,5; adquisición 2 × (10 + 1/3) = 20,67; ganancia 3,83.
-    // En euros el tipo es 1, los importes coinciden y no hay diferencia de cambio.
+    // Transfer value 25 − 0.5 = 24.5; acquisition 2 × (10 + 1/3) = 20.67; gain 3.83.
+    // In euros the rate is 1, the amounts match and there is no exchange difference.
     expect(lines[1]).toBe(
       "2024-05-02;VWCE;'=cmd|' /C calc'!A0;EUR;2;12,5;0,5;24,5;20,67;3,83;1;24,5;20,67;3,83;0;0;0;3,83",
     );
     expect(lines).toHaveLength(2);
   });
 
-  it("con el dialecto inglés usa coma y punto", () => {
+  it("with the English dialect uses comma and dot", () => {
     const csv = buildRealisedGainsCsv(year, HEADERS, "en");
     expect(csv.split("\r\n")[1]).toBe(
       "2024-05-02,VWCE,'=cmd|' /C calc'!A0,EUR,2,12.5,0.5,24.5,20.67,3.83,1,24.5,20.67,3.83,0,0,0,3.83",
     );
   });
 
-  it("en divisa añade el tipo del BCE y los importes en euros; sin tipo, deja vacías esas columnas", () => {
+  it("in a foreign currency adds the ECB rate and the euro amounts; without a rate, leaves those columns empty", () => {
     const usdLots: TradeLot[] = [
       { id: "1", kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-02" },
       { id: "2", kind: "sell", quantity: 1, price: 120, fees: 0, tradedAt: "2024-06-03" },
@@ -56,7 +56,7 @@ describe("buildRealisedGainsCsv", () => {
         ],
       }).years,
     );
-    // 20 / 1,08 = 18,52; diferencia de cambio 100 / 1,08 − 100 / 1,1 = 1,68.
+    // 20 / 1.08 = 18.52; exchange difference 100 / 1.08 − 100 / 1.1 = 1.68.
     expect(buildRealisedGainsCsv(converted, HEADERS, "en").split("\r\n")[1]).toBe(
       "2024-06-03,AAPL,,USD,1,120,0,120,100,20,1.08,111.11,92.59,18.52,1.68,0,0,18.52",
     );
@@ -69,7 +69,7 @@ describe("buildRealisedGainsCsv", () => {
 });
 
 describe("realisedGainsCsvHeaders", () => {
-  it("traduce cada columna con su clave csv.<columna>, en orden", () => {
+  it("translates each column with its csv.<column> key, in order", () => {
     const headers = realisedGainsCsvHeaders((key) => `[${key}]`);
 
     expect(Object.keys(headers)).toEqual([...REALISED_GAINS_CSV_COLUMNS]);

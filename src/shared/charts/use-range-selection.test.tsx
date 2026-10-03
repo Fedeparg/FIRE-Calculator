@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { useRangeSelection } from "./use-range-selection";
 
 describe("useRangeSelection", () => {
-  it("sigue el arrastre con ratón y se borra al soltar", () => {
+  it("follows a mouse drag and clears on release", () => {
     const { result } = renderHook(() => useRangeSelection(true));
 
     act(() => result.current.handlers.onMouseDown({ activeLabel: 5 }));
@@ -15,10 +15,10 @@ describe("useRangeSelection", () => {
     expect(result.current.selection).toBeNull();
   });
 
-  it("con el dedo, el primer movimiento abre la selección (no el punto que traiga el inicio)", () => {
+  it("on touch, the first move opens the selection (not the point the start event carries)", () => {
     const { result } = renderHook(() => useRangeSelection(true));
 
-    // El inicio puede traer el punto activo del toque anterior: se ignora.
+    // The start event may carry the active point of the previous touch: it is ignored.
     act(() => result.current.handlers.onTouchStart({ activeLabel: "20" }));
     act(() => result.current.handlers.onTouchMove({ activeLabel: "4" }));
     act(() => result.current.handlers.onTouchMove({ activeLabel: "9" }));
@@ -28,7 +28,7 @@ describe("useRangeSelection", () => {
     expect(result.current.selection).toBeNull();
   });
 
-  it("no selecciona nada si está desactivada, sin punto activo o sin haber empezado a arrastrar", () => {
+  it("selects nothing when disabled, without an active point or before a drag has started", () => {
     const disabled = renderHook(() => useRangeSelection(false));
     act(() => disabled.result.current.handlers.onMouseDown({ activeLabel: 5 }));
     expect(disabled.result.current.selection).toBeNull();

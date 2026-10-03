@@ -1,16 +1,16 @@
-/** Esquemas que puede llevar un enlace del contenido: web y correo. */
+/** Schemes a content link may use: web and email. */
 const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
 
-/** Base ficticia para resolver rutas relativas y anclas, que así cuentan como `https:`. */
+/** Dummy base to resolve relative paths and anchors, which then count as `https:`. */
 const RELATIVE_BASE = "https://relative.invalid/";
 
 /**
- * ¿Es seguro publicar este `href` de un enlace del Markdown? Solo `http(s):`, `mailto:`, rutas
- * relativas y anclas. Se decide con el parser de `URL`, el mismo algoritmo que aplica el
- * navegador: ignora espacios y caracteres de control al principio, tabuladores y saltos de línea
- * dentro, y las mayúsculas del esquema, así que `" JaVa\tScript:…"` se reconoce como
- * `javascript:` y se descarta. El contenido es de confianza, pero con `script-src
- * 'unsafe-inline'` un `javascript:` se ejecutaría en nuestro origen.
+ * Is it safe to publish this `href` from a Markdown link? Only `http(s):`, `mailto:`, relative
+ * paths and anchors. The decision uses the `URL` parser, the same algorithm the browser applies:
+ * it ignores leading whitespace and control characters, embedded tabs and newlines, and the
+ * scheme's case, so `" JaVa\tScript:…"` is recognized as `javascript:` and rejected. The content
+ * is trusted, but with `script-src 'unsafe-inline'` a `javascript:` link would run on our
+ * origin.
  */
 export function isSafeHref(href: string): boolean {
   try {

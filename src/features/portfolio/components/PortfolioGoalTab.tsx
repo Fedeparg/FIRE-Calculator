@@ -4,8 +4,8 @@ import { usePortfolioData } from "./PortfolioDataProvider";
 import PortfolioGoal from "./PortfolioGoal";
 
 /**
- * Pestaña Objetivo FIRE. Con la cartera vacía sigue siendo útil (patrimonio actual = 0): es
- * justo cuando más ayuda ver la cifra a la que apuntar.
+ * FIRE goal tab. With an empty portfolio it is still useful (current net worth = 0): that is
+ * exactly when seeing the figure to aim for helps the most.
  */
 export default function PortfolioGoalTab() {
   const { agg, display, rates } = usePortfolioData();

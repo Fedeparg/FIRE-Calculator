@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 
-// `showDonations` lo decide el layout: `shared` no puede depender de `features/donations`.
+// The layout decides `showDonations`: `shared` cannot depend on `features/donations`.
 export default function Footer({ showDonations }: { showDonations: boolean }) {
   const t = useTranslations("footer");
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-/** Lo único que `useInputs` lee de un campo enlazado (`FieldBinding`). */
+/** The only thing `useInputs` reads from a bound field (`FieldBinding`). */
 type ValueSource = { readonly value: unknown };
 
 type InputValues<T extends Record<string, ValueSource>> = { [K in keyof T]: T[K]["value"] };
@@ -13,14 +13,14 @@ function sameValues(a: Record<string, unknown>, b: Record<string, unknown>): boo
 }
 
 /**
- * Objeto de entradas de un cálculo a partir de sus campos enlazados, con identidad ESTABLE
- * mientras ningún valor cambie: `useMemo(() => compute(inputs), [inputs])` sustituye a la lista
- * de dependencias escrita a mano, que había que mantener en paralelo a los campos.
+ * A computation's inputs object built from its bound fields, with a STABLE identity as long as
+ * no value changes: `useMemo(() => compute(inputs), [inputs])` replaces the hand-written
+ * dependency list that had to be kept in sync with the fields.
  *
- * Por qué así y no con `useMemo`: sus dependencias serían `Object.values(fields)`, una lista que
- * el linter de hooks no puede comprobar. Se guarda el último objeto en estado y se compara
- * durante el render (el patrón de React para derivar estado de props): si algún valor cambió, se
- * actualiza y se devuelve ya el nuevo, sin un render con el objeto viejo.
+ * Why this and not `useMemo`: its dependencies would be `Object.values(fields)`, a list the hooks
+ * linter cannot check. The last object is kept in state and compared during render (React's
+ * pattern for deriving state from props): if any value changed, it is updated and the new one is
+ * returned straight away, with no render using the stale object.
  */
 export function useInputs<T extends Record<string, ValueSource>>(fields: T): InputValues<T> {
   const current = Object.fromEntries(Object.entries(fields).map(([name, field]) => [name, field.value]));

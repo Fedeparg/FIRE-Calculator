@@ -16,10 +16,10 @@ import ImportPlanView from "./ImportPlanView";
 import ImportResultView from "./ImportResultView";
 import { inputClass } from "@/shared/ui/field-classes";
 
-/** Slug del bróker para la analítica (sin datos del usuario). */
+/** Broker slug for analytics (no user data). */
 const BROKER_SLUG = "trade-republic";
 
-/** Rutas de la API. El CSV viaja como `text/csv` (ver `read-text-body.ts` en la API). */
+/** API routes. The CSV travels as `text/csv` (see `read-text-body.ts` in the API). */
 const PREVIEW_URL = "/api/imports/trade-republic/preview";
 const CONFIRM_URL = "/api/imports/trade-republic/confirm";
 
@@ -33,12 +33,11 @@ type Step =
 const fileInputClass = `${inputClass} text-sm file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground`;
 
 /**
- * Flujo de importación desde Trade Republic: elegir fichero → vista previa → confirmar →
- * resultado.
+ * Import flow from Trade Republic: pick file → preview → confirm → result.
  *
- * El servidor NO guarda nada entre la vista previa y la confirmación (es stateless), así que
- * el `File` se conserva aquí y se vuelve a enviar al confirmar. La autorización y el aislamiento
- * entre usuarios los decide siempre la API; este componente solo orquesta y traduce.
+ * The server stores NOTHING between the preview and the confirmation (it is stateless), so the
+ * `File` is kept here and sent again on confirm. Authorization and isolation between users are
+ * always decided by the API; this component only orchestrates and translates.
  */
 export default function TradeRepublicImport() {
   const t = useTranslations("portfolio.import");
@@ -48,9 +47,9 @@ export default function TradeRepublicImport() {
 
   const [step, setStep] = useState<Step>({ kind: "idle" });
   const [file, setFile] = useState<File | null>(null);
-  // Una sola mutación para la vista previa y la confirmación: nunca van a la vez (el paso lo impide).
+  // A single mutation for preview and confirm: they never run at the same time (the step prevents it).
   const upload = useApiMutation();
-  // Fichero demasiado grande: se rechaza aquí, antes de subir lo que la API devolvería con 413.
+  // File too large: rejected here, before uploading what the API would answer with a 413.
   const [tooLarge, setTooLarge] = useState(false);
   const errorKey: ImportErrorKey | null = tooLarge
     ? "errorTooLarge"
@@ -58,7 +57,7 @@ export default function TradeRepublicImport() {
       ? null
       : importErrorKey(upload.error);
 
-  /** Envía el CSV a una ruta de la API (`text/csv`, ver `read-text-body.ts` en la API). */
+  /** Sends the CSV to an API route (`text/csv`, see `read-text-body.ts` in the API). */
   function postCsv<T>(url: string, csv: File) {
     return upload.run(() => apiJson<T>(url, { method: "POST", headers: { "Content-Type": "text/csv" }, body: csv }));
   }
@@ -96,7 +95,7 @@ export default function TradeRepublicImport() {
     if (result.totals.lotsCreated > 0) {
       trackEvent({ name: "broker-import-completed", data: { broker: BROKER_SLUG } });
     }
-    // Vuelve a pedir al servidor la cartera: al volver a /portfolio ya incluye lo importado.
+    // Re-requests the portfolio from the server: on returning to /portfolio it already includes the import.
     router.refresh();
   }
 
@@ -147,7 +146,7 @@ export default function TradeRepublicImport() {
         <p id={`${uid}-file-hint`} className="text-xs text-muted">
           {t("file.hint")}
         </p>
-        {/* Región viva: los lectores de pantalla anuncian el progreso y los errores. */}
+        {/* Live region: screen readers announce progress and errors. */}
         <div role="status" aria-live="polite" className="text-sm text-muted">
           {step.kind === "analysing" && t("analysing")}
           {step.kind === "importing" && t("importing")}

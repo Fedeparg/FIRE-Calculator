@@ -1,67 +1,68 @@
 # syntax=docker/dockerfile:1
-# Imagen del frontend (Next.js 16, App Router + BFF). Node 24 LTS.
-# Multi-etapa: build (instala deps del front + `next build` en modo standalone)
-# -> runtime delgado que solo lleva la salida autocontenida (server.js + el
-# node_modules mínimo que Next traza). Ver `output: "standalone"` en next.config.
+# Frontend image (Next.js 16, App Router + BFF). Node 24 LTS.
+# Multi-stage: build (installs the frontend deps + `next build` in standalone mode)
+# -> slim runtime that only carries the self-contained output (server.js + the
+# minimal node_modules that Next traces). See `output: "standalone"` in next.config.
 #
-# Contexto de build = raíz del repo (monorepo pnpm). El `.dockerignore` de la
-# raíz mantiene el contexto pequeño y fuera cualquier `.env`.
+# Build context = repo root (pnpm monorepo). The root `.dockerignore` keeps the
+# context small and any `.env` out.
 
-# ---- Base común ----
+# ---- Common base ----
 FROM node:24-slim AS base
 ENV CI=true
 RUN corepack enable
-# Store de pnpm en una ruta fija para poder montarla como caché de BuildKit: así
-# `pnpm install` no re-descarga todo el árbol cuando cambia el lockfile.
+# pnpm store at a fixed path so it can be mounted as a BuildKit cache: that way
+# `pnpm install` does not re-download the whole tree when the lockfile changes.
 RUN pnpm config set store-dir /pnpm/store
 WORKDIR /app
 
 # ---- Build ----
 FROM base AS build
-# Manifiestos primero (cachea la instalación). Se copian también los del
-# workspace (apps/api, packages/core) para que `--frozen-lockfile` valide el lockfile
-# completo. El filtro `sextante...` instala la raíz (el frontend) y sus dependencias
-# del workspace (@sextante/core), no la API.
+# Manifests first (caches the install). The workspace ones (apps/api, packages/core)
+# are copied too so that `--frozen-lockfile` validates the whole lockfile. The
+# `sextante...` filter installs the root (the frontend) and its workspace
+# dependencies (@sextante/core), not the API.
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/package.json
 COPY packages/core/package.json ./packages/core/package.json
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter "sextante..."
 
-# URL de la API. CRÍTICO: el rewrite /api/* de next.config se evalúa en BUILD
-# TIME y se congela en el manifiesto (el server standalone NO lo recalcula en
-# runtime). Por eso API_URL debe estar presente en `next build`, no solo como env
-# de runtime. En producción se hornea la red interna de Compose (http://api:3001):
-# el server de Next resuelve el destino en cada request, ya dentro de esa red.
+# API URL. CRITICAL: next.config's /api/* rewrite is evaluated at BUILD TIME and
+# frozen into the manifest (the standalone server does NOT recompute it at
+# runtime). That is why API_URL must be present during `next build`, not just as
+# a runtime env var. In production Compose's internal network (http://api:3001) is
+# baked in: the Next server resolves the destination on each request, already
+# inside that network.
 ARG API_URL=http://api:3001
 ENV API_URL=$API_URL
 
-# URL canónica pública del sitio. Next la inlinea (metadataBase, canonical,
-# hreflang) y la usan sitemap.xml y robots.txt para emitir URLs absolutas. Se
-# hornea en BUILD TIME (NEXT_PUBLIC_*), así que DEBE estar presente en `next
-# build`: si falta, el código cae a http://localhost:3000 y el sitemap queda
-# inservible para Google. El default local solo cubre un `docker build` suelto;
-# en prod el compose la exige (ver docker-compose.prod.yml).
+# Canonical public URL of the site. Next inlines it (metadataBase, canonical,
+# hreflang) and sitemap.xml and robots.txt use it to emit absolute URLs. It is baked
+# in at BUILD TIME (NEXT_PUBLIC_*), so it MUST be present during `next build`: if
+# missing, the code falls back to http://localhost:3000 and the sitemap becomes
+# useless to Google. The local default only covers a standalone `docker build`; in
+# prod the compose file requires it (see docker-compose.prod.yml).
 ARG NEXT_PUBLIC_SITE_URL="http://localhost:3000"
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 
-# Interruptor PÚBLICO de donaciones ("invítame a un café"): se inlinea en BUILD TIME
-# (como toda NEXT_PUBLIC_). "1" muestra el botón/sección; vacío lo oculta. No es secreto (la
-# clave secreta de Stripe vive solo en el backend, ver el servicio `api`).
+# PUBLIC donations switch ("buy me a coffee"): inlined at BUILD TIME (like every
+# NEXT_PUBLIC_). "1" shows the button/section; empty hides it. Not a secret (the
+# Stripe secret key lives only in the backend, see the `api` service).
 ARG NEXT_PUBLIC_DONATIONS_ENABLED=""
 ENV NEXT_PUBLIC_DONATIONS_ENABLED=$NEXT_PUBLIC_DONATIONS_ENABLED
 
-# Analítica propia (Umami). ANALYTICS_URL es interna (como API_URL, los rewrites de
-# /stats/* se congelan en build); el ID de sitio es PÚBLICO y se inlinea en build.
-# Vacíos = sin analítica: ni rewrites ni script.
+# Self-hosted analytics (Umami). ANALYTICS_URL is internal (like API_URL, the
+# /stats/* rewrites are frozen at build time); the site ID is PUBLIC and inlined at
+# build time. Empty = no analytics: neither rewrites nor script.
 ARG ANALYTICS_URL=""
 ENV ANALYTICS_URL=$ANALYTICS_URL
 ARG NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=""
 ENV NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=$NEXT_PUBLIC_ANALYTICS_WEBSITE_ID
 
-# Código del front y compilación. `pnpm build` compila antes @sextante/core (su
-# `dist/` no viaja en el contexto: lo excluye .dockerignore). `output: "standalone"`
-# genera .next/standalone (server.js + node_modules mínimo) y .next/static aparte.
+# Frontend code and build. `pnpm build` builds @sextante/core first (its `dist/`
+# is not in the context: .dockerignore excludes it). `output: "standalone"`
+# produces .next/standalone (server.js + minimal node_modules) and .next/static separately.
 COPY . .
 RUN pnpm build
 
@@ -69,20 +70,20 @@ RUN pnpm build
 FROM node:24-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# El servidor escucha en 0.0.0.0:3000 por defecto (Next standalone).
+# The server listens on 0.0.0.0:3000 by default (Next standalone).
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 
-# Salida autocontenida: server.js + node_modules trazado. Se copia ya con el
-# usuario `node` como dueño para poder correr sin privilegios (ver USER abajo).
+# Self-contained output: server.js + traced node_modules. Copied already owned by
+# the `node` user so it can run unprivileged (see USER below).
 COPY --from=build --chown=node:node /app/.next/standalone ./
-# Estáticos y assets públicos (Next standalone NO los incluye).
+# Static files and public assets (Next standalone does NOT include them).
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
 
-# Sin privilegios: si alguien logra ejecutar código en el contenedor, no lo hace
-# como root. La imagen `node` ya trae el usuario `node` (uid 1000). El servidor
-# escucha en el 3000, que no es privilegiado, así que no hace falta root para nada.
+# Unprivileged: if someone manages to run code in the container, it does not run
+# as root. The `node` image already ships the `node` user (uid 1000). The server
+# listens on 3000, which is not privileged, so root is not needed for anything.
 USER node
 
 EXPOSE 3000

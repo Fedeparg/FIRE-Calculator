@@ -9,15 +9,15 @@ import { setAssetClass } from "@/features/portfolio/api";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { inputClass } from "@/shared/ui/field-classes";
 
-/** Clasificar en el sitio una posición sin clase de activo; al guardar, se recalcula la página. */
+/** Classifies in place a position with no asset class; on save, the page is recomputed. */
 export default function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: string }) {
   const t = useTranslations("portfolio.realisedGains");
   const router = useRouter();
-  // Controlado: tras un fallo vuelve al placeholder en vez de seguir mostrando una clase que no
-  // se guardó.
+  // Controlled: after a failure it goes back to the placeholder instead of showing a class that
+  // was not saved.
   const [selected, setSelected] = useState<AssetClass | "">("");
   const save = useApiMutation();
-  // El refresco va en una transición: el selector sigue ocupado hasta que la venta cambia de bloque.
+  // The refresh runs in a transition: the select stays busy until the sale moves to its new block.
   const [refreshing, startTransition] = useTransition();
 
   async function classify(value: AssetClass) {

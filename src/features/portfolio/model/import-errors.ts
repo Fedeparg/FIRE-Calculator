@@ -1,11 +1,11 @@
-// Traducción de los fallos de los endpoints de importación (Trade Republic) a una clave de
-// mensaje bajo `portfolio.import.*`. Core puro (sin React), testeable.
+// Maps failures of the import endpoints (Trade Republic) to a message key under
+// `portfolio.import.*`. Pure core (no React), testable.
 
 import { createApiErrorMapper } from "@/shared/api/client";
 
 /**
- * Mensaje de error según el fallo: el código de la API manda sobre el status. Un 400 sin código
- * propio no es "revisa el formulario": aquí no hay formulario, solo un fichero.
+ * Error message for the failure: the API code takes precedence over the status. A 400 without
+ * its own code is not "check the form": there is no form here, only a file.
  */
 export const importErrorKey = createApiErrorMapper({
   codes: {

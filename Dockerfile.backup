@@ -1,6 +1,6 @@
-# Imagen del servicio de backups. Base postgres:17-alpine para tener un pg_dump
-# de la MISMA versión mayor que el servidor (evita incompatibilidades de dump).
-# Añade gnupg (cifrado AES256) y rclone (subida a Google Drive).
+# Backup service image. Based on postgres:17-alpine to get a pg_dump of the SAME
+# major version as the server (avoids dump incompatibilities).
+# Adds gnupg (AES256 encryption) and rclone (upload to Google Drive).
 FROM postgres:17-alpine
 
 RUN apk add --no-cache gnupg rclone tzdata
@@ -9,5 +9,5 @@ COPY scripts/backup/backup.sh /usr/local/bin/backup.sh
 COPY scripts/backup/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/backup.sh /usr/local/bin/entrypoint.sh
 
-# Sustituye el entrypoint de la imagen postgres (no arrancamos un servidor aquí).
+# Replaces the postgres image's entrypoint (we do not start a server here).
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -1,4 +1,4 @@
-// Tipos del catálogo de calculadoras. Sin dependencias de framework (core puro).
+// Calculator catalog types. No framework dependencies (pure core).
 
 import type { CalculatorCategory } from "@sextante/core/calculators/categories";
 
@@ -17,9 +17,9 @@ export const CATEGORIES: Record<CalculatorCategory, Localized> = {
 export type CategoryId = CalculatorCategory;
 
 export interface CalculatorMeta {
-  /** Identificador y, si está activa, ruta bajo /calculadoras/<slug>. */
+  /** Identifier and, when active, route under /calculadoras/<slug>. */
   slug: string;
   category: CategoryId;
-  /** Palabras clave (es+en) para el buscador del selector. El nombre y la descripción están en i18n. */
+  /** Keywords (es+en) for the selector's search box. The name and description live in i18n. */
   keywords: readonly string[];
 }

@@ -5,29 +5,29 @@ import { ANALYTICS_PATH_PREFIX, ANALYTICS_SCRIPT_SRC } from "./src/shared/analyt
 
 const withNextIntl = createNextIntlPlugin();
 
-// URL de la API. En dev apunta a la API local (NestJS); en prod, el servicio web
-// (BFF) proxea /api al servicio `api` por la red interna de Compose
-// (http://api:3001), manteniendo el navegador en same-origin.
+// API URL. In dev it points at the local API (NestJS); in prod the web service (BFF)
+// proxies /api to the `api` service over Compose's internal network
+// (http://api:3001), keeping the browser same-origin.
 const API_URL = process.env.API_URL ?? "http://localhost:3001";
 
-// URL interna de Umami (analítica propia). Opcional: sin ella no se proxea nada y el
-// script tampoco se emite. En prod, la red interna de Compose (http://analytics:3000).
-// Como API_URL, se congela en build en el manifiesto de rewrites.
+// Internal Umami URL (self-hosted analytics). Optional: without it nothing is proxied and
+// the script is not emitted either. In prod, Compose's internal network (http://analytics:3000).
+// Like API_URL, it is frozen into the rewrites manifest at build time.
 const ANALYTICS_URL = process.env.ANALYTICS_URL;
 
 const isDev = process.env.NODE_ENV !== "production";
 
 /**
- * Content-Security-Policy en modo allowlist (NO nonce): un CSP con nonce obligaría a
- * renderizar cada página por petición, lo que anularía la generación estática/ISR de
- * las calculadoras y la wiki. Por eso `script-src` usa `'unsafe-inline'` (sin hashes,
- * que harían que el navegador ignore `'unsafe-inline'`), necesario para el script de
- * tema sin parpadeo y los scripts de hidratación de Next. Stripe no aparece: el flujo
- * de donación es una REDIRECCIÓN (no carga Stripe.js ni usa iframes).
+ * Content-Security-Policy in allowlist mode (NO nonce): a nonce-based CSP would force
+ * every page to render per request, which would defeat the static/ISR generation of the
+ * calculators and the wiki. That is why `script-src` uses `'unsafe-inline'` (no hashes,
+ * which would make the browser ignore `'unsafe-inline'`), needed for the flicker-free
+ * theme script and Next's hydration scripts. Stripe is absent: the donation flow is a
+ * REDIRECT (it neither loads Stripe.js nor uses iframes).
  *
- * La app no carga NINGÚN recurso de terceros: ni publicidad ni fuentes externas. La
- * analítica (Umami) es propia y se sirve por este mismo origen bajo /stats (ver
- * rewrites), así que el allowlist sigue siendo estrictamente 'self'.
+ * The app loads NO third-party resources: no ads, no external fonts. Analytics (Umami)
+ * is self-hosted and served from this same origin under /stats (see rewrites), so the
+ * allowlist stays strictly 'self'.
  */
 function contentSecurityPolicy(): string {
   const directives: Record<string, string[]> = {
@@ -36,7 +36,7 @@ function contentSecurityPolicy(): string {
     "object-src": ["'none'"],
     "frame-ancestors": ["'self'"],
     "form-action": ["'self'"],
-    // 'unsafe-eval' solo en dev (lo necesita React Fast Refresh / HMR).
+    // 'unsafe-eval' only in dev (React Fast Refresh / HMR needs it).
     "script-src": ["'self'", "'unsafe-inline'", ...(isDev ? ["'unsafe-eval'"] : [])],
     "style-src": ["'self'", "'unsafe-inline'"],
     "img-src": ["'self'", "data:"],
@@ -61,28 +61,28 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
-  // Salida autocontenida (server.js + node_modules mínimo) para la imagen Docker
-  // de producción. Ver Dockerfile.web.
+  // Self-contained output (server.js + minimal node_modules) for the production
+  // Docker image. See Dockerfile.web.
   output: "standalone",
-  // Sin `X-Powered-By: Next.js`: no anunciar el framework (ni facilitar buscar sus CVE).
+  // No `X-Powered-By: Next.js`: do not advertise the framework (or make its CVEs easy to look up).
   poweredByHeader: false,
   async headers() {
-    // Cabeceras de seguridad en todas las rutas. Defensa en profundidad: la app
-    // inyecta Markdown como HTML (descartando el HTML embebido).
+    // Security headers on every route. Defence in depth: the app injects Markdown
+    // as HTML (discarding embedded HTML).
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
   async rewrites() {
     return [
       {
-        // Proxea /api/* a la API para que dev sea same-origin (igual que prod),
-        // evitando problemas de CORS y de cookies entre orígenes.
+        // Proxies /api/* to the API so dev is same-origin (like prod), avoiding
+        // CORS and cross-origin cookie issues.
         source: "/api/:path*",
         destination: `${API_URL}/api/:path*`,
       },
-      // Endpoints OAuth 2.1 del servidor MCP. Viven en la RAÍZ de la API (fuera de
-      // /api) porque la spec MCP/OAuth los descubre ahí (.well-known, /authorize…).
-      // Same-origin: el navegador y los clientes LLM siempre hablan con el origen
-      // público; aquí los reenviamos a la API. Ver _local/mcp-integracion.md.
+      // OAuth 2.1 endpoints of the MCP server. They live at the API ROOT (outside
+      // /api) because the MCP/OAuth spec discovers them there (.well-known, /authorize…).
+      // Same-origin: the browser and LLM clients always talk to the public origin;
+      // here we forward them to the API. See _local/mcp-integracion.md.
       {
         source: "/.well-known/oauth-authorization-server",
         destination: `${API_URL}/.well-known/oauth-authorization-server`,
@@ -95,9 +95,9 @@ const nextConfig: NextConfig = {
       { source: "/token", destination: `${API_URL}/token` },
       { source: "/register", destination: `${API_URL}/register` },
       { source: "/revoke", destination: `${API_URL}/revoke` },
-      // Analítica propia (Umami). Solo se exponen el script del tracker y su endpoint
-      // de envío: el panel de Umami NO es accesible desde el origen público (se
-      // consulta por la red local). `/stats` está excluido del proxy de i18n.
+      // Self-hosted analytics (Umami). Only the tracker script and its send endpoint
+      // are exposed: the Umami dashboard is NOT reachable from the public origin (it is
+      // accessed over the local network). `/stats` is excluded from the i18n proxy.
       ...(ANALYTICS_URL
         ? [
             { source: ANALYTICS_SCRIPT_SRC, destination: `${ANALYTICS_URL}/script.js` },

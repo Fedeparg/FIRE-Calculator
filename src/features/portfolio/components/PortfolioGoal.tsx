@@ -16,40 +16,40 @@ import PortfolioGoalSimulation from "./PortfolioGoalSimulation";
 
 type Props = {
   /**
-   * Valor de mercado de la cartera, en `display`. Es EXACTAMENTE el mismo agregado que muestra
-   * el resumen (lo calcula `PortfolioDataProvider` una sola vez): comparar el objetivo con otra cifra
-   * daría dos "patrimonios actuales" distintos en la misma pantalla.
+   * Portfolio market value, in `display`. It is EXACTLY the same aggregate the summary shows
+   * (computed once by `PortfolioDataProvider`): comparing the goal against another figure would
+   * show two different "current net worth" values on the same screen.
    */
   marketValue: number;
-  /** Posiciones incluidas en ese total. */
+  /** Positions included in that total. */
   valued: number;
-  /** Posiciones totales: si sobran, parte de la cartera no entra y hay que decirlo. */
+  /** Total positions: if there are more, part of the portfolio is left out and that must be said. */
   total: number;
-  /** Divisa elegida en la cartera. Gobierna también los importes del objetivo. */
+  /** Currency chosen in the portfolio. It also governs the goal amounts. */
   display: string;
-  /** USD por unidad de cada divisa, para convertir los importes al cambiar de divisa. */
+  /** USD per unit of each currency, to convert the amounts when the currency changes. */
   rates: Record<string, number>;
 };
 
 /**
- * "Tu objetivo": une la calculadora de independencia financiera con la cartera real. El
- * usuario define su gasto anual y su tasa de retiro, y ve el patrimonio objetivo, cuánto lleva
- * de verdad (la valoración de sus posiciones), cuánto le falta y en cuánto tiempo llegaría al
- * ritmo de aportación actual.
+ * "Your goal": joins the financial independence calculator with the real portfolio. The user
+ * sets their annual spending and withdrawal rate, and sees the target net worth, how much they
+ * actually have (the valuation of their positions), how much is missing and how long it would
+ * take at the current contribution rate.
  *
- * El cálculo NO vive aquí: es `computeGoal` (core puro y testeado) sobre `computePortfolioGoal`,
- * que a su vez delega en `computeFire` y en el motor de proyección. El estado vive en
- * `useGoalPlan` y el guardado en `usePlanPersistence`; este componente solo compone los campos,
- * los resultados y el formulario de guardado.
+ * The computation does NOT live here: it is `computeGoal` (pure, tested core) on top of
+ * `computePortfolioGoal`, which in turn delegates to `computeFire` and the projection engine.
+ * State lives in `useGoalPlan` and saving in `usePlanPersistence`; this component only composes
+ * the fields, the results and the save form.
  *
- * **Divisa.** Los importes del objetivo se expresan siempre en la divisa elegida para el total
- * de la cartera. Al cambiarla, se convierten con las mismas tasas FX que usa el resumen; si
- * falta la tasa, se avisa en vez de comparar importes en divisas distintas.
+ * **Currency.** Goal amounts are always expressed in the currency chosen for the portfolio total.
+ * When it changes, they are converted with the same FX rates the summary uses; if the rate is
+ * missing, we warn instead of comparing amounts in different currencies.
  *
- * **Persistencia.** Se reutiliza el CRUD de escenarios guardados (`useSavedScenarios`) con el
- * slug de la calculadora FIRE: no hace falta almacenamiento nuevo y el objetivo aparece también
- * en la calculadora. Al abrir se carga el plan activo (`active`, el que enseña el Resumen). Sin
- * sesión válida el bloque sigue calculando en local, simplemente no ofrece guardar.
+ * **Persistence.** The saved scenarios CRUD (`useSavedScenarios`) is reused with the FIRE
+ * calculator's slug: no new storage is needed and the goal also shows up in the calculator. On
+ * open, the active plan is loaded (`active`, the one the Summary shows). Without a valid session
+ * the block still computes locally; it just does not offer saving.
  */
 export default function PortfolioGoal({ marketValue, valued, total, display, rates }: Props) {
   const t = useTranslations("portfolio.goal");
@@ -89,7 +89,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
         size="md"
       />
 
-      {/* La `key` remonta los campos al cargar un escenario o al cambiar de divisa. */}
+      {/* The `key` remounts the fields when a scenario is loaded or the currency changes. */}
       <Fragment key={`${plan.version}-${display}`}>
         <PortfolioGoalFields
           display={display}
@@ -104,8 +104,8 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
 
       <Notice variant="info">{t("assumptions")}</Notice>
 
-      {/* La simulación mide si el dinero DURA un retiro: solo tiene sentido en modo FIRE. Misma
-          `key` que los campos de arriba: cargar un escenario remonta también estos. */}
+      {/* The simulation measures whether the money LASTS through retirement: it only makes sense in
+          FIRE mode. Same `key` as the fields above: loading a scenario remounts these too. */}
       {plan.params.mode === "fire" && (
         <PortfolioGoalSimulation
           key={`sim-${plan.version}`}
@@ -138,7 +138,7 @@ export default function PortfolioGoal({ marketValue, valued, total, display, rat
 
       {persistence.errorKey && <p className="text-sm text-warning">{scenarioErrorText(persistence.errorKey)}</p>}
 
-      {/* Guardar y cargar cambian cifras de golpe: se anuncia, no solo se ve. */}
+      {/* Saving and loading change figures at once: it is announced, not just shown. */}
       <p role="status" aria-live="polite" className="sr-only">
         {persistence.status}
       </p>

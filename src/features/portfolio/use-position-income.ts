@@ -9,8 +9,8 @@ import { useApiQuery } from "@/shared/api/use-api-query";
 const NO_INCOME: IncomeEvent[] = [];
 
 /**
- * Cobros de una posición (dividendos) y sus mutaciones, para el panel de la posición. Tras cada
- * mutación se recarga la lista; si la recarga fallase, la mutación sí se guardó.
+ * A position's income (dividends) and its mutations, for the position panel. The list is reloaded
+ * after every mutation; if that reload failed, the mutation was still saved.
  */
 export function usePositionIncome(positionId: string) {
   const query = useApiQuery<IncomeEvent[]>(incomePath(positionId), { init: NO_STORE, keepPrevious: true });

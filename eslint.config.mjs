@@ -2,8 +2,8 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-// Fronteras de capas (ver "Dónde va cada cosa" en CLAUDE.md):
-//   app → features → shared, nunca al revés; `packages/core` no conoce `src/`.
+// Layer boundaries (see "Dónde va cada cosa" — where each thing goes — in CLAUDE.md):
+//   app → features → shared, never the other way round; `packages/core` knows nothing of `src/`.
 const FEATURES = [
   "account",
   "auth",
@@ -17,32 +17,32 @@ const FEATURES = [
   "wiki",
 ];
 
-// Dependencias entre features permitidas a propósito (quien importa → de quién).
-// Todo lo demás falla en lint. Si necesitas añadir una, primero valora mover el
-// código común a `src/shared`.
+// Deliberately allowed dependencies between features (importer → imported).
+// Everything else fails lint. If you need to add one, first consider moving the
+// shared code to `src/shared`.
 const FEATURE_EXCEPTIONS = {
-  // La página de una calculadora incrusta el panel de escenarios guardados.
+  // A calculator page embeds the saved-scenarios panel.
   calculators: ["scenarios"],
-  // El objetivo de la cartera reutiliza los escenarios guardados.
+  // The portfolio goal reuses saved scenarios.
   portfolio: ["scenarios"],
-  // La landing compone el widget de donaciones.
+  // The landing page composes the donations widget.
   landing: ["donations"],
-  // El mapa calculadora → artículos de la wiki se indexa por el slug tipado del catálogo.
+  // The calculator → wiki articles map is keyed by the catalogue's typed slug.
   wiki: ["calculators"],
 };
 
 const NEXT_LINK = {
   name: "next/link",
-  message: "Usa `Link` de `@/i18n/navigation` para conservar el prefijo de idioma.",
+  message: "Use `Link` from `@/i18n/navigation` to keep the locale prefix.",
 };
 
-// zod solo lo usa el servidor (MCP): los esquemas de core viven en `*.schema.ts` y en el registro
-// `calculators/schemas` precisamente para que el frontend no los arrastre al bundle del cliente.
+// zod is server-only (MCP): core's schemas live in `*.schema.ts` and in the `calculators/schemas`
+// registry precisely so that the frontend does not drag them into the client bundle.
 const CORE_SERVER_ONLY = {
   group: ["@sextante/core/**/*.schema", "@sextante/core/**/schema-helpers", "@sextante/core/calculators/schemas"],
   message:
-    "Los esquemas zod de core son solo del servidor (MCP): importarlos mete zod en el bundle del cliente. " +
-    "El frontend usa los tipos y las funciones `compute*` de la calculadora.",
+    "Core's zod schemas are server-only (MCP): importing them puts zod in the client bundle. " +
+    "The frontend uses the calculator's types and `compute*` functions.",
 };
 
 const restrictImports = (groups) => ({
@@ -57,12 +57,12 @@ const featureBoundaries = FEATURES.map((feature) => {
     rules: restrictImports([
       {
         group: ["@/app/**"],
-        message: "Una feature no importa de `src/app`: las rutas componen las features.",
+        message: "A feature does not import from `src/app`: routes compose features.",
       },
       {
         group: forbidden.map((other) => `@/features/${other}{,/**}`),
         message:
-          "Una feature no importa de otra salvo excepciones listadas en FEATURE_EXCEPTIONS. Mueve lo común a `src/shared`.",
+          "A feature does not import from another one except for the exceptions listed in FEATURE_EXCEPTIONS. Move shared code to `src/shared`.",
       },
     ]),
   };
@@ -71,8 +71,8 @@ const featureBoundaries = FEATURES.map((feature) => {
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // Va antes que las demás reglas de imports de `src/`: cada una de ellas ya incluye este patrón
-  // (ESLint no fusiona las opciones de una misma regla, gana la última que aplica).
+  // Goes before the other `src/` import rules: each of them already includes this pattern
+  // (ESLint does not merge the options of the same rule; the last one that applies wins).
   {
     files: ["src/**/*.{ts,tsx}"],
     rules: { "no-restricted-imports": ["error", { patterns: [CORE_SERVER_ONLY] }] },
@@ -83,7 +83,7 @@ const eslintConfig = defineConfig([
     rules: restrictImports([
       {
         group: ["@/features/**", "@/app/**"],
-        message: "`src/shared` no depende de features ni de rutas: inyecta lo que falte por props.",
+        message: "`src/shared` depends on no features or routes: inject whatever is missing through props.",
       },
     ]),
   },
@@ -96,15 +96,16 @@ const eslintConfig = defineConfig([
           patterns: [
             {
               group: ["@/**", "**/src/**", "next", "next/**", "react", "react/**"],
-              message: "`packages/core` es lógica pura compartida con la API: no importa de `src/` ni de Next/React.",
+              message:
+                "`packages/core` is pure logic shared with the API: it imports neither from `src/` nor from Next/React.",
             },
           ],
         },
       ],
     },
   },
-  // El acceso HTTP vive en `shared/api` (cliente), en los `api*.ts` de cada feature y
-  // en server components/páginas; la UI pura consume hooks, no `fetch`.
+  // HTTP access lives in `shared/api` (client), in each feature's `api*.ts` and in
+  // server components/pages; pure UI consumes hooks, not `fetch`.
   {
     files: ["src/features/**/components/**/*.{ts,tsx}", "src/shared/{ui,charts,layout}/**/*.{ts,tsx}"],
     rules: {
@@ -112,14 +113,15 @@ const eslintConfig = defineConfig([
         "error",
         {
           name: "fetch",
-          message: "Los componentes no llaman a `fetch`: usa `shared/api` o el `api.ts` de la feature.",
+          message: "Components do not call `fetch`: use `shared/api` or the feature's `api.ts`.",
         },
       ],
     },
   },
-  // Texto visible SIEMPRE traducido: un texto JSX con letras en un componente de feature es una
-  // cadena de UI escrita a mano (ver "Todo el texto visible va traducido" en CLAUDE.md). Va por
-  // `next-intl` (`t("…")`) o, si es un importe, por `useFormat`. Símbolos sin letras (·, /, →) pasan.
+  // Visible text is ALWAYS translated: JSX text with letters in a feature component is a hand-written
+  // UI string (see "Todo el texto visible va traducido" — all visible text is translated — in
+  // CLAUDE.md). It goes through `next-intl` (`t("…")`) or, for amounts, `useFormat`. Symbols with no
+  // letters (·, /, →) pass.
   {
     files: ["src/features/**/components/**/*.tsx"],
     ignores: ["**/*.test.tsx"],
@@ -128,28 +130,28 @@ const eslintConfig = defineConfig([
         "error",
         {
           selector: "JSXText[value=/\\p{L}/u]",
-          message: "Texto de UI hardcodeado: usa una clave de i18n (`t(...)`) en es.json y en.json.",
+          message: "Hard-coded UI text: use an i18n key (`t(...)`) in es.json and en.json.",
         },
       ],
     },
   },
-  // Reglas sintácticas (sin información de tipos, para no alargar el lint de CI):
-  // - `consistent-type-imports`: los imports solo de tipos se marcan `import type`, así el bundler
-  //   los descarta sin depender de la heurística y se ve a la vista qué es runtime.
-  // - `no-non-null-assertion`: un `!` silencia al compilador sin comprobar nada; con
-  //   `noUncheckedIndexedAccess` se usan guardas o `itemAt`/`firstItem` de `@sextante/core/arrays`.
-  // - `eqeqeq`: siempre `===`, salvo el modismo `x == null` (null o undefined a la vez).
+  // Syntactic rules (no type information, to keep CI lint fast):
+  // - `consistent-type-imports`: type-only imports are marked `import type`, so the bundler drops
+  //   them without relying on heuristics and what is runtime is visible at a glance.
+  // - `no-non-null-assertion`: a `!` silences the compiler without checking anything; with
+  //   `noUncheckedIndexedAccess`, use guards or `itemAt`/`firstItem` from `@sextante/core/arrays`.
+  // - `eqeqeq`: always `===`, except for the `x == null` idiom (null or undefined at once).
   {
     files: ["src/**/*.{ts,tsx}", "packages/**/*.ts"],
     rules: {
-      // `import()` en anotaciones se permite: es el patrón de `vi.mock(…, importOriginal<typeof import(…)>)`.
+      // `import()` in annotations is allowed: it is the `vi.mock(…, importOriginal<typeof import(…)>)` pattern.
       "@typescript-eslint/consistent-type-imports": ["error", { disallowTypeAnnotations: false }],
       "@typescript-eslint/no-non-null-assertion": "error",
       eqeqeq: ["error", "always", { null: "ignore" }],
     },
   },
-  // Tamaño de componente: por encima de ~300 líneas efectivas conviene extraer un
-  // hook o un subcomponente.
+  // Component size: above ~300 effective lines it is worth extracting a hook or a
+  // subcomponent.
   {
     files: ["src/**/*.tsx"],
     ignores: ["**/*.test.tsx"],
@@ -157,10 +159,10 @@ const eslintConfig = defineConfig([
       "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
     },
   },
-  // Tamaño de módulo `.ts`: por encima de ~400 líneas efectivas un módulo suele mezclar
-  // responsabilidades (el mayor de lógica, `fiscal/realised-gains.ts`, ronda las 260). Fuera quedan
-  // los tests (un `describe` largo no es un problema de diseño), las tablas de datos y el registro
-  // declarativo de esquemas de calculadoras, que crecen con el producto y no con la lógica.
+  // `.ts` module size: above ~400 effective lines a module usually mixes responsibilities (the
+  // largest logic module, `fiscal/realised-gains.ts`, is around 260). Excluded are tests (a long
+  // `describe` is not a design problem), data tables and the declarative registry of calculator
+  // schemas, which grow with the product rather than with the logic.
   {
     files: ["src/**/*.ts", "packages/**/*.ts"],
     ignores: [
@@ -180,17 +182,17 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Artefactos de build anidados (p. ej. worktrees temporales de agentes bajo
-    // `.claude/`): evita que ESLint analice `.next/`/`out/`/`build/` generados
-    // fuera de la raíz y reporte miles de falsos positivos.
+    // Nested build artifacts (e.g. temporary agent worktrees under `.claude/`): keeps
+    // ESLint from analysing `.next/`/`out/`/`build/` generated outside the root and
+    // reporting thousands of false positives.
     "**/.next/**",
     "**/out/**",
     "**/build/**",
     ".claude/**",
-    // El backend (apps/api) tiene su propio tooling (NestJS/Drizzle); no lo
-    // analiza el ESLint del frontend Next.
+    // The backend (apps/api) has its own tooling (NestJS/Drizzle); the Next
+    // frontend's ESLint does not analyse it.
     "apps/**",
-    // Salida compilada de los paquetes compartidos (su código fuente sí se analiza).
+    // Compiled output of the shared packages (their source is analysed).
     "packages/*/dist/**",
   ]),
 ]);

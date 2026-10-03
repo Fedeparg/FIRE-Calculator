@@ -13,14 +13,14 @@ import { yearOf } from "@sextante/core/dates";
 type Props = {
   goal: GoalOutcome;
   display: string;
-  /** Posiciones incluidas en el total, y posiciones totales: si sobran, hay que decirlo. */
+  /** Positions included in the total, and total positions: if there are more, it must be said. */
   valued: number;
   total: number;
-  /** Aviso de conversión de divisa de los importes, si procede. */
+  /** Currency conversion notice for the amounts, if applicable. */
   note: CurrencyNote;
 };
 
-/** Lo que dice el objetivo: cifras, barra de progreso y notas (plazo, divisa, posiciones excluidas). */
+/** What the goal says: figures, progress bar and notes (term, currency, excluded positions). */
 export default function PortfolioGoalResults({ goal, display, valued, total, note }: Props) {
   const t = useTranslations("portfolio.goal");
   const tp = useTranslations("portfolio.summary");
@@ -61,9 +61,9 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
             aria-label={t("progressAria")}
             aria-valuemin={0}
             aria-valuemax={100}
-            // Sin redondear a entero: un 4,43 % anunciado como "4" pierde precisión sin
-            // motivo (ARIA admite decimales). Se acota a dos para no arrastrar el ruido
-            // de la coma flotante.
+            // Not rounded to an integer: announcing 4.43 % as "4" loses precision for no
+            // reason (ARIA allows decimals). Capped at two decimals so the floating-point noise
+            // is not carried along.
             aria-valuenow={Math.round(goal.progress * 100) / 100}
             aria-valuetext={t("progressValue", { percent: formatPercent(goal.progress) })}
             className="h-3 w-full overflow-hidden rounded-full bg-surface-2"
@@ -85,7 +85,7 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
         )}
         {goal.mode === "fire" && !goal.reached && goal.yearsToTarget === null && <p>{t("etaNever")}</p>}
         {goal.mode === "fire" && !goal.reached && goal.yearsToTarget !== null && (
-          // El año en curso se lee una vez al montar, en UTC como el resto de fechas de la cartera.
+          // The current year is read once on mount, in UTC like every other portfolio date.
           <p>{t("etaYear", { year: currentYear + goal.yearsToTarget })}</p>
         )}
         {valued === 0 && <p>{t("noValuation")}</p>}

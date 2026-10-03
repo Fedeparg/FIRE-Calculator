@@ -1,6 +1,6 @@
-// Validación de los formularios de cartera: del texto tecleado a los números que viajan a la API.
-// Pura (sin React): la comparten los componentes y se prueba en node. Las reglas son las mismas
-// que aplica la API (que es quien decide); aquí solo sirven para habilitar el botón y avisar.
+// Portfolio form validation: from the typed text to the numbers sent to the API.
+// Pure (no React): shared by the components and tested in node. The rules are the same ones
+// the API applies (it is the one that decides); here they only enable the button and warn.
 
 import { withholdingsFitGross } from "@sextante/core/fiscal/income";
 import { parseDecimalInput } from "@/shared/format/number-input";
@@ -8,12 +8,12 @@ import { parseDecimalInput } from "@/shared/format/number-input";
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 
-/** Número tecleado, o `NaN` si aún no lo es ("", "-", "abc"). */
+/** Typed number, or `NaN` if it is not one yet ("", "-", "abc"). */
 function decimalOrNaN(raw: string): number {
   return parseDecimalInput(raw) ?? Number.NaN;
 }
 
-/** Campo opcional: vacío vale `empty`; si no, el número tecleado (o `NaN`). */
+/** Optional field: empty means `empty`; otherwise the typed number (or `NaN`). */
 function optionalDecimal<T extends number | null>(raw: string, empty: T): number | T {
   return raw.trim() === "" ? empty : decimalOrNaN(raw);
 }
@@ -21,7 +21,7 @@ function optionalDecimal<T extends number | null>(raw: string, empty: T): number
 const isPositive = (value: number) => Number.isFinite(value) && value > 0;
 const isNonNegative = (value: number) => Number.isFinite(value) && value >= 0;
 
-/** Cantidad y precio medio de una posición. `null` si falta el símbolo o algún número no vale. */
+/** Quantity and average price of a position. `null` if the symbol is missing or a number is invalid. */
 export function validatePositionForm(values: {
   ticker: string;
   quantity: string;
@@ -33,7 +33,7 @@ export function validatePositionForm(values: {
   return { quantity, avgPrice };
 }
 
-/** Importes de un lote (las comisiones vacías son 0). `null` si alguno no vale o falta la fecha. */
+/** Amounts of a lot (empty fees are 0). `null` if any is invalid or the date is missing. */
 export function validateLotForm(values: {
   quantity: string;
   price: string;
@@ -47,20 +47,21 @@ export function validateLotForm(values: {
   return valid ? { quantity, price, fees } : null;
 }
 
-/** Lo que se envía de un cobro tras validar los campos de texto. */
+/** What is sent for an income entry after validating the text fields. */
 export type IncomeFormNumbers = {
   gross: number;
-  /** `null` = retención en origen desconocida (distinto de 0). */
+  /** `null` = unknown withholding at source (not the same as 0). */
   withholdingOrigin: number | null;
   withholdingSpain: number;
-  /** Código ISO de dos letras en mayúsculas, o `null` si no se indica. */
+  /** Two-letter upper-case ISO code, or `null` if not given. */
   country: string | null;
 };
 
 /**
- * Valida un cobro. `incomplete`: aún falta algo por teclear bien (no se avisa). `inconsistent`:
- * el íntegro y las retenciones son números válidos pero el conjunto no cuadra (retenciones por
- * encima del íntegro, país o fecha mal): se avisa, porque el usuario cree que ya ha terminado.
+ * Validates an income entry. `incomplete`: something still needs to be typed correctly (no
+ * warning). `inconsistent`: the gross amount and the withholdings are valid numbers but the whole
+ * does not add up (withholdings above the gross, bad country or date): we warn, because the user
+ * believes they are done.
  */
 export function validateIncomeForm(values: {
   gross: string;
@@ -92,9 +93,9 @@ export function validateIncomeForm(values: {
 }
 
 /**
- * Saldos pendientes de ejercicios anteriores: cada importe > 0 y sin repetir ejercicio y tipo.
- * Devuelve los importes en el mismo orden, o `null` si alguno no vale; `duplicated` se informa
- * aparte porque tiene su propio aviso.
+ * Pending balances from previous tax years: each amount > 0, with no repeated year and type.
+ * Returns the amounts in the same order, or `null` if any is invalid; `duplicated` is reported
+ * separately because it has its own warning.
  */
 export function validatePendingBalances<K extends string>(
   rows: readonly { originYear: number; kind: K; amount: string }[],

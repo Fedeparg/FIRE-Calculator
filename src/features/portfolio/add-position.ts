@@ -1,4 +1,4 @@
-// Fuera de módulos "use client": un servidor que importa de ellos recibe una referencia, no el string.
+// Kept outside "use client" modules: a server that imports from them gets a reference, not the string.
 
 export const ADD_POSITION_PARAM = "nueva";
 

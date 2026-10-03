@@ -9,7 +9,7 @@ import { inputClass } from "@/shared/ui/field-classes";
 import type { FormControlProps } from "@/shared/ui/FormField";
 
 type Props = FormControlProps & {
-  /** Texto tal como se teclea (con el separador del usuario); se parsea con `parseDecimalInput`. */
+  /** Text as typed (with the user's separator); parsed with `parseDecimalInput`. */
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
@@ -18,8 +18,8 @@ type Props = FormControlProps & {
 };
 
 /**
- * Input de importe o cantidad: `type="text"` + `inputMode="decimal"` (un `type="number"` pierde
- * la coma del teclado móvil en español) y saneado en cada pulsación (`sanitizeDecimalInput`).
+ * Amount or quantity input: `type="text"` + `inputMode="decimal"` (a `type="number"` loses the
+ * comma of the Spanish mobile keyboard) and sanitized on every keystroke (`sanitizeDecimalInput`).
  */
 export default function DecimalField({ value, onChange, placeholder = "0", className = inputClass, ...rest }: Props) {
   return (
@@ -37,13 +37,13 @@ export default function DecimalField({ value, onChange, placeholder = "0", class
 }
 
 /**
- * Estado del texto de un `DecimalField` precargado con un número. Usa `formatDecimalInput` y no
- * `String(n)`: este daría "1e-7", que el saneado leería como 17, y escribiría el punto decimal
- * aunque el usuario teclee con coma. `null`/`undefined` empiezan vacíos.
+ * Text state of a `DecimalField` prefilled with a number. Uses `formatDecimalInput` rather than
+ * `String(n)`: the latter would give "1e-7", which sanitizing would read as 17, and would write
+ * a decimal point even when the user types with a comma. `null`/`undefined` start empty.
  */
 export function useDecimalText(initial: number | null | undefined) {
   const { decimalSeparator } = useFormat();
-  // El inicializador perezoso solo corre al montar: el separador del idioma no cambia sin remontar.
+  // The lazy initializer only runs on mount: the locale's separator does not change without a remount.
   return useState(() =>
     initial === null || initial === undefined ? "" : formatDecimalInput(initial, decimalSeparator),
   );

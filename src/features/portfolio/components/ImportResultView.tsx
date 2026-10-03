@@ -8,7 +8,7 @@ import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
 import ImportNotices from "./ImportNotices";
 
-/** Resultado de una importación confirmada: qué posiciones se crearon, ampliaron o fallaron. */
+/** Result of a confirmed import: which positions were created, topped up or failed. */
 export default function ImportResultView({ result }: { result: ImportResult }) {
   const t = useTranslations("portfolio.import.result");
   const { formatQuantity } = useFormat();
@@ -52,7 +52,7 @@ export default function ImportResultView({ result }: { result: ImportResult }) {
       <ImportNotices plan={result} />
 
       <div>
-        {/* A Posiciones, no al Resumen: es donde se ven las recién importadas buscando precio. */}
+        {/* To Positions, not to Summary: that is where the freshly imported ones show up while fetching prices. */}
         <Link
           href="/portfolio/posiciones"
           className="inline-block rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-fg transition hover:opacity-90"

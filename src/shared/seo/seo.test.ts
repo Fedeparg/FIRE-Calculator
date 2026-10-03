@@ -4,12 +4,12 @@ import { firstItem } from "@sextante/core/arrays";
 import { buildMetadata, localizedPath, ogImagePath, privateMetadata } from "./seo";
 
 describe("localizedPath", () => {
-  it("deja el castellano sin prefijo y prefija el inglés con /en", () => {
+  it("leaves Spanish unprefixed and prefixes English with /en", () => {
     expect(localizedPath("es", "/aprende")).toBe("/aprende");
     expect(localizedPath("en", "/aprende")).toBe("/en/aprende");
   });
 
-  it("trata la home sin barra doble", () => {
+  it("handles the home page without a double slash", () => {
     expect(localizedPath("es", "/")).toBe("/");
     expect(localizedPath("en", "/")).toBe("/en");
   });
@@ -24,7 +24,7 @@ describe("buildMetadata", () => {
     og: { kind: "article", slug: "fire" },
   } as const;
 
-  it("emite canonical, hreflang con x-default al castellano y Open Graph del idioma", () => {
+  it("emits canonical, hreflang with x-default to Spanish, and the locale's Open Graph", () => {
     const meta = buildMetadata(base);
     expect(meta.alternates).toEqual({
       canonical: "/en/aprende/fire",
@@ -34,13 +34,13 @@ describe("buildMetadata", () => {
     expect(meta.title).toBe("FIRE");
   });
 
-  it("cae a castellano con un idioma inválido", () => {
+  it("falls back to Spanish with an invalid locale", () => {
     const meta = buildMetadata({ ...base, locale: "fr" });
     expect(meta.alternates?.canonical).toBe("/aprende/fire");
     expect(meta.openGraph).toMatchObject({ locale: "es_ES" });
   });
 
-  it("la imagen OG identifica la tarjeta por slug y nunca lleva el título en claro", () => {
+  it("identifies the OG card by slug and never carries the title in plain text", () => {
     const url = firstItem(buildMetadata(base).twitter?.images as string[]);
     const params = new URL(url, "http://x").searchParams;
     expect(params.get("article")).toBe("fire");
@@ -48,28 +48,28 @@ describe("buildMetadata", () => {
     expect(params.has("title")).toBe(false);
   });
 
-  it("cada tipo de tarjeta usa su parámetro", () => {
+  it("uses each card type's own parameter", () => {
     expect(ogImagePath({ kind: "page", page: "home" }, "es")).toBe("/og?page=home&locale=es");
     expect(ogImagePath({ kind: "calculator", slug: "roi" }, "en")).toBe("/og?calc=roi&locale=en");
     expect(ogImagePath({ kind: "legal", slug: "privacidad" }, "es")).toBe("/og?legal=privacidad&locale=es");
   });
 
-  it("titleAbsolute evita la plantilla de marca", () => {
+  it("titleAbsolute bypasses the brand template", () => {
     expect(buildMetadata({ ...base, titleAbsolute: true }).title).toEqual({ absolute: "FIRE" });
   });
 
-  it("noindex añade robots y su ausencia no deja la clave", () => {
+  it("noindex adds robots, and its absence leaves no key", () => {
     expect(buildMetadata({ ...base, noindex: true }).robots).toEqual({ index: false, follow: true });
     expect("robots" in buildMetadata(base)).toBe(false);
   });
 
-  it("respeta ogType article", () => {
+  it("honors ogType article", () => {
     expect(buildMetadata({ ...base, ogType: "article" }).openGraph).toMatchObject({ type: "article" });
   });
 });
 
 describe("privateMetadata", () => {
-  it("pone el título y prohíbe indexar y seguir enlaces", () => {
+  it("sets the title and forbids indexing and following links", () => {
     expect(privateMetadata("Mi cuenta")).toEqual({ title: "Mi cuenta", robots: { index: false, follow: false } });
   });
 });

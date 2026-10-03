@@ -5,8 +5,8 @@ import { useTranslations } from "next-intl";
 import type { SortDir, SortKey } from "@/features/portfolio/model/sort";
 
 /**
- * Cabecera de columna ordenable. No es un `<th>` (la lista no es una tabla), así que el estado
- * de la ordenación no va en `aria-sort`: va en el nombre accesible del botón.
+ * Sortable column header. It is not a `<th>` (the list is not a table), so the sort state does
+ * not go in `aria-sort`: it goes in the button's accessible name.
  */
 export default function SortHeader({
   column,

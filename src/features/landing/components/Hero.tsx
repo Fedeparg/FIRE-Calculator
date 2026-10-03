@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { HeroSextant } from "@/shared/illustrations";
 import CtaLink from "./CtaLink";
 
-/** Sección principal: marca, tagline, subcopy, CTAs e ilustración del sextante. */
+/** Main section: brand, tagline, subcopy, CTAs and the sextant illustration. */
 export default function Hero() {
   const t = useTranslations("landing.hero");
 

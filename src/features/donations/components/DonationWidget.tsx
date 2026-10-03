@@ -12,9 +12,9 @@ import Button from "@/shared/ui/Button";
 type Status = "idle" | "loading" | "error";
 
 /**
- * Widget de donación reutilizable (landing y /sobre-mi): importes sugeridos + cantidad
- * libre. Al confirmar, pide a la API una sesión de Stripe Checkout y redirige a su URL
- * alojada. El backend revalida el importe; aquí solo acotamos para una UX correcta.
+ * Reusable donation widget (landing and /sobre-mi): suggested amounts plus a custom amount.
+ * On confirm, it asks the API for a Stripe Checkout session and redirects to its hosted URL.
+ * The backend revalidates the amount; here we only clamp it for a correct UX.
  */
 export default function DonationWidget() {
   const t = useTranslations("donations");

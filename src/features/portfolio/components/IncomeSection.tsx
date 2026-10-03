@@ -16,24 +16,25 @@ import IncomeManager from "./IncomeManager";
 
 type Props = {
   year: number;
-  /** Casillas del ejercicio, o `null` si no están verificadas. */
+  /** Boxes (casillas) for the tax year, or `null` if they are not verified. */
   boxes: TaxBoxes | null;
-  /** Resumen del ejercicio, o `undefined` si no tiene cobros. */
+  /** Tax-year summary, or `undefined` if it has no income. */
   summary: IncomeYear | undefined;
-  /** Cobros del ejercicio, en su divisa. */
+  /** Income for the tax year, in its currency. */
   events: readonly IncomeEvent[];
 };
 
 /**
- * Rendimientos del capital mobiliario del ejercicio: intereses (con las recompensas del bróker)
- * y dividendos, separando lo que el pagador ya comunicó a la AEAT (sale en el borrador) de lo que
- * hay que añadir a mano. Los datos llegan del servidor; tras cada cambio se refresca la página.
+ * Investment income (rendimientos del capital mobiliario) for the tax year: interest (including
+ * broker rewards) and dividends, separating what the payer already reported to the AEAT (it shows
+ * up in the draft return) from what must be added by hand. Data comes from the server; the page
+ * is refreshed after every change.
  */
 export default function IncomeSection({ year, boxes, summary, events }: Props) {
   const t = useTranslations("portfolio.income");
   const router = useRouter();
-  // El refresco va en una transición: mientras llegan los datos nuevos del servidor el formulario
-  // sigue "guardando", en vez de mostrar el resultado con los datos viejos y saltar después.
+  // The refresh runs in a transition: while the new server data arrives the form keeps
+  // "saving", instead of showing the result with stale data and jumping afterwards.
   const [refreshing, startTransition] = useTransition();
   const mutations = useIncomeMutations(() => startTransition(() => router.refresh()));
 
@@ -97,7 +98,7 @@ export default function IncomeSection({ year, boxes, summary, events }: Props) {
   );
 }
 
-/** Una agrupación de la declaración con su desglose. */
+/** A tax-return grouping with its breakdown. */
 function CategoryCard({
   title,
   category,
@@ -106,7 +107,7 @@ function CategoryCard({
 }: {
   title: string;
   category: IncomeCategoryReport;
-  /** Casilla del íntegro y de las retenciones españolas (estas, sumadas entre categorías). */
+  /** Box for the gross amount and for the Spanish withholdings (the latter summed across categories). */
   grossBox: string | undefined;
   withholdingBox: string | undefined;
 }) {

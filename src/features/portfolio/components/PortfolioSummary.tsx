@@ -16,35 +16,36 @@ import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import { daysBetween, yearOf } from "@sextante/core/dates";
 
 type Props = {
-  /** Total agregado (lo calcula el proveedor de datos, el mismo para todas las pestañas). */
+  /** Aggregated total (computed by the data provider, the same for every tab). */
   agg: PortfolioAggregate;
-  /** Fecha de las tasas FX usadas, o null si aún no hay. */
+  /** Date of the FX rates used, or null if there are none yet. */
   fxAsOf: string | null;
-  /** Instante ISO de la lectura de precios más reciente, o null si no se sabe. */
+  /** ISO instant of the most recent price read, or null if unknown. */
   pricesFetchedAt: string | null;
-  /** Cuándo recibió la pantalla esos precios (ms): el "ahora" del tiempo relativo. */
+  /** When the screen received those prices (ms): the "now" for the relative time. */
   pricesCheckedAt: number | null;
   display: string;
 };
 
-/** 1 de enero del año de `today` y los días que han pasado desde entonces, hoy incluido. */
+/** January 1st of `today`'s year and the days elapsed since then, today included. */
 function startOfYear(today: string): { from: string; days: number } {
   const from = `${yearOf(today)}-01-01`;
   return { from, days: daysBetween(from, today) + 1 };
 }
 
 /**
- * Cabecera del Resumen: lo que vale hoy la cartera y cuánto gana, con lo invertido y la ganancia
- * del año al lado. Solo entran las posiciones con precio convertible a la divisa elegida; el
- * resto se excluye y se dice, para no inflar el total con conversiones que no podemos hacer.
+ * Summary header: what the portfolio is worth today and how much it gains, with the amount
+ * invested and the year-to-date gain beside it. Only positions with a price convertible to the
+ * chosen currency count; the rest are excluded and called out, so the total is not inflated with
+ * conversions we cannot perform.
  */
 export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesCheckedAt, display }: Props) {
   const t = useTranslations("portfolio.summary");
   const locale = asLocale(useLocale());
   const { formatCurrency, formatSignedCurrency, formatSignedPercent } = useFormat();
 
-  // La ganancia del año sale del histórico diario: se pide solo lo que va de año. Es un dato de
-  // apoyo: sin histórico (error o aún cargando) simplemente no se enseña.
+  // The year-to-date gain comes from the daily history: only the current year is requested. It is
+  // supporting data: without history (error or still loading) it simply is not shown.
   const { from, days } = startOfYear(useTodayUtc());
   const history = useApiQuery<PortfolioHistoryDto>(historyPath(days, display), { init: NO_STORE });
   const gain = history.status === "ready" ? gainSince(history.data.points, from) : null;

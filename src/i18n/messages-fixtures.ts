@@ -1,5 +1,5 @@
-// Utilidades de los tests de i18n: cargan `messages/*.json` y los aplanan a rutas
-// de hoja ("calc.roi.title"). Solo las importan tests.
+// i18n test utilities: load `messages/*.json` and flatten them into leaf paths
+// ("calc.roi.title"). Only tests import them.
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -16,7 +16,7 @@ export function loadMessages(locale: Locale): MessageTree {
   return JSON.parse(readFileSync(file, "utf8")) as MessageTree;
 }
 
-/** Aplana el árbol de mensajes a rutas de hoja ("calc.roi.title"). */
+/** Flattens the message tree into leaf paths ("calc.roi.title"). */
 export function flattenMessages(tree: MessageTree, prefix = ""): Map<string, string> {
   const flat = new Map<string, string>();
   for (const [key, value] of Object.entries(tree)) {

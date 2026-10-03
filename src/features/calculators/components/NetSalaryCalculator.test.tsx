@@ -23,22 +23,22 @@ function renderNetSalary() {
   );
 }
 
-describe("NetSalaryCalculator (CalculatorLayout agrupado)", () => {
+describe("NetSalaryCalculator (grouped CalculatorLayout)", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "/calculadoras/salario-bruto-neto?grossAnnual=42000&children=2");
   });
 
-  it("reparte los campos en sus dos grupos con título", () => {
+  it("splits the fields into their two titled groups", () => {
     renderNetSalary();
 
     const basic = screen.getByRole("heading", { name: texts.groupBasic }).closest("section");
     const personal = screen.getByRole("heading", { name: texts.groupPersonal }).closest("section");
-    if (!basic || !personal) throw new Error("Faltan las secciones de los grupos");
+    if (!basic || !personal) throw new Error("Group sections are missing");
     expect(within(basic).getByRole("spinbutton", { name: texts.grossAnnual })).toHaveValue("42000");
     expect(within(personal).getByRole("spinbutton", { name: texts.children })).toHaveValue("2");
   });
 
-  it("calcula con los valores del enlace", () => {
+  it("computes with the values from the link", () => {
     renderNetSalary();
 
     const expected = estimateNetSalary({

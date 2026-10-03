@@ -18,26 +18,26 @@ async function openConfirmation(hasSales: boolean | null) {
 }
 
 describe("PositionDeleteBar", () => {
-  it("avisa de que se perderán las ventas si la posición tiene ventas", async () => {
+  it("warns that the sales will be lost if the position has sales", async () => {
     await openConfirmation(true);
 
     expect(screen.getByRole("alert")).toHaveTextContent(STRONG_WARNING);
   });
 
-  it("también avisa mientras no se sabe (lotes cargando o con error), que es lo seguro", async () => {
+  it("also warns while it is unknown (lots loading or failed), which is the safe choice", async () => {
     await openConfirmation(null);
 
     expect(screen.getByRole("alert")).toHaveTextContent(STRONG_WARNING);
   });
 
-  it("no muestra el aviso fuerte si se sabe que no hay ventas", async () => {
+  it("does not show the strong warning if it is known there are no sales", async () => {
     await openConfirmation(false);
 
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: es.portfolio.list.confirm })).toBeInTheDocument();
   });
 
-  it("lleva el foco a confirmar y, al cancelar, lo devuelve a eliminar", async () => {
+  it("moves focus to confirm and, on cancel, returns it to delete", async () => {
     const user = userEvent.setup();
     renderWithIntl(<PositionDeleteBar positionId="p1" hasSales={false} onEdit={vi.fn()} onDeleted={vi.fn()} />);
 

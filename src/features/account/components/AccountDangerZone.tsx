@@ -12,20 +12,20 @@ import { useApiErrorText } from "@/shared/api/use-api-error-text";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 
 /**
- * Traduce el fallo (red, sesión, servidor) a un mensaje del namespace `account`, sin volcar el
- * body crudo de la API. Ese namespace no tiene `errorInvalid`: aquí no hay formulario que revisar.
+ * Maps the failure (network, session, server) to a message in the `account` namespace, without
+ * dumping the raw API body. That namespace has no `errorInvalid`: there is no form to check here.
  */
 const errorKeyFor = createApiErrorMapper({ invalidFallback: "errorGeneric" });
 
 type Props = {
-  /** Email del usuario autenticado (del servidor). Sirve para confirmar el borrado. */
+  /** Email of the authenticated user (from the server). Used to confirm the deletion. */
   email: string;
 };
 
 /**
- * Zona de cuenta con los dos derechos RGPD: exportar mis datos (descarga un JSON) y
- * borrar mi cuenta. El borrado exige escribir el propio correo para confirmar; la
- * autorización y el scoping por usuario los decide SIEMPRE la API (userId del JWT).
+ * Account section with the two GDPR (RGPD) rights: export my data (downloads a JSON) and
+ * delete my account. Deletion requires typing one's own email to confirm; authorization and
+ * per-user scoping are ALWAYS decided by the API (userId from the JWT).
  */
 export default function AccountDangerZone({ email }: Props) {
   const t = useTranslations("account");
@@ -33,16 +33,16 @@ export default function AccountDangerZone({ email }: Props) {
   const confirmId = useId();
   const router = useRouter();
 
-  // Exportación.
+  // Export.
   const exportData = useApiMutation();
   const exporting = exportData.status === "pending";
 
-  // Borrado.
+  // Deletion.
   const [confirmEmail, setConfirmEmail] = useState("");
   const deletion = useApiMutation();
   const deleteError = deletion.error === null ? null : errorKeyFor(deletion.error);
 
-  // Limpia el temporizador de redirección si el componente se desmonta antes.
+  // Clear the redirect timer if the component unmounts first.
   const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     return () => {
@@ -50,11 +50,11 @@ export default function AccountDangerZone({ email }: Props) {
     };
   }, []);
 
-  // El correo confirmado debe coincidir con el del usuario (la API lo normaliza a
-  // minúsculas al iniciar sesión, así que comparamos en minúsculas).
+  // The confirmed email must match the user's (the API lowercases it at sign-in, so we
+  // compare in lowercase).
   const emailMatches = confirmEmail.trim().toLowerCase() === email.toLowerCase();
 
-  /** Descarga el JSON de datos vía blob para poder gestionar errores (401, red…). */
+  /** Downloads the data JSON via a blob so errors (401, network…) can be handled. */
   async function handleExport() {
     await exportData.run(async () => {
       const res = await apiFetch("/api/auth/account/export");
@@ -62,12 +62,12 @@ export default function AccountDangerZone({ email }: Props) {
     });
   }
 
-  /** Borra la cuenta tras confirmar el correo; al terminar, redirige al inicio. */
+  /** Deletes the account once the email is confirmed; when done, redirects to the home page. */
   async function handleDelete() {
     if (!emailMatches || deletion.status === "pending" || deletion.status === "success") return;
     const result = await deletion.run(() => apiFetch("/api/auth/account", { method: "DELETE" }));
     if (!result.ok) return;
-    // Breve pausa para que el usuario vea el aviso antes de salir.
+    // Short pause so the user sees the notice before leaving.
     redirectTimer.current = setTimeout(() => {
       router.replace("/");
       router.refresh();
@@ -76,7 +76,7 @@ export default function AccountDangerZone({ email }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Exportar mis datos */}
+      {/* Export my data */}
       <section className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-6">
         <h2 className="text-lg font-semibold text-foreground">{t("export.title")}</h2>
         <p className="text-sm text-muted">{t("export.description")}</p>
@@ -86,7 +86,7 @@ export default function AccountDangerZone({ email }: Props) {
         {exportData.status === "error" && <p className="text-sm text-warning">{t("export.error")}</p>}
       </section>
 
-      {/* Zona de peligro: borrar mi cuenta */}
+      {/* Danger zone: delete my account */}
       <section className="flex flex-col gap-3 rounded-2xl border border-danger-border bg-danger-soft p-6">
         <h2 className="text-lg font-semibold text-danger">{t("danger.title")}</h2>
         <h3 className="text-base font-medium text-foreground">{t("delete.title")}</h3>

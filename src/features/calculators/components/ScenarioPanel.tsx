@@ -16,20 +16,20 @@ import { useApiErrorText } from "@/shared/api/use-api-error-text";
 const inputClassSm = `${inputClass} text-sm`;
 
 /**
- * Escenarios guardados de la calculadora abierta: guardar el estado actual con un nombre,
- * listarlos, cargarlos, renombrarlos y borrarlos.
+ * Saved scenarios for the open calculator: save the current state under a name, list them,
+ * load, rename and delete them.
  *
- * Sesión: se comprueba pidiendo la lista a la API. Un 401 significa "no hay sesión" y
- * entonces se invita a entrar en vez de enseñar un botón que fallaría. La decisión NO la
- * toma el cliente: la API autoriza cada petición y hace el scoping por usuario; aquí solo
- * se refleja su respuesta. Se comprueba desde el cliente a propósito —como `AuthNav`—
- * porque leer la cookie en el servidor convertiría en dinámicas las 26 páginas de
- * calculadora, que son estáticas con ISR.
+ * Session: checked by requesting the list from the API. A 401 means "no session", and the
+ * user is then invited to sign in instead of being shown a button that would fail. The
+ * client does NOT make the decision: the API authorises each request and scopes by user; this
+ * only reflects its response. The check runs on the client on purpose (like `AuthNav`)
+ * because reading the cookie on the server would turn the 26 calculator pages, which are
+ * static with ISR, into dynamic ones.
  *
- * Cargar un escenario es exactamente "aplicar unos valores": se delega en `applyInputs` del
- * proveedor, el mismo camino que usa la URL, así que los `inputs` guardados se validan
- * contra los campos reales de la calculadora (un escenario obsoleto o manipulado no rompe
- * nada: lo que no encaja cae a su valor por defecto).
+ * Loading a scenario is exactly "applying some values": it delegates to the provider's
+ * `applyInputs`, the same path the URL uses, so saved `inputs` are validated against the
+ * calculator's real fields (a stale or tampered scenario breaks nothing: whatever does not
+ * fit falls back to its default value).
  */
 export default function ScenarioPanel() {
   const t = useTranslations("calculator.scenarios");
@@ -38,26 +38,26 @@ export default function ScenarioPanel() {
   const state = useCalculatorState();
   const slug = state?.slug;
 
-  // Sesión y lista: la propia respuesta dice si hay sesión (401); el estado `loading` es el
-  // `unknown` de antes y no pinta nada hasta que la API contesta.
+  // Session and list: the response itself says whether there is a session (401); the `loading`
+  // status is the former `unknown` and renders nothing until the API answers.
   const { status, scenarios, error: errorKey, create, update, remove } = useSavedScenarios(slug);
   const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
-  // Escenario en proceso de renombrado y el texto que se está escribiendo.
+  // Scenario being renamed and the text being typed.
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
-  // id en confirmación de borrado / id en proceso de borrado (mismo patrón que la cartera).
+  // id awaiting delete confirmation / id being deleted (same pattern as the portfolio).
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  // Nombre del escenario recién cargado, para anunciarlo en la región viva.
+  // Name of the scenario just loaded, to announce it in the live region.
   const [loadedName, setLoadedName] = useState<string | null>(null);
 
   async function handleSave(event: React.FormEvent) {
     event.preventDefault();
     if (!state || !slug) return;
     setSaving(true);
-    // `getInputs()` da el estado COMPLETO (con los valores por defecto), no solo lo que se
-    // ha tocado: así el escenario reproduce el cálculo entero al cargarlo.
+    // `getInputs()` returns the COMPLETE state (defaults included), not just what was touched:
+    // that way the scenario reproduces the whole computation when loaded.
     const created = await create(name, state.getInputs());
     setSaving(false);
     if (created) {
@@ -82,8 +82,8 @@ export default function ScenarioPanel() {
     setLoadedName(scenario.name);
   }
 
-  // Mientras no se sepa si hay sesión no se pinta nada (evita el parpadeo de un panel que
-  // aparece y desaparece), igual que en la navegación de cabecera.
+  // Nothing renders until we know whether there is a session (avoids the flicker of a panel
+  // that appears and disappears), just like the header navigation.
   if (status === "loading") return null;
 
   if (status === "anonymous") {
@@ -213,7 +213,7 @@ export default function ScenarioPanel() {
         </ul>
       )}
 
-      {/* Cargar un escenario cambia los campos de golpe: se anuncia, no solo se ve. */}
+      {/* Loading a scenario changes the fields all at once: it is announced, not just shown. */}
       <p role="status" aria-live="polite" className="sr-only">
         {loadedName ? t("loaded", { name: loadedName }) : ""}
       </p>

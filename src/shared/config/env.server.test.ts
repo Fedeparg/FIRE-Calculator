@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { serverApiUrl } from "./env.server";
 
-// `server-only` lanza fuera de un servidor de React; en el test basta con neutralizarlo.
+// `server-only` throws outside a React server; in the test it is enough to stub it out.
 vi.mock("server-only", () => ({}));
 
 describe("serverApiUrl", () => {
@@ -10,32 +10,32 @@ describe("serverApiUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("devuelve el origen de API_URL", () => {
+  it("returns the origin of API_URL", () => {
     vi.stubEnv("API_URL", "http://api:3001/");
     expect(serverApiUrl()).toBe("http://api:3001");
   });
 
-  it("cae a la API local en desarrollo", () => {
+  it("falls back to the local API in development", () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("API_URL", "");
     expect(serverApiUrl()).toBe("http://localhost:3001");
   });
 
-  it("lanza en producción si falta, en vez de caer en silencio a localhost", () => {
+  it("throws in production when missing, instead of silently falling back to localhost", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("API_URL", "");
-    expect(() => serverApiUrl()).toThrow(/API_URL es obligatoria/);
+    expect(() => serverApiUrl()).toThrow(/API_URL is required/);
   });
 
-  it("no lo exige durante `next build`", () => {
+  it("does not require it during `next build`", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
     vi.stubEnv("API_URL", "");
     expect(serverApiUrl()).toBe("http://localhost:3001");
   });
 
-  it("lanza si no es una URL", () => {
-    vi.stubEnv("API_URL", "no es una url");
-    expect(() => serverApiUrl()).toThrow(/no es una URL válida/);
+  it("throws when it is not a URL", () => {
+    vi.stubEnv("API_URL", "not a url");
+    expect(() => serverApiUrl()).toThrow(/is not a valid URL/);
   });
 });

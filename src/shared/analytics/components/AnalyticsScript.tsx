@@ -5,9 +5,9 @@ import { ANALYTICS_SCRIPT_SRC, ANALYTICS_WEBSITE_ID } from "../config";
 
 const SITE_HOSTNAME = new URL(SITE_URL).hostname;
 
-// `data-exclude-search`: los cálculos compartibles llevan todas sus entradas (salario,
-// patrimonio…) en la query string y no deben llegar a la analítica. `data-domains`: solo mide
-// en el dominio canónico, no en localhost ni previews.
+// `data-exclude-search`: shareable calculations carry all their inputs (salary, net worth…)
+// in the query string and must not reach analytics. `data-domains`: only tracks on the
+// canonical domain, not on localhost or previews.
 export default function AnalyticsScript() {
   if (!ANALYTICS_WEBSITE_ID) return null;
   return (

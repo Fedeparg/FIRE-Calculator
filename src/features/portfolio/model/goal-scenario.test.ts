@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { goalProgress, goalSettingsFromInputs } from "./goal-scenario";
 
-// USD por unidad: 1 EUR = 1,10 USD.
+// USD per unit: 1 EUR = 1.10 USD.
 const RATES = { USD: 1, EUR: 1.1 };
 
 describe("goalSettingsFromInputs", () => {
-  it("lee un escenario guardado desde la cartera, con su divisa", () => {
+  it("reads a scenario saved from the portfolio, with its currency", () => {
     expect(
       goalSettingsFromInputs({
         annualExpenses: 30000,
@@ -26,11 +26,11 @@ describe("goalSettingsFromInputs", () => {
     });
   });
 
-  it("asume euros si el escenario viene de la calculadora (sin goalCurrency)", () => {
+  it("assumes euros if the scenario comes from the calculator (no goalCurrency)", () => {
     expect(goalSettingsFromInputs({ annualExpenses: 24000 }).currency).toBe("EUR");
   });
 
-  it("deja a 0 los importes que faltan y usa los valores por defecto en el resto", () => {
+  it("sets missing amounts to 0 and uses the defaults for everything else", () => {
     expect(goalSettingsFromInputs({})).toMatchObject({
       annualExpenses: 0,
       contribution: 0,
@@ -45,7 +45,7 @@ describe("goalSettingsFromInputs", () => {
 describe("goalProgress", () => {
   const settings = goalSettingsFromInputs({ annualExpenses: 24000, savings: 1000, withdrawalRate: 4 });
 
-  it("calcula el progreso en la misma divisa", () => {
+  it("computes progress in the same currency", () => {
     expect(goalProgress(settings, 150000, "EUR", RATES)).toMatchObject({
       target: 600000,
       current: 150000,
@@ -53,15 +53,15 @@ describe("goalProgress", () => {
     });
   });
 
-  it("convierte los importes del objetivo a la divisa que se está viendo", () => {
+  it("converts the goal amounts into the currency being viewed", () => {
     expect(goalProgress(settings, 165000, "USD", RATES)?.target).toBeCloseTo(660000, 6);
   });
 
-  it("no compara divisas distintas si falta la tasa", () => {
+  it("does not compare different currencies if the rate is missing", () => {
     expect(goalProgress(settings, 100, "JPY", RATES)).toBeNull();
   });
 
-  it("en modo cantidad mide la cifra objetivo y el plazo, convertidos", () => {
+  it("in amount mode measures the target figure and the term, converted", () => {
     const amount = goalSettingsFromInputs({
       goalMode: "amount",
       targetAmount: 100000,
@@ -78,7 +78,7 @@ describe("goalProgress", () => {
     expect(outcome?.mode === "amount" && outcome.onTrack).toBe(false);
   });
 
-  it("los escenarios sin modo son FIRE", () => {
+  it("scenarios without a mode are FIRE", () => {
     expect(settings.mode).toBe("fire");
     expect(goalProgress(settings, 0, "EUR", RATES)?.mode).toBe("fire");
   });

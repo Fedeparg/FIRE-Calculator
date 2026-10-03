@@ -4,7 +4,7 @@ import { firstItem } from "@sextante/core/arrays";
 import { calculatorMetadata } from "./seo";
 
 describe("calculatorMetadata", () => {
-  it("usa la ruta de la calculadora y su tarjeta OG por slug", () => {
+  it("uses the calculator route and its per-slug OG card", () => {
     const meta = calculatorMetadata({ locale: "en", slug: "roi", title: "T", description: "D" });
     expect(meta.alternates?.canonical).toBe("/en/calculadoras/roi");
     const image = firstItem(meta.twitter?.images as string[]);

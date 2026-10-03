@@ -18,7 +18,7 @@ type Props = {
   remove: (incomeId: string) => Promise<boolean>;
 };
 
-/** Lista de cobros con su formulario de alta y edición; lo comparten el panel de la posición y la pestaña fiscal. */
+/** Income list with its create/edit form; shared by the position panel and the tax tab. */
 export default function IncomeManager({ income, defaults, submitting, errorKey, save, remove }: Props) {
   const t = useTranslations("portfolio.income");
   const errorText = useApiErrorText(t);
@@ -41,7 +41,7 @@ export default function IncomeManager({ income, defaults, submitting, errorKey, 
           {errorText(errorKey)}
         </p>
       )}
-      {/* El `key` fuerza un remount al cambiar de cobro editado (o volver al alta). */}
+      {/* The `key` forces a remount when switching the edited entry (or going back to create). */}
       <IncomeForm
         key={rows.editing?.id ?? "add"}
         editing={rows.editing}

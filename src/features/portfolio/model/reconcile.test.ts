@@ -6,12 +6,12 @@ const a = { id: "a", quantity: 1, name: "A" };
 const b = { id: "b", quantity: 2, name: "B" };
 
 describe("reconcileList", () => {
-  it("devuelve la misma lista si el contenido y el orden no cambian", () => {
+  it("returns the same list if content and order are unchanged", () => {
     const prev = [a, b];
     expect(reconcileList(prev, [{ ...a }, { ...b }])).toBe(prev);
   });
 
-  it("conserva los elementos que no cambian y sustituye los que sí", () => {
+  it("keeps the unchanged items and replaces the changed ones", () => {
     const prev = [a, b];
     const next = reconcileList(prev, [{ ...a }, { ...b, quantity: 3 }]);
 
@@ -20,7 +20,7 @@ describe("reconcileList", () => {
     expect(next[1]).toEqual({ ...b, quantity: 3 });
   });
 
-  it("detecta altas, bajas y cambios de orden", () => {
+  it("detects additions, removals and reordering", () => {
     const prev = [a, b];
     expect(reconcileList(prev, [{ ...b }, { ...a }])).toEqual([b, a]);
     expect(reconcileList(prev, [{ ...b }, { ...a }])[0]).toBe(b);
@@ -32,12 +32,12 @@ describe("reconcileList", () => {
 describe("reconcileRecord", () => {
   const p = { close: 10, date: "2026-10-01" };
 
-  it("devuelve el mismo diccionario si ninguna entrada cambia", () => {
+  it("returns the same dictionary if no entry changes", () => {
     const prev = { X: p };
     expect(reconcileRecord(prev, { X: { ...p } })).toBe(prev);
   });
 
-  it("conserva las entradas iguales y detecta cambios, altas y bajas", () => {
+  it("keeps equal entries and detects changes, additions and removals", () => {
     const prev = { X: p, Y: { close: 5, date: "2026-10-01" } };
     const next = reconcileRecord(prev, { X: { ...p }, Y: { close: 6, date: "2026-10-01" } });
 

@@ -5,16 +5,16 @@ import { cookies } from "next/headers";
 import { serverApiUrl } from "@/shared/config/env.server";
 
 /**
- * GET a la API desde el servidor de Next, reenviando la cookie de sesión. `null` (sin cookie,
- * error o fallo de red) es ambiguo a propósito: cada llamante decide su valor de reserva. No
- * autoriza nada: lo hace la API. Se llama distinto que el `apiFetch` del cliente
- * (`shared/api/client.ts`) para que nadie importe uno creyendo que es el otro.
+ * GET to the API from the Next server, forwarding the session cookie. `null` (no cookie, error
+ * or network failure) is ambiguous on purpose: each caller picks its own fallback. It authorizes
+ * nothing: the API does. It is named differently from the client's `apiFetch`
+ * (`shared/api/client.ts`) so nobody imports one thinking it is the other.
  */
 export async function serverApiFetch<T>(path: string): Promise<T | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  // Fuera del `try`: una configuración rota debe fallar a la vista, no pasar por "sin datos".
+  // Outside the `try`: a broken configuration must fail visibly, not pass as "no data".
   const url = `${serverApiUrl()}${path}`;
   try {
     const res = await fetch(url, {

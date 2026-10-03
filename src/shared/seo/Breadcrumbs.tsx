@@ -6,9 +6,9 @@ import { breadcrumbSchema, type BreadcrumbItem } from "@/shared/seo/json-ld";
 import JsonLd from "./JsonLd";
 
 /**
- * Migas de pan accesibles que, además, emiten el `BreadcrumbList` de schema.org.
- * Una sola fuente para la versión visible y la estructurada (evita que se
- * desincronicen). El último elemento es la página actual (no enlazada).
+ * Accessible breadcrumbs that also emit the schema.org `BreadcrumbList`. A single source for
+ * the visible and the structured version (keeps them from drifting apart). The last item is the
+ * current page (not linked).
  */
 export default function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   const locale = asLocale(useLocale());

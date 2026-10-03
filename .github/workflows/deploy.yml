@@ -1,30 +1,30 @@
-# Despliegue continuo a producción (runner self-hosted).
+# Continuous deployment to production (self-hosted runner).
 #
-# Se dispara cuando el workflow `ci` TERMINA CON ÉXITO sobre `main`, no en el push
-# directo. Antes colgaba de `push: [main]` y corría EN PARALELO con `ci`, así que un
-# commit que rompiera typecheck/lint/tests/build llegaba igualmente a producción: el
-# gate de calidad existía pero no gobernaba el despliegue. Con `workflow_run` el
-# orden es real (ci → deploy) y solo se despliega un commit verde.
+# Triggered when the `ci` workflow COMPLETES SUCCESSFULLY on `main`, not on the
+# direct push. It used to hang off `push: [main]` and ran IN PARALLEL with `ci`, so a
+# commit that broke typecheck/lint/tests/build still reached production: the quality
+# gate existed but did not govern the deployment. With `workflow_run` the order is
+# real (ci → deploy) and only a green commit gets deployed.
 #
-# Tres detalles que hacen que el gate no se pueda saltar:
-#   1. Se exige `conclusion == 'success'` Y `head_branch == 'main'`. Sin lo segundo,
-#      un CI verde en una rama de PR dispararía un despliegue a producción.
-#   2. El checkout usa `head_sha` del run de CI, no el tip de la rama: si han entrado
-#      commits nuevos mientras CI corría, se despliega EXACTAMENTE lo que se validó.
-#   3. Se conserva `workflow_dispatch` como escotilla manual (redesplegar sin tocar
-#      código, o desplegar si el gate se atasca).
+# Three details make the gate impossible to skip:
+#   1. Both `conclusion == 'success'` AND `head_branch == 'main'` are required. Without
+#      the latter, a green CI on a PR branch would trigger a production deployment.
+#   2. The checkout uses the CI run's `head_sha`, not the branch tip: if new commits
+#      landed while CI was running, EXACTLY what was validated gets deployed.
+#   3. `workflow_dispatch` is kept as a manual escape hatch (redeploy without touching
+#      code, or deploy if the gate gets stuck).
 #
-# El runner debe tener el label `sextante` (ver docs/DEPLOY.md) para no colisionar
-# con otros runners que solo tengan `self-hosted`.
+# The runner must have the `sextante` label (see docs/DEPLOY.md) so it does not
+# collide with other runners that only have `self-hosted`.
 #
-# ⚠️ SEGURIDAD: si este repositorio es público, un runner self-hosted es peligroso.
-# En un evento `pull_request` GitHub ejecuta los workflows DE LA RAMA DEL PR, así
-# que cualquiera puede abrir un PR desde un fork con un workflow propio que pida
-# `runs-on: [self-hosted, sextante]` y ejecutar código en el servidor. Lee el aviso
-# al principio de docs/DEPLOY.md antes de hacer público el repositorio.
+# ⚠️ SECURITY: if this repository is public, a self-hosted runner is dangerous.
+# On a `pull_request` event GitHub runs the workflows FROM THE PR BRANCH, so
+# anyone can open a PR from a fork with their own workflow requesting
+# `runs-on: [self-hosted, sextante]` and run code on the server. Read the warning
+# at the top of docs/DEPLOY.md before making the repository public.
 #
-# Los secretos se inyectan desde GitHub Secrets, se materializan en un .env
-# efímero (permisos 600) y se borran al terminar. No quedan en el repo ni en logs.
+# Secrets are injected from GitHub Secrets, materialised into an ephemeral .env
+# (mode 600) and deleted at the end. They stay out of the repo and the logs.
 
 name: deploy
 
@@ -32,10 +32,10 @@ on:
   workflow_run:
     workflows: [ci]
     types: [completed]
-  workflow_dispatch: {} # permite lanzarlo a mano desde la pestaña Actions
+  workflow_dispatch: {} # allows triggering it by hand from the Actions tab
 
 concurrency:
-  # Un despliegue a la vez; no cancelar uno a medias.
+  # One deployment at a time; never cancel one halfway.
   group: deploy-prod
   cancel-in-progress: false
 
@@ -44,33 +44,33 @@ permissions:
 
 jobs:
   deploy:
-    # Tres condiciones, todas necesarias:
+    # Three conditions, all required:
     #
-    # - `github.repository`: este repo se replica a un espejo PÚBLICO
-    #   (Fedeparg/sextante) que existe solo como escaparate y NO tiene runner propio.
-    #   Sin este guard, allí el job pediría un runner `[self-hosted, sextante]`
-    #   inexistente y se quedaría encolado para siempre. OJO: esto NO es un control de
-    #   seguridad (un PR desde un fork puede traer su propio workflow sin este `if`);
-    #   lo que hace segura la copia pública es que no tiene runner registrado.
-    # - `workflow_dispatch`: el disparo manual se acepta sin más comprobaciones (solo
-    #   puede lanzarlo quien tiene permiso de escritura en el repo).
-    # - `workflow_run`: solo si CI acabó en verde Y era la rama `main`.
+    # - `github.repository`: this repo is mirrored to a PUBLIC mirror
+    #   (Fedeparg/sextante) that exists only as a showcase and has NO runner of its own.
+    #   Without this guard, the job there would request a nonexistent
+    #   `[self-hosted, sextante]` runner and stay queued forever. CAUTION: this is NOT a
+    #   security control (a PR from a fork can bring its own workflow without this `if`);
+    #   what makes the public copy safe is that it has no registered runner.
+    # - `workflow_dispatch`: a manual trigger is accepted with no further checks (only
+    #   someone with write access to the repo can launch it).
+    # - `workflow_run`: only if CI ended green AND it was the `main` branch.
     if: >-
       github.repository == 'Fedeparg/FIRE-Calculator' &&
       (github.event_name == 'workflow_dispatch' ||
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_branch == 'main'))
-    # AMBOS labels: solo casa con el runner de Sextante, no con otros runners.
+    # BOTH labels: only matches the Sextante runner, not other runners.
     runs-on: [self-hosted, sextante]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # El commit EXACTO que validó CI. En `workflow_run` el checkout por defecto
-          # tomaría el tip de la rama, que puede ser ya un commit posterior sin validar.
+          # The EXACT commit CI validated. On `workflow_run` the default checkout would
+          # take the branch tip, which may already be a later, unvalidated commit.
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
 
-      - name: Materializar el .env de producción (efímero)
+      - name: Materialise the production .env (ephemeral)
         env:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -79,23 +79,23 @@ jobs:
           REVALIDATE_TOKEN: ${{ secrets.REVALIDATE_TOKEN }}
           BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
           RCLONE_CONF_BASE64: ${{ secrets.RCLONE_CONF_BASE64 }}
-          # Clave SECRETA de Stripe (donaciones): va por Secrets, la consume el `api`.
+          # Stripe SECRET key (donations): goes through Secrets, consumed by `api`.
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          # Interruptor público de donaciones (Variable, no Secret): "1" = mostrar.
+          # Public donations switch (a Variable, not a Secret): "1" = show.
           NEXT_PUBLIC_DONATIONS_ENABLED: ${{ vars.NEXT_PUBLIC_DONATIONS_ENABLED }}
-          # Analítica propia (Umami): su Postgres y el secreto del panel. El ID de sitio
-          # es público (Variable): vacío hasta crear el sitio en el panel.
+          # Self-hosted analytics (Umami): its Postgres and the dashboard secret. The site
+          # ID is public (a Variable): empty until the site is created in the dashboard.
           ANALYTICS_DB_PASSWORD: ${{ secrets.ANALYTICS_DB_PASSWORD }}
           ANALYTICS_APP_SECRET: ${{ secrets.ANALYTICS_APP_SECRET }}
           NEXT_PUBLIC_ANALYTICS_WEBSITE_ID: ${{ vars.NEXT_PUBLIC_ANALYTICS_WEBSITE_ID }}
         run: |
           umask 077
-          # Heredoc SIN -x: los valores se expanden desde el entorno del step
-          # (no se interpolan en la línea de comando, así no acaban en los logs).
+          # Heredoc WITHOUT -x: values are expanded from the step's environment
+          # (not interpolated into the command line, so they do not end up in the logs).
           cat > .env <<EOF
           NODE_ENV=production
           APP_URL=https://sextante.fpardo.net
-          # URL canónica pública: la hornea el build de `web` (SEO, sitemap, robots).
+          # Canonical public URL: baked in by the `web` build (SEO, sitemap, robots).
           NEXT_PUBLIC_SITE_URL=https://sextante.fpardo.net
           COOKIE_SECURE=true
           EMAIL_TRANSPORT=resend
@@ -117,21 +117,21 @@ jobs:
           NEXT_PUBLIC_ANALYTICS_WEBSITE_ID=${NEXT_PUBLIC_ANALYTICS_WEBSITE_ID}
           EOF
 
-      - name: Construir y levantar el stack
+      - name: Build and start the stack
         run: >-
           docker compose -f docker-compose.prod.yml --env-file .env
           up -d --build --remove-orphans
 
-      - name: Podar imágenes colgadas
+      - name: Prune dangling images
         run: docker image prune -f
 
-      # `up --build` deja en la caché de BuildKit las capas de cada despliegue (~4 GB con
-      # node_modules y el build de Next), y `image prune` no la toca: sin esto crecía sin
-      # límite en el disco del NAS. Se conserva lo usado más recientemente hasta el tope, así
-      # que el siguiente build sigue reutilizando las capas de dependencias.
-      - name: Acotar la caché de build
+      # `up --build` leaves each deployment's layers in the BuildKit cache (~4 GB with
+      # node_modules and the Next build), and `image prune` does not touch it: without this
+      # it grew unbounded on the NAS disk. The most recently used entries are kept up to the
+      # cap, so the next build keeps reusing the dependency layers.
+      - name: Cap the build cache
         run: docker builder prune -f --max-used-space 8GB
 
-      - name: Borrar el .env efímero
+      - name: Delete the ephemeral .env
         if: always()
         run: rm -f .env

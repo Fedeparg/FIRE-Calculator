@@ -11,23 +11,24 @@ import { useSavedScenarios } from "@/features/scenarios/use-saved-scenarios";
 import { yearOf } from "@sextante/core/dates";
 
 type Props = {
-  /** Valor de mercado de la cartera en `display` (el mismo total que el resto del Resumen). */
+  /** Portfolio market value in `display` (the same total as the rest of the Summary). */
   marketValue: number;
   display: string;
   rates: Record<string, number>;
 };
 
 /**
- * Resumen del objetivo FIRE en la pestaña Resumen: el porcentaje conseguido y el tiempo que
- * falta, con el plan activo (`activeScenario`, el mismo que carga la pestaña Objetivo), y su
- * nombre para que se sepa cuál es. Sin escenario guardado invita a definirlo, en vez de inventar uno.
+ * FIRE goal summary on the Summary tab: the percentage achieved and the time left, with the
+ * active plan (`activeScenario`, the same one the Goal tab loads) and its name so it is clear
+ * which one it is. Without a saved scenario it invites the user to define one instead of making
+ * one up.
  */
 export default function PortfolioGoalCard({ marketValue, display, rates }: Props) {
   const t = useTranslations("portfolio.goalCard");
   const tGoal = useTranslations("portfolio.goal");
   const { formatCurrency, formatPercent } = useFormat();
   const currentYear = yearOf(useTodayUtc());
-  // Cualquier fallo (sin sesión, red, servidor) se trata como "sin plan guardado".
+  // Any failure (no session, network, server) is treated as "no saved plan".
   const { status, active } = useSavedScenarios(FIRE_CALCULATOR_SLUG);
   const settings = active ? goalSettingsFromInputs(active.inputs) : null;
 

@@ -1,4 +1,4 @@
-/** Caracteres de control C0, DEL o la barra invertida: el navegador los normaliza o los ignora al navegar. */
+/** C0 control characters, DEL or the backslash: the browser normalizes or ignores them when navigating. */
 function hasUnsafeChar(value: string): boolean {
   for (const char of value) {
     const code = char.charCodeAt(0);
@@ -8,13 +8,13 @@ function hasUnsafeChar(value: string): boolean {
 }
 
 /**
- * Valida un destino de vuelta (`?returnTo=`) y lo reduce a una ruta de NUESTRO origen
- * (`pathname + search + hash`), o `null` si podría salir de él.
+ * Validates a return target (`?returnTo=`) and reduces it to a path on OUR origin
+ * (`pathname + search + hash`), or `null` if it could leave it.
  *
- * Comprobar solo `startsWith("/") && !startsWith("//")` no basta: `/\evil.com` o `/\t/evil.com`
- * pasan ese filtro y el navegador los normaliza a `//evil.com` (open redirect). Por eso se
- * rechazan la barra invertida y los caracteres de control, y la ruta se resuelve con `URL`
- * contra el origen exigiendo que no cambie.
+ * Checking only `startsWith("/") && !startsWith("//")` is not enough: `/\evil.com` or
+ * `/\t/evil.com` pass that filter and the browser normalizes them to `//evil.com` (open
+ * redirect). That is why backslashes and control characters are rejected, and the path is
+ * resolved with `URL` against the origin, requiring that the origin does not change.
  */
 export function safeReturnTo(raw: string, origin: string): string | null {
   if (!raw.startsWith("/") || raw.startsWith("//") || hasUnsafeChar(raw)) return null;

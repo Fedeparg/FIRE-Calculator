@@ -1,24 +1,24 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  // Un export usado solo dentro de su propio fichero no es muerto (p. ej. un tipo
-  // exportado por claridad), así que no se reporta.
+  // An export used only inside its own file is not dead (e.g. a type exported for
+  // clarity), so it is not reported.
   "ignoreExportsUsedInFile": true,
   "workspaces": {
-    // Frontend Next.js: las entradas (páginas, layouts, route handlers, proxy,
-    // next.config) las detecta el plugin de Next.
+    // Next.js frontend: the entries (pages, layouts, route handlers, proxy,
+    // next.config) are detected by the Next plugin.
     ".": {
-      // Incluye el CSS para que knip vea los `@import`/`@plugin` de Tailwind.
+      // Includes the CSS so knip sees Tailwind's `@import`/`@plugin`.
       "project": ["src/**/*.{ts,tsx,css}"]
     },
     "apps/api": {
-      // `migrate.ts` no se importa: el servicio `migrate` de Compose lo ejecuta
-      // como `node dist/db/migrate.js`.
+      // `migrate.ts` is not imported: the Compose `migrate` service runs it
+      // as `node dist/db/migrate.js`.
       "entry": ["src/main.ts", "src/db/migrate.ts"],
       "project": ["src/**/*.ts", "test/**/*.ts"]
     },
-    // `@sextante/core` expone cada fichero de `src` vía `exports: ./*`; knip lo
-    // trata como entrada, y `includeEntryExports` hace que se reporten sus exports
-    // si nadie (otro paquete o su propio fichero) los usa.
+    // `@sextante/core` exposes every file in `src` via `exports: ./*`; knip
+    // treats it as an entry, and `includeEntryExports` reports its exports
+    // when nobody (another package or its own file) uses them.
     "packages/core": {
       "project": ["src/**/*.ts"],
       "includeEntryExports": true

@@ -19,7 +19,7 @@ afterEach(async () => {
 const write = (name: string, body: string) => fs.writeFile(path.join(dir, name), body);
 
 describe("listLocalizedSlugs", () => {
-  it("filtra por idioma, ordena y ignora ficheros ajenos y subdirectorios", async () => {
+  it("filters by locale, sorts, and ignores unrelated files and subdirectories", async () => {
     await write("b.es.md", "");
     await write("a.es.md", "");
     await write("a.en.md", "");
@@ -31,24 +31,24 @@ describe("listLocalizedSlugs", () => {
     expect(await listLocalizedSlugs(dir, "en")).toEqual(["a"]);
   });
 
-  it("devuelve [] si el directorio no existe o el idioma no tiene ficheros", async () => {
+  it("returns [] if the directory does not exist or the locale has no files", async () => {
     expect(await listLocalizedSlugs(path.join(dir, "nope"), "es")).toEqual([]);
     expect(await listLocalizedSlugs(dir, "es")).toEqual([]);
   });
 
-  it("ignora los slugs no seguros (puntos, mayúsculas) y acepta un patrón de slug propio", async () => {
+  it("ignores unsafe slugs (dots, uppercase) and accepts a custom slug pattern", async () => {
     await write("a.b.es.md", "");
     await write("Mayus.es.md", "");
     await write("2026-09-01.es.md", "");
     await write("draft.es.md", "");
-    // Por defecto solo slugs seguros (los mismos que acepta `readLocalizedMarkdown`).
+    // Only safe slugs by default (the same ones `readLocalizedMarkdown` accepts).
     expect(await listLocalizedSlugs(dir, "es")).toEqual(["2026-09-01", "draft"]);
     expect(await listLocalizedSlugs(dir, "es", "\\d{4}-\\d{2}-\\d{2}")).toEqual(["2026-09-01"]);
   });
 });
 
 describe("listLocalizedFiles", () => {
-  it("devuelve todos los idiomas con su nombre de fichero", async () => {
+  it("returns every locale with its file name", async () => {
     await write("a.es.md", "");
     await write("a.en.md", "");
     const files = await listLocalizedFiles(dir);
@@ -57,20 +57,20 @@ describe("listLocalizedFiles", () => {
 });
 
 describe("readLocalizedMarkdown", () => {
-  it("separa frontmatter y cuerpo", async () => {
+  it("splits frontmatter and body", async () => {
     await write("a.es.md", "---\ntitle: Hola\nlevel: basico\n---\n\nCuerpo\n");
     const file = await readLocalizedMarkdown(dir, "a", "es");
     expect(file?.data).toEqual({ title: "Hola", level: "basico" });
     expect(file?.content.trim()).toBe("Cuerpo");
   });
 
-  it("devuelve null si falta el idioma, sin caer a otro", async () => {
+  it("returns null if the locale is missing, without falling back to another", async () => {
     await write("a.es.md", "x");
     expect(await readLocalizedMarkdown(dir, "a", "en")).toBeNull();
     expect(await readLocalizedMarkdown(dir, "zzz", "es")).toBeNull();
   });
 
-  it("no sale del directorio ni lee idiomas desconocidos: slug o idioma no seguros dan null", async () => {
+  it("never leaves the directory or reads unknown locales: an unsafe slug or locale yields null", async () => {
     const inner = path.join(dir, "inner");
     await fs.mkdir(inner);
     await write("secreto.es.md", "fuera del directorio de contenido");
@@ -84,33 +84,33 @@ describe("readLocalizedMarkdown", () => {
     expect((await readLocalizedMarkdown(inner, "a", "es"))?.content).toBe("dentro");
   });
 
-  it("sin frontmatter da data vacío y el texto íntegro", async () => {
+  it("without frontmatter returns empty data and the full text", async () => {
     await write("a.es.md", "Solo texto\n");
     const file = await readLocalizedMarkdown(dir, "a", "es");
     expect(file?.data).toEqual({});
     expect(file?.content).toBe("Solo texto\n");
   });
 
-  it("deja pasar la fecha sin comillas como Date para que normalizeDate la procese", async () => {
+  it("passes an unquoted date through as a Date for normalizeDate to process", async () => {
     await write("a.es.md", "---\nupdated: 2026-09-03\n---\nx");
     const file = await readLocalizedMarkdown(dir, "a", "es");
     expect(normalizeDate(file?.data.updated)).toBe("2026-09-03");
   });
 
-  it("un frontmatter YAML roto lanza en vez de publicar metadatos inventados", async () => {
+  it("throws on broken YAML frontmatter instead of publishing made-up metadata", async () => {
     await write("a.es.md", "---\ntitle: [sin cerrar\n---\nx");
     await expect(readLocalizedMarkdown(dir, "a", "es")).rejects.toThrow();
   });
 });
 
 describe("normalizeDate", () => {
-  it("acepta Date y cadenas ISO (con o sin hora) y las reduce a YYYY-MM-DD", () => {
+  it("accepts Date and ISO strings (with or without time) and reduces them to YYYY-MM-DD", () => {
     expect(normalizeDate(new Date("2026-09-03T00:00:00Z"))).toBe("2026-09-03");
     expect(normalizeDate("2026-09-03")).toBe("2026-09-03");
     expect(normalizeDate("2026-09-03T10:30:00Z")).toBe("2026-09-03");
   });
 
-  it("descarta lo que no es una fecha válida", () => {
+  it("discards anything that is not a valid date", () => {
     expect(normalizeDate("no es una fecha")).toBeUndefined();
     expect(normalizeDate(new Date("x"))).toBeUndefined();
     expect(normalizeDate(20260903)).toBeUndefined();

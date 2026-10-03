@@ -12,11 +12,11 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "unsubscribe" });
-  // Página a la que solo se llega desde un email: nada que indexar.
+  // Only reachable from an email: nothing to index.
   return { title: t("title"), robots: { index: false, follow: false } };
 }
 
-/** Baja de los avisos por email, desde el enlace del correo (sin sesión). */
+/** Unsubscribe from email alerts, from the link in the email (no session). */
 export default async function UnsubscribePage({ params, searchParams }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
