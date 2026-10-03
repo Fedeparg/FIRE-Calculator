@@ -7,9 +7,6 @@ function row(ticker: string, sortable: Partial<SortableRow> = {}) {
   const full: SortableRow = {
     ticker,
     name: null,
-    broker: null,
-    quantity: 0,
-    avgPrice: 0,
     invested: 0,
     marketValue: 0,
     pnl: 0,
@@ -49,14 +46,14 @@ describe("sortPositions", () => {
 
   it("ordena cadenas con localeCompare tolerante a acentos y con nulos al final", () => {
     const rows = [
-      row("t1", { broker: "Ábaco" }),
-      row("t2", { broker: "banco" }),
-      row("t3", { broker: null }),
-      row("t4", { broker: "Zeta" }),
+      row("t1", { name: "Ábaco" }),
+      row("t2", { name: "banco" }),
+      row("t3", { name: null }),
+      row("t4", { name: "Zeta" }),
     ];
-    expect(order(sortPositions(rows, "broker", "asc"))).toEqual(["t1", "t2", "t4", "t3"]);
+    expect(order(sortPositions(rows, "name", "asc"))).toEqual(["t1", "t2", "t4", "t3"]);
     // desc invierte los presentes pero deja el nulo al final.
-    expect(order(sortPositions(rows, "broker", "desc"))).toEqual(["t4", "t2", "t1", "t3"]);
+    expect(order(sortPositions(rows, "name", "desc"))).toEqual(["t4", "t2", "t1", "t3"]);
   });
 
   it("ordena el P&L por el número mostrado (positivos y negativos)", () => {
@@ -70,10 +67,5 @@ describe("sortPositions", () => {
     expect(order(sortPositions(rows, "invested", "desc"))).toEqual(["AAA", "MMM", "ZZZ"]);
     // El desempate por ticker es ascendente aunque el sentido sea desc.
     expect(order(sortPositions(rows, "invested", "asc"))).toEqual(["AAA", "MMM", "ZZZ"]);
-  });
-
-  it("ordena por cantidad con números crudos (sin conversión de divisa)", () => {
-    const rows = [row("A", { quantity: 0.5 }), row("B", { quantity: 12 }), row("C", { quantity: 3 })];
-    expect(order(sortPositions(rows, "quantity", "desc"))).toEqual(["B", "C", "A"]);
   });
 });

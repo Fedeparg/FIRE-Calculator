@@ -4,7 +4,9 @@ import { useTranslations } from "next-intl";
 
 import type { MatchedLot } from "@sextante/core/fiscal/plusvalias";
 import { formatIsoDate } from "@/shared/format/format";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
+import DataTable, { type DataTableColumn } from "@/shared/ui/DataTable";
 
 type Props = {
   /** Lotes de compra que consume la venta, emparejados por FIFO. */
@@ -16,56 +18,55 @@ type Props = {
 /** Desglose FIFO de una venta: de qué lotes sale cada participación y cuánto se gana con cada uno. */
 export default function SaleMatchesTable({ matched, currency }: Props) {
   const t = useTranslations("portfolio.sale");
-  const { formatCurrency, formatQuantity } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatQuantity } = useFormat();
+  const amount = "tabular-nums text-foreground";
+
+  const columns: DataTableColumn<MatchedLot>[] = [
+    {
+      key: "date",
+      header: t("lotDate"),
+      rowHeader: true,
+      cellClassName: "text-muted",
+      cell: (match) => formatIsoDate(match.tradedAt),
+    },
+    {
+      key: "quantity",
+      header: t("lotQuantity"),
+      align: "right",
+      cellClassName: amount,
+      cell: (m) => formatQuantity(m.quantity),
+    },
+    {
+      key: "price",
+      header: t("lotPrice"),
+      align: "right",
+      cellClassName: amount,
+      cell: (m) => formatCurrency(m.price, currency),
+    },
+    {
+      key: "acquisition",
+      header: t("lotAcquisition"),
+      align: "right",
+      cellClassName: amount,
+      cell: (m) => formatCurrency(m.acquisitionValue, currency),
+    },
+    {
+      key: "gain",
+      header: t("lotGain"),
+      align: "right",
+      cellClassName: (m) => `tabular-nums ${signedTone(m.gain)}`,
+      cell: (m) => formatSignedCurrency(m.gain, currency),
+    },
+  ];
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <table className="w-full min-w-[34rem] text-left text-sm">
-        <caption className="px-3 pt-3 text-left text-xs text-muted">{t("fifoCaption")}</caption>
-        <thead>
-          <tr className="border-b border-border text-muted">
-            <th scope="col" className="px-3 py-2 font-medium">
-              {t("lotDate")}
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
-              {t("lotQuantity")}
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
-              {t("lotPrice")}
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
-              {t("lotAcquisition")}
-            </th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">
-              {t("lotGain")}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {matched.map((match) => (
-            <tr key={match.lotId} className="border-b border-border last:border-0">
-              <th scope="row" className="px-3 py-2 font-normal text-muted">
-                {formatIsoDate(match.tradedAt)}
-              </th>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground">{formatQuantity(match.quantity)}</td>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                {formatCurrency(match.price, currency)}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums text-foreground">
-                {formatCurrency(match.acquisitionValue, currency)}
-              </td>
-              <td
-                className={`px-3 py-2 text-right tabular-nums ${
-                  match.gain > 0 ? "text-success" : match.gain < 0 ? "text-danger" : "text-foreground"
-                }`}
-              >
-                {match.gain > 0 ? "+" : ""}
-                {formatCurrency(match.gain, currency)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      caption={t("fifoCaption")}
+      captionVisible
+      columns={columns}
+      rows={matched}
+      rowKey={(match) => match.lotId}
+      minWidthClass="min-w-[34rem]"
+    />
   );
 }

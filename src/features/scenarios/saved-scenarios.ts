@@ -6,32 +6,23 @@
  */
 
 import type { SavedScenarioResponse } from "@sextante/core/contracts";
-import { ApiError, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
+import { apiJson, createApiErrorMapper } from "@/shared/api/client";
 import type { ApiQueryState } from "@/shared/api/use-api-query";
 
 /** Un escenario tal y como lo devuelve `GET /api/scenarios` (fechas como ISO string). */
 export type SavedScenario = SavedScenarioResponse;
 
 /**
- * Error mostrado al guardar/cargar escenarios. Coincide con las claves
- * `calculator.scenarios.error*` de i18n: las comunes más los dos 400 con significado propio.
+ * Clave i18n de un fallo de la API de escenarios (`calculator.scenarios.error*`): las comunes
+ * más los dos 400 de dominio de `saved-scenarios.service.ts`; el resto de 400 son "revisa el
+ * formulario".
  */
-export type ScenarioErrorKey = ApiErrorKey | "errorTooLarge" | "errorQuota";
+export const scenarioErrorKey = createApiErrorMapper({
+  codes: { INPUTS_TOO_LARGE: "errorTooLarge", SCENARIO_QUOTA_EXCEEDED: "errorQuota" },
+  invalidFallback: "errorInvalid",
+});
 
-/** Códigos de dominio del 400 de `saved-scenarios.service.ts`; el resto de 400 son "revisa el formulario". */
-const SCENARIO_ERROR_CODES: Record<string, ScenarioErrorKey> = {
-  INPUTS_TOO_LARGE: "errorTooLarge",
-  SCENARIO_QUOTA_EXCEEDED: "errorQuota",
-};
-
-/** Clave i18n de un fallo de la API de escenarios: primero el código propio, luego el mapeo común. */
-export function scenarioErrorKey(error: unknown): ScenarioErrorKey {
-  if (error instanceof ApiError && error.code !== undefined) {
-    const own = SCENARIO_ERROR_CODES[error.code];
-    if (own) return own;
-  }
-  return apiErrorKey(error);
-}
+export type ScenarioErrorKey = ReturnType<typeof scenarioErrorKey>;
 
 export function scenariosListPath(slug: string): string {
   return `/api/scenarios?slug=${encodeURIComponent(slug)}`;

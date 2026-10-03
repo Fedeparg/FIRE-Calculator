@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { computeDoubleTaxationDeduction, TREATY_DIVIDEND_RATES } from "./double-taxation.js";
+import { itemAt } from "../arrays.js";
 
 describe("computeDoubleTaxationDeduction", () => {
   it("sin rentas: todo a 0", () => {
@@ -19,6 +20,28 @@ describe("computeDoubleTaxationDeduction", () => {
     const r = computeDoubleTaxationDeduction([{ country: "CH", gross: 1000, withholdingOrigin: 350 }], 21);
     expect(r.countries[0]).toMatchObject({ creditable: 150, excessReclaimable: 200 });
     expect(r.warnings).toEqual([{ code: "excess_withholding", country: "CH", amount: 200 }]);
+    expect(r.deduction).toBe(150);
+  });
+
+  it("el tope del convenio va por cobro: el exceso de uno no se compensa con el hueco de otro", () => {
+    // Fija el comportamiento actual (pregunta abierta para el asesor, hallazgo CO2 de la auditoría):
+    // dos cobros de EE. UU. (convenio 15 %), uno retenido al 30 % y otro sin retención. Agregados,
+    // 300 € cabrían en el 15 % de 2.000 €; por cobro, solo se acreditan 150 € y 150 € se reclaman en
+    // origen. El límite del art. 80 se aplica después sobre TODO el íntegro extranjero.
+    const r = computeDoubleTaxationDeduction(
+      [
+        { country: "US", gross: 1000, withholdingOrigin: 300 },
+        { country: "US", gross: 1000, withholdingOrigin: 0 },
+      ],
+      19,
+    );
+    expect(r.countries[0]).toMatchObject({
+      gross: 2000,
+      withholdingOrigin: 300,
+      creditable: 150,
+      excessReclaimable: 150,
+    });
+    expect(r.limit).toBe(380);
     expect(r.deduction).toBe(150);
   });
 
@@ -61,7 +84,7 @@ describe("computeDoubleTaxationDeduction", () => {
     );
     expect(r.countries).toHaveLength(1);
     expect(r.countries[0]).toMatchObject({ gross: 300, unknownGross: 200, creditable: 15 });
-    expect(r.countries[0].excessReclaimable).toBeCloseTo(11.375, 9);
+    expect(itemAt(r.countries, 0).excessReclaimable).toBeCloseTo(11.375, 9);
   });
 
   it("la tabla del convenio contiene los países de la DGT confirmados", () => {
@@ -89,6 +112,6 @@ describe("computeDoubleTaxationDeduction", () => {
 
   it("Japón usa el 5 % del convenio vigente desde 2021, no el 15 % de la tabla de 2018", () => {
     const r = computeDoubleTaxationDeduction([{ country: "JP", gross: 100, withholdingOrigin: 15.315 }], 19);
-    expect(r.countries[0].creditable).toBeCloseTo(5, 10);
+    expect(itemAt(r.countries, 0).creditable).toBeCloseTo(5, 10);
   });
 });

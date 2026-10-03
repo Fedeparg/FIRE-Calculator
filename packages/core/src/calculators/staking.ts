@@ -1,6 +1,7 @@
 // Staking cripto: capitaliza al APY sobre el motor de proyección y aplica retención sobre las recompensas. Core puro.
 
 import { project, type ProjectionResult } from "../projection.js";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
 
 export interface StakingInput {
   principal: number;
@@ -26,7 +27,7 @@ export function computeStaking(input: StakingInput): StakingResult {
     years: input.years,
   });
 
-  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
+  const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? SPAIN_SAVINGS_WITHHOLDING_PCT)) / 100;
   const rewards = projection.totalInterest;
   const withheld = Math.max(0, rewards) * withholding;
   const netRewards = rewards - withheld;

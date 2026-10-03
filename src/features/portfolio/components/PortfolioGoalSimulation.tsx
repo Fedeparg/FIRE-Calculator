@@ -11,6 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
+import { roundCents } from "@sextante/core/money";
 
 type Props = {
   /** Importes ya expresados en la divisa que se está viendo (los mismos que usa el objetivo). */
@@ -91,7 +92,7 @@ export default function PortfolioGoalSimulation({
     const params = new URLSearchParams({
       annualExpenses: encodeFieldValue(annualExpenses),
       currentSavings: encodeFieldValue(Math.round(currentValue)),
-      savings: encodeFieldValue(Math.round(monthlyContribution(contribution, frequency) * 100) / 100),
+      savings: encodeFieldValue(roundCents(monthlyContribution(contribution, frequency))),
       annualReturn: encodeFieldValue(annualReturn),
       volatility: encodeFieldValue(volatility),
       withdrawalRate: encodeFieldValue(withdrawalRate),

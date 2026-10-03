@@ -9,6 +9,7 @@
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import type { Locale } from "@/i18n/types";
 import type { RealisedGainsYear } from "@sextante/core/fiscal/realised-gains";
+import { roundCents } from "@sextante/core/money";
 
 /** Columnas del fichero, en orden. Es también el orden de `RealisedGainsCsvHeaders`. */
 export const REALISED_GAINS_CSV_COLUMNS = [
@@ -32,11 +33,20 @@ export const REALISED_GAINS_CSV_COLUMNS = [
   "computableGainEur",
 ] as const;
 
-/** Cabeceras YA traducidas por quien llama. */
-export type RealisedGainsCsvHeaders = Readonly<Record<(typeof REALISED_GAINS_CSV_COLUMNS)[number], string>>;
+type RealisedGainsCsvColumn = (typeof REALISED_GAINS_CSV_COLUMNS)[number];
 
-/** Importes calculados (prorrateos, restas): a céntimos, sin el ruido binario de la coma flotante. */
-const cents = (value: number) => Math.round(value * 100) / 100;
+/** Cabeceras YA traducidas. */
+export type RealisedGainsCsvHeaders = Readonly<Record<RealisedGainsCsvColumn, string>>;
+
+/**
+ * Cabeceras traducidas con el `t` del namespace `portfolio.realisedGains`: cada columna es la
+ * clave `csv.<columna>`. Viven junto al CSV para que una columna nueva no se olvide en la UI.
+ */
+export function realisedGainsCsvHeaders(t: (key: `csv.${RealisedGainsCsvColumn}`) => string): RealisedGainsCsvHeaders {
+  const headers = {} as Record<RealisedGainsCsvColumn, string>;
+  for (const column of REALISED_GAINS_CSV_COLUMNS) headers[column] = t(`csv.${column}`);
+  return headers;
+}
 
 export function buildRealisedGainsCsv(
   year: RealisedGainsYear,
@@ -52,17 +62,17 @@ export function buildRealisedGainsCsv(
     sale.quantity,
     sale.price,
     sale.sellFees,
-    cents(sale.transferValue),
-    cents(sale.acquisitionValue),
-    cents(sale.gain),
+    roundCents(sale.transferValue),
+    roundCents(sale.acquisitionValue),
+    roundCents(sale.gain),
     sale.eur?.sellRate.unitsPerEur ?? null,
-    sale.eur ? cents(sale.eur.transferValue) : null,
-    sale.eur ? cents(sale.eur.acquisitionValue) : null,
-    sale.eur ? cents(sale.eur.gain) : null,
-    sale.eur?.fxDifference != null ? cents(sale.eur.fxDifference) : null,
-    sale.eur ? cents(sale.eur.deferredLoss) : null,
-    sale.eur ? cents(sale.eur.integratedLoss) : null,
-    sale.eur ? cents(sale.eur.computableGain) : null,
+    sale.eur ? roundCents(sale.eur.transferValue) : null,
+    sale.eur ? roundCents(sale.eur.acquisitionValue) : null,
+    sale.eur ? roundCents(sale.eur.gain) : null,
+    sale.eur?.fxDifference != null ? roundCents(sale.eur.fxDifference) : null,
+    sale.eur ? roundCents(sale.eur.deferredLoss) : null,
+    sale.eur ? roundCents(sale.eur.integratedLoss) : null,
+    sale.eur ? roundCents(sale.eur.computableGain) : null,
   ]);
   return buildCsv(
     REALISED_GAINS_CSV_COLUMNS.map((column) => headers[column]),

@@ -4,7 +4,8 @@ import { INSTRUMENT_SEARCH } from './instrument-search.js';
 import { InstrumentsController } from './instruments.controller.js';
 import { PRICE_PROVIDER } from './price-provider.interface.js';
 import { PricesController } from './prices.controller.js';
-import { PricesService } from './prices.service.js';
+import { PriceHistoryService } from './price-history.service.js';
+import { PriceReadService } from './price-read.service.js';
 import { OpenFigiSymbolResolver } from './openfigi-symbol-resolver.js';
 import { SYMBOL_RESOLVER } from './symbol-resolver.js';
 import { YahooPriceProvider } from './yahoo-price.provider.js';
@@ -20,12 +21,13 @@ import { SessionModule } from '../auth/session.module.js';
   imports: [SessionModule],
   controllers: [PricesController, InstrumentsController],
   providers: [
-    PricesService,
+    PriceReadService,
+    PriceHistoryService,
     { provide: PRICE_PROVIDER, useClass: YahooPriceProvider },
     { provide: SYMBOL_RESOLVER, useClass: OpenFigiSymbolResolver },
     { provide: INSTRUMENT_SEARCH, useClass: YahooInstrumentSearchProvider },
   ],
-  // Reutilizados por la valoración de cartera y las tools MCP (`search_instruments` usa el mismo buscador que el alta).
-  exports: [PricesService, INSTRUMENT_SEARCH],
+  // Lecturas para la valoración y los snapshots; el histórico para altas, importación y cron. Reutilizados por las tools MCP (`search_instruments` usa el mismo buscador que el alta).
+  exports: [PriceReadService, PriceHistoryService, INSTRUMENT_SEARCH],
 })
 export class PricesModule {}

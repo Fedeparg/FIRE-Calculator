@@ -71,6 +71,23 @@ export interface IncomePayload {
   reportedToAeat?: boolean;
 }
 
+/** Micro-unidades por unidad: los importes se guardan como `numeric(18,6)`, seis decimales. */
+const MICRO_UNITS = 1_000_000;
+
+/**
+ * ¿Caben las retenciones en el íntegro? Se compara en micro-unidades ENTERAS (la precisión con la
+ * que se guardan): en coma flotante, `0.1 + 0.2 <= 0.3` es `false` y se rechazaría un cobro válido.
+ * Una retención ausente cuenta como 0. Lo usan la validación de la API y el formulario.
+ */
+export function withholdingsFitGross(
+  gross: number,
+  withholdingOrigin: number | null | undefined,
+  withholdingSpain: number | null | undefined,
+): boolean {
+  const micro = (value: number) => Math.round(value * MICRO_UNITS);
+  return micro(withholdingOrigin ?? 0) + micro(withholdingSpain ?? 0) <= micro(gross);
+}
+
 /** Agrupación de la declaración: intereses (incluye recompensas) o dividendos. */
 export type IncomeCategory = "interest" | "dividend";
 
@@ -164,7 +181,9 @@ export function buildIncomeReport(events: readonly IncomeEvent[], rates: Referen
   for (const event of events) {
     const year = Number(event.paidAt.slice(0, 4));
     if (!Number.isInteger(year)) continue;
-    byYear.set(year, [...(byYear.get(year) ?? []), event]);
+    const existing = byYear.get(year);
+    if (existing) existing.push(event);
+    else byYear.set(year, [event]);
   }
   const years = [...byYear.entries()].sort(([a], [b]) => b - a).map(([year, list]) => buildYear(year, list, rates));
   return { years };

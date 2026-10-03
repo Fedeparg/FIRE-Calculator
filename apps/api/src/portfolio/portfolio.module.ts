@@ -5,6 +5,7 @@ import { PricesModule } from '../prices/prices.module.js';
 import { PortfolioController } from './portfolio.controller.js';
 import { PortfolioSnapshotsService } from './portfolio-snapshots.service.js';
 import { PortfolioValuationService } from './portfolio-valuation.service.js';
+import { SnapshotRepository } from './snapshot.repository.js';
 import { SessionModule } from '../auth/session.module.js';
 
 /**
@@ -15,7 +16,7 @@ import { SessionModule } from '../auth/session.module.js';
 @Module({
   imports: [PositionsModule, PricesModule, SessionModule],
   controllers: [PortfolioController],
-  providers: [PortfolioValuationService, PortfolioSnapshotsService],
+  providers: [PortfolioValuationService, PortfolioSnapshotsService, SnapshotRepository],
   // Los snapshots se exportan al job diario y a las tools MCP de histórico.
   exports: [PortfolioValuationService, PortfolioSnapshotsService],
 })

@@ -19,6 +19,12 @@ const makeRow = (price: number, shares: number, commission: number): Row => ({
   commission,
 });
 
+/**
+ * Calculadora bespoke A PROPÓSITO: sus entradas son una lista de compras de longitud variable
+ * (añadir y quitar filas), que no encaja en el modelo de campos fijos con clave de URL de
+ * `CalculatorState` (ni en `CalculatorLayout`). Por eso no se comparte por enlace ni guarda
+ * escenarios. Si algún día hiciera falta, el estado de las filas tendría que serializarse entero.
+ */
 export default function AveragePriceCalculator() {
   const t = useTranslations("calc.promediar-acciones");
   const { formatEUR, formatEURCents, formatNumber, formatPercent } = useFormat();
@@ -76,7 +82,7 @@ export default function AveragePriceCalculator() {
                 disabled={rows.length <= 1}
                 className="grid h-10 w-10 place-items-center rounded-lg border border-border text-muted transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
               >
-                ✕
+                <span aria-hidden="true">✕</span>
               </button>
             </li>
           ))}

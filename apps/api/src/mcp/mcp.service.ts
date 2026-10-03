@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 import { IncomeService } from '../income/income.service.js';
-import { ReferenceRatesService } from '../fx-reference/reference-rates.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import { PortfolioValuationService } from '../portfolio/portfolio-valuation.service.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
@@ -35,7 +34,6 @@ export class McpService {
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly scenarios: SavedScenariosService,
     @Inject(INSTRUMENT_SEARCH) private readonly instruments: InstrumentSearchProvider,
-    private readonly referenceRates: ReferenceRatesService,
     private readonly income: IncomeService,
     private readonly taxReturn: TaxReturnService,
     private readonly audit: McpAuditService,
@@ -79,7 +77,6 @@ export class McpService {
       snapshots: this.snapshots,
       scenarios: this.scenarios,
       instruments: this.instruments,
-      referenceRates: this.referenceRates,
       income: this.income,
       taxReturn: this.taxReturn,
     };

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { itemAt } from '@sextante/core/arrays';
 
 import {
   epochToUtcDate,
@@ -128,7 +129,7 @@ describe('parseYahooChartHistory', () => {
     const quotes = parseYahooChartHistory('X', series([DAY_1, DAY_2, DAY_3], ['95.1', Number.NaN, 96.5]));
 
     expect(quotes).toHaveLength(1);
-    expect(quotes[0].close).toBe(96.5);
+    expect(itemAt(quotes, 0).close).toBe(96.5);
   });
 
   it('se queda con la última barra si dos caen el mismo día UTC', () => {
@@ -186,6 +187,86 @@ describe('YahooPriceProvider.getHistory', () => {
     expect(url).toContain('events=div%7Csplit');
     expect(history.quotes).toEqual([{ symbol: 'IWDA.AS', close: 95.4, currency: 'EUR', date: '2026-03-15' }]);
     expect(history.splits).toEqual([]);
+  });
+});
+
+describe('YahooPriceProvider.getQuotes — Yahoo caído', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** Proveedor sin pausas ni esperas entre reintentos (2 intentos por símbolo). */
+  function fastProvider(): YahooPriceProvider {
+    const provider = new YahooPriceProvider();
+    provider.requestDelayMs = 0;
+    provider.retry = { ...provider.retry, max: 2, baseMs: 0 };
+    return provider;
+  }
+  const symbols = Array.from({ length: 12 }, (_, i) => `S${i}`);
+  const symbolOf = (url: string): string => itemAt(itemAt(url.split('/chart/'), 1).split('?'), 0);
+
+  it('corta el lote tras 5 símbolos seguidos con la fuente caída (red o 5xx)', async () => {
+    const fetchMock = vi.fn((url: string) =>
+      symbolOf(url) === 'S0'
+        ? Promise.reject(new TypeError('fetch failed'))
+        : Promise.resolve(new Response('', { status: 503 })),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const quotes = await fastProvider().getQuotes(symbols);
+
+    expect(quotes.size).toBe(0);
+    const asked = new Set(fetchMock.mock.calls.map(([url]) => symbolOf(url)));
+    expect([...asked]).toEqual(['S0', 'S1', 'S2', 'S3', 'S4']);
+  });
+
+  it('un símbolo malo (404) no cuenta como caída y reinicia la cuenta', async () => {
+    const fetchMock = vi.fn((url: string) => {
+      const symbol = symbolOf(url);
+      if (symbol === 'S3') return Promise.resolve(new Response('', { status: 404 }));
+      if (symbol === 'S9') return Promise.resolve(Response.json(chart({ ...VALID_META, symbol: 'S9' })));
+      return Promise.resolve(new Response('', { status: 500 }));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const quotes = await fastProvider().getQuotes(symbols);
+
+    // S0–S2 caídos, S3 malo (reinicia), S4–S8 caídos: corta tras S8 y nunca llega a S9.
+    const asked = new Set(fetchMock.mock.calls.map(([url]) => symbolOf(url)));
+    expect(asked.has('S8')).toBe(true);
+    expect(asked.has('S9')).toBe(false);
+    expect(quotes.size).toBe(0);
+  });
+
+  it('con un proveedor que se cuelga, el presupuesto del lote corta la espera', async () => {
+    const fetchMock = vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => reject(init.signal?.reason as Error));
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = fastProvider();
+    provider.batchBudgetMs = 50;
+
+    const started = Date.now();
+    const quotes = await provider.getQuotes(symbols);
+
+    expect(quotes.size).toBe(0);
+    // Sin presupuesto esperaría 12 s por intento (timeout de cada petición) y símbolo.
+    expect(Date.now() - started).toBeLessThan(2_000);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('con la fuente sana devuelve las cotizaciones', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) => Promise.resolve(Response.json(chart({ ...VALID_META, symbol: symbolOf(url) })))),
+    );
+
+    const quotes = await fastProvider().getQuotes(['A', 'B']);
+
+    expect([...quotes.keys()]).toEqual(['A', 'B']);
   });
 });
 

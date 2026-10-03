@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeDeposit } from "@sextante/core/calculators/deposito";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
@@ -36,7 +37,7 @@ export default function DepositLikeCalculator({ namespace, principalKey, default
   const [principal, setPrincipal] = useNumberField(principalKey, defaultPrincipal);
   const [apr, setApr] = useNumberField("apr", defaultApr);
   const [years, setYears] = useNumberField("years", 1);
-  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
   const [inflationRate, setInflationRate] = useNumberField("inflationRate", 2.5);
 
   const result = useMemo(

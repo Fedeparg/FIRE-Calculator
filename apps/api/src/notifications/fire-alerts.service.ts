@@ -11,6 +11,7 @@ import { fireTargetFromInputs, newMilestone, reachedMilestone } from './fire-mil
 import { NotificationSettingsService } from './notification-settings.service.js';
 import { createUnsubscribeToken } from './unsubscribe-token.js';
 import { todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 
 /** Resultado de una pasada, para el log del trabajo nocturno. */
 export interface FireAlertsSummary {
@@ -20,8 +21,6 @@ export interface FireAlertsSummary {
 }
 
 type Outcome = 'sent' | 'skipped';
-
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que los snapshots. */
 
 /**
  * Evalúa los hitos del objetivo FIRE de cada usuario con alertas activas, justo después de la
@@ -80,7 +79,7 @@ export class FireAlertsService {
         if ((await this.evaluateUser(subscriber, date)) === 'sent') summary.sent++;
       } catch (error) {
         summary.failed++;
-        this.logger.error(`Alerta FIRE de ${subscriber.userId} falló: ${(error as Error).message}`);
+        this.logger.error(`Alerta FIRE de ${subscriber.userId} falló: ${errorMessage(error)}`);
       }
     }
     return summary;

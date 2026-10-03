@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
@@ -54,7 +55,7 @@ describe('SavedScenariosService (integración con Postgres)', () => {
     const filtered = await service.findAllByUser(userId, 'interes-compuesto');
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].name).toBe('Otro');
+    expect(itemAt(filtered, 0).name).toBe('Otro');
   });
 
   it('actualiza nombre e inputs sin tocar el slug', async () => {
@@ -109,6 +110,26 @@ describe('SavedScenariosService (integración con Postgres)', () => {
       });
     });
 
+    it('altas simultáneas con un hueco libre: solo entra una (la cuota no se supera)', async () => {
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const parallel = new SavedScenariosService(concurrent.db);
+        const userId = await insertUser(db, 'a@example.com');
+        for (let i = 0; i < MAX_SCENARIOS_PER_USER - 1; i++) {
+          await service.create(userId, dto({ name: `Plan ${i}` }));
+        }
+
+        const results = await Promise.allSettled(
+          [1, 2, 3].map((i) => parallel.create(userId, dto({ name: `Simultáneo ${i}` }))),
+        );
+
+        expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+        expect(await service.findAllByUser(userId)).toHaveLength(MAX_SCENARIOS_PER_USER);
+      } finally {
+        await concurrent.close();
+      }
+    });
+
     it('la cuota es POR usuario: la de uno no bloquea al otro', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
@@ -140,7 +161,7 @@ describe('SavedScenariosService (integración con Postgres)', () => {
       await expect(service.remove(userB, created.id)).rejects.toBeInstanceOf(NotFoundException);
 
       // El escenario sigue intacto para su dueño.
-      expect((await service.findAllByUser(userA))[0].name).toBe('Mi plan');
+      expect(firstItem(await service.findAllByUser(userA)).name).toBe('Mi plan');
     });
 
     it('un escenario inexistente da 404', async () => {

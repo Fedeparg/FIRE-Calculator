@@ -1,12 +1,13 @@
 import { getLocale, getTranslations } from "next-intl/server";
 
+import type { CalculatorSlug } from "@/features/calculators/registry";
 import { Link } from "@/i18n/navigation";
 import { getExplainer, getArticle } from "../content";
 import { getRelatedArticleSlugs } from "../related-articles";
 
 type Props = {
-  /** Slug de la calculadora (ver `src/features/calculators/registry.ts`). */
-  calcSlug: string;
+  /** Slug de la calculadora del catálogo. */
+  calcSlug: CalculatorSlug;
 };
 
 type Chip = { slug: string; title: string };
@@ -62,7 +63,7 @@ export default async function CalculatorExplainer({ calcSlug }: Props) {
 }
 
 /** Resuelve los slugs relacionados a chips con el título del artículo. */
-async function resolveChips(calcSlug: string, locale: string): Promise<Chip[]> {
+async function resolveChips(calcSlug: CalculatorSlug, locale: string): Promise<Chip[]> {
   const slugs = getRelatedArticleSlugs(calcSlug);
   const resolved = await Promise.all(
     slugs.map(async (slug) => {

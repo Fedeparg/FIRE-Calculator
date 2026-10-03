@@ -9,6 +9,14 @@ asesoramiento fiscal.
 Escalas oficiales, constantes del rendimiento del trabajo y motor de tramos
 progresivos. Es la única fuente de verdad de los tipos impositivos.
 
+- **Revisión anual**: `FISCAL_REVIEW_BY` marca cuándo revisar las cifras de
+  `FISCAL_YEAR` (escalas, mínimos, Seguridad Social, `withholding-rates.ts`). Desde
+  esa fecha falla un test de `brackets.test.ts`: es un recordatorio, no una caducidad.
+- **Patrimonio, Donaciones y planes de pensiones**: el mínimo exento y la exención de
+  la vivienda (Ley 19/1991), los umbrales y coeficientes por parentesco del ISD (Ley
+  29/1987, art. 22.2) y el tope del 30 % de los planes (art. 52 LIRPF) también viven
+  aquí; las calculadoras solo los importan.
+
 - **Escala estatal general** (art. 63.1.1º LIRPF): se aplica tal cual. La ley ya
   la da dividida por dos (tipos 9,50 a 24,50); multiplicarla por 0,5 la dividiría
   dos veces. Fuente: AEAT, Manual práctico de Renta 2025, "Gravamen estatal".
@@ -18,7 +26,7 @@ progresivos. Es la única fuente de verdad de los tipos impositivos.
   vez del 47 % real). Desde 2011 no hay supletoriedad real: rige solo para Ceuta y
   Melilla (DA 32ª LIRPF) y residentes en el extranjero, y es la que se usa si no
   se indica comunidad.
-- **Escala general** `IRPF_GENERAL` = estatal + supletoria tramo a tramo (el 47 %
+- **Escala general** `IRPF_GENERAL_SCALE` = estatal + supletoria tramo a tramo (el 47 %
   final sale de 24,50 + 22,50).
 - **Ahorro, Patrimonio (Ley 19/1991, art. 30) y Sucesiones (Ley 29/1987, art. 21)**:
   escalas estatales; las CCAA pueden aprobar la suya.
@@ -41,7 +49,7 @@ Rendimiento del trabajo para las calculadoras de salario bruto→neto, retenció
 planes de pensiones e IRPF de autónomos. Aproxima el cálculo de la AEAT por el
 método de doble escala: cuota(base) − cuota(mínimo personal y familiar).
 
-- **Sin comunidad**: escala conjunta `IRPF_GENERAL` y mínimo estatal (comportamiento
+- **Sin comunidad**: escala conjunta `IRPF_GENERAL_SCALE` y mínimo estatal (comportamiento
   de Ceuta y Melilla).
 - **Con comunidad**: cuota estatal (escala y mínimo estatales) + cuota autonómica
   (escala de la comunidad y su mínimo propio si lo tiene), cada una acotada a cero
@@ -102,7 +110,7 @@ régimen común.
 ## `plusvalias.ts`
 
 Ganancias y pérdidas patrimoniales por transmisión de valores homogéneos:
-emparejamiento FIFO de lotes y estimación de la cuota en la escala del ahorro.
+emparejamiento FIFO de lotes (la cuota va aparte, en `savings-tax.ts`).
 Lo consumen la simulación "¿qué pasaría si vendo?" y el informe de ganancias
 realizadas (`realised-gains.ts`), con las mismas reglas.
 
@@ -113,17 +121,19 @@ realizadas (`realised-gains.ts`), con las mismas reglas.
 - Valor de adquisición = importe + gastos y comisiones de compra (art. 35.1); las
   comisiones del lote se prorratean entre las participaciones vivas.
 - Valor de transmisión = importe recibido − gastos y comisiones de venta (art. 35.2).
-- Escala del ahorro (`IRPF_AHORRO`) aplicada por tramos.
 - **Ampliaciones liberadas** (art. 37.1.a LIRPF): el coste total de las acciones antiguas se
   reparte entre antiguas y nuevas, y las nuevas heredan la antigüedad de las antiguas. Una
   compra a **precio 0 y sin comisiones** se interpreta como acciones totalmente liberadas (así las
   importa Trade Republic, `BONUS_ISSUE`) y `walkLots` la reparte proporcionalmente entre los lotes
-  vivos en ese momento: cada lote gana títulos, conserva su coste total y su fecha (y su orden
+  vivos en ese momento (solo si el precio es un 0 de verdad: un precio no numérico, que se sanea
+  a 0, queda como compra propia): cada lote gana títulos, conserva su coste total y su fecha (y su orden
   FIFO). Con ello la ganancia cuadra con el ejemplo del Manual práctico de Renta 2025 (Parte 1,
   págs. 885-887: 900 acciones de 2001 + 600 liberadas + 500 parcialmente liberadas de 2011; venta
   de 1.600 a 10 € → 6.000 + 500 = 6.500 €). Supuestos: las **parcialmente liberadas** (se paga algo)
   no se distinguen de una compra normal y siguen como compra; sin lotes vivos la compra a precio 0
-  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Fuente: Ley 35/2006,
+  es una compra normal. Afecta también a `simulateSale` y `buildOpenLots`. Pendiente de la revisión
+  del asesor fiscal: una compra manual a 0 (regalo, error de tecleo) también se reparte; la solución
+  completa es un flag explícito de ampliación que escriba el importador. Fuente: Ley 35/2006,
   art. 37.1.a, https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 **No modela** (resultado solo orientativo)
@@ -296,13 +306,23 @@ Reparte un dividendo importado en íntegro, retención en origen y retención es
 dividendos de valores sin dato de mercado en la divisa de pago (quedan como estimación o sin
 saber, con aviso).
 
+## `countries.ts`
+
+Registro único, por país (ISO 3166-1 alfa-2) y **en %**, de los tipos sobre dividendos: el del
+convenio (`treatyPct`), la retención que aplica de hecho el país (`statutory`, con su fuente) y la
+que aplica el bróker (`brokerAppliedPct`). `TREATY_DIVIDEND_RATES` (en %),
+`STATUTORY_DIVIDEND_WITHHOLDING` y la tabla del bróker de `dividend-resolution.ts` (en tanto por
+uno) son vistas de este registro, cada una con su unidad en el borde. También fija
+`SPAIN_SAVINGS_WITHHOLDING_PCT` (19 %, art. 90 RIRPF), que usan la resolución de dividendos y el
+valor por defecto de las calculadoras.
+
 ## `withholding-rates.ts`
 
 Retención que aplica de hecho cada país a los dividendos de una persona física residente en
 España. Solo sirve para **estimar** la retención en origen cuando faltan el dato del bróker y el de
 mercado; lo que sale de aquí se marca como estimación y la pantalla lo avisa.
 
-- Fuentes por país en el propio fichero: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
+- Fuentes por país en `countries.ts`: IRS, AEAT, Vero, avisos de emisoras y, sobre todo, PwC
   Worldwide Tax Summaries (fuente secundaria: confianza media). Las autoridades fiscales de
   Alemania, Suiza, Países Bajos, Italia, Noruega, Canadá y Japón no se pudieron consultar.
 - Fuera: Irlanda (25 % o 0 % con declaración de no residente) y Australia (30 % o 0 % según el
@@ -330,8 +350,7 @@ tabla verificada se muestra sin números de casilla, nunca con los de otro año.
 
 ## `savings-base.ts`
 
-Integración y compensación de la base imponible del ahorro y cuota por la escala del
-ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
+Integración y compensación de la base imponible del ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
 
 - **Qué modela** (arts. 46, 48 y 49 LIRPF): dos grupos, ganancias y pérdidas
   patrimoniales por transmisión (art. 49.1.b) y rendimientos del capital mobiliario
@@ -348,14 +367,29 @@ ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
   positivo del ejercicio antes de compensar), compartido por el propio ejercicio y los arrastres
   («límite conjunto», según el manual). El orden entre pendientes del mismo grupo de años
   distintos no lo fija ninguna fuente: el más antiguo primero, para que caduque lo menos posible.
-- `savingsTax(base)` aplica `IRPF_AHORRO` y devuelve cuota íntegra y tipo medio
-  efectivo en % (`null` con base 0).
+- La cuota de la base resultante la calcula `savingsTax` (`savings-tax.ts`).
 - **No modela**: la reducción del art. 55 LIRPF (remanente que reduce la base del
   ahorro, art. 50.2), deducciones ni rentas exentas. Un test reproduce el caso práctico del
   capítulo 12 del Manual práctico de Renta 2025 (base del ahorro de 200 €).
 - **Fuentes**: Ley 35/2006, arts. 46, 48, 49 y 50.2 (art. 49 en la redacción de la
   Ley 26/2014, de 27 de noviembre),
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
+
+## `savings-tax.ts`
+
+La única implementación de la cuota de la escala del ahorro (`IRPF_SAVINGS_SCALE`, arts. 66 y 76 LIRPF).
+
+- `savingsTax(base)`: cuota íntegra y tipo medio efectivo en % (`null` con base 0). La usa la
+  base del ahorro del informe de la Renta (`savings-return.ts`).
+- `estimateSavingsTax(gain)`: la cuota de una ganancia aislada (una pérdida da 0), con el tipo
+  medio y el marginal; se apoya en `savingsTax`. La usan el simulador de venta y el resumen de
+  `realised-gains.ts`.
+
+## `report-inputs.ts`
+
+Entradas del informe fiscal que comparten la web, la API (`TaxReturnService`) y el MCP, para que
+los tres canales lo monten igual: `toRealisedGainsPositions` reparte las operaciones entre sus
+posiciones y `referenceRatesRequest` une los tipos del BCE que necesitan ventas y cobros.
 
 ## `double-taxation.ts`
 
@@ -377,7 +411,7 @@ extranjero. Puro: los avisos son códigos (`origin_unknown`, `no_treaty_rate`,
   acreditable es mín(retención, tipo del convenio × íntegro); la retención por encima
   del convenio se devuelve como `excessReclaimable` (se reclama en origen, no se
   deduce en España). El tipo medio se redondea a dos decimales (art. 80.2).
-- **Tabla `TREATY_DIVIDEND_RATES`**: tipo «General» de dividendos de la tabla de la DGT
+- **Tabla `TREATY_DIVIDEND_RATES`** (vista de `countries.ts`): tipo «General» de dividendos de la tabla de la DGT
   (actualización 01/01/2018), solo países con un único tipo sin nota al pie. No incluye
   la cláusula matriz-filial ni cambios de convenio posteriores a 2018. Revisar al
   cambiar de ejercicio.

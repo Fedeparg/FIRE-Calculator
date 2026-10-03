@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
-import { PricesService, type PriceInfo } from '../prices/prices.service.js';
-import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/fx';
+import type { PositionResponse } from '../positions/position.mapper.js';
+import { PositionsService } from '../positions/positions.service.js';
+import { PriceReadService, type FxRates, type PriceInfo } from '../prices/price-read.service.js';
+import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/portfolio/aggregate';
 import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio/breakdown';
 
 const UNKNOWN_BROKER_LABEL = 'Sin bróker';
@@ -42,6 +43,15 @@ export interface PositionValuation {
   unpricedReason?: 'no_price' | 'currency_mismatch';
 }
 
+/**
+ * Precios (por ticker) y tasas FX ya leídos de la caché. La captura nocturna los lee UNA vez para
+ * todas las carteras en vez de una por usuario; un ticker sin precio simplemente no está.
+ */
+export interface MarketData {
+  prices: ReadonlyMap<string, PriceInfo>;
+  fx: FxRates;
+}
+
 /** Valoración completa de la cartera: agregado (con FX) + desglose por posición (nativo). */
 export interface PortfolioValuation {
   display: string;
@@ -53,18 +63,19 @@ export interface PortfolioValuation {
 
 /**
  * Valor de mercado y P&L de la cartera sobre `PositionsService` (scoping por usuario) y
- * `PricesService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
+ * `PriceReadService` (precios y FX cacheados), con el mismo `aggregatePortfolio` que la UI. Sirve
  * a las tools MCP de lectura (`_local/mcp-integracion.md`).
  */
 @Injectable()
 export class PortfolioValuationService {
   constructor(
     private readonly positions: PositionsService,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
   ) {}
 
-  async valuate(userId: string, display: string): Promise<PortfolioValuation> {
-    const { owned, priceMap, pricesRecord, fx } = await this.loadMarketData(userId);
+  /** `market`: precios y FX ya leídos (ver `MarketData`); sin él, se leen para este usuario. */
+  async valuate(userId: string, display: string, market?: MarketData): Promise<PortfolioValuation> {
+    const { owned, priceMap, pricesRecord, fx } = await this.loadUserMarketData(userId, market);
 
     const aggregate = aggregatePortfolio({
       positions: owned.map((p) => ({
@@ -93,7 +104,7 @@ export class PortfolioValuationService {
     display: string,
     groupBy: BreakdownGroupBy,
   ): Promise<BreakdownResult & { display: string; fxAsOf: string | null }> {
-    const { owned, pricesRecord, fx } = await this.loadMarketData(userId);
+    const { owned, pricesRecord, fx } = await this.loadUserMarketData(userId);
     const result = buildBreakdown({
       // Como la web: los derivados no tienen precio fiable y no entran en el reparto.
       positions: owned.filter((p) => !p.isDerivative),
@@ -106,11 +117,21 @@ export class PortfolioValuationService {
     return { ...result, display, fxAsOf: fx.asOf };
   }
 
-  private async loadMarketData(userId: string) {
-    const owned = await this.positions.findAllByUser(userId);
-    const tickers = [...new Set(owned.map((p) => p.ticker))];
-    const priceMap = await this.prices.getPrices(tickers);
+  /** Precios de los tickers indicados y tasas FX, leídos de la caché en dos consultas. */
+  async loadMarketData(tickers: readonly string[]): Promise<MarketData> {
+    const prices = await this.prices.getPrices([...new Set(tickers)]);
     const fx = await this.prices.getFxRates();
+    return { prices, fx };
+  }
+
+  private async loadUserMarketData(userId: string, market?: MarketData) {
+    const owned = await this.positions.findAllByUser(userId);
+    const { prices, fx } = market ?? (await this.loadMarketData(owned.map((p) => p.ticker)));
+    const priceMap = new Map<string, PriceInfo>();
+    for (const p of owned) {
+      const price = prices.get(p.ticker);
+      if (price) priceMap.set(p.ticker, price);
+    }
 
     const pricesRecord: Record<string, { close: number; currency: string }> = {};
     for (const [ticker, info] of priceMap) {

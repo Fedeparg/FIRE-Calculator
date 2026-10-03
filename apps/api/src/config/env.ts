@@ -3,6 +3,9 @@ import { z } from 'zod';
 /** Secreto de desarrollo (el del `.env.example` y el de `docker-compose.yml`): en producción está prohibido. */
 export const DEV_JWT_SECRET = 'dev_insecure_secret_change_me';
 
+/** Longitud mínima del `JWT_SECRET` en producción: 32 caracteres (HS256 pide al menos 256 bits de clave). */
+export const MIN_PRODUCTION_JWT_SECRET_LENGTH = 32;
+
 /**
  * Compose pasa `VAR: ${VAR:-}`, así que una variable "no definida" llega como `""`. Se trata
  * como ausente (igual que hacía el antiguo `?.trim() || DEFAULT`) para que el defecto aplique.
@@ -68,15 +71,35 @@ const appEnvSchema = z
     LOGIN_TOKEN_RETENTION_DAYS: lenientInt(1, 30),
     MCP_AUDIT_RETENTION_DAYS: lenientInt(1, 180),
     OAUTH_CLIENT_RETENTION_DAYS: lenientInt(1, 30),
+    // Pool de Postgres (`db/database.module.ts`). Un 0 en el idle o en el statement los desactiva.
+    DB_IDLE_TIMEOUT_SECONDS: lenientInt(0, 30),
+    DB_CONNECT_TIMEOUT_SECONDS: lenientInt(1, 10),
+    DB_STATEMENT_TIMEOUT_MS: lenientInt(0, 30_000),
   })
   .superRefine((env, ctx) => {
-    // Un secreto de desarrollo en producción permitiría falsificar sesiones.
-    if (env.NODE_ENV === 'production' && env.JWT_SECRET === DEV_JWT_SECRET) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['JWT_SECRET'],
-        message: 'usa el valor de desarrollo en producción. Define uno fuerte: openssl rand -base64 48',
-      });
+    if (env.NODE_ENV === 'production') {
+      // Un secreto de desarrollo, o uno corto, en producción permitiría falsificar sesiones.
+      if (env.JWT_SECRET === DEV_JWT_SECRET) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['JWT_SECRET'],
+          message: 'usa el valor de desarrollo en producción. Define uno fuerte: openssl rand -base64 48',
+        });
+      } else if (env.JWT_SECRET.length < MIN_PRODUCTION_JWT_SECRET_LENGTH) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['JWT_SECRET'],
+          message: `debe tener al menos ${MIN_PRODUCTION_JWT_SECRET_LENGTH} caracteres en producción (openssl rand -base64 48)`,
+        });
+      }
+      // Sin `Secure`, la cookie de sesión viajaría en claro por cualquier petición http.
+      if (!env.COOKIE_SECURE) {
+        ctx.addIssue({ code: 'custom', path: ['COOKIE_SECURE'], message: 'debe ser "true" en producción' });
+      }
+      // Es la base del magic link y el issuer OAuth: en http, el enlace y los tokens irían en claro.
+      if (!env.APP_URL.startsWith('https://')) {
+        ctx.addIssue({ code: 'custom', path: ['APP_URL'], message: 'debe empezar por https:// en producción' });
+      }
     }
     // Sin remitente por defecto: el dominio de envío es propio de cada despliegue, y más vale
     // enterarse al arrancar que cuando un usuario intenta entrar.

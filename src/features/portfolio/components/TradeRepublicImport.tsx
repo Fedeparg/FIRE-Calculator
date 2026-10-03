@@ -9,9 +9,11 @@ import type { ImportPlan, ImportResult } from "@sextante/core/imports/types";
 import { trackEvent } from "@/shared/analytics/track";
 import Notice from "@/shared/ui/Notice";
 import { importErrorKey, type ImportErrorKey } from "@/features/portfolio/model/import-errors";
-import { useFormat } from "@/shared/format/use-format";
 import { apiJson } from "@/shared/api/client";
-import { PlanView, ResultView } from "./TradeRepublicImportViews";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
+import ImportPlanView from "./ImportPlanView";
+import ImportResultView from "./ImportResultView";
 import { inputClass } from "@/shared/ui/field-classes";
 
 /** Slug del bróker para la analítica (sin datos del usuario). */
@@ -40,55 +42,52 @@ const fileInputClass = `${inputClass} text-sm file:mr-3 file:rounded-md file:bor
  */
 export default function TradeRepublicImport() {
   const t = useTranslations("portfolio.import");
-  const { formatQuantity } = useFormat();
+  const errorText = useApiErrorText(t);
   const router = useRouter();
   const uid = useId();
 
   const [step, setStep] = useState<Step>({ kind: "idle" });
   const [file, setFile] = useState<File | null>(null);
-  const [errorKey, setErrorKey] = useState<ImportErrorKey | null>(null);
+  // Una sola mutación para la vista previa y la confirmación: nunca van a la vez (el paso lo impide).
+  const upload = useApiMutation();
+  // Fichero demasiado grande: se rechaza aquí, antes de subir lo que la API devolvería con 413.
+  const [tooLarge, setTooLarge] = useState(false);
+  const errorKey: ImportErrorKey | null = tooLarge
+    ? "errorTooLarge"
+    : upload.error === null
+      ? null
+      : importErrorKey(upload.error);
 
-  /** Envía el CSV a una ruta de la API. Devuelve el JSON o la clave del error a mostrar. */
-  async function post<T>(url: string, csv: File): Promise<{ data: T } | { error: ImportErrorKey }> {
-    try {
-      return { data: await apiJson<T>(url, { method: "POST", headers: { "Content-Type": "text/csv" }, body: csv }) };
-    } catch (error) {
-      return { error: importErrorKey(error) };
-    }
+  /** Envía el CSV a una ruta de la API (`text/csv`, ver `read-text-body.ts` en la API). */
+  function postCsv<T>(url: string, csv: File) {
+    return upload.run(() => apiJson<T>(url, { method: "POST", headers: { "Content-Type": "text/csv" }, body: csv }));
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const chosen = event.target.files?.[0] ?? null;
-    setErrorKey(null);
+    upload.reset();
+    setTooLarge(false);
     setStep({ kind: "idle" });
     setFile(chosen);
     if (!chosen) return;
 
-    // Se corta antes de subir lo que la API rechazaría de todos modos (413).
     if (chosen.size > MAX_IMPORT_BYTES) {
-      setErrorKey("errorTooLarge");
+      setTooLarge(true);
       return;
     }
 
     setStep({ kind: "analysing" });
-    const outcome = await post<ImportPlan>(PREVIEW_URL, chosen);
-    if ("error" in outcome) {
-      setErrorKey(outcome.error);
-      setStep({ kind: "idle" });
-      return;
-    }
-    setStep({ kind: "preview", plan: outcome.data });
+    const outcome = await postCsv<ImportPlan>(PREVIEW_URL, chosen);
+    setStep(outcome.ok ? { kind: "preview", plan: outcome.data } : { kind: "idle" });
   }
 
   async function handleConfirm() {
     if (step.kind !== "preview" || !file) return;
     const { plan } = step;
-    setErrorKey(null);
     setStep({ kind: "importing", plan });
 
-    const outcome = await post<ImportResult>(CONFIRM_URL, file);
-    if ("error" in outcome) {
-      setErrorKey(outcome.error);
+    const outcome = await postCsv<ImportResult>(CONFIRM_URL, file);
+    if (!outcome.ok) {
       setStep({ kind: "preview", plan });
       return;
     }
@@ -155,21 +154,16 @@ export default function TradeRepublicImport() {
         </div>
         {errorKey && (
           <p role="alert" className="text-sm text-warning">
-            {t(errorKey)}
+            {errorText(errorKey)}
           </p>
         )}
       </section>
 
       {(step.kind === "preview" || step.kind === "importing") && (
-        <PlanView
-          plan={step.plan}
-          importing={step.kind === "importing"}
-          onConfirm={handleConfirm}
-          formatQuantity={formatQuantity}
-        />
+        <ImportPlanView plan={step.plan} importing={step.kind === "importing"} onConfirm={handleConfirm} />
       )}
 
-      {step.kind === "done" && <ResultView result={step.result} formatQuantity={formatQuantity} />}
+      {step.kind === "done" && <ImportResultView result={step.result} />}
 
       <Notice variant="info">{t("disclaimer")}</Notice>
     </div>

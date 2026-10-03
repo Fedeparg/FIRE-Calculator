@@ -1,4 +1,5 @@
 import type { AbstractIntlMessages } from "next-intl";
+import { lastItem } from "@sextante/core/arrays";
 
 /**
  * Subconjunto del catálogo con solo los namespaces pedidos (`"nav"`, `"auth.nav"`…). Un
@@ -27,7 +28,8 @@ export function pickMessages(messages: AbstractIntlMessages, namespaces: readonl
         target = created;
       }
     }
-    target[path[path.length - 1]!] = leaf;
+    // `split` nunca devuelve una lista vacía: siempre hay un último segmento.
+    target[lastItem(path)] = leaf;
   }
   return picked;
 }

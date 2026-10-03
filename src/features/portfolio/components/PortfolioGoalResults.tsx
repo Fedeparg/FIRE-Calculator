@@ -7,6 +7,8 @@ import type { GoalOutcome } from "@sextante/core/portfolio/goal";
 import { useFormat } from "@/shared/format/use-format";
 import Stat from "@/shared/ui/Stat";
 import StatGrid from "@/shared/ui/StatGrid";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
+import { yearOf } from "@sextante/core/dates";
 
 type Props = {
   goal: GoalOutcome;
@@ -23,6 +25,7 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
   const t = useTranslations("portfolio.goal");
   const tp = useTranslations("portfolio.summary");
   const { formatCurrency, formatPercent } = useFormat();
+  const currentYear = yearOf(useTodayUtc());
 
   const excluded = total - valued;
   const etaValue = goal.reached
@@ -76,15 +79,14 @@ export default function PortfolioGoalResults({ goal, display, valued, total, not
           <p className={goal.onTrack ? "text-success" : undefined}>
             {t(goal.onTrack ? "amountOnTrack" : "amountOffTrack", {
               projected: formatCurrency(goal.projectedAtDeadline, display),
-              year: new Date().getFullYear() + goal.deadlineYears,
+              year: currentYear + goal.deadlineYears,
             })}
           </p>
         )}
         {goal.mode === "fire" && !goal.reached && goal.yearsToTarget === null && <p>{t("etaNever")}</p>}
         {goal.mode === "fire" && !goal.reached && goal.yearsToTarget !== null && (
-          // El año se deriva en el render. Servidor y cliente pintan el mismo salvo que la
-          // hidratación cruzara la medianoche del 31 de diciembre, y React lo corregiría solo.
-          <p>{t("etaYear", { year: new Date().getFullYear() + goal.yearsToTarget })}</p>
+          // El año en curso se lee una vez al montar, en UTC como el resto de fechas de la cartera.
+          <p>{t("etaYear", { year: currentYear + goal.yearsToTarget })}</p>
         )}
         {valued === 0 && <p>{t("noValuation")}</p>}
         {excluded > 0 && <p>{tp("excluded", { count: excluded, total })}</p>}

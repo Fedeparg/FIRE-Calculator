@@ -1,4 +1,6 @@
 import { eq } from 'drizzle-orm';
+import { firstItem, itemAt } from '@sextante/core/arrays';
+import { FIRE_CALCULATOR_SLUG } from '@sextante/core/portfolio/goal';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
@@ -8,7 +10,7 @@ import type { FireMilestoneEmail } from '../email/templates/fire-milestone.js';
 import { fakeConfig } from '../../test/config.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { FireAlertsService } from './fire-alerts.service.js';
-import { FIRE_SCENARIO_SLUG, NotificationSettingsService } from './notification-settings.service.js';
+import { NotificationSettingsService } from './notification-settings.service.js';
 import { verifyUnsubscribeToken } from './unsubscribe-token.js';
 
 const DATE = '2026-09-28';
@@ -60,7 +62,7 @@ describe('FireAlertsService (integración con Postgres)', () => {
     await settings.update(userId, { fireAlertsEnabled: true, locale: options.locale ?? 'es' });
     await db.insert(savedScenarios).values({
       userId,
-      slug: FIRE_SCENARIO_SLUG,
+      slug: FIRE_CALCULATOR_SLUG,
       name: 'Mi objetivo',
       inputs: { annualExpenses: 24000, withdrawalRate: 4 },
     });
@@ -93,10 +95,12 @@ describe('FireAlertsService (integración con Postgres)', () => {
   }
 
   async function lastMilestone(userId: string) {
-    const [row] = await db
-      .select({ last: userNotificationSettings.lastFireMilestone })
-      .from(userNotificationSettings)
-      .where(eq(userNotificationSettings.userId, userId));
+    const row = firstItem(
+      await db
+        .select({ last: userNotificationSettings.lastFireMilestone })
+        .from(userNotificationSettings)
+        .where(eq(userNotificationSettings.userId, userId)),
+    );
     return row.last;
   }
 
@@ -111,12 +115,12 @@ describe('FireAlertsService (integración con Postgres)', () => {
     expect(first).toEqual({ users: 1, sent: 1, failed: 0 });
     expect(second.sent).toBe(0);
     expect(sent).toHaveLength(1);
-    expect(sent[0].to).toBe('a@example.com');
-    expect(sent[0].email).toMatchObject({ milestone: 25, target: 600000, currency: 'EUR', locale: 'es' });
-    expect(sent[0].email.portfolioUrl).toBe('https://sextante.test/portfolio');
-    const token = decodeURIComponent(new URL(sent[0].email.unsubscribeUrl).searchParams.get('token') ?? '');
+    expect(itemAt(sent, 0).to).toBe('a@example.com');
+    expect(itemAt(sent, 0).email).toMatchObject({ milestone: 25, target: 600000, currency: 'EUR', locale: 'es' });
+    expect(itemAt(sent, 0).email.portfolioUrl).toBe('https://sextante.test/portfolio');
+    const token = decodeURIComponent(new URL(itemAt(sent, 0).email.unsubscribeUrl).searchParams.get('token') ?? '');
     expect(verifyUnsubscribeToken(token, SECRET)).toBe(userId);
-    expect(sent[0].oneClick).toContain('/api/notifications/unsubscribe?token=');
+    expect(itemAt(sent, 0).oneClick).toContain('/api/notifications/unsubscribe?token=');
     expect(await lastMilestone(userId)).toBe(25);
   });
 
@@ -128,8 +132,8 @@ describe('FireAlertsService (integración con Postgres)', () => {
     await service.evaluateAll(DATE);
 
     expect(sent.map((s) => s.email.milestone)).toEqual([75]);
-    expect(sent[0].email.locale).toBe('en');
-    expect(sent[0].email.unsubscribeUrl).toContain('https://sextante.test/en/alertas/baja?token=');
+    expect(itemAt(sent, 0).email.locale).toBe('en');
+    expect(itemAt(sent, 0).email.unsubscribeUrl).toContain('https://sextante.test/en/alertas/baja?token=');
   });
 
   it('una caída por debajo de un hito ya avisado no dispara nada', async () => {
@@ -192,8 +196,8 @@ describe('FireAlertsService (integración con Postgres)', () => {
 
     await service.evaluateAll(DATE);
 
-    expect(sent[0].email).toMatchObject({ milestone: 25, currency: 'USD' });
-    expect(sent[0].email.currentValue).toBeCloseTo(165_000, 6);
+    expect(itemAt(sent, 0).email).toMatchObject({ milestone: 25, currency: 'USD' });
+    expect(itemAt(sent, 0).email.currentValue).toBeCloseTo(165_000, 6);
   });
 
   it('se salta usuarios sin objetivo, sin snapshot real de hoy o con alertas desactivadas', async () => {

@@ -7,6 +7,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { defined } from "@sextante/core/assert";
 import { FIRE_CALCULATOR_SLUG } from "@sextante/core/portfolio/goal";
 import { describe, expect, it } from "vitest";
 
@@ -20,17 +21,20 @@ const LOCALES = ["es", "en"] as const;
 type Locale = (typeof LOCALES)[number];
 type MessageTree = { readonly [key: string]: string | MessageTree };
 
-function loadCalcNamespaces(locale: Locale): ReadonlySet<string> {
+function loadMessages(locale: Locale): { calc?: MessageTree; catalog?: MessageTree } {
   const file = path.join(ROOT, "messages", `${locale}.json`);
-  const messages = JSON.parse(readFileSync(file, "utf8")) as { calc?: MessageTree };
-  return new Set(Object.keys(messages.calc ?? {}));
+  return JSON.parse(readFileSync(file, "utf8")) as { calc?: MessageTree; catalog?: MessageTree };
+}
+
+function loadCalcNamespaces(locale: Locale): ReadonlySet<string> {
+  return new Set(Object.keys(loadMessages(locale).calc ?? {}));
 }
 
 const calcNamespaces = new Map<Locale, ReadonlySet<string>>(
   LOCALES.map((locale) => [locale, loadCalcNamespaces(locale)]),
 );
 
-const allSlugs = new Set(CALCULATORS.map((c) => c.slug));
+const allSlugs = new Set<string>(CALCULATORS.map((c) => c.slug));
 
 describe("registry: coherencia del catálogo", () => {
   it("no hay slugs duplicados", () => {
@@ -43,9 +47,19 @@ describe("registry: coherencia del catálogo", () => {
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su namespace calc.<slug> en %s", (locale) => {
-    const namespaces = calcNamespaces.get(locale)!;
+    const namespaces = defined(calcNamespaces.get(locale));
     const missing = [...allSlugs].filter((slug) => !namespaces.has(slug));
     expect(missing).toEqual([]);
+  });
+
+  it.each(LOCALES)("cada calculadora tiene nombre y descripción en catalog.<slug> en %s", (locale) => {
+    const catalog = loadMessages(locale).catalog ?? {};
+    const missing = [...allSlugs].filter((slug) => {
+      const entry = catalog[slug];
+      return typeof entry !== "object" || !entry.name || !entry.description;
+    });
+    expect(missing).toEqual([]);
+    expect(Object.keys(catalog).filter((slug) => !allSlugs.has(slug))).toEqual([]);
   });
 
   it.each(LOCALES)("cada calculadora publicada tiene su explainer en %s", (locale) => {
@@ -60,7 +74,7 @@ describe("registry: sin material huérfano", () => {
   });
 
   it.each(LOCALES)("no hay namespaces calc.* fuera del registry en %s", (locale) => {
-    const orphans = [...calcNamespaces.get(locale)!].filter((ns) => !allSlugs.has(ns));
+    const orphans = [...defined(calcNamespaces.get(locale))].filter((ns) => !allSlugs.has(ns));
     expect(orphans).toEqual([]);
   });
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -9,11 +10,9 @@ import CopyValue from "@/shared/ui/CopyValue";
 import type { IncomeCategoryReport, IncomeEvent, IncomeYear } from "@sextante/core/fiscal/income";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
-import { useIncomeMutations } from "../use-income";
+import { formatTaxBox } from "@sextante/core/money";
+import { useIncomeMutations } from "@/features/portfolio/use-income-mutations";
 import IncomeManager from "./IncomeManager";
-
-/** Importe como se escribe en Renta WEB: coma decimal, sin separador de miles. */
-const boxValue = (value: number) => value.toFixed(2).replace(".", ",");
 
 type Props = {
   year: number;
@@ -33,7 +32,10 @@ type Props = {
 export default function IncomeSection({ year, boxes, summary, events }: Props) {
   const t = useTranslations("portfolio.income");
   const router = useRouter();
-  const mutations = useIncomeMutations(() => router.refresh());
+  // El refresco va en una transición: mientras llegan los datos nuevos del servidor el formulario
+  // sigue "guardando", en vez de mostrar el resultado con los datos viejos y saltar después.
+  const [refreshing, startTransition] = useTransition();
+  const mutations = useIncomeMutations(() => startTransition(() => router.refresh()));
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
@@ -84,7 +86,7 @@ export default function IncomeSection({ year, boxes, summary, events }: Props) {
           <IncomeManager
             income={events}
             defaults={{ kind: "interest", positionId: null, isin: null, name: null, country: null, currency: "EUR" }}
-            submitting={mutations.submitting}
+            submitting={mutations.submitting || refreshing}
             errorKey={mutations.errorKey}
             save={mutations.save}
             remove={mutations.remove}
@@ -122,7 +124,7 @@ function CategoryCard({
         <dt className="text-muted">{t("gross")}</dt>
         <dd className="text-right font-semibold tabular-nums text-foreground">
           {eur(category.total.gross)}
-          <CopyValue value={boxValue(category.total.gross)} label={`${title} ${t("gross")}`} />
+          <CopyValue value={formatTaxBox(category.total.gross)} label={`${title} ${t("gross")}`} />
         </dd>
         <dt className="text-muted">{t("withholdingOrigin")}</dt>
         <dd className="text-right tabular-nums text-foreground">{eur(category.total.withholdingOrigin)}</dd>

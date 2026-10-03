@@ -3,13 +3,15 @@ import { z } from 'zod';
 import type { CalculatorCategory } from '@sextante/core/calculators/categories';
 import { CALCULATORS, type CalculatorEntry } from '@sextante/core/calculators/schemas';
 
+import { ToolUserError } from './tool-errors.js';
+
 /**
  * Pegamento MCP sobre el registro de calculadoras de `@sextante/core` (esquemas, categoría y
  * cálculo de cada una): catálogo para `list_calculators` y ejecución para `calculate`.
  */
 
 /** Calculadora cuyo slug no existe (se traduce a error de tool con la lista de válidos). */
-export class UnknownCalculatorError extends Error {
+export class UnknownCalculatorError extends ToolUserError {
   constructor(slug: string) {
     super(`Calculadora desconocida: "${slug}". Usa list_calculators para ver los slugs disponibles.`);
   }
@@ -60,7 +62,7 @@ function describeIssues(error: z.ZodError): string {
 
 /**
  * Valida `inputs` con el esquema de ESA calculadora y calcula. Lanza `UnknownCalculatorError` si
- * el slug no existe y un `Error` con los campos inválidos si la entrada no cumple el esquema
+ * el slug no existe y un `ToolUserError` con los campos inválidos si la entrada no cumple el esquema
  * (fuera de rango, de otro tipo o desconocida): en ambos casos no se calcula nada.
  */
 export function runCalculator(slug: string, inputs: unknown): unknown {
@@ -69,7 +71,9 @@ export function runCalculator(slug: string, inputs: unknown): unknown {
   try {
     return entry.run(inputs);
   } catch (error) {
-    if (error instanceof z.ZodError) throw new Error(`Entrada no válida para ${slug}: ${describeIssues(error)}`);
+    if (error instanceof z.ZodError) {
+      throw new ToolUserError(`Entrada no válida para ${slug}: ${describeIssues(error)}`);
+    }
     throw error;
   }
 }

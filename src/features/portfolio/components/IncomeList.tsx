@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { IncomeEvent } from "@sextante/core/fiscal/income";
 import { formatIsoDate } from "@/shared/format/format";
 import { useFormat } from "@/shared/format/use-format";
-import Button from "@/shared/ui/Button";
+import RowActions from "@/shared/ui/RowActions";
 
 type Props = {
   income: readonly IncomeEvent[];
@@ -35,6 +35,16 @@ export default function IncomeList({
   const { formatCurrency } = useFormat();
 
   if (income.length === 0) return <p className="text-sm text-muted">{t("empty")}</p>;
+
+  const rowLabels = (item: string) => ({
+    edit: t("edit"),
+    delete: t("delete"),
+    confirm: t("confirmDelete"),
+    cancel: t("cancel"),
+    editLabel: t("editItem", { item }),
+    deleteLabel: t("deleteItem", { item }),
+    confirmLabel: t("confirmDeleteItem", { item }),
+  });
 
   return (
     <ul aria-label={t("listLabel")} className="flex flex-col">
@@ -87,33 +97,15 @@ export default function IncomeList({
             {event.reportedToAeat && <span className="text-success">{t("reportedBadge")}</span>}
           </div>
           <div className="flex justify-end text-xs text-muted">
-            {confirmingId === event.id ? (
-              <span className="flex shrink-0 gap-2">
-                <Button variant="warning" size="xs" onClick={() => onConfirmDelete(event.id)} disabled={submitting}>
-                  {t("confirmDelete")}
-                </Button>
-                <Button variant="secondary" size="xs" onClick={onCancelDelete} disabled={submitting}>
-                  {t("cancel")}
-                </Button>
-              </span>
-            ) : (
-              <span className="flex shrink-0 gap-1">
-                <button
-                  type="button"
-                  onClick={() => onEdit(event)}
-                  className="rounded-md px-2 py-1.5 font-medium hover:bg-surface-2 hover:text-foreground"
-                >
-                  {t("edit")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onAskDelete(event.id)}
-                  className="rounded-md px-2 py-1.5 font-medium hover:bg-surface-2 hover:text-foreground"
-                >
-                  {t("delete")}
-                </button>
-              </span>
-            )}
+            <RowActions
+              labels={rowLabels(`${t(`kinds.${event.kind}`)} · ${formatIsoDate(event.paidAt)}`)}
+              confirming={confirmingId === event.id}
+              busy={submitting}
+              onEdit={() => onEdit(event)}
+              onAskDelete={() => onAskDelete(event.id)}
+              onCancelDelete={onCancelDelete}
+              onConfirmDelete={() => onConfirmDelete(event.id)}
+            />
           </div>
         </li>
       ))}

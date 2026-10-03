@@ -2,6 +2,9 @@
 // la serie la descarga y cachea la API (`apps/api/src/fx-reference/`). Criterio fiscal y
 // fuentes: ver ./README.md, sección `fx-reference.ts`.
 
+import { itemAt } from "../arrays.js";
+import { daysBetween } from "../dates.js";
+
 /** Divisa en la que se declara el IRPF. */
 export const TAX_CURRENCY = "EUR";
 
@@ -30,12 +33,6 @@ export interface AppliedRate {
   date: string;
 }
 
-const MS_PER_DAY = 86_400_000;
-
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
-}
-
 /**
  * Tipo de referencia vigente en `date` para `currency`: el publicado ese día o, si no hubo
  * publicación (fin de semana, festivo), el último anterior. `null` si la divisa no tiene serie,
@@ -53,7 +50,7 @@ export function referenceRateOn(rates: ReferenceRates, currency: string, date: s
   let found = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (series[mid].date <= date) {
+    if (itemAt(series, mid).date <= date) {
       found = mid;
       lo = mid + 1;
     } else {
@@ -62,7 +59,7 @@ export function referenceRateOn(rates: ReferenceRates, currency: string, date: s
   }
   if (found < 0) return null;
 
-  const point = series[found];
+  const point = itemAt(series, found);
   if (!Number.isFinite(point.unitsPerEur) || point.unitsPerEur <= 0) return null;
   if (daysBetween(point.date, date) > MAX_RATE_GAP_DAYS) return null;
   return { currency, unitsPerEur: point.unitsPerEur, date: point.date };

@@ -5,13 +5,14 @@ import { useTranslations } from "next-intl";
 import { computeCompound } from "@sextante/core/calculators/interes-compuesto";
 import { COMPOUNDING_FREQUENCIES, FREQUENCIES, type Frequency } from "@sextante/core/projection";
 import { useFormat } from "@/shared/format/use-format";
-import NumberField from "@/shared/ui/NumberField";
 import SelectField from "@/shared/ui/SelectField";
 import Stat from "@/shared/ui/Stat";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
-import { useNumberField, useOptionField } from "./CalculatorState";
+import { useBoundNumberField, useBoundOptionField } from "./CalculatorState";
+import NumField from "./NumField";
+import { useInputs } from "./use-inputs";
 import StatGrid from "@/shared/ui/StatGrid";
 
 export default function CompoundCalculator() {
@@ -20,33 +21,30 @@ export default function CompoundCalculator() {
   const tf = useTranslations("frequency");
   const tc = useTranslations("chart");
 
-  const [initial, setInitial] = useNumberField("initial", 5000);
-  const [contribution, setContribution] = useNumberField("contribution", 300);
-  const [frequency, setFrequency] = useOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
+  const initial = useBoundNumberField("initial", 5000);
+  const contribution = useBoundNumberField("contribution", 300);
+  const frequency = useBoundOptionField<Frequency>("frequency", "monthly", FREQUENCIES);
   // Por defecto anual: la tasa se lee como rentabilidad anual y no se capitaliza dentro del año
-  const [compounding, setCompounding] = useOptionField<Frequency>("compounding", "annual", COMPOUNDING_FREQUENCIES);
-  const [annualRate, setAnnualRate] = useNumberField("annualRate", 7);
-  const [years, setYears] = useNumberField("years", 25);
+  const compounding = useBoundOptionField<Frequency>("compounding", "annual", COMPOUNDING_FREQUENCIES);
+  const annualRate = useBoundNumberField("annualRate", 7);
+  const years = useBoundNumberField("years", 25);
   // Extras (desactivados por defecto)
-  const [annualFee, setAnnualFee] = useNumberField("annualFee", 0);
-  const [contributionGrowth, setContributionGrowth] = useNumberField("contributionGrowth", 0);
-  const [inflationRate, setInflationRate] = useNumberField("inflationRate", 0);
+  const annualFee = useBoundNumberField("annualFee", 0);
+  const contributionGrowth = useBoundNumberField("contributionGrowth", 0);
+  const inflationRate = useBoundNumberField("inflationRate", 0);
 
-  const result = useMemo(
-    () =>
-      computeCompound({
-        initial,
-        contribution,
-        frequency,
-        compounding,
-        annualRate,
-        years,
-        annualFee,
-        contributionGrowth,
-        inflationRate,
-      }),
-    [initial, contribution, frequency, compounding, annualRate, years, annualFee, contributionGrowth, inflationRate],
-  );
+  const inputs = useInputs({
+    initial,
+    contribution,
+    frequency,
+    compounding,
+    annualRate,
+    years,
+    annualFee,
+    contributionGrowth,
+    inflationRate,
+  });
+  const result = useMemo(() => computeCompound(inputs), [inputs]);
 
   const frequencyOptions = FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
   const compoundingOptions = COMPOUNDING_FREQUENCIES.map((f) => ({ value: f, label: tf(f) }));
@@ -56,74 +54,34 @@ export default function CompoundCalculator() {
       layout="grid"
       inputs={
         <>
-          <NumberField
-            label={t("initial")}
-            value={initial}
-            onChange={setInitial}
-            step={1000}
-            help={t("help.initial")}
-          />
-          <NumberField
-            label={t("contribution")}
-            value={contribution}
-            onChange={setContribution}
-            step={50}
-            help={t("help.contribution")}
-          />
+          <NumField field={initial} step={1000} />
+          <NumField field={contribution} step={50} />
           <SelectField
             label={tf("label")}
-            value={frequency}
+            value={frequency.value}
             options={frequencyOptions}
-            onChange={setFrequency}
+            onChange={frequency.set}
             help={tf("help")}
           />
           <SelectField
             label={t("compounding")}
-            value={compounding}
+            value={compounding.value}
             options={compoundingOptions}
-            onChange={setCompounding}
+            onChange={compounding.set}
             help={t("help.compounding")}
           />
-          <NumberField
-            label={t("annualRate")}
-            value={annualRate}
-            onChange={setAnnualRate}
-            step={0.5}
-            max={100}
-            help={t("help.annualRate")}
-          />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField
-            label={t("annualFee")}
-            value={annualFee}
-            onChange={setAnnualFee}
-            step={0.1}
-            max={100}
-            help={t("help.annualFee")}
-          />
-          <NumberField
-            label={t("contributionGrowth")}
-            value={contributionGrowth}
-            onChange={setContributionGrowth}
-            step={0.5}
-            max={100}
-            help={t("help.contributionGrowth")}
-          />
-          <NumberField
-            label={t("inflationRate")}
-            value={inflationRate}
-            onChange={setInflationRate}
-            step={0.5}
-            max={100}
-            help={t("help.inflationRate")}
-          />
+          <NumField field={annualRate} step={0.5} max={100} />
+          <NumField field={years} step={1} max={70} />
+          <NumField field={annualFee} step={0.1} max={100} />
+          <NumField field={contributionGrowth} step={0.5} max={100} />
+          <NumField field={inflationRate} step={0.5} max={100} />
         </>
       }
       results={
         <>
           <StatGrid>
             <Stat label={t("finalValue")} value={formatEUR(result.finalValue)} highlight />
-            {inflationRate > 0 && <Stat label={t("finalRealValue")} value={formatEUR(result.finalRealValue)} />}
+            {inputs.inflationRate > 0 && <Stat label={t("finalRealValue")} value={formatEUR(result.finalRealValue)} />}
             <Stat label={t("totalContributed")} value={formatEUR(result.totalContributed)} />
             <Stat label={t("totalInterest")} value={formatEUR(result.totalInterest)} />
           </StatGrid>

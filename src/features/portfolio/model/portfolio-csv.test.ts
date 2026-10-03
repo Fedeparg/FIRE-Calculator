@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { itemAt } from "@sextante/core/arrays";
 
 import { UTF8_BOM } from "@/shared/format/csv";
 
@@ -83,7 +84,7 @@ describe("buildPortfolioCsv", () => {
     const csv = buildPortfolioCsv({ ...BASE, locale: "es", positions: [], prices: {} });
 
     expect(rows(csv)).toHaveLength(1);
-    expect(rows(csv)[0].split(";")).toHaveLength(CSV_COLUMNS.length);
+    expect(itemAt(rows(csv), 0).split(";")).toHaveLength(CSV_COLUMNS.length);
   });
 
   it("entrecomilla el texto que lleva el separador o comillas", () => {
@@ -144,7 +145,7 @@ describe("buildPortfolioCsv", () => {
     });
 
     // 10 × 220 USD → EUR con USD = 1 y EUR = 1,1 → 2000 EUR.
-    expect(rows(csv)[1].split(";").at(-1)).toBe("2000");
+    expect(itemAt(rows(csv), 1).split(";").at(-1)).toBe("2000");
   });
 
   it("no escribe notación científica para cantidades muy pequeñas", () => {

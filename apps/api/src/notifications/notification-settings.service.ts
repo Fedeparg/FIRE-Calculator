@@ -2,14 +2,9 @@ import type { NotificationLocale, NotificationSettingsResponse } from '@sextante
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 
+import { FIRE_CALCULATOR_SLUG } from '@sextante/core/portfolio/goal';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { savedScenarios, userNotificationSettings } from '../db/schema.js';
-
-/**
- * Slug de la calculadora FIRE en el frontend (`src/features/calculators/registry.ts`). El objetivo de la
- * cartera se guarda como escenario de esa calculadora; es el que vigilan las alertas.
- */
-export const FIRE_SCENARIO_SLUG = 'independencia-financiera';
 
 const asLocale = (value: string): NotificationLocale => (value === 'en' ? 'en' : 'es');
 
@@ -78,7 +73,7 @@ export class NotificationSettingsService {
         inputs: savedScenarios.inputs,
       })
       .from(savedScenarios)
-      .where(and(eq(savedScenarios.userId, userId), eq(savedScenarios.slug, FIRE_SCENARIO_SLUG)))
+      .where(and(eq(savedScenarios.userId, userId), eq(savedScenarios.slug, FIRE_CALCULATOR_SLUG)))
       .orderBy(desc(savedScenarios.updatedAt))
       .limit(1);
     return row ?? null;

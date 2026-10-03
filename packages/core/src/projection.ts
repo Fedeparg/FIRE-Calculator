@@ -2,9 +2,9 @@
 
 import { clampYears } from "./inputs.js";
 
-export type Frequency = "weekly" | "monthly" | "quarterly" | "semiannual" | "annual";
+export const FREQUENCIES = ["weekly", "monthly", "quarterly", "semiannual", "annual"] as const;
 
-export const FREQUENCIES: Frequency[] = ["weekly", "monthly", "quarterly", "semiannual", "annual"];
+export type Frequency = (typeof FREQUENCIES)[number];
 
 export const PERIODS_PER_YEAR: Record<Frequency, number> = {
   weekly: 52,
@@ -15,7 +15,12 @@ export const PERIODS_PER_YEAR: Record<Frequency, number> = {
 };
 
 /** Frecuencias con sentido para capitalizar intereses (la semanal solo se usa para aportar). */
-export const COMPOUNDING_FREQUENCIES: Frequency[] = FREQUENCIES.filter((f) => f !== "weekly");
+export const COMPOUNDING_FREQUENCIES = [
+  "monthly",
+  "quarterly",
+  "semiannual",
+  "annual",
+] as const satisfies readonly Frequency[];
 
 export interface ProjectionInput {
   initial: number;
@@ -42,8 +47,6 @@ export interface ProjectionInput {
 }
 
 export interface ProjectionPoint {
-  // firma de índice: permite usar los puntos como datos de gráfica (Record<string, number>) sin casts
-  [key: string]: number;
   year: number;
   contributed: number;
   interest: number;
@@ -84,8 +87,8 @@ function effectiveFromNominal(nominalPercent: number, compoundingPeriods: number
 export function project(input: ProjectionInput): ProjectionResult {
   const initial = Math.max(0, input.initial || 0);
   const years = clampYears(input.years);
-  const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
-  const compoundingPeriods = PERIODS_PER_YEAR[input.compounding ?? "annual"] ?? 1;
+  const periodsPerYear = PERIODS_PER_YEAR[input.frequency];
+  const compoundingPeriods = PERIODS_PER_YEAR[input.compounding ?? "annual"];
   const netAnnualRate = (input.annualRate || 0) - Math.max(0, input.annualFee || 0);
   const periodRate = periodRateFromEffective(effectiveFromNominal(netAnnualRate, compoundingPeriods), periodsPerYear);
   const growth = Math.max(0, input.contributionGrowth || 0) / 100;

@@ -1,9 +1,9 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { and, asc, eq, gte, inArray, lte, min, or, sql, type SQL } from 'drizzle-orm';
+import { asc, eq, min, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import { portfolioSnapshots, positionLots, positions } from '../db/schema.js';
+import { positionLots, positions } from '../db/schema.js';
 import {
   LOT_CHANGED_EVENT,
   POSITION_CREATED_EVENT,
@@ -11,8 +11,11 @@ import {
   type PositionCreatedEvent,
 } from '../positions/position-events.js';
 import { PositionsService } from '../positions/positions.service.js';
-import { HISTORY_MAX_DAYS, PricesService } from '../prices/prices.service.js';
-import { PortfolioValuationService } from './portfolio-valuation.service.js';
+import { HISTORY_MAX_DAYS, PriceHistoryService } from '../prices/price-history.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
+import { PortfolioValuationService, type MarketData } from './portfolio-valuation.service.js';
+import { SnapshotRebuildQueue } from './snapshot-rebuild.queue.js';
+import { SnapshotRepository, type SnapshotInsert } from './snapshot.repository.js';
 import { convertCurrency } from '@sextante/core/fx';
 import {
   firstTradeDate,
@@ -21,8 +24,9 @@ import {
   type HistoryPosition,
 } from '@sextante/core/portfolio/history-reconstruction';
 import type { HistoryPointDto, PortfolioHistoryDto } from '@sextante/core/portfolio/types';
-import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
-import { isoDate, todayUtc } from '../common/dates.js';
+import { planSnapshotWrites, staleSnapshotDates } from '@sextante/core/portfolio/staleness';
+import { addDays, isoDate, todayUtc } from '../common/dates.js';
+import { errorMessage } from '../common/errors.js';
 
 /**
  * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
@@ -31,12 +35,9 @@ import { isoDate, todayUtc } from '../common/dates.js';
  */
 export const SNAPSHOT_BASE_CURRENCY = 'EUR';
 
-/** Rango por defecto del histórico, en días (el máximo vive en `prices.service.ts`). */
+/** Rango por defecto del histórico, en días (el máximo vive en `price-history.service.ts`). */
 export const HISTORY_DEFAULT_DAYS = 365;
 export { HISTORY_MAX_DAYS };
-
-/** Filas por sentencia al escribir el histórico reconstruido (evita una sentencia por día). */
-const UPSERT_CHUNK_SIZE = 200;
 
 /** Resumen de una ejecución de la captura diaria (para los logs del cron). */
 export interface SnapshotSummary {
@@ -48,16 +49,6 @@ export interface SnapshotSummary {
 
 /** Tope de `numeric(20,8)`: 12 dígitos enteros. */
 const MAX_SNAPSHOT_AMOUNT = 1e12;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** Igualdad de tasas FX (un `jsonb` no conserva el orden de las claves). */
-function sameRates(a: Record<string, number>, b: Record<string, number>): boolean {
-  const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
-}
-
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
 
 /** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
 function toNumeric(value: number): string | null {
@@ -72,14 +63,16 @@ function toNumeric(value: number): string | null {
 @Injectable()
 export class PortfolioSnapshotsService {
   private readonly logger = new Logger(PortfolioSnapshotsService.name);
-  /** Usuarios con reconstrucción en curso → posiciones y fecha de lote borrado/movido anotadas (ver `onLotChanged`). */
-  private readonly rebuilding = new Map<string, { positions: Set<string>; invalidateFrom: string | null }>();
+  /** Coalescencia de las reconstrucciones por usuario tras cambiar lotes (ver `onLotChanged`). */
+  private readonly rebuilds = new SnapshotRebuildQueue();
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
     private readonly valuation: PortfolioValuationService,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
+    private readonly priceHistory: PriceHistoryService,
     private readonly positionsService: PositionsService,
+    private readonly repository: SnapshotRepository,
   ) {}
 
   /**
@@ -90,16 +83,19 @@ export class PortfolioSnapshotsService {
   async captureAll(): Promise<SnapshotSummary> {
     const date = todayUtc();
     const userIds = await this.usersWithPositions();
+    // Precios y FX de toda la pasada en una lectura, no dos consultas por usuario.
+    const tickers = await this.db.selectDistinct({ ticker: positions.ticker }).from(positions);
+    const market = await this.valuation.loadMarketData(tickers.map((row) => row.ticker));
 
     let captured = 0;
     let failed = 0;
     for (const userId of userIds) {
       try {
-        await this.captureUser(userId, date);
+        await this.captureUser(userId, date, market);
         captured += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
+        this.logger.warn(`Snapshot de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
       }
     }
 
@@ -111,10 +107,13 @@ export class PortfolioSnapshotsService {
     return summary;
   }
 
-  /** Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`. */
-  async captureUser(userId: string, date: string = todayUtc()): Promise<void> {
-    const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY);
-    const { rates } = await this.prices.getFxRates();
+  /**
+   * Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`.
+   * `market`: precios y FX ya leídos para toda la pasada (ver `captureAll`).
+   */
+  async captureUser(userId: string, date: string = todayUtc(), market?: MarketData): Promise<void> {
+    const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY, market);
+    const { rates } = market?.fx ?? (await this.prices.getFxRates());
 
     const invested = toNumeric(valuation.aggregate.invested);
     const marketValue = toNumeric(valuation.aggregate.marketValue);
@@ -122,7 +121,7 @@ export class PortfolioSnapshotsService {
       throw new Error('La valoración no cabe en el snapshot (importe no finito o desbordado)');
     }
 
-    const row = {
+    const row: SnapshotInsert = {
       userId,
       date,
       invested,
@@ -134,21 +133,7 @@ export class PortfolioSnapshotsService {
       estimated: false,
     };
 
-    await this.db
-      .insert(portfolioSnapshots)
-      .values(row)
-      .onConflictDoUpdate({
-        target: [portfolioSnapshots.userId, portfolioSnapshots.date],
-        set: {
-          invested: row.invested,
-          marketValue: row.marketValue,
-          valuedPositions: row.valuedPositions,
-          totalPositions: row.totalPositions,
-          fxRates: row.fxRates,
-          estimated: false,
-          updatedAt: new Date(),
-        },
-      });
+    await this.repository.upsertCapture(row);
   }
 
   /**
@@ -235,9 +220,9 @@ export class PortfolioSnapshotsService {
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
-      const floor = isoDate(new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS));
+      const floor = addDays(todayUtc(), -HISTORY_MAX_DAYS);
       const from = earliest > floor ? earliest : floor;
-      const to = isoDate(new Date(Date.now() - DAY_MS)); // ayer: hoy es del cron
+      const to = addDays(todayUtc(), -1); // ayer: hoy es del cron
       if (from > to) return;
 
       const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
@@ -264,17 +249,16 @@ export class PortfolioSnapshotsService {
             valuedPositions: aggregate.valued,
             totalPositions: aggregate.total,
             fxRates: rates,
-            estimated: date < trackingSince,
           },
         ];
       });
       if (rows.length === 0) return;
 
-      // Solo se escribe la diferencia con lo guardado (reescribir ~1.800 filas idénticas por
-      // usuario cada noche no aporta nada). `readAt` es previo a la lectura: una real reescrita
-      // por la captura nocturna después de leerla es fresca y no debe pisarse (ver `setWhere`).
+      // Solo se escribe la diferencia con lo guardado (`planSnapshotWrites`). `readAt` es previo a
+      // la lectura: una real reescrita por la captura nocturna después de leerla es fresca y no
+      // debe pisarse (ver `upsertReconstructed`).
       const readAt = new Date();
-      const existing = await tx.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
+      const existing = await this.repository.loadExisting(tx, userId);
       const staleReal = staleSnapshotDates({
         snapshots: existing
           .filter((row) => !row.estimated)
@@ -285,69 +269,10 @@ export class PortfolioSnapshotsService {
         })),
         invalidateFrom: options.invalidateFrom ?? null,
       });
-      const existingByDate = new Map(existing.map((row) => [row.date, row]));
-      const newDates = new Set(rows.map((row) => row.date));
+      const { changed, stale } = planSnapshotWrites({ rows, existing, staleReal, trackingSince });
 
-      const changed = rows.filter((row) => {
-        const current = existingByDate.get(row.date);
-        if (!current) return true;
-        if (!current.estimated) return staleReal.has(row.date); // real: solo si está obsoleta
-        // Un `estimated` incoherente con la regla también cuenta como cambio.
-        return !(
-          current.estimated === row.estimated &&
-          current.invested === row.invested &&
-          current.marketValue === row.marketValue &&
-          current.valuedPositions === row.valuedPositions &&
-          current.totalPositions === row.totalPositions &&
-          sameRates(current.fxRates, row.fxRates)
-        );
-      });
-      // Estimadas que ya no salen de la reconstrucción (operación borrada...): se retiran.
-      const stale = existing.filter((row) => row.estimated && !newDates.has(row.date)).map((row) => row.date);
-
-      for (let i = 0; i < changed.length; i += UPSERT_CHUNK_SIZE) {
-        const chunk = changed.slice(i, i + UPSERT_CHUNK_SIZE);
-        const staleInChunk = chunk.filter((row) => staleReal.has(row.date)).map((row) => row.date);
-        // Una real solo se pisa si es obsoleta y no ha cambiado desde la lectura (carrera con la
-        // captura nocturna).
-        const overwritable: SQL | undefined =
-          staleInChunk.length > 0
-            ? and(
-                eq(portfolioSnapshots.estimated, false),
-                inArray(portfolioSnapshots.date, staleInChunk),
-                lte(portfolioSnapshots.updatedAt, readAt),
-              )
-            : undefined;
-        await tx
-          .insert(portfolioSnapshots)
-          .values(chunk)
-          .onConflictDoUpdate({
-            target: [portfolioSnapshots.userId, portfolioSnapshots.date],
-            set: {
-              invested: sql`excluded.invested`,
-              marketValue: sql`excluded.market_value`,
-              valuedPositions: sql`excluded.valued_positions`,
-              totalPositions: sql`excluded.total_positions`,
-              fxRates: sql`excluded.fx_rates`,
-              estimated: sql`excluded.estimated`,
-              updatedAt: new Date(),
-            },
-            setWhere: overwritable
-              ? or(eq(portfolioSnapshots.estimated, true), overwritable)
-              : eq(portfolioSnapshots.estimated, true),
-          });
-      }
-      for (let i = 0; i < stale.length; i += UPSERT_CHUNK_SIZE) {
-        await tx
-          .delete(portfolioSnapshots)
-          .where(
-            and(
-              eq(portfolioSnapshots.userId, userId),
-              eq(portfolioSnapshots.estimated, true),
-              inArray(portfolioSnapshots.date, stale.slice(i, i + UPSERT_CHUNK_SIZE)),
-            ),
-          );
-      }
+      await this.repository.upsertReconstructed(tx, changed, staleReal, readAt);
+      await this.repository.deleteEstimated(tx, userId, stale);
     });
   }
 
@@ -362,7 +287,7 @@ export class PortfolioSnapshotsService {
         backfilled += 1;
       } catch (error) {
         failed += 1;
-        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${(error as Error).message}`);
+        this.logger.warn(`Backfill de cartera fallido (usuario ${userId}): ${errorMessage(error)}`);
       }
     }
     this.logger.log(
@@ -376,44 +301,23 @@ export class PortfolioSnapshotsService {
     try {
       await this.backfillUser(userId);
     } catch (error) {
-      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${(error as Error).message}`);
+      this.logger.warn(`Backfill tras alta de posición fallido (usuario ${userId}): ${errorMessage(error)}`);
     }
   }
 
   /** Un lote cambió: pide el histórico de precios que falte y reconstruye la evolución. Tolerante a fallos. */
   @OnEvent(LOT_CHANGED_EVENT)
   async onLotChanged({ userId, positionId, invalidateFrom }: LotChangedEvent): Promise<void> {
-    // Coalesce por usuario: una ráfaga de ediciones dispararía una reconstrucción por evento,
-    // cada una con una conexión esperando el cerrojo, y más de ~10 agotarían el pool. Si ya hay
-    // una en curso solo se anota la posición; al terminar repite una vez cubriendo las anotadas.
-    const earliest = (a: string | null, b: string | undefined): string | null =>
-      b !== undefined && (a === null || b < a) ? b : a;
-    const running = this.rebuilding.get(userId);
-    if (running) {
-      running.positions.add(positionId);
-      running.invalidateFrom = earliest(running.invalidateFrom, invalidateFrom);
-      return;
-    }
-    const pending = { positions: new Set([positionId]), invalidateFrom: earliest(null, invalidateFrom) };
-    this.rebuilding.set(userId, pending);
-    try {
-      while (pending.positions.size > 0) {
-        const batch = [...pending.positions];
-        const from = pending.invalidateFrom;
-        pending.positions.clear();
-        pending.invalidateFrom = null;
-        try {
-          for (const id of batch) await this.ensureLotHistory(id);
-          await this.backfillUser(userId, { invalidateFrom: from });
-        } catch (error) {
-          this.logger.warn(
-            `Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${(error as Error).message}`,
-          );
-        }
-      }
-    } finally {
-      this.rebuilding.delete(userId);
-    }
+    await this.rebuilds.enqueue(
+      userId,
+      { positionId, invalidateFrom },
+      async ({ positionIds, invalidateFrom: from }) => {
+        for (const id of positionIds) await this.ensureLotHistory(id);
+        await this.backfillUser(userId, { invalidateFrom: from });
+      },
+      (error) =>
+        this.logger.warn(`Reconstrucción tras cambiar un lote fallida (usuario ${userId}): ${errorMessage(error)}`),
+    );
   }
 
   private async ensureLotHistory(positionId: string): Promise<void> {
@@ -423,7 +327,7 @@ export class PortfolioSnapshotsService {
       .from(positionLots)
       .where(eq(positionLots.positionId, positionId));
     if (position && first?.firstTrade) {
-      await this.prices.ensureHistoryForTicker(position.ticker, first.firstTrade);
+      await this.priceHistory.ensureHistoryForTicker(position.ticker, first.firstTrade);
     }
   }
 
@@ -438,13 +342,9 @@ export class PortfolioSnapshotsService {
     display: string = SNAPSHOT_BASE_CURRENCY,
   ): Promise<PortfolioHistoryDto> {
     const span = Math.min(Math.max(Math.trunc(days), 1), HISTORY_MAX_DAYS);
-    const from = isoDate(new Date(Date.now() - span * 24 * 60 * 60 * 1000));
+    const from = addDays(todayUtc(), -span);
 
-    const rows = await this.db
-      .select()
-      .from(portfolioSnapshots)
-      .where(and(eq(portfolioSnapshots.userId, userId), gte(portfolioSnapshots.date, from)))
-      .orderBy(asc(portfolioSnapshots.date));
+    const rows = await this.repository.listSince(userId, from);
 
     const points = rows.map((row): HistoryPointDto => {
       const invested = convertCurrency(Number(row.invested), SNAPSHOT_BASE_CURRENCY, display, row.fxRates);

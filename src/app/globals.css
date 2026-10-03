@@ -16,6 +16,10 @@
   --brand-soft: #e6e8fd;
   --accent: #10b981;
   --accent-soft: #d6f5e7;
+  /* Acento para TEXTO: el verde de --accent sobre blanco o --accent-soft se queda en ~2,5:1 y no
+     llega a AA (4,5:1); este da 5,5:1 sobre blanco y 4,7:1 sobre --accent-soft. --accent sigue
+     para rellenos, bordes y gráficas. */
+  --accent-text: #047857;
   --warning: #b45309;
   --warning-soft: #fef3e2;
   --warning-border: #f5d9a8;
@@ -52,6 +56,8 @@
   --brand-soft: #1f2a4d;
   --accent: #34d399;
   --accent-soft: #123726;
+  /* En oscuro el verde claro ya contrasta (≥ 6,8:1 sobre superficie y --accent-soft). */
+  --accent-text: #34d399;
   --warning: #fbbf24;
   --warning-soft: #2a2110;
   --warning-border: #4a3a17;
@@ -84,6 +90,7 @@
   --color-brand-soft: var(--brand-soft);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-warning-border: var(--warning-border);
@@ -100,6 +107,20 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Movimiento reducido: quien lo pide en el sistema no ve animaciones ni transiciones (los
+   desplazamientos, el panel que sube, los hover con `transition`). Se acortan a casi cero en vez
+   de quitarlas para que los eventos `transitionend`/`animationend` sigan llegando. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Recharts: quitar el contorno de foco al hacer clic/arrastrar en gráficas y
@@ -140,6 +161,7 @@ body {
     --brand-soft: #e6e8fd;
     --accent: #10b981;
     --accent-soft: #d6f5e7;
+    --accent-text: #047857;
     --warning: #b45309;
     --warning-soft: #fef3e2;
     --warning-border: #f5d9a8;

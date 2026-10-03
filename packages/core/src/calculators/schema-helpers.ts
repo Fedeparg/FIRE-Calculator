@@ -6,9 +6,9 @@
 import { z } from "zod";
 
 import { CONTRACT_TYPES, DISABILITY_GRADES } from "../fiscal/irpf.js";
-import { REGION_CODES, type RegionCode } from "../fiscal/regions.js";
+import { REGION_CODES } from "../fiscal/regions.js";
 import { MAX_HORIZON_YEARS } from "../inputs.js";
-import { COMPOUNDING_FREQUENCIES, FREQUENCIES, type Frequency } from "../projection.js";
+import { COMPOUNDING_FREQUENCIES, FREQUENCIES } from "../projection.js";
 
 const MAX_AMOUNT = 1e12;
 
@@ -20,12 +20,12 @@ export const horizon = (description: string, max = MAX_HORIZON_YEARS) =>
 export const count = (description: string, max: number) => z.number().int().min(0).max(max).describe(description);
 
 export const frequency = z
-  .enum(FREQUENCIES as [Frequency, ...Frequency[]])
+  .enum(FREQUENCIES)
   .optional()
   .describe("Frecuencia de las aportaciones (por defecto monthly).");
 
 export const compounding = z
-  .enum(COMPOUNDING_FREQUENCIES as [Frequency, ...Frequency[]])
+  .enum(COMPOUNDING_FREQUENCIES)
   .optional()
   .describe(
     "Capitalización de los intereses, independiente de la frecuencia de aportación (por defecto annual). " +
@@ -33,7 +33,7 @@ export const compounding = z
   );
 
 export const region = z
-  .enum(REGION_CODES as [RegionCode, ...RegionCode[]])
+  .enum(REGION_CODES)
   .optional()
   .describe(
     "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. " +

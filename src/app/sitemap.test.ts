@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { defined } from "@sextante/core/assert";
 
 // El sitemap lee de disco vía los módulos de contenido (`server-only`); aquí se sustituyen por
 // datos fijos para probar solo cómo se compone: slugs, hreflang y `lastModified` condicional.
@@ -48,8 +49,8 @@ describe("sitemap", () => {
   it("emite lastModified solo cuando hay una fecha real", () => {
     expect(byPath("/aprende/a")?.lastModified).toBe("2026-09-03");
     expect(byPath("/novedades")?.lastModified).toBe("2026-10-01");
-    expect(byPath("/aprende/b") && "lastModified" in byPath("/aprende/b")!).toBe(false);
-    expect("lastModified" in byPath("/legal/privacidad")!).toBe(false);
-    expect("lastModified" in byPath("/")!).toBe(false);
+    expect("lastModified" in defined(byPath("/aprende/b"))).toBe(false);
+    expect("lastModified" in defined(byPath("/legal/privacidad"))).toBe(false);
+    expect("lastModified" in defined(byPath("/"))).toBe(false);
   });
 });

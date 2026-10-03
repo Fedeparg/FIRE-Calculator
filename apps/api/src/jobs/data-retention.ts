@@ -1,0 +1,244 @@
+import { Inject, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { and, eq, inArray, isNull, lt, notExists, or, sql } from 'drizzle-orm';
+
+import type { Env } from '../config/env.js';
+import { DRIZZLE, type Database } from '../db/database.module.js';
+import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
+import { MS_PER_DAY } from '../common/dates.js';
+import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
+import { errorMessage } from '../common/errors.js';
+
+/** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
+const DEFAULT_CRON = '0 15 * * * *';
+
+/**
+ * Filas por `DELETE`. Borrar por lotes acota la duración de cada sentencia (y de sus cerrojos)
+ * y el WAL de una sola transacción si se acumula mucho, p. ej. tras subir una retención.
+ */
+export const RETENTION_BATCH_SIZE = 10_000;
+
+/**
+ * Retenciones (defecto en `config/env.ts`), en días. Criterios:
+ *  - `login_tokens`: un magic link vive 15 min; 30 días de cola es margen de sobra para
+ *    poder investigar un incidente de acceso reciente sin guardar historial indefinido.
+ *  - `mcp_audit_log`: 180 días, para poder reconstruir qué hizo un cliente LLM durante un
+ *    periodo razonable (RGPD: solo metadatos, pero tampoco los guardamos para siempre).
+ *  - `oauth_clients`: 30 días sin uso y sin consentimiento ni token vivo = registro DCR
+ *    abandonado (un cliente que se registró y nunca completó el flujo).
+ */
+type RetentionKey = 'LOGIN_TOKEN_RETENTION_DAYS' | 'MCP_AUDIT_RETENTION_DAYS' | 'OAUTH_CLIENT_RETENTION_DAYS';
+
+/** Filas borradas en una pasada, por tabla. */
+export interface ReapSummary {
+  authCodes: number;
+  tokens: number;
+  loginTokens: number;
+  auditEntries: number;
+  clients: number;
+}
+
+/**
+ * Poda periódica de las tablas que crecen sin límite. Higiene de la base de datos y
+ * minimización de datos (RGPD): nada que ya no sirva debe seguir almacenado. Vive en `jobs/`
+ * y no en `oauth/` porque poda también tablas que no son de OAuth (`login_tokens`,
+ * `mcp_audit_log`).
+ *
+ * Qué borra y por qué:
+ *  1. Códigos de autorización y tokens OAuth caducados (`expiresAt < now`). Se borran solo
+ *     los caducados, no los consumidos-pero-vigentes: un refresh ya rotado pero aún válido
+ *     debe conservarse para detectar su reuso. Un token caducado ya no sirve para nada.
+ *  2. `login_tokens` caducados o ya consumidos con más de N días: los magic link viven 15
+ *     minutos, así que pasada la retención son puro histórico.
+ *  3. `mcp_audit_log` más antiguo que la retención configurada.
+ *  4. `oauth_clients` registrados por DCR, antiguos y ABANDONADOS.
+ *
+ * Configurable con `OAUTH_REAPER_CRON` (se conserva el nombre de la variable para no tocar el
+ * entorno de producción) y con las variables `*_RETENTION_DAYS` (ver `.env.example`).
+ */
+@Injectable()
+export class DataRetentionJob implements OnModuleInit {
+  private readonly logger = new Logger(DataRetentionJob.name);
+
+  constructor(
+    @Inject(DRIZZLE) private readonly db: Database,
+    private readonly config: ConfigService<Env, true>,
+    private readonly registry: SchedulerRegistry,
+  ) {}
+
+  onModuleInit(): void {
+    const cronTime = scheduleFromEnv(this.registry, {
+      name: 'data-retention',
+      cronTime: this.config.get('OAUTH_REAPER_CRON', { infer: true }),
+      defaultCron: DEFAULT_CRON,
+      handler: () => void this.runSafely(),
+    });
+    this.logger.log(`Limpieza programada: "${cronTime}" (${TIME_ZONE})`);
+  }
+
+  /** Envoltorio del cron: un fallo de la limpieza no debe tumbar el proceso. */
+  private async runSafely(): Promise<void> {
+    try {
+      await this.run();
+    } catch (error) {
+      this.logger.error(`Limpieza falló: ${errorMessage(error)}`);
+    }
+  }
+
+  /**
+   * Ejecuta una pasada de limpieza y devuelve cuántas filas ha borrado de cada tabla
+   * (público para poder testearlo sin arrancar el cron). Propaga los errores: quien lo
+   * llama decide qué hacer con ellos.
+   */
+  async run(): Promise<ReapSummary> {
+    const now = new Date();
+    const summary: ReapSummary = {
+      authCodes: await this.reapExpiredAuthCodes(now),
+      tokens: await this.reapExpiredTokens(now),
+      loginTokens: await this.reapLoginTokens(now),
+      auditEntries: await this.reapAuditLog(now),
+      clients: await this.reapAbandonedClients(now),
+    };
+
+    // Solo se loguea si ha borrado algo: en un sistema en reposo la pasada horaria no
+    // debe generar ruido.
+    if (Object.values(summary).some((count) => count > 0)) {
+      this.logger.log(
+        `Limpieza: ${summary.authCodes} códigos, ${summary.tokens} tokens OAuth, ` +
+          `${summary.loginTokens} tokens de login, ${summary.auditEntries} entradas de ` +
+          `auditoría MCP y ${summary.clients} clientes abandonados`,
+      );
+    }
+    return summary;
+  }
+
+  private reapExpiredAuthCodes(now: Date): Promise<number> {
+    const where = lt(oauthAuthCodes.expiresAt, now);
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthAuthCodes)
+        .where(
+          inArray(
+            oauthAuthCodes.codeHash,
+            this.db
+              .select({ key: oauthAuthCodes.codeHash })
+              .from(oauthAuthCodes)
+              .where(where)
+              .limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
+  }
+
+  private reapExpiredTokens(now: Date): Promise<number> {
+    const where = lt(oauthTokens.expiresAt, now);
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthTokens)
+        .where(
+          inArray(
+            oauthTokens.tokenHash,
+            this.db.select({ key: oauthTokens.tokenHash }).from(oauthTokens).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
+  }
+
+  /**
+   * Tokens de magic link ya inservibles (consumidos o caducados) y más viejos que la
+   * retención. La condición de antigüedad va sobre `createdAt`, no sobre `expiresAt`: es la
+   * fecha que fija de verdad cuánto tiempo llevamos guardando el dato.
+   */
+  private reapLoginTokens(now: Date): Promise<number> {
+    const cutoff = this.cutoff(now, 'LOGIN_TOKEN_RETENTION_DAYS');
+    const where = and(
+      lt(loginTokens.createdAt, cutoff),
+      or(lt(loginTokens.expiresAt, now), sql`${loginTokens.consumedAt} is not null`),
+    );
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(loginTokens)
+        .where(
+          inArray(
+            loginTokens.id,
+            this.db.select({ key: loginTokens.id }).from(loginTokens).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
+  }
+
+  private reapAuditLog(now: Date): Promise<number> {
+    const where = lt(mcpAuditLog.createdAt, this.cutoff(now, 'MCP_AUDIT_RETENTION_DAYS'));
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(mcpAuditLog)
+        .where(
+          inArray(
+            mcpAuditLog.id,
+            this.db.select({ key: mcpAuditLog.id }).from(mcpAuditLog).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
+  }
+
+  /**
+   * Clientes DCR abandonados. La seguridad está ENTERAMENTE en el predicado: `oauth_grants`
+   * y `oauth_tokens` guardan el `clientId` como texto suelto, sin FK, así que la base de
+   * datos no impediría borrar un cliente en uso y dejar consentimientos huérfanos. Por eso
+   * excluimos explícitamente todo cliente con un consentimiento o un token asociado.
+   *
+   * Esa exclusión es también lo que hace seguro el estreno de esta poda: `lastUsedAt` no se
+   * escribía hasta ahora, así que todas las filas existentes lo tienen a NULL y solo el
+   * criterio "sin grants ni tokens" las salva. Un cliente en uso real siempre tiene grant.
+   */
+  private reapAbandonedClients(now: Date): Promise<number> {
+    const cutoff = this.cutoff(now, 'OAUTH_CLIENT_RETENTION_DAYS');
+    const where = and(
+      lt(oauthClients.createdAt, cutoff),
+      or(isNull(oauthClients.lastUsedAt), lt(oauthClients.lastUsedAt, cutoff)),
+      notExists(
+        this.db
+          .select({ one: sql`1` })
+          .from(oauthGrants)
+          .where(eq(oauthGrants.clientId, oauthClients.clientId)),
+      ),
+      notExists(
+        this.db
+          .select({ one: sql`1` })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.clientId, oauthClients.clientId)),
+      ),
+    );
+    return this.deleteInBatches(() =>
+      this.db
+        .delete(oauthClients)
+        .where(
+          inArray(
+            oauthClients.clientId,
+            this.db.select({ key: oauthClients.clientId }).from(oauthClients).where(where).limit(RETENTION_BATCH_SIZE),
+          ),
+        ),
+    );
+  }
+
+  /**
+   * Repite el `DELETE` de un lote hasta que borra menos de `RETENTION_BATCH_SIZE` filas. Cuenta
+   * con el `count` que devuelve postgres-js, sin `RETURNING` (que traería las claves solo para
+   * contarlas).
+   */
+  private async deleteInBatches(deleteBatch: () => PromiseLike<{ count: number }>): Promise<number> {
+    let total = 0;
+    for (;;) {
+      const { count } = await deleteBatch();
+      total += count;
+      if (count < RETENTION_BATCH_SIZE) return total;
+    }
+  }
+
+  /** Fecha de corte para una retención configurable (ya validada, con su defecto, en `config/env.ts`). */
+  private cutoff(now: Date, key: RetentionKey): Date {
+    const days = this.config.get(key, { infer: true });
+    return new Date(now.getTime() - days * MS_PER_DAY);
+  }
+}

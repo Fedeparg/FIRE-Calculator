@@ -8,13 +8,15 @@ import {
   type DividendResolution,
 } from '@sextante/core/fiscal/dividend-resolution';
 import { STATUTORY_DIVIDEND_WITHHOLDING } from '@sextante/core/fiscal/withholding-rates';
+import { roundCents } from '@sextante/core/money';
+import { addDays } from '../common/dates.js';
+import { numberOrNull } from '../common/numeric.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
-import { PricesService } from '../prices/prices.service.js';
+import { PriceReadService } from '../prices/price-read.service.js';
 
 /** Margen máximo entre la fecha ex-dividendo y la de pago. */
 const MAX_EX_TO_PAY_DAYS = 100;
-const MS_PER_DAY = 86_400_000;
 
 /** Dividendo por acción de mercado de un símbolo, ya sin el ajuste por splits posteriores. */
 type MarketDividend = { exDate: string; amount: number; currency: string };
@@ -33,7 +35,7 @@ export class DividendResolutionService {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly prices: PricesService,
+    private readonly prices: PriceReadService,
   ) {}
 
   /** Resuelve los dividendos pendientes de un usuario (o de todos). Devuelve cuántos ha completado. */
@@ -55,24 +57,29 @@ export class DividendResolutionService {
     const symbolByTicker = await this.prices.resolveCachedTickers([...new Set(tickers)]);
     const market = await this.marketDividends([...new Set(symbolByTicker.values())]);
 
-    let resolved = 0;
-    for (const { event, ticker } of pending) {
+    const updates = pending.flatMap(({ event, ticker }) => {
       const result = this.resolve(event, ticker ? symbolByTicker.get(ticker) : undefined, market);
-      if (!result) continue;
-      await this.db
-        .update(incomeEvents)
-        .set({
-          gross: String(result.gross),
-          grossSource: result.grossSource,
-          withholdingOrigin: result.origin === null ? null : String(result.origin),
-          withholdingOriginSource: result.originSource,
-          withholdingSpain: String(result.spain),
-        })
-        .where(eq(incomeEvents.id, event.id));
-      resolved++;
-    }
-    if (resolved > 0) this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${resolved}`);
-    return resolved;
+      return result ? [{ id: event.id, result }] : [];
+    });
+    if (updates.length === 0) return 0;
+
+    // Todas en una transacción: una sola ida y vuelta de commit en vez de una por cobro.
+    await this.db.transaction(async (tx) => {
+      for (const { id, result } of updates) {
+        await tx
+          .update(incomeEvents)
+          .set({
+            gross: String(result.gross),
+            grossSource: result.grossSource,
+            withholdingOrigin: result.origin === null ? null : String(result.origin),
+            withholdingOriginSource: result.originSource,
+            withholdingSpain: String(result.spain),
+          })
+          .where(eq(incomeEvents.id, id));
+      }
+    });
+    this.logger.log(`Dividendos completados con el dato de mercado o una estimación: ${updates.length}`);
+    return updates.length;
   }
 
   /** Capa 2 (mercado) y, si no hay dato, capa 3 (tipo legal); `null` si no cambia nada. */
@@ -108,10 +115,16 @@ export class DividendResolutionService {
         .from(instrumentSplits)
         .where(inArray(instrumentSplits.symbol, [...symbols])),
     ]);
+    const splitsBySymbol = new Map<string, (typeof splits)[number][]>();
+    for (const split of splits) {
+      const list = splitsBySymbol.get(split.symbol) ?? [];
+      list.push(split);
+      splitsBySymbol.set(split.symbol, list);
+    }
     for (const row of dividends) {
       // Yahoo divide el dividendo por cada split posterior (como los cierres): se deshace.
-      const factor = splits
-        .filter((split) => split.symbol === row.symbol && split.date > row.exDate)
+      const factor = (splitsBySymbol.get(row.symbol) ?? [])
+        .filter((split) => split.date > row.exDate)
         .reduce((product, split) => product * Number(split.ratio), 1);
       const list = out.get(row.symbol) ?? [];
       list.push({ exDate: row.exDate, amount: Number(row.amount) * factor, currency: row.currency });
@@ -129,9 +142,9 @@ function factsOf(event: IncomeEventRow): DividendFacts {
   const gross = Number(event.gross);
   const origin = event.withholdingOrigin === null ? 0 : Number(event.withholdingOrigin);
   return {
-    amount: Math.round((gross - origin) * 100) / 100,
+    amount: roundCents(gross - origin),
     tax: Number(event.withholdingSpain),
-    originalAmount: event.originalAmount === null ? null : Number(event.originalAmount),
+    originalAmount: numberOrNull(event.originalAmount),
     reported: event.reportedToAeat,
     country: event.country ?? '',
   };
@@ -144,9 +157,7 @@ function factsOf(event: IncomeEventRow): DividendFacts {
  */
 function matchDividend(dividends: readonly MarketDividend[], event: IncomeEventRow): MarketDividend | null {
   const currency = event.originalCurrency ?? 'EUR';
-  const earliest = new Date(Date.parse(`${event.paidAt}T00:00:00Z`) - MAX_EX_TO_PAY_DAYS * MS_PER_DAY)
-    .toISOString()
-    .slice(0, 10);
+  const earliest = addDays(event.paidAt, -MAX_EX_TO_PAY_DAYS);
   const candidates = dividends.filter(
     (d) => d.currency === currency && d.exDate <= event.paidAt && d.exDate >= earliest,
   );

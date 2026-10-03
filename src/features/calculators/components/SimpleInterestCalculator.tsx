@@ -2,29 +2,29 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeSimpleInterest } from "@sextante/core/calculators/interes-simple";
 import { useFormat } from "@/shared/format/use-format";
-import NumberField from "@/shared/ui/NumberField";
 import Stat from "@/shared/ui/Stat";
 import Notice from "@/shared/ui/Notice";
 import TimeSeriesChart from "@/shared/charts/TimeSeriesChart";
 import BreakdownDonut from "@/shared/charts/BreakdownDonut";
 import CalculatorLayout from "@/features/calculators/components/CalculatorLayout";
-import { useNumberField } from "./CalculatorState";
+import { useBoundNumberField } from "./CalculatorState";
+import NumField from "./NumField";
+import { useInputs } from "./use-inputs";
 
 export default function SimpleInterestCalculator() {
   const t = useTranslations("calc.interes-simple");
   const { formatEUR } = useFormat();
 
-  const [principal, setPrincipal] = useNumberField("principal", 10000);
-  const [annualRate, setAnnualRate] = useNumberField("annualRate", 4);
-  const [years, setYears] = useNumberField("years", 15);
-  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const principal = useBoundNumberField("principal", 10000);
+  const annualRate = useBoundNumberField("annualRate", 4);
+  const years = useBoundNumberField("years", 15);
+  const withholdingRate = useBoundNumberField("withholdingRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
 
-  const result = useMemo(
-    () => computeSimpleInterest({ principal, annualRate, years, withholdingRate }),
-    [principal, annualRate, years, withholdingRate],
-  );
+  const inputs = useInputs({ principal, annualRate, years, withholdingRate });
+  const result = useMemo(() => computeSimpleInterest(inputs), [inputs]);
 
   return (
     <CalculatorLayout
@@ -32,30 +32,10 @@ export default function SimpleInterestCalculator() {
       notice={<Notice>{t("note")}</Notice>}
       inputs={
         <>
-          <NumberField
-            label={t("principal")}
-            value={principal}
-            onChange={setPrincipal}
-            step={1000}
-            help={t("help.principal")}
-          />
-          <NumberField
-            label={t("annualRate")}
-            value={annualRate}
-            onChange={setAnnualRate}
-            step={0.5}
-            max={100}
-            help={t("help.annualRate")}
-          />
-          <NumberField label={t("years")} value={years} onChange={setYears} step={1} max={70} help={t("help.years")} />
-          <NumberField
-            label={t("withholdingRate")}
-            value={withholdingRate}
-            onChange={setWithholdingRate}
-            step={1}
-            max={100}
-            help={t("help.withholdingRate")}
-          />
+          <NumField field={principal} step={1000} />
+          <NumField field={annualRate} step={0.5} max={100} />
+          <NumField field={years} step={1} max={70} />
+          <NumField field={withholdingRate} step={1} max={100} />
         </>
       }
       results={
@@ -85,7 +65,7 @@ export default function SimpleInterestCalculator() {
             title={t("donutTitle")}
             centerLabel={t("donutCenter")}
             data={[
-              { name: t("seriesContributed"), value: principal, color: "var(--brand)" },
+              { name: t("seriesContributed"), value: inputs.principal, color: "var(--brand)" },
               { name: t("seriesInterest"), value: result.totalInterest, color: "var(--accent)" },
             ]}
           />

@@ -15,9 +15,11 @@ import {
   type HistoryRangeKey,
 } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Props = {
@@ -42,7 +44,7 @@ type Status = "loading" | "ready" | "error";
  */
 export default function PortfolioHistoryChart({ display }: Props) {
   const t = useTranslations("portfolio.history");
-  const { formatCurrency, formatPercent } = useFormat();
+  const { formatCurrency, formatSignedCurrency, formatSignedPercent } = useFormat();
   const [range, setRange] = useState<HistoryRangeKey>(DEFAULT_HISTORY_RANGE);
 
   const days = HISTORY_RANGES.find((r) => r.key === range)?.days ?? 365;
@@ -56,11 +58,12 @@ export default function PortfolioHistoryChart({ display }: Props) {
   // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
   // la serie en el día de hoy para que la gráfica no se quede en ayer.
   const { agg } = usePortfolioData();
+  const today = useTodayUtc();
   const series = useMemo(() => {
     const live =
       agg.display === display
         ? {
-            date: new Date().toISOString().slice(0, 10),
+            date: today,
             marketValue: agg.marketValue,
             invested: agg.invested,
             pnlAbs: agg.pnlAbs,
@@ -70,7 +73,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
           }
         : null;
     return buildHistorySeries(withLivePoint(history?.points ?? [], live));
-  }, [history, agg, display]);
+  }, [history, agg, display, today]);
 
   const estimatedColumn: ChartTableColumn<DataRow> = {
     label: t("estimatedColumn"),
@@ -81,12 +84,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
   const lastPoint = series.points.at(-1);
   const lastValue = typeof lastPoint?.marketValue === "number" ? lastPoint.marketValue : null;
 
-  const changeColor =
-    series.changeAbs === null || series.changeAbs === 0
-      ? "text-foreground"
-      : series.changeAbs > 0
-        ? "text-success"
-        : "text-danger";
+  const changeColor = signedTone(series.changeAbs);
 
   return (
     // `min-w-0` + `overflow-hidden`: la caja no puede ser más ancha que su columna, pase lo que
@@ -102,7 +100,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
             const next = HISTORY_RANGES.find(({ key }) => key === event.target.value);
             if (next) setRange(next.key);
           }}
-          className="min-h-9 rounded-lg border border-border bg-surface px-2.5 py-1 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30"
+          className="min-h-9 rounded-lg border border-border bg-surface px-2.5 py-1 text-sm text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30"
         >
           {HISTORY_RANGES.map(({ key }) => (
             <option key={key} value={key}>
@@ -130,13 +128,9 @@ export default function PortfolioHistoryChart({ display }: Props) {
           {series.changeAbs !== null && series.from && series.to && (
             <p className="-mt-3 flex flex-wrap items-baseline gap-x-2 text-sm">
               <span className={`font-semibold tabular-nums ${changeColor}`}>
-                {series.changeAbs > 0 ? "+" : ""}
-                {formatCurrency(series.changeAbs, display)}
+                {formatSignedCurrency(series.changeAbs, display)}
                 {series.changePct !== null && (
-                  <span className="ml-1 font-medium">
-                    ({series.changeAbs > 0 ? "+" : ""}
-                    {formatPercent(series.changePct)})
-                  </span>
+                  <span className="ml-1 font-medium">({formatSignedPercent(series.changePct)})</span>
                 )}
               </span>
               <span className="text-xs text-muted">

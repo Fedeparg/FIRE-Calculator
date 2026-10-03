@@ -1,15 +1,16 @@
 import { randomUUID } from 'node:crypto';
 
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack } from '../../test/positions-stack.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
-import { PositionsService } from './positions.service.js';
+import type { PositionsService } from './positions.service.js';
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
   return {
@@ -49,9 +50,9 @@ describe('PositionsService (integración con Postgres)', () => {
       const bPositions = await service.findAllByUser(userB);
 
       expect(aPositions).toHaveLength(1);
-      expect(aPositions[0].ticker).toBe('IWDA');
+      expect(itemAt(aPositions, 0).ticker).toBe('IWDA');
       expect(bPositions).toHaveLength(1);
-      expect(bPositions[0].ticker).toBe('VWCE');
+      expect(itemAt(bPositions, 0).ticker).toBe('VWCE');
     });
 
     it('un usuario no puede borrar la posición de otro (404)', async () => {
@@ -96,6 +97,26 @@ describe('PositionsService (integración con Postgres)', () => {
       await expect(service.create(user, dto({ ticker: 'IWDA', broker: 'degiro' }))).rejects.toMatchObject({
         response: { code: 'DUPLICATE' },
       });
+    });
+
+    it('dos altas simultáneas del mismo (símbolo, bróker): una entra y la otra es 409 DUPLICATE, no 500', async () => {
+      const concurrent = createTestDb({ max: 4 });
+      try {
+        const { positions: parallel } = buildPositionsStack(concurrent.db);
+        const user = await insertUser(db, 'a@example.com');
+
+        const results = await Promise.allSettled([
+          parallel.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' })),
+          parallel.create(user, dto({ ticker: 'IWDA', broker: 'Degiro' })),
+        ]);
+
+        expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+        const rejected = firstItem(results.filter((r) => r.status === 'rejected'));
+        expect(rejected.reason).toBeInstanceOf(ConflictException);
+        expect(rejected.reason).toMatchObject({ response: { code: 'DUPLICATE', existing: { ticker: 'IWDA' } } });
+      } finally {
+        await concurrent.close();
+      }
     });
 
     it('permite el mismo símbolo en brókers distintos', async () => {

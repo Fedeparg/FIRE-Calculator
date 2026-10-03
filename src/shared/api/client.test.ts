@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { firstItem, itemAt } from "@sextante/core/arrays";
 
-import { ApiError, apiErrorKey, apiFetch, apiJson } from "./client";
+import { ApiError, apiErrorKey, apiFetch, apiJson, createApiErrorMapper } from "./client";
 
 function mockFetch(impl: (path: string, init?: RequestInit) => Promise<Response> | Response) {
   const fn = vi.fn(async (path: string, init?: RequestInit) => impl(path, init));
@@ -24,7 +25,7 @@ describe("apiJson", () => {
   it("serializes the body and sets the JSON content type", async () => {
     const fn = mockFetch(() => Response.json({}));
     await apiJson("/api/x", { method: "POST", body: { n: 2 }, headers: { "X-Test": "1" } });
-    const [, init] = fn.mock.calls[0];
+    const [, init] = firstItem(fn.mock.calls);
     expect(init?.body).toBe('{"n":2}');
     expect(init?.headers).toEqual({ "Content-Type": "application/json", "X-Test": "1" });
     expect(init?.method).toBe("POST");
@@ -33,7 +34,7 @@ describe("apiJson", () => {
   it("does not add a content type without body", async () => {
     const fn = mockFetch(() => Response.json({}));
     await apiJson("/api/x");
-    expect(fn.mock.calls[0][1]?.headers).toBeUndefined();
+    expect(itemAt(fn.mock.calls, 0)[1]?.headers).toBeUndefined();
   });
 
   it("throws ApiError with status and the code of the error body", async () => {
@@ -53,7 +54,7 @@ describe("apiJson", () => {
     const fn = mockFetch(() => Response.json({}));
     const csv = new Blob(["a,b"], { type: "text/csv" });
     await apiJson("/api/x", { method: "POST", body: csv, headers: { "Content-Type": "text/csv" } });
-    const [, init] = fn.mock.calls[0];
+    const [, init] = firstItem(fn.mock.calls);
     expect(init?.body).toBe(csv);
     expect(init?.headers).toEqual({ "Content-Type": "text/csv" });
   });
@@ -115,5 +116,42 @@ describe("apiErrorKey", () => {
   it("falls back to generic for non-ApiError values", () => {
     expect(apiErrorKey(new Error("boom"))).toBe("errorGeneric");
     expect(apiErrorKey("x")).toBe("errorGeneric");
+  });
+});
+
+describe("createApiErrorMapper", () => {
+  const map = createApiErrorMapper({
+    codes: { QUOTA: "errorQuota" },
+    statuses: { 404: "errorNotFound", 429: "errorRateLimit" },
+    invalidFallback: "errorInvalid",
+  });
+
+  it("el código de dominio manda sobre el status", () => {
+    expect(map(new ApiError(400, "QUOTA"))).toBe("errorQuota");
+    expect(map(new ApiError(404, "QUOTA"))).toBe("errorQuota");
+  });
+
+  it("sin código conocido, usa el status propio", () => {
+    expect(map(new ApiError(404))).toBe("errorNotFound");
+    expect(map(new ApiError(429, "OTRO"))).toBe("errorRateLimit");
+  });
+
+  it("no confunde un código con una propiedad del prototipo", () => {
+    expect(map(new ApiError(400, "toString"))).toBe("errorInvalid");
+  });
+
+  it("el resto cae en el mapeo común", () => {
+    expect(map(new ApiError(0))).toBe("errorNetwork");
+    expect(map(new ApiError(401))).toBe("errorSession");
+    expect(map(new ApiError(503))).toBe("errorServer");
+    expect(map(new ApiError(409, "CONFLICT"))).toBe("errorGeneric");
+    expect(map(new Error("boom"))).toBe("errorGeneric");
+  });
+
+  it("un 400/422 sin código propio se traduce con invalidFallback", () => {
+    const noForm = createApiErrorMapper({ invalidFallback: "errorGeneric" });
+    expect(map(new ApiError(422))).toBe("errorInvalid");
+    expect(noForm(new ApiError(400))).toBe("errorGeneric");
+    expect(noForm(new ApiError(400, "OUT_OF_RANGE"))).toBe("errorGeneric");
   });
 });

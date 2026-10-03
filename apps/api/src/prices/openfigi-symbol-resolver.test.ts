@@ -15,6 +15,7 @@ import {
   tickerCandidates,
 } from './openfigi-symbol-resolver.js';
 import type { PriceProvider, Quote } from './price-provider.interface.js';
+import { stub } from '../../test/factories.js';
 
 /** Tope de candidatos que aplica el resolver (`MAX_CANDIDATES`). */
 const MAX_CANDIDATES = 12;
@@ -171,11 +172,11 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
 
   function makeResolver(searchResults: InstrumentSearchResult[], priced: string[]) {
     const quote = (symbol: string): Quote => ({ symbol, close: 100, currency: 'EUR', date: '2026-10-01' });
-    const provider = {
+    const provider = stub<PriceProvider>({
       getQuotes: vi.fn((symbols: string[]) =>
         Promise.resolve(new Map(symbols.filter((s) => priced.includes(s)).map((s) => [s, quote(s)]))),
       ),
-    } as unknown as PriceProvider;
+    });
     const search = { search: vi.fn().mockResolvedValue(searchResults) };
     const resolver = new OpenFigiSymbolResolver(db, provider, search, fakeConfig());
     return { resolver, search };
@@ -223,5 +224,97 @@ describe('OpenFigiSymbolResolver.resolve (ISIN)', () => {
     await expect(resolver.resolve('US0231351067')).resolves.toBe('AMZ.DE');
     const [row] = await db.select().from(instruments).where(eq(instruments.query, 'US0231351067'));
     expect(row).toMatchObject({ symbol: 'AMZ.DE', source: 'openfigi' });
+  });
+});
+
+describe('OpenFigiSymbolResolver.resolveManyCached', () => {
+  let db: Database;
+  let close: () => Promise<void>;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+  });
+  afterEach(async () => {
+    await resetDb(db);
+  });
+  afterAll(async () => {
+    await close();
+  });
+
+  it('resuelve muchos de la caché en una consulta, sin tocar la red, conservando la entrada original', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const now = new Date();
+    await db.insert(instruments).values([
+      { query: 'IE00BK5BQZ41', symbol: 'VWCE.DE', source: 'yahoo_search', resolvedAt: now },
+      { query: 'AAPL', symbol: 'AAPL', source: 'identity', resolvedAt: now },
+      { query: 'XX0000000000', symbol: null, source: 'not_found', resolvedAt: now },
+    ]);
+    const getQuotes = vi.fn();
+    const provider = stub<PriceProvider>({ getQuotes });
+    const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
+
+    const resolved = await resolver.resolveManyCached([' ie00bk5bqz41 ', 'AAPL', 'XX0000000000', 'NUEVO', '']);
+
+    expect(resolved).toEqual(
+      new Map([
+        [' ie00bk5bqz41 ', 'VWCE.DE'],
+        ['AAPL', 'AAPL'],
+        ['XX0000000000', null],
+        ['NUEVO', null],
+        ['', null],
+      ]),
+    );
+    await expect(resolver.resolveCached('aapl')).resolves.toBe('AAPL');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(getQuotes).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('OpenFigiSymbolResolver.resolve — caché negativa', () => {
+  const HOUR = 60 * 60_000;
+  let db: Database;
+  let close: () => Promise<void>;
+
+  beforeAll(() => {
+    ({ db, close } = createTestDb());
+  });
+  afterEach(async () => {
+    vi.useRealTimers();
+    await resetDb(db);
+  });
+  afterAll(async () => {
+    await close();
+  });
+
+  it('no reintenta un ticker sin cotización hasta que vence su espera, que crece y se olvida al resolver', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-01T10:00:00Z'));
+    let priced = false;
+    const getQuotes = vi.fn((symbols: string[]) =>
+      Promise.resolve(
+        new Map(priced ? symbols.map((s) => [s, { symbol: s, close: 1, currency: 'EUR', date: '2026-10-01' }]) : []),
+      ),
+    );
+    const provider = stub<PriceProvider>({ getQuotes });
+    const resolver = new OpenFigiSymbolResolver(db, provider, { search: vi.fn() }, fakeConfig());
+
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBeNull();
+    expect(getQuotes).toHaveBeenCalledTimes(1);
+
+    // Vence la primera espera (1 h): reintenta, vuelve a fallar y la siguiente es de 2 h.
+    vi.setSystemTime(Date.now() + HOUR + 1);
+    await resolver.resolve('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(2);
+    vi.setSystemTime(Date.now() + HOUR + 1);
+    await resolver.resolve('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(2);
+
+    vi.setSystemTime(Date.now() + HOUR);
+    priced = true;
+    await expect(resolver.resolve('NOPE.DE')).resolves.toBe('NOPE.DE');
+    expect(getQuotes).toHaveBeenCalledTimes(3);
   });
 });

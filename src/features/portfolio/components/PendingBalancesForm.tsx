@@ -1,14 +1,19 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
+import { firstItem, itemAt } from "@sextante/core/arrays";
 import type { PendingNegative, SavingsGroup } from "@sextante/core/fiscal/savings-base";
 import { savePendingBalances } from "@/features/portfolio/api";
-import { apiErrorKey, type ApiErrorKey } from "@/shared/api/client";
-import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
+import { validatePendingBalances } from "@/features/portfolio/model/form-validation";
+import { formatDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
+import DecimalField from "@/shared/ui/DecimalField";
 import { inputClass } from "@/shared/ui/field-classes";
 
 type Row = { key: number; originYear: number; kind: SavingsGroup; amount: string };
@@ -27,21 +32,28 @@ type Props = {
  */
 export default function PendingBalancesForm({ balances, firstYear }: Props) {
   const t = useTranslations("portfolio.pendingBalances");
+  const errorText = useApiErrorText(t);
   const router = useRouter();
   const uid = useId();
+  const { decimalSeparator } = useFormat();
   const years = [1, 2, 3, 4].map((offset) => firstYear - offset);
 
   const [rows, setRows] = useState<Row[]>(() =>
-    balances.map((b, i) => ({ key: i, originYear: b.originYear, kind: b.kind, amount: String(b.amount) })),
+    balances.map((b, i) => ({
+      key: i,
+      originYear: b.originYear,
+      kind: b.kind,
+      amount: formatDecimalInput(b.amount, decimalSeparator),
+    })),
   );
   const [nextKey, setNextKey] = useState(balances.length);
-  const [saving, setSaving] = useState(false);
-  const [errorKey, setErrorKey] = useState<ApiErrorKey | null>(null);
+  const save = useApiMutation();
+  // El refresco va en una transición: "Guardado" no aparece hasta que llegan los datos nuevos.
+  const [refreshing, startTransition] = useTransition();
+  const busy = save.status === "pending" || refreshing;
   const [saved, setSaved] = useState(false);
 
-  const parsed = rows.map((row) => ({ ...row, value: parseDecimalInput(row.amount) ?? Number.NaN }));
-  const duplicated = new Set(rows.map((r) => `${r.originYear}:${r.kind}`)).size !== rows.length;
-  const isValid = !duplicated && parsed.every((row) => Number.isFinite(row.value) && row.value > 0);
+  const { duplicated, amounts } = validatePendingBalances(rows);
 
   function update(key: number, patch: Partial<Row>) {
     setSaved(false);
@@ -49,18 +61,13 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   }
 
   async function handleSave() {
-    if (!isValid) return;
-    setSaving(true);
-    setErrorKey(null);
-    try {
-      await savePendingBalances(parsed.map(({ originYear, kind, value }) => ({ originYear, kind, amount: value })));
-      setSaved(true);
-      router.refresh();
-    } catch (error) {
-      setErrorKey(apiErrorKey(error));
-    } finally {
-      setSaving(false);
-    }
+    if (!amounts) return;
+    const result = await save.run(() =>
+      savePendingBalances(rows.map(({ originYear, kind }, i) => ({ originYear, kind, amount: itemAt(amounts, i) }))),
+    );
+    if (!result.ok) return;
+    setSaved(true);
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -104,15 +111,10 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-muted">
                   {t("amount")}
-                  <input
+                  <DecimalField
                     id={`${uid}-amount-${row.key}`}
-                    type="text"
-                    inputMode="decimal"
-                    autoComplete="off"
                     value={row.amount}
-                    onChange={(e) => update(row.key, { amount: sanitizeDecimalInput(e.target.value) })}
-                    placeholder="0"
-                    className={inputClass}
+                    onChange={(amount) => update(row.key, { amount })}
                   />
                 </label>
                 <Button
@@ -131,9 +133,9 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
         )}
 
         {duplicated && <p className="text-sm text-warning">{t("duplicated")}</p>}
-        {errorKey && (
+        {save.errorKey && (
           <p role="alert" className="text-sm text-warning">
-            {t(errorKey)}
+            {errorText(save.errorKey)}
           </p>
         )}
 
@@ -143,16 +145,19 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
             disabled={rows.length >= 8}
             onClick={() => {
               setSaved(false);
-              setRows((current) => [...current, { key: nextKey, originYear: years[0], kind: "gains", amount: "" }]);
+              setRows((current) => [
+                ...current,
+                { key: nextKey, originYear: firstItem(years), kind: "gains", amount: "" },
+              ]);
               setNextKey((k) => k + 1);
             }}
           >
             {t("add")}
           </Button>
-          <Button disabled={!isValid || saving} onClick={() => void handleSave()}>
-            {saving ? t("saving") : t("save")}
+          <Button disabled={!amounts || busy} onClick={() => void handleSave()}>
+            {busy ? t("saving") : t("save")}
           </Button>
-          {saved && <span className="text-sm text-success">{t("saved")}</span>}
+          {saved && !refreshing && <span className="text-sm text-success">{t("saved")}</span>}
         </div>
       </div>
     </details>

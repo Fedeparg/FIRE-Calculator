@@ -2,17 +2,12 @@
 // emparejadas por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas
 // dentro de él. Core puro. Alcance, criterio de divisas y fuentes: ver ./README.md.
 
+import { firstItem } from "../arrays.js";
+import { compareStrings } from "../compare.js";
 import { referenceRateOn, TAX_CURRENCY, toEur, type AppliedRate, type ReferenceRates } from "./fx-reference.js";
-import {
-  walkLots,
-  estimateSavingsTax,
-  type RealisedSale,
-  type SavingsTaxEstimate,
-  type TradeLot,
-} from "./plusvalias.js";
+import { walkLots, type RealisedSale, type TradeLot } from "./plusvalias.js";
+import { estimateSavingsTax, type SavingsTaxEstimate } from "./savings-tax.js";
 import { computeWashSales, type WashSaleIntegration } from "./wash-sale.js";
-
-export { TAX_CURRENCY };
 
 /** Una posición con su histórico, tal y como la tiene la cartera. */
 export interface RealisedGainsPosition {
@@ -171,7 +166,9 @@ export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]
   for (const position of positions) {
     if (position.currency === TAX_CURRENCY) continue;
     const key = securityKey(position);
-    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+    const existing = bySecurity.get(key);
+    if (existing) existing.push(position);
+    else bySecurity.set(key, [position]);
   }
 
   const currencies = new Set<string>();
@@ -179,7 +176,7 @@ export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]
   for (const group of bySecurity.values()) {
     const lots = group.flatMap((p) => p.lots);
     if (!lots.some((lot) => lot.kind === "sell")) continue;
-    currencies.add(group[0].currency);
+    currencies.add(firstItem(group).currency);
     for (const lot of lots) if (from === null || lot.tradedAt < from) from = lot.tradedAt;
   }
   return from === null ? null : { currencies: [...currencies].sort(), from };
@@ -229,7 +226,9 @@ export function buildRealisedGainsReport(
   const bySecurity = new Map<string, RealisedGainsPosition[]>();
   for (const position of positions) {
     const key = securityKey(position);
-    bySecurity.set(key, [...(bySecurity.get(key) ?? []), position]);
+    const existing = bySecurity.get(key);
+    if (existing) existing.push(position);
+    else bySecurity.set(key, [position]);
   }
 
   const byYear = new Map<number, RealisedGainsSale[]>();
@@ -269,7 +268,9 @@ export function buildRealisedGainsReport(
 
     for (const sale of groupSales) {
       const year = fiscalYear(sale.tradedAt);
-      byYear.set(year, [...(byYear.get(year) ?? []), sale]);
+      const existing = byYear.get(year);
+      if (existing) existing.push(sale);
+      else byYear.set(year, [sale]);
     }
   }
 
@@ -300,7 +301,7 @@ function applyWashSalesInEur(sales: readonly RealisedGainsSale[]): void {
 
 function buildYear(year: number, sales: RealisedGainsSale[]): RealisedGainsYear {
   const ordered = [...sales].sort((a, b) =>
-    a.tradedAt !== b.tradedAt ? (a.tradedAt < b.tradedAt ? -1 : 1) : a.ticker.localeCompare(b.ticker),
+    a.tradedAt !== b.tradedAt ? compareStrings(a.tradedAt, b.tradedAt) : a.ticker.localeCompare(b.ticker),
   );
 
   const rows = new Map<string, RealisedGainsRow>();

@@ -1,15 +1,17 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-import { incomeFieldsSchema } from '../../income/dto/create-income.dto.js';
-import { IncomeService } from '../../income/income.service.js';
+import { createIncomeSchema, incomeFieldsSchema } from '../../income/dto/create-income.dto.js';
+import { updateIncomeSchema } from '../../income/dto/update-income.dto.js';
+import type { IncomeService } from '../../income/income.service.js';
 import { combinePositionSchema } from '../../positions/dto/combine-position.dto.js';
 import { createPositionSchema } from '../../positions/dto/create-position.dto.js';
 import { createPositionLotSchema } from '../../positions/dto/create-position-lot.dto.js';
 import { updatePositionSchema } from '../../positions/dto/update-position.dto.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
+import type { PositionLotsService } from '../../positions/position-lots.service.js';
+import type { PositionsService } from '../../positions/positions.service.js';
 import { jsonResult } from '../mcp-results.js';
+import { InvalidToolInputError } from '../tool-errors.js';
 import type { ToolRunner } from './tool-runner.js';
 
 export type WriteToolDeps = {
@@ -24,9 +26,23 @@ export type WriteToolDeps = {
  * recibe un error de tool pidiendo reconectar con permiso de escritura (step-up). No es un
  * 403 HTTP: todas las tools comparten el mismo endpoint, así que el control es por-tool.
  *
- * El `inputSchema` de cada tool sale de los esquemas zod de `positions/dto` (los mismos que validan
- * la API REST): así el camino MCP no es una vía de escritura más débil y no puede divergir de ella.
+ * El `inputSchema` de cada tool sale de los esquemas zod de los DTO (los mismos que validan la API
+ * REST). Pero el SDK solo acepta un `shape`, que pierde los refinamientos que cruzan campos
+ * ("al menos un campo", "las retenciones no superan el íntegro"…): por eso cada tool vuelve a
+ * validar con el esquema REST COMPLETO (`asRest`) antes de llamar al servicio. Así el camino MCP
+ * no es una vía de escritura más débil.
  */
+/** Valida como la API REST (esquema completo, refinamientos incluidos); un fallo es error de entrada de la tool. */
+function asRest<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
+  const result = schema.safeParse(value);
+  if (!result.success) {
+    throw new InvalidToolInputError(
+      result.error.issues.map((issue) => `${issue.path.join('.') || 'entrada'}: ${issue.message}`).join('; '),
+    );
+  }
+  return result.data;
+}
+
 export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: WriteToolDeps): void {
   server.registerTool(
     'add_position',
@@ -41,7 +57,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     (args) =>
       runner.runWrite('add_position', async () => {
-        const position = await deps.positions.create(runner.userId, args);
+        const position = await deps.positions.create(runner.userId, asRest(createPositionSchema, args));
         return jsonResult({ position });
       }),
   );
@@ -61,7 +77,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     ({ id, ...rest }) =>
       runner.runWrite('update_position', async () => {
-        const position = await deps.positions.update(runner.userId, id, rest);
+        const position = await deps.positions.update(runner.userId, id, asRest(updatePositionSchema, rest));
         return jsonResult({ position });
       }),
   );
@@ -82,7 +98,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     ({ id, ...rest }) =>
       runner.runWrite('combine_position', async () => {
-        const position = await deps.positions.combine(runner.userId, id, rest);
+        const position = await deps.positions.combine(runner.userId, id, asRest(combinePositionSchema, rest));
         return jsonResult({ position });
       }),
   );
@@ -124,7 +140,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     ({ positionId, ...rest }) =>
       runner.runWrite('add_position_lot', async () => {
-        const lot = await deps.lots.create(runner.userId, positionId, rest);
+        const lot = await deps.lots.create(runner.userId, positionId, asRest(createPositionLotSchema, rest));
         return jsonResult({ lot });
       }),
   );
@@ -165,7 +181,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     (args) =>
       runner.runWrite('add_income', async () => {
-        const income = await deps.income.create(runner.userId, args);
+        const income = await deps.income.create(runner.userId, asRest(createIncomeSchema, args));
         return jsonResult({ income });
       }),
   );
@@ -185,7 +201,7 @@ export function registerWriteTools(server: McpServer, runner: ToolRunner, deps: 
     },
     ({ id, ...rest }) =>
       runner.runWrite('update_income', async () => {
-        const income = await deps.income.update(runner.userId, id, rest);
+        const income = await deps.income.update(runner.userId, id, asRest(updateIncomeSchema, rest));
         return jsonResult({ income });
       }),
   );

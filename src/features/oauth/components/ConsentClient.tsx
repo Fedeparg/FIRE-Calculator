@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
+import { denyRedirectTarget } from "@/features/oauth/model/deny-redirect";
 import { apiFetch } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
@@ -11,6 +12,8 @@ type Props = {
   scopes: string[];
   /** Query original de `/authorize` para reanudar el flujo tras aprobar. */
   authorizeParams: string;
+  /** `redirect_uris` registradas por el cliente (vacía si la API no respondió). */
+  redirectUris: readonly string[];
 };
 
 const SCOPE_LABELS: Record<string, string> = {
@@ -21,9 +24,9 @@ const SCOPE_LABELS: Record<string, string> = {
 /**
  * Acciones de la pantalla de consentimiento. Al permitir, registra el consentimiento en la
  * API y reanuda el flujo de `/authorize` (que emitirá el código). Al denegar, devuelve el
- * control al cliente con `error=access_denied`. Ver `_local/mcp-integracion.md`.
+ * control al cliente con `error=access_denied` si su `redirect_uri` está registrada. Ver `_local/mcp-integracion.md`.
  */
-export default function ConsentClient({ clientId, scopes, authorizeParams }: Props) {
+export default function ConsentClient({ clientId, scopes, authorizeParams, redirectUris }: Props) {
   const t = useTranslations("oauth.consent");
   const consent = useApiMutation();
   // `success` cuenta como trabajando: el botón sigue deshabilitado hasta que la navegación termine.
@@ -38,22 +41,9 @@ export default function ConsentClient({ clientId, scopes, authorizeParams }: Pro
   }
 
   function deny() {
-    // Devuelve el control al cliente con error=access_denied (flujo OAuth correcto).
-    const params = new URLSearchParams(authorizeParams);
-    const redirectUri = params.get("redirect_uri");
-    const state = params.get("state");
-    if (redirectUri) {
-      try {
-        const target = new URL(redirectUri);
-        target.searchParams.set("error", "access_denied");
-        if (state) target.searchParams.set("state", state);
-        window.location.assign(target.href);
-        return;
-      } catch {
-        /* cae al fallback */
-      }
-    }
-    window.location.assign("/");
+    // Devuelve el control al cliente con error=access_denied (flujo OAuth correcto), pero solo
+    // a una redirect_uri registrada: la query no es de fiar (ver `denyRedirectTarget`).
+    window.location.assign(denyRedirectTarget(authorizeParams, clientId, redirectUris));
   }
 
   return (

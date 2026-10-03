@@ -9,6 +9,7 @@ import type { TaxBoxes } from "@sextante/core/fiscal/tax-boxes";
 import CopyValue from "@/shared/ui/CopyValue";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
+import { formatTaxBox } from "@sextante/core/money";
 
 /**
  * Por debajo de 5 céntimos, un exceso de retención es ruido de redondeo: el bróker redondea cada
@@ -91,7 +92,7 @@ export default function SavingsReturnSection({
             </dt>
             <dd className="tabular-nums text-foreground">
               {row.value}
-              {row.copy !== undefined && <CopyValue value={row.copy.toFixed(2).replace(".", ",")} label={row.label} />}
+              {row.copy !== undefined && <CopyValue value={formatTaxBox(row.copy)} label={row.label} />}
             </dd>
           </div>
         ))}

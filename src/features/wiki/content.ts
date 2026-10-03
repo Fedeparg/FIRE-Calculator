@@ -2,6 +2,8 @@ import "server-only";
 
 import path from "node:path";
 
+import { cache } from "react";
+
 import {
   listLocalizedFiles,
   listLocalizedSlugs,
@@ -85,14 +87,20 @@ export async function getAllArticles(locale: string): Promise<ArticleMeta[]> {
   return articles.filter((article): article is ArticleMeta => article !== null);
 }
 
-/** Un artículo completo (metadatos + HTML) o `null` si no existe. */
-export async function getArticle(slug: string, locale: string): Promise<Article | null> {
+/**
+ * Un artículo completo (metadatos + HTML) o `null` si no existe.
+ *
+ * `cache` de React memoriza el resultado durante UNA petición de servidor: `generateMetadata` y
+ * la página piden el mismo artículo, y sin esto se leía y renderizaba dos veces. No es una
+ * caché entre peticiones (de eso se encarga el ISR).
+ */
+export const getArticle = cache(async (slug: string, locale: string): Promise<Article | null> => {
   const file = await readLocalizedMarkdown(WIKI_DIR, slug, locale);
   if (!file) return null;
   const meta = parseArticleMeta(slug, file.data);
   const html = await renderMarkdown(file.content, asLocale(locale));
   return { ...meta, html };
-}
+});
 
 /** Documento legal (privacidad, aviso legal…): título del frontmatter + HTML. */
 export interface LegalDoc {
@@ -106,8 +114,8 @@ export function getLegalSlugs(locale: string): Promise<string[]> {
   return listLocalizedSlugs(LEGAL_DIR, locale);
 }
 
-/** Un documento legal completo (título + HTML) o `null` si no existe. */
-export async function getLegalDoc(slug: string, locale: string): Promise<LegalDoc | null> {
+/** Un documento legal completo (título + HTML) o `null` si no existe. Memorizado por petición (ver `getArticle`). */
+export const getLegalDoc = cache(async (slug: string, locale: string): Promise<LegalDoc | null> => {
   const file = await readLocalizedMarkdown(LEGAL_DIR, slug, locale);
   if (!file) return null;
   const { data } = file;
@@ -117,7 +125,7 @@ export async function getLegalDoc(slug: string, locale: string): Promise<LegalDo
     updatedAt: typeof data.updatedAt === "string" ? data.updatedAt : undefined,
     html,
   };
-}
+});
 
 /**
  * Fecha de última revisión por slug, para el `lastmod` del sitemap. Recorre AMBOS
@@ -145,11 +153,11 @@ export async function getContentUpdatedDates(kind: "wiki" | "legal"): Promise<Ma
   return dates;
 }
 
-/** Explainer de una calculadora o `null` si todavía no existe (degradación). */
-export async function getExplainer(calcSlug: string, locale: string): Promise<Explainer | null> {
+/** Explainer de una calculadora o `null` si todavía no existe (degradación). Memorizado por petición. */
+export const getExplainer = cache(async (calcSlug: string, locale: string): Promise<Explainer | null> => {
   const file = await readLocalizedMarkdown(EXPLAINERS_DIR, calcSlug, locale);
   if (!file) return null;
   const html = await renderMarkdown(file.content, asLocale(locale));
   const title = typeof file.data.title === "string" ? file.data.title : undefined;
   return { title, html };
-}
+});

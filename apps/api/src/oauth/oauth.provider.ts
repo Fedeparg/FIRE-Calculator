@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 import type { AuthorizationParams, OAuthServerProvider } from '@modelcontextprotocol/sdk/server/auth/provider.js';
@@ -16,9 +15,9 @@ import {
   InvalidTokenError,
 } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 
-import { DRIZZLE, type Database } from '../db/database.module.js';
+import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
 import { oauthAuthCodes, oauthTokens } from '../db/schema.js';
-import { SESSION_COOKIE } from '@sextante/core/contracts';
+import { SessionService } from '../auth/session.service.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';
@@ -28,10 +27,9 @@ import {
   REFRESH_TOKEN_TTL_SECONDS,
   SCOPE_PORTFOLIO_READ,
   SCOPES_SUPPORTED,
+  withImpliedScopes,
 } from './oauth.constants.js';
 import { randomToken, sha256Hex } from '../common/crypto.js';
-
-type SessionJwt = { sub: string; email: string };
 
 /**
  * Authorization Server de Sextante para MCP, implementando la interfaz `OAuthServerProvider`
@@ -53,7 +51,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
-    private readonly jwt: JwtService,
+    private readonly sessions: SessionService,
     private readonly urls: OAuthUrls,
     private readonly clients: OAuthClientsStore,
     private readonly grants: OAuthGrantsService,
@@ -98,9 +96,9 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       return;
     }
 
-    const code = this.randomToken();
+    const code = this.newToken();
     await this.db.insert(oauthAuthCodes).values({
-      codeHash: this.hash(code),
+      codeHash: sha256Hex(code),
       userId,
       clientId: client.client_id,
       scopes,
@@ -125,7 +123,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       .from(oauthAuthCodes)
       .where(
         and(
-          eq(oauthAuthCodes.codeHash, this.hash(authorizationCode)),
+          eq(oauthAuthCodes.codeHash, sha256Hex(authorizationCode)),
           isNull(oauthAuthCodes.consumedAt),
           gt(oauthAuthCodes.expiresAt, new Date()),
         ),
@@ -150,7 +148,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       .set({ consumedAt: new Date() })
       .where(
         and(
-          eq(oauthAuthCodes.codeHash, this.hash(authorizationCode)),
+          eq(oauthAuthCodes.codeHash, sha256Hex(authorizationCode)),
           isNull(oauthAuthCodes.consumedAt),
           gt(oauthAuthCodes.expiresAt, new Date()),
         ),
@@ -185,7 +183,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     scopes?: string[],
     resource?: URL,
   ): Promise<OAuthTokens> {
-    const refreshHash = this.hash(refreshToken);
+    const refreshHash = sha256Hex(refreshToken);
     const [row] = await this.db
       .select()
       .from(oauthTokens)
@@ -208,17 +206,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       throw new InvalidGrantError('Refresh token expired');
     }
 
-    // Consumo atómico: si otra petición lo consumió primero, trátalo como reuso.
-    const [consumed] = await this.db
-      .update(oauthTokens)
-      .set({ consumedAt: new Date() })
-      .where(and(eq(oauthTokens.tokenHash, refreshHash), isNull(oauthTokens.consumedAt)))
-      .returning({ tokenHash: oauthTokens.tokenHash });
-    if (!consumed) {
-      await this.grants.revoke(row.userId, row.clientId);
-      throw new InvalidGrantError('Refresh token reuse detected; access revoked');
-    }
-
+    // Validaciones ANTES de consumir: una petición mal formada (scopes de más, otro recurso) no
+    // debe gastar el refresh, o el cliente se quedaría sin cadena por un error suyo.
     // Solo se pueden estrechar scopes en el refresh, nunca ampliarlos.
     let nextScopes = row.scopes;
     if (scopes && scopes.length > 0) {
@@ -228,10 +217,27 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
       }
       nextScopes = scopes;
     }
-
     const audience = this.validateResource(resource);
+
+    // Consumir y emitir en la MISMA transacción: si la emisión fallara después de consumir, el
+    // cliente se quedaría sin refresh válido y su reintento se tomaría por reuso (revocación).
+    const tokens = await this.db.transaction(async (tx) => {
+      // Consumo atómico: si otra petición lo consumió primero, trátalo como reuso.
+      const [consumed] = await tx
+        .update(oauthTokens)
+        .set({ consumedAt: new Date() })
+        .where(and(eq(oauthTokens.tokenHash, refreshHash), isNull(oauthTokens.consumedAt)))
+        .returning({ tokenHash: oauthTokens.tokenHash });
+      if (!consumed) return null;
+      return this.issueTokens(row.userId, row.clientId, nextScopes, audience, refreshHash, tx);
+    });
+    if (!tokens) {
+      await this.grants.revoke(row.userId, row.clientId);
+      throw new InvalidGrantError('Refresh token reuse detected; access revoked');
+    }
+
     this.touchClient(row.clientId);
-    return this.issueTokens(row.userId, row.clientId, nextScopes, audience, refreshHash);
+    return tokens;
   }
 
   /**
@@ -243,7 +249,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     const [row] = await this.db
       .select()
       .from(oauthTokens)
-      .where(and(eq(oauthTokens.tokenHash, this.hash(token)), eq(oauthTokens.type, 'access')))
+      .where(and(eq(oauthTokens.tokenHash, sha256Hex(token)), eq(oauthTokens.type, 'access')))
       .limit(1);
 
     if (!row) {
@@ -259,7 +265,8 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return {
       token,
       clientId: row.clientId,
-      scopes: row.scopes,
+      // Los tokens emitidos antes de que `write` implicara `read` se leen con la regla actual.
+      scopes: withImpliedScopes(row.scopes),
       expiresAt: Math.floor(row.expiresAt.getTime() / 1000),
       resource: new URL(row.audience),
       extra: { userId: row.userId },
@@ -270,13 +277,13 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
   async revokeToken(client: OAuthClientInformationFull, request: OAuthTokenRevocationRequest): Promise<void> {
     await this.db
       .delete(oauthTokens)
-      .where(and(eq(oauthTokens.tokenHash, this.hash(request.token)), eq(oauthTokens.clientId, client.client_id)));
+      .where(and(eq(oauthTokens.tokenHash, sha256Hex(request.token)), eq(oauthTokens.clientId, client.client_id)));
   }
 
   /* --------------------------------- helpers -------------------------------- */
 
   /**
-   * Marca el cliente como usado (columna `lastUsedAt`, que el reaper usa para no purgar
+   * Marca el cliente como usado (columna `lastUsedAt`, que la poda de `jobs/data-retention.ts` usa para no purgar
    * clientes vivos). Deliberadamente sin `await`: es telemetría, no parte del contrato del
    * canje, así que no debe sumar latencia a `/token` ni hacer fallar la emisión si el UPDATE
    * falla. Un error solo se registra.
@@ -294,14 +301,15 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     scopes: string[],
     audience: string,
     parentHash?: string,
+    db: DatabaseOrTransaction = this.db,
   ): Promise<OAuthTokens> {
-    const accessToken = this.randomToken();
-    const refreshToken = this.randomToken();
+    const accessToken = this.newToken();
+    const refreshToken = this.newToken();
     const now = Date.now();
 
-    await this.db.insert(oauthTokens).values([
+    await db.insert(oauthTokens).values([
       {
-        tokenHash: this.hash(accessToken),
+        tokenHash: sha256Hex(accessToken),
         type: 'access',
         userId,
         clientId,
@@ -310,7 +318,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
         expiresAt: new Date(now + ACCESS_TOKEN_TTL_SECONDS * 1000),
       },
       {
-        tokenHash: this.hash(refreshToken),
+        tokenHash: sha256Hex(refreshToken),
         type: 'refresh',
         userId,
         clientId,
@@ -341,7 +349,7 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     return this.urls.audience;
   }
 
-  /** Normaliza/valida los scopes pedidos; por defecto, solo lectura. */
+  /** Normaliza/valida los scopes pedidos; por defecto, solo lectura. `write` implica `read`. */
   private effectiveScopes(scopes?: string[]): string[] {
     const requested = scopes && scopes.length > 0 ? scopes : [SCOPE_PORTFOLIO_READ];
     const supported = new Set(SCOPES_SUPPORTED);
@@ -349,34 +357,27 @@ export class SextanteOAuthProvider implements OAuthServerProvider {
     if (unknown.length > 0) {
       throw new InvalidScopeError(`Unsupported scope(s): ${unknown.join(', ')}`);
     }
-    return Array.from(new Set(requested));
+    return withImpliedScopes(requested);
   }
 
-  /** Lee la sesión del magic link (cookie JWT) y devuelve el `userId`, o null. */
+  /**
+   * `userId` de la sesión del magic link, o null. Misma regla que `JwtAuthGuard` (`SessionService`):
+   * una cuenta borrada no puede autorizar clientes con un JWT que aún no ha caducado.
+   */
   private async readSession(req: Request): Promise<string | null> {
-    const cookies = (req.cookies ?? {}) as Record<string, string | undefined>;
-    const token = cookies[SESSION_COOKIE];
-    if (!token) {
-      return null;
-    }
-    try {
-      const payload = await this.jwt.verifyAsync<SessionJwt>(token);
-      return payload.sub;
-    } catch {
-      return null;
-    }
+    return (await this.sessions.resolve(req))?.id ?? null;
+  }
+
+  /**
+   * Token aleatorio para códigos y tokens. Es un método (y no la llamada directa a `randomToken`)
+   * para que los tests puedan forzar una colisión y comprobar la atomicidad de la emisión.
+   */
+  private newToken(): string {
+    return randomToken();
   }
 
   /** URL pública completa de la petición actual (sobre el issuer canónico). */
   private currentUrl(req: Request): URL {
     return new URL(req.originalUrl, this.urls.issuer);
-  }
-
-  private hash(value: string): string {
-    return sha256Hex(value);
-  }
-
-  private randomToken(): string {
-    return randomToken();
   }
 }

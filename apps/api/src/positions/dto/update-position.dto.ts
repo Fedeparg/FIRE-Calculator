@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-import { amountSchema, assetClassSchema, currencySchema, quantitySchema, trimmedText } from './create-position.dto.js';
+import {
+  amountSchema,
+  assetClassSchema,
+  currencySchema,
+  quantitySchema,
+  trimmedText,
+} from '../../common/dto/primitives.js';
 
 /** Cuerpo de PATCH /api/positions/:id: campos opcionales, validados como en el alta (`ticker` y `broker` no pueden quedar vacíos). */
 export const updatePositionSchema = z.strictObject({

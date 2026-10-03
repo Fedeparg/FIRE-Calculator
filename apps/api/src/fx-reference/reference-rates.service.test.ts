@@ -51,7 +51,7 @@ describe('ReferenceRatesService (integración con Postgres)', () => {
     const first = await service.getRates(['USD'], '2024-03-28');
     // Incluye los días previos que puede necesitar una operación en festivo.
     expect(first.USD?.map((p) => p.date)).toEqual(['2024-03-27', '2024-03-28', '2024-04-02', daysAgo(1)]);
-    expect(first.USD?.[0].unitsPerEur).toBeCloseTo(1.0816, 8);
+    expect(first.USD?.[0]?.unitsPerEur).toBeCloseTo(1.0816, 8);
     expect(provider.calls).toEqual([{ currencies: ['USD'], from: '2024-03-21', to: today }]);
 
     const second = await service.getRates(['USD'], '2024-03-28');

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import type { NestExpressApplication } from '@nestjs/platform-express';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 import { SESSION_COOKIE } from '@sextante/core/contracts';
 import cookieParser from 'cookie-parser';
 import { eq } from 'drizzle-orm';
@@ -61,7 +62,7 @@ function sessionSetCookie(res: Response): string | undefined {
 
 /** Valor de la cookie de sesión de una cabecera `Set-Cookie`. */
 function cookieValue(setCookie: string): string {
-  return setCookie.split(';')[0].slice(SESSION_COOKIE.length + 1);
+  return itemAt(setCookie.split(';'), 0).slice(SESSION_COOKIE.length + 1);
 }
 
 describe('AuthController (HTTP)', () => {
@@ -71,7 +72,7 @@ describe('AuthController (HTTP)', () => {
   let db: Database;
   let closeDb: () => Promise<void>;
   /** Enlaces mágicos "enviados": el transporte de dev se sustituye para capturarlos. */
-  let sentLinks: { to: string; link: string }[];
+  let sentLinks: { to: string; link: string; locale: string }[];
 
   /** Token en claro del último enlace enviado (el que llegaría al buzón del usuario). */
   const lastToken = (): string => {
@@ -118,8 +119,8 @@ describe('AuthController (HTTP)', () => {
   beforeEach(async () => {
     await resetDb(db);
     sentLinks = [];
-    vi.spyOn(DevEmailService.prototype, 'sendMagicLink').mockImplementation((to, link) => {
-      sentLinks.push({ to, link });
+    vi.spyOn(DevEmailService.prototype, 'sendMagicLink').mockImplementation((to, link, locale) => {
+      sentLinks.push({ to, link, locale });
       return Promise.resolve();
     });
   });
@@ -150,6 +151,21 @@ describe('AuthController (HTTP)', () => {
       expect(sentLinks.map((s) => s.to)).toEqual(['existe@example.com', 'nuevo@example.com']);
     });
 
+    it('limita los enlaces por email aunque cambie la IP: el 4º en 15 min es 202 pero no se envía', async () => {
+      const statuses: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        // Cada petición desde una IP distinta: el límite por IP no actúa, el de email sí.
+        statuses.push((await postJson(`${baseUrl}/request`, { email: 'victima@example.com' })).status);
+      }
+
+      expect(statuses).toEqual([202, 202, 202, 202]);
+      expect(sentLinks).toHaveLength(3);
+      expect(await db.select().from(loginTokens)).toHaveLength(3);
+      // Otra dirección no comparte el cupo.
+      await postJson(`${baseUrl}/request`, { email: 'otra@example.com' });
+      expect(sentLinks).toHaveLength(4);
+    });
+
     it('no crea el usuario al pedir el enlace: se crea al verificarlo', async () => {
       await postJson(`${baseUrl}/request`, { email: 'nuevo@example.com' });
 
@@ -160,7 +176,7 @@ describe('AuthController (HTTP)', () => {
       const before = Date.now();
       const token = await requestToken('a@example.com');
 
-      const [row] = await db.select().from(loginTokens);
+      const row = firstItem(await db.select().from(loginTokens));
       expect(row.tokenHash).toBe(sha256(token));
       expect(row.tokenHash).not.toContain(token);
       expect(row.consumedAt).toBeNull();
@@ -168,15 +184,31 @@ describe('AuthController (HTTP)', () => {
       expect(ttl).toBeGreaterThan(14 * 60_000);
       expect(ttl).toBeLessThanOrEqual(15 * 60_000 + 5_000);
       // El enlace apunta al frontend público.
-      expect(sentLinks[0].link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
+      expect(itemAt(sentLinks, 0).link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
     });
 
     it('normaliza el email a minúsculas antes de guardarlo y enviarlo', async () => {
       await postJson(`${baseUrl}/request`, { email: 'A@Example.COM' });
 
-      expect(sentLinks[0].to).toBe('a@example.com');
-      const [row] = await db.select().from(loginTokens);
+      expect(itemAt(sentLinks, 0).to).toBe('a@example.com');
+      const row = firstItem(await db.select().from(loginTokens));
       expect(row.email).toBe('a@example.com');
+    });
+
+    it('envía el enlace en el idioma pedido (castellano por defecto), apuntando a la web en ese idioma', async () => {
+      await postJson(`${baseUrl}/request`, { email: 'a@example.com' });
+      await postJson(`${baseUrl}/request`, { email: 'b@example.com', locale: 'en' });
+
+      expect(sentLinks.map((sent) => sent.locale)).toEqual(['es', 'en']);
+      expect(itemAt(sentLinks, 0).link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
+      expect(itemAt(sentLinks, 1).link.startsWith(`${APP_URL}/en/auth/verify?token=`)).toBe(true);
+    });
+
+    it('rechaza un idioma no soportado con 400', async () => {
+      const res = await postJson(`${baseUrl}/request`, { email: 'a@example.com', locale: 'fr' });
+
+      expect(res.status).toBe(400);
+      expect(sentLinks).toHaveLength(0);
     });
 
     it('rechaza un email no válido con 400 y no envía nada', async () => {
@@ -201,7 +233,7 @@ describe('AuthController (HTTP)', () => {
       const res = await postJson(`${baseUrl}/verify`, { token });
 
       expect(res.status).toBe(200);
-      const [user] = await db.select().from(users);
+      const user = firstItem(await db.select().from(users));
       expect(user.email).toBe('nuevo@example.com');
       expect(await res.json()).toEqual({ id: user.id, email: 'nuevo@example.com' });
       expect(sessionSetCookie(res)).toBeDefined();
@@ -326,6 +358,8 @@ describe('AuthController (HTTP)', () => {
 
       expect(payload.sub).toBe(user.id);
       expect(payload.email).toBe('a@example.com');
+      // Versión de sesión del usuario al firmar (0 para un usuario recién creado).
+      expect(payload).toHaveProperty('ver', 0);
       expect(payload.exp - payload.iat).toBe(SESSION_TTL_SECONDS);
       await expect(new JwtService({ secret: 'otro-secreto' }).verifyAsync(jwt)).rejects.toThrow();
     });
@@ -418,6 +452,86 @@ describe('AuthController (HTTP)', () => {
       expect(setCookie).toMatch(/Expires=Thu, 01 Jan 1970/i);
       expect(setCookie).toMatch(/;\s*HttpOnly/i);
       expect(setCookie).toMatch(/;\s*Path=\//i);
+    });
+  });
+
+  describe('revocación de sesiones', () => {
+    /** Abre sesión por el flujo real y devuelve el JWT de la cookie. */
+    const login = async (email: string): Promise<string> => {
+      const token = await requestToken(email);
+      const res = await postJson(`${baseUrl}/verify`, { token });
+      return cookieValue(sessionSetCookie(res) ?? '');
+    };
+    const me = (jwt: string): Promise<Response> =>
+      fetch(`${baseUrl}/me`, { headers: { Cookie: `${SESSION_COOKIE}=${jwt}` } });
+    const postWithSession = (path: string, jwt: string): Promise<Response> =>
+      fetch(`${baseUrl}/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Cookie: `${SESSION_COOKIE}=${jwt}` },
+        body: '{}',
+      });
+
+    it('tras cerrar sesión, el JWT anterior deja de valer aunque no haya caducado', async () => {
+      const jwt = await login('a@example.com');
+      expect((await me(jwt)).status).toBe(200);
+
+      expect((await postWithSession('logout', jwt)).status).toBe(200);
+
+      expect((await me(jwt)).status).toBe(401);
+    });
+
+    it('cerrar sesión invalida también las otras sesiones del usuario, no las de otros', async () => {
+      const laptop = await login('a@example.com');
+      const phone = await login('a@example.com');
+      const other = await login('b@example.com');
+
+      await postWithSession('logout', laptop);
+
+      expect((await me(phone)).status).toBe(401);
+      expect((await me(other)).status).toBe(200);
+    });
+
+    it('un nuevo login tras cerrar sesión funciona', async () => {
+      await postWithSession('logout', await login('a@example.com'));
+
+      expect((await me(await login('a@example.com'))).status).toBe(200);
+    });
+
+    it('POST /auth/sessions/revoke cierra todas las sesiones y borra la cookie', async () => {
+      const laptop = await login('a@example.com');
+      const phone = await login('a@example.com');
+
+      const res = await postWithSession('sessions/revoke', laptop);
+
+      expect(res.status).toBe(200);
+      expect(cookieValue(sessionSetCookie(res) ?? 'x')).toBe('');
+      expect((await me(laptop)).status).toBe(401);
+      expect((await me(phone)).status).toBe(401);
+    });
+
+    it('POST /auth/sessions/revoke exige sesión', async () => {
+      expect((await postJson(`${baseUrl}/sessions/revoke`, {})).status).toBe(401);
+    });
+
+    it('un JWT emitido antes de la versión de sesión (sin `ver`) sigue valiendo mientras no se cierre', async () => {
+      const id = await insertUser(db, 'a@example.com');
+      const legacy = await new JwtService({ secret: SECRET }).signAsync({ sub: id, email: 'a@example.com' });
+
+      expect((await me(legacy)).status).toBe(200);
+      await postWithSession('logout', legacy);
+      expect((await me(legacy)).status).toBe(401);
+    });
+
+    it('borrar la cuenta deja sin valor sus sesiones', async () => {
+      const jwt = await login('a@example.com');
+
+      const res = await fetch(`${baseUrl}/account`, {
+        method: 'DELETE',
+        headers: { Cookie: `${SESSION_COOKIE}=${jwt}` },
+      });
+
+      expect(res.status).toBe(204);
+      expect((await me(jwt)).status).toBe(401);
     });
   });
 

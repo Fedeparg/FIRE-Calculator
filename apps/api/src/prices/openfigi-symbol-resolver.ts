@@ -1,7 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
+import { isIsin } from '@sextante/core/portfolio/isin';
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { instruments } from '../db/schema.js';
@@ -13,9 +14,8 @@ import {
 } from './instrument-search.js';
 import { PRICE_PROVIDER, type PriceProvider } from './price-provider.interface.js';
 import { normalizeQuery, type SymbolResolver } from './symbol-resolver.js';
+import { fetchJson, sleep } from '../common/http.js';
 
-/** Forma de un ISIN: 2 letras (país) + 9 alfanuméricos + 1 dígito de control. */
-const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 /** Endpoint v3 de OpenFIGI (v2 EOL 2026-07-01). POST con cuerpo JSON. */
 const OPENFIGI_MAPPING_URL = 'https://api.openfigi.com/v3/mapping';
 const OPENFIGI_TIMEOUT_MS = 8_000;
@@ -53,8 +53,22 @@ const SUFFIX_ORDER = [...YAHOO_SUFFIXES, ''];
 const MAX_CANDIDATES = 12;
 /** Pausa entre validaciones: evita ráfagas que disparen el 429 de Yahoo. */
 const VALIDATION_DELAY_MS = 400;
+/**
+ * Caché negativa en memoria de las consultas que no se resolvieron SIN dejar fila en
+ * `instruments` (fallo transitorio, hueco de cobertura, ticker sin cotización). Sin ella, el
+ * refresco horario las reintentaba contra OpenFIGI y Yahoo cada hora para siempre. Espera
+ * exponencial: 1 h, 2 h, 4 h… hasta 24 h; se olvida al resolver. Se pierde al reiniciar, que es
+ * aceptable: lo peor es un reintento de más.
+ */
+const NEGATIVE_BACKOFF_BASE_MS = 60 * 60_000;
+const NEGATIVE_BACKOFF_MAX_MS = 24 * 60 * 60_000;
+/** Tope de entradas para que una avalancha de consultas basura no haga crecer la memoria. */
+const NEGATIVE_CACHE_MAX_ENTRIES = 1_000;
 
-const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+interface NegativeEntry {
+  failures: number;
+  nextTryAt: number;
+}
 
 /** Resultado de consultar OpenFIGI por un ISIN. Distingue el "vacío" real del fallo transitorio. */
 type OpenFigiOutcome =
@@ -180,6 +194,7 @@ export function tickerCandidates(query: string): string[] {
 export class OpenFigiSymbolResolver implements SymbolResolver {
   private readonly logger = new Logger(OpenFigiSymbolResolver.name);
   private readonly apiKey: string | undefined;
+  private readonly negative = new Map<string, NegativeEntry>();
 
   constructor(
     @Inject(DRIZZLE) private readonly db: Database,
@@ -191,10 +206,21 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
   }
 
   async resolveCached(tickerOrIsin: string): Promise<string | null> {
-    const query = normalizeQuery(tickerOrIsin);
-    if (!query) return null;
-    const cached = await this.lookup(query);
-    return cached ?? null;
+    return (await this.resolveManyCached([tickerOrIsin])).get(tickerOrIsin) ?? null;
+  }
+
+  async resolveManyCached(tickersOrIsins: readonly string[]): Promise<Map<string, string | null>> {
+    const queryByInput = new Map(tickersOrIsins.map((input) => [input, normalizeQuery(input)]));
+    const queries = [...new Set(queryByInput.values())].filter(Boolean);
+    const rows =
+      queries.length === 0
+        ? []
+        : await this.db
+            .select({ query: instruments.query, symbol: instruments.symbol })
+            .from(instruments)
+            .where(inArray(instruments.query, queries));
+    const symbolByQuery = new Map(rows.map((row) => [row.query, row.symbol]));
+    return new Map([...queryByInput].map(([input, query]) => [input, symbolByQuery.get(query) ?? null]));
   }
 
   async resolve(tickerOrIsin: string): Promise<string | null> {
@@ -204,7 +230,31 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
     const cached = await this.lookup(query);
     if (cached !== undefined) return cached; // hit: símbolo resuelto o null (no encontrado).
 
-    if (ISIN_RE.test(query)) {
+    const backoff = this.negative.get(query);
+    if (backoff && Date.now() < backoff.nextTryAt) return null;
+
+    const symbol = await this.resolveUncached(query);
+    if (symbol) this.negative.delete(query);
+    else this.recordFailure(query);
+    return symbol;
+  }
+
+  /** Apunta un fallo sin fila en caché y aplaza el siguiente intento (espera exponencial). */
+  private recordFailure(query: string): void {
+    const failures = (this.negative.get(query)?.failures ?? 0) + 1;
+    const waitMs = Math.min(NEGATIVE_BACKOFF_BASE_MS * 2 ** (failures - 1), NEGATIVE_BACKOFF_MAX_MS);
+    // Reinsertar la mueve al final: el `Map` conserva el orden, así que la primera es la más antigua.
+    this.negative.delete(query);
+    this.negative.set(query, { failures, nextTryAt: Date.now() + waitMs });
+    if (this.negative.size > NEGATIVE_CACHE_MAX_ENTRIES) {
+      const oldest = this.negative.keys().next().value;
+      if (oldest !== undefined) this.negative.delete(oldest);
+    }
+  }
+
+  /** Resolución contra las fuentes externas de una consulta sin fila en caché. */
+  private async resolveUncached(query: string): Promise<string | null> {
+    if (isIsin(query)) {
       // La búsqueda nunca lanza: ante un fallo devuelve [] y se sigue con OpenFIGI.
       const searched = await this.firstThatPrices(searchCandidates(await this.search.search(query)));
       if (searched) {
@@ -239,10 +289,10 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
 
   /** Primer candidato que cotiza en la fuente (el orden es la prioridad), o null. */
   private async firstThatPrices(candidates: string[]): Promise<string | null> {
-    for (let i = 0; i < candidates.length; i++) {
-      if (i > 0) await delay(VALIDATION_DELAY_MS);
-      const quotes = await this.provider.getQuotes([candidates[i]]);
-      if (quotes.has(candidates[i])) return candidates[i];
+    for (const [i, candidate] of candidates.entries()) {
+      if (i > 0) await sleep(VALIDATION_DELAY_MS);
+      const quotes = await this.provider.getQuotes([candidate]);
+      if (quotes.has(candidate)) return candidate;
     }
     return null;
   }
@@ -254,7 +304,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       .from(instruments)
       .where(eq(instruments.query, query))
       .limit(1);
-    return rows.length ? rows[0].symbol : undefined;
+    return rows[0]?.symbol;
   }
 
   /** Upsert de la resolución (permanente). `symbol` null cachea un "no encontrado" real. */
@@ -270,37 +320,28 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
 
   /** Consulta OpenFIGI v3 por ISIN. Separa "sin coincidencias" (cachear) de "fallo" (reintentar). */
   private async mapIsin(isin: string): Promise<OpenFigiOutcome> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), OPENFIGI_TIMEOUT_MS);
-    try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (this.apiKey) headers['X-OPENFIGI-APIKEY'] = this.apiKey;
-      const res = await fetch(OPENFIGI_MAPPING_URL, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        this.logger.warn(`OpenFIGI ${isin}: HTTP ${res.status}`);
-        return { kind: 'error' };
-      }
-      const body = (await res.json()) as OpenFigiResultItem[];
-      const item = Array.isArray(body) ? body[0] : undefined;
-      const data = item?.data;
-      if (!data || data.length === 0) return { kind: 'empty' };
-      // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
-      const listings = data.flatMap(({ ticker, exchCode }) =>
-        typeof ticker === 'string' && ticker
-          ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]
-          : [],
-      );
-      return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
-    } catch (error) {
-      this.logger.warn(`OpenFIGI ${isin}: ${(error as Error).message}`);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.apiKey) headers['X-OPENFIGI-APIKEY'] = this.apiKey;
+    const result = await fetchJson(OPENFIGI_MAPPING_URL, {
+      timeoutMs: OPENFIGI_TIMEOUT_MS,
+      method: 'POST',
+      headers,
+      body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
+    });
+    if (!result.ok) {
+      this.logger.warn(`OpenFIGI ${isin}: ${result.error}`);
       return { kind: 'error' };
-    } finally {
-      clearTimeout(timeout);
     }
+    const body = result.body as OpenFigiResultItem[];
+    const item = Array.isArray(body) ? body[0] : undefined;
+    const data = item?.data;
+    if (!data || data.length === 0) return { kind: 'empty' };
+    // OpenFIGI manda `null` en los campos que no tiene: se normaliza a ausente.
+    const listings = data.flatMap(({ ticker, exchCode }) =>
+      typeof ticker === 'string' && ticker
+        ? [{ ticker, exchCode: typeof exchCode === 'string' ? exchCode : undefined }]
+        : [],
+    );
+    return listings.length ? { kind: 'matches', listings } : { kind: 'empty' };
   }
 }

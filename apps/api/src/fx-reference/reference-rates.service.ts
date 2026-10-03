@@ -7,24 +7,17 @@ import {
   type ReferenceRatePoint,
   type ReferenceRates,
 } from '@sextante/core/fiscal/fx-reference';
-import { isoDate, todayUtc } from '../common/dates.js';
+import { addDays, todayUtc } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { fxReferenceCoverage, fxReferenceRates } from '../db/schema.js';
+import { ECB_FIRST_DATE } from './constants.js';
 import { REFERENCE_RATES_PROVIDER, type EcbRate, type ReferenceRatesProvider } from './ecb-reference-rates.provider.js';
 
-/** Primera publicación del BCE (el euro nace el 1 de enero de 1999). */
-export const ECB_FIRST_DATE = '1999-01-04';
-/** Tope de divisas por petición: una cartera real tiene unas pocas. */
-export const MAX_REFERENCE_CURRENCIES = 10;
 /** Cada cuánto se vuelve a mirar el final de la serie, como mucho. */
 const TAIL_REFRESH_MS = 6 * 3_600_000;
 
 const CURRENCY = /^[A-Z]{3}$/;
 const INSERT_CHUNK = 1_000;
-
-function addDays(date: string, days: number): string {
-  return isoDate(new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000));
-}
 
 /**
  * Tipos de referencia del BCE con caché permanente en BD: las publicaciones pasadas no cambian,
@@ -65,7 +58,8 @@ export class ReferenceRatesService {
       .orderBy(asc(fxReferenceRates.currency), asc(fxReferenceRates.date));
 
     const series: Record<string, ReferenceRatePoint[]> = Object.fromEntries(wanted.map((c) => [c, []]));
-    for (const row of rows) series[row.currency].push({ date: row.date, unitsPerEur: Number(row.unitsPerEur) });
+    // La consulta filtra por `wanted`, así que cada fila tiene ya su serie.
+    for (const row of rows) series[row.currency]?.push({ date: row.date, unitsPerEur: Number(row.unitsPerEur) });
     return series;
   }
 

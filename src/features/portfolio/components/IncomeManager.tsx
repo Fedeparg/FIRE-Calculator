@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
 import type { ApiErrorKey } from "@/shared/api/client";
+import { useApiErrorText } from "@/shared/api/use-api-error-text";
+import { useEditableCollection } from "@/shared/ui/use-editable-collection";
 import IncomeForm from "./IncomeForm";
 import IncomeList from "./IncomeList";
 
@@ -20,44 +21,34 @@ type Props = {
 /** Lista de cobros con su formulario de alta y edición; lo comparten el panel de la posición y la pestaña fiscal. */
 export default function IncomeManager({ income, defaults, submitting, errorKey, save, remove }: Props) {
   const t = useTranslations("portfolio.income");
-  const [editing, setEditing] = useState<IncomeEvent | null>(null);
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
-
-  async function handleSubmit(payload: IncomePayload) {
-    if (await save(editing?.id ?? null, payload)) setEditing(null);
-  }
-
-  async function handleDelete(id: string) {
-    const ok = await remove(id);
-    setConfirmingId(null);
-    if (ok && editing?.id === id) setEditing(null);
-  }
+  const errorText = useApiErrorText(t);
+  const rows = useEditableCollection<IncomeEvent, IncomePayload>({ save, remove });
 
   return (
     <div className="flex flex-col gap-4">
       <IncomeList
         income={income}
-        editingId={editing?.id ?? null}
-        confirmingId={confirmingId}
+        editingId={rows.editing?.id ?? null}
+        confirmingId={rows.confirmingId}
         submitting={submitting}
-        onEdit={setEditing}
-        onAskDelete={setConfirmingId}
-        onCancelDelete={() => setConfirmingId(null)}
-        onConfirmDelete={(id) => void handleDelete(id)}
+        onEdit={rows.startEdit}
+        onAskDelete={rows.askDelete}
+        onCancelDelete={rows.cancelDelete}
+        onConfirmDelete={(id) => void rows.confirmDelete(id)}
       />
       {errorKey && (
         <p role="alert" className="text-sm text-warning">
-          {t(errorKey)}
+          {errorText(errorKey)}
         </p>
       )}
       {/* El `key` fuerza un remount al cambiar de cobro editado (o volver al alta). */}
       <IncomeForm
-        key={editing?.id ?? "add"}
-        editing={editing}
+        key={rows.editing?.id ?? "add"}
+        editing={rows.editing}
         defaults={defaults}
         submitting={submitting}
-        onSubmit={(payload) => void handleSubmit(payload)}
-        onCancelEdit={() => setEditing(null)}
+        onSubmit={(payload) => void rows.submit(payload)}
+        onCancelEdit={rows.cancelEdit}
       />
     </div>
   );

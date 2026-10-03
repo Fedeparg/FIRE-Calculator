@@ -4,13 +4,13 @@ import { z } from 'zod';
 import {
   HISTORY_DEFAULT_DAYS,
   HISTORY_MAX_DAYS,
-  PortfolioSnapshotsService,
+  type PortfolioSnapshotsService,
 } from '../../portfolio/portfolio-snapshots.service.js';
 import { incomeQuerySchema } from '../../income/dto/income-query.dto.js';
-import { IncomeService } from '../../income/income.service.js';
-import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
+import type { IncomeService } from '../../income/income.service.js';
+import type { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
+import type { PositionLotsService } from '../../positions/position-lots.service.js';
+import type { PositionsService } from '../../positions/positions.service.js';
 import type { InstrumentSearchProvider } from '../../prices/instrument-search.js';
 import { jsonResult } from '../mcp-results.js';
 import { CURRENCY_VALUES } from './tool-schemas.js';

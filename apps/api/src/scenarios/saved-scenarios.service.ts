@@ -1,8 +1,9 @@
+import { firstItem } from '@sextante/core/arrays';
 import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 
-import { DRIZZLE, type Database } from '../db/database.module.js';
+import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
 import { savedScenarios, type SavedScenario } from '../db/schema.js';
 import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import type { UpdateSavedScenarioDto } from './dto/update-saved-scenario.dto.js';
@@ -40,12 +41,22 @@ export class SavedScenariosService {
   /** Guarda un escenario nuevo, aplicando los límites de tamaño y de cantidad. */
   async create(userId: string, dto: CreateSavedScenarioDto): Promise<SavedScenarioResponse> {
     this.assertInputsSize(dto.inputs);
-    await this.assertQuotaAvailable(userId);
 
-    const [row] = await this.db
-      .insert(savedScenarios)
-      .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
-      .returning();
+    // Contar y luego insertar es check-then-act: dos altas simultáneas verían el mismo recuento y
+    // superarían el tope. Un cerrojo transaccional por usuario las serializa. Clave de dos partes
+    // (espacio 'saved_scenarios' + usuario) para no chocar con otros cerrojos por usuario, como
+    // el de los snapshots.
+    const row = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('saved_scenarios'), hashtext(${userId}))`);
+      await this.assertQuotaAvailable(tx, userId);
+      const inserted = firstItem(
+        await tx
+          .insert(savedScenarios)
+          .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
+          .returning(),
+      );
+      return inserted;
+    });
 
     return toResponse(row);
   }
@@ -62,26 +73,28 @@ export class SavedScenariosService {
         inputs: dto.inputs ?? current.inputs,
         updatedAt: new Date(),
       })
-      .where(eq(savedScenarios.id, id))
+      .where(ownedScenario(userId, id))
       .returning();
+    // Borrado entre la comprobación de propiedad y la escritura.
+    if (!row) throw scenarioNotFound();
 
     return toResponse(row);
   }
 
   /** Borra un escenario del usuario (404 si no existe o es de otro). */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.db.delete(savedScenarios).where(eq(savedScenarios.id, id));
+    const deleted = await this.db
+      .delete(savedScenarios)
+      .where(ownedScenario(userId, id))
+      .returning({ id: savedScenarios.id });
+    if (deleted.length === 0) throw scenarioNotFound();
   }
 
   /** Localiza un escenario verificando propiedad. Centraliza el scoping por usuario. */
   private async findOwned(userId: string, id: string): Promise<SavedScenario> {
-    const [row] = await this.db
-      .select()
-      .from(savedScenarios)
-      .where(and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)));
+    const [row] = await this.db.select().from(savedScenarios).where(ownedScenario(userId, id));
     if (!row) {
-      throw new NotFoundException('Escenario no encontrado');
+      throw scenarioNotFound();
     }
     return row;
   }
@@ -102,11 +115,10 @@ export class SavedScenariosService {
   }
 
   /** Rechaza el alta si el usuario ya está en su tope de escenarios. */
-  private async assertQuotaAvailable(userId: string): Promise<void> {
-    const [row] = await this.db
-      .select({ total: count() })
-      .from(savedScenarios)
-      .where(eq(savedScenarios.userId, userId));
+  private async assertQuotaAvailable(tx: DatabaseOrTransaction, userId: string): Promise<void> {
+    const row = firstItem(
+      await tx.select({ total: count() }).from(savedScenarios).where(eq(savedScenarios.userId, userId)),
+    );
 
     if (row.total >= MAX_SCENARIOS_PER_USER) {
       throw new BadRequestException({
@@ -126,4 +138,16 @@ function toResponse(row: SavedScenario): SavedScenarioResponse {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+/**
+ * Condición "el escenario `id` es de `userId`". Lecturas y escrituras por id la llevan siempre,
+ * no solo la comprobación previa: defensa en profundidad entre usuarios.
+ */
+function ownedScenario(userId: string, id: string): SQL {
+  return and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)) as SQL;
+}
+
+function scenarioNotFound(): NotFoundException {
+  return new NotFoundException('Escenario no encontrado');
 }

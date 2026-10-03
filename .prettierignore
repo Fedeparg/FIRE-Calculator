@@ -6,3 +6,7 @@ coverage
 _local
 apps/api/drizzle
 next-env.d.ts
+# Salida de Vitest (`toMatchFileSnapshot`): la escribe el test tal cual y reformatearla la rompería.
+apps/api/src/mcp/__snapshots__
+# Lo gestiona Next (`next build` reescribe opciones e `include` con su propio formato).
+/tsconfig.json

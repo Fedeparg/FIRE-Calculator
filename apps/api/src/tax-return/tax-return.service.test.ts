@@ -1,4 +1,5 @@
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { itemAt } from '@sextante/core/arrays';
 import type { ReferenceRates } from '@sextante/core/fiscal/fx-reference';
 import { buildIncomeReport, type IncomeEvent } from '@sextante/core/fiscal/income';
 import { buildRealisedGainsReport, type RealisedGainsPosition } from '@sextante/core/fiscal/realised-gains';
@@ -7,13 +8,14 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { Database } from '../db/database.module.js';
-import { positionLots, positions } from '../db/schema.js';
+import { positionLots } from '../db/schema.js';
 import type { ReferenceRatesService } from '../fx-reference/reference-rates.service.js';
 import { IncomeService } from '../income/income.service.js';
 import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnService } from './tax-return.service.js';
+import { makeLot, seedPosition, stub } from '../../test/factories.js';
 
 const RATES: ReferenceRates = {
   USD: [
@@ -38,9 +40,15 @@ describe('TaxReturnService (integración con Postgres)', () => {
     const positionsService = new PositionsService(db, {} as never, lots, new EventEmitter2());
     income = new IncomeService(db);
     pending = new PendingBalancesService(db);
-    service = new TaxReturnService(positionsService, lots, income, pending, {
-      getRates,
-    } as unknown as ReferenceRatesService);
+    service = new TaxReturnService(
+      positionsService,
+      lots,
+      income,
+      pending,
+      stub<ReferenceRatesService>({
+        getRates,
+      }),
+    );
   });
   afterEach(async () => {
     getRates.mockReset();
@@ -48,12 +56,8 @@ describe('TaxReturnService (integración con Postgres)', () => {
   });
   afterAll(() => close());
 
-  async function seedPosition(userId: string, ticker: string, currency: 'EUR' | 'USD') {
-    const [row] = await db
-      .insert(positions)
-      .values({ userId, ticker, quantity: '0', avgPrice: '0', currency })
-      .returning();
-    return row.id;
+  async function seedPositionId(userId: string, ticker: string, currency: 'EUR' | 'USD'): Promise<string> {
+    return (await seedPosition(db, userId, { ticker, currency })).id;
   }
 
   async function seedLots(
@@ -62,21 +66,21 @@ describe('TaxReturnService (integración con Postgres)', () => {
     rows: { kind: 'buy' | 'sell'; quantity: number; price: number; tradedAt: string }[],
   ) {
     await db.insert(positionLots).values(
-      rows.map((r) => ({
-        userId,
-        positionId,
-        kind: r.kind,
-        quantity: String(r.quantity),
-        price: String(r.price),
-        tradedAt: r.tradedAt,
-      })),
+      rows.map((r) =>
+        makeLot(userId, positionId, {
+          kind: r.kind,
+          quantity: String(r.quantity),
+          price: String(r.price),
+          tradedAt: r.tradedAt,
+        }),
+      ),
     );
   }
 
   it('coincide con lo que calcula el core con los mismos datos (ventas, cobros y saldo pendiente)', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    const eur = await seedPosition(userId, 'IWDA', 'EUR');
-    const usd = await seedPosition(userId, 'AAPL', 'USD');
+    const eur = await seedPositionId(userId, 'IWDA', 'EUR');
+    const usd = await seedPositionId(userId, 'AAPL', 'USD');
     await seedLots(userId, eur, [
       { kind: 'buy', quantity: 10, price: 100, tradedAt: '2023-05-01' },
       { kind: 'sell', quantity: 10, price: 90, tradedAt: '2025-03-01' },
@@ -131,7 +135,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(report.gains?.sales).toHaveLength(2);
     expect(report.incomeEvents.map((e) => e.grossSource)).toEqual(['manual', 'manual']);
     expect(report.savings?.savingsBase.pending).toBeDefined();
-    expect(report.savings?.gainsBalance).toBeCloseTo(gains[0].total, 9);
+    expect(report.savings?.gainsBalance).toBeCloseTo(itemAt(gains, 0).total, 9);
     // Procedencia de las ventas: tipo del BCE aplicado.
     expect(report.gains?.sales.find((s) => s.currency === 'USD')?.eur?.sellRate).toMatchObject({
       unitsPerEur: 1.04,
@@ -142,7 +146,14 @@ describe('TaxReturnService (integración con Postgres)', () => {
   it('sin ejercicio pedido usa el último con datos; sin datos o en un año vacío devuelve null', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const empty = await service.build(userId);
-    expect(empty).toMatchObject({ year: null, availableYears: [], gains: null, income: null, savings: null });
+    expect(empty).toMatchObject({
+      year: null,
+      availableYears: [],
+      gains: null,
+      income: null,
+      savings: null,
+      incomeEvents: [],
+    });
     expect(getRates).not.toHaveBeenCalled();
 
     await income.create(userId, { kind: 'interest', paidAt: '2024-06-30', gross: 12 });
@@ -152,6 +163,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(latest.availableYears).toEqual([2024, 2022]);
     expect(latest.gains).toBeNull();
     expect(latest.savings?.capitalIncomeBalance).toBe(12);
+    expect(latest.incomeEvents.map((e) => e.paidAt)).toEqual(['2024-06-30']);
 
     const gap = await service.build(userId, 2023);
     expect(gap).toMatchObject({ year: 2023, gains: null, income: null, savings: null, incomeEvents: [] });
@@ -159,7 +171,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
 
   it('si fallan los tipos del BCE el informe sale con lo en divisa sin convertir', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    const usd = await seedPosition(userId, 'AAPL', 'USD');
+    const usd = await seedPositionId(userId, 'AAPL', 'USD');
     await seedLots(userId, usd, [
       { kind: 'buy', quantity: 1, price: 100, tradedAt: '2025-01-10' },
       { kind: 'sell', quantity: 1, price: 120, tradedAt: '2025-02-10' },

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { dailyMovers } from "@sextante/core/portfolio/positions";
 import { Link } from "@/i18n/navigation";
+import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 
@@ -21,7 +22,7 @@ const MOVERS = 3;
  */
 export default function PortfolioMovers({ positions, prices }: Props) {
   const t = useTranslations("portfolio.movers");
-  const { formatPercent } = useFormat();
+  const { formatSignedPercent } = useFormat();
   const movers = dailyMovers(positions, prices, MOVERS);
   const open = positions.filter((p) => p.quantity > 0 && !p.isDerivative).length;
 
@@ -34,9 +35,8 @@ export default function PortfolioMovers({ positions, prices }: Props) {
             <span key={move.id}>
               {index > 0 && <span className="text-muted"> · </span>}
               {move.name}{" "}
-              <span className={move.changePct > 0 ? "text-success" : move.changePct < 0 ? "text-danger" : "text-muted"}>
-                {move.changePct > 0 ? "+" : ""}
-                {formatPercent(Math.round(move.changePct * 10) / 10)}
+              <span className={signedTone(move.changePct, "text-muted")}>
+                {formatSignedPercent(Math.round(move.changePct * 10) / 10)}
               </span>
             </span>
           ))}

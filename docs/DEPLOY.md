@@ -123,6 +123,10 @@ build del `web`; déjala vacía para ocultarlo). Debe ir junto con el secret
 > `JWT_SECRET` debe ser **fijo y estable**: si lo cambias, invalidas todas las
 > sesiones. Defínelo una vez.
 
+> Con `NODE_ENV=production` la API **se niega a arrancar** si `JWT_SECRET` es el de
+> desarrollo o tiene menos de 32 caracteres, si `COOKIE_SECURE` no es `true` o si
+> `APP_URL` no empieza por `https://` (`apps/api/src/config/env.ts`).
+
 ## 3. Email (Resend)
 
 El login es passwordless: la API envía un magic link por email. `EMAIL_TRANSPORT`
@@ -285,6 +289,16 @@ de privacidad.
 - **CI en rojo = no hay despliegue.** Producción se queda en la versión anterior;
   arregla el fallo y vuelve a hacer push. No hay forma de saltarse el gate salvo
   el disparo manual, que es deliberadamente explícito.
+- **Migraciones aditivas (expand/contract).** `migrate` corre antes de recrear la API,
+  así que durante unos segundos la API **anterior** sirve con el esquema **nuevo**, y
+  un rollback a la imagen anterior también la deja sobre ese esquema. Por eso cada
+  migración debe ser compatible con el código del despliegue anterior:
+  - **Expand** (en el mismo despliegue que el código que lo usa): crear tablas, columnas
+    con `DEFAULT` o anulables, índices, `CHECK … NOT VALID`.
+  - **Contract** (en un despliegue **posterior**, cuando ya ningún código lo usa):
+    borrar o renombrar columnas y tablas, pasar a `NOT NULL`, `VALIDATE CONSTRAINT`.
+  - Un renombrado es siempre expand (columna nueva + copia) y, más adelante, contract.
+  - Nunca edites una migración ya aplicada en producción: se añade otra.
 - **NUNCA** `docker compose ... down -v` en producción: borra la base de datos.
   Tampoco cambies `JWT_SECRET` salvo que quieras desloguear a todo el mundo.
 - **Logs:** `docker compose -f docker-compose.prod.yml logs -f api web analytics`.

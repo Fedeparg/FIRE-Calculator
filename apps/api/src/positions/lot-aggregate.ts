@@ -2,6 +2,8 @@
 // operan como enteros de coma fija (`bigint`): pasar por `number` desplazaría el precio medio
 // en céntimos por error binario.
 
+import { compareStrings } from '@sextante/core/compare';
+import { DomainError } from '../common/domain-error.js';
 import type { PositionLotKind } from '../db/schema.js';
 
 /** Escala (decimales) de `position_lots.quantity/price` y de `positions.quantity/avg_price`. */
@@ -31,10 +33,10 @@ export interface LotAggregate {
   cost: string;
 }
 
-/** Códigos de error de la agregación (el servicio los traduce a 400). */
+/** Códigos de error de la agregación (el borde los traduce a 400; ver `DomainError`). */
 export type LotAggregateErrorCode = 'NEGATIVE_QUANTITY' | 'OVERFLOW' | 'INVALID_DECIMAL';
 
-export class LotAggregateError extends Error {
+export class LotAggregateError extends DomainError {
   constructor(
     readonly code: LotAggregateErrorCode,
     message: string,
@@ -97,11 +99,11 @@ function divRoundHalfUp(dividend: bigint, divisor: bigint): bigint {
  * coste medio móvil dependería del orden en que la BD devuelva las filas del mismo día.
  */
 export function compareLots(a: AggregatableLot, b: AggregatableLot): number {
-  if (a.tradedAt !== b.tradedAt) return a.tradedAt < b.tradedAt ? -1 : 1;
+  if (a.tradedAt !== b.tradedAt) return compareStrings(a.tradedAt, b.tradedAt);
   const ta = a.createdAt.getTime();
   const tb = b.createdAt.getTime();
   if (ta !== tb) return ta - tb;
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  return compareStrings(a.id, b.id);
 }
 
 /**

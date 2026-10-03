@@ -3,15 +3,16 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-import type { LotPayload, PositionLot, PriceInfo, Position } from "@sextante/core/portfolio/types";
-import IncomeManager from "./IncomeManager";
-import LotList from "./LotList";
+import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
+import { positionHasSales } from "@/features/portfolio/model/lots";
+import { usePositionIncome } from "@/features/portfolio/use-position-income";
+import { usePositionLots } from "@/features/portfolio/use-position-lots";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import PositionDeleteBar from "./PositionDeleteBar";
 import PositionDetailSummary from "./PositionDetailSummary";
-import PositionLotForm from "./PositionLotForm";
+import PositionIncomeView from "./PositionIncomeView";
+import PositionLotsView from "./PositionLotsView";
 import SaleSimulator from "./SaleSimulator";
-import { usePositionIncome } from "../use-income";
-import { usePositionLots } from "../use-position-lots";
 
 export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
 
@@ -37,10 +38,8 @@ type Props = {
 /** Las vistas del detalle. */
 type View = "lots" | "income" | "sale";
 
+const VIEWS: readonly View[] = ["lots", "income", "sale"];
 const VIEW_LABELS = { lots: "viewLots", income: "viewIncome", sale: "viewSale" } as const;
-
-/** Un ticker con forma de ISIN (posiciones importadas): da el ISIN y el país del emisor de sus dividendos. */
-const ISIN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 
 /**
  * Detalle de una posición, dentro del panel: cuánto vale y cuánto gana, sus datos clave, sus
@@ -56,25 +55,13 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const t = useTranslations("portfolio.lots");
   const tDetail = useTranslations("portfolio.detail");
 
-  const { lots, loadState, errorKey, submitting, save, remove } = usePositionLots(position.id, onMutated);
-  const incomeState = usePositionIncome(position.id);
+  const lots = usePositionLots(position.id, onMutated);
+  const income = usePositionIncome(position.id);
   const [view, setView] = useState<View>("lots");
-  const isin = ISIN.test(position.ticker) ? position.ticker : null;
-  const [editingLot, setEditingLot] = useState<PositionLot | null>(null);
-  const [confirmingLotId, setConfirmingLotId] = useState<string | null>(null);
 
-  // Los lotes ya están cargados: no hace falta otra consulta para saber si hay ventas.
-  const hasSales = lots.some((lot) => lot.kind === "sell");
-
-  async function handleSubmitLot(payload: LotPayload) {
-    if (await save(editingLot?.id ?? null, payload)) setEditingLot(null);
-  }
-
-  async function handleDeleteLot(lotId: string) {
-    const ok = await remove(lotId);
-    setConfirmingLotId(null);
-    if (ok && editingLot?.id === lotId) setEditingLot(null);
-  }
+  // Los lotes ya se cargan aquí: no hace falta otra consulta para saber si hay ventas. Mientras
+  // cargan o si fallan vale `null` ("no se sabe"), y el aviso fuerte de borrado se muestra igual.
+  const hasSales = positionHasSales(lots.loadState, lots.lots);
 
   return (
     <div className="flex flex-col gap-5">
@@ -82,86 +69,23 @@ export default function PositionDetail({ position, price, rates, pricePending, o
 
       {/* Tres vistas del mismo panel: botones de alternancia (`aria-pressed`), no un `tablist`,
           que exigiría además navegación con flechas. */}
-      <div role="group" aria-label={tDetail("viewLabel")} className="flex rounded-xl bg-surface-2 p-1">
-        {(["lots", "income", "sale"] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setView(option)}
-            aria-pressed={view === option}
-            className={`h-10 flex-1 rounded-lg text-sm transition ${
-              view === option
-                ? "bg-surface font-semibold text-foreground shadow-sm"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {tDetail(VIEW_LABELS[option])}
-          </button>
-        ))}
-      </div>
+      <ToggleGroup
+        label={tDetail("viewLabel")}
+        value={view}
+        options={VIEWS.map((option) => ({ value: option, label: tDetail(VIEW_LABELS[option]) }))}
+        onChange={setView}
+        layout="fill"
+      />
 
-      {view !== "income" && loadState === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
-      {view !== "income" && loadState === "error" && <p className="text-sm text-warning">{t("loadError")}</p>}
+      {view !== "income" && lots.loadState === "loading" && <p className="text-sm text-muted">{t("loading")}</p>}
+      {view !== "income" && lots.loadState === "error" && <p className="text-sm text-warning">{t("loadError")}</p>}
 
-      {loadState === "ready" && view === "lots" && (
-        <div className="flex flex-col gap-4">
-          <LotList
-            lots={lots}
-            ticker={position.ticker}
-            currency={position.currency}
-            editingId={editingLot?.id ?? null}
-            confirmingId={confirmingLotId}
-            submitting={submitting}
-            onEdit={setEditingLot}
-            onAskDelete={setConfirmingLotId}
-            onCancelDelete={() => setConfirmingLotId(null)}
-            onConfirmDelete={(lotId) => void handleDeleteLot(lotId)}
-          />
-
-          {errorKey && (
-            <p role="alert" className="text-sm text-warning">
-              {t(errorKey)}
-            </p>
-          )}
-
-          {/* El `key` fuerza un remount al cambiar de lote editado (o volver al alta). */}
-          <PositionLotForm
-            key={editingLot?.id ?? "add"}
-            editing={editingLot}
-            currency={position.currency}
-            submitting={submitting}
-            onSubmit={handleSubmitLot}
-            onCancelEdit={() => setEditingLot(null)}
-          />
-        </div>
+      {lots.loadState === "ready" && view === "lots" && (
+        <PositionLotsView ticker={position.ticker} currency={position.currency} lots={lots} />
       )}
-
-      {view === "income" && incomeState.loadState === "loading" && (
-        <p className="text-sm text-muted">{tDetail("incomeLoading")}</p>
-      )}
-      {view === "income" && incomeState.loadState === "error" && (
-        <p className="text-sm text-warning">{tDetail("incomeLoadError")}</p>
-      )}
-      {view === "income" && incomeState.loadState === "ready" && (
-        <IncomeManager
-          income={incomeState.income}
-          defaults={{
-            kind: "dividend",
-            positionId: position.id,
-            isin,
-            name: position.name ?? position.ticker,
-            country: isin ? isin.slice(0, 2) : null,
-            currency: position.currency,
-          }}
-          submitting={incomeState.submitting}
-          errorKey={incomeState.errorKey}
-          save={incomeState.save}
-          remove={incomeState.remove}
-        />
-      )}
-
-      {loadState === "ready" && view === "sale" && (
-        <SaleSimulator position={position} lots={lots} price={price} rates={rates} />
+      {view === "income" && <PositionIncomeView position={position} income={income} />}
+      {lots.loadState === "ready" && view === "sale" && (
+        <SaleSimulator position={position} lots={lots.lots} price={price} rates={rates} />
       )}
 
       <PositionDeleteBar positionId={position.id} hasSales={hasSales} onEdit={onEdit} onDeleted={onDeleted} />

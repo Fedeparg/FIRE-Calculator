@@ -1,10 +1,11 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { FIRE_CALCULATOR_SLUG } from '@sextante/core/portfolio/goal';
 
 import type { Database } from '../db/database.module.js';
 import { savedScenarios, userNotificationSettings, users } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
-import { FIRE_SCENARIO_SLUG, NotificationSettingsService } from './notification-settings.service.js';
+import { NotificationSettingsService } from './notification-settings.service.js';
 
 describe('NotificationSettingsService (integración con Postgres)', () => {
   let db: Database;
@@ -53,8 +54,8 @@ describe('NotificationSettingsService (integración con Postgres)', () => {
   it('el objetivo es el escenario FIRE actualizado más recientemente', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await db.insert(savedScenarios).values([
-      { userId, slug: FIRE_SCENARIO_SLUG, name: 'Viejo', inputs: {}, updatedAt: new Date('2026-01-01') },
-      { userId, slug: FIRE_SCENARIO_SLUG, name: 'Nuevo', inputs: {}, updatedAt: new Date('2026-06-01') },
+      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'Viejo', inputs: {}, updatedAt: new Date('2026-01-01') },
+      { userId, slug: FIRE_CALCULATOR_SLUG, name: 'Nuevo', inputs: {}, updatedAt: new Date('2026-06-01') },
       { userId, slug: 'interes-compuesto', name: 'Otro', inputs: {}, updatedAt: new Date('2026-09-01') },
     ]);
 

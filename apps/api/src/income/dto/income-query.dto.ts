@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
+import { fiscalYearParamSchema } from '../../common/dto/fiscal-year.js';
+
 /** Query de GET /api/income: filtros opcionales por ejercicio y por posición. */
 export const incomeQuerySchema = z.strictObject({
-  year: z.coerce.number().int().min(1900).max(2100).optional(),
+  year: fiscalYearParamSchema.optional(),
   positionId: z.uuid().optional(),
 });
 

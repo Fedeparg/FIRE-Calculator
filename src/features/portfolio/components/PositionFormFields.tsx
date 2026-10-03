@@ -3,8 +3,9 @@
 import { useTranslations } from "next-intl";
 
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
-import { sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
+import DecimalField from "@/shared/ui/DecimalField";
+import FormField from "@/shared/ui/FormField";
 import {
   ASSET_CLASSES,
   type AssetClass,
@@ -61,128 +62,118 @@ export default function PositionFormFields({ values, onChange, brokerRequired, b
     });
   }
 
+  const required = <span className="text-warning">*</span>;
+  const brokerProblem = brokerRequired ? t("brokerRequired") : brokerEmptied ? t("brokerCannotEmpty") : undefined;
+
   return (
     <div className="grid grid-cols-1 gap-4">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="ticker" className="text-sm font-medium text-foreground">
-          {t("ticker")} <span className="text-warning">*</span>
-        </label>
-        <InstrumentSearchField
-          id="ticker"
-          value={values.ticker}
-          onChange={(ticker) => onChange({ ticker, assetClass: undefined })}
-          onSelect={handleSelect}
-          placeholder={t("tickerPlaceholder")}
-          inputClass={inputClass}
-          maxLength={20}
-        />
-        <p className="text-xs text-muted">{t("tickerHint")}</p>
-      </div>
+      <FormField
+        label={
+          <>
+            {t("ticker")} {required}
+          </>
+        }
+        hint={t("tickerHint")}
+      >
+        {({ id }) => (
+          <InstrumentSearchField
+            id={id}
+            value={values.ticker}
+            onChange={(ticker) => onChange({ ticker, assetClass: undefined })}
+            onSelect={handleSelect}
+            placeholder={t("tickerPlaceholder")}
+            inputClass={inputClass}
+            maxLength={20}
+          />
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="name" className="text-sm font-medium text-foreground">
-          {t("name")}
-        </label>
-        <input
-          id="name"
-          type="text"
-          maxLength={100}
-          value={values.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder={t("namePlaceholder")}
-          className={inputClass}
-        />
-      </div>
+      <FormField label={t("name")}>
+        {(control) => (
+          <input
+            {...control}
+            type="text"
+            maxLength={100}
+            value={values.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            placeholder={t("namePlaceholder")}
+            className={inputClass}
+          />
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="quantity" className="text-sm font-medium text-foreground">
-          {t("quantity")} <span className="text-warning">*</span>
-        </label>
-        <input
-          id="quantity"
-          type="text"
-          required
-          inputMode="decimal"
-          autoComplete="off"
-          value={values.quantity}
-          onChange={(e) => onChange({ quantity: sanitizeDecimalInput(e.target.value) })}
-          placeholder="0"
-          className={inputClass}
-        />
-      </div>
+      <FormField
+        label={
+          <>
+            {t("quantity")} {required}
+          </>
+        }
+      >
+        {(control) => (
+          <DecimalField {...control} required value={values.quantity} onChange={(quantity) => onChange({ quantity })} />
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="avgPrice" className="text-sm font-medium text-foreground">
-          {t("avgPrice")} <span className="text-warning">*</span>
-        </label>
-        <input
-          id="avgPrice"
-          type="text"
-          required
-          inputMode="decimal"
-          autoComplete="off"
-          value={values.avgPrice}
-          onChange={(e) => onChange({ avgPrice: sanitizeDecimalInput(e.target.value) })}
-          placeholder="0"
-          className={inputClass}
-        />
-      </div>
+      <FormField
+        label={
+          <>
+            {t("avgPrice")} {required}
+          </>
+        }
+      >
+        {(control) => (
+          <DecimalField {...control} required value={values.avgPrice} onChange={(avgPrice) => onChange({ avgPrice })} />
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="broker" className="text-sm font-medium text-foreground">
-          {t("broker")}
-        </label>
-        <input
-          id="broker"
-          type="text"
-          maxLength={100}
-          value={values.broker}
-          onChange={(e) => onChange({ broker: e.target.value })}
-          placeholder={t("brokerPlaceholder")}
-          aria-invalid={brokerRequired || brokerEmptied}
-          className={`${inputClass} ${brokerRequired || brokerEmptied ? "border-warning" : ""}`}
-        />
-        {brokerRequired && <p className="text-xs text-warning">{t("brokerRequired")}</p>}
-        {brokerEmptied && <p className="text-xs text-warning">{t("brokerCannotEmpty")}</p>}
-      </div>
+      <FormField label={t("broker")} error={brokerProblem}>
+        {(control) => (
+          <input
+            {...control}
+            type="text"
+            maxLength={100}
+            value={values.broker}
+            onChange={(e) => onChange({ broker: e.target.value })}
+            placeholder={t("brokerPlaceholder")}
+            className={`${inputClass} ${brokerProblem ? "border-warning" : ""}`}
+          />
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="currency" className="text-sm font-medium text-foreground">
-          {t("currency")}
-        </label>
-        <select
-          id="currency"
-          value={values.currency}
-          onChange={(e) => onChange({ currency: e.target.value as SupportedCurrency })}
-          className={inputClass}
-        >
-          {SUPPORTED_CURRENCIES.map((c) => (
-            <option key={c} value={c}>
-              {currencyLabel(c)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <FormField label={t("currency")}>
+        {(control) => (
+          <select
+            {...control}
+            value={values.currency}
+            onChange={(e) => onChange({ currency: e.target.value as SupportedCurrency })}
+            className={inputClass}
+          >
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c} value={c}>
+                {currencyLabel(c)}
+              </option>
+            ))}
+          </select>
+        )}
+      </FormField>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="assetClass" className="text-sm font-medium text-foreground">
-          {t("assetClass")}
-        </label>
-        <select
-          id="assetClass"
-          value={values.assetClass ?? ""}
-          onChange={(e) => onChange({ assetClass: (e.target.value || undefined) as AssetClass | undefined })}
-          className={inputClass}
-        >
-          <option value="">{t("assetClassUnknown")}</option>
-          {ASSET_CLASSES.map((value) => (
-            <option key={value} value={value}>
-              {t(`assetClasses.${value}`)}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted">{t("assetClassHint")}</p>
-      </div>
+      <FormField label={t("assetClass")} hint={t("assetClassHint")}>
+        {(control) => (
+          <select
+            {...control}
+            value={values.assetClass ?? ""}
+            onChange={(e) => onChange({ assetClass: (e.target.value || undefined) as AssetClass | undefined })}
+            className={inputClass}
+          >
+            <option value="">{t("assetClassUnknown")}</option>
+            {ASSET_CLASSES.map((value) => (
+              <option key={value} value={value}>
+                {t(`assetClasses.${value}`)}
+              </option>
+            ))}
+          </select>
+        )}
+      </FormField>
     </div>
   );
 }

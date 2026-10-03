@@ -7,7 +7,8 @@
     "home": "Calculadoras",
     "learn": "Aprende",
     "primary": "Navegación principal",
-    "theme": "Cambiar entre tema claro y oscuro"
+    "theme": "Tema oscuro",
+    "breadcrumb": "Ruta de navegación"
   },
   "landing": {
     "meta": {
@@ -89,13 +90,129 @@
     "open": "Abrir",
     "resultsCount": "{count, plural, =0 {Sin resultados} =1 {1 calculadora} other {# calculadoras}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Interés compuesto",
+      "description": "Proyecta el crecimiento de tus inversiones con aportaciones periódicas."
+    },
+    "independencia-financiera": {
+      "name": "Independencia financiera (FIRE)",
+      "description": "Calcula tu número FIRE y en cuántos años puedes vivir de tus rentas."
+    },
+    "simulador-montecarlo": {
+      "name": "Simulador FIRE Monte Carlo",
+      "description": "Probabilidad de alcanzar FIRE y de que tu dinero dure toda la jubilación, en miles de escenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Hipoteca a tipo fijo",
+      "description": "Cuota mensual, intereses totales y cuadro de amortización."
+    },
+    "interes-simple": {
+      "name": "Interés simple",
+      "description": "Cálculo básico de interés simple."
+    },
+    "promediar-acciones": {
+      "name": "Promediar acciones (DCA)",
+      "description": "Precio medio ponderado de tus compras."
+    },
+    "dividendos": {
+      "name": "Dividendos de acciones",
+      "description": "Ingresos por dividendos y retención."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Retorno de la inversión."
+    },
+    "staking": {
+      "name": "Intereses de staking (cripto)",
+      "description": "Rendimiento de staking en criptoactivos."
+    },
+    "ahorro-jubilacion": {
+      "name": "Ahorro para la jubilación",
+      "description": "Cuánto necesitas ahorrar para tu jubilación."
+    },
+    "presupuesto-mensual": {
+      "name": "Presupuesto mensual",
+      "description": "Organiza ingresos y gastos (regla 50/30/20)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "¿Qué hipoteca me puedo permitir?",
+      "description": "Importe máximo según tus ingresos."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Hipoteca vs alquiler",
+      "description": "Comprar o alquilar: comparativa."
+    },
+    "amortizacion-anticipada": {
+      "name": "Amortización anticipada",
+      "description": "Reducir cuota o plazo amortizando antes."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rentabilidad de alquiler",
+      "description": "Rentabilidad bruta y neta de un inmueble."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Rentabilidad alquiler vacacional",
+      "description": "Rentabilidad de un alquiler turístico."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Depósito a plazo fijo",
+      "description": "Intereses de un depósito bancario."
+    },
+    "cuenta-remunerada": {
+      "name": "Cuenta remunerada",
+      "description": "Rentabilidad de una cuenta remunerada."
+    },
+    "impuesto-donaciones": {
+      "name": "Impuesto de donaciones",
+      "description": "Estimación por CCAA y parentesco."
+    },
+    "impuesto-patrimonio": {
+      "name": "Impuesto sobre el patrimonio",
+      "description": "Estimación según patrimonio y CCAA."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Desgravación plan de pensiones",
+      "description": "Ahorro fiscal por aportar a un plan."
+    },
+    "salario-bruto-neto": {
+      "name": "Salario bruto a neto",
+      "description": "De salario bruto a neto mensual."
+    },
+    "irpf-nomina": {
+      "name": "IRPF nómina",
+      "description": "Retención de IRPF en nómina."
+    },
+    "irpf-autonomos": {
+      "name": "IRPF autónomos",
+      "description": "IRPF para autónomos."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Intereses de tarjeta de crédito",
+      "description": "Coste de la deuda revolving."
+    },
+    "inflacion": {
+      "name": "Inflación (IPC)",
+      "description": "Poder adquisitivo a lo largo del tiempo."
+    },
+    "salud-financiera": {
+      "name": "Test de salud financiera",
+      "description": "Cuestionario sobre tus finanzas."
+    }
+  },
   "common": {
     "back": "Volver a las calculadoras",
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
     "moreInfo": "Más información",
     "copy": "Copiar",
     "copied": "Copiado",
-    "copyLabel": "Copiar {label}"
+    "copyLabel": "Copiar {label}",
+    "apiError": {
+      "network": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
+      "server": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
+      "session": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
+      "generic": "No se pudo completar la operación. Inténtalo de nuevo."
+    }
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -152,7 +269,8 @@
     "interest": "Intereses",
     "axisYear": "Año",
     "imageLabel": "Gráfica: {title}",
-    "dataTableCaption": "Datos de la gráfica: {title}"
+    "dataTableCaption": "Datos de la gráfica: {title}",
+    "showData": "Ver los datos de la gráfica: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -260,7 +378,8 @@
       "sensitivityCaption": "Probabilidad de éxito según la tasa de retiro, con el resto de datos iguales y los mismos escenarios de mercado.",
       "sensitivityRate": "Tasa de retiro",
       "sensitivityTarget": "Número FIRE",
-      "historicalSource": "Datos históricos: Robert J. Shiller, «U.S. Stock Markets 1871-Present», rentabilidades reales de {from} a {to}. Es el mercado de EE. UU., uno de los que mejor han ido del mundo: el pasado no garantiza el futuro."
+      "historicalSource": "Datos históricos: Robert J. Shiller, «U.S. Stock Markets 1871-Present», rentabilidades reales de {from} a {to}. Es el mercado de EE. UU., uno de los que mejor han ido del mundo: el pasado no garantiza el futuro.",
+      "recalculating": "Recalculando…"
     },
     "hipoteca-fija": {
       "title": "Calculadora de hipoteca a tipo fijo",
@@ -928,6 +1047,7 @@
       "title": "Test de salud financiera",
       "intro": "Responde ocho preguntas y obtén una puntuación de 0 a 100 sobre el estado de tus finanzas, con consejos.",
       "score": "Tu puntuación",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "¿Cuánto tienes ahorrado para imprevistos?",
@@ -1028,12 +1148,8 @@
       "confirmDelete": "Confirmar",
       "deleting": "Borrando…",
       "quotaReached": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el nombre del escenario: no puede estar vacío.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "errorTooLarge": "Este cálculo ocupa demasiado para guardarlo.",
       "errorQuota": "Has alcanzado el máximo de escenarios guardados. Borra alguno para guardar otro."
     }
@@ -1226,12 +1342,8 @@
       "save": "Guardar cambios",
       "saving": "Guardando…",
       "cancel": "Cancelar",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado.",
       "errorSessionLink": "Vuelve a iniciar sesión",
       "errorInvalid": "Revisa el formulario: hay algún campo con un valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
       "duplicate": "Ya tienes {ticker} en {broker}.",
       "duplicateHint": "Cambia el bróker para añadirla como nueva, o combínala con la existente (precio medio ponderado).",
       "combine": "Combinar con la existente",
@@ -1319,6 +1431,9 @@
       "edit": "Editar",
       "delete": "Eliminar",
       "confirmDelete": "Sí, eliminar",
+      "editItem": "Editar {item}",
+      "deleteItem": "Eliminar {item}",
+      "confirmDeleteItem": "Sí, eliminar {item}",
       "cancel": "Cancelar",
       "formAddTitle": "Añadir operación",
       "formEditTitle": "Editar operación",
@@ -1328,14 +1443,10 @@
       "add": "Añadir operación",
       "save": "Guardar cambios",
       "saving": "Guardando…",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
       "errorNotFound": "Esta operación ya no existe. Recarga la página para ver el histórico actualizado.",
       "errorNegative": "Esa venta dejaría la posición en negativo: no puedes vender más participaciones de las que tienes en esa fecha.",
       "errorOverflow": "El resultado de las operaciones excede el máximo que admite una posición.",
-      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido.",
-      "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-      "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo."
+      "errorInvalid": "Revisa los datos de la operación: hay algún valor no válido."
     },
     "sale": {
       "title": "¿Qué pasaría si vendo?",
@@ -1480,10 +1591,7 @@
       "errorEmpty": "El fichero no contiene operaciones.",
       "errorMalformed": "El fichero no es un CSV válido.",
       "errorTooManyRows": "El fichero tiene demasiadas filas (el máximo es 20.000).",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión.",
       "errorRateLimit": "Demasiados intentos seguidos. Espera un minuto e inténtalo de nuevo.",
-      "errorNetwork": "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "Ha habido un problema en el servidor. Inténtalo de nuevo en unos minutos.",
       "errorGeneric": "No se pudo procesar el fichero. Inténtalo de nuevo.",
       "preview": {
         "title": "Esto es lo que se importará",
@@ -1552,6 +1660,7 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Las ventas superan lo comprado: falta historial anterior.",
           "OVERFLOW": "La cantidad resultante es demasiado grande.",
+          "CONFLICT": "Otra importación del mismo fichero se hizo a la vez. Vuelve a importarlo para completarla.",
           "UNEXPECTED": "Error inesperado. Inténtalo de nuevo más tarde."
         },
         "pricesNote": "Los precios de las posiciones nuevas pueden tardar unos minutos en aparecer.",
@@ -1656,6 +1765,7 @@
       "country": "País de la fuente",
       "countryHint": "Código de dos letras (US, NL, ES…). Hace falta para la doble imposición.",
       "name": "Valor o cuenta",
+      "isin": "ISIN",
       "reportedToAeat": "El pagador ya lo comunicó a Hacienda (sale en mi borrador)",
       "reportedBadge": "En el borrador",
       "invalid": "Las retenciones no pueden superar el íntegro y el país debe ser un código de dos letras.",
@@ -1667,10 +1777,10 @@
       "edit": "Editar",
       "delete": "Eliminar",
       "confirmDelete": "Sí, eliminar",
+      "editItem": "Editar {item}",
+      "deleteItem": "Eliminar {item}",
+      "confirmDeleteItem": "Sí, eliminar {item}",
       "cancel": "Cancelar",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
       "errorInvalid": "Revisa los datos: alguno no es válido.",
       "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo.",
       "grossShort": "Íntegro",
@@ -1727,9 +1837,6 @@
       "saving": "Guardando…",
       "saved": "Guardado",
       "duplicated": "Cada ejercicio y tipo solo puede aparecer una vez.",
-      "errorSession": "Tu sesión ha caducado. Vuelve a iniciar sesión para seguir.",
-      "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-      "errorServer": "El servidor ha fallado. Inténtalo de nuevo en unos momentos.",
       "errorInvalid": "Revisa los datos: alguno no es válido.",
       "errorGeneric": "No se ha podido guardar. Inténtalo de nuevo."
     },
@@ -1776,6 +1883,13 @@
       "step3": "Listo: pídele que analice tu cartera. Puedes revocar el acceso desde aquí cuando quieras.",
       "howToNote": "ChatGPT también admite conectores MCP, pero su soporte es más limitado según el plan; Claude es hoy el camino más completo."
     },
+    "sessions": {
+      "title": "Sesiones abiertas",
+      "description": "Cierra la sesión en todos los dispositivos donde hayas entrado, este incluido. Úsalo si has iniciado sesión en un equipo ajeno o crees que alguien puede estar usando tu cuenta.",
+      "button": "Cerrar todas las sesiones",
+      "revoking": "Cerrando sesiones…",
+      "error": "No se pudieron cerrar las sesiones. Inténtalo de nuevo."
+    },
     "danger": {
       "title": "Zona de peligro"
     },
@@ -1788,11 +1902,7 @@
       "deleting": "Borrando…",
       "success": "Tu cuenta ha sido borrada. Te llevamos al inicio…"
     },
-    "errorNetwork": "No se pudo conectar con el servidor. Comprueba tu conexión e inténtalo de nuevo.",
-    "errorSession": "Tu sesión ha caducado.",
     "errorSessionLink": "Vuelve a iniciar sesión",
-    "errorServer": "Ha ocurrido un error en el servidor. Inténtalo de nuevo en unos momentos.",
-    "errorGeneric": "No se pudo completar la operación. Inténtalo de nuevo.",
     "notifications": {
       "title": "Avisos por email",
       "intro": "Te escribimos cuando tu cartera cruza el 25, 50, 75 y 100 % de tu objetivo de independencia financiera. Un aviso por hito, nunca repetido, calculado cada noche con los precios del cierre.",

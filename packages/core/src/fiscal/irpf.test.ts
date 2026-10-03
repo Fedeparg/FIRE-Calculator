@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MINIMO_PERSONAL } from "./brackets.js";
+import { PERSONAL_MINIMUM } from "./brackets.js";
 import {
   estimateNetSalary,
   generalIncomeTax,
@@ -140,10 +140,10 @@ describe("IRPF por comunidad autónoma", () => {
   it("sin comunidad el resultado es exactamente el de siempre (escala conjunta)", () => {
     for (const base of BASES) {
       const legacy = generalIncomeTax(base);
-      expect(generalIncomeTax(base, MINIMO_PERSONAL, {})).toBe(legacy);
-      expect(generalIncomeTax(base, MINIMO_PERSONAL, { region: undefined })).toBe(legacy);
+      expect(generalIncomeTax(base, PERSONAL_MINIMUM, {})).toBe(legacy);
+      expect(generalIncomeTax(base, PERSONAL_MINIMUM, { region: undefined })).toBe(legacy);
       // Un mínimo autonómico distinto es irrelevante mientras no haya comunidad.
-      expect(generalIncomeTax(base, MINIMO_PERSONAL, { regionalMinimum: 9999 })).toBe(legacy);
+      expect(generalIncomeTax(base, PERSONAL_MINIMUM, { regionalMinimum: 9999 })).toBe(legacy);
     }
   });
 
@@ -151,7 +151,7 @@ describe("IRPF por comunidad autónoma", () => {
     // Su escala autonómica es idéntica a la supletoria y no modifica el mínimo:
     // es la comprobación de que sumar estatal + autonómica no introduce sesgo.
     for (const base of BASES) {
-      expect(generalIncomeTax(base, MINIMO_PERSONAL, { region: "castilla-la-mancha" })).toBeCloseTo(
+      expect(generalIncomeTax(base, PERSONAL_MINIMUM, { region: "castilla-la-mancha" })).toBeCloseTo(
         generalIncomeTax(base),
         6,
       );
@@ -160,11 +160,11 @@ describe("IRPF por comunidad autónoma", () => {
 
   it.each(REGION_CODES)("%s: cuota positiva, creciente y nunca superior al 47 % de la base", (region) => {
     const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
-    expect(generalIncomeTax(0, MINIMO_PERSONAL, options)).toBe(0);
-    expect(generalIncomeTax(40000, MINIMO_PERSONAL, options)).toBeGreaterThan(
-      generalIncomeTax(30000, MINIMO_PERSONAL, options),
+    expect(generalIncomeTax(0, PERSONAL_MINIMUM, options)).toBe(0);
+    expect(generalIncomeTax(40000, PERSONAL_MINIMUM, options)).toBeGreaterThan(
+      generalIncomeTax(30000, PERSONAL_MINIMUM, options),
     );
-    expect(generalIncomeTax(60000, MINIMO_PERSONAL, options)).toBeLessThan(60000 * 0.47);
+    expect(generalIncomeTax(60000, PERSONAL_MINIMUM, options)).toBeLessThan(60000 * 0.47);
   });
 
   it("cada cuota se acota a cero por separado, no la suma", () => {
@@ -177,12 +177,12 @@ describe("IRPF por comunidad autónoma", () => {
       regionalMinimum: regionalPersonalAndFamilyMinimum({ region: "asturias" }),
     };
     expect(regionalPersonalAndFamilyMinimum({ region: "asturias" })).toBe(6105);
-    expect(generalIncomeTax(6000, MINIMO_PERSONAL, options)).toBeCloseTo(42.75, 6);
+    expect(generalIncomeTax(6000, PERSONAL_MINIMUM, options)).toBeCloseTo(42.75, 6);
   });
 
   it("Madrid tributa menos que la escala supletoria y la Comunitat Valenciana, más", () => {
     const withRegion = (region: "madrid" | "valencia") =>
-      generalIncomeTax(100000, MINIMO_PERSONAL, {
+      generalIncomeTax(100000, PERSONAL_MINIMUM, {
         region,
         regionalMinimum: regionalPersonalAndFamilyMinimum({ region }),
       });
@@ -193,10 +193,10 @@ describe("IRPF por comunidad autónoma", () => {
   it("bases nulas o no finitas no rompen el cálculo con comunidad", () => {
     for (const region of REGION_CODES) {
       const options = { region, regionalMinimum: regionalPersonalAndFamilyMinimum({ region }) };
-      expect(generalIncomeTax(0, MINIMO_PERSONAL, options)).toBe(0);
-      expect(generalIncomeTax(-1000, MINIMO_PERSONAL, options)).toBe(0);
-      expect(generalIncomeTax(Number.NaN, MINIMO_PERSONAL, options)).toBe(0);
-      expect(generalIncomeTax(Number.POSITIVE_INFINITY, MINIMO_PERSONAL, options)).toBe(0);
+      expect(generalIncomeTax(0, PERSONAL_MINIMUM, options)).toBe(0);
+      expect(generalIncomeTax(-1000, PERSONAL_MINIMUM, options)).toBe(0);
+      expect(generalIncomeTax(Number.NaN, PERSONAL_MINIMUM, options)).toBe(0);
+      expect(generalIncomeTax(Number.POSITIVE_INFINITY, PERSONAL_MINIMUM, options)).toBe(0);
       expect(generalIncomeTax(30000, Number.NaN, options)).toBeGreaterThan(0);
     }
   });
@@ -206,11 +206,11 @@ describe("IRPF por comunidad autónoma", () => {
     // misma base, su cuota difiere de la que sale usando el mínimo estatal en
     // ambas escalas.
     const base = 30000;
-    const withOwnMinimum = generalIncomeTax(base, MINIMO_PERSONAL, {
+    const withOwnMinimum = generalIncomeTax(base, PERSONAL_MINIMUM, {
       region: "canarias",
       regionalMinimum: regionalPersonalAndFamilyMinimum({ region: "canarias" }),
     });
-    const withStateMinimum = generalIncomeTax(base, MINIMO_PERSONAL, { region: "canarias" });
+    const withStateMinimum = generalIncomeTax(base, PERSONAL_MINIMUM, { region: "canarias" });
     expect(regionalPersonalAndFamilyMinimum({ region: "canarias" })).toBe(5606);
     expect(withOwnMinimum).toBeLessThan(withStateMinimum);
   });

@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { firstItem, lastItem } from "@sextante/core/arrays";
 import {
   MAX_RETIREMENT_YEARS,
   MAX_VOLATILITY,
@@ -24,8 +25,8 @@ type ModelKind = (typeof MODELS)[number];
 
 /** Vidas de la tabla de sensibilidad: cinco simulaciones seguidas, así que menos que la principal. */
 const SENSITIVITY_PATHS = 2000;
-const FIRST_YEAR = HISTORICAL_RETURNS[0].year;
-const LAST_YEAR = HISTORICAL_RETURNS[HISTORICAL_RETURNS.length - 1].year;
+const FIRST_YEAR = firstItem(HISTORICAL_RETURNS).year;
+const LAST_YEAR = lastItem(HISTORICAL_RETURNS).year;
 
 export default function MonteCarloCalculator() {
   const t = useTranslations("calc.simulador-montecarlo");
@@ -48,33 +49,35 @@ export default function MonteCarloCalculator() {
   // baja, descartando cálculos intermedios si se sigue tecleando. Se difiere un único objeto
   // para que todos los valores cambien juntos. La semilla es fija, así que el resultado es
   // idéntico en servidor y cliente.
-  const inputs = useDeferredValue(
-    useMemo(
-      () => ({
-        annualExpenses,
-        currentSavings,
-        monthlySavings,
-        annualReturn,
-        volatility,
-        withdrawalRate,
-        retirementYears,
-        returnModel: (model === "historical"
-          ? { kind: "historical", stockShare }
-          : { kind: "lognormal" }) satisfies ReturnModel,
-      }),
-      [
-        annualExpenses,
-        currentSavings,
-        monthlySavings,
-        annualReturn,
-        volatility,
-        withdrawalRate,
-        retirementYears,
-        model,
-        stockShare,
-      ],
-    ),
+  const latestInputs = useMemo(
+    () => ({
+      annualExpenses,
+      currentSavings,
+      monthlySavings,
+      annualReturn,
+      volatility,
+      withdrawalRate,
+      retirementYears,
+      returnModel: (model === "historical"
+        ? { kind: "historical", stockShare }
+        : { kind: "lognormal" }) satisfies ReturnModel,
+    }),
+    [
+      annualExpenses,
+      currentSavings,
+      monthlySavings,
+      annualReturn,
+      volatility,
+      withdrawalRate,
+      retirementYears,
+      model,
+      stockShare,
+    ],
   );
+  const inputs = useDeferredValue(latestInputs);
+  // Mientras el valor diferido va por detrás del último tecleado, lo que se ve es de la entrada
+  // anterior: se avisa y se atenúa para que nadie lea un resultado viejo como el nuevo.
+  const recalculating = inputs !== latestInputs;
   const result = useMemo(() => simulateFire(inputs), [inputs]);
   // Misma entrada con otras tasas de retiro, con las mismas secuencias de mercado (misma semilla).
   const sensitivity = useMemo(() => withdrawalSensitivity(inputs, undefined, { paths: SENSITIVITY_PATHS }), [inputs]);
@@ -177,7 +180,10 @@ export default function MonteCarloCalculator() {
         </>
       }
       results={
-        <>
+        <div className={`grid gap-6 transition-opacity ${recalculating ? "opacity-60" : ""}`} aria-busy={recalculating}>
+          <p role="status" className="sr-only">
+            {recalculating ? t("recalculating") : ""}
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Stat label={t("successRate")} value={formatPercent(result.successRate * 100)} highlight />
             <Stat label={t("medianYears")} value={medianLabel} />
@@ -249,7 +255,7 @@ export default function MonteCarloCalculator() {
           {model === "historical" && (
             <p className="text-xs text-muted">{t("historicalSource", { from: FIRST_YEAR, to: LAST_YEAR })}</p>
           )}
-        </>
+        </div>
       }
     />
   );

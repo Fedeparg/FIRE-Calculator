@@ -1,0 +1,1 @@
+CREATE INDEX "login_tokens_email_created_at_idx" ON "login_tokens" USING btree ("email","created_at");

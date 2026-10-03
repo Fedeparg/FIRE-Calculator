@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     locale,
     path: `/aprende/${slug}`,
+    og: { kind: "article", slug },
     title: article.title,
     description: article.description,
     ogType: "article",
@@ -45,6 +46,7 @@ export default async function ArticlePage({ params }: Props) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
   const tNav = await getTranslations("nav");
+  const tCatalog = await getTranslations("catalog");
 
   const article = await getArticle(slug, locale);
   if (!article) notFound();
@@ -52,7 +54,7 @@ export default async function ArticlePage({ params }: Props) {
   const relatedSlugs = new Set(getRelatedCalculatorSlugs(slug));
   const relatedCalculators = CALCULATORS.filter((c) => relatedSlugs.has(c.slug)).map((c) => ({
     slug: c.slug,
-    name: c.name[asLocale(locale)],
+    name: tCatalog(`${c.slug}.name`),
   }));
 
   return (

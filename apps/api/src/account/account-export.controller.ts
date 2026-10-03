@@ -1,4 +1,5 @@
 import { Controller, Get, Header, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
@@ -15,8 +16,12 @@ import { AccountExportService, type AccountExport } from './account-export.servi
 export class AccountExportController {
   constructor(private readonly accountExport: AccountExportService) {}
 
-  /** Descarga un JSON con todos los datos personales del usuario; la cabecera fuerza la descarga. */
+  /**
+   * Descarga un JSON con todos los datos personales del usuario; la cabecera fuerza la descarga.
+   * Es la lectura más cara de la API (todo el histórico): pocas por minuto bastan.
+   */
   @Get()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Header('Content-Disposition', 'attachment; filename="sextante-datos.json"')
   export(@CurrentUser() user: SessionUser): Promise<AccountExport> {
     return this.accountExport.export(user);

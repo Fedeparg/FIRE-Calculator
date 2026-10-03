@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { firstItem } from '@sextante/core/arrays';
 
 import type { Database } from '../db/database.module.js';
 import { incomeEvents, positions } from '../db/schema.js';
@@ -22,10 +23,12 @@ describe('IncomeService (integración con Postgres)', () => {
   afterAll(() => close());
 
   async function positionFor(userId: string): Promise<string> {
-    const [row] = await db
-      .insert(positions)
-      .values({ userId, ticker: 'AAPL', quantity: '1', avgPrice: '100', currency: 'USD' })
-      .returning();
+    const row = firstItem(
+      await db
+        .insert(positions)
+        .values({ userId, ticker: 'AAPL', quantity: '1', avgPrice: '100', currency: 'USD' })
+        .returning(),
+    );
     return row.id;
   }
 
@@ -90,13 +93,24 @@ describe('IncomeService (integración con Postgres)', () => {
     await expect(service.update(userId, created.id, { gross: 0.05 })).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('acepta retenciones que suman exactamente el íntegro aunque en coma flotante no cuadre (0,1 + 0,2 = 0,3)', async () => {
+    const exact = { ...dividend, gross: 0.3, withholdingOrigin: 0.1, withholdingSpain: 0.2 };
+    expect(createIncomeSchema.safeParse(exact).success).toBe(true);
+
+    const userId = await insertUser(db, 'a@example.com');
+    const created = await service.create(userId, exact);
+    await expect(service.update(userId, created.id, { gross: 0.6, withholdingOrigin: 0.4 })).resolves.toMatchObject({
+      gross: 0.6,
+    });
+  });
+
   it('borrar la posición deja el cobro sin posición, no lo borra', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const positionId = await positionFor(userId);
     const created = await service.create(userId, { ...dividend, positionId });
 
     await db.delete(positions).where(eq(positions.id, positionId));
-    const [row] = await db.select().from(incomeEvents).where(eq(incomeEvents.id, created.id));
+    const row = firstItem(await db.select().from(incomeEvents).where(eq(incomeEvents.id, created.id)));
     expect(row.positionId).toBeNull();
   });
 });

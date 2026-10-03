@@ -12,11 +12,12 @@ import {
   type PositionFilter,
 } from "@sextante/core/portfolio/positions";
 import { usePathname, useRouter } from "@/i18n/navigation";
+import ToggleGroup from "@/shared/ui/ToggleGroup";
 import type { Position } from "@sextante/core/portfolio/types";
 import { ADD_POSITION_PARAM } from "../add-position";
 import DerivativesNotice from "./DerivativesNotice";
 import PortfolioExport from "./PortfolioExport";
-import { usePortfolioData } from "./PortfolioDataProvider";
+import { usePortfolioData, usePortfolioFreshness } from "./PortfolioDataProvider";
 import PositionDetail, { POSITION_DETAIL_TITLE_ID } from "./PositionDetail";
 import PositionForm, { POSITION_FORM_TITLE_ID } from "./PositionForm";
 import PositionList from "./PositionList";
@@ -35,7 +36,9 @@ type PanelState = { kind: "closed" } | { kind: "detail"; id: string } | { kind: 
  */
 export default function PortfolioPositionsTab() {
   const t = useTranslations("portfolio");
-  const { positions, setPositions, refresh, prices, rates, display, agg, pendingIds } = usePortfolioData();
+  const { positions, addPosition, replacePosition, removePosition, refresh, prices, rates, display, agg } =
+    usePortfolioData();
+  const { pendingIds } = usePortfolioFreshness();
   const [filter, setFilter] = useState<PositionFilter>("open");
   const [query, setQuery] = useState("");
   const [panel, setPanel] = useState<PanelState>({ kind: "closed" });
@@ -75,18 +78,18 @@ export default function PortfolioPositionsTab() {
   function handleCreated(position: Position) {
     // Más recientes primero, igual que el orden del backend. Se abre su detalle: es lo que
     // se quiere ver justo después de darla de alta.
-    setPositions((prev) => [position, ...prev]);
+    addPosition(position);
     setPanel({ kind: "detail", id: position.id });
   }
 
   // Edición o combinación: reemplaza la posición y vuelve a su detalle.
   function handleSaved(position: Position) {
-    setPositions((prev) => prev.map((p) => (p.id === position.id ? position : p)));
+    replacePosition(position);
     setPanel({ kind: "detail", id: position.id });
   }
 
   function handleDeleted(id: string) {
-    setPositions((prev) => prev.filter((p) => p.id !== id));
+    removePosition(id);
     setPanel({ kind: "closed" });
   }
 
@@ -121,26 +124,23 @@ export default function PortfolioPositionsTab() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t("positions.searchPlaceholder")}
-                    className="h-11 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 sm:w-72"
+                    className="h-11 w-full rounded-xl border border-border bg-surface pl-9 pr-3 text-sm text-foreground outline-hidden focus:border-brand focus:ring-2 focus:ring-brand/30 sm:w-72"
                   />
                 </label>
-                <div role="group" aria-label={t("positions.filterLabel")} className="flex rounded-xl bg-surface-2 p-1">
-                  {POSITION_FILTERS.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setFilter(option)}
-                      aria-pressed={filter === option}
-                      className={`h-9 flex-1 whitespace-nowrap rounded-lg px-3 text-sm transition sm:flex-none ${
-                        filter === option
-                          ? "bg-surface font-semibold text-foreground shadow-sm"
-                          : "text-muted hover:text-foreground"
-                      }`}
-                    >
-                      {t(`positions.filter.${option}`)} <span className="tabular-nums">{counts[option]}</span>
-                    </button>
-                  ))}
-                </div>
+                <ToggleGroup
+                  label={t("positions.filterLabel")}
+                  value={filter}
+                  options={POSITION_FILTERS.map((option) => ({
+                    value: option,
+                    label: (
+                      <>
+                        {t(`positions.filter.${option}`)} <span className="tabular-nums">{counts[option]}</span>
+                      </>
+                    ),
+                  }))}
+                  onChange={setFilter}
+                  layout="fillOnMobile"
+                />
               </div>
               <PortfolioExport positions={positions} prices={prices} rates={rates} display={display} />
             </div>

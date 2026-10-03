@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
+import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "@sextante/core/fiscal/countries";
 import { computeDividends } from "@sextante/core/calculators/dividendos";
 import { useFormat } from "@/shared/format/use-format";
 import NumberField from "@/shared/ui/NumberField";
@@ -19,7 +20,7 @@ export default function DividendsCalculator() {
   const [shares, setShares] = useNumberField("shares", 100);
   const [dividendPerShare, setDividendPerShare] = useNumberField("dividendPerShare", 1.5);
   const [sharePrice, setSharePrice] = useNumberField("sharePrice", 50);
-  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", 19);
+  const [withholdingRate, setWithholdingRate] = useNumberField("withholdingRate", SPAIN_SAVINGS_WITHHOLDING_PCT);
   const [annualGrowth, setAnnualGrowth] = useNumberField("annualGrowth", 5);
   const [years, setYears] = useNumberField("years", 10);
 

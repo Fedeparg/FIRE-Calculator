@@ -1,9 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`characterization: matemática de préstamos > computeAffordability 1`] = `"567 casos, sha256 ef6de9e73e44aa7f5402a1dd6015310362981a20c97e10d4e25eb3714cab2cbc"`;
-
-exports[`characterization: matemática de préstamos > computeCreditCard 1`] = `"288 casos, sha256 aab2a9d79d72fe5ca0fd9765d3a822cf8d9a85ed16964347ec5d8555bb37769d"`;
-
-exports[`characterization: matemática de préstamos > computeEarlyRepayment 1`] = `"1260 casos, sha256 c1246f070f2eb868190f0e9403456e388bed828aca06309433ce54a30b91fd7e"`;
-
-exports[`characterization: matemática de préstamos > computeMortgage 1`] = `"315 casos, sha256 c87adba725d3173126cb8ae69bbbd9483a1ff0c7bd94335d360a73f30a7e3e26"`;

@@ -4,7 +4,7 @@
 // la reducción por rendimientos del trabajo (art. 20 LIRPF): no rige para actividades económicas.
 
 import {
-  REDUCCION_TRIBUTACION_CONJUNTA,
+  JOINT_RETURN_REDUCTION,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_CAP,
   SELF_EMPLOYED_DIFFICULT_EXPENSES_RATE,
 } from "../fiscal/brackets.js";
@@ -49,7 +49,7 @@ export function computeSelfEmployedTax(input: SelfEmployedInput): SelfEmployedRe
     : 0;
   const netIncome = Math.max(0, grossNetIncome - difficultExpenses);
 
-  const jointReduction = input.jointReturn ? REDUCCION_TRIBUTACION_CONJUNTA : 0;
+  const jointReduction = input.jointReturn ? JOINT_RETURN_REDUCTION : 0;
   const taxableBase = Math.max(0, netIncome - pension - jointReduction);
 
   const personalMinimum = personalAndFamilyMinimum(input);

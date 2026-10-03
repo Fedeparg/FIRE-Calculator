@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { parseWebsiteId } from "./config";
+import { ANALYTICS_PATH_PREFIX, parseWebsiteId } from "./config";
 import { trackEvent } from "./track";
 
 const VALID_ID = "4f1c2b8e-9a3d-4e7f-8b21-6c5d0e9f1a2b";
@@ -53,5 +55,13 @@ describe("trackEvent", () => {
 
     expect(() => trackEvent({ name: "position-added" })).not.toThrow();
     expect(track).toHaveBeenCalledOnce();
+  });
+});
+
+describe("ANALYTICS_PATH_PREFIX", () => {
+  it("está excluido del proxy de i18n (el matcher de proxy.ts tiene que ser un literal)", () => {
+    const proxy = readFileSync(new URL("../../proxy.ts", import.meta.url), "utf8");
+    const segment = ANALYTICS_PATH_PREFIX.replace(/^\//, "");
+    expect(proxy).toMatch(new RegExp(`matcher: \\[".*\\|${segment}\\|`));
   });
 });

@@ -7,7 +7,8 @@
     "home": "Calculators",
     "learn": "Learn",
     "primary": "Primary navigation",
-    "theme": "Switch between light and dark theme"
+    "theme": "Dark theme",
+    "breadcrumb": "Breadcrumb"
   },
   "landing": {
     "meta": {
@@ -89,13 +90,129 @@
     "open": "Open",
     "resultsCount": "{count, plural, =0 {No results} =1 {1 calculator} other {# calculators}}"
   },
+  "catalog": {
+    "interes-compuesto": {
+      "name": "Compound interest",
+      "description": "Project your investment growth with regular contributions."
+    },
+    "independencia-financiera": {
+      "name": "Financial independence (FIRE)",
+      "description": "Work out your FIRE number and how many years until you can live off your assets."
+    },
+    "simulador-montecarlo": {
+      "name": "FIRE Monte Carlo simulator",
+      "description": "Probability of reaching FIRE and of your money lasting through retirement, across thousands of scenarios."
+    },
+    "hipoteca-fija": {
+      "name": "Fixed-rate mortgage",
+      "description": "Monthly payment, total interest and amortization schedule."
+    },
+    "interes-simple": {
+      "name": "Simple interest",
+      "description": "Basic simple-interest calculation."
+    },
+    "promediar-acciones": {
+      "name": "Average down (DCA)",
+      "description": "Weighted average price of your purchases."
+    },
+    "dividendos": {
+      "name": "Stock dividends",
+      "description": "Dividend income and withholding."
+    },
+    "roi": {
+      "name": "ROI",
+      "description": "Return on investment."
+    },
+    "staking": {
+      "name": "Staking interest (crypto)",
+      "description": "Yield from crypto staking."
+    },
+    "ahorro-jubilacion": {
+      "name": "Retirement savings",
+      "description": "How much to save for retirement."
+    },
+    "presupuesto-mensual": {
+      "name": "Monthly budget",
+      "description": "Organize income and expenses (50/30/20 rule)."
+    },
+    "que-hipoteca-me-puedo-permitir": {
+      "name": "How much mortgage can I afford?",
+      "description": "Maximum amount based on your income."
+    },
+    "hipoteca-vs-alquiler": {
+      "name": "Buy vs rent",
+      "description": "Buying or renting: a comparison."
+    },
+    "amortizacion-anticipada": {
+      "name": "Early repayment",
+      "description": "Reduce payment or term by repaying early."
+    },
+    "rentabilidad-alquiler": {
+      "name": "Rental yield",
+      "description": "Gross and net yield of a property."
+    },
+    "rentabilidad-alquiler-vacacional": {
+      "name": "Holiday rental yield",
+      "description": "Yield of a holiday let."
+    },
+    "deposito-plazo-fijo": {
+      "name": "Fixed-term deposit",
+      "description": "Interest on a bank deposit."
+    },
+    "cuenta-remunerada": {
+      "name": "High-yield account",
+      "description": "Return of a high-yield savings account."
+    },
+    "impuesto-donaciones": {
+      "name": "Gift tax",
+      "description": "Estimate by region and kinship."
+    },
+    "impuesto-patrimonio": {
+      "name": "Wealth tax",
+      "description": "Estimate by wealth and region."
+    },
+    "desgravacion-plan-pensiones": {
+      "name": "Pension plan tax relief",
+      "description": "Tax savings from pension contributions."
+    },
+    "salario-bruto-neto": {
+      "name": "Gross to net salary",
+      "description": "From gross to net monthly salary."
+    },
+    "irpf-nomina": {
+      "name": "Payroll income tax",
+      "description": "Income-tax withholding on payroll."
+    },
+    "irpf-autonomos": {
+      "name": "Self-employed income tax",
+      "description": "Income tax for the self-employed."
+    },
+    "intereses-tarjeta-credito": {
+      "name": "Credit card interest",
+      "description": "Cost of revolving debt."
+    },
+    "inflacion": {
+      "name": "Inflation (CPI)",
+      "description": "Purchasing power over time."
+    },
+    "salud-financiera": {
+      "name": "Financial health test",
+      "description": "A quiz about your finances."
+    }
+  },
   "common": {
     "back": "Back to calculators",
     "disclaimerShort": "Information, not tax or financial advice.",
     "moreInfo": "More information",
     "copy": "Copy",
     "copied": "Copied",
-    "copyLabel": "Copy {label}"
+    "copyLabel": "Copy {label}",
+    "apiError": {
+      "network": "Could not reach the server. Check your connection and try again.",
+      "server": "A server error occurred. Please try again in a moment.",
+      "session": "Your session has expired. Sign in again to continue.",
+      "generic": "The operation could not be completed. Please try again."
+    }
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
@@ -152,7 +269,8 @@
     "interest": "Interest",
     "axisYear": "Year",
     "imageLabel": "Chart: {title}",
-    "dataTableCaption": "Chart data: {title}"
+    "dataTableCaption": "Chart data: {title}",
+    "showData": "Show the chart data: {title}"
   },
   "calc": {
     "interes-compuesto": {
@@ -260,7 +378,8 @@
       "sensitivityCaption": "Probability of success by withdrawal rate, with everything else unchanged and the same market scenarios.",
       "sensitivityRate": "Withdrawal rate",
       "sensitivityTarget": "FIRE number",
-      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future."
+      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future.",
+      "recalculating": "Recalculating…"
     },
     "hipoteca-fija": {
       "title": "Fixed-rate mortgage calculator",
@@ -928,6 +1047,7 @@
       "title": "Financial health test",
       "intro": "Answer eight questions and get a 0-100 score on the state of your finances, with tailored tips.",
       "score": "Your score",
+      "scoreMax": "/ {max}",
       "questions": {
         "emergencyFund": {
           "label": "How much have you saved for emergencies?",
@@ -1028,12 +1148,8 @@
       "confirmDelete": "Confirm",
       "deleting": "Deleting…",
       "quotaReached": "You've reached the maximum number of saved scenarios. Delete one to save another.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the scenario name: it cannot be empty.",
-      "errorServer": "A server error occurred. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again.",
       "errorTooLarge": "This calculation is too large to save.",
       "errorQuota": "You've reached the maximum number of saved scenarios. Delete one to save another."
     }
@@ -1226,12 +1342,8 @@
       "save": "Save changes",
       "saving": "Saving…",
       "cancel": "Cancel",
-      "errorNetwork": "Couldn't reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired.",
       "errorSessionLink": "Sign in again",
       "errorInvalid": "Check the form: a field has an invalid value.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "Couldn't complete the operation. Please try again.",
       "duplicate": "You already have {ticker} at {broker}.",
       "duplicateHint": "Change the broker to add it as a new position, or combine it with the existing one (weighted average price).",
       "combine": "Combine with existing",
@@ -1319,6 +1431,9 @@
       "edit": "Edit",
       "delete": "Delete",
       "confirmDelete": "Yes, delete",
+      "editItem": "Edit {item}",
+      "deleteItem": "Delete {item}",
+      "confirmDeleteItem": "Yes, delete {item}",
       "cancel": "Cancel",
       "formAddTitle": "Add trade",
       "formEditTitle": "Edit trade",
@@ -1328,14 +1443,10 @@
       "add": "Add trade",
       "save": "Save changes",
       "saving": "Saving…",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorSession": "Your session has expired. Sign in again to continue.",
       "errorNotFound": "This trade no longer exists. Reload the page to see the current history.",
       "errorNegative": "That sell would leave the position negative: you cannot sell more units than you hold on that date.",
       "errorOverflow": "The result of these trades exceeds the maximum a position can hold.",
-      "errorInvalid": "Check the trade details: some value is not valid.",
-      "errorServer": "Something went wrong on the server. Please try again in a moment.",
-      "errorGeneric": "The operation could not be completed. Please try again."
+      "errorInvalid": "Check the trade details: some value is not valid."
     },
     "sale": {
       "title": "What if I sell?",
@@ -1480,10 +1591,7 @@
       "errorEmpty": "The file contains no transactions.",
       "errorMalformed": "The file is not a valid CSV.",
       "errorTooManyRows": "The file has too many rows (the maximum is 20,000).",
-      "errorSession": "Your session has expired. Please sign in again.",
       "errorRateLimit": "Too many attempts in a row. Wait a minute and try again.",
-      "errorNetwork": "Could not connect. Check your connection and try again.",
-      "errorServer": "There was a problem on the server. Please try again in a few minutes.",
       "errorGeneric": "The file could not be processed. Please try again.",
       "preview": {
         "title": "This is what will be imported",
@@ -1552,6 +1660,7 @@
         "failure": {
           "NEGATIVE_QUANTITY": "Sales exceed purchases: earlier history is missing.",
           "OVERFLOW": "The resulting quantity is too large.",
+          "CONFLICT": "Another import of the same file ran at the same time. Import it again to complete it.",
           "UNEXPECTED": "Unexpected error. Please try again later."
         },
         "pricesNote": "Prices for the new positions may take a few minutes to appear.",
@@ -1656,6 +1765,7 @@
       "country": "Source country",
       "countryHint": "Two-letter code (US, NL, ES…). Needed for double taxation relief.",
       "name": "Security or account",
+      "isin": "ISIN",
       "reportedToAeat": "The payer already reported it to the Spanish tax agency (it is in my draft return)",
       "reportedBadge": "In the draft",
       "invalid": "Withholdings cannot exceed the gross amount and the country must be a two-letter code.",
@@ -1667,10 +1777,10 @@
       "edit": "Edit",
       "delete": "Delete",
       "confirmDelete": "Yes, delete",
+      "editItem": "Edit {item}",
+      "deleteItem": "Delete {item}",
+      "confirmDeleteItem": "Yes, delete {item}",
       "cancel": "Cancel",
-      "errorSession": "Your session has expired. Sign in again to continue.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorServer": "The server failed. Try again in a moment.",
       "errorInvalid": "Check the data: something is not valid.",
       "errorGeneric": "It could not be saved. Try again.",
       "grossShort": "Gross",
@@ -1727,9 +1837,6 @@
       "saving": "Saving…",
       "saved": "Saved",
       "duplicated": "Each year and type can only appear once.",
-      "errorSession": "Your session has expired. Sign in again to continue.",
-      "errorNetwork": "Could not reach the server. Check your connection and try again.",
-      "errorServer": "The server failed. Try again in a moment.",
       "errorInvalid": "Check the data: something is not valid.",
       "errorGeneric": "It could not be saved. Try again."
     },
@@ -1776,6 +1883,13 @@
       "step3": "Done: ask it to analyse your portfolio. You can revoke access here at any time.",
       "howToNote": "ChatGPT also supports MCP connectors, but support is more limited depending on your plan; Claude is currently the most complete option."
     },
+    "sessions": {
+      "title": "Open sessions",
+      "description": "Sign out on every device where you have signed in, including this one. Use it if you signed in on someone else's computer or think someone may be using your account.",
+      "button": "Sign out everywhere",
+      "revoking": "Signing out…",
+      "error": "Couldn't sign out your sessions. Please try again."
+    },
     "danger": {
       "title": "Danger zone"
     },
@@ -1788,11 +1902,7 @@
       "deleting": "Deleting…",
       "success": "Your account has been deleted. Taking you home…"
     },
-    "errorNetwork": "We couldn't reach the server. Check your connection and try again.",
-    "errorSession": "Your session has expired.",
     "errorSessionLink": "Sign in again",
-    "errorServer": "A server error occurred. Please try again in a few moments.",
-    "errorGeneric": "We couldn't complete the operation. Please try again.",
     "notifications": {
       "title": "Email notices",
       "intro": "We email you when your portfolio crosses 25, 50, 75 and 100% of your financial independence goal. One notice per milestone, never repeated, calculated every night with closing prices.",

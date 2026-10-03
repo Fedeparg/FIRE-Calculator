@@ -4,7 +4,6 @@ import type { ConnectedApp } from '@sextante/core/contracts';
 import type { SessionUser } from '../auth/auth.service.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
-import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 
 /**
@@ -16,28 +15,20 @@ import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 @Controller('account/connections')
 @UseGuards(JwtAuthGuard)
 export class ConnectionsController {
-  constructor(
-    private readonly grants: OAuthGrantsService,
-    private readonly clients: OAuthClientsStore,
-  ) {}
+  constructor(private readonly grants: OAuthGrantsService) {}
 
   /** Lista las aplicaciones conectadas del usuario, con su nombre legible. */
   @Get()
   async list(@CurrentUser() user: SessionUser): Promise<ConnectedApp[]> {
-    const grants = await this.grants.listForUser(user.id);
-    return Promise.all(
-      grants.map(async (g) => {
-        const client = await this.clients.getClient(g.clientId);
-        return {
-          clientId: g.clientId,
-          clientName: client?.client_name ?? null,
-          clientUri: client?.client_uri ?? null,
-          scopes: g.scopes,
-          createdAt: g.createdAt.toISOString(),
-          lastUsedAt: g.lastUsedAt ? g.lastUsedAt.toISOString() : null,
-        };
-      }),
-    );
+    const grants = await this.grants.listWithClients(user.id);
+    return grants.map((g) => ({
+      clientId: g.clientId,
+      clientName: g.clientName,
+      clientUri: g.clientUri,
+      scopes: g.scopes,
+      createdAt: g.createdAt.toISOString(),
+      lastUsedAt: g.lastUsedAt ? g.lastUsedAt.toISOString() : null,
+    }));
   }
 
   /** Revoca el acceso de un cliente: borra el consentimiento y todos sus tokens. */

@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 
+import { firstItem } from "@sextante/core/arrays";
 import type { TradeLot } from "@sextante/core/fiscal/plusvalias";
 import { buildRealisedGainsReport } from "@sextante/core/fiscal/realised-gains";
-import { buildRealisedGainsCsv, REALISED_GAINS_CSV_COLUMNS, type RealisedGainsCsvHeaders } from "./realised-gains-csv";
+import {
+  buildRealisedGainsCsv,
+  REALISED_GAINS_CSV_COLUMNS,
+  realisedGainsCsvHeaders,
+  type RealisedGainsCsvHeaders,
+} from "./realised-gains-csv";
 
 const HEADERS = Object.fromEntries(REALISED_GAINS_CSV_COLUMNS.map((c) => [c, c])) as RealisedGainsCsvHeaders;
 
@@ -11,10 +17,9 @@ const lots: TradeLot[] = [
   { id: "2", kind: "sell", quantity: 2, price: 12.5, fees: 0.5, tradedAt: "2024-05-02" },
 ];
 
-const year = buildRealisedGainsReport(
-  [{ id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots }],
-  {},
-).years[0];
+const year = firstItem(
+  buildRealisedGainsReport([{ id: "p", ticker: "VWCE", name: "=cmd|' /C calc'!A0", currency: "EUR", lots }], {}).years,
+);
 
 describe("buildRealisedGainsCsv", () => {
   it("una fila por venta, con el dialecto español", () => {
@@ -43,20 +48,31 @@ describe("buildRealisedGainsCsv", () => {
       { id: "2", kind: "sell", quantity: 1, price: 120, fees: 0, tradedAt: "2024-06-03" },
     ];
     const position = { id: "u", ticker: "AAPL", name: null, currency: "USD", lots: usdLots };
-    const converted = buildRealisedGainsReport([position], {
-      USD: [
-        { date: "2024-01-02", unitsPerEur: 1.1 },
-        { date: "2024-06-03", unitsPerEur: 1.08 },
-      ],
-    }).years[0];
+    const converted = firstItem(
+      buildRealisedGainsReport([position], {
+        USD: [
+          { date: "2024-01-02", unitsPerEur: 1.1 },
+          { date: "2024-06-03", unitsPerEur: 1.08 },
+        ],
+      }).years,
+    );
     // 20 / 1,08 = 18,52; diferencia de cambio 100 / 1,08 − 100 / 1,1 = 1,68.
     expect(buildRealisedGainsCsv(converted, HEADERS, "en").split("\r\n")[1]).toBe(
       "2024-06-03,AAPL,,USD,1,120,0,120,100,20,1.08,111.11,92.59,18.52,1.68,0,0,18.52",
     );
 
-    const missing = buildRealisedGainsReport([position], {}).years[0];
+    const missing = firstItem(buildRealisedGainsReport([position], {}).years);
     expect(buildRealisedGainsCsv(missing, HEADERS, "en").split("\r\n")[1]).toBe(
       "2024-06-03,AAPL,,USD,1,120,0,120,100,20,,,,,,,,",
     );
+  });
+});
+
+describe("realisedGainsCsvHeaders", () => {
+  it("traduce cada columna con su clave csv.<columna>, en orden", () => {
+    const headers = realisedGainsCsvHeaders((key) => `[${key}]`);
+
+    expect(Object.keys(headers)).toEqual([...REALISED_GAINS_CSV_COLUMNS]);
+    expect(headers.gainEur).toBe("[csv.gainEur]");
   });
 });

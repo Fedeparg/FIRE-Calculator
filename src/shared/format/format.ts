@@ -47,6 +47,14 @@ export interface Formatters {
   formatPercent: (n: number, options?: { minDecimals?: number }) => string;
   /** Moneda en una divisa arbitraria (EUR/USD/GBP/JPY…), para las posiciones de la cartera. */
   formatCurrency: (n: number, currency: string) => string;
+  /**
+   * Como `formatCurrency` pero con signo explícito para ganancias y pérdidas ("+1.234,56 €",
+   * "-3,00 €"). El cero (y lo que redondea a cero, y el -0) va sin signo: "+0,00 €" o "-0,00 €"
+   * sugerirían una ganancia o una pérdida que no hay.
+   */
+  formatSignedCurrency: (n: number, currency: string) => string;
+  /** Como `formatPercent` pero con signo explícito ("+5,2 %"), con la misma regla del cero. */
+  formatSignedPercent: (n: number, options?: { minDecimals?: number }) => string;
   /** Símbolo corto de una divisa ("€", "$", "£", "CHF"…) en el idioma activo. */
   currencySymbol: (currency: string) => string;
   /** Etiqueta compacta de una divisa para selectores: "€ EUR", "$ USD"… */
@@ -59,10 +67,12 @@ export interface Formatters {
 function build(locale: Locale): Formatters {
   const l = INTL_LOCALE[locale];
 
+  // `signDisplay: "negative"`: sin él, -0,4 € redondeado a 0 sale "-0 €".
   const eur = new Intl.NumberFormat(l, {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
+    signDisplay: "negative",
   });
   const eurCents = new Intl.NumberFormat(l, {
     style: "currency",
@@ -94,20 +104,65 @@ function build(locale: Locale): Formatters {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  // `exceptZero`: "+" en positivos, "-" en negativos y nada en el cero ya redondeado.
+  const signedPct = new Intl.NumberFormat(l, {
+    style: "percent",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    signDisplay: "exceptZero",
+  });
+  const signedPctFixed2 = new Intl.NumberFormat(l, {
+    style: "percent",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    signDisplay: "exceptZero",
+  });
 
   // Cachés por divisa (dentro del closure del idioma: cada locale tiene las suyas). Sin esto,
   // una caché global por-divisa devolvería el formateador del primer idioma que la tocara.
   const currencyFormatters = new Map<string, Intl.NumberFormat>();
+  const signedCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const compactCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const currencySymbols = new Map<string, string>();
+  // Para una divisa que `Intl` no conoce (un código ISO inválido en un dato importado): el
+  // importe con dos decimales y el código detrás, en vez de un `RangeError` en pleno render.
+  const plainAmount = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const signedPlainAmount = new Intl.NumberFormat(l, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    signDisplay: "exceptZero",
+  });
+
+  /** `Intl.NumberFormat` de divisa, o `null` si el código no es válido. */
+  const currencyFormat = (options: Intl.NumberFormatOptions): Intl.NumberFormat | null => {
+    try {
+      return new Intl.NumberFormat(l, options);
+    } catch {
+      return null;
+    }
+  };
 
   const formatCurrency = (n: number, currency: string): string => {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = currencyFormatters.get(currency);
     if (!fmt) {
       // Los decimales los decide `Intl` por divisa (EUR/USD → 2, JPY → 0): forzar 2 rompería el yen.
-      fmt = new Intl.NumberFormat(l, { style: "currency", currency });
+      const created = currencyFormat({ style: "currency", currency });
+      if (!created) return `${plainAmount.format(n)} ${currency}`;
+      fmt = created;
       currencyFormatters.set(currency, fmt);
+    }
+    return fmt.format(n);
+  };
+
+  const formatSignedCurrency = (n: number, currency: string): string => {
+    if (!Number.isFinite(n)) return NON_FINITE;
+    let fmt = signedCurrencyFormatters.get(currency);
+    if (!fmt) {
+      const created = currencyFormat({ style: "currency", currency, signDisplay: "exceptZero" });
+      if (!created) return `${signedPlainAmount.format(n)} ${currency}`;
+      fmt = created;
+      signedCurrencyFormatters.set(currency, fmt);
     }
     return fmt.format(n);
   };
@@ -119,12 +174,9 @@ function build(locale: Locale): Formatters {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = compactCurrencyFormatters.get(currency);
     if (!fmt) {
-      fmt = new Intl.NumberFormat(l, {
-        style: "currency",
-        currency,
-        notation: "compact",
-        maximumFractionDigits: 1,
-      });
+      const created = currencyFormat({ style: "currency", currency, notation: "compact", maximumFractionDigits: 1 });
+      if (!created) return `${compact.format(n)} ${currency}`;
+      fmt = created;
       compactCurrencyFormatters.set(currency, fmt);
     }
     return fmt.format(n);
@@ -133,12 +185,8 @@ function build(locale: Locale): Formatters {
   const currencySymbol = (currency: string): string => {
     let symbol = currencySymbols.get(currency);
     if (symbol === undefined) {
-      const parts = new Intl.NumberFormat(l, {
-        style: "currency",
-        currency,
-        currencyDisplay: "narrowSymbol",
-      }).formatToParts(0);
-      symbol = parts.find((p) => p.type === "currency")?.value ?? currency;
+      const parts = currencyFormat({ style: "currency", currency, currencyDisplay: "narrowSymbol" })?.formatToParts(0);
+      symbol = parts?.find((p) => p.type === "currency")?.value ?? currency;
       currencySymbols.set(currency, symbol);
     }
     return symbol;
@@ -150,11 +198,15 @@ function build(locale: Locale): Formatters {
     formatNumber: (n) => (Number.isFinite(n) ? num.format(n) : NON_FINITE),
     formatQuantity: (n) => (Number.isFinite(n) ? quantity.format(n) : NON_FINITE),
     formatMultiplier: (n) => (Number.isFinite(n) ? multiplier.format(n) : NON_FINITE),
-    formatCompactEUR: (n) => (Number.isFinite(n) ? `${compact.format(n)} €` : NON_FINITE),
+    // La posición del símbolo depende del idioma ("1,2 M €" / "€1.2M"): la decide `Intl`.
+    formatCompactEUR: (n) => formatCompactCurrency(n, "EUR"),
     formatCompactCurrency,
     formatPercent: (n, options) =>
       Number.isFinite(n) ? (options?.minDecimals === 2 ? pctFixed2 : pct).format(n / 100) : NON_FINITE,
+    formatSignedPercent: (n, options) =>
+      Number.isFinite(n) ? (options?.minDecimals === 2 ? signedPctFixed2 : signedPct).format(n / 100) : NON_FINITE,
     formatCurrency,
+    formatSignedCurrency,
     currencySymbol,
     // El código ISO va SIEMPRE (los símbolos colisionan: $ → USD/CAD/AUD/HKD/SGD, ¥ → JPY/CNY).
     // Si la divisa no tiene símbolo propio (CHF), `currencySymbol` ya devuelve el código.
@@ -201,7 +253,7 @@ const longDateFormatters = new Map<Locale, Intl.DateTimeFormat>();
  * si no es una fecha parseable, para no inventar un día.
  */
 export const formatLongDate = (iso: string, locale: Locale): string => {
-  const [y, m, d] = iso.split("-").map(Number);
+  const [y = NaN, m = NaN, d = NaN] = iso.split("-").map(Number);
   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return iso;
 
   const timestamp = Date.UTC(y, m - 1, d);

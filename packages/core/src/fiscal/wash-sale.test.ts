@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TradeLot } from "./plusvalias.js";
-import { addMonths, computeWashSales } from "./wash-sale.js";
+import { computeWashSales } from "./wash-sale.js";
 
 const buy = (id: string, tradedAt: string, quantity: number, total: number): TradeLot => ({
   id,
@@ -19,25 +19,6 @@ const sell = (id: string, tradedAt: string, quantity: number, total: number): Tr
   price: total / quantity,
   fees: 0,
   tradedAt,
-});
-
-describe("addMonths", () => {
-  it("cuenta de fecha a fecha", () => {
-    expect(addMonths("2025-07-16", 2)).toBe("2025-09-16");
-    expect(addMonths("2025-07-16", -2)).toBe("2025-05-16");
-  });
-
-  it("cruza años", () => {
-    expect(addMonths("2025-11-30", 2)).toBe("2026-01-30");
-    expect(addMonths("2025-01-15", -2)).toBe("2024-11-15");
-  });
-
-  it("toma el último día del mes cuando el destino no tiene ese día", () => {
-    expect(addMonths("2025-12-31", 2)).toBe("2026-02-28");
-    expect(addMonths("2023-12-31", 2)).toBe("2024-02-29");
-    expect(addMonths("2025-10-31", -2)).toBe("2025-08-31");
-    expect(addMonths("2025-04-30", -2)).toBe("2025-02-28");
-  });
 });
 
 describe("computeWashSales", () => {

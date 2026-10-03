@@ -1,4 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { firstItem } from '@sextante/core/arrays';
+
+import { fetchText } from '../common/http.js';
 
 /**
  * API de datos del BCE (ECB Data Portal, SDMX): series diarias `EXR.D.<DIVISA>.EUR.SP00.A`,
@@ -37,7 +40,7 @@ const CURRENCY = /^[A-Z]{3}$/;
 export function parseEcbCsv(text: string): EcbRate[] {
   const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
   if (lines.length === 0) return [];
-  const header = lines[0].split(',');
+  const header = firstItem(lines).split(',');
   const currencyAt = header.indexOf('CURRENCY');
   const dateAt = header.indexOf('TIME_PERIOD');
   const valueAt = header.indexOf('OBS_VALUE');
@@ -50,7 +53,7 @@ export function parseEcbCsv(text: string): EcbRate[] {
     const currency = cells[currencyAt];
     const date = cells[dateAt];
     const unitsPerEur = Number(cells[valueAt]);
-    if (!CURRENCY.test(currency ?? '') || !DATE.test(date ?? '')) continue;
+    if (currency === undefined || date === undefined || !CURRENCY.test(currency) || !DATE.test(date)) continue;
     if (!Number.isFinite(unitsPerEur) || unitsPerEur <= 0) continue;
     out.push({ currency, date, unitsPerEur });
   }
@@ -70,13 +73,14 @@ export class EcbReferenceRatesProvider implements ReferenceRatesProvider {
       `${ECB_DATA_URL}/D.${valid.join('+')}.EUR.SP00.A` +
       `?startPeriod=${from}&endPeriod=${to}&format=csvdata&detail=dataonly`;
 
-    const response = await fetch(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    const result = await fetchText(url, { timeoutMs: REQUEST_TIMEOUT_MS });
+    if (result.ok) return parseEcbCsv(result.body);
     // 404 = ninguna de las series existe en ese tramo: no es un error, es "sin datos".
-    if (response.status === 404) return [];
-    if (!response.ok) {
-      this.logger.warn(`ECB respondió ${response.status} para ${valid.join(',')} ${from}..${to}`);
-      throw new Error(`ECB responded ${response.status}`);
-    }
-    return parseEcbCsv(await response.text());
+    if (result.status === 404) return [];
+    // Lanza: quien llama distingue "no hay datos" de "no se pudieron cargar" (`ratesLoaded`).
+    this.logger.warn(`ECB: ${result.error} para ${valid.join(',')} ${from}..${to}`);
+    throw new Error(
+      result.status === undefined ? `ECB request failed: ${result.error}` : `ECB responded ${result.status}`,
+    );
   }
 }

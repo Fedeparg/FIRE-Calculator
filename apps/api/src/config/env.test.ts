@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DEV_JWT_SECRET, parseDatabaseEnv, parseEnv } from './env.js';
+import { DEV_JWT_SECRET, MIN_PRODUCTION_JWT_SECRET_LENGTH, parseDatabaseEnv, parseEnv } from './env.js';
 
 const MIN = { DATABASE_URL: 'postgres://db', JWT_SECRET: 'a-strong-secret', APP_URL: 'https://sextante.test' };
 
@@ -16,6 +16,9 @@ describe('parseEnv', () => {
       LOGIN_TOKEN_RETENTION_DAYS: 30,
       MCP_AUDIT_RETENTION_DAYS: 180,
       OAUTH_CLIENT_RETENTION_DAYS: 30,
+      DB_IDLE_TIMEOUT_SECONDS: 30,
+      DB_CONNECT_TIMEOUT_SECONDS: 10,
+      DB_STATEMENT_TIMEOUT_MS: 30_000,
     });
   });
 
@@ -94,15 +97,38 @@ describe('parseEnv', () => {
     );
   });
 
-  describe('JWT_SECRET en producción', () => {
+  describe('producción', () => {
+    /** Mínimo válido en producción: secreto largo, cookie Secure y APP_URL https. */
+    const PROD = {
+      ...MIN,
+      NODE_ENV: 'production',
+      JWT_SECRET: 'x'.repeat(MIN_PRODUCTION_JWT_SECRET_LENGTH),
+      COOKIE_SECURE: 'true',
+    };
+
     it('rechaza el secreto de desarrollo', () => {
-      expect(() => parseEnv({ ...MIN, NODE_ENV: 'production', JWT_SECRET: DEV_JWT_SECRET })).toThrow(
+      expect(() => parseEnv({ ...PROD, JWT_SECRET: DEV_JWT_SECRET })).toThrow(
         /JWT_SECRET: usa el valor de desarrollo en producción/,
       );
     });
 
-    it('acepta un secreto fuerte', () => {
-      expect(parseEnv({ ...MIN, NODE_ENV: 'production' }).NODE_ENV).toBe('production');
+    it('rechaza un secreto de menos de 32 caracteres', () => {
+      expect(() => parseEnv({ ...PROD, JWT_SECRET: 'x'.repeat(MIN_PRODUCTION_JWT_SECRET_LENGTH - 1) })).toThrow(
+        /JWT_SECRET: debe tener al menos 32 caracteres/,
+      );
+    });
+
+    it('exige COOKIE_SECURE=true', () => {
+      expect(() => parseEnv({ ...PROD, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE: debe ser "true"/);
+      expect(() => parseEnv({ ...PROD, COOKIE_SECURE: undefined })).toThrow(/COOKIE_SECURE/);
+    });
+
+    it('exige un APP_URL https', () => {
+      expect(() => parseEnv({ ...PROD, APP_URL: 'http://sextante.test' })).toThrow(/APP_URL: debe empezar por https/);
+    });
+
+    it('acepta una configuración segura', () => {
+      expect(parseEnv(PROD).NODE_ENV).toBe('production');
     });
 
     it('permite el secreto de desarrollo fuera de producción', () => {
