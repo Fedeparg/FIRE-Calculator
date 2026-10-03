@@ -9,3 +9,18 @@ import { afterEach } from "vitest";
 afterEach(() => {
   cleanup();
 });
+
+// jsdom no implementa `matchMedia`. Por defecto ninguna media query se cumple (pantalla estrecha,
+// sin preferencias); un test que necesite otra cosa la sustituye con `vi.spyOn(window, "matchMedia")`.
+if (typeof window.matchMedia !== "function") {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+    dispatchEvent: () => false,
+  });
+}
