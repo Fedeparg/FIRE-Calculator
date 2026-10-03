@@ -17,8 +17,9 @@ import { PositionsService } from '../../positions/positions.service.js';
 import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
 import { TaxReturnService } from '../../tax-return/tax-return.service.js';
 import { jsonResult } from '../mcp-results.js';
+import { InvalidToolInputError } from '../tool-errors.js';
 import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-schemas.js';
-import { InvalidToolInputError, type ToolRunner } from './tool-runner.js';
+import type { ToolRunner } from './tool-runner.js';
 
 export type AnalysisToolDeps = {
   positions: PositionsService;

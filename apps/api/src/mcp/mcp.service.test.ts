@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { NotFoundException } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CALCULATORS } from '@sextante/core/calculators/schemas';
@@ -120,8 +121,8 @@ function makeService() {
   return { service, audit, valuation, scenarios, taxReturn };
 }
 
-async function connect(service: McpService): Promise<Client> {
-  const server = service.createServer({ userId: USER, clientId: 'client-1', scopes: [SCOPE_PORTFOLIO_READ] });
+async function connect(service: McpService, scopes: string[] = [SCOPE_PORTFOLIO_READ]): Promise<Client> {
+  const server = service.createServer({ userId: USER, clientId: 'client-1', scopes });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: 'test', version: '1.0.0' });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
@@ -392,5 +393,52 @@ describe('McpService', () => {
     );
     expect(scenarios.findAllByUser).toHaveBeenCalledWith(USER, 'independencia-financiera');
     expect(listed).toMatchObject({ scenarios: [{ id: 's1' }] });
+  });
+
+  it('no reenvía al host el texto de un error interno: solo una referencia', async () => {
+    const { service, valuation, audit } = makeService();
+    valuation.breakdown.mockRejectedValueOnce(
+      new Error('Failed query: select "email" from "users" where "id" = $1\nparams: secreto@example.com'),
+    );
+    client = await connect(service);
+
+    const result = (await client.callTool({
+      name: 'get_portfolio_breakdown',
+      arguments: { groupBy: 'broker' },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    const text = JSON.stringify(result.content);
+    expect(text).not.toContain('Failed query');
+    expect(text).not.toContain('secreto@example.com');
+    expect(text).toMatch(/Error interno al ejecutar la operación \(ref\. [0-9a-f-]{36}\)/);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_portfolio_breakdown', 'error');
+  });
+
+  it('sí reenvía el mensaje (y el código) de los errores de dominio de Nest', async () => {
+    const { service, valuation } = makeService();
+    valuation.breakdown.mockRejectedValueOnce(
+      new NotFoundException({ message: 'Posición no encontrada', code: 'POSITION_NOT_FOUND' }),
+    );
+    client = await connect(service);
+
+    const result = (await client.callTool({
+      name: 'get_portfolio_breakdown',
+      arguments: { groupBy: 'broker' },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain('Posición no encontrada (POSITION_NOT_FOUND)');
+  });
+
+  it('exige portfolio:read para las tools de lectura y audita el rechazo', async () => {
+    const { service, audit } = makeService();
+    client = await connect(service, []);
+
+    const result = (await client.callTool({ name: 'list_positions', arguments: {} })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain('portfolio:read');
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'list_positions', 'denied_scope');
   });
 });
