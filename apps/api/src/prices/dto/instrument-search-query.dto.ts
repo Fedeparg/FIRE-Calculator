@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
-/** Más que cualquier nombre o ISIN que alguien teclee en el buscador; acota lo que se reenvía a Yahoo. */
+/** Longer than any name or ISIN someone types into the search box; bounds what is forwarded to Yahoo. */
 const MAX_QUERY_LENGTH = 40;
 
-/** Query de GET /api/instruments/search: `?q=` (opcional; corta o vacía, sin resultados). */
+/** Query of GET /api/instruments/search: `?q=` (optional; a short or empty one yields no results). */
 export const instrumentSearchQuerySchema = z.strictObject({
   q: z.string().trim().max(MAX_QUERY_LENGTH).default(''),
 });

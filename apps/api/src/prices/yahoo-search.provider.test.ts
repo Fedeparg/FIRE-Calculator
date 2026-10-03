@@ -9,7 +9,7 @@ describe('YahooInstrumentSearchProvider', () => {
     vi.unstubAllGlobals();
   });
 
-  it('cachea una consulta repetida: la segunda no sale a Yahoo', async () => {
+  it('caches a repeated query: the second one does not hit Yahoo', async () => {
     const fetchMock = vi.fn(() => Promise.resolve(Response.json(BODY)));
     vi.stubGlobal('fetch', fetchMock);
     const provider = new YahooInstrumentSearchProvider();
@@ -22,7 +22,7 @@ describe('YahooInstrumentSearchProvider', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it('no cachea un fallo de Yahoo: el siguiente intento vuelve a preguntar', async () => {
+  it('does not cache a Yahoo failure: the next attempt asks again', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(new Response('', { status: 503 }))
@@ -35,7 +35,7 @@ describe('YahooInstrumentSearchProvider', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it('no pregunta por consultas más cortas que el mínimo', async () => {
+  it('does not query for searches shorter than the minimum', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
