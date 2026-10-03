@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 
-import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
+import type { PositionResponse } from '../positions/position.mapper.js';
+import { PositionsService } from '../positions/positions.service.js';
 import { PriceReadService, type FxRates, type PriceInfo } from '../prices/price-read.service.js';
 import { aggregatePortfolio, type PortfolioAggregate } from '@sextante/core/portfolio/aggregate';
 import { buildBreakdown, type BreakdownGroupBy, type BreakdownResult } from '@sextante/core/portfolio/breakdown';

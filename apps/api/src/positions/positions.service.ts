@@ -2,7 +2,6 @@ import { BadRequestException, ConflictException, Inject, Injectable, Unauthorize
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, desc, eq, ne } from 'drizzle-orm';
 
-import type { AssetClass } from '@sextante/core/portfolio/types';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
 import { PriceHistoryService } from '../prices/price-history.service.js';
@@ -11,6 +10,7 @@ import type { CreatePositionDto } from './dto/create-position.dto.js';
 import type { UpdatePositionDto } from './dto/update-position.dto.js';
 import { brokerEquals, findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { PositionLotsService, sameAmount } from './position-lots.service.js';
+import { toPositionResponse, type PositionResponse } from './position.mapper.js';
 import {
   LOT_CHANGED_EVENT,
   POSITION_CREATED_EVENT,
@@ -19,21 +19,6 @@ import {
 } from './position-events.js';
 import { isoDate, todayUtc } from '../common/dates.js';
 import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../common/pg-error.js';
-
-/** Posición para el frontend: los `numeric` (string en Drizzle) se exponen como `number` porque la vista es de solo lectura. */
-export type PositionResponse = {
-  id: string;
-  ticker: string;
-  name: string | null;
-  quantity: number;
-  avgPrice: number;
-  broker: string | null;
-  currency: string;
-  /** Derivado: se registra pero no se valora ni entra en los totales. */
-  isDerivative: boolean;
-  assetClass: AssetClass | null;
-  createdAt: string;
-};
 
 @Injectable()
 export class PositionsService {
@@ -84,7 +69,7 @@ export class PositionsService {
       await this.prices.primeSymbol(row.ticker, row.currency);
       // Evento sin esperar: no debe alargar la respuesta del alta (ver `position-events.ts`).
       this.events.emit(POSITION_CREATED_EVENT, { userId } satisfies PositionCreatedEvent);
-      return this.toResponse(row);
+      return toPositionResponse(row);
     } catch (error) {
       // La única FK es `userId → users.id`: JWT válido pero usuario inexistente (cuenta
       // borrada, BD reiniciada en dev) es sesión muerta → 401, no 500.
@@ -109,7 +94,7 @@ export class PositionsService {
       .where(eq(positions.userId, userId))
       .orderBy(desc(positions.createdAt));
 
-    return rows.map((row) => this.toResponse(row));
+    return rows.map((row) => toPositionResponse(row));
   }
 
   /**
@@ -137,7 +122,7 @@ export class PositionsService {
       return this.reread(tx, id);
     });
 
-    return this.toResponse(row);
+    return toPositionResponse(row);
   }
 
   /** Edición manual; 409 si `ticker`/`broker` chocan con otra posición del usuario. */
@@ -195,7 +180,7 @@ export class PositionsService {
       // Los lotes realineados cambian la reconstrucción aunque el símbolo no.
       this.events.emit(LOT_CHANGED_EVENT, { userId, positionId: id } satisfies LotChangedEvent);
     }
-    return this.toResponse(row);
+    return toPositionResponse(row);
   }
 
   /** Borra una posición propia: 404 si no existe o es de otro usuario. */
@@ -250,7 +235,7 @@ export class PositionsService {
       throw new ConflictException({
         code: 'DUPLICATE',
         message: 'Ya tienes este símbolo en este bróker',
-        existing: this.toResponse(existing),
+        existing: toPositionResponse(existing),
       });
     }
   }
@@ -271,20 +256,5 @@ export class PositionsService {
   /** Normaliza el símbolo: sin espacios y en mayúsculas ("iwda" y "IWDA" son el mismo). */
   private normalizeTicker(ticker: string): string {
     return ticker.trim().toUpperCase();
-  }
-
-  private toResponse(row: Position): PositionResponse {
-    return {
-      id: row.id,
-      ticker: row.ticker,
-      name: row.name,
-      quantity: Number(row.quantity),
-      avgPrice: Number(row.avgPrice),
-      broker: row.broker,
-      currency: row.currency,
-      isDerivative: row.isDerivative,
-      assetClass: row.assetClass,
-      createdAt: row.createdAt.toISOString(),
-    };
   }
 }

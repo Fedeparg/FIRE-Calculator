@@ -10,6 +10,7 @@ import {
 import { STATUTORY_DIVIDEND_WITHHOLDING } from '@sextante/core/fiscal/withholding-rates';
 import { roundCents } from '@sextante/core/money';
 import { addDays } from '../common/dates.js';
+import { numberOrNull } from '../common/numeric.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
 import { PriceReadService } from '../prices/price-read.service.js';
@@ -143,7 +144,7 @@ function factsOf(event: IncomeEventRow): DividendFacts {
   return {
     amount: roundCents(gross - origin),
     tax: Number(event.withholdingSpain),
-    originalAmount: event.originalAmount === null ? null : Number(event.originalAmount),
+    originalAmount: numberOrNull(event.originalAmount),
     reported: event.reportedToAeat,
     country: event.country ?? '',
   };

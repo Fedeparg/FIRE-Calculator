@@ -9,36 +9,13 @@ import { findOwnedPosition, type DatabaseOrTransaction } from '../positions/posi
 import { withholdingsWithinGross, type CreateIncomeDto } from './dto/create-income.dto.js';
 import type { IncomeQueryDto } from './dto/income-query.dto.js';
 import type { UpdateIncomeDto } from './dto/update-income.dto.js';
+import { toIncomeEvent } from './income.mapper.js';
 
 /** Cobro importado listo para guardar: el del parser con su `external_id` ya prefijado y su posición. */
 export type ImportedIncomeInput = ImportedIncome & { positionId: string | null };
 
 /** Tope de ids por `IN (...)` al buscar duplicados. */
 const ID_BATCH_SIZE = 500;
-
-function toResponse(row: IncomeEventRow): IncomeEvent {
-  return {
-    id: row.id,
-    positionId: row.positionId,
-    kind: row.kind,
-    paidAt: row.paidAt,
-    isin: row.isin,
-    name: row.name,
-    country: row.country,
-    currency: row.currency,
-    gross: Number(row.gross),
-    withholdingOrigin: row.withholdingOrigin === null ? null : Number(row.withholdingOrigin),
-    withholdingSpain: Number(row.withholdingSpain),
-    reportedToAeat: row.reportedToAeat,
-    source: row.source,
-    grossSource: row.grossSource,
-    withholdingOriginSource: row.withholdingOrigin === null ? null : row.withholdingOriginSource,
-    quantity: row.quantity === null ? null : Number(row.quantity),
-    originalAmount: row.originalAmount === null ? null : Number(row.originalAmount),
-    originalCurrency: row.originalCurrency,
-    createdAt: row.createdAt.toISOString(),
-  };
-}
 
 /** `numeric` acepta texto: se guarda el número tal cual, ya validado (6 decimales como mucho). */
 const decimal = (value: number) => String(value);
@@ -62,7 +39,7 @@ export class IncomeService {
       .from(incomeEvents)
       .where(and(...conditions))
       .orderBy(asc(incomeEvents.paidAt), asc(incomeEvents.createdAt), asc(incomeEvents.id));
-    return rows.map(toResponse);
+    return rows.map(toIncomeEvent);
   }
 
   async create(userId: string, dto: CreateIncomeDto): Promise<IncomeEvent> {
@@ -91,7 +68,7 @@ export class IncomeService {
         withholdingOriginSource: dto.withholdingOrigin == null ? null : 'manual',
       })
       .returning();
-    return toResponse(row);
+    return toIncomeEvent(row);
   }
 
   async update(userId: string, id: string, dto: UpdateIncomeDto): Promise<IncomeEvent> {
@@ -134,7 +111,7 @@ export class IncomeService {
       })
       .where(and(eq(incomeEvents.id, id), eq(incomeEvents.userId, userId)))
       .returning();
-    return toResponse(row);
+    return toIncomeEvent(row);
   }
 
   async remove(userId: string, id: string): Promise<void> {

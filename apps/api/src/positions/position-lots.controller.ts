@@ -18,7 +18,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import type { SessionUser } from '../auth/auth.service.js';
 import { createPositionLotSchema, type CreatePositionLotDto } from './dto/create-position-lot.dto.js';
 import { updatePositionLotSchema, type UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
-import { PositionLotsService, type PositionLotResponse } from './position-lots.service.js';
+import { PositionLotsService } from './position-lots.service.js';
+import type { PositionLotResponse } from './position.mapper.js';
 
 /**
  * Lotes de una posición, anidados a propósito: el aislamiento se resuelve una vez comprobando

@@ -10,8 +10,9 @@ import type { IncomeEvent } from '@sextante/core/fiscal/income';
 import type { PendingNegative } from '@sextante/core/fiscal/savings-base';
 import { IncomeService } from '../income/income.service.js';
 import { PendingBalancesService } from '../tax-return/pending-balances.service.js';
-import { PositionLotsService, type PositionLotResponse } from '../positions/position-lots.service.js';
-import { PositionsService, type PositionResponse } from '../positions/positions.service.js';
+import { PositionLotsService } from '../positions/position-lots.service.js';
+import type { PositionLotResponse, PositionResponse } from '../positions/position.mapper.js';
+import { PositionsService } from '../positions/positions.service.js';
 import { SavedScenariosService } from '../scenarios/saved-scenarios.service.js';
 
 /** Una aplicación OAuth/MCP conectada, tal y como aparece en la exportación RGPD. */

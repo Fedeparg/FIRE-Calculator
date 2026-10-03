@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { randomToken, sha256Hex } from './crypto.js';
 import { isoDate, todayUtc } from './dates.js';
 import { errorMessage } from './errors.js';
+import { numberOrNull } from './numeric.js';
 import { scheduleFromEnv } from './schedule.js';
 
 describe('dates', () => {
@@ -95,5 +96,13 @@ describe('errorMessage', () => {
     expect(errorMessage('texto lanzado')).toBe('texto lanzado');
     expect(errorMessage(42)).toBe('42');
     expect(errorMessage(undefined)).toBe('undefined');
+  });
+});
+
+describe('numberOrNull', () => {
+  it('convierte el numeric de Drizzle y conserva el null', () => {
+    expect(numberOrNull('12.500000')).toBe(12.5);
+    expect(numberOrNull('0')).toBe(0);
+    expect(numberOrNull(null)).toBeNull();
   });
 });

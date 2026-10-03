@@ -8,21 +8,9 @@ import type { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
 import type { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
 import { aggregateLots, AMOUNT_SCALE, LotAggregateError, parseDecimal, type LotAggregate } from './lot-aggregate.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import { toPositionLotResponse, type PositionLotResponse } from './position.mapper.js';
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 import { todayUtc } from '../common/dates.js';
-
-/** Lote para el frontend: `numeric` como `number` (solo lectura; los cálculos internos no pasan por aquí). */
-export type PositionLotResponse = {
-  id: string;
-  positionId: string;
-  kind: 'buy' | 'sell';
-  quantity: number;
-  price: number;
-  fees: number;
-  tradedAt: string;
-  note: string | null;
-  createdAt: string;
-};
 
 /** Lote importado de un bróker (importes en decimal `string`). */
 export type ImportedLotInput = {
@@ -33,8 +21,6 @@ export type ImportedLotInput = {
   fees: string;
   tradedAt: string;
 };
-
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usan `instrument_prices`. */
 
 /**
  * CRUD de lotes y recálculo de `positions.quantity/avgPrice` a partir de ellos. Cada mutación
@@ -61,7 +47,7 @@ export class PositionLotsService {
   async listByPosition(userId: string, positionId: string): Promise<PositionLotResponse[]> {
     await findOwnedPosition(this.db, userId, positionId);
     const rows = await this.selectLots(this.db, positionId);
-    return rows.map((row) => toResponse(row));
+    return rows.map((row) => toPositionLotResponse(row));
   }
 
   /** Todos los lotes del usuario (por `userId` desnormalizado, sin join); los usan la exportación RGPD y la tool MCP de operaciones. */
@@ -72,7 +58,7 @@ export class PositionLotsService {
       .where(eq(positionLots.userId, userId))
       .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt), asc(positionLots.id));
 
-    return rows.map((row) => toResponse(row));
+    return rows.map((row) => toPositionLotResponse(row));
   }
 
   /** Añade un lote y reagrega en una transacción: una secuencia inválida (venta en negativo) lo revierte. */
@@ -95,7 +81,7 @@ export class PositionLotsService {
         .returning();
 
       await this.recompute(tx, positionId);
-      return toResponse(row);
+      return toPositionLotResponse(row);
     });
     this.emitLotChanged(userId, positionId);
     return created;
@@ -136,7 +122,7 @@ export class PositionLotsService {
         next.note === current.note
       ) {
         changed = false;
-        return toResponse(current);
+        return toPositionLotResponse(current);
       }
 
       const [row] = await tx
@@ -154,7 +140,7 @@ export class PositionLotsService {
         .returning();
 
       await this.recompute(tx, positionId);
-      return toResponse(row);
+      return toPositionLotResponse(row);
     });
     if (changed) this.emitLotChanged(userId, positionId, previousDate);
     return updated;
@@ -345,18 +331,4 @@ export function sameAmount(a: string, b: string): boolean {
     if (error instanceof LotAggregateError) return false;
     throw error;
   }
-}
-
-function toResponse(row: PositionLot): PositionLotResponse {
-  return {
-    id: row.id,
-    positionId: row.positionId,
-    kind: row.kind,
-    quantity: Number(row.quantity),
-    price: Number(row.price),
-    fees: Number(row.fees),
-    tradedAt: row.tradedAt,
-    note: row.note,
-    createdAt: row.createdAt.toISOString(),
-  };
 }
