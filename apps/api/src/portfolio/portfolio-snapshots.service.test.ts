@@ -45,10 +45,11 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
   let close: () => Promise<void>;
   let snapshots: PortfolioSnapshotsService;
   let positions: PositionsService;
+  let prices: PricesService;
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    const prices = new PricesService(db, silentProvider, identityResolver);
+    prices = new PricesService(db, silentProvider, identityResolver);
     positions = buildPositionsStack(db, { prices }).positions;
     snapshots = new PortfolioSnapshotsService(db, new PortfolioValuationService(positions, prices), prices, positions);
   });
@@ -116,6 +117,29 @@ describe('PortfolioSnapshotsService (integración con Postgres)', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].marketValue).toBe('1300.00000000');
     expect(summary).toMatchObject({ users: 1, captured: 1, failed: 0 });
+  });
+
+  it('lee precios y FX UNA vez por pasada, no por usuario, y valora a cada uno con los suyos', async () => {
+    const ana = await insertUser(db, 'ana@example.com');
+    const bea = await insertUser(db, 'bea@example.com');
+    await positions.create(ana, { ticker: 'IWDA', quantity: 10, avgPrice: 100 });
+    await positions.create(bea, { ticker: 'AAPL', quantity: 2, avgPrice: 150, currency: 'USD' });
+    await cachePrice('IWDA', '120', 'EUR');
+    await cachePrice('AAPL', '200', 'USD');
+    await cachePrice('EURUSD=X', '1.25', 'USD');
+    const getPrices = vi.spyOn(prices, 'getPrices');
+    const getFxRates = vi.spyOn(prices, 'getFxRates');
+
+    await snapshots.captureAll();
+
+    expect(getPrices).toHaveBeenCalledTimes(1);
+    expect(getFxRates).toHaveBeenCalledTimes(1);
+    const rows = await db.select().from(portfolioSnapshots);
+    expect(rows.find((row) => row.userId === ana)?.marketValue).toBe('1200.00000000');
+    // 2 × 200 USD a 1,25 USD/EUR = 320 EUR.
+    expect(rows.find((row) => row.userId === bea)?.marketValue).toBe('320.00000000');
+    getPrices.mockRestore();
+    getFxRates.mockRestore();
   });
 
   it('omite a los usuarios sin posiciones (no ensucia la serie con filas a cero)', async () => {

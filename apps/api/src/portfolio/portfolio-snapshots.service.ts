@@ -12,7 +12,7 @@ import {
 } from '../positions/position-events.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { HISTORY_MAX_DAYS, PricesService } from '../prices/prices.service.js';
-import { PortfolioValuationService } from './portfolio-valuation.service.js';
+import { PortfolioValuationService, type MarketData } from './portfolio-valuation.service.js';
 import { convertCurrency } from '@sextante/core/fx';
 import {
   firstTradeDate,
@@ -56,8 +56,6 @@ function sameRates(a: Record<string, number>, b: Record<string, number>): boolea
   return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
 }
 
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que `instrument_prices.date`. */
-
 /** Formatea para `numeric(20,8)`; `null` si no es finito o no cabe (mejor no guardar que inventar o reventar el driver). */
 function toNumeric(value: number): string | null {
   if (!Number.isFinite(value) || Math.abs(value) >= MAX_SNAPSHOT_AMOUNT) return null;
@@ -89,12 +87,15 @@ export class PortfolioSnapshotsService {
   async captureAll(): Promise<SnapshotSummary> {
     const date = todayUtc();
     const userIds = await this.usersWithPositions();
+    // Precios y FX de toda la pasada en una lectura, no dos consultas por usuario.
+    const tickers = await this.db.selectDistinct({ ticker: positions.ticker }).from(positions);
+    const market = await this.valuation.loadMarketData(tickers.map((row) => row.ticker));
 
     let captured = 0;
     let failed = 0;
     for (const userId of userIds) {
       try {
-        await this.captureUser(userId, date);
+        await this.captureUser(userId, date, market);
         captured += 1;
       } catch (error) {
         failed += 1;
@@ -110,10 +111,13 @@ export class PortfolioSnapshotsService {
     return summary;
   }
 
-  /** Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`. */
-  async captureUser(userId: string, date: string = todayUtc()): Promise<void> {
-    const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY);
-    const { rates } = await this.prices.getFxRates();
+  /**
+   * Captura el snapshot de un usuario para una fecha. Idempotente: upsert por `(userId, date)`.
+   * `market`: precios y FX ya leídos para toda la pasada (ver `captureAll`).
+   */
+  async captureUser(userId: string, date: string = todayUtc(), market?: MarketData): Promise<void> {
+    const valuation = await this.valuation.valuate(userId, SNAPSHOT_BASE_CURRENCY, market);
+    const { rates } = market?.fx ?? (await this.prices.getFxRates());
 
     const invested = toNumeric(valuation.aggregate.invested);
     const marketValue = toNumeric(valuation.aggregate.marketValue);
@@ -273,7 +277,22 @@ export class PortfolioSnapshotsService {
       // usuario cada noche no aporta nada). `readAt` es previo a la lectura: una real reescrita
       // por la captura nocturna después de leerla es fresca y no debe pisarse (ver `setWhere`).
       const readAt = new Date();
-      const existing = await tx.select().from(portfolioSnapshots).where(eq(portfolioSnapshots.userId, userId));
+      // Solo las columnas que compara el diff. `fx_rates` (jsonb) se sigue trayendo: compararlo en
+      // SQL por hash exigiría reproducir en JS el texto canónico de jsonb, y un desajuste haría que
+      // cada noche se reescribiera todo como "cambiado".
+      const existing = await tx
+        .select({
+          date: portfolioSnapshots.date,
+          invested: portfolioSnapshots.invested,
+          marketValue: portfolioSnapshots.marketValue,
+          valuedPositions: portfolioSnapshots.valuedPositions,
+          totalPositions: portfolioSnapshots.totalPositions,
+          fxRates: portfolioSnapshots.fxRates,
+          estimated: portfolioSnapshots.estimated,
+          updatedAt: portfolioSnapshots.updatedAt,
+        })
+        .from(portfolioSnapshots)
+        .where(eq(portfolioSnapshots.userId, userId));
       const staleReal = staleSnapshotDates({
         snapshots: existing
           .filter((row) => !row.estimated)
