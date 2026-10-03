@@ -55,6 +55,7 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     avgPrice: editing ? String(editing.avgPrice) : "",
     broker: editing?.broker ?? "",
     currency: toCurrency(editing?.currency),
+    assetClass: editing?.assetClass ?? undefined,
   });
   const { ticker, name, quantity, avgPrice, broker, currency, assetClass } = values;
   const [status, setStatus] = useState<Status>("idle");

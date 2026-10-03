@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 
 import type { Env } from '../config/env.js';
+import { AssetClassBackfillService } from '../positions/asset-class-backfill.service.js';
 import { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
@@ -44,6 +45,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly fireAlerts: FireAlertsService,
     private readonly dividends: DividendResolutionService,
+    private readonly assetClasses: AssetClassBackfillService,
     private readonly config: ConfigService<Env, true>,
     private readonly registry: SchedulerRegistry,
   ) {}
@@ -91,6 +93,16 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
       await this.snapshots.backfillAll();
     } catch (error) {
       this.logger.error(`Backfill de snapshots al arrancar falló: ${(error as Error).message}`);
+    }
+    await this.classifyAssets();
+  }
+
+  /** Clase de activo de las posiciones que no la tienen (decide el bloque de la declaración). */
+  private async classifyAssets(): Promise<void> {
+    try {
+      await this.assetClasses.classifyMissing();
+    } catch (error) {
+      this.logger.error(`Clasificación de posiciones falló: ${(error as Error).message}`);
     }
   }
 
@@ -168,5 +180,6 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     } catch (error) {
       this.logger.error(`Resolución de dividendos falló: ${(error as Error).message}`);
     }
+    await this.classifyAssets();
   }
 }

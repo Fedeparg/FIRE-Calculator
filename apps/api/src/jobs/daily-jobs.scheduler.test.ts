@@ -3,6 +3,7 @@ import type { CronJob } from 'cron';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fakeConfig } from '../../test/config.js';
+import type { AssetClassBackfillService } from '../positions/asset-class-backfill.service.js';
 import type { DividendResolutionService } from '../income/dividend-resolution.service.js';
 import type { FireAlertsService } from '../notifications/fire-alerts.service.js';
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
@@ -41,6 +42,7 @@ function setup(env: Record<string, string> = {}) {
     snapshots as unknown as PortfolioSnapshotsService,
     fireAlerts as unknown as FireAlertsService,
     dividends as unknown as DividendResolutionService,
+    { classifyMissing: vi.fn(() => Promise.resolve(0)) } as unknown as AssetClassBackfillService,
     fakeConfig(env),
     registry,
   );

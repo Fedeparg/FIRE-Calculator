@@ -138,9 +138,7 @@ function BlockTable({
           <li key={row.positionId} className="flex flex-col gap-2 p-3 text-sm">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="min-w-0">
-                <span className="font-medium text-foreground">{row.ticker}</span>
-                {row.currency !== TAX_CURRENCY && <span className="ml-1.5 text-xs text-muted">{row.currency}</span>}
-                {row.name && <span className="block text-xs text-muted">{row.name}</span>}
+                <EntityName row={row} entityBox={block === "shares" ? boxes?.shares.entity : undefined} />
               </span>
               <span className={`font-semibold tabular-nums ${signColor(row.gain)}`}>{signed(row.gain)}</span>
             </div>
@@ -213,9 +211,7 @@ function BlockTable({
             {rows.map((row) => (
               <tr key={row.positionId} className="border-b border-border last:border-0">
                 <th scope="row" className="px-3 py-2 font-normal">
-                  <span className="font-medium text-foreground">{row.ticker}</span>
-                  {row.currency !== TAX_CURRENCY && <span className="ml-1.5 text-xs text-muted">{row.currency}</span>}
-                  {row.name && <span className="block text-xs text-muted">{row.name}</span>}
+                  <EntityName row={row} entityBox={columns === boxes?.shares ? boxes?.shares.entity : undefined} />
                   {row.sales > 1 && (
                     <span className="block text-xs text-muted">{t("salesCount", { count: row.sales })}</span>
                   )}
@@ -242,6 +238,26 @@ function BlockTable({
         </table>
       </div>
     </div>
+  );
+}
+
+/**
+ * Denominación del valor primero (es lo que pide Renta WEB, casilla de entidad emisora en
+ * acciones), con su botón de copiar; debajo, el símbolo o ISIN y la divisa.
+ */
+function EntityName({ row, entityBox }: { row: RealisedGainsRow; entityBox: string | undefined }) {
+  const t = useTranslations("portfolio.realisedGains");
+  const name = row.name ?? row.ticker;
+  return (
+    <>
+      <span className="font-medium text-foreground">{name}</span>
+      <CopyValue value={name} label={entityBox ? t("box", { box: entityBox }) : name} />
+      <span className="block text-xs text-muted">
+        {row.name ? row.ticker : null}
+        {row.currency !== TAX_CURRENCY && `${row.name ? " · " : ""}${row.currency}`}
+        {entityBox && ` · ${t("box", { box: entityBox })}`}
+      </span>
+    </>
   );
 }
 

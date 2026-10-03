@@ -20,7 +20,16 @@ const MIN_EXCESS = 0.05;
  * La base del ahorro del ejercicio de principio a fin: saldos, compensación, cuota, deducción por
  * doble imposición internacional y retenciones españolas. El cálculo es `buildSavingsReturn`.
  */
-export default function SavingsReturnSection({ result, boxes }: { result: SavingsReturn; boxes: TaxBoxes | null }) {
+export default function SavingsReturnSection({
+  result,
+  boxes,
+  inProgress,
+}: {
+  result: SavingsReturn;
+  boxes: TaxBoxes | null;
+  /** El ejercicio no ha terminado: la cifra es provisional. */
+  inProgress: boolean;
+}) {
   const t = useTranslations("portfolio.savingsReturn");
   const { formatCurrency, formatPercent } = useFormat();
   const eur = (value: number) => formatCurrency(value, TAX_CURRENCY);
@@ -54,7 +63,11 @@ export default function SavingsReturnSection({ result, boxes }: { result: Saving
       : []),
     { label: t("netTax"), value: eur(result.netTax), strong: true },
     ...(result.withholdingSpain > 0 ? [{ label: t("withholdingSpain"), value: eur(-result.withholdingSpain) }] : []),
-    { label: t(result.result >= 0 ? "resultPay" : "resultRefund"), value: eur(Math.abs(result.result)), strong: true },
+    {
+      label: `${t(result.result >= 0 ? "resultPay" : "resultRefund")}${inProgress ? ` (${t("provisional")})` : ""}`,
+      value: eur(Math.abs(result.result)),
+      strong: true,
+    },
   ];
 
   return (

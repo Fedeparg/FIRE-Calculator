@@ -1249,7 +1249,16 @@
           "other": "Other"
         }
       },
-      "errorHasSales": "This position has recorded sales. To change the quantity or average price, edit its transactions instead, so the sale history is kept."
+      "errorHasSales": "This position has recorded sales. To change the quantity or average price, edit its transactions instead, so the sale history is kept.",
+      "assetClass": "Asset class",
+      "assetClassUnknown": "Unclassified",
+      "assetClassHint": "Decides which tax return block its sales go in. If left unclassified, Sextante tries to work it out.",
+      "assetClasses": {
+        "stock": "Share",
+        "fund": "Fund or ETF",
+        "derivative": "Derivative",
+        "other": "Other"
+      }
     },
     "history": {
       "title": "Performance",
@@ -1701,7 +1710,8 @@
       "noTreatyRate": "{country}: we do not have the treaty rate, so its withholding ({amount}) has not been credited.",
       "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Custody fees are not included. Indicative, not advice.",
       "pendingAfter": "Pending for later years: {amount}.",
-      "box": "box {box}"
+      "box": "box {box}",
+      "provisional": "provisional: the year is not over"
     },
     "pendingBalances": {
       "title": "Losses from previous years pending offset ({count})",

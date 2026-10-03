@@ -253,7 +253,9 @@ export default function RealisedGainsReport({
 
       <IncomeSection year={selectedYear} boxes={boxes} summary={incomeSummary} events={incomeEvents} />
 
-      {savingsReturn && <SavingsReturnSection result={savingsReturn} boxes={boxes} />}
+      {savingsReturn && (
+        <SavingsReturnSection result={savingsReturn} boxes={boxes} inProgress={selectedYear >= currentYear} />
+      )}
 
       <PendingBalancesForm balances={pendingBalances} firstYear={years[years.length - 1]} />
 

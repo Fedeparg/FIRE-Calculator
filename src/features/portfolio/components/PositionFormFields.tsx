@@ -5,7 +5,12 @@ import { useTranslations } from "next-intl";
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
-import type { AssetClass, InstrumentSearchResult, InstrumentType } from "@sextante/core/portfolio/types";
+import {
+  ASSET_CLASSES,
+  type AssetClass,
+  type InstrumentSearchResult,
+  type InstrumentType,
+} from "@sextante/core/portfolio/types";
 import InstrumentSearchField from "./InstrumentSearchField";
 import { inputClass } from "@/shared/ui/field-classes";
 
@@ -157,6 +162,26 @@ export default function PositionFormFields({ values, onChange, brokerRequired, b
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="assetClass" className="text-sm font-medium text-foreground">
+          {t("assetClass")}
+        </label>
+        <select
+          id="assetClass"
+          value={values.assetClass ?? ""}
+          onChange={(e) => onChange({ assetClass: (e.target.value || undefined) as AssetClass | undefined })}
+          className={inputClass}
+        >
+          <option value="">{t("assetClassUnknown")}</option>
+          {ASSET_CLASSES.map((value) => (
+            <option key={value} value={value}>
+              {t(`assetClasses.${value}`)}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted">{t("assetClassHint")}</p>
       </div>
     </div>
   );

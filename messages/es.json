@@ -1249,7 +1249,16 @@
           "other": "Otro"
         }
       },
-      "errorHasSales": "Esta posición tiene ventas registradas. Para cambiar la cantidad o el precio medio, edita sus operaciones: así no se pierde el histórico de ventas."
+      "errorHasSales": "Esta posición tiene ventas registradas. Para cambiar la cantidad o el precio medio, edita sus operaciones: así no se pierde el histórico de ventas.",
+      "assetClass": "Clase de activo",
+      "assetClassUnknown": "Sin clasificar",
+      "assetClassHint": "Decide en qué bloque de la declaración van sus ventas. Si la dejas sin clasificar, Sextante intenta deducirla.",
+      "assetClasses": {
+        "stock": "Acción",
+        "fund": "Fondo o ETF",
+        "derivative": "Derivado",
+        "other": "Otro"
+      }
     },
     "history": {
       "title": "Evolución",
@@ -1701,7 +1710,8 @@
       "noTreatyRate": "{country}: no tenemos el tipo del convenio, así que su retención ({amount}) no se ha deducido.",
       "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye gastos de custodia. Orientativo, no es asesoramiento.",
       "pendingAfter": "Quedan pendientes para años siguientes: {amount}.",
-      "box": "casilla {box}"
+      "box": "casilla {box}",
+      "provisional": "provisional: el ejercicio no ha terminado"
     },
     "pendingBalances": {
       "title": "Pérdidas de años anteriores pendientes de compensar ({count})",
