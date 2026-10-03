@@ -1,8 +1,8 @@
-// Entradas de muestra compartidas por los tests de las calculadoras MCP.
+// Sample inputs shared by the MCP calculator tests.
 
 /**
- * Una entrada realista por calculadora. El test exige que cada una tenga la suya: una nueva sin
- * muestra falla aquí en vez de llegar a producción sin haberse ejecutado nunca.
+ * One realistic input per calculator. The test requires each one to have its own: a new one
+ * without a sample fails here instead of reaching production without ever having run.
  */
 export const SAMPLES: Record<string, Record<string, unknown>> = {
   'interes-compuesto': { initial: 10_000, contribution: 300, annualRate: 7, years: 20 },

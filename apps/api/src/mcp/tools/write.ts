@@ -21,18 +21,18 @@ export type WriteToolDeps = {
 };
 
 /**
- * Tools de escritura (scope `portfolio:write`). Se registran siempre (para que el host las
- * descubra), pero cada una verifica el scope en tiempo de ejecución: un token solo-lectura
- * recibe un error de tool pidiendo reconectar con permiso de escritura (step-up). No es un
- * 403 HTTP: todas las tools comparten el mismo endpoint, así que el control es por-tool.
+ * Write tools (scope `portfolio:write`). They are always registered (so the host discovers them),
+ * but each one checks the scope at run time: a read-only token gets a tool error asking it to
+ * reconnect with write permission (step-up). It is not an HTTP 403: all tools share the same
+ * endpoint, so the check is per tool.
  *
- * El `inputSchema` de cada tool sale de los esquemas zod de los DTO (los mismos que validan la API
- * REST). Pero el SDK solo acepta un `shape`, que pierde los refinamientos que cruzan campos
- * ("al menos un campo", "las retenciones no superan el íntegro"…): por eso cada tool vuelve a
- * validar con el esquema REST COMPLETO (`asRest`) antes de llamar al servicio. Así el camino MCP
- * no es una vía de escritura más débil.
+ * Each tool's `inputSchema` comes from the DTOs' zod schemas (the same ones that validate the REST
+ * API). But the SDK only accepts a `shape`, which drops the cross-field refinements ("at least one
+ * field", "withholdings do not exceed the gross amount"…): so each tool re-validates with the FULL
+ * REST schema (`asRest`) before calling the service. That way the MCP path is not a weaker way to
+ * write.
  */
-/** Valida como la API REST (esquema completo, refinamientos incluidos); un fallo es error de entrada de la tool. */
+/** Validates like the REST API (full schema, refinements included); a failure is a tool input error. */
 function asRest<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
   const result = schema.safeParse(value);
   if (!result.success) {

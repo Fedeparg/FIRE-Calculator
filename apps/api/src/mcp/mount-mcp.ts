@@ -17,14 +17,14 @@ import {
 import { McpService } from './mcp.service.js';
 
 /**
- * Monta el Authorization Server OAuth (endpoints en la RAÍZ, fuera del prefijo `/api`) y el
- * endpoint MCP `/api/mcp` (Streamable HTTP protegido por Bearer). Se hace aquí, sobre el
- * Express subyacente, porque `mcpAuthRouter` debe colgar de la raíz (`/authorize`, `/token`,
- * `/register`, `/revoke`, `/.well-known/...`); el prefijo global de Nest solo afecta a los
- * controllers, no a este middleware. Ver `_local/mcp-integracion.md`.
+ * Mounts the OAuth Authorization Server (endpoints at the ROOT, outside the `/api` prefix) and the
+ * MCP endpoint `/api/mcp` (Streamable HTTP protected by Bearer). It is done here, on the underlying
+ * Express, because `mcpAuthRouter` must hang from the root (`/authorize`, `/token`, `/register`,
+ * `/revoke`, `/.well-known/...`); Nest's global prefix only affects controllers, not this
+ * middleware. See `_local/mcp-integracion.md`.
  *
- * Debe llamarse después de `app.use(cookieParser())` (el provider lee la cookie de sesión en
- * `/authorize`) y antes de `app.listen()`.
+ * Must be called after `app.use(cookieParser())` (the provider reads the session cookie on
+ * `/authorize`) and before `app.listen()`.
  */
 export function mountMcp(app: NestExpressApplication): void {
   const logger = new Logger('MCP');
@@ -33,7 +33,7 @@ export function mountMcp(app: NestExpressApplication): void {
   const mcp = app.get(McpService);
   const server_ = app.getHttpAdapter().getInstance();
 
-  // Endpoints OAuth 2.1 + discovery + PRM, en la raíz.
+  // OAuth 2.1 + discovery + PRM endpoints, at the root.
   server_.use(
     mcpAuthRouter({
       provider,
@@ -44,20 +44,20 @@ export function mountMcp(app: NestExpressApplication): void {
     }),
   );
 
-  // URL de la Protected Resource Metadata para el reto WWW-Authenticate del 401.
+  // Protected Resource Metadata URL for the 401's WWW-Authenticate challenge.
   const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(urls.resource);
   const bearer = requireBearerAuth({
     verifier: provider,
-    // El scope mínimo se exige por-tool (lectura/escritura); aquí basta un token válido.
+    // The minimum scope is enforced per tool (read/write); a valid token is enough here.
     requiredScopes: [],
     resourceMetadataUrl,
   });
 
-  // CORS para el endpoint MCP. El router OAuth del SDK ya pone CORS en /authorize|token|
-  // register|.well-known, pero /api/mcp lo montamos a mano y sin esto un cliente de
-  // navegador (MCP Inspector, conectores web) no puede ni leer el 401 de descubrimiento
-  // (necesita ver WWW-Authenticate) ni hacer el preflight del POST. Se monta antes del
-  // bearer para que el propio 401 lleve las cabeceras CORS.
+  // CORS for the MCP endpoint. The SDK's OAuth router already sets CORS on /authorize|token|
+  // register|.well-known, but we mount /api/mcp by hand, and without this a browser client
+  // (MCP Inspector, web connectors) can neither read the discovery 401 (it needs to see
+  // WWW-Authenticate) nor preflight the POST. Mounted before the bearer so the 401 itself
+  // carries the CORS headers.
   server_.use('/api/mcp', (req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
     res.setHeader('Vary', 'Origin');
@@ -75,17 +75,17 @@ export function mountMcp(app: NestExpressApplication): void {
     next();
   });
 
-  // Rate limit del endpoint MCP, en dos pasos (ver `mcp-rate-limit.ts`). El de IP va después
-  // del CORS (para que el 429 lleve sus cabeceras y un cliente de navegador pueda leerlo) y
-  // antes de los handlers, incluidos el bearer y los 405: el orden de registro es el orden de
-  // ejecución en Express, así que montarlo al final dejaría rutas sin limitar. El de token va
-  // en la ruta POST, detrás del bearer, para contar por identidad ya verificada.
+  // Two-step rate limit for the MCP endpoint (see `mcp-rate-limit.ts`). The IP one goes after
+  // CORS (so the 429 carries its headers and a browser client can read it) and before the
+  // handlers, including the bearer and the 405s: registration order is execution order in
+  // Express, so mounting it last would leave routes unlimited. The token one sits on the POST
+  // route, behind the bearer, to count by already verified identity.
   server_.use('/api/mcp', createMcpIpRateLimiter());
   const tokenRateLimiter = createMcpTokenRateLimiter();
 
-  // Servidor sin estado: no hay stream SSE servidor→cliente ni sesión que cerrar. Tras el
-  // initialize, los clientes abren un GET para el stream; respondemos 405 (no 404) para que
-  // sepan que el endpoint existe y sigan en modo solo-POST en vez de creer que no hay MCP.
+  // Stateless server: there is no server→client SSE stream nor session to close. After
+  // initialize, clients open a GET for the stream; we answer 405 (not 404) so they know the
+  // endpoint exists and stay in POST-only mode instead of assuming there is no MCP.
   const methodNotAllowed = (_req: Request, res: Response): void => {
     res.status(405).json({
       jsonrpc: '2.0',
@@ -96,7 +96,7 @@ export function mountMcp(app: NestExpressApplication): void {
   server_.get('/api/mcp', methodNotAllowed);
   server_.delete('/api/mcp', methodNotAllowed);
 
-  // Endpoint MCP (Streamable HTTP, sin estado: un transporte por petición).
+  // MCP endpoint (Streamable HTTP, stateless: one transport per request).
   server_.post('/api/mcp', bearer, tokenRateLimiter, async (req: Request, res: Response) => {
     const auth = req.auth;
     const userId = auth?.extra && typeof auth.extra.userId === 'string' ? auth.extra.userId : undefined;
@@ -120,7 +120,7 @@ export function mountMcp(app: NestExpressApplication): void {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (error) {
-      logger.error(`Error atendiendo petición MCP: ${String(error)}`);
+      logger.error(`Error handling MCP request: ${String(error)}`);
       if (!res.headersSent) {
         res.status(500).json({ error: 'internal_server_error' });
       }
@@ -128,7 +128,7 @@ export function mountMcp(app: NestExpressApplication): void {
   });
 
   logger.log(
-    `Servidor MCP montado en ${urls.resource.href} (límite: ${MCP_TOKEN_RATE_LIMIT_MAX} req/min por token, ` +
-      `${MCP_IP_RATE_LIMIT_MAX} por IP)`,
+    `MCP server mounted at ${urls.resource.href} (limit: ${MCP_TOKEN_RATE_LIMIT_MAX} req/min per token, ` +
+      `${MCP_IP_RATE_LIMIT_MAX} per IP)`,
   );
 }

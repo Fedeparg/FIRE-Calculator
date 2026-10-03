@@ -3,32 +3,33 @@ import { ipKeyGenerator, rateLimit, type RateLimitRequestHandler } from 'express
 import { sha256Hex } from '../common/crypto.js';
 
 export const MCP_RATE_LIMIT_WINDOW_MS = 60_000;
-/** 120/min por token es holgado para un cliente LLM normal y acota el coste de uno abusivo (cada petición hace SELECT del token + INSERT de auditoría). */
+/** 120/min per token is generous for a normal LLM client and bounds the cost of an abusive one (each request does a token SELECT + an audit INSERT). */
 export const MCP_TOKEN_RATE_LIMIT_MAX = 120;
 /**
- * 600/min por IP, ANTES de verificar el token: cubre las peticiones con Bearer inválido, que el
- * límite por token no puede contar. Holgado a propósito (varios clientes legítimos tras un NAT
- * caben de sobra), porque la IP no es fiable hasta ajustar `TRUST_PROXY_HOPS`.
+ * 600/min per IP, BEFORE the token is verified: covers requests with an invalid Bearer, which the
+ * per-token limit cannot count. Generous on purpose (several legitimate clients behind a NAT fit
+ * easily), because the IP is not reliable until `TRUST_PROXY_HOPS` is tuned.
  */
 export const MCP_IP_RATE_LIMIT_MAX = 600;
 
-/** Clave por IP, con IPv6 agrupada por /64 (`ipKeyGenerator`) para que rotar de dirección dentro del prefijo no burle el límite. */
+/** Per-IP key, with IPv6 grouped by /64 (`ipKeyGenerator`) so rotating addresses within the prefix does not dodge the limit. */
 export function mcpIpRateLimitKey(req: Request): string {
   return `ip:${ipKeyGenerator(req.ip ?? 'unknown')}`;
 }
 
 /**
- * Clave por token YA VERIFICADO (`req.auth`, que rellena el middleware Bearer del SDK). No sale
- * de la cabecera: con un Bearer aleatorio en cada petición, cada una abriría un cubo nuevo (y un
- * SELECT del token), y el límite no limitaría nada. Se hashea para no dejar credenciales en
- * memoria ni en trazas. Sin token verificado cae a la IP (no debería pasar: va tras el Bearer).
+ * Key per ALREADY VERIFIED token (`req.auth`, filled in by the SDK's Bearer middleware). It does
+ * not come from the header: with a random Bearer on each request, every one would open a new bucket
+ * (and a token SELECT), and the limit would limit nothing. It is hashed so no credentials linger in
+ * memory or traces. Without a verified token it falls back to the IP (should not happen: it runs
+ * after the Bearer).
  */
 export function mcpTokenRateLimitKey(req: Request): string {
   const token = req.auth?.token;
   return token ? `token:${sha256Hex(token)}` : mcpIpRateLimitKey(req);
 }
 
-/** Respuesta 429 en JSON-RPC como el 405 de `mount-mcp.ts`: el HTML por defecto no lo parsearía el cliente MCP. */
+/** 429 response in JSON-RPC, like the 405 in `mount-mcp.ts`: the MCP client would not parse the default HTML. */
 function rateLimitExceeded(_req: Request, res: Response): void {
   res.status(429).json({
     jsonrpc: '2.0',
@@ -52,11 +53,11 @@ function createLimiter(limit: number, keyGenerator: (req: Request) => string): R
 }
 
 /**
- * Limitadores del endpoint MCP, encadenados: el de IP va antes del Bearer (cuenta también los
- * tokens inválidos) y el de token después (identidad verificada, tolera NAT). El
- * `ThrottlerGuard` global no los cubre: `/api/mcp` es middleware de Express y los guards de Nest
- * solo corren en controllers. Almacén en memoria por proceso: vale con una instancia; al escalar
- * habrá que usar Redis. El `limit` solo se cambia en los tests.
+ * Chained limiters for the MCP endpoint: the IP one runs before the Bearer (it also counts invalid
+ * tokens) and the token one after it (verified identity, tolerates NAT). The global
+ * `ThrottlerGuard` does not cover them: `/api/mcp` is Express middleware and Nest guards only run
+ * on controllers. In-memory store per process: fine with a single instance; scaling out will need
+ * Redis. `limit` is only changed in tests.
  */
 export function createMcpIpRateLimiter(limit: number = MCP_IP_RATE_LIMIT_MAX): RateLimitRequestHandler {
   return createLimiter(limit, mcpIpRateLimitKey);

@@ -1,9 +1,9 @@
 /**
- * Error PENSADO para el usuario de una tool MCP: su mensaje se reenvía tal cual al host (y de
- * ahí al LLM). Cualquier otro error se considera interno y el host solo recibe una referencia
- * (ver `ToolRunner`), así que el texto de estos errores nunca debe llevar datos internos.
+ * Error MEANT for the user of an MCP tool: its message is forwarded verbatim to the host (and from
+ * there to the LLM). Any other error is treated as internal and the host only receives a reference
+ * (see `ToolRunner`), so the text of these errors must never carry internal data.
  */
 export class ToolUserError extends Error {}
 
-/** Error de validación de entrada de tool (se muestra con el prefijo "Entrada no válida"). */
+/** Tool input validation error (shown with the "Entrada no válida" prefix, i.e. "Invalid input"). */
 export class InvalidToolInputError extends ToolUserError {}
