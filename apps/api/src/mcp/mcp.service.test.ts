@@ -9,6 +9,7 @@ import { CALCULATORS } from '@sextante/core/calculators/schemas';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
 import { createIncomeSchema } from '../income/dto/create-income.dto.js';
 import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
+import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
 
 /**
@@ -110,22 +111,28 @@ function makeService() {
     create: vi.fn().mockResolvedValue({ id: 'i1' }),
     update: vi.fn().mockResolvedValue({ id: 'i1' }),
   };
-  const taxReturn = {
-    build: vi.fn().mockResolvedValue({ year: 2025, availableYears: [2025], savings: null }),
-  };
+  const positionsService = { findAllByUser: vi.fn().mockResolvedValue(positions) };
+  const lotsService = { findAllByUser: vi.fn().mockResolvedValue(lots) };
+  // El informe de verdad sobre los mismos dobles: `get_realised_gains` lo compone `TaxReturnService`.
+  const taxReturn = new TaxReturnService(
+    positionsService as never,
+    lotsService as never,
+    income as never,
+    { list: vi.fn().mockResolvedValue([]) } as never,
+    referenceRates as never,
+  );
   const service = new McpService(
-    { findAllByUser: vi.fn().mockResolvedValue(positions) } as never,
-    { findAllByUser: vi.fn().mockResolvedValue(lots) } as never,
+    positionsService as never,
+    lotsService as never,
     valuation as never,
     {} as never,
     scenarios as never,
     {} as never,
-    referenceRates as never,
     income as never,
-    taxReturn as never,
+    taxReturn,
     audit as never,
   );
-  return { service, audit, valuation, scenarios, taxReturn, income };
+  return { service, audit, valuation, scenarios, taxReturn, income, referenceRates };
 }
 
 async function connect(service: McpService, scopes: string[] = [SCOPE_PORTFOLIO_READ]): Promise<Client> {
@@ -284,11 +291,45 @@ describe('McpService', () => {
     expect(year?.unconverted).toEqual([]);
 
     const none = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2024 } }));
-    expect(none).toEqual({ years: [] });
+    expect(none).toEqual({ years: [], ratesLoaded: true });
+  });
+
+  it('get_realised_gains da las mismas cifras que el informe de la Renta (un único cálculo)', async () => {
+    const { service, taxReturn } = makeService();
+    client = await connect(service);
+
+    const tool = parse(await client.callTool({ name: 'get_realised_gains', arguments: { year: 2025 } }));
+    const report = await taxReturn.build(USER, 2025);
+
+    expect(tool).toEqual({ years: [report.gains], ratesLoaded: true });
+  });
+
+  it('get_realised_gains degrada si cae el BCE: ventas en divisa sin convertir y ratesLoaded false', async () => {
+    const { service, referenceRates, audit } = makeService();
+    referenceRates.getRates.mockRejectedValueOnce(new Error('ECB request failed: timeout'));
+    client = await connect(service);
+
+    const result = parse(await client.callTool({ name: 'get_realised_gains', arguments: {} })) as {
+      ratesLoaded: boolean;
+      years: { year: number; net: number; unconverted: unknown[] }[];
+    };
+
+    expect(result.ratesLoaded).toBe(false);
+    const [year] = result.years;
+    // La venta en euros sigue calculada; la de USD queda fuera de los totales.
+    expect(year?.net).toBeCloseTo(99, 6);
+    // USD: 2 × 140 − 2 × 150 = −20 USD.
+    expect(year?.unconverted).toEqual([{ currency: 'USD', sales: 1, gain: -20 }]);
+    expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_realised_gains', 'ok');
   });
 
   it('sirve el informe de la Renta del ejercicio pedido o, sin él, el del último con datos', async () => {
     const { service, taxReturn, audit } = makeService();
+    const build = vi.spyOn(taxReturn, 'build').mockResolvedValue({
+      year: 2025,
+      availableYears: [2025],
+      savings: null,
+    } as Partial<Awaited<ReturnType<TaxReturnService['build']>>> as Awaited<ReturnType<TaxReturnService['build']>>);
     client = await connect(service);
     const { tools } = await client.listTools();
     expect(tools.find((t) => t.name === 'get_tax_return_report')?.annotations).toMatchObject({ readOnlyHint: true });
@@ -298,9 +339,9 @@ describe('McpService', () => {
       availableYears: [2025],
       savings: null,
     });
-    expect(taxReturn.build).toHaveBeenLastCalledWith(USER, 2025);
+    expect(build).toHaveBeenLastCalledWith(USER, 2025);
     parse(await client.callTool({ name: 'get_tax_return_report', arguments: {} }));
-    expect(taxReturn.build).toHaveBeenLastCalledWith(USER, undefined);
+    expect(build).toHaveBeenLastCalledWith(USER, undefined);
     expect(audit.record).toHaveBeenCalledWith(USER, 'client-1', 'get_tax_return_report', 'ok');
 
     const invalid = await client.callTool({ name: 'get_tax_return_report', arguments: { year: 1800 } });

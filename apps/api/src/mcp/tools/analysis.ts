@@ -1,7 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { FIRE_SEARCH_MAX_YEARS } from '@sextante/core/calculators/fire';
 import { MAX_RETIREMENT_YEARS, MAX_VOLATILITY } from '@sextante/core/calculators/fire-montecarlo';
-import { buildRealisedGainsReport, referenceRatesNeeded } from '@sextante/core/fiscal/realised-gains';
 import {
   computeGoalProgress,
   resolveGoalTarget,
@@ -11,10 +10,7 @@ import {
 import { z } from 'zod';
 
 import { fiscalYearSchema } from '../../common/dto/fiscal-year.js';
-import { ReferenceRatesService } from '../../fx-reference/reference-rates.service.js';
 import { PortfolioValuationService } from '../../portfolio/portfolio-valuation.service.js';
-import { PositionLotsService } from '../../positions/position-lots.service.js';
-import { PositionsService } from '../../positions/positions.service.js';
 import { SavedScenariosService } from '../../scenarios/saved-scenarios.service.js';
 import { TaxReturnService } from '../../tax-return/tax-return.service.js';
 import { jsonResult } from '../mcp-results.js';
@@ -23,11 +19,8 @@ import { BREAKDOWN_VALUES, CURRENCY_VALUES, FREQUENCY_VALUES } from './tool-sche
 import type { ToolRunner } from './tool-runner.js';
 
 export type AnalysisToolDeps = {
-  positions: PositionsService;
-  lots: PositionLotsService;
   valuation: PortfolioValuationService;
   scenarios: SavedScenariosService;
-  referenceRates: ReferenceRatesService;
   taxReturn: TaxReturnService;
 };
 
@@ -56,7 +49,8 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
         'de la venta (criterio de la DGT, V0152-26); la diferencia de cambio de la divisa ' +
         'invertida va aparte (`fxDifference`), suponiendo que el bróker cambia a euros al ' +
         'comprar y al vender. Las ventas sin tipo publicado van en `unconverted`, fuera de ' +
-        'los totales. Sirve para preparar las casillas de ganancias patrimoniales. Compensa ' +
+        'los totales; si `ratesLoaded` es false, no se pudieron cargar los tipos del BCE y las ' +
+        'ventas en divisa quedan todas sin convertir: avisa al usuario. Sirve para preparar las casillas de ganancias patrimoniales. Compensa ' +
         'las ventas del mismo ejercicio, pero NO aplica los saldos negativos de los cuatro ' +
         'ejercicios anteriores, la compensación del 25 % con dividendos e intereses ni la ' +
         'regla de los dos meses. Solo lectura.',
@@ -68,30 +62,10 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
       annotations: { readOnlyHint: true },
     },
     ({ year }) =>
-      runner.run('get_realised_gains', async () => {
-        const [positions, lots] = await Promise.all([
-          deps.positions.findAllByUser(runner.userId),
-          deps.lots.findAllByUser(runner.userId),
-        ]);
-        const lotsByPosition = new Map<string, typeof lots>();
-        for (const lot of lots) {
-          lotsByPosition.set(lot.positionId, [...(lotsByPosition.get(lot.positionId) ?? []), lot]);
-        }
-        const input = positions.map((p) => ({
-          id: p.id,
-          ticker: p.ticker,
-          name: p.name,
-          currency: p.currency,
-          // Un derivado no se empareja por FIFO con una acción del mismo símbolo.
-          isDerivative: p.isDerivative,
-          lots: lotsByPosition.get(p.id) ?? [],
-        }));
-        const needed = referenceRatesNeeded(input);
-        const rates = needed ? await deps.referenceRates.getRates(needed.currencies, needed.from) : {};
-        const report = buildRealisedGainsReport(input, rates);
-        const years = year === undefined ? report.years : report.years.filter((y) => y.year === year);
-        return jsonResult({ years });
-      }),
+      runner.run('get_realised_gains', async () =>
+        // Mismo cálculo que `get_tax_return_report` y la API REST (`TaxReturnService`).
+        jsonResult(await deps.taxReturn.realisedGains(runner.userId, year)),
+      ),
   );
 
   server.registerTool(
