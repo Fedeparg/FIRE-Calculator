@@ -1,6 +1,6 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { firstItem } from '@sextante/core/arrays';
 import { sql } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { inject } from 'vitest';
 
@@ -20,42 +20,37 @@ export function createTestDb(options: { max?: number } = {}): { db: Database; cl
 }
 
 /**
- * Vacía todas las tablas con datos de dominio entre tests para aislarlos. `CASCADE`
- * resuelve las claves foráneas (p. ej. positions → users) y `RESTART IDENTITY` deja
- * la BD como recién migrada.
+ * Tablas a vaciar: TODAS las del esquema `public`, leídas de `pg_tables` (la tabla de control de
+ * migraciones de Drizzle vive en el esquema `drizzle`, y por si acaso se excluye cualquier
+ * `__drizzle…`). Una tabla nueva queda cubierta sin tocar nada aquí. Se leen una vez por proceso:
+ * el esquema no cambia durante los tests.
+ */
+let domainTables: Promise<string[]> | undefined;
+
+function listDomainTables(db: Database): Promise<string[]> {
+  domainTables ??= db
+    .execute<{ tablename: string }>(
+      sql`select tablename from pg_tables where schemaname = 'public' and not starts_with(tablename, '__drizzle') order by tablename`,
+    )
+    .then((rows) => rows.map((row) => row.tablename));
+  return domainTables;
+}
+
+/** Identificador SQL entrecomillado (los nombres vienen del catálogo, pero así es correcto siempre). */
+const quoteIdent = (name: string): string => `"${name.replaceAll('"', '""')}"`;
+
+/**
+ * Vacía todas las tablas con datos de dominio entre tests para aislarlos, en una sola sentencia.
+ * `CASCADE` resuelve las claves foráneas y `RESTART IDENTITY` deja la BD como recién migrada.
  *
- * Están TODAS las tablas a propósito, no solo las que cuelgan de `users`: los ficheros de
- * test comparten una única BD (`fileParallelism: false`), así que una tabla sin FK a `users`
+ * Son TODAS las tablas a propósito, no solo las que cuelgan de `users`: los ficheros de test
+ * comparten una única BD (`fileParallelism: false`), así que una tabla sin FK a `users`
  * —`oauth_clients`, `instruments`, `instrument_prices`— sobreviviría al `CASCADE` y filtraría
- * estado al siguiente fichero. `mcp_audit_log` sí caería por cascada, pero se lista explícito:
- * la lista es la documentación de qué se limpia.
+ * estado al siguiente fichero.
  */
 export async function resetDb(db: Database): Promise<void> {
-  await db.execute(sql`
-    TRUNCATE TABLE
-      position_lots,
-      income_events,
-      savings_pending_balances,
-      portfolio_snapshots,
-      saved_scenarios,
-      user_notification_settings,
-      positions,
-      instrument_prices,
-      fx_reference_rates,
-      fx_reference_coverage,
-      instrument_splits,
-      instrument_dividends,
-      instrument_split_checks,
-      instruments,
-      mcp_audit_log,
-      oauth_tokens,
-      oauth_auth_codes,
-      oauth_grants,
-      oauth_clients,
-      login_tokens,
-      users
-    RESTART IDENTITY CASCADE
-  `);
+  const tables = await listDomainTables(db);
+  await db.execute(sql.raw(`TRUNCATE TABLE ${tables.map(quoteIdent).join(', ')} RESTART IDENTITY CASCADE`));
 }
 
 /** Inserta un usuario y devuelve su id (las posiciones/tokens necesitan un FK válido). */
