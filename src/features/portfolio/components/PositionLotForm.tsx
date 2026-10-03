@@ -3,7 +3,8 @@
 import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 
-import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
 import { inputClass } from "@/shared/ui/field-classes";
 import Button from "@/shared/ui/Button";
@@ -36,12 +37,15 @@ export default function PositionLotForm({ editing, currency, submitting, onSubmi
   // Un id por instancia para poder etiquetar cada campo sin colisionar con el resto de la
   // página (hay otro formulario de posición debajo).
   const uid = useId();
+  const { decimalSeparator } = useFormat();
+  // `formatDecimalInput` y no `String(n)`: este daría "1e-7", que el saneado leería como 17.
+  const asText = (value: number) => formatDecimalInput(value, decimalSeparator);
 
   const [kind, setKind] = useState<PositionLotKind>(editing?.kind ?? "buy");
   const [tradedAt, setTradedAt] = useState(() => editing?.tradedAt ?? todayUtc());
-  const [quantity, setQuantity] = useState(editing ? String(editing.quantity) : "");
-  const [price, setPrice] = useState(editing ? String(editing.price) : "");
-  const [fees, setFees] = useState(editing && editing.fees ? String(editing.fees) : "");
+  const [quantity, setQuantity] = useState(editing ? asText(editing.quantity) : "");
+  const [price, setPrice] = useState(editing ? asText(editing.price) : "");
+  const [fees, setFees] = useState(editing && editing.fees ? asText(editing.fees) : "");
   const [note, setNote] = useState(editing?.note ?? "");
 
   const quantityNum = parseDecimalInput(quantity) ?? Number.NaN;

@@ -114,6 +114,14 @@ export default function InstrumentSearchField({
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    // Con el desplegable abierto, Escape solo lo cierra: no debe llegar al panel que contiene el
+    // formulario (cerraría el panel entero y se perdería lo escrito).
+    if (event.key === "Escape" && open) {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+      return;
+    }
     if (!open || results.length === 0) {
       if (event.key === "ArrowDown" && results.length > 0) setOpen(true);
       return;
@@ -127,8 +135,6 @@ export default function InstrumentSearchField({
     } else if (event.key === "Enter" && activeIndex >= 0) {
       event.preventDefault();
       pick(results[activeIndex]);
-    } else if (event.key === "Escape") {
-      setOpen(false);
     }
   }
 

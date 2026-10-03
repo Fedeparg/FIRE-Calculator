@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { INCOME_KINDS, type IncomeEvent, type IncomeKind, type IncomePayload } from "@sextante/core/fiscal/income";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
-import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import { inputClass } from "@/shared/ui/field-classes";
 import Button from "@/shared/ui/Button";
 
@@ -20,7 +21,6 @@ type Props = {
 };
 
 const todayUtc = () => new Date().toISOString().slice(0, 10);
-const asText = (value: number | null | undefined) => (value === null || value === undefined ? "" : String(value));
 
 /**
  * Alta y edición de un cobro: dividendo, interés o recompensa del bróker. La retención en origen
@@ -30,6 +30,10 @@ const asText = (value: number | null | undefined) => (value === null || value ==
 export default function IncomeForm({ editing, defaults, submitting, onSubmit, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.income");
   const uid = useId();
+  const { decimalSeparator } = useFormat();
+  // `formatDecimalInput` y no `String(n)`: este daría "1e-7", que el saneado leería como 17.
+  const asText = (value: number | null | undefined) =>
+    value === null || value === undefined ? "" : formatDecimalInput(value, decimalSeparator);
 
   const [kind, setKind] = useState<IncomeKind>(editing?.kind ?? defaults.kind);
   const [paidAt, setPaidAt] = useState(() => editing?.paidAt ?? todayUtc());

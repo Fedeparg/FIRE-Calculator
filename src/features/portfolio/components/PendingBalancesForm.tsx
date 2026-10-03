@@ -1,13 +1,14 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import type { PendingNegative, SavingsGroup } from "@sextante/core/fiscal/savings-base";
 import { savePendingBalances } from "@/features/portfolio/api";
 import { apiErrorKey, type ApiErrorKey } from "@/shared/api/client";
-import { parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
 import { inputClass } from "@/shared/ui/field-classes";
 
@@ -29,13 +30,22 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
   const t = useTranslations("portfolio.pendingBalances");
   const router = useRouter();
   const uid = useId();
+  const { decimalSeparator } = useFormat();
   const years = [1, 2, 3, 4].map((offset) => firstYear - offset);
 
   const [rows, setRows] = useState<Row[]>(() =>
-    balances.map((b, i) => ({ key: i, originYear: b.originYear, kind: b.kind, amount: String(b.amount) })),
+    balances.map((b, i) => ({
+      key: i,
+      originYear: b.originYear,
+      kind: b.kind,
+      amount: formatDecimalInput(b.amount, decimalSeparator),
+    })),
   );
   const [nextKey, setNextKey] = useState(balances.length);
   const [saving, setSaving] = useState(false);
+  // El refresco va en una transición: "Guardado" no aparece hasta que llegan los datos nuevos.
+  const [refreshing, startTransition] = useTransition();
+  const busy = saving || refreshing;
   const [errorKey, setErrorKey] = useState<ApiErrorKey | null>(null);
   const [saved, setSaved] = useState(false);
 
@@ -55,7 +65,7 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
     try {
       await savePendingBalances(parsed.map(({ originYear, kind, value }) => ({ originYear, kind, amount: value })));
       setSaved(true);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch (error) {
       setErrorKey(apiErrorKey(error));
     } finally {
@@ -149,10 +159,10 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
           >
             {t("add")}
           </Button>
-          <Button disabled={!isValid || saving} onClick={() => void handleSave()}>
-            {saving ? t("saving") : t("save")}
+          <Button disabled={!isValid || busy} onClick={() => void handleSave()}>
+            {busy ? t("saving") : t("save")}
           </Button>
-          {saved && <span className="text-sm text-success">{t("saved")}</span>}
+          {saved && !refreshing && <span className="text-sm text-success">{t("saved")}</span>}
         </div>
       </div>
     </details>

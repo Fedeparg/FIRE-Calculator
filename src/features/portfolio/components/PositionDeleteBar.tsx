@@ -10,9 +10,10 @@ type Props = {
   positionId: string;
   /**
    * Borrar una posición con ventas las quita del informe de plusvalías: merece un aviso más
-   * fuerte que el "¿seguro?" normal.
+   * fuerte que el "¿seguro?" normal. `null` = aún no se sabe (lotes cargando o con error): se
+   * avisa igual, que es lo seguro.
    */
-  hasSales: boolean;
+  hasSales: boolean | null;
   /** Abrir el formulario de edición de la posición. */
   onEdit: () => void;
   /** La posición se ha borrado. */
@@ -44,7 +45,7 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
     <div className="mt-auto flex flex-col gap-2 border-t border-border pt-4">
       {confirming ? (
         <>
-          {hasSales && (
+          {hasSales !== false && (
             <p role="alert" className="text-xs text-warning">
               {tList("confirmDeleteWithSales")}
             </p>

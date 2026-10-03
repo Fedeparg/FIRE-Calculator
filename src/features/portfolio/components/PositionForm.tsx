@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 
 import { SUPPORTED_CURRENCIES, type SupportedCurrency } from "@sextante/core/contracts";
 import { trackEvent } from "@/shared/analytics/track";
-import { parseDecimalInput } from "@/shared/format/number-input";
+import { formatDecimalInput, parseDecimalInput } from "@/shared/format/number-input";
+import { useFormat } from "@/shared/format/use-format";
 import { Link } from "@/i18n/navigation";
 import { type Position } from "@sextante/core/portfolio/types";
 import {
@@ -47,12 +48,14 @@ function toCurrency(value: string | undefined): SupportedCurrency {
 export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit }: Props) {
   const t = useTranslations("portfolio.form");
   const isEditing = Boolean(editing);
+  const { decimalSeparator } = useFormat();
 
   const [values, setValues] = useState<PositionFormValues>({
     ticker: editing?.ticker ?? "",
     name: editing?.name ?? "",
-    quantity: editing ? String(editing.quantity) : "",
-    avgPrice: editing ? String(editing.avgPrice) : "",
+    // `formatDecimalInput` y no `String(n)`: este daría "1e-7", que el saneado leería como 17.
+    quantity: editing ? formatDecimalInput(editing.quantity, decimalSeparator) : "",
+    avgPrice: editing ? formatDecimalInput(editing.avgPrice, decimalSeparator) : "",
     broker: editing?.broker ?? "",
     currency: toCurrency(editing?.currency),
     assetClass: editing?.assetClass ?? undefined,
@@ -102,10 +105,9 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     setDuplicate(null);
     setBrokerRequired(false);
     setBrokerEmptied(false);
-    if (!isValid) {
-      setErrorKey("errorInvalid");
-      return;
-    }
+    // El botón está deshabilitado mientras no es válido (y sin botón activo no hay envío
+    // implícito con Enter): esto solo estrecha los tipos.
+    if (!isValid) return;
     // No se puede vaciar el bróker de una posición que ya lo tenía (el alta sí permite
     // crearla sin bróker; quitarlo después haría ambiguo el modelo de duplicados).
     if (isEditing && Boolean(editing?.broker) && broker.trim() === "") {

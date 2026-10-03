@@ -1,5 +1,6 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -33,7 +34,10 @@ type Props = {
 export default function IncomeSection({ year, boxes, summary, events }: Props) {
   const t = useTranslations("portfolio.income");
   const router = useRouter();
-  const mutations = useIncomeMutations(() => router.refresh());
+  // El refresco va en una transición: mientras llegan los datos nuevos del servidor el formulario
+  // sigue "guardando", en vez de mostrar el resultado con los datos viejos y saltar después.
+  const [refreshing, startTransition] = useTransition();
+  const mutations = useIncomeMutations(() => startTransition(() => router.refresh()));
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6">
@@ -84,7 +88,7 @@ export default function IncomeSection({ year, boxes, summary, events }: Props) {
           <IncomeManager
             income={events}
             defaults={{ kind: "interest", positionId: null, isin: null, name: null, country: null, currency: "EUR" }}
-            submitting={mutations.submitting}
+            submitting={mutations.submitting || refreshing}
             errorKey={mutations.errorKey}
             save={mutations.save}
             remove={mutations.remove}

@@ -31,7 +31,8 @@ export default function PositionPanel({ id, labelledBy, onClose, children }: Pro
   useEffect(() => {
     panelRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      // `defaultPrevented`: un control interno (el desplegable de búsqueda) ya consumió el Escape.
+      if (event.key === "Escape" && !event.defaultPrevented) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);

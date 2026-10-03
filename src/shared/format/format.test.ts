@@ -33,6 +33,26 @@ describe("formatCurrency", () => {
     expect(es.formatCurrency(Number.NaN, "EUR")).toBe("—");
     expect(en.formatCurrency(Number.POSITIVE_INFINITY, "USD")).toBe("—");
   });
+
+  it("degrada a importe + código ISO con una divisa que Intl no conoce, sin lanzar", () => {
+    expect(es.formatCurrency(12.5, "EURO")).toBe("12,50 EURO");
+    expect(es.formatCompactCurrency(1_200_000, "EURO")).toMatch(/^1,2\sM EURO$/u);
+    expect(es.currencySymbol("EURO")).toBe("EURO");
+  });
+});
+
+describe("formatEUR", () => {
+  it("no escribe '-0 €' al redondear un negativo pequeño", () => {
+    expect(es.formatEUR(-0.4)).toMatch(/^0\s?€$/u);
+    expect(es.formatEUR(-0.6)).toMatch(/^-1\s?€$/u);
+  });
+});
+
+describe("formatCompactEUR", () => {
+  it("coloca el símbolo según el idioma", () => {
+    expect(es.formatCompactEUR(1_200_000)).toMatch(/^1,2\sM\s€$/u);
+    expect(en.formatCompactEUR(1_200_000)).toMatch(/^€1\.2[mM]$/u);
+  });
 });
 
 describe("formatQuantity", () => {

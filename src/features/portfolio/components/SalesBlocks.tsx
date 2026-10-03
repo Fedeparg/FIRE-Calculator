@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
@@ -281,16 +281,23 @@ function WashSaleNote({ row, eur }: { row: RealisedGainsRow; eur: (value: number
 function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: string }) {
   const t = useTranslations("portfolio.realisedGains");
   const router = useRouter();
+  // Controlado: tras un fallo vuelve al placeholder en vez de seguir mostrando una clase que no
+  // se guardó.
+  const [selected, setSelected] = useState<AssetClass | "">("");
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  // El refresco va en una transición: el selector sigue ocupado hasta que la venta cambia de bloque.
+  const [refreshing, startTransition] = useTransition();
 
   async function classify(value: AssetClass) {
+    setSelected(value);
     setSaving(true);
     setFailed(false);
     try {
       await setAssetClass(positionId, value);
-      router.refresh();
+      startTransition(() => router.refresh());
     } catch {
+      setSelected("");
       setFailed(true);
     } finally {
       setSaving(false);
@@ -301,8 +308,8 @@ function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: st
     <span className="mt-1 flex flex-col gap-1 print:hidden">
       <select
         aria-label={t("classifyLabel", { ticker })}
-        defaultValue=""
-        disabled={saving}
+        value={selected}
+        disabled={saving || refreshing}
         onChange={(e) => void classify(e.target.value as AssetClass)}
         className={`${inputClass} h-8 text-xs`}
       >

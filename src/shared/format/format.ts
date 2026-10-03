@@ -59,10 +59,12 @@ export interface Formatters {
 function build(locale: Locale): Formatters {
   const l = INTL_LOCALE[locale];
 
+  // `signDisplay: "negative"`: sin él, -0,4 € redondeado a 0 sale "-0 €".
   const eur = new Intl.NumberFormat(l, {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 0,
+    signDisplay: "negative",
   });
   const eurCents = new Intl.NumberFormat(l, {
     style: "currency",
@@ -100,13 +102,27 @@ function build(locale: Locale): Formatters {
   const currencyFormatters = new Map<string, Intl.NumberFormat>();
   const compactCurrencyFormatters = new Map<string, Intl.NumberFormat>();
   const currencySymbols = new Map<string, string>();
+  // Para una divisa que `Intl` no conoce (un código ISO inválido en un dato importado): el
+  // importe con dos decimales y el código detrás, en vez de un `RangeError` en pleno render.
+  const plainAmount = new Intl.NumberFormat(l, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  /** `Intl.NumberFormat` de divisa, o `null` si el código no es válido. */
+  const currencyFormat = (options: Intl.NumberFormatOptions): Intl.NumberFormat | null => {
+    try {
+      return new Intl.NumberFormat(l, options);
+    } catch {
+      return null;
+    }
+  };
 
   const formatCurrency = (n: number, currency: string): string => {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = currencyFormatters.get(currency);
     if (!fmt) {
       // Los decimales los decide `Intl` por divisa (EUR/USD → 2, JPY → 0): forzar 2 rompería el yen.
-      fmt = new Intl.NumberFormat(l, { style: "currency", currency });
+      const created = currencyFormat({ style: "currency", currency });
+      if (!created) return `${plainAmount.format(n)} ${currency}`;
+      fmt = created;
       currencyFormatters.set(currency, fmt);
     }
     return fmt.format(n);
@@ -119,12 +135,9 @@ function build(locale: Locale): Formatters {
     if (!Number.isFinite(n)) return NON_FINITE;
     let fmt = compactCurrencyFormatters.get(currency);
     if (!fmt) {
-      fmt = new Intl.NumberFormat(l, {
-        style: "currency",
-        currency,
-        notation: "compact",
-        maximumFractionDigits: 1,
-      });
+      const created = currencyFormat({ style: "currency", currency, notation: "compact", maximumFractionDigits: 1 });
+      if (!created) return `${compact.format(n)} ${currency}`;
+      fmt = created;
       compactCurrencyFormatters.set(currency, fmt);
     }
     return fmt.format(n);
@@ -133,12 +146,8 @@ function build(locale: Locale): Formatters {
   const currencySymbol = (currency: string): string => {
     let symbol = currencySymbols.get(currency);
     if (symbol === undefined) {
-      const parts = new Intl.NumberFormat(l, {
-        style: "currency",
-        currency,
-        currencyDisplay: "narrowSymbol",
-      }).formatToParts(0);
-      symbol = parts.find((p) => p.type === "currency")?.value ?? currency;
+      const parts = currencyFormat({ style: "currency", currency, currencyDisplay: "narrowSymbol" })?.formatToParts(0);
+      symbol = parts?.find((p) => p.type === "currency")?.value ?? currency;
       currencySymbols.set(currency, symbol);
     }
     return symbol;
@@ -150,7 +159,8 @@ function build(locale: Locale): Formatters {
     formatNumber: (n) => (Number.isFinite(n) ? num.format(n) : NON_FINITE),
     formatQuantity: (n) => (Number.isFinite(n) ? quantity.format(n) : NON_FINITE),
     formatMultiplier: (n) => (Number.isFinite(n) ? multiplier.format(n) : NON_FINITE),
-    formatCompactEUR: (n) => (Number.isFinite(n) ? `${compact.format(n)} €` : NON_FINITE),
+    // La posición del símbolo depende del idioma ("1,2 M €" / "€1.2M"): la decide `Intl`.
+    formatCompactEUR: (n) => formatCompactCurrency(n, "EUR"),
     formatCompactCurrency,
     formatPercent: (n, options) =>
       Number.isFinite(n) ? (options?.minDecimals === 2 ? pctFixed2 : pct).format(n / 100) : NON_FINITE,

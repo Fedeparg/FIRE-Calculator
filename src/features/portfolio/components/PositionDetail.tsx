@@ -10,6 +10,7 @@ import PositionDeleteBar from "./PositionDeleteBar";
 import PositionDetailSummary from "./PositionDetailSummary";
 import PositionLotForm from "./PositionLotForm";
 import SaleSimulator from "./SaleSimulator";
+import { positionHasSales } from "../model/lots";
 import { usePositionIncome } from "../use-income";
 import { usePositionLots } from "../use-position-lots";
 
@@ -63,8 +64,9 @@ export default function PositionDetail({ position, price, rates, pricePending, o
   const [editingLot, setEditingLot] = useState<PositionLot | null>(null);
   const [confirmingLotId, setConfirmingLotId] = useState<string | null>(null);
 
-  // Los lotes ya están cargados: no hace falta otra consulta para saber si hay ventas.
-  const hasSales = lots.some((lot) => lot.kind === "sell");
+  // Los lotes ya se cargan aquí: no hace falta otra consulta para saber si hay ventas. Mientras
+  // cargan o si fallan vale `null` ("no se sabe"), y el aviso fuerte de borrado se muestra igual.
+  const hasSales = positionHasSales(loadState, lots);
 
   async function handleSubmitLot(payload: LotPayload) {
     if (await save(editingLot?.id ?? null, payload)) setEditingLot(null);
