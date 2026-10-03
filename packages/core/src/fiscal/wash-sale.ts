@@ -1,60 +1,61 @@
-// Regla de los dos meses (art. 33.5.f LIRPF): pérdidas por transmisión de valores cotizados que
-// no se computan porque se recompran valores homogéneos en los dos meses anteriores o
-// posteriores. Core puro, sin conversión de divisas: trabaja en la divisa de la posición.
-// Criterios, supuestos y fuentes: ver ./README.md (sección `wash-sale.ts`).
+// Two-month rule (regla de los dos meses, art. 33.5.f LIRPF): losses from transfers of listed
+// securities that are not computed because homogeneous securities (valores homogéneos) are
+// repurchased in the two months before or after. Pure core module, with no currency conversion:
+// it works in the position's currency. Criteria, assumptions and sources: see ./README.md
+// (section `wash-sale.ts`).
 
 import { QUANTITY_EPSILON } from "../inputs.js";
 import { addMonths } from "../dates.js";
 import { compareTradeLots, walkLots, type LotWalk, type RealisedSale, type TradeLot } from "./plusvalias.js";
 
-/** Parte de una pérdida diferida que se integra en una venta posterior. */
+/** Part of a deferred loss that is integrated into a later sale. */
 export interface WashSaleIntegration {
-  /** Id de la venta que difirió la pérdida. */
+  /** Id of the sale that deferred the loss. */
   fromSaleId: string;
-  /** Pérdida que se integra (≤ 0), en la divisa de la posición. */
+  /** Loss being integrated (≤ 0), in the position's currency. */
   loss: number;
 }
 
-/** Efecto de la regla en una venta, en la divisa de la posición. */
+/** Effect of the rule on a sale, in the position's currency. */
 export interface SaleWashSale {
-  /** Id de la venta (el del lote de venta). */
+  /** Id of the sale (that of the sale lot). */
   saleId: string;
-  /** Pérdida de esta venta que no se computa por ahora (≤ 0). 0 si no hay recompra homogénea. */
+  /** Loss of this sale not computed for now (≤ 0). 0 if there is no homogeneous repurchase. */
   deferredLoss: number;
-  /** Títulos vendidos con pérdida que quedan bloqueados por las compras homogéneas. */
+  /** Shares sold at a loss that are blocked by the homogeneous purchases. */
   deferredQuantity: number;
-  /** Pérdida de ventas anteriores que se integra en esta, al transmitirse los valores que las bloquearon (≤ 0). */
+  /** Loss from earlier sales integrated into this one, as the securities that blocked them are transferred (≤ 0). */
   integratedLoss: number;
-  /** Desglose de `integratedLoss` por venta de origen. */
+  /** Breakdown of `integratedLoss` by originating sale. */
   integratedFrom: WashSaleIntegration[];
 }
 
-/** Estado de una compra: parte libre (que aún no bloquea ninguna pérdida) y pérdidas que bloquea. */
+/** State of a purchase: free part (not yet blocking any loss) and the losses it blocks. */
 interface PurchaseState {
-  /** Fracción de las participaciones vivas que no bloquea nada (0..1); es independiente de la unidad. */
+  /** Fraction of the remaining units that blocks nothing (0..1); it is unit-independent. */
   free: number;
   tags: { saleId: string; loss: number }[];
 }
 
-/** Estado de las compras que han bloqueado alguna pérdida, por id de lote. */
+/** State of the purchases that have blocked some loss, by lot id. */
 type PurchaseStates = Map<string, PurchaseState>;
 
-/** Compra de la ventana de una venta con capacidad para bloquear títulos. */
+/** A purchase in a sale's window with capacity to block shares. */
 interface WindowCandidate {
   lotId: string;
-  /** Títulos que aún puede bloquear para ESTA venta. */
+  /** Shares it can still block for THIS sale. */
   capacity: number;
   /**
-   * Títulos sobre los que se expresa su parte libre: los vivos tras la venta (compras anteriores)
-   * o los comprados (posteriores).
+   * Shares its free part is expressed over: those held after the sale (earlier purchases) or
+   * those bought (later ones).
    */
   reference: number;
 }
 
 /**
- * Capacidad de bloqueo de las compras de la ventana de una venta. Cada título comprado bloquea
- * como mucho una vez: lo que se bloquea aquí se descuenta de la parte libre de su compra
- * (`PurchaseState.free`) y deja de estar disponible para ventas posteriores.
+ * Blocking capacity of the purchases in a sale's window. Each purchased share blocks at most
+ * once: what is blocked here is deducted from its purchase's free part (`PurchaseState.free`)
+ * and is no longer available to later sales.
  */
 class WindowCapacity {
   constructor(
@@ -62,14 +63,14 @@ class WindowCapacity {
     private readonly states: PurchaseStates,
   ) {}
 
-  /** Títulos que aún se pueden bloquear en la ventana. */
+  /** Shares that can still be blocked in the window. */
   free(): number {
     return this.candidates.reduce((sum, c) => sum + c.capacity, 0);
   }
 
   /**
-   * Bloquea `quantity` títulos de las compras de la ventana (las más antiguas primero),
-   * repartiendo `losses` (pérdida por venta de origen) en proporción a lo que bloquea cada una.
+   * Blocks `quantity` shares from the window's purchases (oldest first), splitting `losses`
+   * (loss per originating sale) in proportion to what each one blocks.
    */
   block(quantity: number, losses: ReadonlyMap<string, number>): void {
     let remaining = quantity;
@@ -94,9 +95,9 @@ class WindowCapacity {
 }
 
 /**
- * Paso 1: la venta transmite títulos que bloqueaban pérdidas de ventas anteriores. La parte
- * proporcional de cada pérdida se libera (deja de estar en la compra) y se devuelve por venta de
- * origen; si se integra o vuelve a diferirse lo decide el paso 3.
+ * Step 1: the sale transfers shares that were blocking losses from earlier sales. The
+ * proportional part of each loss is released (it leaves the purchase) and returned per
+ * originating sale; step 3 decides whether it is integrated or deferred again.
  */
 function releaseBlockedLosses(
   sale: RealisedSale,
@@ -120,7 +121,7 @@ function releaseBlockedLosses(
   return { released, releasedQuantity };
 }
 
-/** Compras de la ventana de dos meses de la venta (ambos extremos incluidos) con capacidad libre. */
+/** Purchases in the sale's two-month window (both ends included) with free capacity. */
 function collectWindowCandidates(
   sale: RealisedSale,
   purchases: readonly TradeLot[],
@@ -143,8 +144,8 @@ function collectWindowCandidates(
 }
 
 /**
- * Paso 2: la pérdida propia de la venta (sus trozos FIFO con pérdida) queda diferida en la
- * proporción de títulos que la ventana puede bloquear.
+ * Step 2: the sale's own loss (its FIFO pieces with a loss) is deferred in the proportion of
+ * shares the window can block.
  */
 function deferOwnLoss(sale: RealisedSale, capacity: WindowCapacity, entry: SaleWashSale): void {
   const lossPieces = sale.matched.filter((m) => m.gain < 0);
@@ -159,10 +160,10 @@ function deferOwnLoss(sale: RealisedSale, capacity: WindowCapacity, entry: SaleW
 }
 
 /**
- * Paso 3: una transmisión es definitiva si en los dos meses anteriores o posteriores no se
- * adquieren valores homogéneos. Si hay recompra, la parte proporcional de lo liberado vuelve a
- * quedar diferida (con su venta de origen) en las compras que aún tengan capacidad libre; el
- * resto se integra en esta venta.
+ * Step 3: a transfer is definitive if no homogeneous securities are acquired in the two months
+ * before or after. If there is a repurchase, the proportional part of what was released is
+ * deferred again (with its originating sale) on the purchases that still have free capacity; the
+ * rest is integrated into this sale.
  */
 function integrateReleased(
   released: ReadonlyMap<string, number>,
@@ -184,25 +185,27 @@ function integrateReleased(
 }
 
 /**
- * Calcula qué parte de la pérdida de cada venta no se computa por la regla de los dos meses y en
- * qué venta posterior se integra. Recibe el histórico de **un valor** (todas sus posiciones
- * juntas, como el FIFO) y, opcionalmente, su `walkLots(lots, { trackOpenLots: true })`; si falta
- * o no trae los lotes vivos, se recalcula. Devuelve una entrada por venta, en orden cronológico.
+ * Computes which part of each sale's loss is not computed under the two-month rule and into which
+ * later sale it is integrated. It receives the history of **one security** (all its positions
+ * together, like FIFO) and, optionally, its `walkLots(lots, { trackOpenLots: true })`; if that is
+ * missing or lacks the open lots, it is recomputed. Returns one entry per sale, in chronological
+ * order.
  *
- * Criterio (interpretación, ver README):
- * - Ventana: de fecha a fecha, ambos extremos incluidos (venta 16/07 → 16/05 a 16/09).
- * - Solo bloquean las compras cuyos títulos siguen en cartera tras la venta (las anteriores) o
- *   que aún no existen (las posteriores). Los títulos vendidos en la propia operación no cuentan.
- * - Las ampliaciones liberadas no son compra: no bloquean (ya están repartidas entre los lotes).
- * - Se analiza cada trozo FIFO de la venta: solo los trozos con pérdida. Si los títulos
- *   recomprados son menos que los vendidos con pérdida, se difiere la parte proporcional.
- * - Cada título comprado bloquea como mucho una vez; varias ventas se atienden por orden
- *   cronológico y cada una consume las compras más antiguas de su ventana primero.
- * - La pérdida se integra, en la proporción en que se vendan, cuando se transmiten esos títulos
- *   (FIFO) «de forma definitiva»: si esa venta tiene a su vez una recompra en su ventana (sea con
- *   ganancia o con pérdida), la parte proporcional sigue diferida y pasa a los nuevos títulos.
+ * Criterion (interpretation, see README):
+ * - Window: date to date, both ends included (sale on 16/07 → 16/05 to 16/09).
+ * - Only purchases whose shares are still held after the sale (earlier ones) or do not exist yet
+ *   (later ones) block. Shares sold in the transaction itself do not count.
+ * - Bonus issues are not purchases: they do not block (they are already spread across the lots).
+ * - Each FIFO piece of the sale is analysed: only the pieces with a loss. If fewer shares are
+ *   repurchased than were sold at a loss, the proportional part is deferred.
+ * - Each purchased share blocks at most once; several sales are handled in chronological order
+ *   and each one consumes the oldest purchases in its window first.
+ * - The loss is integrated, in the proportion sold, when those shares are transferred (FIFO)
+ *   "for good" («de forma definitiva»): if that sale in turn has a repurchase in its window
+ *   (whether at a gain or a loss), the proportional part stays deferred and moves to the new
+ *   shares.
  *
- * Los derivados no están sujetos (DGT V2172-21): no se debe llamar con su histórico.
+ * Derivatives are not subject to the rule (DGT V2172-21): do not call it with their history.
  */
 export function computeWashSales(lots: readonly TradeLot[], walk?: LotWalk): Map<string, SaleWashSale> {
   const tracked = walk?.openAfterSale ? walk : walkLots(lots, { trackOpenLots: true });
@@ -228,9 +231,9 @@ export function computeWashSales(lots: readonly TradeLot[], walk?: LotWalk): Map
     };
     result.set(sale.lotId, entry);
 
-    // El orden de los pasos importa: lo liberado (1) se calcula antes de que la venta consuma
-    // capacidad de su ventana con su propia pérdida (2), que tiene prioridad sobre volver a
-    // diferir lo liberado (3).
+    // The order of the steps matters: what is released (1) is computed before the sale consumes
+    // its window's capacity with its own loss (2), which takes priority over deferring the
+    // released amount again (3).
     const { released, releasedQuantity } = releaseBlockedLosses(sale, states, aliveAfter);
     const capacity = collectWindowCandidates(sale, purchases, orderOf, aliveAfter, states);
     deferOwnLoss(sale, capacity, entry);

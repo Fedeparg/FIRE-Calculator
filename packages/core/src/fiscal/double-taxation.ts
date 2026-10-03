@@ -1,29 +1,28 @@
-// Deducción por doble imposición internacional (art. 80 LIRPF) sobre rentas del ahorro.
-// Core puro: los avisos son códigos, no texto. Alcance y fuentes: ver ./README.md.
+// Foreign tax credit (deducción por doble imposición internacional, art. 80 LIRPF) on savings
+// income. Pure core module: warnings are codes, not text. Scope and sources: see ./README.md.
 
 import { nonNegative } from "../inputs.js";
 import { countryColumn } from "./countries.js";
 
 /**
- * Tipo máximo (%) que el convenio de doble imposición permite al país de la fuente sobre
- * dividendos pagados a un residente en España. Vista de `COUNTRY_DIVIDEND_RATES` (countries.ts),
- * donde están el dato y sus fuentes; un país ausente no tiene dato confirmado.
+ * Maximum rate (%) the double taxation treaty allows the source country on dividends paid to a
+ * Spanish resident. View of `COUNTRY_DIVIDEND_RATES` (countries.ts), where the figure and its
+ * sources live; an absent country has no confirmed figure.
  */
 export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = countryColumn((rates) => rates.treatyPct);
 
 /**
- * Países sin convenio con España: la deducción del art. 80 LIRPF no tiene el límite de un convenio
- * y alcanza todo el impuesto satisfecho (con el límite del tipo medio). Dinamarca, sin convenio
- * desde el 01/01/2009 (AEAT, folleto "Residentes con rentas en Dinamarca"); Islas Caimán, sin
- * convenio.
+ * Countries with no treaty with Spain: the art. 80 LIRPF credit has no treaty limit and covers all
+ * the tax paid (up to the average rate limit). Denmark, no treaty since 01/01/2009 (AEAT, folleto
+ * "Residentes con rentas en Dinamarca"); Cayman Islands, no treaty.
  */
 export const NO_TREATY_COUNTRIES: ReadonlySet<string> = new Set(["DK", "KY"]);
 
-/** Renta bruta del extranjero de un país (ISO 3166-1 alfa-2), en euros. */
+/** Gross foreign income from one country (ISO 3166-1 alpha-2), in euros. */
 export interface ForeignIncome {
   readonly country: string;
   readonly gross: number;
-  /** Retención soportada en origen en euros; `null` si se desconoce. */
+  /** Withholding borne at source, in euros; `null` if unknown. */
   readonly withholdingOrigin: number | null;
 }
 
@@ -32,38 +31,38 @@ export type DoubleTaxationWarningCode = "origin_unknown" | "no_treaty_rate" | "e
 export interface DoubleTaxationWarning {
   readonly code: DoubleTaxationWarningCode;
   readonly country: string;
-  /** `no_treaty_rate`: retención sin deducir; `excess_withholding`: exceso reclamable; `origin_unknown`: bruto sin retención conocida. */
+  /** `no_treaty_rate`: withholding not deducted; `excess_withholding`: reclaimable excess; `origin_unknown`: gross with no known withholding. */
   readonly amount: number;
 }
 
 export interface CountryDeduction {
   readonly country: string;
   readonly gross: number;
-  /** Suma de las retenciones conocidas. */
+  /** Sum of the known withholdings. */
   readonly withholdingOrigin: number;
-  /** Bruto cuya retención se desconoce (no deduce nada). */
+  /** Gross whose withholding is unknown (deducts nothing). */
   readonly unknownGross: number;
   readonly treatyRatePct: number | null;
-  /** Impuesto acreditable: mín(retención, tipo del convenio × íntegro). */
+  /** Creditable tax: min(withholding, treaty rate × gross). */
   readonly creditable: number;
-  /** Retención por encima del convenio, reclamable al fisco del país de origen. */
+  /** Withholding above the treaty rate, reclaimable from the source country's tax authority. */
   readonly excessReclaimable: number;
-  /** Límite b) del art. 80.1 para este país: tipo medio efectivo × su íntegro. */
+  /** Limit b) of art. 80.1 for this country: average effective rate × its gross. */
   readonly limit: number;
-  /** Deducción del país: mín(acreditable, límite). */
+  /** The country's credit: min(creditable, limit). */
   readonly deduction: number;
 }
 
 export interface DoubleTaxationResult {
   readonly countries: readonly CountryDeduction[];
   readonly creditableTotal: number;
-  /** Tipo medio efectivo aplicado, en % y con dos decimales (art. 80.2 LIRPF). */
+  /** Average effective rate applied, in % and with two decimals (art. 80.2 LIRPF). */
   readonly averageRatePct: number;
-  /** Suma de los límites b) del art. 80.1 de cada país. */
+  /** Sum of each country's art. 80.1 limit b). */
   readonly limit: number;
-  /** Deducción total: suma de las de cada país. */
+  /** Total credit: sum of each country's. */
   readonly deduction: number;
-  /** El tipo medio recorta lo acreditable de algún país. */
+  /** The average rate caps some country's creditable amount. */
   readonly limitedByAverageRate: boolean;
   readonly warnings: readonly DoubleTaxationWarning[];
 }
@@ -78,18 +77,19 @@ interface Acc {
 }
 
 /**
- * Deducción por doble imposición internacional (art. 80.1 LIRPF): la menor de a) lo
- * satisfecho en el extranjero y b) el tipo medio efectivo × la renta gravada fuera.
+ * Foreign tax credit (art. 80.1 LIRPF): the lower of a) the tax paid abroad and b) the average
+ * effective rate × the income taxed abroad.
  *
- * Decisión de prudencia: la deducción a) se acota al tipo del convenio (lo demás se debe
- * reclamar en origen, no es impuesto «efectivamente debido»). Sin tipo confirmado en
- * `TREATY_DIVIDEND_RATES` no se deduce nada y se avisa (`no_treaty_rate`); con retención
- * desconocida tampoco (`origin_unknown`).
+ * Prudence decision: credit a) is capped at the treaty rate (the rest must be reclaimed at
+ * source; it is not tax "actually due", «efectivamente debido»). Without a confirmed rate in
+ * `TREATY_DIVIDEND_RATES` nothing is deducted and a warning is raised (`no_treaty_rate`); the
+ * same with unknown withholding (`origin_unknown`).
  *
- * El límite b) se aplica país a país y se suman las deducciones: el art. 80.1.a) habla del
- * impuesto satisfecho «sobre dichos rendimientos», renta a renta (también la DGT, V2393-25), y nada
- * autoriza a compensar el exceso de un país caro con la holgura de otro. Agregarlo todo daría una
- * deducción igual o mayor; el criterio por país es el prudente. Ver ./README.md.
+ * Limit b) is applied country by country and the credits are summed: art. 80.1.a) speaks of the
+ * tax paid "on said income" («sobre dichos rendimientos»), income by income (so does the DGT,
+ * V2393-25), and nothing allows offsetting a high-tax country's excess with another's headroom.
+ * Aggregating everything would give the same or a larger credit; the per-country criterion is
+ * the prudent one. See ./README.md.
  */
 export function computeDoubleTaxationDeduction(
   incomes: readonly ForeignIncome[],

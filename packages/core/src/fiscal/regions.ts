@@ -1,6 +1,6 @@
-// Escalas autonómicas del IRPF y mínimos personales y familiares autonómicos de las 15
-// comunidades de régimen común. Core puro.
-// Alcance y supuestos: ver ./README.md. Cifras orientativas, sin deducciones autonómicas.
+// Regional IRPF scales (escalas autonómicas) and regional personal and family minimums of the 15
+// common-regime regions (comunidades de régimen común). Pure core module.
+// Scope and assumptions: see ./README.md. Indicative figures, without regional deductions.
 
 import {
   IRPF_DEFAULT_REGIONAL_SCALE,
@@ -16,7 +16,7 @@ import {
 } from "./brackets.js";
 
 // ---------------------------------------------------------------------------
-// Escalas autonómicas (ejercicios 2025 y 2026)
+// Regional scales (tax years 2025 and 2026)
 // ---------------------------------------------------------------------------
 
 /** Andalucía — art. 23 Ley 5/2021, de 20 de octubre, de Tributos Cedidos. */
@@ -43,8 +43,8 @@ const IRPF_REGIONAL_SCALE_ARAGON: readonly Bracket[] = [
 
 /**
  * Principado de Asturias — art. 2 TR Decreto Legislativo 2/2014, de 22 de octubre,
- * en la redacción dada por el art. Único.Uno de la Ley 3/2025, de 19 de noviembre
- * (BOPA 2-12-2025), que modificó la escala con efectos en el propio 2025.
+ * as worded by art. Único.Uno of Ley 3/2025, de 19 de noviembre (BOPA 2-12-2025),
+ * which changed the scale with effect from 2025 itself.
  */
 const IRPF_REGIONAL_SCALE_ASTURIAS: readonly Bracket[] = [
   { upTo: 12450, rate: 9 },
@@ -71,10 +71,10 @@ const IRPF_REGIONAL_SCALE_BALEARES: readonly Bracket[] = [
 ];
 
 /**
- * Canarias — art. 18 bis TR Decreto Legislativo 1/2009, de 21 de abril, tras la
- * deflactación del 2,1 % de la DF 11ª de la Ley 9/2025 (BOC 29-12-2025), con
- * efectos desde el 1-1-2025. El último tramo es 123.745 €, no los 121.200 € del
- * Anexo I de Hacienda (texto anterior a la deflactación; ver README).
+ * Canarias — art. 18 bis TR Decreto Legislativo 1/2009, de 21 de abril, after the 2.1%
+ * deflation of DF 11ª of Ley 9/2025 (BOC 29-12-2025), effective from 1-1-2025. The last
+ * bracket is €123,745, not the €121,200 in Hacienda's Annex I (text that predates the
+ * deflation; see README).
  */
 const IRPF_REGIONAL_SCALE_CANARIAS: readonly Bracket[] = [
   { upTo: 13748, rate: 9 },
@@ -97,9 +97,9 @@ const IRPF_REGIONAL_SCALE_CANTABRIA: readonly Bracket[] = [
 ];
 
 /**
- * Castilla-La Mancha — art. 13 bis Ley 8/2013, de 21 de noviembre. Única escala
- * idéntica a la supletoria del art. 65 LIRPF (suma 19 / 24 / 30 / 37 / 45 / 47): se
- * referencia en vez de copiarla. Si la comunidad la cambia, aquí va su propia tabla.
+ * Castilla-La Mancha — art. 13 bis Ley 8/2013, de 21 de noviembre. The only scale identical
+ * to the default regional scale of art. 65 LIRPF (sums to 19 / 24 / 30 / 37 / 45 / 47): it is
+ * referenced instead of copied. If the region changes it, its own table goes here.
  */
 const IRPF_REGIONAL_SCALE_CASTILLA_LA_MANCHA: readonly Bracket[] = IRPF_DEFAULT_REGIONAL_SCALE;
 
@@ -113,8 +113,8 @@ const IRPF_REGIONAL_SCALE_CASTILLA_Y_LEON: readonly Bracket[] = [
 ];
 
 /**
- * Cataluña — art. 611-1 Decreto Legislativo 1/2024, de 12 de marzo (libro sexto
- * del código tributario de Catalunya).
+ * Cataluña — art. 611-1 Decreto Legislativo 1/2024, de 12 de marzo (book six of the
+ * Catalan tax code, código tributario de Catalunya).
  */
 const IRPF_REGIONAL_SCALE_CATALUNA: readonly Bracket[] = [
   { upTo: 12500, rate: 9.5 },
@@ -195,35 +195,35 @@ const IRPF_REGIONAL_SCALE_VALENCIANA: readonly Bracket[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Mínimo personal y familiar autonómico
+// Regional personal and family minimum
 // ---------------------------------------------------------------------------
 
 /**
- * Importes del mínimo personal y familiar que modela el motor (arts. 57-60 LIRPF).
- * Los importes por tramo de edad son totales acumulados, no incrementos.
+ * Personal and family minimum (mínimo personal y familiar) amounts the engine models
+ * (arts. 57-60 LIRPF). The amounts per age bracket are cumulative totals, not increments.
  */
 export interface PersonalMinimumSchedule {
-  /** Mínimo del contribuyente menor de 65 años. */
+  /** Minimum for a taxpayer under 65. */
   readonly taxpayer: number;
-  /** Mínimo del contribuyente de 65 a 74 años (total). */
+  /** Minimum for a taxpayer aged 65 to 74 (total). */
   readonly taxpayer65: number;
-  /** Mínimo del contribuyente de 75 años en adelante (total). */
+  /** Minimum for a taxpayer aged 75 or over (total). */
   readonly taxpayer75: number;
-  /** Mínimo por 1.º, 2.º, 3.º y 4.º descendiente y siguientes. */
+  /** Minimum for the 1st, 2nd, 3rd and 4th and subsequent descendants. */
   readonly descendants: readonly [number, number, number, number];
-  /** Incremento por cada descendiente menor de 3 años. */
+  /** Increase for each descendant under 3. */
   readonly descendantUnder3: number;
-  /** Mínimo por cada ascendiente mayor de 65 años a cargo. */
+  /** Minimum for each dependent ascendant over 65. */
   readonly ascendant65: number;
-  /** Incremento por discapacidad del contribuyente de grado 33-65 %. */
+  /** Increase for a taxpayer disability of grade 33-65%. */
   readonly disability33: number;
-  /** Incremento por discapacidad del contribuyente de grado ≥ 65 %. */
+  /** Increase for a taxpayer disability of grade ≥ 65%. */
   readonly disability65: number;
 }
 
 /**
- * Mínimo estatal (arts. 57-60 LIRPF). Siempre alimenta la cuota estatal; el
- * autonómico solo la autonómica (art. 46.1.a Ley 22/2009).
+ * State minimum (arts. 57-60 LIRPF). It always feeds the state tax; the regional one only
+ * feeds the regional tax (art. 46.1.a Ley 22/2009).
  */
 export const STATE_PERSONAL_MINIMUM: PersonalMinimumSchedule = {
   taxpayer: PERSONAL_MINIMUM,
@@ -236,10 +236,10 @@ export const STATE_PERSONAL_MINIMUM: PersonalMinimumSchedule = {
   disability65: DISABILITY_MINIMUM_65,
 };
 
-// Importes del ejercicio 2025 (AEAT, Manual de Renta 2025, cuadro comparativo de
-// mínimos). Los de 2026 aún no están publicados: continuidad no verificada.
+// Tax year 2025 amounts (AEAT, Manual de Renta 2025, comparative table of minimums). The
+// 2026 ones are not published yet: continuity unverified.
 
-/** Andalucía — mínimos propios. */
+/** Andalucía — own minimums. */
 const MINIMUM_ANDALUCIA: PersonalMinimumSchedule = {
   taxpayer: 5790,
   taxpayer65: 6990,
@@ -251,7 +251,7 @@ const MINIMUM_ANDALUCIA: PersonalMinimumSchedule = {
   disability65: 9390,
 };
 
-/** Principado de Asturias — mínimos propios. */
+/** Principado de Asturias — own minimums. */
 const MINIMUM_ASTURIAS: PersonalMinimumSchedule = {
   taxpayer: 6105,
   taxpayer65: 7370,
@@ -263,7 +263,7 @@ const MINIMUM_ASTURIAS: PersonalMinimumSchedule = {
   disability65: 9900,
 };
 
-/** Canarias — mínimos propios. */
+/** Canarias — own minimums. */
 const MINIMUM_CANARIAS: PersonalMinimumSchedule = {
   taxpayer: 5606,
   taxpayer65: 6768,
@@ -275,7 +275,7 @@ const MINIMUM_CANARIAS: PersonalMinimumSchedule = {
   disability65: 9090,
 };
 
-/** Galicia — mínimos propios. */
+/** Galicia — own minimums. */
 const MINIMUM_GALICIA: PersonalMinimumSchedule = {
   taxpayer: 5789,
   taxpayer65: 6988,
@@ -287,7 +287,7 @@ const MINIMUM_GALICIA: PersonalMinimumSchedule = {
   disability65: 9387,
 };
 
-/** Comunidad de Madrid — mínimos propios. */
+/** Comunidad de Madrid — own minimums. */
 const MINIMUM_MADRID: PersonalMinimumSchedule = {
   taxpayer: 5956.65,
   taxpayer65: 7190.91,
@@ -299,7 +299,7 @@ const MINIMUM_MADRID: PersonalMinimumSchedule = {
   disability65: 9659.44,
 };
 
-/** Comunitat Valenciana — mínimos propios (coinciden con los de Asturias, pero son leyes distintas: no se comparten). */
+/** Comunitat Valenciana — own minimums (they match Asturias's, but they are different laws: not shared). */
 const MINIMUM_VALENCIANA: PersonalMinimumSchedule = {
   taxpayer: 6105,
   taxpayer65: 7370,
@@ -312,20 +312,19 @@ const MINIMUM_VALENCIANA: PersonalMinimumSchedule = {
 };
 
 // ---------------------------------------------------------------------------
-// Catálogo de comunidades
+// Region catalogue
 // ---------------------------------------------------------------------------
 
-/** Comunidades autónomas de régimen común con escala propia del IRPF. */
+/** Common-regime regions (comunidades autónomas) with their own IRPF scale. */
 export type RegionCode = (typeof REGION_CODES)[number];
 
-/** Definición fiscal de una comunidad de régimen común. */
+/** Tax definition of a common-regime region. */
 export interface RegionDefinition {
-  /** Escala autonómica de la base liquidable general. */
+  /** Regional scale for the general taxable base (base liquidable general). */
   readonly scale: readonly Bracket[];
   /**
-   * Mínimo personal y familiar autonómico, solo si la comunidad lo modifica en
-   * alguno de los conceptos que este motor modela. Si falta, la cuota autonómica
-   * usa el mínimo estatal.
+   * Regional personal and family minimum, only if the region changes it in any of the
+   * items this engine models. If missing, the regional tax uses the state minimum.
    */
   readonly minimum?: PersonalMinimumSchedule;
 }
@@ -334,7 +333,7 @@ export const REGIONS: Record<RegionCode, RegionDefinition> = {
   andalucia: { scale: IRPF_REGIONAL_SCALE_ANDALUCIA, minimum: MINIMUM_ANDALUCIA },
   aragon: { scale: IRPF_REGIONAL_SCALE_ARAGON },
   asturias: { scale: IRPF_REGIONAL_SCALE_ASTURIAS, minimum: MINIMUM_ASTURIAS },
-  // Baleares sin mínimo propio a propósito: el cuadro de la AEAT es ambiguo (ver README).
+  // Baleares has no own minimum on purpose: the AEAT table is ambiguous (see README).
   baleares: { scale: IRPF_REGIONAL_SCALE_BALEARES },
   canarias: { scale: IRPF_REGIONAL_SCALE_CANARIAS, minimum: MINIMUM_CANARIAS },
   cantabria: { scale: IRPF_REGIONAL_SCALE_CANTABRIA },
@@ -345,12 +344,12 @@ export const REGIONS: Record<RegionCode, RegionDefinition> = {
   galicia: { scale: IRPF_REGIONAL_SCALE_GALICIA, minimum: MINIMUM_GALICIA },
   madrid: { scale: IRPF_REGIONAL_SCALE_MADRID, minimum: MINIMUM_MADRID },
   murcia: { scale: IRPF_REGIONAL_SCALE_MURCIA },
-  // La Rioja solo difiere en la discapacidad de descendientes, que no se modela.
+  // La Rioja only differs in the disability of descendants, which is not modelled.
   "la-rioja": { scale: IRPF_REGIONAL_SCALE_LA_RIOJA },
   valencia: { scale: IRPF_REGIONAL_SCALE_VALENCIANA, minimum: MINIMUM_VALENCIANA },
 };
 
-/** Comunidades soportadas, en el orden en que se muestran en el selector. */
+/** Supported regions, in the order the selector shows them. */
 export const REGION_CODES = [
   "andalucia",
   "aragon",
@@ -369,10 +368,10 @@ export const REGION_CODES = [
   "valencia",
 ] as const;
 
-/** Territorios que aparecen en el selector pero no se pueden calcular. */
+/** Territories that appear in the selector but cannot be calculated. */
 export type UnsupportedRegionCode = "alava" | "bizkaia" | "gipuzkoa" | "navarra" | "ceuta-melilla";
 
-/** Por qué un territorio no está soportado (alimenta el selector). */
+/** Why a territory is not supported (feeds the selector). */
 export type UnsupportedRegionReason = "foral" | "ceutaMelilla";
 
 export interface UnsupportedRegion {
@@ -381,8 +380,8 @@ export interface UnsupportedRegion {
 }
 
 /**
- * Territorios que se muestran deshabilitados en el selector, con el motivo: omitirlos
- * haría creer que el resultado genérico les vale (foral y Ceuta/Melilla: ver README).
+ * Territories shown disabled in the selector, with the reason: omitting them would suggest
+ * the generic result applies to them (foral regime and Ceuta/Melilla: see README).
  */
 export const UNSUPPORTED_REGIONS: readonly UnsupportedRegion[] = [
   { code: "alava", reason: "foral" },
@@ -393,28 +392,29 @@ export const UNSUPPORTED_REGIONS: readonly UnsupportedRegion[] = [
 ];
 
 /**
- * Valor del selector de comunidad: una comunidad soportada, un territorio no
- * soportado (opción deshabilitada) o "" = sin especificar.
+ * Value of the region selector: a supported region, an unsupported territory (disabled
+ * option) or "" = unspecified.
  */
 export type RegionSelection = RegionCode | UnsupportedRegionCode | "";
 
 /**
- * Selecciones realmente elegibles: sin comunidad ("") y las soportadas. Así una URL con
- * un territorio deshabilitado cae a "" en vez de dejar un estado inalcanzable desde la UI.
+ * Selections that can actually be chosen: no region ("") and the supported ones. This way a
+ * URL with a disabled territory falls back to "" instead of leaving a state unreachable from
+ * the UI.
  */
 export const SELECTABLE_REGIONS: readonly RegionSelection[] = ["", ...REGION_CODES];
 
-/** Código del motor para una selección, o `undefined` si no hay comunidad o no está soportada. */
+/** Engine code for a selection, or `undefined` if there is no region or it is not supported. */
 export function toSupportedRegion(selection: RegionSelection): RegionCode | undefined {
   return REGION_CODES.find((code) => code === selection);
 }
 
-/** Escala autonómica de una comunidad de régimen común. */
+/** Regional scale of a common-regime region. */
 export function regionalScale(region: RegionCode): readonly Bracket[] {
   return REGIONS[region].scale;
 }
 
-/** Mínimo aplicable a la cuota autonómica: el propio de la comunidad o, si no, el estatal. */
+/** Minimum that applies to the regional tax: the region's own or, failing that, the state one. */
 export function regionalMinimumSchedule(region: RegionCode): PersonalMinimumSchedule {
   return REGIONS[region].minimum ?? STATE_PERSONAL_MINIMUM;
 }

@@ -1,71 +1,73 @@
-// Reparto de un dividendo importado en íntegro, retención en origen y retención española, con la
-// procedencia de cada cifra. Core puro. Tres capas, de más a menos fiable:
-//   1. `resolveFromBroker`: aritmética sobre lo que dice el bróker.
-//   2. `resolveWithMarket`: contraste con el dividendo por acción de mercado × acciones.
-//   3. `estimateWithStatutoryRate`: tipo que retiene por ley el país, marcado como estimación.
-// Criterio y fuentes: ver ./README.md, sección `dividend-resolution.ts`.
+// Splits an imported dividend into gross amount, withholding at source (retención en origen) and
+// Spanish withholding, with the provenance of each figure. Pure core module. Three layers, from
+// most to least reliable:
+//   1. `resolveFromBroker`: arithmetic on what the broker says.
+//   2. `resolveWithMarket`: check against the market dividend per share × shares.
+//   3. `estimateWithStatutoryRate`: the rate the country withholds by law, flagged as an estimate.
+// Criterion and sources: see ./README.md, section `dividend-resolution.ts`.
 
 import { roundCents } from "../money.js";
 import { countryColumn, SPAIN_SAVINGS_WITHHOLDING_PCT } from "./countries.js";
 import type { ValueSource } from "./income.js";
 
-/** Retención española sobre rendimientos del capital mobiliario (art. 90 RIRPF), en tanto por uno. */
+/** Spanish withholding on capital income (rendimientos del capital mobiliario, art. 90 RIRPF), as a fraction. */
 export const SPANISH_WITHHOLDING_RATE = SPAIN_SAVINGS_WITHHOLDING_PCT / 100;
 
 /**
- * Retención en origen que el bróker aplica de hecho, en tanto por uno, para deshacer la mezcla de
- * retenciones del export de Trade Republic. Datos y fuente: `brokerAppliedPct` en `countries.ts`.
+ * Withholding at source the broker actually applies, as a fraction, to untangle the mix of
+ * withholdings in the Trade Republic export. Data and source: `brokerAppliedPct` in `countries.ts`.
  */
 const BROKER_ORIGIN_RATES: Readonly<Record<string, number>> = countryColumn((rates) =>
   rates.brokerAppliedPct !== undefined ? rates.brokerAppliedPct / 100 : undefined,
 );
 
-/** Margen para comparar importes que el bróker redondea a céntimos en cada paso. */
+/** Tolerance for comparing amounts the broker rounds to cents at each step. */
 const CENT_TOLERANCE = 0.011;
 
-/** Una retención en origen por encima de esto no es verosímil: el dato de mercado no casa. */
+/** Withholding at source above this is not plausible: the market figure does not fit. */
 const MAX_PLAUSIBLE_ORIGIN_RATE = 0.4;
 
-/** Lo que dice el bróker de un dividendo. Importes en euros salvo `originalAmount`. */
+/** What the broker says about a dividend. Amounts in euros except `originalAmount`. */
 export interface DividendFacts {
-  /** Abonado, en euros. */
+  /** Amount paid, in euros. */
   amount: number;
-  /** Retenciones que el bróker anota en la fila, en euros y en valor absoluto. */
+  /** Withholdings the broker records on the row, in euros and as an absolute value. */
   tax: number;
-  /** Abonado en la divisa de pago, si no era el euro. */
+  /** Amount paid in the payment currency, if it was not the euro. */
   originalAmount: number | null;
-  /** El bróker ya retiene en España (sucursal española): aplica el 19 % sobre lo cobrado. */
+  /** The broker already withholds in Spain (Spanish branch): it applies 19% to the amount received. */
   reported: boolean;
-  /** País del emisor (prefijo del ISIN). */
+  /** Issuer's country (ISIN prefix). */
   country: string;
 }
 
 export interface DividendResolution {
   gross: number;
-  /** `null` si no se puede saber. */
+  /** `null` if it cannot be known. */
   origin: number | null;
   spain: number;
   grossSource: ValueSource;
-  /** `null` mientras `origin` sea `null`. */
+  /** `null` while `origin` is `null`. */
   originSource: ValueSource | null;
 }
 
 /**
- * Capa 1. El significado de `amount` y `tax` cambia con el periodo y el emisor (verificado contra
- * los informes fiscales de Trade Republic):
+ * Layer 1. The meaning of `amount` and `tax` changes with the period and the issuer (verified
+ * against Trade Republic's tax reports):
  *
- * - Antes de la sucursal española: `amount` es el íntegro y `tax`, la retención en origen.
- * - Después, España retiene el 19 % de lo cobrado neto de origen. `tax/amount` ≈ 19 %: `amount`
- *   llegó neto de origen y `tax` es solo la española (ASML). ≈ origen + 19 % del resto: `amount` es
- *   el íntegro y `tax` suma las dos (EE. UU.).
+ * - Before the Spanish branch: `amount` is the gross amount and `tax` the withholding at source.
+ * - Afterwards, Spain withholds 19% of the amount received net of source withholding.
+ *   `tax/amount` ≈ 19%: `amount` arrived net of source withholding and `tax` is only the Spanish
+ *   one (ASML). ≈ source + 19% of the rest: `amount` is the gross amount and `tax` adds up both
+ *   (US).
  *
- * Deshacer un neto con un tipo supuesto es una estimación hasta que lo confirme el mercado.
+ * Grossing up a net amount with an assumed rate is an estimate until the market confirms it.
  */
 export function resolveFromBroker({ amount, tax, country, reported }: DividendFacts): DividendResolution {
   const rate = BROKER_ORIGIN_RATES[country];
   if (tax === 0) {
     if (country === "ES") return { gross: amount, origin: 0, spain: 0, grossSource: "broker", originSource: "broker" };
-    // Tan pequeño que la retención de origen redondearía a 0 céntimos.
+    // So small that the withholding at source would round to 0 cents.
     if (rate !== undefined && roundCents(Math.abs(amount) * rate) === 0) {
       return { gross: amount, origin: 0, spain: 0, grossSource: "broker", originSource: "derived" };
     }
@@ -85,12 +87,12 @@ export function resolveFromBroker({ amount, tax, country, reported }: DividendFa
     rate !== undefined &&
     Math.abs(tax - (rate + SPANISH_WITHHOLDING_RATE * (1 - rate)) * amount) <= 2 * CENT_TOLERANCE
   ) {
-    // Se reproduce el redondeo del bróker (origen a céntimos, España el resto): despejarlo
-    // algebraicamente falla por un céntimo en importes pequeños.
+    // Reproduces the broker's rounding (source to cents, Spain the rest): solving it
+    // algebraically is off by a cent on small amounts.
     const origin = roundCents(rate * amount);
     return { gross: amount, origin, spain: roundCents(tax - origin), grossSource: "broker", originSource: "derived" };
   }
-  // Sin clasificar: la española no puede pasar del 19 % de lo cobrado; el origen, sin saber.
+  // Unclassified: the Spanish withholding cannot exceed 19% of the amount received; source unknown.
   return {
     gross: amount,
     origin: null,
@@ -101,12 +103,13 @@ export function resolveFromBroker({ amount, tax, country, reported }: DividendFa
 }
 
 /**
- * Capa 2. `marketGross` = acciones × dividendo por acción de mercado, en la divisa de pago. Si
- * coincide con lo abonado, el bróker dio el íntegro; si es mayor, lo abonado llegó neto y la
- * diferencia es la retención en origen, sea cual sea el país. Se compara en la divisa de pago (no
- * en euros: mezclaría el cambio del bróker con el del BCE) y lo derivado se pasa a euros con el
- * cambio implícito del bróker, para que íntegro, retenciones y neto cuadren. `null` si el dato de
- * mercado no casa (menor que lo abonado, o una retención inverosímil).
+ * Layer 2. `marketGross` = shares × market dividend per share, in the payment currency. If it
+ * matches what was paid, the broker gave the gross amount; if it is larger, the payment arrived
+ * net and the difference is the withholding at source, whatever the country. The comparison is
+ * made in the payment currency (not in euros: that would mix the broker's rate with the ECB's)
+ * and the derived figures are converted to euros at the broker's implied rate, so that gross,
+ * withholdings and net add up. `null` if the market figure does not fit (lower than what was
+ * paid, or an implausible withholding).
  */
 export function resolveWithMarket(facts: DividendFacts, marketGross: number): DividendResolution | null {
   const paid = facts.originalAmount ?? facts.amount;
@@ -116,7 +119,7 @@ export function resolveWithMarket(facts: DividendFacts, marketGross: number): Di
 
   const fx = facts.amount / paid;
   if (Math.abs(marketGross - paid) <= tolerance) {
-    // Lo abonado es el íntegro: lo que retuvo el bróker es todo lo que hubo.
+    // The amount paid is the gross amount: what the broker withheld is all there was.
     const broker = resolveFromBroker(facts);
     if (broker.origin !== null && broker.originSource !== "estimate") return broker;
     const spain = facts.reported ? Math.min(facts.tax, roundCents(SPANISH_WITHHOLDING_RATE * facts.amount)) : 0;
@@ -131,8 +134,9 @@ export function resolveWithMarket(facts: DividendFacts, marketGross: number): Di
 }
 
 /**
- * Capa 3. Sin dato de mercado, supone que lo abonado llegó neto del tipo que retiene por ley el
- * país (`statutoryRate`, con su fuente en `withholding-rates.ts`). Es una estimación y así se marca.
+ * Layer 3. With no market data, assumes the payment arrived net of the rate the country withholds
+ * by law (`statutoryRate`, with its source in `withholding-rates.ts`). It is an estimate and is
+ * flagged as such.
  */
 export function estimateWithStatutoryRate(facts: DividendFacts, statutoryRate: number): DividendResolution {
   const spain = facts.reported ? facts.tax : 0;

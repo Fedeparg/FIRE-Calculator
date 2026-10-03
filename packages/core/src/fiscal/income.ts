@@ -1,13 +1,13 @@
-// Rendimientos del capital mobiliario del ejercicio (art. 25 LIRPF): dividendos, intereses y las
-// recompensas que el bróker declara como intereses (saveback). Core puro. Alcance y fuentes: ver
-// ./README.md, sección `income.ts`.
+// Capital income (rendimientos del capital mobiliario) for the tax year (art. 25 LIRPF): dividends,
+// interest and the rewards the broker reports as interest (saveback). Pure core module. Scope and
+// sources: see ./README.md, section `income.ts`.
 
 import { referenceRateOn, TAX_CURRENCY, toEur, type ReferenceRates } from "./fx-reference.js";
 
 export const INCOME_KINDS = ["dividend", "interest", "benefit"] as const;
 /**
- * `benefit`: recompensa en efectivo del bróker (saveback, stockperk). Se declara como intereses
- * (casilla de intereses de cuentas), igual que hace el propio bróker.
+ * `benefit`: a cash reward from the broker (saveback, stockperk). It is reported as interest
+ * (the account-interest box), just as the broker itself does.
  */
 export type IncomeKind = (typeof INCOME_KINDS)[number];
 
@@ -15,48 +15,48 @@ export const INCOME_SOURCES = ["manual", "trade_republic"] as const;
 export type IncomeSource = (typeof INCOME_SOURCES)[number];
 
 /**
- * De dónde sale una cifra: `broker` (tal cual en el fichero del bróker), `derived` (aritmética
- * sobre datos del bróker), `market` (contraste con el dividendo por acción de mercado),
- * `estimate` (tipo legal del país, sin confirmar) o `manual` (lo introdujo el usuario).
+ * Where a figure comes from: `broker` (as is in the broker's file), `derived` (arithmetic on
+ * broker data), `market` (checked against the market dividend per share), `estimate` (the
+ * country's statutory rate, unconfirmed) or `manual` (entered by the user).
  */
 export const VALUE_SOURCES = ["broker", "derived", "market", "estimate", "manual"] as const;
 export type ValueSource = (typeof VALUE_SOURCES)[number];
 
-/** Un cobro, tal y como lo sirve `GET /api/income`. Importes en `currency`. */
+/** An income payment, as served by `GET /api/income`. Amounts in `currency`. */
 export interface IncomeEvent {
   id: string;
-  /** Posición de la que sale, si la hay (los intereses de cuenta no tienen). */
+  /** Position it comes from, if any (account interest has none). */
   positionId: string | null;
   kind: IncomeKind;
-  /** Fecha de cobro (`YYYY-MM-DD`): decide el ejercicio. */
+  /** Payment date (`YYYY-MM-DD`): it decides the tax year. */
   paidAt: string;
   isin: string | null;
-  /** Valor o cuenta de la que sale. */
+  /** Security or account it comes from. */
   name: string | null;
-  /** País de la fuente (ISO 3166-1 alfa-2), para la doble imposición. */
+  /** Source country (ISO 3166-1 alpha-2), for double taxation. */
   country: string | null;
   currency: string;
-  /** Íntegro: antes de cualquier retención. Negativo en una anulación del bróker. */
+  /** Gross amount: before any withholding. Negative for a broker reversal. */
   gross: number;
-  /** Retención practicada en el país de la fuente; `null` si no se sabe. */
+  /** Withholding at source (retención en origen) in the source country; `null` if unknown. */
   withholdingOrigin: number | null;
-  /** Retención practicada en España (ingreso a cuenta del IRPF). */
+  /** Withholding made in Spain (an IRPF payment on account). */
   withholdingSpain: number;
-  /** El pagador ya lo comunicó a la AEAT: puede aparecer en el borrador. */
+  /** The payer already reported it to the AEAT: it may appear in the draft return (borrador). */
   reportedToAeat: boolean;
   source: IncomeSource;
   grossSource: ValueSource;
-  /** `null` mientras la retención en origen sea desconocida. */
+  /** `null` while the withholding at source is unknown. */
   withholdingOriginSource: ValueSource | null;
-  /** Acciones con derecho al cobro (dividendos importados). */
+  /** Shares entitled to the payment (imported dividends). */
   quantity: number | null;
-  /** Importe abonado en la divisa de pago, si no era el euro. */
+  /** Amount paid in the payment currency, if it was not the euro. */
   originalAmount: number | null;
   originalCurrency: string | null;
   createdAt: string;
 }
 
-/** Alta o edición de un cobro (`POST`/`PATCH /api/income`). */
+/** Creating or editing an income payment (`POST`/`PATCH /api/income`). */
 export interface IncomePayload {
   kind: IncomeKind;
   paidAt: string;
@@ -71,13 +71,13 @@ export interface IncomePayload {
   reportedToAeat?: boolean;
 }
 
-/** Micro-unidades por unidad: los importes se guardan como `numeric(18,6)`, seis decimales. */
+/** Micro-units per unit: amounts are stored as `numeric(18,6)`, six decimals. */
 const MICRO_UNITS = 1_000_000;
 
 /**
- * ¿Caben las retenciones en el íntegro? Se compara en micro-unidades ENTERAS (la precisión con la
- * que se guardan): en coma flotante, `0.1 + 0.2 <= 0.3` es `false` y se rechazaría un cobro válido.
- * Una retención ausente cuenta como 0. Lo usan la validación de la API y el formulario.
+ * Do the withholdings fit within the gross amount? Compared in INTEGER micro-units (the precision
+ * they are stored with): in floating point, `0.1 + 0.2 <= 0.3` is `false` and a valid payment
+ * would be rejected. A missing withholding counts as 0. Used by the API validation and the form.
  */
 export function withholdingsFitGross(
   gross: number,
@@ -88,20 +88,20 @@ export function withholdingsFitGross(
   return micro(withholdingOrigin ?? 0) + micro(withholdingSpain ?? 0) <= micro(gross);
 }
 
-/** Agrupación de la declaración: intereses (incluye recompensas) o dividendos. */
+/** Tax return grouping: interest (rewards included) or dividends. */
 export type IncomeCategory = "interest" | "dividend";
 
 export function incomeCategoryOf(kind: IncomeKind): IncomeCategory {
   return kind === "dividend" ? "dividend" : "interest";
 }
 
-/** Sumas en euros de un conjunto de cobros. */
+/** Sums in euros of a set of income payments. */
 export interface IncomeTotals {
   events: number;
   gross: number;
   withholdingOrigin: number;
   withholdingSpain: number;
-  /** Lo cobrado: íntegro − retenciones. */
+  /** What was received: gross − withholdings. */
   net: number;
 }
 
@@ -112,11 +112,11 @@ export interface IncomeCountryTotals extends IncomeTotals {
 export interface IncomeCategoryReport {
   category: IncomeCategory;
   total: IncomeTotals;
-  /** Lo que el pagador ya comunicó a la AEAT: puede estar en el borrador. */
+  /** What the payer already reported to the AEAT: it may be in the draft return. */
   reported: IncomeTotals;
-  /** Lo que hay que añadir a mano a la declaración. */
+  /** What has to be added to the return by hand. */
   pending: IncomeTotals;
-  /** Por país de la fuente, el de más íntegro primero. */
+  /** By source country, highest gross first. */
   byCountry: IncomeCountryTotals[];
 }
 
@@ -124,16 +124,16 @@ export interface IncomeYear {
   year: number;
   interest: IncomeCategoryReport;
   dividend: IncomeCategoryReport;
-  /** Cobros sin tipo del BCE el día de cobro, por divisa: fuera de los totales. */
+  /** Payments without an ECB rate on the payment date, by currency: left out of the totals. */
   unconverted: { currency: string; events: number }[];
-  /** Dividendos extranjeros sin retención en origen conocida (la doble imposición no se puede calcular). */
+  /** Foreign dividends with no known withholding at source (double taxation cannot be computed). */
   originUnknown: number;
-  /** Dividendos extranjeros cuya retención en origen es una estimación (tipo legal del país). */
+  /** Foreign dividends whose withholding at source is an estimate (the country's statutory rate). */
   originEstimated: number;
 }
 
 export interface IncomeReport {
-  /** Ejercicios con algún cobro, del más reciente al más antiguo. */
+  /** Tax years with at least one payment, from newest to oldest. */
   years: IncomeYear[];
 }
 
@@ -160,7 +160,7 @@ function emptyCategory(
   };
 }
 
-/** Divisas distintas del euro de los cobros y su fecha más antigua, para pedir los tipos del BCE. */
+/** The payments' non-euro currencies and their oldest date, to request the ECB rates. */
 export function incomeRatesNeeded(events: readonly IncomeEvent[]): { currencies: string[]; from: string } | null {
   const currencies = new Set<string>();
   let from: string | null = null;
@@ -173,8 +173,8 @@ export function incomeRatesNeeded(events: readonly IncomeEvent[]): { currencies:
 }
 
 /**
- * Resumen por ejercicio de los rendimientos del capital mobiliario, en euros. Los cobros en
- * divisa se convierten con el tipo del BCE del día de cobro; sin tipo, quedan fuera de los totales.
+ * Per-tax-year summary of capital income, in euros. Foreign-currency payments are converted at
+ * the ECB rate of the payment date; without a rate, they are left out of the totals.
  */
 export function buildIncomeReport(events: readonly IncomeEvent[], rates: ReferenceRates): IncomeReport {
   const byYear = new Map<number, IncomeEvent[]>();
