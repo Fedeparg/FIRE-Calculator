@@ -17,7 +17,7 @@ import type { Position } from "@sextante/core/portfolio/types";
 import { ADD_POSITION_PARAM } from "../add-position";
 import DerivativesNotice from "./DerivativesNotice";
 import PortfolioExport from "./PortfolioExport";
-import { usePortfolioData } from "./PortfolioDataProvider";
+import { usePortfolioData, usePortfolioFreshness } from "./PortfolioDataProvider";
 import PositionDetail, { POSITION_DETAIL_TITLE_ID } from "./PositionDetail";
 import PositionForm, { POSITION_FORM_TITLE_ID } from "./PositionForm";
 import PositionList from "./PositionList";
@@ -36,7 +36,9 @@ type PanelState = { kind: "closed" } | { kind: "detail"; id: string } | { kind: 
  */
 export default function PortfolioPositionsTab() {
   const t = useTranslations("portfolio");
-  const { positions, setPositions, refresh, prices, rates, display, agg, pendingIds } = usePortfolioData();
+  const { positions, addPosition, replacePosition, removePosition, refresh, prices, rates, display, agg } =
+    usePortfolioData();
+  const { pendingIds } = usePortfolioFreshness();
   const [filter, setFilter] = useState<PositionFilter>("open");
   const [query, setQuery] = useState("");
   const [panel, setPanel] = useState<PanelState>({ kind: "closed" });
@@ -76,18 +78,18 @@ export default function PortfolioPositionsTab() {
   function handleCreated(position: Position) {
     // Más recientes primero, igual que el orden del backend. Se abre su detalle: es lo que
     // se quiere ver justo después de darla de alta.
-    setPositions((prev) => [position, ...prev]);
+    addPosition(position);
     setPanel({ kind: "detail", id: position.id });
   }
 
   // Edición o combinación: reemplaza la posición y vuelve a su detalle.
   function handleSaved(position: Position) {
-    setPositions((prev) => prev.map((p) => (p.id === position.id ? position : p)));
+    replacePosition(position);
     setPanel({ kind: "detail", id: position.id });
   }
 
   function handleDeleted(id: string) {
-    setPositions((prev) => prev.filter((p) => p.id !== id));
+    removePosition(id);
     setPanel({ kind: "closed" });
   }
 

@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 
 import { Link } from "@/i18n/navigation";
 import PortfolioBreakdown from "./PortfolioBreakdown";
-import { usePortfolioData } from "./PortfolioDataProvider";
+import { usePortfolioData, usePortfolioFreshness } from "./PortfolioDataProvider";
 import PortfolioGoalCard from "./PortfolioGoalCard";
 import PortfolioHistoryChart from "./PortfolioHistoryChart";
 import PortfolioMovers from "./PortfolioMovers";
@@ -13,7 +13,8 @@ import PortfolioSummary from "./PortfolioSummary";
 /** Pestaña Resumen: cómo va la cartera, sin tabla ni formularios. */
 export default function PortfolioSummaryTab() {
   const t = useTranslations("portfolio");
-  const { positions, prices, rates, display, agg, fxAsOf, pricesFetchedAt, pricesCheckedAt } = usePortfolioData();
+  const { positions, prices, rates, display, agg, fxAsOf } = usePortfolioData();
+  const { pricesFetchedAt, pricesCheckedAt } = usePortfolioFreshness();
 
   if (positions.length === 0) {
     return (
