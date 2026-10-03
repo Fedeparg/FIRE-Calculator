@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { redirect } from "next/navigation";
 
-import { routing } from "@/i18n/routing";
 import { Link } from "@/i18n/navigation";
-import { getSessionUser } from "@/shared/api/session";
+import { requireSessionUser } from "@/shared/api/session";
 import { fetchPositions } from "@/features/portfolio/api.server";
 import { ADD_POSITION_HREF } from "@/features/portfolio/add-position";
 import PortfolioDataProvider from "@/features/portfolio/components/PortfolioDataProvider";
@@ -23,11 +21,7 @@ export default async function PortfolioTabsLayout({ children, params }: Props) {
   setRequestLocale(locale);
 
   // Protección server-side: sin sesión válida, al login (con prefijo de locale).
-  const user = await getSessionUser();
-  if (!user) {
-    const prefix = locale === routing.defaultLocale ? "" : `/${locale}`;
-    redirect(`${prefix}/entrar`);
-  }
+  await requireSessionUser(locale);
 
   const t = await getTranslations("auth.portfolio");
   const tPortfolio = await getTranslations("portfolio");

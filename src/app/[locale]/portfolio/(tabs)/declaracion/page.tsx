@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { privateMetadata } from "@/shared/seo/seo";
+
 import { fetchRealisedGainsData } from "@/features/portfolio/api.server";
 import Notice from "@/shared/ui/Notice";
 import { Link } from "@/i18n/navigation";
@@ -11,8 +13,7 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "portfolio.taxReturn" });
-  // Página privada: nada que indexar.
-  return { title: t("title"), robots: { index: false, follow: false } };
+  return privateMetadata(t("title"));
 }
 
 /**

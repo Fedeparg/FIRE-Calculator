@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildMetadata, localizedPath } from "./seo";
+import { buildMetadata, localizedPath, privateMetadata } from "./seo";
 
 describe("localizedPath", () => {
   it("deja el castellano sin prefijo y prefija el inglés con /en", () => {
@@ -54,5 +54,11 @@ describe("buildMetadata", () => {
 
   it("respeta ogType article", () => {
     expect(buildMetadata({ ...base, ogType: "article" }).openGraph).toMatchObject({ type: "article" });
+  });
+});
+
+describe("privateMetadata", () => {
+  it("pone el título y prohíbe indexar y seguir enlaces", () => {
+    expect(privateMetadata("Mi cuenta")).toEqual({ title: "Mi cuenta", robots: { index: false, follow: false } });
   });
 });

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
+import { privateMetadata } from "@/shared/seo/seo";
+
 import PortfolioGoalTab from "@/features/portfolio/components/PortfolioGoalTab";
 
 type Props = { params: Promise<{ locale: string }> };
@@ -8,8 +10,7 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "portfolio.tabs" });
-  // Página privada: nada que indexar.
-  return { title: t("goalTitle"), robots: { index: false, follow: false } };
+  return privateMetadata(t("goalTitle"));
 }
 
 export default async function PortfolioGoalPage({ params }: Props) {

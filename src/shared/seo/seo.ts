@@ -34,6 +34,11 @@ function languageAlternates(path: string): Record<string, string> {
   return languages;
 }
 
+/** Metadata de una página privada (cartera, cuenta, importación): su título y nada que indexar ni seguir. */
+export function privateMetadata(title: string): Metadata {
+  return { title, robots: { index: false, follow: false } };
+}
+
 /** Construye la ruta relativa a la imagen Open Graph generada en `/og`. */
 function ogImagePath(title: string, locale: Locale, subtitle?: string): string {
   const params = new URLSearchParams({ title, locale });
