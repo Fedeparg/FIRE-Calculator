@@ -14,13 +14,13 @@
     "dev": "pnpm core:build && next dev",
     "build": "pnpm core:build && next build",
     "start": "next start",
-    "lint": "eslint && prettier --check \"**/*.{ts,tsx,js,mjs,css}\" && knip",
+    "lint": "eslint && prettier --check \"**/*.{ts,tsx,js,mjs,css,json}\" && knip",
     "knip": "knip",
     "typecheck": "pnpm core:build && tsc --noEmit && pnpm --filter @sextante/core typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "core:build": "pnpm --filter @sextante/core build",
-    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,css}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,css,json}\""
   },
   "dependencies": {
     "@sextante/core": "workspace:*",
