@@ -3,6 +3,7 @@
 // Alcance y supuestos: ver ./README.md. Cifras orientativas, sin deducciones autonómicas.
 
 import {
+  IRPF_AUTONOMICA_SUPLETORIA,
   MINIMO_ASCENDIENTES,
   MINIMO_DESCENDIENTES,
   MINIMO_DESCENDIENTE_MENOR_3,
@@ -97,15 +98,10 @@ const IRPF_AUT_CANTABRIA: readonly Bracket[] = [
 
 /**
  * Castilla-La Mancha — art. 13 bis Ley 8/2013, de 21 de noviembre. Única escala
- * idéntica a la supletoria del art. 65 LIRPF (suma 19 / 24 / 30 / 37 / 45 / 47).
+ * idéntica a la supletoria del art. 65 LIRPF (suma 19 / 24 / 30 / 37 / 45 / 47): se
+ * referencia en vez de copiarla. Si la comunidad la cambia, aquí va su propia tabla.
  */
-const IRPF_AUT_CASTILLA_LA_MANCHA: readonly Bracket[] = [
-  { upTo: 12450, rate: 9.5 },
-  { upTo: 20200, rate: 12 },
-  { upTo: 35200, rate: 15 },
-  { upTo: 60000, rate: 18.5 },
-  { upTo: null, rate: 22.5 },
-];
+const IRPF_AUT_CASTILLA_LA_MANCHA: readonly Bracket[] = IRPF_AUTONOMICA_SUPLETORIA;
 
 /** Castilla y León — art. 1 TR Decreto Legislativo 1/2013, de 12 de septiembre. */
 const IRPF_AUT_CASTILLA_Y_LEON: readonly Bracket[] = [
@@ -303,7 +299,7 @@ const MINIMUM_MADRID: PersonalMinimumSchedule = {
   disability65: 9659.44,
 };
 
-/** Comunitat Valenciana — mínimos propios. */
+/** Comunitat Valenciana — mínimos propios (coinciden con los de Asturias, pero son leyes distintas: no se comparten). */
 const MINIMUM_VALENCIANA: PersonalMinimumSchedule = {
   taxpayer: 6105,
   taxpayer65: 7370,
@@ -320,22 +316,7 @@ const MINIMUM_VALENCIANA: PersonalMinimumSchedule = {
 // ---------------------------------------------------------------------------
 
 /** Comunidades autónomas de régimen común con escala propia del IRPF. */
-export type RegionCode =
-  | "andalucia"
-  | "aragon"
-  | "asturias"
-  | "baleares"
-  | "canarias"
-  | "cantabria"
-  | "castilla-la-mancha"
-  | "castilla-y-leon"
-  | "cataluna"
-  | "extremadura"
-  | "galicia"
-  | "madrid"
-  | "murcia"
-  | "la-rioja"
-  | "valencia";
+export type RegionCode = (typeof REGION_CODES)[number];
 
 /** Definición fiscal de una comunidad de régimen común. */
 export interface RegionDefinition {
@@ -370,7 +351,7 @@ export const REGIONS: Record<RegionCode, RegionDefinition> = {
 };
 
 /** Comunidades soportadas, en el orden en que se muestran en el selector. */
-export const REGION_CODES: readonly RegionCode[] = [
+export const REGION_CODES = [
   "andalucia",
   "aragon",
   "asturias",
@@ -386,7 +367,7 @@ export const REGION_CODES: readonly RegionCode[] = [
   "murcia",
   "la-rioja",
   "valencia",
-];
+] as const;
 
 /** Territorios que aparecen en el selector pero no se pueden calcular. */
 export type UnsupportedRegionCode = "alava" | "bizkaia" | "gipuzkoa" | "navarra" | "ceuta-melilla";

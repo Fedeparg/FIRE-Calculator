@@ -2,29 +2,26 @@
 // Muy orientativo: el ISD está cedido a las CCAA, que aplican bonificaciones (Madrid ~99 %) y
 // reducciones propias.
 
-import { ISD_ESTATAL, applyProgressiveBrackets } from "../fiscal/brackets.js";
+import { nonNegative } from "../inputs.js";
+import {
+  GIFT_TAX_KINSHIP_COEFFICIENTS,
+  GIFT_TAX_WEALTH_TIERS,
+  ISD_ESTATAL,
+  applyProgressiveBrackets,
+} from "../fiscal/brackets.js";
 
 export const KINSHIP_GROUPS = ["grupoI_II", "grupoIII", "grupoIV"] as const;
 export type KinshipGroup = (typeof KINSHIP_GROUPS)[number];
 
-/** Umbrales de patrimonio preexistente (€) de los cuatro tramos (Ley 29/1987, art. 22.2); el límite superior entra en su tramo. */
-const WEALTH_TIERS = [402678.11, 2007380.43, 4020770.98] as const;
-
-/**
- * Coeficiente multiplicador por grupo y tramo de patrimonio (Ley 29/1987, art. 22.2). Grupos I y II:
- * cónyuge, descendientes, ascendientes; III: colaterales de 2.º y 3.º grado y afines; IV: resto.
- */
-export const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, number, number]> = {
-  grupoI_II: [1.0, 1.05, 1.1, 1.2],
-  grupoIII: [1.5882, 1.6676, 1.7471, 1.9059],
-  grupoIV: [2.0, 2.1, 2.2, 2.4],
-};
+/** Coeficientes por grupo (tabla en `brackets.ts`); el tipo exige uno por cada grupo de `KINSHIP_GROUPS`. */
+const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, number, number]> =
+  GIFT_TAX_KINSHIP_COEFFICIENTS;
 
 /** Coeficiente multiplicador según parentesco y patrimonio preexistente (art. 22.2 Ley 29/1987). */
 export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: number): number {
-  const wealth = Math.max(0, Number.isFinite(preexistingWealth) ? preexistingWealth : 0);
+  const wealth = nonNegative(preexistingWealth);
   let tier = 0;
-  while (tier < WEALTH_TIERS.length && wealth > WEALTH_TIERS[tier]) tier++;
+  while (tier < GIFT_TAX_WEALTH_TIERS.length && wealth > GIFT_TAX_WEALTH_TIERS[tier]) tier++;
   return KINSHIP_COEFFICIENTS[kinship][tier];
 }
 

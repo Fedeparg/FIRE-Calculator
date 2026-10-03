@@ -2,9 +2,10 @@
 // produce `ImportedTrade` y el resto (plan en la API, vista previa en la UI) no sabe de qué bróker viene.
 
 import type { ValueSource } from "../fiscal/income.js";
+import type { AssetClass } from "../portfolio/types.js";
 
-/** Clase de activo normalizada; `other` cubre lo vacío o lo no clasificado. */
-export type ImportedAssetClass = "fund" | "stock" | "derivative" | "other";
+/** Clase de activo normalizada (la misma de la cartera); `other` cubre lo vacío o lo no clasificado. */
+export type ImportedAssetClass = AssetClass;
 
 /**
  * Compra o venta normalizada. Los importes van como `string` decimal para no pasar por coma flotante

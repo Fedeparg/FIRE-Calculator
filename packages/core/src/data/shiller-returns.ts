@@ -7,8 +7,15 @@
 //
 // Método: stocks = TRP(ene. año+1) / TRP(ene. año) − 1, con TRP la columna "Real Total Return
 // Price"; bonds = igual sobre la columna "Real Total Bond Returns" (índice acumulado). Cada
-// fila es el año natural que empieza en `year`. Generado por un script, no editar a mano:
-// para actualizarlo se repite el cálculo sobre una versión más reciente del fichero.
+// fila es el año natural que empieza en `year`. No editar a mano.
+//
+// Para regenerarlo: (1) descargar `ie_data.xls` de shillerdata.com y anotar aquí su versión y
+// su SHA-256; (2) en la hoja "Data", quedarse con las filas de enero (fecha `AAAA.01`); (3) para
+// cada año con el enero siguiente publicado, aplicar el método de arriba a las dos columnas,
+// redondeando a 6 decimales; (4) sustituir la tabla. El script de la versión actual no se
+// versionó ni se conservó el `.xls`, así que esta no tiene hash: la próxima actualización debe
+// dejar el script en `scripts/` y el hash del fichero fuente en esta cabecera.
+// `shiller-returns.test.ts` comprueba la forma de la serie y las cifras de referencia.
 
 export interface HistoricalYear {
   /** Año natural (enero de `year` a enero de `year + 1`). */

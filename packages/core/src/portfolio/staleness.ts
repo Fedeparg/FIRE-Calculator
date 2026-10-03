@@ -1,3 +1,4 @@
+import { compareStrings } from "../compare.js";
 /**
  * Capturas reales del histórico de la cartera que han quedado obsoletas. Core puro.
  *
@@ -29,7 +30,7 @@ export interface StalenessInput {
   invalidateFrom?: string | null;
 }
 
-const byDate = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+const byDate = (a: string, b: string): number => compareStrings(a, b);
 
 /** Fechas (YYYY-MM-DD) de las capturas obsoletas, en O(n log n). */
 export function staleSnapshotDates(input: StalenessInput): Set<string> {

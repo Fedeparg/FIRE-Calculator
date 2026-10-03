@@ -1,11 +1,21 @@
 // Núcleo fiscal compartido: escalas oficiales y motor de tramos progresivos. Core puro.
 // Alcance y supuestos: ver ./README.md. Cifras orientativas del ejercicio `FISCAL_YEAR`.
 
+import { nonNegative } from "../inputs.js";
+
 /** Ejercicio fiscal de referencia de las escalas de este módulo. */
 export const FISCAL_YEAR = 2026;
 
 /** `FISCAL_YEAR` como cadena: evita que el formato numérico del idioma lo pinte «2.026». */
 export const FISCAL_YEAR_LABEL = String(FISCAL_YEAR);
+
+/**
+ * Fecha (`YYYY-MM-DD`) a partir de la cual hay que revisar las cifras de `FISCAL_YEAR`: escalas,
+ * mínimos, Seguridad Social y `withholding-rates.ts`. Coincide con el arranque de la campaña de
+ * Renta. Un test falla desde ese día: es un recordatorio ejecutable, no una caducidad del cálculo.
+ * Al revisar, se actualizan `FISCAL_YEAR` y esta fecha.
+ */
+export const FISCAL_REVIEW_BY = "2027-04-01";
 
 /** Tramo de una escala: `upTo` es el límite superior incluido (`null` = último); `rate` en % (19 = 19 %). */
 export interface Bracket {
@@ -15,7 +25,7 @@ export interface Bracket {
 
 /** Cuota de una base según una escala progresiva: cada tramo grava solo su porción de base. */
 export function applyProgressiveBrackets(base: number, brackets: readonly Bracket[]): number {
-  const b = Math.max(0, Number.isFinite(base) ? base : 0);
+  const b = nonNegative(base);
   let tax = 0;
   let lower = 0;
 
@@ -32,7 +42,7 @@ export function applyProgressiveBrackets(base: number, brackets: readonly Bracke
 
 /** Tipo marginal (%) aplicable al último euro de la base dada. */
 export function marginalRate(base: number, brackets: readonly Bracket[]): number {
-  const b = Math.max(0, Number.isFinite(base) ? base : 0);
+  const b = nonNegative(base);
   for (const bracket of brackets) {
     if (b <= (bracket.upTo ?? Infinity)) return bracket.rate;
   }
@@ -40,7 +50,7 @@ export function marginalRate(base: number, brackets: readonly Bracket[]): number
 }
 
 export function effectiveRate(base: number, brackets: readonly Bracket[]): number {
-  const b = Math.max(0, Number.isFinite(base) ? base : 0);
+  const b = nonNegative(base);
   if (b === 0) return 0;
   return (applyProgressiveBrackets(b, brackets) / b) * 100;
 }
@@ -107,6 +117,12 @@ export const PATRIMONIO_ESTATAL: readonly Bracket[] = [
   { upTo: null, rate: 3.5 },
 ];
 
+/** Patrimonio — mínimo exento estatal (Ley 19/1991, art. 28); varias CCAA fijan otro. */
+export const WEALTH_TAX_EXEMPT_MINIMUM = 700000;
+
+/** Patrimonio — exención de la vivienda habitual, hasta este importe (Ley 19/1991, art. 4.Nueve). */
+export const WEALTH_TAX_PRIMARY_RESIDENCE_EXEMPTION = 300000;
+
 /** Sucesiones y Donaciones — tarifa estatal (supletoria de las CCAA). Ley 29/1987, art. 21. */
 export const ISD_ESTATAL: readonly Bracket[] = [
   { upTo: 7993.46, rate: 7.65 },
@@ -163,6 +179,23 @@ export const MINIMO_ASCENDIENTES = 1150;
 export const MINIMO_DISCAPACIDAD_33 = 3000;
 export const MINIMO_DISCAPACIDAD_65 = 9000;
 
+/**
+ * Sucesiones y Donaciones — umbrales (€) de patrimonio preexistente de los cuatro tramos del
+ * coeficiente multiplicador (Ley 29/1987, art. 22.2); el límite superior entra en su tramo.
+ */
+export const GIFT_TAX_WEALTH_TIERS = [402678.11, 2007380.43, 4020770.98] as const;
+
+/**
+ * Sucesiones y Donaciones — coeficiente multiplicador por grupo de parentesco y tramo de patrimonio
+ * preexistente (Ley 29/1987, art. 22.2). Grupos I y II: cónyuge, descendientes y ascendientes; III:
+ * colaterales de 2.º y 3.º grado y afines; IV: resto.
+ */
+export const GIFT_TAX_KINSHIP_COEFFICIENTS = {
+  grupoI_II: [1.0, 1.05, 1.1, 1.2],
+  grupoIII: [1.5882, 1.6676, 1.7471, 1.9059],
+  grupoIV: [2.0, 2.1, 2.2, 2.4],
+} as const;
+
 /** Reducción en la base por tributación conjunta (unidad familiar biparental). */
 export const REDUCCION_TRIBUTACION_CONJUNTA = 3400;
 
@@ -174,6 +207,9 @@ export const PENSION_EMPLOYER_LIMIT = 8500;
 
 /** Límite conjunto (individual + empresa) con reducción en la base (art. 52.1 LIRPF); además, 30 % de los rendimientos netos. */
 export const PENSION_JOINT_LIMIT = 10000;
+
+/** Tope de las aportaciones a planes de pensiones: 30 % de los rendimientos netos del trabajo y de actividades (art. 52.1 LIRPF). */
+export const PENSION_NET_INCOME_CAP_RATE = 30;
 
 /**
  * Estimación directa simplificada — gastos de difícil justificación: 5 % del

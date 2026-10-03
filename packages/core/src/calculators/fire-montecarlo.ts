@@ -11,6 +11,7 @@
 // (Shiller); los bloques conservan rachas (1929-1932, 1973-1974…) y con ellas el riesgo de secuencia.
 // La mezcla acciones/bonos se rebalancea cada año.
 
+import { finiteOr, nonNegative } from "../inputs.js";
 import { computeFire, FIRE_SEARCH_MAX_YEARS } from "./fire.js";
 import { HISTORICAL_RETURNS } from "../data/shiller-returns.js";
 import { mulberry32, normalGenerator, percentileSorted, type Rng } from "../random.js";
@@ -77,7 +78,6 @@ const MIN_RETURN = -99;
 export const HISTORICAL_BLOCK_YEARS = 10;
 export const SENSITIVITY_RATES: readonly number[] = [3, 3.5, 4, 4.5, 5];
 
-const nonNegative = (value: number) => (Number.isFinite(value) && value > 0 ? value : 0);
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 interface PathState {
@@ -119,9 +119,7 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
   const model = input.returnModel ?? { kind: "lognormal" };
   const historical = model.kind === "historical" ? blendHistorical(model.stockShare) : null;
   // Media: la tecleada en lognormal, la histórica de la mezcla en histórico; la usa la referencia determinista.
-  const mean = historical
-    ? historical.mean
-    : clamp(Number.isFinite(input.annualReturn) ? input.annualReturn : 0, MIN_RETURN, Infinity) / 100;
+  const mean = historical ? historical.mean : clamp(finiteOr(input.annualReturn, 0), MIN_RETURN, Infinity) / 100;
   const sigma = clamp(nonNegative(input.volatility), 0, MAX_VOLATILITY) / 100;
 
   // FIRE en frecuencia anual para que las reglas de aportación coincidan con las de este simulador
@@ -248,7 +246,7 @@ function historicalSampler(series: readonly number[], rng: Rng): (out: Float64Ar
 
 /** Serie histórica con `stockShare` % en acciones y el resto en bonos, rebalanceada cada año, y su media; porcentaje no finito = 0, acotado a 0–100. */
 function blendHistorical(stockShare: number): { returns: number[]; mean: number } {
-  const share = clamp(Number.isFinite(stockShare) ? stockShare : 0, 0, 100) / 100;
+  const share = clamp(finiteOr(stockShare, 0), 0, 100) / 100;
   const returns = HISTORICAL_RETURNS.map((y) => share * y.stocks + (1 - share) * y.bonds);
   const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
   return { returns, mean };

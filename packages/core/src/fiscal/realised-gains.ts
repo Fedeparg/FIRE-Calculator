@@ -2,6 +2,7 @@
 // emparejadas por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas
 // dentro de él. Core puro. Alcance, criterio de divisas y fuentes: ver ./README.md.
 
+import { compareStrings } from "../compare.js";
 import { referenceRateOn, TAX_CURRENCY, toEur, type AppliedRate, type ReferenceRates } from "./fx-reference.js";
 import {
   walkLots,
@@ -298,7 +299,7 @@ function applyWashSalesInEur(sales: readonly RealisedGainsSale[]): void {
 
 function buildYear(year: number, sales: RealisedGainsSale[]): RealisedGainsYear {
   const ordered = [...sales].sort((a, b) =>
-    a.tradedAt !== b.tradedAt ? (a.tradedAt < b.tradedAt ? -1 : 1) : a.ticker.localeCompare(b.ticker),
+    a.tradedAt !== b.tradedAt ? compareStrings(a.tradedAt, b.tradedAt) : a.ticker.localeCompare(b.ticker),
   );
 
   const rows = new Map<string, RealisedGainsRow>();

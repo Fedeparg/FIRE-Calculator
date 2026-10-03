@@ -43,14 +43,11 @@ export function computeFire(input: FireInput): FireResult {
     contributionGrowth: input.savingsGrowth,
   });
 
-  let yearsToFire: number | null = null;
-  const series: FireYearPoint[] = projection.series.map((p) => {
-    if (yearsToFire === null && p.value >= fireNumber) yearsToFire = p.year;
-    return { ...p, target: fireNumber };
-  });
+  const yearsToFire = projection.series.find((p) => p.value >= fireNumber)?.year ?? null;
+  const series: FireYearPoint[] = projection.series.map((p) => ({ ...p, target: fireNumber }));
 
   // se recorta la gráfica unos años tras alcanzar el objetivo
-  const trimmed = yearsToFire === null ? series : series.filter((p) => p.year <= (yearsToFire as number) + 3);
+  const trimmed = yearsToFire === null ? series : series.filter((p) => p.year <= yearsToFire + 3);
 
   return { fireNumber, yearsToFire, series: trimmed };
 }

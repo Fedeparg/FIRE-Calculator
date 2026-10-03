@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 
-import type { PortfolioAggregate } from "@sextante/core/fx";
+import type { PortfolioAggregate } from "@sextante/core/portfolio/aggregate";
 import { formatIsoDate, formatRelativeTime } from "@/shared/format/format";
 import { gainSince } from "@sextante/core/portfolio/history-series";
 import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";

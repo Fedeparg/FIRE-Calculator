@@ -3,23 +3,18 @@
 // Lo usan la simulación de venta y el informe `realised-gains.ts`, con las mismas reglas.
 // Alcance fiscal (qué modela y qué no): ver ./README.md. Resultado solo orientativo.
 
+import { finiteOr, QUANTITY_EPSILON } from "../inputs.js";
+import type { PositionLot } from "../portfolio/types.js";
+import { compareStrings } from "../compare.js";
 import { applyProgressiveBrackets, effectiveRate, IRPF_AHORRO, marginalRate } from "./brackets.js";
 
-/** Operación del histórico de una posición, como la sirve `GET /api/positions/:id/lots`, en la divisa de la posición. */
-export interface TradeLot {
-  id: string;
-  kind: "buy" | "sell";
-  /** Participaciones; siempre > 0 (el signo lo da `kind`). */
-  quantity: number;
-  /** Precio unitario de la operación. */
-  price: number;
-  /** Comisiones y gastos de la operación. */
-  fees: number;
-  /** Fecha de la operación (`YYYY-MM-DD`). */
-  tradedAt: string;
-  /** Instante de alta en la BD (ISO); desempata operaciones del mismo día. */
-  createdAt?: string;
-}
+/**
+ * Operación del histórico de una posición, como la sirve `GET /api/positions/:id/lots`, en la
+ * divisa de la posición: un `PositionLot` sin lo que el FIFO no usa. `createdAt` es opcional
+ * porque una simulación o un test pueden no tenerlo.
+ */
+export type TradeLot = Pick<PositionLot, "id" | "kind" | "quantity" | "price" | "fees" | "tradedAt"> &
+  Partial<Pick<PositionLot, "createdAt">>;
 
 /** Lote de compra con la parte aún sin vender. */
 export interface OpenLot {
@@ -88,19 +83,16 @@ export interface SavingsTaxEstimate {
   marginal: number;
 }
 
-/** Las cantidades tienen 6 decimales: un resto < 1e-9 es residuo binario, no una posición. */
-const QUANTITY_EPSILON = 1e-9;
-
 /**
  * Orden canónico `(tradedAt, createdAt, id)`, el mismo que el backend (`lot-aggregate.ts`).
  * `tradedAt` no lleva hora: sin desempate el FIFO del mismo día no sería determinista.
  */
 export function compareTradeLots(a: TradeLot, b: TradeLot): number {
-  if (a.tradedAt !== b.tradedAt) return a.tradedAt < b.tradedAt ? -1 : 1;
+  if (a.tradedAt !== b.tradedAt) return compareStrings(a.tradedAt, b.tradedAt);
   const ca = a.createdAt ?? "";
   const cb = b.createdAt ?? "";
-  if (ca !== cb) return ca < cb ? -1 : 1;
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  if (ca !== cb) return compareStrings(ca, cb);
+  return compareStrings(a.id, b.id);
 }
 
 /** Venta registrada, emparejada por FIFO contra las compras anteriores. */
@@ -239,7 +231,7 @@ export function walkLots(lots: readonly TradeLot[], options: WalkLotsOptions = {
 
   for (const lot of ordered) {
     if (!Number.isFinite(lot.quantity) || lot.quantity <= 0) continue;
-    const price = Number.isFinite(lot.price) ? lot.price : 0;
+    const price = finiteOr(lot.price, 0);
 
     if (lot.kind === "buy") {
       if (price === 0 && cleanFees(lot.fees) === 0 && open.some((l) => l.quantity > QUANTITY_EPSILON)) {

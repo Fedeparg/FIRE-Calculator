@@ -43,4 +43,9 @@ describe("computeRoi", () => {
     expect(r.netGain).toBeCloseTo(429.3, 6);
     expect(r.netRoi).toBeCloseTo(42.08823529411765, 6);
   });
+
+  it("un plazo minúsculo que desborda la anualización la deja sin respuesta", () => {
+    const r = computeRoi({ initial: 1000, final: 1500, years: 1e-300 });
+    expect(r.annualized).toBeNull();
+  });
 });

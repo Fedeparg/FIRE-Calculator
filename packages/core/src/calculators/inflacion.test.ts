@@ -57,4 +57,9 @@ describe("computeInflation", () => {
     expect(r.realReturn).toBeGreaterThan(0);
     expect(r.realValueInvested).toBeGreaterThan(1000);
   });
+
+  it("con una inflación del −100 % la rentabilidad real queda en la nominal, no en Infinity", () => {
+    const r = computeInflation({ amount: 1000, annualRate: -100, years: 5, nominalReturn: 6 });
+    expect(r.realReturn).toBeCloseTo(6, 10);
+  });
 });

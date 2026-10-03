@@ -13,8 +13,11 @@
  * estimación para la gráfica, no un dato contable.
  */
 
+import type { TradeLot } from "../fiscal/plusvalias.js";
+import { QUANTITY_EPSILON } from "../inputs.js";
+import { compareStrings } from "../compare.js";
 import { addDays, daysBetween } from "../dates.js";
-import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "../fx.js";
+import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "./aggregate.js";
 
 /**
  * Días máximos que se arrastra el último cierre/tasa cuando un día no tiene dato propio. Pasado el
@@ -22,15 +25,8 @@ import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from
  */
 export const MAX_CARRY_FORWARD_DAYS = 10;
 
-/** Por debajo de esto una cantidad es cero (ruido de redondeo). */
-const QUANTITY_EPSILON = 1e-9;
-
-export interface HistoryLot {
-  kind: "buy" | "sell";
-  quantity: number;
-  price: number;
-  tradedAt: string;
-}
+/** Lo que la reconstrucción usa de cada operación. */
+export type HistoryLot = Pick<TradeLot, "kind" | "quantity" | "price" | "tradedAt">;
 
 export interface HistoryPosition {
   ticker: string;
@@ -96,6 +92,8 @@ interface Holding {
   cost: number;
 }
 
+const emptyHolding = (): Holding => ({ quantity: 0, cost: 0 });
+
 function applyLot(holding: Holding, lot: HistoryLot): void {
   if (lot.kind === "buy") {
     holding.quantity += lot.quantity;
@@ -149,10 +147,10 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
     position,
     // orden estable: los lotes del mismo día conservan el recibido
     lots: adjustForSplits(position.lots, splits[position.ticker] ?? []).sort((a, b) =>
-      a.tradedAt < b.tradedAt ? -1 : a.tradedAt > b.tradedAt ? 1 : 0,
+      compareStrings(a.tradedAt, b.tradedAt),
     ),
     next: 0,
-    holding: { quantity: 0, cost: 0 } as Holding,
+    holding: emptyHolding(),
     price: new SeriesCursor(prices[position.ticker] ?? []),
   }));
   const fxCursors = Object.entries(fx).map(([currency, series]) => ({

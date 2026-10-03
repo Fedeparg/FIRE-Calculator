@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { todayUtc } from "../dates.js";
 import {
+  FISCAL_REVIEW_BY,
+  FISCAL_YEAR,
   IRPF_AHORRO,
   IRPF_AUTONOMICA_SUPLETORIA,
   IRPF_ESTATAL_GENERAL,
@@ -100,5 +103,14 @@ describe.each([
     const bases = limits.flatMap((l) => [l.upTo - CENT, l.upTo, l.upTo + CENT]);
     const taxes = bases.map((b) => applyProgressiveBrackets(b, scale));
     taxes.forEach((t, i) => i > 0 && expect(t).toBeGreaterThanOrEqual(taxes[i - 1]));
+  });
+});
+
+describe("recordatorio de revisión fiscal", () => {
+  it("las cifras de FISCAL_YEAR siguen vigentes (si falla, toca revisar escalas, mínimos y retenciones)", () => {
+    expect(
+      todayUtc() < FISCAL_REVIEW_BY,
+      `Desde ${FISCAL_REVIEW_BY} hay que revisar las cifras de ${FISCAL_YEAR}: ver FISCAL_REVIEW_BY en brackets.ts`,
+    ).toBe(true);
   });
 });

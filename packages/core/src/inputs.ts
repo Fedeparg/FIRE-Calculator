@@ -24,3 +24,19 @@ export const MAX_HORIZON_YEARS = 100;
 export function clampYears(years: number | undefined, min = 0): number {
   return Math.min(MAX_HORIZON_YEARS, Math.max(min, Math.round(years || 0)));
 }
+
+/**
+ * Tolerancia de cantidades (participaciones): se guardan con 6 decimales, así que un resto menor
+ * es ruido binario de la coma flotante y cuenta como cero.
+ */
+export const QUANTITY_EPSILON = 1e-9;
+
+/** `value` si es finito; si no (NaN, ±Infinity), `fallback`. */
+export function finiteOr(value: number, fallback: number): number {
+  return Number.isFinite(value) ? value : fallback;
+}
+
+/** `value` si es finito y positivo; cualquier otra cosa (negativos, cero, NaN, ±Infinity) da 0. */
+export function nonNegative(value: number): number {
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}

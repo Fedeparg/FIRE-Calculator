@@ -1,3 +1,4 @@
+import { compareStrings } from '@sextante/core/compare';
 import { Injectable, Logger } from '@nestjs/common';
 
 import type { DividendEvent, PriceHistory, PriceProvider, Quote, SplitEvent } from './price-provider.interface.js';
@@ -95,7 +96,7 @@ export function parseYahooChartHistory(symbol: string, body: unknown): Quote[] {
     byDate.set(date, { symbol, close, currency, date });
   }
 
-  return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return [...byDate.values()].sort((a, b) => compareStrings(a.date, b.date));
 }
 
 /** Extrae los splits de una respuesta con `events=split` (pura); un ratio inválido corrompería la cantidad histórica, así que se descartan. */
@@ -118,7 +119,7 @@ export function parseYahooSplits(symbol: string, body: unknown): SplitEvent[] {
     }
     out.push({ symbol, date: epochToUtcDate(date), ratio: numerator / denominator });
   }
-  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  return out.sort((a, b) => compareStrings(a.date, b.date));
 }
 
 /**
@@ -138,7 +139,7 @@ export function parseYahooDividends(symbol: string, body: unknown): DividendEven
     if (typeof date !== 'number' || !Number.isFinite(date) || typeof amount !== 'number' || !(amount > 0)) continue;
     out.push({ symbol, exDate: epochToUtcDate(date), amount, currency });
   }
-  return out.sort((a, b) => (a.exDate < b.exDate ? -1 : a.exDate > b.exDate ? 1 : 0));
+  return out.sort((a, b) => compareStrings(a.exDate, b.exDate));
 }
 
 /** Precios sobre la API no oficial de Yahoo: amplia y gratis, por eso vive tras `PriceProvider`. */

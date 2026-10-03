@@ -4,6 +4,7 @@
  * BOM: `src/shared/format/csv.ts`.
  */
 
+import { compareStrings } from "@sextante/core/compare";
 import { buildCsv, type CsvCell } from "@/shared/format/csv";
 import type { Locale } from "@/i18n/types";
 import type { IncomeEvent } from "@sextante/core/fiscal/income";
@@ -42,7 +43,7 @@ export function buildIncomeCsv(
   locale: Locale,
 ): string {
   const rows: CsvCell[][] = [...events]
-    .sort((a, b) => (a.paidAt < b.paidAt ? -1 : a.paidAt > b.paidAt ? 1 : 0))
+    .sort((a, b) => compareStrings(a.paidAt, b.paidAt))
     .map((event) => [
       event.paidAt,
       labels.kind(event.kind),

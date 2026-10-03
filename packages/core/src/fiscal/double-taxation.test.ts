@@ -22,6 +22,28 @@ describe("computeDoubleTaxationDeduction", () => {
     expect(r.deduction).toBe(150);
   });
 
+  it("el tope del convenio va por cobro: el exceso de uno no se compensa con el hueco de otro", () => {
+    // Fija el comportamiento actual (pregunta abierta para el asesor, hallazgo CO2 de la auditoría):
+    // dos cobros de EE. UU. (convenio 15 %), uno retenido al 30 % y otro sin retención. Agregados,
+    // 300 € cabrían en el 15 % de 2.000 €; por cobro, solo se acreditan 150 € y 150 € se reclaman en
+    // origen. El límite del art. 80 se aplica después sobre TODO el íntegro extranjero.
+    const r = computeDoubleTaxationDeduction(
+      [
+        { country: "US", gross: 1000, withholdingOrigin: 300 },
+        { country: "US", gross: 1000, withholdingOrigin: 0 },
+      ],
+      19,
+    );
+    expect(r.countries[0]).toMatchObject({
+      gross: 2000,
+      withholdingOrigin: 300,
+      creditable: 150,
+      excessReclaimable: 150,
+    });
+    expect(r.limit).toBe(380);
+    expect(r.deduction).toBe(150);
+  });
+
   it("el tipo medio efectivo limita la deducción", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 1000, withholdingOrigin: 150 }], 10);
     expect(r.limit).toBe(100);

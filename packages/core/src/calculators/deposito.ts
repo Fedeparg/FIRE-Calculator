@@ -1,5 +1,7 @@
 // Depósito a plazo fijo: capitaliza a la TAE y aplica la retención española sobre los intereses. Core puro.
 
+import { MAX_HORIZON_YEARS } from "../inputs.js";
+
 export interface DepositInput {
   principal: number;
   apr: number;
@@ -23,15 +25,18 @@ export interface DepositResult {
 export function computeDeposit(input: DepositInput): DepositResult {
   const principal = Math.max(0, input.principal || 0);
   const apr = (input.apr || 0) / 100;
-  const years = Math.max(0, input.years || 0);
+  // Sin redondear (un depósito puede ser a 6 meses), pero acotado como el resto de plazos.
+  const years = Math.min(MAX_HORIZON_YEARS, Math.max(0, input.years || 0));
   const withholding = Math.min(100, Math.max(0, input.withholdingRate ?? 19)) / 100;
   const inflation = (input.inflationRate || 0) / 100;
 
-  const finalGross = principal * Math.pow(1 + apr, years);
+  // Con una TAE o una inflación ≤ −100 % el factor se anula (como en `projection.ts`) en vez de dar NaN.
+  const finalGross = principal * Math.pow(Math.max(0, 1 + apr), years);
   const grossInterest = finalGross - principal;
   const withheld = grossInterest * withholding;
   const netInterest = grossInterest - withheld;
   const finalNet = principal + netInterest;
+  const inflationFactor = Math.pow(Math.max(0, 1 + inflation), years);
 
   return {
     finalGross,
@@ -39,6 +44,6 @@ export function computeDeposit(input: DepositInput): DepositResult {
     withheld,
     netInterest,
     finalNet,
-    realFinalNet: finalNet / Math.pow(1 + inflation, years),
+    realFinalNet: inflationFactor > 0 ? finalNet / inflationFactor : finalNet,
   };
 }

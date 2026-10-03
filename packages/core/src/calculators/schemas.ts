@@ -111,7 +111,7 @@ const DEPOSIT = defineCalculator(
       "brutos y netos de la retención, y valor final en poder adquisitivo de hoy.",
     schema: depositSchema,
   },
-  (args) => computeDeposit(args),
+  computeDeposit,
 );
 
 export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
@@ -126,7 +126,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "serie año a año.",
       schema: compoundSchema,
     },
-    (args) => computeCompound(args),
+    computeCompound,
   ),
   "interes-simple": defineCalculator(
     "inversion",
@@ -137,7 +137,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "retención española sobre rendimientos del capital mobiliario.",
       schema: simpleInterestSchema,
     },
-    (args) => computeSimpleInterest(args),
+    computeSimpleInterest,
   ),
   "promediar-acciones": defineCalculator(
     "inversion",
@@ -148,7 +148,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "si se da el precio actual, valor y ganancia/pérdida de la posición.",
       schema: averagePriceSchema,
     },
-    (args) => computeAveragePrice(args),
+    computeAveragePrice,
   ),
   dividendos: defineCalculator(
     "inversion",
@@ -159,7 +159,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "proyección con crecimiento del dividendo.",
       schema: dividendSchema,
     },
-    (args) => computeDividends(args),
+    computeDividends,
   ),
   roi: defineCalculator(
     "inversion",
@@ -170,7 +170,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "rentabilidad anualizada (CAGR).",
       schema: roiSchema,
     },
-    (args) => computeRoi(args),
+    computeRoi,
   ),
   staking: defineCalculator(
     "inversion",
@@ -181,7 +181,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "impuesto sobre las recompensas.",
       schema: stakingSchema,
     },
-    (args) => computeStaking(args),
+    computeStaking,
   ),
 
   // --- FIRE y jubilación ----------------------------------------------------------------------
@@ -196,7 +196,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "contra el objetivo, `get_fire_goal_progress`.",
       schema: fireSchema,
     },
-    (args) => computeFire(args),
+    computeFire,
   ),
   "simulador-montecarlo": defineCalculator(
     "fire",
@@ -234,7 +234,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "términos nominales y reales, con la serie año a año.",
       schema: retirementSchema,
     },
-    (args) => computeRetirement(args),
+    computeRetirement,
   ),
   "presupuesto-mensual": defineCalculator(
     "fire",
@@ -245,7 +245,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "la regla 50/30/20.",
       schema: budgetSchema,
     },
-    (args) => computeBudget(args),
+    computeBudget,
   ),
 
   // --- Hipoteca e inmuebles -------------------------------------------------------------------
@@ -258,7 +258,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "vinculaciones, y cuadro de amortización por años.",
       schema: mortgageSchema,
     },
-    (args) => computeMortgage(args),
+    computeMortgage,
   ),
   "que-hipoteca-me-puedo-permitir": defineCalculator(
     "hipoteca",
@@ -269,7 +269,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "de esfuerzo, indicando qué límite manda (cuota o entrada).",
       schema: affordabilitySchema,
     },
-    (args) => computeAffordability(args),
+    computeAffordability,
   ),
   "hipoteca-vs-alquiler": defineCalculator(
     "hipoteca",
@@ -280,7 +280,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "diferencia durante el horizonte indicado, con la serie año a año.",
       schema: buyVsRentSchema,
     },
-    (args) => computeBuyVsRent(args),
+    computeBuyVsRent,
   ),
   "amortizacion-anticipada": defineCalculator(
     "hipoteca",
@@ -291,7 +291,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "ahorrados y ahorro neto tras la comisión de amortización.",
       schema: earlyRepaymentSchema,
     },
-    (args) => computeEarlyRepayment(args),
+    computeEarlyRepayment,
   ),
   "rentabilidad-alquiler": defineCalculator(
     "hipoteca",
@@ -302,7 +302,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "IBI, comunidad, seguro y mantenimiento.",
       schema: rentalYieldSchema,
     },
-    (args) => computeRentalYield(args),
+    computeRentalYield,
   ),
   "rentabilidad-alquiler-vacacional": defineCalculator(
     "hipoteca",
@@ -313,7 +313,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "ocupación, comisiones y limpiezas.",
       schema: holidayRentalSchema,
     },
-    (args) => computeHolidayRental(args),
+    computeHolidayRental,
   ),
 
   // --- Ahorro ---------------------------------------------------------------------------------
@@ -330,7 +330,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "Social, IRPF estatal y autonómico, mínimos personales y familiares.",
       schema: netSalarySchema,
     },
-    (args) => estimateNetSalary(args),
+    estimateNetSalary,
   ),
   "irpf-nomina": defineCalculator(
     "fiscalidad",
@@ -341,7 +341,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "modelo que el salario neto.",
       schema: netSalarySchema,
     },
-    (args) => computePayrollWithholding(args),
+    computePayrollWithholding,
   ),
   "irpf-autonomos": defineCalculator(
     "fiscalidad",
@@ -352,7 +352,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "ingresos, gastos y cuota de autónomos, con rendimiento neto y tipo efectivo.",
       schema: selfEmployedSchema,
     },
-    (args) => computeSelfEmployedTax(args),
+    computeSelfEmployedTax,
   ),
   "desgravacion-plan-pensiones": defineCalculator(
     "fiscalidad",
@@ -363,7 +363,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "comunidad, aplicando los límites legales de aportación individual y de empresa.",
       schema: pensionReliefSchema,
     },
-    (args) => computePensionRelief(args),
+    computePensionRelief,
   ),
   "impuesto-donaciones": defineCalculator(
     "fiscalidad",
@@ -374,7 +374,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "coeficiente por parentesco y patrimonio previo y la bonificación autonómica indicada.",
       schema: giftTaxSchema,
     },
-    (args) => computeGiftTax(args),
+    computeGiftTax,
   ),
   "impuesto-patrimonio": defineCalculator(
     "fiscalidad",
@@ -385,7 +385,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "vivienda habitual, el mínimo exento y la bonificación autonómica indicada.",
       schema: wealthTaxSchema,
     },
-    (args) => computeWealthTax(args),
+    computeWealthTax,
   ),
 
   // --- Deuda y herramientas -------------------------------------------------------------------
@@ -418,7 +418,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
         "adquisitivo se pierde si el dinero está parado o rinde poco, con la serie año a año.",
       schema: inflationSchema,
     },
-    (args) => computeInflation(args),
+    computeInflation,
   ),
   "salud-financiera": defineCalculator(
     "herramientas",

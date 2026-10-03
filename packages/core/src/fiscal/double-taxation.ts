@@ -1,6 +1,8 @@
 // Deducción por doble imposición internacional (art. 80 LIRPF) sobre rentas del ahorro.
 // Core puro: los avisos son códigos, no texto. Alcance y fuentes: ver ./README.md.
 
+import { nonNegative } from "../inputs.js";
+
 /**
  * Tipo máximo (%) que el convenio de doble imposición permite al país de la fuente sobre
  * dividendos pagados a un residente en España (columna «General», no matriz-filial).
@@ -89,8 +91,6 @@ export interface DoubleTaxationResult {
   readonly limitedByAverageRate: boolean;
   readonly warnings: readonly DoubleTaxationWarning[];
 }
-
-const nonNegative = (n: number): number => (Number.isFinite(n) && n > 0 ? n : 0);
 
 interface Acc {
   gross: number;

@@ -2,6 +2,7 @@
 // aproximación orientativa del cálculo de la AEAT por doble escala. Core puro.
 // Alcance y supuestos: ver ./README.md. Sin comunidad rige la escala supletoria.
 
+import { nonNegative } from "../inputs.js";
 import {
   IRPF_ESTATAL_GENERAL,
   IRPF_GENERAL,
@@ -66,7 +67,7 @@ export interface PersonalCircumstances {
 
 /** Reducción por rendimientos del trabajo (art. 20 LIRPF), nunca negativa; cifras en `brackets.ts`. */
 export function workIncomeReduction(netWorkIncome: number): number {
-  const r = Math.max(0, Number.isFinite(netWorkIncome) ? netWorkIncome : 0);
+  const r = nonNegative(netWorkIncome);
   if (r <= WORK_INCOME_REDUCTION_FULL_LIMIT) return WORK_INCOME_REDUCTION_MAX;
   if (r <= WORK_INCOME_REDUCTION_TIER2_LIMIT) {
     return Math.max(
@@ -140,7 +141,7 @@ export function generalIncomeTax(
   minimum: number = MINIMO_PERSONAL,
   options: GeneralIncomeTaxOptions = {},
 ): number {
-  const base = Math.max(0, Number.isFinite(taxableBase) ? taxableBase : 0);
+  const base = nonNegative(taxableBase);
   const stateMinimum = Math.max(0, minimum);
 
   if (options.region === undefined) {

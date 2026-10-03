@@ -9,6 +9,14 @@ asesoramiento fiscal.
 Escalas oficiales, constantes del rendimiento del trabajo y motor de tramos
 progresivos. Es la única fuente de verdad de los tipos impositivos.
 
+- **Revisión anual**: `FISCAL_REVIEW_BY` marca cuándo revisar las cifras de
+  `FISCAL_YEAR` (escalas, mínimos, Seguridad Social, `withholding-rates.ts`). Desde
+  esa fecha falla un test de `brackets.test.ts`: es un recordatorio, no una caducidad.
+- **Patrimonio, Donaciones y planes de pensiones**: el mínimo exento y la exención de
+  la vivienda (Ley 19/1991), los umbrales y coeficientes por parentesco del ISD (Ley
+  29/1987, art. 22.2) y el tope del 30 % de los planes (art. 52 LIRPF) también viven
+  aquí; las calculadoras solo los importan.
+
 - **Escala estatal general** (art. 63.1.1º LIRPF): se aplica tal cual. La ley ya
   la da dividida por dos (tipos 9,50 a 24,50); multiplicarla por 0,5 la dividiría
   dos veces. Fuente: AEAT, Manual práctico de Renta 2025, "Gravamen estatal".

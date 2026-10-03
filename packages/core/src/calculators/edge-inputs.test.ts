@@ -1,6 +1,7 @@
 // Política de entradas numéricas de las calculadoras (ver `../inputs.ts`), verificada
-// en tabla sobre TODAS ellas: con cada campo numérico a 0, negativo, NaN, ±Infinity, y con todos a
-// la vez, ninguna lanza; y con entradas finitas (0 / negativas) todas las cifras de salida son finitas.
+// en tabla sobre TODAS ellas: con cada campo numérico a 0, −1, −100 (un −100 % anula los factores
+// de crecimiento), NaN, ±Infinity, y con todos a la vez, ninguna lanza; y con entradas finitas
+// (0 / negativas) todas las cifras de salida son finitas.
 
 import { describe, expect, it } from "vitest";
 import { computeEarlyRepayment } from "./amortizacion-anticipada.js";
@@ -34,7 +35,7 @@ interface Case {
   /** Entrada válida con TODOS los campos numéricos opcionales rellenos, para poder variar cada uno. */
   baseline: unknown;
   run: (input: never) => unknown;
-  /** Rutas de salida que valen `Infinity` a propósito (p. ej. la deuda que nunca se paga). */
+  /** Rutas de salida no finitas a propósito (la deuda que nunca se paga, una tasa sin casos). */
   allowInfinity?: readonly string[];
 }
 
@@ -91,6 +92,9 @@ const CASES: readonly Case[] = [
       withdrawalRate: 4,
       retirementYears: 30,
     },
+    // Si ninguna vida llega a FIRE (p. ej. rentabilidad −100 %), la supervivencia no tiene respuesta:
+    // es `NaN` a propósito y la web la pinta «—» (ver `fire-montecarlo.test.ts`).
+    allowInfinity: ["survivalRate"],
   },
   {
     name: "fire",
@@ -285,7 +289,7 @@ function nonFinitePaths(value: unknown, prefix = ""): string[] {
   return [];
 }
 
-const FINITE_EDGES = [0, -1] as const;
+const FINITE_EDGES = [0, -1, -100] as const;
 const NON_FINITE_EDGES = [Number.NaN, Infinity, -Infinity] as const;
 
 describe("detector de no finitos", () => {

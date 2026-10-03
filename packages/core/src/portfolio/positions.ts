@@ -1,6 +1,7 @@
 // Lógica pura de la pestaña Posiciones (valoración, filtro, búsqueda), compartida por la lista y el detalle para mostrar la misma cifra.
 
 import { convertCurrency } from "../fx.js";
+import { valueInDisplay } from "./aggregate.js";
 
 export interface ValuablePosition {
   quantity: number;
@@ -31,9 +32,7 @@ export function valuePosition(
 ): PositionValuation {
   const invested = position.quantity * position.avgPrice;
   const marketValue =
-    price === undefined
-      ? null
-      : convertCurrency(position.quantity * price.close, price.currency, position.currency, rates);
+    price === undefined ? null : (valueInDisplay(position, price, rates, position.currency)?.marketValue ?? null);
   const pnlAbs = marketValue === null ? null : marketValue - invested;
   const pnlPct = pnlAbs !== null && invested > 0 ? (pnlAbs / invested) * 100 : null;
   return { invested, marketValue, pnlAbs, pnlPct };

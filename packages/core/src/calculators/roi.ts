@@ -33,7 +33,9 @@ export function computeRoi(input: RoiInput): RoiResult {
 
   let annualized: number | null = null;
   if (input.years && input.years > 0 && invested > 0 && final + income > 0) {
-    annualized = (Math.pow((final + income) / invested, 1 / input.years) - 1) * 100;
+    const rate = (Math.pow((final + income) / invested, 1 / input.years) - 1) * 100;
+    // Un plazo minúsculo (1e-300 años) desborda la potencia: sin respuesta, como sin plazo.
+    annualized = Number.isFinite(rate) ? rate : null;
   }
 
   // El impuesto solo grava la ganancia positiva.

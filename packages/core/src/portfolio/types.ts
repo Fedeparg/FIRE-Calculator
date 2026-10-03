@@ -60,12 +60,16 @@ export type PositionLot = {
   id: string;
   positionId: string;
   kind: PositionLotKind;
+  /** Participaciones; siempre > 0 (el signo lo da `kind`). */
   quantity: number;
+  /** Precio unitario de la operación. */
   price: number;
   /** Comisiones y gastos: no entran en el precio medio, sí en la fiscalidad. */
   fees: number;
+  /** Fecha de la operación (`YYYY-MM-DD`). */
   tradedAt: string;
   note: string | null;
+  /** Instante de alta en la BD (ISO); desempata operaciones del mismo día. */
   createdAt: string;
 };
 

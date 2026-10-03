@@ -6,6 +6,7 @@
 // columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
+import { compareStrings } from "../compare.js";
 import { addDays } from "../dates.js";
 import { resolveFromBroker } from "../fiscal/dividend-resolution.js";
 import { CsvSyntaxError, parseCsv, type CsvRecord } from "./csv.js";
@@ -355,11 +356,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
   }
 
   // Estable: ante el mismo instante, el orden del fichero.
-  parsed.sort(
-    (a, b) =>
-      (a.trade.executedAt < b.trade.executedAt ? -1 : a.trade.executedAt > b.trade.executedAt ? 1 : 0) ||
-      a.line - b.line,
-  );
+  parsed.sort((a, b) => compareStrings(a.trade.executedAt, b.trade.executedAt) || a.line - b.line);
   const trades = parsed.map(({ trade }) => trade);
   skipped.sort((a, b) => a.line - b.line);
 
@@ -541,7 +538,7 @@ function resolveIncome(
     });
   }
 
-  income.sort((a, b) => (a.item.paidAt < b.item.paidAt ? -1 : a.item.paidAt > b.item.paidAt ? 1 : a.line - b.line));
+  income.sort((a, b) => compareStrings(a.item.paidAt, b.item.paidAt) || a.line - b.line);
   return { income: income.map(({ item }) => item), buysWithBenefitTax };
 }
 
@@ -585,7 +582,7 @@ function resolveBonusIssues(
     seenIds.add(row.transactionId);
     valid.push({ row, shares, executedAt });
   }
-  valid.sort((a, b) => (a.executedAt < b.executedAt ? -1 : a.executedAt > b.executedAt ? 1 : a.row.line - b.row.line));
+  valid.sort((a, b) => compareStrings(a.executedAt, b.executedAt) || a.row.line - b.row.line);
 
   const issued: Valid[] = [];
   for (const entry of valid) {

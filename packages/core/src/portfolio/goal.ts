@@ -4,6 +4,7 @@
  * el progreso. Agnóstico de divisa: `annualExpenses`, `contribution` y `currentValue` van en la misma.
  */
 
+import { finiteOr, nonNegative } from "../inputs.js";
 import { computeFire, FIRE_SEARCH_MAX_YEARS } from "../calculators/fire.js";
 import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "../calculators/fire-montecarlo.js";
 import { PERIODS_PER_YEAR, periodRateFromEffective, project, type Frequency } from "../projection.js";
@@ -79,7 +80,7 @@ export const GOAL_MODES: readonly GoalMode[] = ["fire", "amount"];
 
 /** Modo de los `inputs` de un escenario; sin la clave (escenarios antiguos) es `fire`. */
 export function goalModeFromInputs(inputs: unknown): GoalMode {
-  const mode = typeof inputs === "object" && inputs !== null ? (inputs as Record<string, unknown>).goalMode : undefined;
+  const mode = typeof inputs === "object" && inputs !== null && "goalMode" in inputs ? inputs.goalMode : undefined;
   return mode === "amount" ? "amount" : "fire";
 }
 
@@ -112,12 +113,12 @@ export interface AmountGoalResult extends PortfolioGoalResult {
  * P en `VF = C·(1+i)^n + P·((1+i)^n − 1) / i` (con i = 0, P·n).
  */
 export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
-  const current = Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
-  const target = Number.isFinite(input.targetAmount) && input.targetAmount > 0 ? input.targetAmount : 0;
-  const deadlineYears = Math.max(0, Math.round(Number.isFinite(input.years) ? input.years : 0));
+  const current = nonNegative(input.currentValue);
+  const target = nonNegative(input.targetAmount);
+  const deadlineYears = Math.max(0, Math.round(finiteOr(input.years, 0)));
   const reached = current >= target;
 
-  const periodsPerYear = PERIODS_PER_YEAR[input.frequency] ?? 12;
+  const periodsPerYear = PERIODS_PER_YEAR[input.frequency];
   const periodRate = periodRateFromEffective(input.annualReturn || 0, periodsPerYear);
   const periods = deadlineYears * periodsPerYear;
   const growth = (1 + periodRate) ** periods;
@@ -225,7 +226,7 @@ export interface PortfolioGoalSimulationInput extends PortfolioGoalInput {
  * total anual. También la usa el enlace "Abrir en el simulador".
  */
 export function monthlyContribution(contribution: number, frequency: Frequency): number {
-  const periodsPerYear = PERIODS_PER_YEAR[frequency] ?? 12;
+  const periodsPerYear = PERIODS_PER_YEAR[frequency];
   return (contribution * periodsPerYear) / 12;
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { computeMortgage } from "./calculators/hipoteca.js";
 import { estimateNetSalary } from "./fiscal/irpf.js";
-import { MAX_HORIZON_YEARS, clampYears } from "./inputs.js";
+import { MAX_HORIZON_YEARS, clampYears, finiteOr, nonNegative } from "./inputs.js";
 import { project } from "./projection.js";
 
 describe("clampYears", () => {
@@ -42,5 +42,25 @@ describe("personas a cargo infinitas no cuelgan el mínimo personal", () => {
       ascendants: Infinity,
     });
     expect(Number.isFinite(r.netPerPayment)).toBe(true);
+  });
+});
+
+describe("finiteOr", () => {
+  it("deja pasar los finitos y sustituye NaN y ±Infinity", () => {
+    expect(finiteOr(-3.5, 7)).toBe(-3.5);
+    expect(finiteOr(0, 7)).toBe(0);
+    expect(finiteOr(Number.NaN, 7)).toBe(7);
+    expect(finiteOr(Infinity, 7)).toBe(7);
+    expect(finiteOr(-Infinity, 7)).toBe(7);
+  });
+});
+
+describe("nonNegative", () => {
+  it("deja los positivos finitos y convierte lo demás en 0", () => {
+    expect(nonNegative(12.5)).toBe(12.5);
+    expect(nonNegative(-1)).toBe(0);
+    expect(Object.is(nonNegative(-0), 0)).toBe(true);
+    expect(nonNegative(Number.NaN)).toBe(0);
+    expect(nonNegative(Infinity)).toBe(0);
   });
 });

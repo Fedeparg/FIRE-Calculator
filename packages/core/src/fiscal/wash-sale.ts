@@ -3,6 +3,7 @@
 // posteriores. Core puro, sin conversión de divisas: trabaja en la divisa de la posición.
 // Criterios, supuestos y fuentes: ver ./README.md (sección `wash-sale.ts`).
 
+import { QUANTITY_EPSILON } from "../inputs.js";
 import { addMonths } from "../dates.js";
 import { compareTradeLots, walkLots, type LotWalk, type TradeLot } from "./plusvalias.js";
 
@@ -27,9 +28,6 @@ export interface SaleWashSale {
   /** Desglose de `integratedLoss` por venta de origen. */
   integratedFrom: WashSaleIntegration[];
 }
-
-/** Tolerancia: las cantidades tienen 6 decimales, un resto menor es ruido binario. */
-const QUANTITY_EPSILON = 1e-9;
 
 /** Estado de una compra: parte libre (que aún no bloquea ninguna pérdida) y pérdidas que bloquea. */
 interface PurchaseState {

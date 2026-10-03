@@ -2,6 +2,7 @@
 // euros y lo reexpresa con las tasas FX de cada día; aquí solo se recorta, se descartan los puntos no
 // convertibles y se resume el periodo.
 
+import { compareStrings } from "../compare.js";
 import type { HistoryPointDto } from "./types.js";
 
 /** Punto listo para pintar. Es un `type` (no `interface`) para tener firma de índice implícita: `TimeSeriesChart` recibe `Record<string, …>`. */
@@ -70,7 +71,7 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
   }
 
   // ordenar aquí evita depender del orden del backend
-  usable.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  usable.sort((a, b) => compareStrings(a.date, b.date));
 
   const first = usable[0];
   const last = usable[usable.length - 1];
@@ -116,12 +117,12 @@ export interface PeriodGain {
  */
 export function gainSince(points: readonly HistoryPointDto[], from: string): PeriodGain | null {
   const usable = points
-    .filter((p) => p.date >= from && p.pnlAbs !== null && Number.isFinite(p.pnlAbs))
-    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    .filter((p): p is HistoryPointDto & { pnlAbs: number } => p.date >= from && Number.isFinite(p.pnlAbs))
+    .sort((a, b) => compareStrings(a.date, b.date));
   if (usable.length < MIN_HISTORY_POINTS) return null;
   const first = usable[0];
   const last = usable[usable.length - 1];
-  return { gain: last.pnlAbs! - first.pnlAbs!, since: first.date, estimated: first.estimated };
+  return { gain: last.pnlAbs - first.pnlAbs, since: first.date, estimated: first.estimated };
 }
 
 export interface LiveValuation {
