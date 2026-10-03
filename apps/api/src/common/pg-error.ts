@@ -6,23 +6,23 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
-/** SQLSTATE de Postgres que tienen traducción HTTP propia. */
+/** Postgres SQLSTATEs that have their own HTTP translation. */
 export const PG_FOREIGN_KEY_VIOLATION = '23503';
 export const PG_UNIQUE_VIOLATION = '23505';
 const PG_NUMERIC_VALUE_OUT_OF_RANGE = '22003';
 const PG_SERIALIZATION_FAILURE = '40001';
 const PG_DEADLOCK_DETECTED = '40P01';
 
-/** Lo que interesa de un error de Postgres (postgres-js): el SQLSTATE y la restricción violada. */
+/** What matters from a Postgres error (postgres-js): the SQLSTATE and the violated constraint. */
 export type PgErrorInfo = { code: string; constraint: string | null };
 
 /**
- * Busca el error de Postgres en la cadena de `cause`: Drizzle envuelve el error del driver
- * (`DrizzleQueryError`), así que el `code` SQLSTATE no está en el error de primer nivel.
+ * Looks for the Postgres error along the `cause` chain: Drizzle wraps the driver error
+ * (`DrizzleQueryError`), so the SQLSTATE `code` is not on the top-level error.
  */
 export function findPgError(error: unknown): PgErrorInfo | null {
   let current: unknown = error;
-  // Acotado: una cadena de `cause` circular no debe colgar el proceso.
+  // Bounded: a circular `cause` chain must not hang the process.
   for (let depth = 0; depth < 10 && typeof current === 'object' && current !== null; depth++) {
     const { code, constraint_name: constraint } = current as { code?: unknown; constraint_name?: unknown };
     if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) {
@@ -33,23 +33,23 @@ export function findPgError(error: unknown): PgErrorInfo | null {
   return null;
 }
 
-/** ¿Es una violación de este SQLSTATE (en cualquier nivel de la cadena de `cause`)? */
+/** Is it a violation of this SQLSTATE (at any level of the `cause` chain)? */
 export function isPgError(error: unknown, code: string): boolean {
   return findPgError(error)?.code === code;
 }
 
 /**
- * Traducción a HTTP de los errores de Postgres que no son fallos del servidor sino de la
- * petición o de la concurrencia. `null` = no tiene traducción (sigue siendo un 500).
+ * HTTP translation of the Postgres errors that are not server failures but caused by the
+ * request or by concurrency. `null` = no translation (it stays a 500).
  *
- * - 23503 (FK): si la FK es la del usuario (`*_user_id_users_id_fk`), el JWT es válido pero el
- *   usuario ya no existe (cuenta borrada): sesión muerta → 401. Otra FK (p. ej. la posición de un
- *   lote borrada a la vez) es un conflicto con el estado actual → 409.
- * - 23505 (único): el recurso ya existe (dos altas simultáneas) → 409.
- * - 22003 (numérico fuera de rango): un importe que no cabe en la columna → 400.
- * - 40001/40P01 (serialización, interbloqueo): transitorio, se puede reintentar → 503.
+ * - 23503 (FK): if the FK is the user one (`*_user_id_users_id_fk`), the JWT is valid but the
+ *   user no longer exists (deleted account): dead session → 401. Any other FK (e.g. a lot's
+ *   position deleted at the same time) is a conflict with the current state → 409.
+ * - 23505 (unique): the resource already exists (two concurrent creations) → 409.
+ * - 22003 (numeric value out of range): an amount that does not fit in the column → 400.
+ * - 40001/40P01 (serialisation failure, deadlock): transient, can be retried → 503.
  *
- * Los mensajes no incluyen el detalle de Postgres (lleva valores de la fila).
+ * The messages do not include the Postgres detail (it carries row values).
  */
 export function pgErrorToHttp(error: unknown): HttpException | null {
   const pg = findPgError(error);

@@ -1,8 +1,8 @@
 /**
- * Caché en memoria con tamaño máximo (expulsa la entrada usada hace más tiempo) y caducidad por
- * entrada. Se apoya en que un `Map` conserva el orden de inserción: reinsertar al leer mueve la
- * clave al final, así que la primera clave es siempre la menos reciente. Por proceso, sin
- * coordinación entre réplicas (la API corre en una sola).
+ * In-memory cache with a maximum size (evicts the least recently used entry) and per-entry expiry.
+ * It relies on a `Map` keeping insertion order: re-inserting on read moves the key to the end, so
+ * the first key is always the least recent. Per process, with no coordination between replicas
+ * (the API runs as a single one).
  */
 export class LruCache<K, V> {
   private readonly entries = new Map<K, { value: V; expiresAt: number }>();

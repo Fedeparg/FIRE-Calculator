@@ -5,12 +5,12 @@ import { DomainError, domainErrorToHttp } from './domain-error.js';
 import { pgErrorToHttp } from './pg-error.js';
 
 /**
- * Filtro global (registrado con `APP_FILTER`): traduce a su respuesta HTTP, en vez de un 500,
- * los errores que tienen significado para el cliente pero no nacen como `HttpException`:
- *  - los de dominio (`DomainError`, p. ej. un lote que deja la cantidad en negativo) → 400;
- *  - los de Postgres (FK, único, rango, concurrencia; ver `pgErrorToHttp`).
- * Las `HttpException` y cualquier otro error siguen el camino por defecto de Nest
- * (`BaseExceptionFilter`), así que las respuestas ya existentes no cambian.
+ * Global filter (registered with `APP_FILTER`): translates into their HTTP response, instead of a
+ * 500, the errors that mean something to the client but are not born as an `HttpException`:
+ *  - domain errors (`DomainError`, e.g. a lot that leaves the quantity negative) → 400;
+ *  - Postgres errors (FK, unique, range, concurrency; see `pgErrorToHttp`).
+ * `HttpException`s and any other error follow Nest's default path (`BaseExceptionFilter`), so
+ * existing responses do not change.
  */
 @Catch()
 export class ErrorTranslationFilter extends BaseExceptionFilter {

@@ -1,41 +1,41 @@
 import { errorMessage } from './errors.js';
 
-/** Pausa de `ms` milisegundos. */
+/** Waits for `ms` milliseconds. */
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Reintentos con espera lineal (`baseMs × intento`), como los que ya usaba el cliente de Yahoo. */
+/** Retries with linear backoff (`baseMs × attempt`), like the ones the Yahoo client already used. */
 export interface RetryPolicy {
-  /** Intentos en total, el primero incluido. */
+  /** Total attempts, including the first one. */
   max: number;
   baseMs: number;
-  /** ¿Se reintenta esta respuesta HTTP? (p. ej. 429 y 5xx). */
+  /** Should this HTTP response be retried? (e.g. 429 and 5xx). */
   retryOn: (status: number) => boolean;
 }
 
 export interface RequestOptions {
-  /** Tope de cada intento, cuerpo incluido. */
+  /** Time limit of each attempt, body included. */
   timeoutMs: number;
   method?: 'GET' | 'POST';
   headers?: Record<string, string>;
   body?: string;
   /**
-   * Sin política, un solo intento. Con política, también se reintentan los fallos de red, los
-   * timeouts y un cuerpo ilegible.
+   * Without a policy, a single attempt. With one, network failures, timeouts and an unreadable
+   * body are retried too.
    */
   retry?: RetryPolicy;
   /**
-   * Presupuesto externo (p. ej. el de un lote entero, `AbortSignal.timeout`): si se agota, el
-   * intento en curso se aborta y no se reintenta más.
+   * External time budget (e.g. that of a whole batch, `AbortSignal.timeout`): once it runs out, the
+   * current attempt is aborted and nothing more is retried.
    */
   signal?: AbortSignal;
 }
 
 /**
- * Resultado de una petición a un servicio externo. `ok: false` lleva el `status` si hubo
- * respuesta HTTP (no 2xx) y un texto para el log; sin `status`, falló la red, el timeout o el
- * cuerpo. Nunca lanza: cada proveedor decide cómo degradar.
+ * Result of a request to an external service. `ok: false` carries the `status` if there was an
+ * HTTP response (non-2xx) and a text for the log; without `status`, the network, the timeout or the
+ * body failed. Never throws: each provider decides how to degrade.
  */
 export type HttpResult<T> = { ok: true; status: number; body: T } | { ok: false; status?: number; error: string };
 
@@ -45,11 +45,11 @@ async function request<T>(
   read: (response: Response) => Promise<T>,
 ): Promise<HttpResult<T>> {
   const attempts = options.retry?.max ?? 1;
-  let last: HttpResult<T> = { ok: false, error: 'sin intentos' };
+  let last: HttpResult<T> = { ok: false, error: 'no attempts' };
   for (let attempt = 1; attempt <= attempts; attempt++) {
     if (attempt > 1 && options.retry) await sleep(options.retry.baseMs * (attempt - 1));
     if (options.signal?.aborted) {
-      return { ok: false, error: 'presupuesto de tiempo agotado' };
+      return { ok: false, error: 'time budget exhausted' };
     }
     const timeout = AbortSignal.timeout(options.timeoutMs);
     try {
@@ -73,12 +73,12 @@ async function request<T>(
   return last;
 }
 
-/** Petición con timeout (y reintentos opcionales) cuyo cuerpo es JSON, sin tipar. */
+/** Request with a timeout (and optional retries) whose body is untyped JSON. */
 export function fetchJson(url: string, options: RequestOptions): Promise<HttpResult<unknown>> {
   return request<unknown>(url, options, (response) => response.json());
 }
 
-/** Igual que `fetchJson`, con el cuerpo como texto (p. ej. el CSV del BCE). */
+/** Same as `fetchJson`, with the body as text (e.g. the ECB CSV). */
 export function fetchText(url: string, options: RequestOptions): Promise<HttpResult<string>> {
   return request(url, options, (response) => response.text());
 }

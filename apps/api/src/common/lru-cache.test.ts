@@ -7,7 +7,7 @@ describe('LruCache', () => {
     vi.useRealTimers();
   });
 
-  it('devuelve lo guardado y undefined si no está', () => {
+  it('returns what was stored and undefined when missing', () => {
     const cache = new LruCache<string, number>(2, 1_000);
     cache.set('a', 1);
 
@@ -15,11 +15,11 @@ describe('LruCache', () => {
     expect(cache.get('b')).toBeUndefined();
   });
 
-  it('al llenarse expulsa la entrada usada hace más tiempo, no la insertada antes', () => {
+  it('when full, evicts the least recently used entry, not the first inserted', () => {
     const cache = new LruCache<string, number>(2, 1_000);
     cache.set('a', 1);
     cache.set('b', 2);
-    cache.get('a'); // `a` pasa a ser la más reciente
+    cache.get('a'); // `a` becomes the most recent
     cache.set('c', 3);
 
     expect(cache.get('a')).toBe(1);
@@ -27,7 +27,7 @@ describe('LruCache', () => {
     expect(cache.get('c')).toBe(3);
   });
 
-  it('caduca las entradas pasado el TTL', () => {
+  it('expires entries after the TTL', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(0);
     const cache = new LruCache<string, number>(2, 1_000);
