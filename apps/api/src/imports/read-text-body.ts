@@ -2,14 +2,14 @@ import { BadRequestException, PayloadTooLargeException, UnsupportedMediaTypeExce
 import type { Request } from 'express';
 
 /**
- * Lee el cuerpo `text/csv` como UTF-8 con un tope de bytes, cortando en stream (413) en
- * cuanto se supera.
+ * Reads the `text/csv` body as UTF-8 with a byte cap, cutting the stream off (413) as soon as
+ * it is exceeded.
  *
- * Por qué ni multipart ni JSON: los parsers globales de Nest ignoran `text/csv`, así que el
- * tope se aplica solo en esta ruta sin tocar `main.ts`; multipart exigiría `multer` y su
- * superficie de ataque para un único fichero de texto; un JSON obligaría a escapar y cargar
- * hasta 2 MB en un objeto antes de validar. Además `text/csv` no es un tipo "simple" de CORS:
- * un sitio ajeno no puede lanzar la petición con la cookie sin un preflight que la API no autoriza.
+ * Why neither multipart nor JSON: Nest's global parsers ignore `text/csv`, so the cap applies
+ * only to this route without touching `main.ts`; multipart would require `multer` and its attack
+ * surface for a single text file; JSON would force escaping and loading up to 2 MB into an object
+ * before validating. Also, `text/csv` is not a CORS "simple" type: a third-party site cannot
+ * send the request with the cookie without a preflight the API does not authorize.
  */
 export async function readCsvBody(request: Request, maxBytes: number): Promise<string> {
   const contentType = request.headers['content-type'] ?? '';

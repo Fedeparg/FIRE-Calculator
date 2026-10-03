@@ -19,10 +19,10 @@ import { TRADE_REPUBLIC_BROKER } from './trade-republic-import.model.js';
 import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
 import { stub } from '../../test/factories.js';
 
-/** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */
+/** Resolution with market data has its own test; here it does nothing. */
 const dividendsStub = stub<DividendResolutionService>({ resolvePending: () => Promise.resolve(0) });
 
-/** El grafo de la importación tal y como lo cablea Nest, con precios y dividendos en no-op. */
+/** The import graph as Nest wires it, with prices and dividends as no-ops. */
 function buildImportsService(db: Database, events: EventEmitter2 = new EventEmitter2()): ImportsService {
   const income = new IncomeService(db);
   return new ImportsService(
@@ -41,7 +41,7 @@ const DERIVATIVE = 'ZZ00DERIV003';
 
 let counter = 0;
 
-/** Una fila de operación sintética. `day` (1-28) fija fecha e instante; el id es único. */
+/** A synthetic trade row. `day` (1-28) sets the date and instant; the id is unique. */
 function trade(
   kind: 'BUY' | 'SELL',
   isin: string,
@@ -75,7 +75,7 @@ function csv(...rows: string[]): string {
   return `${[header, ...rows].join('\n')}\n`;
 }
 
-describe('ImportsService (integración con Postgres)', () => {
+describe('ImportsService (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: ImportsService;
@@ -105,7 +105,7 @@ describe('ImportsService (integración con Postgres)', () => {
       .orderBy(asc(positionLots.tradedAt), asc(positionLots.createdAt));
   }
 
-  it('crea la posición con ticker = ISIN, bróker, divisa EUR y lotes con comisiones e id externo', async () => {
+  it('creates the position with ticker = ISIN, broker, EUR currency and lots with fees and external id', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const result = await service.confirm(
       userId,
@@ -129,11 +129,11 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(lots).toHaveLength(2);
     expect(lots[0]).toMatchObject({ kind: 'buy', fees: '1.000000', tradedAt: '2025-03-03' });
     expect(itemAt(lots, 0).externalId).toMatch(/^trade-republic:00000000-/);
-    // Los lotes manuales no llevan id externo: aquí solo hay importados.
+    // Manual lots carry no external id: here there are only imported ones.
     expect(lots.every((lot) => lot.externalId !== null)).toBe(true);
   });
 
-  it('amplía una posición existente de Trade Republic en vez de fallar por duplicada', async () => {
+  it('extends an existing Trade Republic position instead of failing as a duplicate', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const existing = firstItem(
       await db
@@ -152,7 +152,7 @@ describe('ImportsService (integración con Postgres)', () => {
     await db.update(positions).set({ quantity: '1', avgPrice: '90' }).where(eq(positions.id, existing.id));
 
     const plan = await service.preview(userId, csv(trade('BUY', ETF, '1', '110', 3)));
-    // Coste medio con los precios de ejecución: (90 + 110) / 2.
+    // Average cost with the execution prices: (90 + 110) / 2.
     expect(plan.positions[0]).toMatchObject({
       action: 'extend',
       currentQuantity: 1,
@@ -168,7 +168,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(all[0]).toMatchObject({ id: existing.id, quantity: '2.000000', avgPrice: '100.000000' });
   });
 
-  it('importar sobre una posición existente emite LOT_CHANGED_EVENT (y sobre una nueva, no)', async () => {
+  it('importing into an existing position emits LOT_CHANGED_EVENT (and into a new one, does not)', async () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
@@ -183,12 +183,12 @@ describe('ImportsService (integración con Postgres)', () => {
     const position = firstItem(await positionsOf(userId));
     expect(emitted).toEqual([{ userId, positionId: position.id }]);
 
-    // Reimportar sin lotes nuevos no emite.
+    // Re-importing with no new lots does not emit.
     await svc.confirm(userId, csv(second));
     expect(emitted).toHaveLength(1);
   });
 
-  it('una venta parcial deja el precio medio y la cantidad restante correctos', async () => {
+  it('a partial sale leaves the correct average price and remaining quantity', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.confirm(
       userId,
@@ -199,16 +199,16 @@ describe('ImportsService (integración con Postgres)', () => {
         trade('BUY', STOCK, '5', '100', 6),
       ),
     );
-    // Coste medio móvil (la semántica de `lot-aggregate.ts`): 20 a 60 de media; la venta de 5
-    // retira coste al medio (no cambia) y la última compra lo recalcula: (900 + 500) / 20.
+    // Moving average cost (the semantics of `lot-aggregate.ts`): 20 at an average of 60; the sale
+    // of 5 removes cost at the average (unchanged) and the last buy recomputes it: (900 + 500) / 20.
     const [position] = await positionsOf(userId);
     expect(position).toMatchObject({ quantity: '20.000000', avgPrice: '70.000000' });
   });
 
-  it('respeta el orden de ejecución dentro del mismo día', async () => {
+  it('respects the execution order within the same day', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    // La venta va ANTES de la compra el mismo día solo si su instante es anterior: con un orden
-    // de inserción arbitrario daría cantidad negativa.
+    // The sale goes BEFORE the same-day buy only if its instant is earlier: an arbitrary insertion
+    // order would produce a negative quantity.
     const result = await service.confirm(
       userId,
       csv(
@@ -222,7 +222,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(position).toMatchObject({ quantity: '3.000000', avgPrice: '11.000000' });
   });
 
-  it('reimportar el mismo fichero no cambia nada', async () => {
+  it('re-importing the same file changes nothing', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const file = csv(trade('BUY', ETF, '2', '100', 3), trade('SELL', ETF, '1', '120', 4));
 
@@ -239,7 +239,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(plan.positions[0]).toMatchObject({ newBuys: 0, newSells: 0, duplicates: 2 });
   });
 
-  it('importa solo las operaciones nuevas de un fichero que amplía el anterior', async () => {
+  it('imports only the new trades of a file that extends the previous one', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const first = trade('BUY', ETF, '2', '100', 3);
     await service.confirm(userId, csv(first));
@@ -250,11 +250,11 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(position.quantity).toBe('3.000000');
   });
 
-  it('revierte solo la posición cuya cantidad quedaría negativa y confirma el resto', async () => {
+  it('rolls back only the position whose quantity would go negative and confirms the rest', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const file = csv(
       trade('BUY', ETF, '2', '100', 3),
-      trade('SELL', STOCK, '5', '10', 4), // vende sin haber comprado
+      trade('SELL', STOCK, '5', '10', 4), // sells without having bought
       trade('BUY', STOCK, '1', '10', 5),
     );
 
@@ -271,18 +271,18 @@ describe('ImportsService (integración con Postgres)', () => {
     });
     expect(result.positions.find((p) => p.isin === ETF)?.status).toBe('created');
 
-    // La posición fallida no deja nada (ni la posición ni sus lotes).
+    // The failed position leaves nothing behind (neither the position nor its lots).
     expect((await positionsOf(userId)).map((p) => p.ticker)).toEqual([ETF]);
     expect(await lotsOf(userId)).toHaveLength(1);
   });
 
-  it('aísla a los usuarios: mismo fichero, cada uno con sus lotes', async () => {
+  it('isolates users: same file, each with their own lots', async () => {
     const userA = await insertUser(db, 'a@example.com');
     const userB = await insertUser(db, 'b@example.com');
     const file = csv(trade('BUY', ETF, '2', '100', 3));
 
     await service.confirm(userA, file);
-    // Para B el fichero es nuevo aunque A ya haya importado esos mismos ids.
+    // For B the file is new even though A already imported those same ids.
     const plan = await service.preview(userB, file);
     expect(plan.positions[0]).toMatchObject({ action: 'create', duplicates: 0, newBuys: 1 });
     const resultB = await service.confirm(userB, file);
@@ -293,7 +293,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(firstItem(await positionsOf(userB)).quantity).toBe('2.000000');
   });
 
-  it('la vista previa no escribe nada y marca los derivados como "precio posiblemente no disponible"', async () => {
+  it('the preview writes nothing and flags derivatives as "price possibly unavailable"', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const plan = await service.preview(
       userId,
@@ -316,7 +316,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(await lotsOf(userId)).toEqual([]);
   });
 
-  it('guarda los derivados con la marca isDerivative y no el resto', async () => {
+  it('stores derivatives with the isDerivative flag and not the rest', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.confirm(userId, csv(trade('BUY', DERIVATIVE, '100', '1.23', 3), trade('BUY', ETF, '1', '100', 3)));
     const rows = await positionsOf(userId);
@@ -324,10 +324,10 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(rows.find((p) => p.ticker === ETF)?.isDerivative).toBe(false);
   });
 
-  it('un exceso de redondeo al vender todo deja la posición en 0 en vez de fallar', async () => {
+  it('a rounding excess when selling everything leaves the position at 0 instead of failing', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    // 0.0000004 + 0.0000004 se guardan como 0 + 0, pero 1.0000004 + 1.0000004 = 2.000000 (6 dp)
-    // mientras la venta de 2.0000009 redondea a 2.000001: 1 unidad de más, dentro de la tolerancia.
+    // 0.0000004 + 0.0000004 are stored as 0 + 0, but 1.0000004 + 1.0000004 = 2.000000 (6 dp)
+    // while the sale of 2.0000009 rounds to 2.000001: 1 unit too many, within the tolerance.
     const result = await service.confirm(
       userId,
       csv(
@@ -340,7 +340,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(firstItem(await positionsOf(userId)).quantity).toBe('0.000000');
   });
 
-  it('resume las filas descartadas por motivo y propaga los avisos, solo con recuentos', async () => {
+  it('summarizes skipped rows by reason and passes on the warnings, with counts only', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const plan = await service.preview(
       userId,
@@ -358,7 +358,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(plan.warnings).toEqual([{ code: 'trade_tax_ignored', count: 1 }]);
   });
 
-  it('rechaza ficheros que no son de Trade Republic con un código estable', async () => {
+  it('rejects non-Trade Republic files with a stable code', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const error = await service.preview(userId, 'a,b\n1,2\n').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(BadRequestException);
@@ -366,7 +366,7 @@ describe('ImportsService (integración con Postgres)', () => {
   });
 });
 
-describe('ImportsService — cobros (integración con Postgres)', () => {
+describe('ImportsService — income payments (Postgres integration)', () => {
   let db: Database;
   let close: () => Promise<void>;
   let service: ImportsService;
@@ -395,7 +395,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
       tax,
     });
 
-  it('la vista previa cuenta los cobros sin escribirlos y la confirmación los guarda una sola vez', async () => {
+  it('the preview counts payments without writing them and the confirm stores them only once', async () => {
     const userId = await insertUser(db, 'a@example.com');
     const file = csv(
       interest('2025-01-01', '1.48', ''),
@@ -425,7 +425,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
     expect(await db.select().from(incomeEvents)).toHaveLength(2);
   });
 
-  it('enlaza un dividendo con la posición de Trade Republic de su ISIN, aunque se cree en la misma importación', async () => {
+  it('links a dividend to the Trade Republic position of its ISIN, even one created in the same import', async () => {
     const userId = await insertUser(db, 'a@example.com');
     await service.confirm(
       userId,
@@ -446,7 +446,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
     expect(row).toMatchObject({ kind: 'dividend', isin: STOCK, positionId: position.id, gross: '1.360000' });
   });
 
-  it('guarda la clase de activo del bróker en las posiciones, también en las que no la tenían', async () => {
+  it("stores the broker's asset class on positions, including those that did not have it", async () => {
     const FIRST_ETF_ID = '00000000-0000-0000-0000-00000000e7f1';
     const FIRST_DERIVATIVE_ID = '00000000-0000-0000-0000-00000000de71';
     const userId = await insertUser(db, 'a@example.com');
@@ -458,7 +458,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
       ),
     );
     await db.update(positions).set({ assetClass: null });
-    // El mismo fichero otra vez: no hay operaciones nuevas, pero la clase de activo se completa.
+    // The same file again: no new trades, but the asset class gets filled in.
     await service.confirm(
       userId,
       csv(
@@ -472,7 +472,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
     expect(byTicker.get(DERIVATIVE)).toBe('derivative');
   });
 
-  it('los cobros de un usuario no chocan con los mismos ids de otro', async () => {
+  it("one user's payments do not clash with the same ids from another user", async () => {
     const a = await insertUser(db, 'a@example.com');
     const b = await insertUser(db, 'b@example.com');
     const file = csv(interest('2025-01-01', '1.48', ''));

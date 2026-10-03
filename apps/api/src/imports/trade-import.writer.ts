@@ -17,18 +17,17 @@ import {
   type InstrumentGroup,
 } from './trade-republic-import.model.js';
 
-/** `positions.name` es `varchar(100)`. */
+/** `positions.name` is `varchar(100)`. */
 const NAME_MAX_LENGTH = 100;
 
-/** Resultado de escribir un instrumento: la posición tal como quedó y cuántos lotes entraron. */
+/** Outcome of writing one instrument: the position as it ended up and how many lots went in. */
 export type InstrumentWriteOutcome = { position: Position; wasCreated: boolean; inserted: number };
 
 /**
- * Lado de ESCRITURA de la importación de Trade Republic: crea o amplía la posición de cada
- * instrumento (una transacción por posición, para que una que quede en negativo solo revierta la
- * suya) y guarda los cobros. Los lotes entran con `PositionLotsService.appendImported`, así que la
- * posición se recalcula con el mismo `recompute` que las altas manuales. Idempotente por
- * `external_id`.
+ * WRITE side of the Trade Republic import: creates or extends each instrument's position (one
+ * transaction per position, so one that goes negative only rolls back its own) and stores the
+ * income payments. Lots go in through `PositionLotsService.appendImported`, so the position is
+ * recomputed with the same `recompute` as manual entries. Idempotent by `external_id`.
  */
 @Injectable()
 export class TradeImportWriter {
@@ -38,7 +37,7 @@ export class TradeImportWriter {
     private readonly income: IncomeService,
   ) {}
 
-  /** Escribe las operaciones nuevas de un instrumento en su propia transacción. */
+  /** Writes an instrument's new trades in its own transaction. */
   importInstrument(
     userId: string,
     group: InstrumentGroup,
@@ -47,14 +46,14 @@ export class TradeImportWriter {
     return this.db.transaction((tx) => this.writeInstrument(tx, userId, group, existing));
   }
 
-  /** Da la clase de activo del bróker a una posición importada antes de que se guardara; devuelve la posición. */
+  /** Gives the broker's asset class to a position imported before it was stored; returns the position. */
   backfillAssetClass(position: Position | undefined, group: InstrumentGroup): Promise<Position | undefined> {
     return this.backfillAssetClassIn(this.db, position, group);
   }
 
   /**
-   * Guarda los cobros en una transacción, enlazando cada uno con la posición de Trade Republic de su
-   * ISIN si la hay. Idempotente por `external_id`.
+   * Stores the income payments in one transaction, linking each to the Trade Republic position of
+   * its ISIN when there is one. Idempotent by `external_id`.
    */
   async importIncome(userId: string, items: readonly ImportedIncome[]): Promise<ImportIncomeSummary> {
     if (items.length === 0) return { created: 0, duplicates: 0, reportedToAeat: 0 };
@@ -85,7 +84,7 @@ export class TradeImportWriter {
     );
     return {
       created,
-      // Incluye lo que otra petición concurrente importó entre la lectura y la escritura.
+      // Includes whatever a concurrent request imported between the read and the write.
       duplicates: items.length - created,
       reportedToAeat: fresh.filter((item) => item.reportedToAeat).length,
     };
@@ -108,7 +107,7 @@ export class TradeImportWriter {
             userId,
             ticker: group.isin,
             name: group.name.slice(0, NAME_MAX_LENGTH) || null,
-            // La foto real la escribe `appendImported` al recalcular; aquí solo el hueco.
+            // `appendImported` writes the real snapshot when it recomputes; this is just the placeholder.
             quantity: '0',
             avgPrice: '0',
             broker: TRADE_REPUBLIC_BROKER,
@@ -129,12 +128,12 @@ export class TradeImportWriter {
     });
 
     if (wasCreated && inserted === 0) {
-      // Otra petición concurrente ya había importado todos estos lotes: no dejar una posición vacía.
+      // A concurrent request had already imported all these lots: do not leave an empty position.
       await tx.delete(positions).where(eq(positions.id, position.id));
       return { position, wasCreated: false, inserted };
     }
 
-    // La posición existe: la ha escrito esta misma transacción.
+    // The position exists: this very transaction wrote it.
     const fresh = firstItem(await tx.select().from(positions).where(eq(positions.id, position.id)));
     return { position: fresh, wasCreated, inserted };
   }
@@ -154,13 +153,13 @@ export class TradeImportWriter {
   }
 }
 
-/** Traduce el error de la transacción de un instrumento al código que ve el usuario. */
+/** Maps the error of an instrument's transaction to the code the user sees. */
 export function failureOf(error: unknown): ImportFailureCode {
   if (error instanceof LotAggregateError && (error.code === 'NEGATIVE_QUANTITY' || error.code === 'OVERFLOW')) {
     return error.code;
   }
-  // Un lote con el mismo `external_id` lo insertó a la vez otra importación del mismo fichero:
-  // no es un fallo inesperado, basta con volver a importar (la deduplicación lo completará).
+  // Another import of the same file inserted a lot with the same `external_id` at the same time:
+  // not an unexpected failure, importing again is enough (deduplication will complete it).
   if (isPgError(error, PG_UNIQUE_VIOLATION)) return 'CONFLICT';
   return 'UNEXPECTED';
 }
