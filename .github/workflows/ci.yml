@@ -32,6 +32,8 @@ jobs:
   frontend:
     name: Frontend (Next.js)
     runs-on: ubuntu-latest
+    # A hung job (a test that never ends, a stuck build) must not hold the runner for 6 h.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -74,6 +76,7 @@ jobs:
   backend:
     name: Backend (NestJS)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -89,6 +92,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Migration drift: if `schema.ts` changed without its migration (or a migration was
+      # hand-edited and no longer matches the schema), `drizzle-kit generate` writes new files
+      # and this step fails. It needs no database.
+      - name: Migrations match the schema
+        run: |
+          pnpm core:build
+          pnpm --filter @sextante/api exec drizzle-kit generate
+          git diff --exit-code -- apps/api/drizzle
+          test -z "$(git status --porcelain -- apps/api/drizzle)"
+
       - name: Typecheck
         run: pnpm --filter @sextante/api typecheck
 
@@ -100,3 +113,36 @@ jobs:
 
       - name: Build
         run: pnpm --filter @sextante/api build
+
+  # Builds the images that get deployed (without publishing them): a broken Dockerfile or a
+  # dependency that only fails inside the image shows up in the PR, not in the deployment.
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: api
+            dockerfile: apps/api/Dockerfile
+          - image: web
+            dockerfile: Dockerfile.web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build ${{ matrix.image }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          # Same build arguments as docker-compose.prod.yml (the web image bakes them in).
+          build-args: |
+            API_URL=http://api:3001
+            NEXT_PUBLIC_SITE_URL=https://sextante.fpardo.net
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
