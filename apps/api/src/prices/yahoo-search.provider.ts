@@ -3,11 +3,15 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import type { InstrumentSearchProvider, InstrumentSearchResult, InstrumentType } from './instrument-search.js';
 import { fetchJson } from '../common/http.js';
+import { LruCache } from '../common/lru-cache.js';
 import { YAHOO_USER_AGENT } from './yahoo-http.js';
 
 const YAHOO_SEARCH_URL = 'https://query1.finance.yahoo.com/v1/finance/search';
 const QUOTES_COUNT = 8;
 const REQUEST_TIMEOUT_MS = 8_000;
+/** Consultas recientes en memoria: el buscador repite las mismas al teclear y borrar. */
+const CACHE_MAX_ENTRIES = 500;
+const CACHE_TTL_MS = 10 * 60_000;
 
 /** `quoteType` de Yahoo → tipo normalizado; los no contemplados caen en 'other'. */
 const TYPE_MAP: Record<string, InstrumentType> = {
@@ -61,17 +65,24 @@ export class YahooInstrumentSearchProvider implements InstrumentSearchProvider {
   readonly name = 'yahoo';
   private readonly logger = new Logger(YahooInstrumentSearchProvider.name);
 
+  private readonly cache = new LruCache<string, InstrumentSearchResult[]>(CACHE_MAX_ENTRIES, CACHE_TTL_MS);
+
   async search(query: string): Promise<InstrumentSearchResult[]> {
     const q = query.trim();
     if (q.length < MIN_INSTRUMENT_QUERY_LENGTH) return [];
 
+    const cached = this.cache.get(q);
+    if (cached) return cached;
+
     const url = `${YAHOO_SEARCH_URL}?q=${encodeURIComponent(q)}` + `&quotesCount=${QUOTES_COUNT}&newsCount=0`;
     const result = await fetchJson(url, { timeoutMs: REQUEST_TIMEOUT_MS, headers: { 'User-Agent': YAHOO_USER_AGENT } });
     if (!result.ok) {
-      // Degrada a "sin resultados" para no romper la UI.
+      // Degrada a "sin resultados" para no romper la UI. No se cachea: es un fallo transitorio.
       this.logger.warn(`Yahoo search "${q}": ${result.error}`);
       return [];
     }
-    return parseYahooSearch(result.body);
+    const results = parseYahooSearch(result.body);
+    this.cache.set(q, results);
+    return results;
   }
 }

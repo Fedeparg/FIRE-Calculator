@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 
 import type { Env } from '../config/env.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { pricesQuerySchema, type PricesQueryDto } from './dto/prices-query.dto.js';
 import { PricesService, type FxRates, type PriceInfo, type RefreshSummary } from './prices.service.js';
 
 /** Precios: la lectura sale de nuestra DB; a la fuente externa solo va el cron diario (o el refresco manual de dev). */
@@ -14,14 +16,15 @@ export class PricesController {
     private readonly config: ConfigService<Env, true>,
   ) {}
 
-  /** `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original. */
+  /**
+   * `?symbols=AAPL,EUNL.DE,BTC-USD` → último precio de cada ticker, indexado por el ticker original.
+   * Como mucho `MAX_PRICE_SYMBOLS` símbolos de 20 caracteres (400 si no).
+   */
   @Get()
-  async get(@Query('symbols') symbols?: string): Promise<Record<string, PriceInfo>> {
-    const tickers = (symbols ?? '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const prices = await this.prices.getPrices(tickers);
+  async get(
+    @Query(new ZodValidationPipe(pricesQuerySchema)) query: PricesQueryDto,
+  ): Promise<Record<string, PriceInfo>> {
+    const prices = await this.prices.getPrices(query.symbols);
     return Object.fromEntries(prices);
   }
 
