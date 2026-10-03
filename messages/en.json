@@ -1360,7 +1360,7 @@
     },
     "realisedGains": {
       "yearLabel": "Tax year",
-      "download": "Download {year} CSV",
+      "download": "{year} sales CSV",
       "downloadError": "The file could not be generated. Please try again.",
       "gains": "Gains",
       "losses": "Losses",
@@ -1434,7 +1434,9 @@
       "print": "Print or save as PDF",
       "model720": "Form 720: if on 31 December your accounts, securities or property abroad exceed €50,000 in any of those blocks, you must report them (it is not a tax). Sextante does not calculate it because it does not know which brokers count as foreign: for Trade Republic with its Spanish IBAN, the tax authority says the cash account no longer does (ruling V2475-25).",
       "rowDeferred": "Loss not counted this year (two-month rule): {amount}",
-      "rowIntegrated": "Includes {amount} of earlier deferred losses"
+      "rowIntegrated": "Includes {amount} of earlier deferred losses",
+      "yearInProgress": "{year} (in progress)",
+      "downloadIncome": "{year} payouts CSV"
     },
     "import": {
       "link": "Import from Trade Republic",
@@ -1671,7 +1673,15 @@
         "manual": "manual"
       },
       "originEstimated": "Dividends whose withholding at source is estimated with the country's statutory rate: {count}. Check it against your broker's certificate or tax report before filing.",
-      "box": "box {box}"
+      "box": "box {box}",
+      "csv": {
+        "date": "Payment date",
+        "reportedToAeat": "Already in the draft",
+        "grossSource": "Source of the gross",
+        "withholdingOriginSource": "Source of the withholding at source",
+        "yes": "yes",
+        "no": "no"
+      }
     },
     "savingsReturn": {
       "title": "Savings base for {year}",

@@ -10,8 +10,11 @@ import CopyValue from "@/shared/ui/CopyValue";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
 
-/** Por debajo de medio céntimo, un exceso de retención es ruido de redondeo, no un aviso. */
-const MIN_EXCESS = 0.005;
+/**
+ * Por debajo de 5 céntimos, un exceso de retención es ruido de redondeo: el bróker redondea cada
+ * dividendo a céntimos y la suma de esos restos no es dinero que reclamar.
+ */
+const MIN_EXCESS = 0.05;
 
 /**
  * La base del ahorro del ejercicio de principio a fin: saldos, compensación, cuota, deducción por

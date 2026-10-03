@@ -1360,7 +1360,7 @@
     },
     "realisedGains": {
       "yearLabel": "Ejercicio",
-      "download": "Descargar CSV de {year}",
+      "download": "CSV de ventas de {year}",
       "downloadError": "No se pudo generar el fichero. Inténtalo de nuevo.",
       "gains": "Ganancias",
       "losses": "Pérdidas",
@@ -1434,7 +1434,9 @@
       "print": "Imprimir o guardar en PDF",
       "model720": "Modelo 720: si a 31 de diciembre tus cuentas, valores o inmuebles en el extranjero superan 50.000 € en alguno de esos bloques, tienes que informar de ellos (no es un impuesto). Sextante no lo calcula porque no sabe qué brókers cuentan como extranjeros: con Trade Republic y su IBAN español, la DGT dice que la cuenta de efectivo ya no lo es (consulta V2475-25).",
       "rowDeferred": "Pérdida no computable este año (regla de los dos meses): {amount}",
-      "rowIntegrated": "Incluye {amount} de pérdidas diferidas de antes"
+      "rowIntegrated": "Incluye {amount} de pérdidas diferidas de antes",
+      "yearInProgress": "{year} (en curso)",
+      "downloadIncome": "CSV de cobros de {year}"
     },
     "import": {
       "link": "Importar de Trade Republic",
@@ -1671,7 +1673,15 @@
         "manual": "manual"
       },
       "originEstimated": "Dividendos con la retención en origen estimada con el tipo legal del país: {count}. Contrástala con el certificado o el informe fiscal de tu bróker antes de declarar.",
-      "box": "casilla {box}"
+      "box": "casilla {box}",
+      "csv": {
+        "date": "Fecha de cobro",
+        "reportedToAeat": "Ya en el borrador",
+        "grossSource": "Procedencia del íntegro",
+        "withholdingOriginSource": "Procedencia de la retención en origen",
+        "yes": "sí",
+        "no": "no"
+      }
     },
     "savingsReturn": {
       "title": "Base del ahorro de {year}",

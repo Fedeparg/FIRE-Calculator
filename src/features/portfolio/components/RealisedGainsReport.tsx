@@ -17,6 +17,7 @@ import {
   TAX_CURRENCY,
   type RealisedGainsPosition,
 } from "@sextante/core/fiscal/realised-gains";
+import { buildIncomeCsv } from "@/features/portfolio/model/income-csv";
 import { buildRealisedGainsCsv } from "@/features/portfolio/model/realised-gains-csv";
 import { asLocale } from "@/i18n/types";
 import { downloadBlob } from "@/shared/format/download";
@@ -58,6 +59,7 @@ export default function RealisedGainsReport({
   ratesLoaded,
 }: Props) {
   const t = useTranslations("portfolio.realisedGains");
+  const tIncome = useTranslations("portfolio.income");
   const locale = asLocale(useLocale());
   const { formatCurrency } = useFormat();
 
@@ -70,7 +72,13 @@ export default function RealisedGainsReport({
     return [...all].sort((a, b) => b - a);
   }, [report, incomeReport]);
 
-  const [selected, setSelected] = useState<string>(() => String(years[0]));
+  // Por defecto, el ejercicio que se declara ahora (el año pasado), si tiene datos: el actual
+  // aún no ha terminado.
+  const [selected, setSelected] = useState<string>(() => {
+    const lastClosed = new Date().getUTCFullYear() - 1;
+    return String(years.includes(lastClosed) ? lastClosed : years[0]);
+  });
+  const currentYear = new Date().getUTCFullYear();
   const [failed, setFailed] = useState(false);
   // Se mide si el informe se usa (sin cifras): decide si merece la pena seguir invirtiendo en él.
   useEffect(() => trackEvent({ name: "tax-report-viewed" }), []);
@@ -145,6 +153,43 @@ export default function RealisedGainsReport({
     }
   }
 
+  function handleDownloadIncome() {
+    setFailed(false);
+    try {
+      const csv = buildIncomeCsv(
+        incomeEvents,
+        {
+          date: tIncome("csv.date"),
+          kind: tIncome("kind"),
+          name: tIncome("name"),
+          isin: "ISIN",
+          country: tIncome("country"),
+          currency: tIncome("currency"),
+          gross: tIncome("gross"),
+          withholdingOrigin: tIncome("withholdingOrigin"),
+          withholdingSpain: tIncome("withholdingSpain"),
+          reportedToAeat: tIncome("csv.reportedToAeat"),
+          grossSource: tIncome("csv.grossSource"),
+          withholdingOriginSource: tIncome("csv.withholdingOriginSource"),
+        },
+        {
+          kind: (kind) => tIncome(`kinds.${kind}`),
+          source: (source) => tIncome(`sources.${source}`),
+          yes: tIncome("csv.yes"),
+          no: tIncome("csv.no"),
+        },
+        locale,
+      );
+      trackEvent({ name: "tax-report-exported", data: { format: "csv" } });
+      downloadBlob(
+        new Blob([UTF8_BOM, csv], { type: "text/csv;charset=utf-8" }),
+        `sextante-cobros-${selectedYear}.csv`,
+      );
+    } catch {
+      setFailed(true);
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -153,22 +198,30 @@ export default function RealisedGainsReport({
             label={t("yearLabel")}
             value={String(selectedYear)}
             onChange={changeYear}
-            options={years.map((y) => ({ value: String(y), label: String(y) }))}
+            options={years.map((y) => ({
+              value: String(y),
+              label: y === currentYear ? t("yearInProgress", { year: y }) : String(y),
+            }))}
           />
         </div>
-        {year && (
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex flex-wrap gap-2 print:hidden">
-              <Button variant="secondary" onClick={handlePrint}>
-                {t("print")}
-              </Button>
+        <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-wrap justify-end gap-2 print:hidden">
+            <Button variant="secondary" onClick={handlePrint}>
+              {t("print")}
+            </Button>
+            {year && (
               <Button variant="secondary" onClick={handleDownload}>
                 {t("download", { year: year.year })}
               </Button>
-            </div>
-            {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
+            )}
+            {incomeEvents.length > 0 && (
+              <Button variant="secondary" onClick={handleDownloadIncome}>
+                {t("downloadIncome", { year: selectedYear })}
+              </Button>
+            )}
           </div>
-        )}
+          {failed && <p className="text-xs text-warning">{t("downloadError")}</p>}
+        </div>
       </div>
 
       {!ratesLoaded && <Notice variant="warning">{t("ratesUnavailable")}</Notice>}
