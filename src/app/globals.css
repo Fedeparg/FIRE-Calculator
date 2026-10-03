@@ -118,3 +118,43 @@ body {
 .recharts-wrapper :focus-visible {
   outline: none;
 }
+
+/* Impresión (informe de la declaración): sin navegación ni formularios, y siempre con los colores
+   del tema claro, que es lo que se lee en papel o en PDF. */
+@media print {
+  header,
+  footer,
+  nav,
+  details {
+    display: none !important;
+  }
+  .dark {
+    --background: #f6f7fb;
+    --surface: #ffffff;
+    --surface-2: #f1f3f9;
+    --foreground: #0f1729;
+    --muted: #5b6478;
+    --border: #e4e7ef;
+    --brand: #4f46e5;
+    --brand-fg: #ffffff;
+    --brand-soft: #e6e8fd;
+    --accent: #10b981;
+    --accent-soft: #d6f5e7;
+    --warning: #b45309;
+    --warning-soft: #fef3e2;
+    --warning-border: #f5d9a8;
+    --success: #15803d;
+    --danger: #b91c1c;
+    --danger-fg: #ffffff;
+    --danger-soft: #fef2f2;
+    --danger-border: #f3c4c4;
+    --chart-1: #4f46e5;
+    --chart-2: #10b981;
+    --chart-3: #f59e0b;
+    --chart-4: #db2777;
+    --chart-5: #0891b2;
+    --chart-6: #7c3aed;
+    --chart-7: #65a30d;
+    --chart-8: #ea580c;
+  }
+}

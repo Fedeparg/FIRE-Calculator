@@ -84,6 +84,8 @@ export function registerAnalysisTools(server: McpServer, runner: ToolRunner, dep
           ticker: p.ticker,
           name: p.name,
           currency: p.currency,
+          // Los derivados no están sujetos a la regla de los dos meses (DGT V2172-21).
+          isDerivative: p.isDerivative,
           lots: lotsByPosition.get(p.id) ?? [],
         }));
         const needed = referenceRatesNeeded(input);

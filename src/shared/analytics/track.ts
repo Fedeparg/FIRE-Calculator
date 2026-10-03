@@ -8,7 +8,10 @@ export type AnalyticsEvent =
   | { name: "login-link-requested" }
   | { name: "position-added" }
   | { name: "broker-import-completed"; data: { broker: string } }
-  | { name: "donation-checkout-started" };
+  | { name: "donation-checkout-started" }
+  | { name: "tax-report-viewed" }
+  | { name: "tax-report-year-changed" }
+  | { name: "tax-report-exported"; data: { format: "csv" | "print" } };
 
 type EventData = Record<string, string>;
 

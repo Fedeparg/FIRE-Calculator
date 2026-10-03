@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { FISCAL_YEAR_LABEL } from "@sextante/core/fiscal/brackets";
 import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
 import type { SavingsReturn } from "@sextante/core/fiscal/savings-return";
+import type { TaxBoxes } from "@sextante/core/fiscal/tax-boxes";
+import CopyValue from "@/shared/ui/CopyValue";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
 
@@ -15,7 +17,7 @@ const MIN_EXCESS = 0.005;
  * La base del ahorro del ejercicio de principio a fin: saldos, compensación, cuota, deducción por
  * doble imposición internacional y retenciones españolas. El cálculo es `buildSavingsReturn`.
  */
-export default function SavingsReturnSection({ result }: { result: SavingsReturn }) {
+export default function SavingsReturnSection({ result, boxes }: { result: SavingsReturn; boxes: TaxBoxes | null }) {
   const t = useTranslations("portfolio.savingsReturn");
   const { formatCurrency, formatPercent } = useFormat();
   const eur = (value: number) => formatCurrency(value, TAX_CURRENCY);
@@ -25,7 +27,7 @@ export default function SavingsReturnSection({ result }: { result: SavingsReturn
   );
   const noTreaty = result.doubleTaxation.warnings.filter((w) => w.code === "no_treaty_rate");
 
-  const rows: { label: string; value: string; strong?: boolean }[] = [
+  const rows: { label: string; value: string; strong?: boolean; box?: string; copy?: number }[] = [
     { label: t("gainsBalance"), value: eur(result.gainsBalance) },
     { label: t("capitalIncome"), value: eur(result.capitalIncomeBalance) },
     ...(compensated > 0 ? [{ label: t("compensated"), value: eur(-compensated) }] : []),
@@ -38,7 +40,14 @@ export default function SavingsReturnSection({ result }: { result: SavingsReturn
           : `${eur(result.tax.tax)} (${formatPercent(result.tax.averageRatePct)})`,
     },
     ...(result.doubleTaxation.deduction > 0
-      ? [{ label: t("doubleTaxation"), value: eur(-result.doubleTaxation.deduction) }]
+      ? [
+          {
+            label: t("doubleTaxation"),
+            value: eur(-result.doubleTaxation.deduction),
+            box: boxes?.doubleTaxation,
+            copy: result.doubleTaxation.deduction,
+          },
+        ]
       : []),
     { label: t("netTax"), value: eur(result.netTax), strong: true },
     ...(result.withholdingSpain > 0 ? [{ label: t("withholdingSpain"), value: eur(-result.withholdingSpain) }] : []),
@@ -60,8 +69,14 @@ export default function SavingsReturnSection({ result }: { result: SavingsReturn
               row.strong ? "font-semibold text-foreground" : "text-muted"
             }`}
           >
-            <dt>{row.label}</dt>
-            <dd className="tabular-nums text-foreground">{row.value}</dd>
+            <dt>
+              {row.label}
+              {row.box && <span className="ml-2 text-xs font-normal">{t("box", { box: row.box })}</span>}
+            </dt>
+            <dd className="tabular-nums text-foreground">
+              {row.value}
+              {row.copy !== undefined && <CopyValue value={row.copy.toFixed(2).replace(".", ",")} label={row.label} />}
+            </dd>
           </div>
         ))}
       </dl>

@@ -4,14 +4,21 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { TAX_CURRENCY } from "@sextante/core/fiscal/fx-reference";
+import type { TaxBoxes } from "@sextante/core/fiscal/tax-boxes";
+import CopyValue from "@/shared/ui/CopyValue";
 import type { IncomeCategoryReport, IncomeEvent, IncomeYear } from "@sextante/core/fiscal/income";
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
 import { useIncomeMutations } from "../use-income";
 import IncomeManager from "./IncomeManager";
 
+/** Importe como se escribe en Renta WEB: coma decimal, sin separador de miles. */
+const boxValue = (value: number) => value.toFixed(2).replace(".", ",");
+
 type Props = {
   year: number;
+  /** Casillas del ejercicio, o `null` si no están verificadas. */
+  boxes: TaxBoxes | null;
   /** Resumen del ejercicio, o `undefined` si no tiene cobros. */
   summary: IncomeYear | undefined;
   /** Cobros del ejercicio, en su divisa. */
@@ -23,7 +30,7 @@ type Props = {
  * y dividendos, separando lo que el pagador ya comunicó a la AEAT (sale en el borrador) de lo que
  * hay que añadir a mano. Los datos llegan del servidor; tras cada cambio se refresca la página.
  */
-export default function IncomeSection({ year, summary, events }: Props) {
+export default function IncomeSection({ year, boxes, summary, events }: Props) {
   const t = useTranslations("portfolio.income");
   const router = useRouter();
   const mutations = useIncomeMutations(() => router.refresh());
@@ -37,8 +44,18 @@ export default function IncomeSection({ year, summary, events }: Props) {
 
       {summary ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <CategoryCard title={t("categoryInterest")} category={summary.interest} />
-          <CategoryCard title={t("categoryDividend")} category={summary.dividend} />
+          <CategoryCard
+            title={t("categoryInterest")}
+            category={summary.interest}
+            grossBox={boxes?.interest}
+            withholdingBox={boxes?.capitalWithholding}
+          />
+          <CategoryCard
+            title={t("categoryDividend")}
+            category={summary.dividend}
+            grossBox={boxes?.dividends}
+            withholdingBox={boxes?.capitalWithholding}
+          />
         </div>
       ) : (
         <p className="text-sm text-muted">{t("noneThisYear")}</p>
@@ -79,20 +96,40 @@ export default function IncomeSection({ year, summary, events }: Props) {
 }
 
 /** Una agrupación de la declaración con su desglose. */
-function CategoryCard({ title, category }: { title: string; category: IncomeCategoryReport }) {
+function CategoryCard({
+  title,
+  category,
+  grossBox,
+  withholdingBox,
+}: {
+  title: string;
+  category: IncomeCategoryReport;
+  /** Casilla del íntegro y de las retenciones españolas (estas, sumadas entre categorías). */
+  grossBox: string | undefined;
+  withholdingBox: string | undefined;
+}) {
   const t = useTranslations("portfolio.income");
   const { formatCurrency } = useFormat();
   const eur = (value: number) => formatCurrency(value, TAX_CURRENCY);
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <h3 className="text-sm font-semibold text-foreground">
+        {title}
+        {grossBox && <span className="ml-2 text-xs font-normal text-muted">{t("box", { box: grossBox })}</span>}
+      </h3>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
         <dt className="text-muted">{t("gross")}</dt>
-        <dd className="text-right font-semibold tabular-nums text-foreground">{eur(category.total.gross)}</dd>
+        <dd className="text-right font-semibold tabular-nums text-foreground">
+          {eur(category.total.gross)}
+          <CopyValue value={boxValue(category.total.gross)} label={`${title} ${t("gross")}`} />
+        </dd>
         <dt className="text-muted">{t("withholdingOrigin")}</dt>
         <dd className="text-right tabular-nums text-foreground">{eur(category.total.withholdingOrigin)}</dd>
-        <dt className="text-muted">{t("withholdingSpain")}</dt>
+        <dt className="text-muted">
+          {t("withholdingSpain")}
+          {withholdingBox && <span className="block text-xs">{t("box", { box: withholdingBox })}</span>}
+        </dt>
         <dd className="text-right tabular-nums text-foreground">{eur(category.total.withholdingSpain)}</dd>
       </dl>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 border-t border-border pt-3 text-xs">

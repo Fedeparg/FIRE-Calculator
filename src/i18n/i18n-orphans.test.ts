@@ -43,6 +43,8 @@ const DYNAMIC_PREFIXES: readonly string[] = [
   "portfolio.positions.filter.",
   "portfolio.positions.empty.",
   "portfolio.income.kinds.",
+  "portfolio.realisedGains.blocks.",
+  "portfolio.realisedGains.assetClasses.",
   "portfolio.income.sources.",
   "account.notifications.languages.",
   // Claves de error que devuelve una función tipada (`ApiErrorKey`,

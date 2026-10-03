@@ -92,7 +92,10 @@
   "common": {
     "back": "Back to calculators",
     "disclaimerShort": "Information, not tax or financial advice.",
-    "moreInfo": "More information"
+    "moreInfo": "More information",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyLabel": "Copy {label}"
   },
   "footer": {
     "disclaimer": "This site provides general information for educational purposes and does not constitute tax, financial or investment advice. Always check with a professional and official sources (AEAT, Bank of Spain).",
@@ -1362,9 +1365,7 @@
       "gains": "Gains",
       "losses": "Losses",
       "net": "Net for the year",
-      "tableCaption": "Sales by position, in euros. Transfer value = sale price − fees; acquisition value = cost of the lots sold + their fees. Sales in another currency are calculated in that currency and converted at the ECB rate of the sale date.",
       "position": "Position",
-      "sales": "Sales",
       "quantity": "Units",
       "transferValue": "Transfer value",
       "acquisitionValue": "Acquisition value",
@@ -1385,7 +1386,10 @@
         "transferValueEur": "Transfer value (EUR)",
         "acquisitionValueEur": "Acquisition value (EUR)",
         "gainEur": "Gain/loss (EUR)",
-        "fxDifferenceEur": "Exchange difference (EUR)"
+        "fxDifferenceEur": "Exchange difference (EUR)",
+        "deferredLossEur": "Deferred loss, two-month rule (EUR)",
+        "integratedLossEur": "Deferred loss now counted (EUR)",
+        "computableGainEur": "Computable gain/loss (EUR)"
       },
       "salesTitle": "Sales in the year",
       "fxDifference": "Exchange differences",
@@ -1393,7 +1397,41 @@
       "unconverted": "Sales in {currencies} without an ECB exchange rate for the sale date: {count}. They are left out of the totals and the tax; the CSV lists them in their own currency.",
       "fxIncomplete": "Sales missing the ECB rate of a purchase (before 1999 or in a currency the ECB does not publish): {count}. Their exchange difference has not been calculated.",
       "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell. If you keep the currency in an account, that difference is not declared until you convert it.",
-      "noSalesThisYear": "No sales recorded for this tax year."
+      "noSalesThisYear": "No sales recorded for this tax year.",
+      "deferred": "Two-month rule: {amount} of losses from this year do not count because you bought back the same securities within two months before or after the sale. They will count when you sell the repurchased ones.",
+      "integrated": "This year includes {amount} of losses the two-month rule had deferred, because you sold the repurchased securities.",
+      "box": "box {box}",
+      "noBoxes": "The {year} tax form boxes are not verified: figures are shown without box numbers.",
+      "salesCount": "{count} sales",
+      "blocks": {
+        "shares": {
+          "title": "Listed shares",
+          "note": "Declared per issuer with the total of its sales: boxes {shares} (issuer, transfer value, acquisition value)."
+        },
+        "funds": {
+          "title": "Funds and ETFs",
+          "note": "Foreign ETFs and funds without withholding on redemption: boxes {funds} (transfer and acquisition value). If a Spanish custodian withheld tax when you sold, they go in the funds-with-withholding block (0310-0325)."
+        },
+        "other": {
+          "title": "Derivatives and other assets",
+          "note": "Other assets (boxes {other}). The form does not name derivatives: they are placed here by exclusion, as Trade Republic does in its tax report. Confirm it before filing."
+        },
+        "unclassified": {
+          "title": "Unclassified",
+          "note": "We do not know whether these are shares, funds or derivatives, and each goes in a different block."
+        }
+      },
+      "unclassifiedNotice": "Say what each position is to put it in its block. It is saved on the position.",
+      "classifyLabel": "Asset class of {ticker}",
+      "classifyPlaceholder": "What is it?",
+      "classifyError": "It could not be saved. Try again.",
+      "assetClasses": {
+        "stock": "Share",
+        "fund": "Fund or ETF",
+        "derivative": "Derivative",
+        "other": "Other"
+      },
+      "print": "Print or save as PDF"
     },
     "import": {
       "link": "Import from Trade Republic",
@@ -1629,7 +1667,8 @@
         "estimate": "estimate",
         "manual": "manual"
       },
-      "originEstimated": "Dividends whose withholding at source is estimated with the country's statutory rate: {count}. Check it against your broker's certificate or tax report before filing."
+      "originEstimated": "Dividends whose withholding at source is estimated with the country's statutory rate: {count}. Check it against your broker's certificate or tax report before filing.",
+      "box": "box {box}"
     },
     "savingsReturn": {
       "title": "Savings base for {year}",
@@ -1648,7 +1687,8 @@
       "excessWithholding": "{country}: {amount} was withheld above the treaty rate. The Spanish tax agency does not credit it; it is reclaimed from that country.",
       "noTreatyRate": "{country}: we do not have the treaty rate, so its withholding ({amount}) has not been credited.",
       "note": "{scaleYear} savings scale. The average rate for double taxation uses only the savings base; the tax return also uses the general base. Custody fees are not included. Indicative, not advice.",
-      "pendingAfter": "Pending for later years: {amount}."
+      "pendingAfter": "Pending for later years: {amount}.",
+      "box": "box {box}"
     },
     "pendingBalances": {
       "title": "Losses from previous years pending offset ({count})",

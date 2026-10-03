@@ -47,6 +47,7 @@ export default async function TaxReturnPage({ params }: Props) {
           positions={data.positions}
           income={data.income}
           pendingBalances={data.pendingBalances}
+          assetClasses={data.assetClasses}
           rates={data.rates}
           ratesLoaded={data.ratesLoaded}
         />

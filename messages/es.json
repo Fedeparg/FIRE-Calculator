@@ -92,7 +92,10 @@
   "common": {
     "back": "Volver a las calculadoras",
     "disclaimerShort": "Información, no asesoramiento fiscal o financiero.",
-    "moreInfo": "Más información"
+    "moreInfo": "Más información",
+    "copy": "Copiar",
+    "copied": "Copiado",
+    "copyLabel": "Copiar {label}"
   },
   "footer": {
     "disclaimer": "Esta web ofrece información general con fines educativos y no constituye asesoramiento fiscal, financiero ni de inversión. Verifica siempre con un profesional y con las fuentes oficiales (AEAT, Banco de España).",
@@ -1362,9 +1365,7 @@
       "gains": "Ganancias",
       "losses": "Pérdidas",
       "net": "Saldo del ejercicio",
-      "tableCaption": "Ventas por posición, en euros. Valor de transmisión = precio de venta − comisiones; valor de adquisición = coste de los lotes vendidos + sus comisiones. Las ventas en divisa se calculan en su divisa y se pasan a euros con el tipo del BCE del día de la venta.",
       "position": "Posición",
-      "sales": "Ventas",
       "quantity": "Participaciones",
       "transferValue": "Valor de transmisión",
       "acquisitionValue": "Valor de adquisición",
@@ -1385,7 +1386,10 @@
         "transferValueEur": "Valor de transmisión (EUR)",
         "acquisitionValueEur": "Valor de adquisición (EUR)",
         "gainEur": "Ganancia/pérdida (EUR)",
-        "fxDifferenceEur": "Diferencia de cambio (EUR)"
+        "fxDifferenceEur": "Diferencia de cambio (EUR)",
+        "deferredLossEur": "Pérdida diferida, regla de los dos meses (EUR)",
+        "integratedLossEur": "Pérdida diferida que se integra (EUR)",
+        "computableGainEur": "Ganancia/pérdida computable (EUR)"
       },
       "salesTitle": "Ventas del ejercicio",
       "fxDifference": "Diferencias de cambio",
@@ -1393,7 +1397,41 @@
       "unconverted": "Ventas en {currencies} sin tipo de cambio del BCE para el día de la venta: {count}. Quedan fuera de los totales y de la cuota; el CSV las incluye en su divisa.",
       "fxIncomplete": "Ventas en las que falta el tipo del BCE de alguna compra (anterior a 1999 o de una divisa que el BCE no publica): {count}. Su diferencia de cambio no se ha calculado.",
       "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender. Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias.",
-      "noSalesThisYear": "No hay ventas registradas en este ejercicio."
+      "noSalesThisYear": "No hay ventas registradas en este ejercicio.",
+      "deferred": "Regla de los dos meses: {amount} de pérdidas de este ejercicio no se computan porque recompraste valores homogéneos en los dos meses anteriores o posteriores a la venta. Se integrarán cuando vendas los recomprados.",
+      "integrated": "Se integran en este ejercicio {amount} de pérdidas que la regla de los dos meses había diferido, porque has vendido los valores recomprados.",
+      "box": "casilla {box}",
+      "noBoxes": "Las casillas del modelo 100 de {year} no están verificadas: se muestran las cifras sin número de casilla.",
+      "salesCount": "{count} ventas",
+      "blocks": {
+        "shares": {
+          "title": "Acciones admitidas a negociación",
+          "note": "Se declaran por entidad emisora con el importe global de sus ventas: casillas {shares} (entidad, valor de transmisión, valor de adquisición)."
+        },
+        "funds": {
+          "title": "Fondos y ETF",
+          "note": "ETF y fondos extranjeros sin retención en el reembolso: casillas {funds} (valor de transmisión y de adquisición). Si un depositario español te retuvo al vender, van en el bloque de fondos con retención (0310-0325)."
+        },
+        "other": {
+          "title": "Derivados y otros elementos patrimoniales",
+          "note": "Otros elementos patrimoniales (casillas {other}). El modelo no nombra los derivados: se incluyen aquí por exclusión, como hace Trade Republic en su informe. Confírmalo antes de declarar."
+        },
+        "unclassified": {
+          "title": "Sin clasificar",
+          "note": "No sabemos si son acciones, fondos o derivados, y cada uno va en un bloque distinto."
+        }
+      },
+      "unclassifiedNotice": "Indica qué es cada posición para ponerla en su bloque. Se guarda en la posición.",
+      "classifyLabel": "Clase de activo de {ticker}",
+      "classifyPlaceholder": "¿Qué es?",
+      "classifyError": "No se pudo guardar. Inténtalo de nuevo.",
+      "assetClasses": {
+        "stock": "Acción",
+        "fund": "Fondo o ETF",
+        "derivative": "Derivado",
+        "other": "Otro"
+      },
+      "print": "Imprimir o guardar en PDF"
     },
     "import": {
       "link": "Importar de Trade Republic",
@@ -1629,7 +1667,8 @@
         "estimate": "estimación",
         "manual": "manual"
       },
-      "originEstimated": "Dividendos con la retención en origen estimada con el tipo legal del país: {count}. Contrástala con el certificado o el informe fiscal de tu bróker antes de declarar."
+      "originEstimated": "Dividendos con la retención en origen estimada con el tipo legal del país: {count}. Contrástala con el certificado o el informe fiscal de tu bróker antes de declarar.",
+      "box": "casilla {box}"
     },
     "savingsReturn": {
       "title": "Base del ahorro de {year}",
@@ -1648,7 +1687,8 @@
       "excessWithholding": "{country}: te retuvieron {amount} por encima del convenio. Hacienda no los deduce; se reclaman a la administración de ese país.",
       "noTreatyRate": "{country}: no tenemos el tipo del convenio, así que su retención ({amount}) no se ha deducido.",
       "note": "Escala del ahorro de {scaleYear}. El tipo medio de la doble imposición usa solo la base del ahorro; la de la declaración usa también la base general. No incluye gastos de custodia. Orientativo, no es asesoramiento.",
-      "pendingAfter": "Quedan pendientes para años siguientes: {amount}."
+      "pendingAfter": "Quedan pendientes para años siguientes: {amount}.",
+      "box": "casilla {box}"
     },
     "pendingBalances": {
       "title": "Pérdidas de años anteriores pendientes de compensar ({count})",

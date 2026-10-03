@@ -27,6 +27,9 @@ export const REALISED_GAINS_CSV_COLUMNS = [
   "acquisitionValueEur",
   "gainEur",
   "fxDifferenceEur",
+  "deferredLossEur",
+  "integratedLossEur",
+  "computableGainEur",
 ] as const;
 
 /** Cabeceras YA traducidas por quien llama. */
@@ -57,6 +60,9 @@ export function buildRealisedGainsCsv(
     sale.eur ? cents(sale.eur.acquisitionValue) : null,
     sale.eur ? cents(sale.eur.gain) : null,
     sale.eur?.fxDifference != null ? cents(sale.eur.fxDifference) : null,
+    sale.eur ? cents(sale.eur.deferredLoss) : null,
+    sale.eur ? cents(sale.eur.integratedLoss) : null,
+    sale.eur ? cents(sale.eur.computableGain) : null,
   ]);
   return buildCsv(
     REALISED_GAINS_CSV_COLUMNS.map((column) => headers[column]),

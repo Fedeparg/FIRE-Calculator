@@ -7,6 +7,7 @@
 import type { IncomeEvent, IncomePayload } from "@sextante/core/fiscal/income";
 import type { PendingNegative } from "@sextante/core/fiscal/savings-base";
 import type {
+  AssetClass,
   InstrumentSearchResult,
   LotPayload,
   Position,
@@ -85,6 +86,11 @@ export function saveIncome(incomeId: string | null, payload: IncomePayload): Pro
 
 export function deleteIncome(incomeId: string): Promise<void> {
   return apiJson<void>(`/api/income/${incomeId}`, { method: "DELETE" });
+}
+
+/** Clasifica una posición (acción, fondo o ETF, derivado u otro) para la declaración. */
+export function setAssetClass(positionId: string, assetClass: AssetClass): Promise<Position> {
+  return apiJson<Position>(`/api/positions/${positionId}`, { method: "PATCH", body: { assetClass } });
 }
 
 /** Sustituye los saldos negativos pendientes de años que Sextante no calcula. */
