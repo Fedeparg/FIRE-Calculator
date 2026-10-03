@@ -4,7 +4,6 @@ import type { SavedScenarioResponse } from '@sextante/core/contracts';
 import type { HistoryPointDto } from '@sextante/core/portfolio/types';
 import type { SessionUser } from '../auth/auth.service.js';
 import { NotificationSettingsService } from '../notifications/notification-settings.service.js';
-import { OAuthClientsStore } from '../oauth/oauth-clients.store.js';
 import { OAuthGrantsService } from '../oauth/oauth-grants.service.js';
 import { PortfolioSnapshotsService, HISTORY_MAX_DAYS } from '../portfolio/portfolio-snapshots.service.js';
 import type { IncomeEvent } from '@sextante/core/fiscal/income';
@@ -62,7 +61,6 @@ export class AccountExportService {
     private readonly snapshots: PortfolioSnapshotsService,
     private readonly scenarios: SavedScenariosService,
     private readonly grants: OAuthGrantsService,
-    private readonly clients: OAuthClientsStore,
     private readonly notifications: NotificationSettingsService,
   ) {}
 
@@ -72,27 +70,34 @@ export class AccountExportService {
    * siempre del JWT, nunca del cliente.
    */
   async export(user: SessionUser): Promise<AccountExport> {
-    const positions = await this.positions.findAllByUser(user.id);
-    const positionLots = await this.lots.findAllByUser(user.id);
-    const income = await this.income.list(user.id);
-    const savingsPendingBalances = await this.pendingBalances.list(user.id);
-    // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
-    const history = await this.snapshots.history(user.id, HISTORY_MAX_DAYS);
-    const savedScenarios = await this.scenarios.findAllByUser(user.id);
-    const { fireAlertsEnabled, locale, lastFireMilestone } = await this.notifications.get(user.id);
-    const grants = await this.grants.listForUser(user.id);
-    const connectedApps: ConnectedAppExport[] = await Promise.all(
-      grants.map(async (g) => {
-        const client = await this.clients.getClient(g.clientId);
-        return {
-          clientId: g.clientId,
-          clientName: client?.client_name ?? null,
-          scopes: g.scopes,
-          createdAt: g.createdAt.toISOString(),
-          lastUsedAt: g.lastUsedAt ? g.lastUsedAt.toISOString() : null,
-        };
-      }),
-    );
+    // Consultas independientes entre sí: en paralelo, no en serie.
+    const [
+      positions,
+      positionLots,
+      income,
+      savingsPendingBalances,
+      history,
+      savedScenarios,
+      { fireAlertsEnabled, locale, lastFireMilestone },
+      grants,
+    ] = await Promise.all([
+      this.positions.findAllByUser(user.id),
+      this.lots.findAllByUser(user.id),
+      this.income.list(user.id),
+      this.pendingBalances.list(user.id),
+      // Se exporta el histórico COMPLETO que guardamos (el tope del servicio), en EUR.
+      this.snapshots.history(user.id, HISTORY_MAX_DAYS),
+      this.scenarios.findAllByUser(user.id),
+      this.notifications.get(user.id),
+      this.grants.listWithClients(user.id),
+    ]);
+    const connectedApps: ConnectedAppExport[] = grants.map((g) => ({
+      clientId: g.clientId,
+      clientName: g.clientName,
+      scopes: g.scopes,
+      createdAt: g.createdAt.toISOString(),
+      lastUsedAt: g.lastUsedAt ? g.lastUsedAt.toISOString() : null,
+    }));
     return {
       email: user.email,
       exportedAt: new Date().toISOString(),

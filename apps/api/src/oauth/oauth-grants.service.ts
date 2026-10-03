@@ -2,7 +2,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
-import { oauthGrants, oauthTokens } from '../db/schema.js';
+import { oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
+
+/** Un consentimiento con los datos legibles de su cliente. */
+export interface GrantWithClient {
+  clientId: string;
+  clientName: string | null;
+  clientUri: string | null;
+  scopes: string[];
+  createdAt: Date;
+  lastUsedAt: Date | null;
+}
 
 /**
  * Consentimientos OAuth (tabla `oauth_grants`): qué scopes ha concedido un usuario a un
@@ -77,18 +87,23 @@ export class OAuthGrantsService {
     });
   }
 
-  /** Lista los consentimientos del usuario (para "Aplicaciones conectadas"). */
-  async listForUser(
-    userId: string,
-  ): Promise<{ clientId: string; scopes: string[]; createdAt: Date; lastUsedAt: Date | null }[]> {
+  /**
+   * Consentimientos del usuario con el nombre y la URL de su cliente ("Aplicaciones conectadas" y
+   * exportación RGPD), los usados más recientemente primero. Una sola consulta: el cliente se une
+   * aquí en vez de pedirlo grant a grant. Un grant cuyo cliente ya no existe sale sin nombre.
+   */
+  async listWithClients(userId: string): Promise<GrantWithClient[]> {
     return this.db
       .select({
         clientId: oauthGrants.clientId,
+        clientName: sql<string | null>`${oauthClients.data}->>'client_name'`,
+        clientUri: sql<string | null>`${oauthClients.data}->>'client_uri'`,
         scopes: oauthGrants.scopes,
         createdAt: oauthGrants.createdAt,
         lastUsedAt: oauthGrants.lastUsedAt,
       })
       .from(oauthGrants)
+      .leftJoin(oauthClients, eq(oauthClients.clientId, oauthGrants.clientId))
       .where(eq(oauthGrants.userId, userId))
       .orderBy(sql`${oauthGrants.lastUsedAt} desc nulls last`);
   }

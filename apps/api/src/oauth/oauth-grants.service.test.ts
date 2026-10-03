@@ -172,7 +172,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
     });
   });
 
-  describe('listForUser', () => {
+  describe('listWithClients', () => {
     it('solo lista los consentimientos del usuario, los usados más recientemente primero', async () => {
       const userA = await insertUser(db, 'a@example.com');
       const userB = await insertUser(db, 'b@example.com');
@@ -185,16 +185,31 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
         .set({ lastUsedAt: new Date('2020-01-01T00:00:00Z') })
         .where(eq(oauthGrants.clientId, 'old'));
 
-      const list = await service.listForUser(userA);
+      const list = await service.listWithClients(userA);
 
       expect(list.map((g) => g.clientId)).toEqual(['recent', 'old']);
       expect(list[0].scopes).toEqual(['portfolio:read']);
     });
 
+    it('trae el nombre y la URL del cliente en la misma consulta, y null si el cliente ya no existe', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      await db.insert(oauthClients).values({
+        clientId: 'claude',
+        data: { client_id: 'claude', client_name: 'Claude', client_uri: 'https://claude.ai', redirect_uris: [] },
+      });
+      await service.recordConsent(userId, 'claude', ['portfolio:read']);
+      await service.recordConsent(userId, 'borrado', ['portfolio:read']);
+
+      const byId = new Map((await service.listWithClients(userId)).map((g) => [g.clientId, g]));
+
+      expect(byId.get('claude')).toMatchObject({ clientName: 'Claude', clientUri: 'https://claude.ai' });
+      expect(byId.get('borrado')).toMatchObject({ clientName: null, clientUri: null });
+    });
+
     it('un usuario sin consentimientos recibe una lista vacía', async () => {
       const userId = await insertUser(db, 'a@example.com');
 
-      expect(await service.listForUser(userId)).toEqual([]);
+      expect(await service.listWithClients(userId)).toEqual([]);
     });
   });
 });
