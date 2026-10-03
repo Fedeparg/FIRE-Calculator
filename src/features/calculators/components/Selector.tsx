@@ -17,8 +17,8 @@ type Props = {
   categories: { id: string; label: string }[];
 };
 
-// Normaliza para que el buscador ignore acentos ("hipoteca" ~ "hipotéca").
-// NFD separa la letra de su diacrítico; eliminamos el rango de combinantes
+// Normalises so the search ignores accents ("hipoteca" ~ "hipotéca").
+// NFD splits each letter from its diacritic; we then drop the combining range
 // (U+0300–U+036F).
 const normalize = (s: string): string =>
   s
@@ -81,7 +81,7 @@ function CategoryChip({ active, onClick, label }: { active: boolean; onClick: ()
   return (
     <button
       type="button"
-      // Filtro de alternancia: el lector de pantalla anuncia cuál está activo (antes solo lo decía el color).
+      // Toggle filter: screen readers announce which one is active (previously only colour conveyed it).
       aria-pressed={active}
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-sm transition-colors ${

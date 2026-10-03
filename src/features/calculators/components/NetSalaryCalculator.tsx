@@ -29,12 +29,12 @@ import StatGrid from "@/shared/ui/StatGrid";
 export default function NetSalaryCalculator() {
   const t = useTranslations("calc.salario-bruto-neto");
   const { formatEUR, formatEURCents, formatPercent } = useFormat();
-  // Datos básicos
+  // Basic details
   const grossAnnual = useBoundNumberField("grossAnnual", 30000);
   const payments = useBoundOptionField<PaymentCount>("payments", "14", PAYMENT_COUNTS);
   const contractType = useBoundOptionField<ContractType>("contractType", "indefinido", CONTRACT_TYPES);
   const region = useBoundOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
-  // Circunstancias personales y familiares
+  // Personal and family circumstances
   const age = useBoundNumberField("age", 30);
   const children = useBoundNumberField("children", 0);
   const childrenUnder3 = useBoundNumberField("childrenUnder3", 0);

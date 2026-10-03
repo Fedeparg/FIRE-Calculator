@@ -23,7 +23,7 @@ import { useNumberField, useOptionField } from "./CalculatorState";
 const MODELS = ["lognormal", "historical"] as const;
 type ModelKind = (typeof MODELS)[number];
 
-/** Vidas de la tabla de sensibilidad: cinco simulaciones seguidas, así que menos que la principal. */
+/** Paths for the sensitivity table: five simulations in a row, so fewer than the main one. */
 const SENSITIVITY_PATHS = 2000;
 const FIRST_YEAR = firstItem(HISTORICAL_RETURNS).year;
 const LAST_YEAR = lastItem(HISTORICAL_RETURNS).year;
@@ -32,7 +32,7 @@ export default function MonteCarloCalculator() {
   const t = useTranslations("calc.simulador-montecarlo");
   const { formatCurrency, formatPercent } = useFormat();
 
-  // Mismas claves que la calculadora FIRE donde el dato es el mismo.
+  // Same keys as the FIRE calculator wherever the value means the same.
   const [annualExpenses, setAnnualExpenses] = useNumberField("annualExpenses", 24000);
   const [currentSavings, setCurrentSavings] = useNumberField("currentSavings", 20000);
   const [monthlySavings, setMonthlySavings] = useNumberField("savings", 800);
@@ -43,12 +43,12 @@ export default function MonteCarloCalculator() {
   const [model, setModel] = useOptionField<ModelKind>("model", "lognormal", MODELS);
   const [stockShare, setStockShare] = useNumberField("stockShare", 60);
 
-  // 5.000 vidas × ~120 años cuestan unos 60 ms en un portátil (más en un móvil modesto), y se
-  // recalcula con cada tecla. `useDeferredValue` le dice a React que la simulación puede ir
-  // "por detrás": el campo se actualiza al instante y el resultado se recalcula con prioridad
-  // baja, descartando cálculos intermedios si se sigue tecleando. Se difiere un único objeto
-  // para que todos los valores cambien juntos. La semilla es fija, así que el resultado es
-  // idéntico en servidor y cliente.
+  // 5,000 paths × ~120 years take about 60 ms on a laptop (more on a modest phone), and it
+  // recomputes on every keystroke. `useDeferredValue` tells React the simulation may lag
+  // "behind": the field updates instantly and the result is recomputed at low priority,
+  // discarding intermediate computations while typing continues. A single object is deferred
+  // so all values change together. The seed is fixed, so the result is identical on server
+  // and client.
   const latestInputs = useMemo(
     () => ({
       annualExpenses,
@@ -75,11 +75,11 @@ export default function MonteCarloCalculator() {
     ],
   );
   const inputs = useDeferredValue(latestInputs);
-  // Mientras el valor diferido va por detrás del último tecleado, lo que se ve es de la entrada
-  // anterior: se avisa y se atenúa para que nadie lea un resultado viejo como el nuevo.
+  // While the deferred value lags behind the latest keystroke, what is shown belongs to the
+  // previous input: it is flagged and dimmed so nobody reads a stale result as the new one.
   const recalculating = inputs !== latestInputs;
   const result = useMemo(() => simulateFire(inputs), [inputs]);
-  // Misma entrada con otras tasas de retiro, con las mismas secuencias de mercado (misma semilla).
+  // Same input at other withdrawal rates, with the same market sequences (same seed).
   const sensitivity = useMemo(() => withdrawalSensitivity(inputs, undefined, { paths: SENSITIVITY_PATHS }), [inputs]);
 
   const { p10, p50, p90 } = result.yearsToFire;
@@ -127,7 +127,7 @@ export default function MonteCarloCalculator() {
             options={MODELS.map((m) => ({ value: m, label: t(`models.${m}`) }))}
             help={t("help.model", { from: FIRST_YEAR, to: LAST_YEAR })}
           />
-          {/* Cada modelo enseña solo sus parámetros; los del otro se conservan en la URL. */}
+          {/* Each model shows only its own parameters; the other's are kept in the URL. */}
           {model === "historical" ? (
             <NumberField
               label={t("stockShare")}

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { useInputs } from "./use-inputs";
 
 describe("useInputs", () => {
-  it("devuelve los valores de los campos con identidad estable mientras no cambian", () => {
+  it("returns the field values with a stable identity while they do not change", () => {
     const set = () => undefined;
     const { result, rerender } = renderHook(
       ({ a, b }: { a: number; b: string }) => useInputs({ a: { value: a, set }, b: { value: b, set } }),

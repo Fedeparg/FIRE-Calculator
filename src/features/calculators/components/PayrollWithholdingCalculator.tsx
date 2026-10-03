@@ -28,13 +28,13 @@ import StatGrid from "@/shared/ui/StatGrid";
 export default function PayrollWithholdingCalculator() {
   const t = useTranslations("calc.irpf-nomina");
   const { formatEUR, formatEURCents, formatPercent } = useFormat();
-  // Datos de la nómina
+  // Payslip details
   const [grossAnnual, setGrossAnnual] = useNumberField("grossAnnual", 30000);
   const [payments, setPayments] = useOptionField<PaymentCount>("payments", "14", PAYMENT_COUNTS);
   const [contractType, setContractType] = useOptionField<ContractType>("contractType", "indefinido", CONTRACT_TYPES);
   const [region, setRegion] = useOptionField<RegionSelection>("region", "", SELECTABLE_REGIONS);
   const [pensionContribution, setPensionContribution] = useNumberField("pensionContribution", 0);
-  // Situación personal y familiar
+  // Personal and family situation
   const [age, setAge] = useNumberField("age", 30);
   const [jointReturn, setJointReturn] = useOptionField<JointReturnOption>("jointReturn", "no", JOINT_RETURN_OPTIONS);
   const [children, setChildren] = useNumberField("children", 0);

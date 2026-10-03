@@ -6,13 +6,13 @@ import type { ComponentType } from "react";
 import type { CalculatorSlug } from "@/features/calculators/registry";
 
 /**
- * Componente de cada calculadora, por slug. Una sola ruta (`calculadoras/[slug]`) sirve las 27:
- * `next/dynamic` en un componente de CLIENTE parte el JS por calculadora (desde un componente de
- * servidor no habría división automática, según la guía de lazy loading de Next) y mantiene el
- * SSR. `import()` tiene que ir escrito literalmente dentro de `dynamic()` para que Next lo enlace.
+ * Component for each calculator, by slug. A single route (`calculadoras/[slug]`) serves all 27:
+ * `next/dynamic` in a CLIENT component splits the JS per calculator (a server component would get
+ * no automatic splitting, per Next's lazy-loading guide) and keeps SSR. `import()` must be written
+ * literally inside `dynamic()` for Next to link it.
  *
- * Para añadir una calculadora: una línea aquí (además del registry, i18n y explainer). El tipo
- * `Record<CalculatorSlug, …>` hace que olvidarla (o dejar una de más) sea un error de compilación.
+ * To add a calculator: one line here (plus the registry, i18n and explainer). The
+ * `Record<CalculatorSlug, …>` type turns forgetting one (or leaving an extra one) into a compile error.
  */
 export const CALCULATOR_COMPONENTS = {
   "ahorro-jubilacion": dynamic(() => import("./RetirementCalculator")),

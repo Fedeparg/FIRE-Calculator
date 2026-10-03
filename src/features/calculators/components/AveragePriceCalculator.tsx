@@ -20,10 +20,10 @@ const makeRow = (price: number, shares: number, commission: number): Row => ({
 });
 
 /**
- * Calculadora bespoke A PROPÓSITO: sus entradas son una lista de compras de longitud variable
- * (añadir y quitar filas), que no encaja en el modelo de campos fijos con clave de URL de
- * `CalculatorState` (ni en `CalculatorLayout`). Por eso no se comparte por enlace ni guarda
- * escenarios. Si algún día hiciera falta, el estado de las filas tendría que serializarse entero.
+ * Bespoke calculator ON PURPOSE: its inputs are a variable-length list of purchases (add and
+ * remove rows), which does not fit `CalculatorState`'s model of fixed fields with URL keys (nor
+ * `CalculatorLayout`). That is why it cannot be shared by link or saved as a scenario. If that
+ * were ever needed, the whole row state would have to be serialised.
  */
 export default function AveragePriceCalculator() {
   const t = useTranslations("calc.promediar-acciones");
@@ -50,9 +50,9 @@ export default function AveragePriceCalculator() {
           {rows.map((row, i) => (
             <li key={row.id} className="grid grid-cols-[1fr_1fr_1fr_auto] items-end gap-3">
               {/*
-                La etiqueta se escribe siempre (es el nombre accesible del
-                campo) y a partir de la segunda fila se oculta visualmente:
-                en pantalla la cabecera de la columna ya la muestra una vez.
+                The label is always rendered (it is the field's accessible
+                name) and from the second row on it is visually hidden: on
+                screen the column header already shows it once.
               */}
               <NumberField
                 label={t("price")}

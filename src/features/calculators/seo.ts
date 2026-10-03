@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { buildMetadata } from "@/shared/seo/seo";
 
 /**
- * Metadata de una página de calculadora: centraliza la ruta y la tarjeta OG (que `/og` pinta
- * con el título y la categoría de la calculadora) para que cada página quede en una línea.
- * `title`/`description` ya vienen traducidos del namespace `calc.<slug>` de la propia página.
+ * Metadata for a calculator page: centralises the route and the OG card (which `/og` draws with
+ * the calculator's title and category) so each page stays a one-liner.
+ * `title`/`description` arrive already translated from the page's own `calc.<slug>` namespace.
  */
 export function calculatorMetadata(args: {
   locale: string;

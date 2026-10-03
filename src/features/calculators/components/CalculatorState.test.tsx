@@ -7,8 +7,8 @@ import { renderWithIntl } from "@/test/render";
 
 import CalculatorStateProvider, { useCalculatorState, useNumberField, useOptionField } from "./CalculatorState";
 
-// El panel de escenarios habla con la API; aquí lo sustituye un botón que carga un escenario por
-// el mismo camino que el real (`applyInputs`).
+// The scenario panel talks to the API; here it is replaced by a button that loads a scenario
+// through the same path as the real one (`applyInputs`).
 vi.mock("./ScenarioPanel", () => ({
   default: function FakeScenarioPanel() {
     const state = useCalculatorState();
@@ -20,7 +20,7 @@ vi.mock("./ScenarioPanel", () => ({
   },
 }));
 
-/** Calculadora mínima: un campo numérico y uno de opción, y su resultado. */
+/** Minimal calculator: one number field, one option field, and their result. */
 function FakeCalculator() {
   const [principal, setPrincipal] = useNumberField("principal", 100_000);
   const [mode] = useOptionField("mode", "a", ["a", "b"] as const);
@@ -49,7 +49,7 @@ describe("CalculatorStateProvider", () => {
     vi.useRealTimers();
   });
 
-  it("aplica los valores de un enlace compartido al campo y al resultado", async () => {
+  it("applies a shared link's values to the field and the result", async () => {
     window.history.replaceState(null, "", "/calculadoras/prueba?principal=180000&mode=b");
 
     renderCalculator();
@@ -58,14 +58,14 @@ describe("CalculatorStateProvider", () => {
     expect(screen.getByRole("spinbutton", { name: "Capital" })).toHaveValue("180000");
   });
 
-  it("sin query usa los valores por defecto", () => {
+  it("uses the defaults when there is no query", () => {
     renderCalculator();
 
     expect(screen.getByLabelText("resultado")).toHaveTextContent("100000-a");
     expect(screen.getByRole("spinbutton", { name: "Capital" })).toHaveValue("100000");
   });
 
-  it("lo tecleado llega al resultado y a la URL (solo lo que difiere del defecto)", async () => {
+  it("typed input reaches the result and the URL (only what differs from the default)", async () => {
     const user = userEvent.setup();
     renderCalculator();
     const field = screen.getByRole("spinbutton", { name: "Capital" });
@@ -77,7 +77,7 @@ describe("CalculatorStateProvider", () => {
     await waitFor(() => expect(window.location.search).toBe("?principal=120000"));
   });
 
-  it("cargar un escenario reemplaza los valores y resincroniza el texto del campo", async () => {
+  it("loading a scenario replaces the values and resyncs the field text", async () => {
     const user = userEvent.setup();
     renderCalculator();
     const field = screen.getByRole("spinbutton", { name: "Capital" });

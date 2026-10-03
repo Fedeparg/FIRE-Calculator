@@ -1,12 +1,12 @@
 import type { CalculatorMeta, CategoryId } from "@/features/calculators/types";
 
-// Catálogo completo de calculadoras del producto.
-// Cada entrada es una calculadora implementada y navegable en /calculadoras/<slug>. El orden es el
-// del selector y el sitemap. El nombre y la descripción viven en i18n (`catalog.<slug>`), como el
-// resto de textos visibles; aquí solo lo que no se traduce.
+// The product's full calculator catalog.
+// Each entry is an implemented calculator reachable at /calculadoras/<slug>. The order is the one
+// used by the selector and the sitemap. The name and description live in i18n (`catalog.<slug>`),
+// like every other visible text; only what is not translated lives here.
 //
-// `as const` conserva cada slug como literal, de modo que `CalculatorSlug` es la unión exacta de
-// los slugs y un mapa `Record<CalculatorSlug, …>` falla en compilación si le falta uno.
+// `as const` keeps each slug as a literal, so `CalculatorSlug` is the exact union of the slugs and
+// a `Record<CalculatorSlug, …>` map fails to compile if it is missing one.
 
 export const CALCULATORS = [
   {
@@ -158,17 +158,17 @@ export const CALCULATORS = [
   },
 ] as const satisfies readonly CalculatorMeta[];
 
-/** Slug de una calculadora del catálogo. */
+/** Slug of a calculator in the catalog. */
 export type CalculatorSlug = (typeof CALCULATORS)[number]["slug"];
 
 const SLUGS: ReadonlySet<string> = new Set(CALCULATORS.map((c) => c.slug));
 
-/** Estrecha un slug que llega de la URL (o de un fichero) al tipo del catálogo. */
+/** Narrows a slug coming from the URL (or from a file) to the catalog type. */
 export function isCalculatorSlug(slug: string): slug is CalculatorSlug {
   return SLUGS.has(slug);
 }
 
-/** Categorías con al menos una calculadora, en el orden en que aparecen en el catálogo. */
+/** Categories with at least one calculator, in the order they appear in the catalog. */
 export function getUsedCategories(): CategoryId[] {
   return [...new Set(CALCULATORS.map((c) => c.category))];
 }
