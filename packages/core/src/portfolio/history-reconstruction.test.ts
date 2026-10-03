@@ -9,6 +9,7 @@ import {
   type HistoryPosition,
   type PricePoint,
 } from "./history-reconstruction.js";
+import { itemAt } from "../arrays.js";
 
 const buy = (tradedAt: string, quantity: number, price: number): HistoryLot => ({
   kind: "buy",
@@ -65,11 +66,11 @@ describe("reconstructHistory", () => {
         prices: { A: daily("2026-01-01", [100, 101, 102, 103, 104, 105, 106, 107, 108, 109]) },
       }),
     );
-    expect(days[0].date).toBe("2026-01-04");
+    expect(itemAt(days, 0).date).toBe("2026-01-04");
     expect(days).toHaveLength(7);
     // El día de la compra se valora con el cierre de ese día.
-    expect(days[0].aggregate.marketValue).toBe(10 * 103);
-    expect(days[0].aggregate.invested).toBe(1000);
+    expect(itemAt(days, 0).aggregate.marketValue).toBe(10 * 103);
+    expect(itemAt(days, 0).aggregate.invested).toBe(1000);
   });
 
   it("usa la cantidad de cada día, no la actual (compra, segunda compra y venta parcial)", () => {
@@ -82,12 +83,12 @@ describe("reconstructHistory", () => {
       }),
     );
     const byDate = Object.fromEntries(days.map((d) => [d.date, d.aggregate]));
-    expect(byDate["2026-01-02"].marketValue).toBe(1000); // 10 uds
-    expect(byDate["2026-01-03"].marketValue).toBe(2000); // 20 uds
-    expect(byDate["2026-01-03"].invested).toBe(2200); // 10·100 + 10·120
-    expect(byDate["2026-01-05"].marketValue).toBe(1500); // 15 uds tras vender 5
+    expect(byDate["2026-01-02"]?.marketValue).toBe(1000); // 10 uds
+    expect(byDate["2026-01-03"]?.marketValue).toBe(2000); // 20 uds
+    expect(byDate["2026-01-03"]?.invested).toBe(2200); // 10·100 + 10·120
+    expect(byDate["2026-01-05"]?.marketValue).toBe(1500); // 15 uds tras vender 5
     // Coste medio móvil: la venta retira al medio (110) y el medio no cambia.
-    expect(byDate["2026-01-05"].invested).toBeCloseTo(15 * 110, 8);
+    expect(byDate["2026-01-05"]?.invested).toBeCloseTo(15 * 110, 8);
   });
 
   it("compra y venta total en el periodo: desaparece tras vender y reaparece al recomprar", () => {
@@ -107,7 +108,7 @@ describe("reconstructHistory", () => {
       "2026-01-10",
     ]);
     // Tras vender todo el coste arranca de cero: la recompra no hereda el medio anterior.
-    expect(days[2].aggregate.invested).toBe(360);
+    expect(itemAt(days, 2).aggregate.invested).toBe(360);
   });
 
   it("tolera vender más de lo que hay (se acota a cero, sin cantidades negativas)", () => {
@@ -128,8 +129,8 @@ describe("reconstructHistory", () => {
       }),
     );
     // Vender todo y recomprar 5@50 deja coste 250; en el orden inverso se habría vendido de más.
-    expect(days[1].aggregate.invested).toBe(250);
-    expect(days[1].aggregate.marketValue).toBe(300);
+    expect(itemAt(days, 1).aggregate.invested).toBe(250);
+    expect(itemAt(days, 1).aggregate.marketValue).toBe(300);
   });
 
   it("arrastra el último cierre en fines de semana y festivos", () => {
@@ -169,8 +170,8 @@ describe("reconstructHistory", () => {
         prices: { A: daily("2026-01-01", Array<number>(10).fill(10)) },
       }),
     );
-    expect(days[0].aggregate.valued).toBe(1);
-    expect(days[0].aggregate.total).toBe(2);
+    expect(itemAt(days, 0).aggregate.valued).toBe(1);
+    expect(itemAt(days, 0).aggregate.total).toBe(2);
   });
 
   it("convierte con la tasa FX de CADA día y omite el día sin tasa", () => {
@@ -187,10 +188,10 @@ describe("reconstructHistory", () => {
         },
       }),
     );
-    expect(days[0].date).toBe("2026-01-02"); // el día 1 no hay tasa EUR: no se valora
-    expect(days[0].aggregate.marketValue).toBeCloseTo(1000 / 1.1, 8);
-    expect(days[1].aggregate.marketValue).toBeCloseTo(1000 / 1.2, 8);
-    expect(days[1].rates).toEqual({ USD: 1, EUR: 1.2 });
+    expect(itemAt(days, 0).date).toBe("2026-01-02"); // el día 1 no hay tasa EUR: no se valora
+    expect(itemAt(days, 0).aggregate.marketValue).toBeCloseTo(1000 / 1.1, 8);
+    expect(itemAt(days, 1).aggregate.marketValue).toBeCloseTo(1000 / 1.2, 8);
+    expect(itemAt(days, 1).rates).toEqual({ USD: 1, EUR: 1.2 });
   });
 
   it("ignora tasas no válidas (cero, NaN) y excluye los derivados del total", () => {
@@ -204,8 +205,8 @@ describe("reconstructHistory", () => {
         fx: { EUR: [{ date: "2026-01-01", rate: Number.NaN }] },
       }),
     );
-    expect(days[0].rates).toEqual({ USD: 1 });
-    expect(days[0].aggregate.total).toBe(1);
+    expect(itemAt(days, 0).rates).toEqual({ USD: 1 });
+    expect(itemAt(days, 0).aggregate.total).toBe(1);
   });
 
   it("procesa los lotes anteriores a `from` en el primer día de la ventana", () => {
@@ -216,8 +217,8 @@ describe("reconstructHistory", () => {
         from: "2026-01-05",
       }),
     );
-    expect(days[0].date).toBe("2026-01-05");
-    expect(days[0].aggregate.marketValue).toBe(30);
+    expect(itemAt(days, 0).date).toBe("2026-01-05");
+    expect(itemAt(days, 0).aggregate.marketValue).toBe(30);
   });
 
   it("ignora los lotes posteriores a `to`", () => {
@@ -255,10 +256,10 @@ describe("reconstructHistory con splits", () => {
         splits: { A: [{ date: "2026-01-05", ratio: 10 }] },
       }),
     );
-    expect(days[0].aggregate.marketValue).toBe(10_000);
-    expect(days[5].aggregate.marketValue).toBe(10_000 + 500);
+    expect(itemAt(days, 0).aggregate.marketValue).toBe(10_000);
+    expect(itemAt(days, 5).aggregate.marketValue).toBe(10_000 + 500);
     // Coste medio móvil coherente: 10·1000 + 5·100.
-    expect(days[5].aggregate.invested).toBe(10_500);
+    expect(itemAt(days, 5).aggregate.invested).toBe(10_500);
   });
 
   it("encadena varios splits y un split inverso", () => {
@@ -275,7 +276,7 @@ describe("reconstructHistory con splits", () => {
         },
       }),
     );
-    expect(days[0].aggregate.marketValue).toBe(100 * 3 * 10);
+    expect(itemAt(days, 0).aggregate.marketValue).toBe(100 * 3 * 10);
   });
 
   it("un split del mismo día de la compra no afecta a ese lote", () => {
@@ -286,7 +287,7 @@ describe("reconstructHistory con splits", () => {
         splits: { A: [{ date: "2026-01-05", ratio: 10 }] },
       }),
     );
-    expect(days[0].aggregate.marketValue).toBe(1000);
+    expect(itemAt(days, 0).aggregate.marketValue).toBe(1000);
   });
 });
 

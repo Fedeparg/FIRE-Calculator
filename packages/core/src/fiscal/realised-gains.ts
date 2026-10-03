@@ -2,6 +2,7 @@
 // emparejadas por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas
 // dentro de él. Core puro. Alcance, criterio de divisas y fuentes: ver ./README.md.
 
+import { firstItem } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 import { referenceRateOn, TAX_CURRENCY, toEur, type AppliedRate, type ReferenceRates } from "./fx-reference.js";
 import { walkLots, type RealisedSale, type TradeLot } from "./plusvalias.js";
@@ -175,7 +176,7 @@ export function referenceRatesNeeded(positions: readonly RealisedGainsPosition[]
   for (const group of bySecurity.values()) {
     const lots = group.flatMap((p) => p.lots);
     if (!lots.some((lot) => lot.kind === "sell")) continue;
-    currencies.add(group[0].currency);
+    currencies.add(firstItem(group).currency);
     for (const lot of lots) if (from === null || lot.tradedAt < from) from = lot.tradedAt;
   }
   return from === null ? null : { currencies: [...currencies].sort(), from };

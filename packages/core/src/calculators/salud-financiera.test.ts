@@ -5,6 +5,7 @@ import {
   computeFinancialHealth,
   scoreFinancialHealthOptions,
 } from "./salud-financiera.js";
+import { itemAt } from "../arrays.js";
 
 describe("salud-financiera", () => {
   it("los pesos de las preguntas suman 1", () => {
@@ -28,7 +29,7 @@ describe("salud-financiera", () => {
 
   it("respuestas que faltan cuentan como 0", () => {
     const r = computeFinancialHealth([1]);
-    expect(r.score).toBe(Math.round(FINANCIAL_HEALTH_QUESTIONS[0].weight * 100));
+    expect(r.score).toBe(Math.round(itemAt(FINANCIAL_HEALTH_QUESTIONS, 0).weight * 100));
   });
 
   it("umbrales de categoría", () => {

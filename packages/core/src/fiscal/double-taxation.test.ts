@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { computeDoubleTaxationDeduction, TREATY_DIVIDEND_RATES } from "./double-taxation.js";
+import { itemAt } from "../arrays.js";
 
 describe("computeDoubleTaxationDeduction", () => {
   it("sin rentas: todo a 0", () => {
@@ -83,7 +84,7 @@ describe("computeDoubleTaxationDeduction", () => {
     );
     expect(r.countries).toHaveLength(1);
     expect(r.countries[0]).toMatchObject({ gross: 300, unknownGross: 200, creditable: 15 });
-    expect(r.countries[0].excessReclaimable).toBeCloseTo(11.375, 9);
+    expect(itemAt(r.countries, 0).excessReclaimable).toBeCloseTo(11.375, 9);
   });
 
   it("la tabla del convenio contiene los países de la DGT confirmados", () => {
@@ -111,6 +112,6 @@ describe("computeDoubleTaxationDeduction", () => {
 
   it("Japón usa el 5 % del convenio vigente desde 2021, no el 15 % de la tabla de 2018", () => {
     const r = computeDoubleTaxationDeduction([{ country: "JP", gross: 100, withholdingOrigin: 15.315 }], 19);
-    expect(r.countries[0].creditable).toBeCloseTo(5, 10);
+    expect(itemAt(r.countries, 0).creditable).toBeCloseTo(5, 10);
   });
 });

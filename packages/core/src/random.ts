@@ -1,6 +1,8 @@
 // PRNG con semilla para simulaciones (Monte Carlo): `Math.random` no sirve porque la misma URL debe
 // dar el mismo resultado en servidor y cliente, y los tests necesitan valores fijos. No es criptográfico.
 
+import { itemAt } from "./arrays.js";
+
 export type Rng = () => number;
 
 /** mulberry32: PRNG de 32 bits; la misma semilla da la misma secuencia. */
@@ -38,9 +40,11 @@ export function normalGenerator(rng: Rng): () => number {
 export function percentileSorted(sorted: ArrayLike<number>, p: number): number {
   const n = sorted.length;
   if (n === 0) return NaN;
-  if (n === 1) return sorted[0];
+  if (n === 1) return itemAt(sorted, 0);
   const rank = (Math.min(100, Math.max(0, p)) / 100) * (n - 1);
   const low = Math.floor(rank);
   const high = Math.ceil(rank);
-  return sorted[low] + (sorted[high] - sorted[low]) * (rank - low);
+  // `rank` está en [0, n − 1], así que `low` y `high` son índices válidos.
+  const lowValue = itemAt(sorted, low);
+  return lowValue + (itemAt(sorted, high) - lowValue) * (rank - low);
 }

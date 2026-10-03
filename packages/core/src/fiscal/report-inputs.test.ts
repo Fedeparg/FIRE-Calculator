@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { IncomeEvent } from "./income.js";
 import { referenceRatesRequest, toRealisedGainsPositions, type RealisedGainsLotSource } from "./report-inputs.js";
+import { itemAt } from "../arrays.js";
 
 const position = (id: string, currency = "EUR", isDerivative = false) => ({
   id,
@@ -48,7 +49,9 @@ describe("toRealisedGainsPositions", () => {
   });
 
   it("ignora las operaciones de posiciones que no están en la lista", () => {
-    expect(toRealisedGainsPositions([position("a")], [lot("1", "otra", "buy", "2024-01-01")])[0].lots).toEqual([]);
+    expect(itemAt(toRealisedGainsPositions([position("a")], [lot("1", "otra", "buy", "2024-01-01")]), 0).lots).toEqual(
+      [],
+    );
   });
 });
 

@@ -3,6 +3,7 @@
 // internacional (art. 80 LIRPF) y retenciones españolas. Core puro: une `realised-gains.ts`,
 // `income.ts`, `savings-base.ts`, `savings-tax.ts` y `double-taxation.ts`. Ver ./README.md.
 
+import { firstItem, lastItem } from "../arrays.js";
 import { computeDoubleTaxationDeduction, type DoubleTaxationResult } from "./double-taxation.js";
 import { referenceRateOn, toEur, type ReferenceRates } from "./fx-reference.js";
 import type { IncomeEvent, IncomeYear } from "./income.js";
@@ -120,7 +121,7 @@ export function buildSavingsReturns(input: SavingsReturnsInput): SavingsReturn[]
 
   const out: SavingsReturn[] = [];
   let carried: PendingNegative[] = [...input.manualPending];
-  for (let year = years[0]; year <= years[years.length - 1]; year++) {
+  for (let year = firstItem(years); year <= lastItem(years); year++) {
     const result = buildSavingsReturn({
       year,
       gains: gainsByYear.get(year),

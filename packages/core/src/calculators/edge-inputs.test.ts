@@ -29,6 +29,7 @@ import { computeRoi } from "./roi.js";
 import { computeFinancialHealth } from "./salud-financiera.js";
 import { computeStaking } from "./staking.js";
 import { computeCreditCard } from "./tarjeta-credito.js";
+import { itemAt } from "../arrays.js";
 
 interface Case {
   name: string;
@@ -274,7 +275,7 @@ function withValue(value: unknown, paths: readonly Path[], replacement: number):
   for (const path of paths) {
     let target = copy as Record<string | number, unknown>;
     for (const key of path.slice(0, -1)) target = target[key] as Record<string | number, unknown>;
-    target[path[path.length - 1]] = replacement;
+    target[itemAt(path, path.length - 1)] = replacement;
   }
   return copy;
 }

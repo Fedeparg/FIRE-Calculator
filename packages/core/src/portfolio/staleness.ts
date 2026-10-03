@@ -1,3 +1,4 @@
+import { itemAt } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 /**
  * Capturas reales del histórico de la cartera que han quedado obsoletas. Core puro.
@@ -44,8 +45,8 @@ export function staleSnapshotDates(input: StalenessInput): Set<string> {
   let latestChange = Number.NEGATIVE_INFINITY;
   let next = 0;
   for (const snapshot of snapshotsByDate) {
-    while (next < lotsByDate.length && lotsByDate[next].tradedAt <= snapshot.date) {
-      latestChange = Math.max(latestChange, lotsByDate[next].changedAt);
+    while (next < lotsByDate.length && itemAt(lotsByDate, next).tradedAt <= snapshot.date) {
+      latestChange = Math.max(latestChange, itemAt(lotsByDate, next).changedAt);
       next += 1;
     }
     if (latestChange > snapshot.writtenAt || (invalidateFrom !== null && snapshot.date >= invalidateFrom)) {

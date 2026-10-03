@@ -16,6 +16,7 @@ import {
   toSupportedRegion,
   type RegionCode,
 } from "./regions.js";
+import { itemAt } from "../arrays.js";
 
 /** Bases de prueba: cero, tramos bajos, cada frontera relevante y rentas altas. */
 const SAMPLE_BASES = [
@@ -89,7 +90,7 @@ describe("forma de las escalas autonómicas", () => {
   it.each(REGION_CODES)("%s: tramos crecientes, último abierto y tipos razonables", (region) => {
     const scale = regionalScale(region);
     expect(scale.length).toBeGreaterThan(0);
-    expect(scale[scale.length - 1].upTo).toBeNull();
+    expect(itemAt(scale, scale.length - 1).upTo).toBeNull();
 
     let previousLimit = 0;
     let previousRate = 0;
@@ -138,9 +139,9 @@ describe("contraste con el segundo organismo (Hacienda, Medidas 2026)", () => {
     (region, brackets, minRate, maxRate, lastThreshold) => {
       const scale = regionalScale(region);
       expect(scale).toHaveLength(brackets);
-      expect(scale[0].rate).toBe(minRate);
-      expect(scale[scale.length - 1].rate).toBe(maxRate);
-      expect(scale[scale.length - 2].upTo).toBe(lastThreshold);
+      expect(itemAt(scale, 0).rate).toBe(minRate);
+      expect(itemAt(scale, scale.length - 1).rate).toBe(maxRate);
+      expect(itemAt(scale, scale.length - 2).upTo).toBe(lastThreshold);
     },
   );
 

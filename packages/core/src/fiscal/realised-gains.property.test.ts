@@ -5,6 +5,7 @@ import { PROPERTY_PARAMS } from "../test-support/property-config.js";
 import type { ReferenceRates } from "./fx-reference.js";
 import type { TradeLot } from "./plusvalias.js";
 import { buildRealisedGainsReport } from "./realised-gains.js";
+import { itemAt } from "../arrays.js";
 
 const DAYS = 3 * 365;
 const dateOf = (day: number) => new Date(Date.UTC(2022, 0, 1) + day * 86_400_000).toISOString().slice(0, 10);
@@ -44,7 +45,7 @@ describe("buildRealisedGainsReport — propiedades", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {
         const report = buildRealisedGainsReport([{ id: "p", ticker: "X", name: null, currency: "USD", lots }], rates);
-        const rateOn = (date: string) => rates.USD.find((p) => p.date === date)?.unitsPerEur ?? NaN;
+        const rateOn = (date: string) => rates.USD?.find((p) => p.date === date)?.unitsPerEur ?? NaN;
         return report.years.every((year) => {
           const perOperation = year.sales.reduce(
             (sum, sale) =>
@@ -111,7 +112,9 @@ describe("buildRealisedGainsReport — propiedades", () => {
         const b = buildRealisedGainsReport(position([...lots].reverse()), rates);
         return (
           a.years.length === b.years.length &&
-          a.years.every((year, i) => close(year.total, b.years[i].total) && close(year.net, b.years[i].net))
+          a.years.every(
+            (year, i) => close(year.total, itemAt(b.years, i).total) && close(year.net, itemAt(b.years, i).net),
+          )
         );
       }),
       PROPERTY_PARAMS,

@@ -7,6 +7,7 @@ import {
   withholdingsFitGross,
   type IncomeEvent,
 } from "./income.js";
+import { firstItem } from "../arrays.js";
 
 let seq = 0;
 function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "paidAt" | "gross">): IncomeEvent {
@@ -64,7 +65,7 @@ describe("buildIncomeReport", () => {
     );
 
     expect(report.years.map((y) => y.year)).toEqual([2025, 2024]);
-    const [y2025] = report.years;
+    const y2025 = firstItem(report.years);
     expect(y2025.interest.total).toMatchObject({ events: 2, gross: 25, withholdingSpain: 4.75 });
     expect(y2025.interest.total.net).toBeCloseTo(20.25, 10);
     expect(y2025.dividend.total).toMatchObject({
@@ -78,13 +79,15 @@ describe("buildIncomeReport", () => {
   });
 
   it("cuenta aparte lo que el pagador ya comunicó a la AEAT", () => {
-    const [year] = buildIncomeReport(
-      [
-        event({ kind: "interest", paidAt: "2025-03-01", gross: 11.78 }),
-        event({ kind: "interest", paidAt: "2025-07-01", gross: 10, withholdingSpain: 1.9, reportedToAeat: true }),
-      ],
-      {},
-    ).years;
+    const year = firstItem(
+      buildIncomeReport(
+        [
+          event({ kind: "interest", paidAt: "2025-03-01", gross: 11.78 }),
+          event({ kind: "interest", paidAt: "2025-07-01", gross: 10, withholdingSpain: 1.9, reportedToAeat: true }),
+        ],
+        {},
+      ).years,
+    );
 
     expect(year.interest.reported).toMatchObject({ events: 1, gross: 10 });
     expect(year.interest.pending).toMatchObject({ events: 1, gross: 11.78 });
@@ -92,73 +95,81 @@ describe("buildIncomeReport", () => {
   });
 
   it("convierte los cobros en divisa con el tipo del BCE del día de cobro", () => {
-    const [year] = buildIncomeReport(
-      [
-        event({
-          kind: "dividend",
-          paidAt: "2025-05-15",
-          gross: 0.26,
-          currency: "USD",
-          country: "US",
-          withholdingOrigin: 0.039,
-        }),
-      ],
-      { USD: [{ date: "2025-05-15", unitsPerEur: 1.13 }] },
-    ).years;
+    const year = firstItem(
+      buildIncomeReport(
+        [
+          event({
+            kind: "dividend",
+            paidAt: "2025-05-15",
+            gross: 0.26,
+            currency: "USD",
+            country: "US",
+            withholdingOrigin: 0.039,
+          }),
+        ],
+        { USD: [{ date: "2025-05-15", unitsPerEur: 1.13 }] },
+      ).years,
+    );
     expect(year.dividend.total.gross).toBeCloseTo(0.26 / 1.13, 10);
     expect(year.dividend.total.withholdingOrigin).toBeCloseTo(0.039 / 1.13, 10);
     expect(year.unconverted).toEqual([]);
   });
 
   it("deja fuera los cobros sin tipo y avisa de los dividendos extranjeros sin retención en origen conocida", () => {
-    const [year] = buildIncomeReport(
-      [
-        event({ kind: "dividend", paidAt: "2025-05-15", gross: 1, currency: "HKD", country: "CN" }),
-        event({ kind: "dividend", paidAt: "2025-05-16", gross: 2, country: "US", withholdingOrigin: null }),
-        event({ kind: "dividend", paidAt: "2025-05-17", gross: 3, country: "ES", withholdingOrigin: null }),
-      ],
-      {},
-    ).years;
+    const year = firstItem(
+      buildIncomeReport(
+        [
+          event({ kind: "dividend", paidAt: "2025-05-15", gross: 1, currency: "HKD", country: "CN" }),
+          event({ kind: "dividend", paidAt: "2025-05-16", gross: 2, country: "US", withholdingOrigin: null }),
+          event({ kind: "dividend", paidAt: "2025-05-17", gross: 3, country: "ES", withholdingOrigin: null }),
+        ],
+        {},
+      ).years,
+    );
     expect(year.unconverted).toEqual([{ currency: "HKD", events: 1 }]);
     expect(year.dividend.total.gross).toBe(5);
     expect(year.originUnknown).toBe(1);
   });
 
   it("cuenta aparte los dividendos con la retención en origen estimada", () => {
-    const [year] = buildIncomeReport(
-      [
-        event({
-          kind: "dividend",
-          paidAt: "2025-05-15",
-          gross: 1,
-          country: "CN",
-          withholdingOrigin: 0.1,
-          withholdingOriginSource: "estimate",
-        }),
-        event({
-          kind: "dividend",
-          paidAt: "2025-05-16",
-          gross: 1,
-          country: "US",
-          withholdingOrigin: 0.15,
-          withholdingOriginSource: "market",
-        }),
-      ],
-      {},
-    ).years;
+    const year = firstItem(
+      buildIncomeReport(
+        [
+          event({
+            kind: "dividend",
+            paidAt: "2025-05-15",
+            gross: 1,
+            country: "CN",
+            withholdingOrigin: 0.1,
+            withholdingOriginSource: "estimate",
+          }),
+          event({
+            kind: "dividend",
+            paidAt: "2025-05-16",
+            gross: 1,
+            country: "US",
+            withholdingOrigin: 0.15,
+            withholdingOriginSource: "market",
+          }),
+        ],
+        {},
+      ).years,
+    );
     expect(year.originEstimated).toBe(1);
     expect(year.originUnknown).toBe(0);
   });
 
   it("una anulación del bróker (íntegro negativo) resta", () => {
-    const [year] = buildIncomeReport(
-      [
-        event({ kind: "dividend", paidAt: "2025-07-29", gross: 1.47, country: "CN" }),
-        event({ kind: "dividend", paidAt: "2025-08-12", gross: -1.47, country: "CN" }),
-        event({ kind: "dividend", paidAt: "2025-08-12", gross: 1.44, country: "CN" }),
-      ],
-      {},
-    ).years;
+    const year = firstItem(
+      buildIncomeReport(
+        [
+          event({ kind: "dividend", paidAt: "2025-07-29", gross: 1.47, country: "CN" }),
+          event({ kind: "dividend", paidAt: "2025-08-12", gross: -1.47, country: "CN" }),
+          event({ kind: "dividend", paidAt: "2025-08-12", gross: 1.44, country: "CN" }),
+        ],
+        {},
+      ).years,
+    );
     expect(year.dividend.total.gross).toBeCloseTo(1.44, 10);
   });
 });

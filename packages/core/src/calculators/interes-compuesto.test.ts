@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FREQUENCIES } from "../projection.js";
 import { computeCompound } from "./interes-compuesto.js";
+import { itemAt } from "../arrays.js";
 
 describe("computeCompound", () => {
   it("sin interés (0 %) es la suma exacta de las aportaciones", () => {
@@ -54,7 +55,7 @@ describe("computeCompound", () => {
   it("la serie es monótona creciente con aportaciones e interés positivos", () => {
     const r = computeCompound({ initial: 1000, contribution: 200, annualRate: 6, years: 15 });
     for (let k = 1; k < r.series.length; k++) {
-      expect(r.series[k].value).toBeGreaterThan(r.series[k - 1].value);
+      expect(itemAt(r.series, k).value).toBeGreaterThan(itemAt(r.series, k - 1).value);
     }
   });
 

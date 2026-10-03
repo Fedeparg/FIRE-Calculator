@@ -4,6 +4,7 @@ import type { TradeLot } from "./plusvalias.js";
 import { estimateSavingsTax } from "./savings-tax.js";
 import type { ReferenceRates } from "./fx-reference.js";
 import { buildRealisedGainsReport, referenceRatesNeeded, type RealisedGainsPosition } from "./realised-gains.js";
+import { firstItem, itemAt, takeItems } from "../arrays.js";
 
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
   return { kind: "buy", quantity: 1, price: 100, fees: 0, tradedAt: "2024-01-01", ...overrides };
@@ -45,8 +46,8 @@ describe("buildRealisedGainsReport", () => {
     ]);
 
     expect(report.years.map((y) => y.year)).toEqual([2025, 2023]);
-    expect(report.years[0].net).toBe(20);
-    expect(report.years[1].net).toBe(10);
+    expect(itemAt(report.years, 0).net).toBe(20);
+    expect(itemAt(report.years, 1).net).toBe(10);
   });
 
   it("compensa ganancias y pérdidas del mismo ejercicio y estima la cuota sobre el saldo", () => {
@@ -55,7 +56,7 @@ describe("buildRealisedGainsReport", () => {
       position({ id: "lose", lots: [buy("3", 10, 10, "2024-01-01"), sell("4", 10, 7, "2024-07-01")] }),
     ]);
 
-    const [year] = report.years;
+    const year = firstItem(report.years);
     expect(year.gains).toBe(100);
     expect(year.losses).toBe(-30);
     expect(year.net).toBe(70);
@@ -71,8 +72,8 @@ describe("buildRealisedGainsReport", () => {
       position({ id: "a", lots: [buy("1", 10, 10, "2024-01-01"), sell("2", 10, 5, "2024-06-01")] }),
     ]);
 
-    expect(report.years[0].net).toBe(-50);
-    expect(report.years[0].tax?.tax).toBe(0);
+    expect(itemAt(report.years, 0).net).toBe(-50);
+    expect(itemAt(report.years, 0).tax?.tax).toBe(0);
   });
 
   it("deja fuera de los totales las ventas en divisa sin tipo del día de la venta", () => {
@@ -82,7 +83,7 @@ describe("buildRealisedGainsReport", () => {
       position({ id: "gbp", currency: "GBP", lots: [buy("5", 1, 100, "2024-01-01"), sell("6", 1, 90, "2024-02-01")] }),
     ]);
 
-    const [year] = report.years;
+    const year = firstItem(report.years);
     expect(year.net).toBe(10);
     expect(year.unconverted).toEqual([
       { currency: "GBP", sales: 1, gain: -10 },
@@ -109,8 +110,8 @@ describe("buildRealisedGainsReport", () => {
       usd({ "2023-10-03": 1.07, "2025-03-14": 1.0885 }),
     );
 
-    const [year] = report.years;
-    const [sale] = year.sales;
+    const year = firstItem(report.years);
+    const sale = firstItem(year.sales);
     // Ganancia en USD: 2.099 − 1.501 = 598, a 1,0885.
     expect(sale.gain).toBeCloseTo(598, 9);
     expect(sale.eur?.gain).toBeCloseTo(598 / 1.0885, 9);
@@ -137,10 +138,10 @@ describe("buildRealisedGainsReport", () => {
       usd({ "2024-01-02": 1.1, "2024-06-03": 1.08 }),
     );
 
-    const [year] = report.years;
+    const year = firstItem(report.years);
     expect(year.net).toBeCloseTo(100 / 1.08, 9);
-    expect(year.sales[0].eur?.fxDifference).toBeNull();
-    expect(year.sales[0].eur?.buyRates.map((r) => r?.date ?? null)).toEqual([null, "2024-01-02"]);
+    expect(itemAt(year.sales, 0).eur?.fxDifference).toBeNull();
+    expect(itemAt(year.sales, 0).eur?.buyRates.map((r) => r?.date ?? null)).toEqual([null, "2024-01-02"]);
     expect(year.fxDifference).toBe(0);
     expect(year.fxIncomplete).toBe(1);
     expect(year.total).toBeCloseTo(year.net, 9);
@@ -150,9 +151,9 @@ describe("buildRealisedGainsReport", () => {
     const report = build([
       position({ id: "a", lots: [buy("1", 2, 10, "2024-01-01"), sell("2", 2, 12, "2024-03-01")] }),
     ]);
-    const [sale] = report.years[0].sales;
+    const sale = firstItem(itemAt(report.years, 0).sales);
     expect(sale.eur).toMatchObject({ gain: 4, fxDifference: 0, sellRate: { unitsPerEur: 1 } });
-    expect(report.years[0].fxIncomplete).toBe(0);
+    expect(itemAt(report.years, 0).fxIncomplete).toBe(0);
   });
 
   it("usa el último tipo publicado si la venta cae en fin de semana", () => {
@@ -167,7 +168,7 @@ describe("buildRealisedGainsReport", () => {
       // 2024-06-08 es sábado: vale el del viernes 7.
       usd({ "2024-01-02": 1.1, "2024-06-07": 1.08, "2024-06-10": 1.5 }),
     );
-    expect(report.years[0].sales[0].eur?.sellRate.date).toBe("2024-06-07");
+    expect(itemAt(itemAt(report.years, 0).sales, 0).eur?.sellRate.date).toBe("2024-06-07");
   });
 
   it("suma varias ventas de la misma posición en una fila y conserva cada venta para el CSV", () => {
@@ -179,8 +180,8 @@ describe("buildRealisedGainsReport", () => {
       }),
     ]);
 
-    const [year] = report.years;
-    const [row] = year.rows;
+    const year = firstItem(report.years);
+    const row = firstItem(year.rows);
     expect(row).toMatchObject({ ticker: "A", name: "Fondo A", sales: 2, quantity: 6, gain: 18 });
     expect(year.sales.map((s) => [s.lotId, s.tradedAt, s.gain])).toEqual([
       ["2", "2024-03-01", 6],
@@ -192,7 +193,7 @@ describe("buildRealisedGainsReport", () => {
     const report = build([
       position({ id: "a", lots: [buy("1", 5, 10, "2024-01-01"), sell("2", 5, 30, "2024-12-31")] }),
     ]);
-    expect(report.years[0].net).toBe(100);
+    expect(itemAt(report.years, 0).net).toBe(100);
   });
 
   it("la venta del 31 de diciembre y la del 1 de enero van a ejercicios distintos", () => {
@@ -217,7 +218,7 @@ describe("buildRealisedGainsReport", () => {
       }),
     ]);
 
-    const [year] = report.years;
+    const year = firstItem(report.years);
     expect(year.net).toBe(250);
     // La venta se atribuye a la posición donde se registró.
     expect(year.rows.map((r) => r.positionId)).toEqual(["myinvestor"]);
@@ -233,7 +234,7 @@ describe("buildRealisedGainsReport", () => {
         lots: [buy("2", 1, 50, "2021-01-01"), sell("3", 1, 60, "2024-01-01")],
       }),
     ]);
-    expect(report.years[0].unconverted).toEqual([{ currency: "USD", sales: 1, gain: 10 }]);
+    expect(itemAt(report.years, 0).unconverted).toEqual([{ currency: "USD", sales: 1, gain: 10 }]);
   });
 });
 
@@ -279,27 +280,27 @@ describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF
   const rebuy = buy("re", 1000, 16.5, "2025-08-16");
 
   it("caso T.S.A.: la pérdida de 4.800 € no se integra en 2025", () => {
-    const [year] = build([position({ id: "a", lots: [...tsa, rebuy] })]).years;
+    const year = firstItem(build([position({ id: "a", lots: [...tsa, rebuy] })]).years);
 
-    expect(year.sales[0].gain).toBeCloseTo(-4800, 6);
-    expect(year.sales[0].deferredLoss).toBeCloseTo(-4800, 6);
+    expect(itemAt(year.sales, 0).gain).toBeCloseTo(-4800, 6);
+    expect(itemAt(year.sales, 0).deferredLoss).toBeCloseTo(-4800, 6);
     expect(year.deferred).toBeCloseTo(-4800, 6);
     expect(year.integrated).toBe(0);
     expect(year.losses).toBeCloseTo(0, 6);
     expect(year.net).toBeCloseTo(0, 6);
     expect(year.total).toBeCloseTo(0, 6);
-    expect(year.rows[0].gain).toBeCloseTo(0, 6);
+    expect(itemAt(year.rows, 0).gain).toBeCloseTo(0, 6);
   });
 
   it("sin recompra la pérdida se integra en su ejercicio", () => {
-    const [year] = build([position({ id: "a", lots: tsa })]).years;
+    const year = firstItem(build([position({ id: "a", lots: tsa })]).years);
 
     expect(year.deferred).toBe(0);
     expect(year.net).toBeCloseTo(-4800, 6);
   });
 
   it("recompra parcial: solo se difiere la parte proporcional", () => {
-    const [year] = build([position({ id: "a", lots: [...tsa, buy("re", 250, 16.5, "2025-08-16")] })]).years;
+    const year = firstItem(build([position({ id: "a", lots: [...tsa, buy("re", 250, 16.5, "2025-08-16")] })]).years);
 
     expect(year.deferred).toBeCloseTo(-1200, 6);
     expect(year.net).toBeCloseTo(-3600, 6);
@@ -307,20 +308,20 @@ describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF
 
   it("la pérdida diferida se integra en el ejercicio en que se venden los recomprados", () => {
     const report = build([position({ id: "a", lots: [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")] })]);
-    const [y2026, y2025] = report.years;
+    const [y2026, y2025] = takeItems(report.years, 2);
 
     expect(y2025.net).toBeCloseTo(0, 6);
     // Venta de 2026: ganancia propia de 500 € menos los 4.800 € de pérdida que desbloquea.
-    expect(y2026.sales[0].gain).toBeCloseTo(500, 6);
+    expect(itemAt(y2026.sales, 0).gain).toBeCloseTo(500, 6);
     expect(y2026.integrated).toBeCloseTo(-4800, 6);
-    expect(y2026.sales[0].integratedFrom.map((p) => p.fromSaleId)).toEqual(["s1"]);
+    expect(itemAt(y2026.sales, 0).integratedFrom.map((p) => p.fromSaleId)).toEqual(["s1"]);
     expect(y2026.net).toBeCloseTo(-4300, 6);
   });
 
   it("la pérdida diferida se integra por su importe en euros del día de la venta original", () => {
     const rates = usd({ "2015-05-25": 1, "2025-07-16": 1.25, "2025-08-16": 1.1, "2026-09-01": 1.5 });
     const lots = [...tsa, rebuy, sell("s2", 1000, 17, "2026-09-01")];
-    const [y2026, y2025] = build([position({ id: "a", currency: "USD", lots })], rates).years;
+    const [y2026, y2025] = takeItems(build([position({ id: "a", currency: "USD", lots })], rates).years, 2);
 
     // −4.800 USD a 1,25 USD/EUR = −3.840 €, no −3.200 € (tipo de 2026).
     expect(y2025.deferred).toBeCloseTo(-3840, 6);
@@ -329,16 +330,16 @@ describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF
 
   it("los warrants y certificados (derivados con ISIN) también están sujetos: son valores negociables", () => {
     // V2172-21 y V3755-16 solo excluyen contratos (opciones, futuros); V1790-07 trata los warrants como valores.
-    const [year] = build([position({ id: "a", isDerivative: true, lots: [...tsa, rebuy] })]).years;
+    const year = firstItem(build([position({ id: "a", isDerivative: true, lots: [...tsa, rebuy] })]).years);
 
     expect(year.deferred).toBeCloseTo(-4800, 6);
   });
 
   it("la recompra en otra posición del mismo valor también bloquea", () => {
-    const [year] = build([
-      position({ id: "a", ticker: "TSA", lots: tsa }),
-      position({ id: "b", ticker: "TSA", lots: [rebuy] }),
-    ]).years;
+    const year = firstItem(
+      build([position({ id: "a", ticker: "TSA", lots: tsa }), position({ id: "b", ticker: "TSA", lots: [rebuy] })])
+        .years,
+    );
 
     expect(year.deferred).toBeCloseTo(-4800, 6);
   });

@@ -10,6 +10,7 @@ import {
   simulatePortfolioGoal,
   type PortfolioGoalInput,
 } from "./goal.js";
+import { itemAt } from "../arrays.js";
 
 /** Objetivo típico: 24.000 €/año al 4 % → 600.000 € de patrimonio objetivo. */
 const BASE: PortfolioGoalInput = {
@@ -136,7 +137,7 @@ describe("simulatePortfolioGoal", () => {
   it("usa el valor de mercado real como patrimonio de partida", () => {
     const result = simulatePortfolioGoal(SIM, { paths: 200 });
 
-    expect(result.series[0].p50).toBe(150000);
+    expect(itemAt(result.series, 0).p50).toBe(150000);
   });
 
   it("una cartera que ya cubre el objetivo arranca retirada", () => {
@@ -149,7 +150,7 @@ describe("simulatePortfolioGoal", () => {
   it("una cartera vacía o no finita se trata como 0 y no produce NaN", () => {
     const empty = simulatePortfolioGoal({ ...SIM, currentValue: Number.NaN }, { paths: 200 });
 
-    expect(empty.series[0].p50).toBe(0);
+    expect(itemAt(empty.series, 0).p50).toBe(0);
     expect(Number.isFinite(empty.successRate)).toBe(true);
   });
 

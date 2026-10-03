@@ -8,6 +8,7 @@ import {
   type StalenessSnapshot,
   type StoredSnapshot,
 } from "./staleness.js";
+import { itemAt } from "../arrays.js";
 
 const at = (iso: string): number => Date.parse(iso);
 
@@ -155,7 +156,7 @@ describe("planSnapshotWrites", () => {
       trackingSince: "2026-09-10",
     });
 
-    expect(changed[0].userId).toBe("u1");
-    expect(changed[0].estimated).toBe(false);
+    expect(itemAt(changed, 0).userId).toBe("u1");
+    expect(itemAt(changed, 0).estimated).toBe(false);
   });
 });

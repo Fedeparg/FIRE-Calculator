@@ -48,7 +48,8 @@ function daysInMonth(year: number, month: number): number {
  * día (31/12 + 2 meses), se toma su último día (28/02 o 29/02).
  */
 export function addMonths(day: string, months: number): string {
-  const [year, month, dayOfMonth] = day.split("-").map(Number);
+  // Un día mal formado deja huecos: `NaN` los propaga igual que antes (el resultado es "NaN-…").
+  const [year = NaN, month = NaN, dayOfMonth = NaN] = day.split("-").map(Number);
   const index = year * 12 + (month - 1) + months;
   const targetYear = Math.floor(index / 12);
   const targetMonth = (index % 12) + 1;

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildOpenLots, simulateSale, walkLots, type TradeLot } from "./plusvalias.js";
 import { estimateSavingsTax } from "./savings-tax.js";
+import { firstItem, itemAt } from "../arrays.js";
 
 /** Constructor breve de lotes: los tests solo fijan lo que les importa. */
 function lot(overrides: Partial<TradeLot> & Pick<TradeLot, "id">): TradeLot {
@@ -55,7 +56,7 @@ describe("buildOpenLots", () => {
   });
 
   it("prorratea las comisiones de compra por participación", () => {
-    const [open] = buildOpenLots([lot({ id: "a", quantity: 4, price: 25, fees: 10 })]);
+    const open = firstItem(buildOpenLots([lot({ id: "a", quantity: 4, price: 25, fees: 10 })]));
     expect(open.feesPerUnit).toBe(2.5);
   });
 
@@ -273,7 +274,7 @@ describe("walkLots", () => {
     ]);
 
     expect(sales).toHaveLength(1);
-    const [sale] = sales;
+    const sale = firstItem(sales);
     expect(sale.lotId).toBe("s");
     expect(sale.tradedAt).toBe("2024-06-01");
     expect(sale.quantity).toBe(4);
@@ -294,7 +295,7 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 5, price: 15, tradedAt: "2024-03-01" }),
     ]);
 
-    const [sale] = sales;
+    const sale = firstItem(sales);
     expect(sale.matched.map((m) => [m.lotId, m.quantity])).toEqual([
       ["a", 3],
       ["b", 2],
@@ -332,7 +333,7 @@ describe("walkLots", () => {
     ]);
 
     expect(sales).toHaveLength(1);
-    expect(sales[0].gain).toBe(50);
+    expect(itemAt(sales, 0).gain).toBe(50);
   });
 
   it("una venta que excede lo disponible solo empareja lo que hay", () => {
@@ -341,8 +342,8 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 5, price: 20, tradedAt: "2024-02-01" }),
     ]);
 
-    expect(sales[0].quantity).toBe(2);
-    expect(sales[0].gain).toBe(20);
+    expect(itemAt(sales, 0).quantity).toBe(2);
+    expect(itemAt(sales, 0).gain).toBe(20);
     expect(open).toEqual([]);
   });
 
@@ -357,8 +358,8 @@ describe("walkLots", () => {
       lot({ id: "s", kind: "sell", quantity: 9, price: 25, fees: 2, tradedAt: "2024-03-01" }),
     ]);
 
-    expect(sales[0].gain).toBe(simulated?.gain);
-    expect(sales[0].matched).toEqual(simulated?.matched);
+    expect(itemAt(sales, 0).gain).toBe(simulated?.gain);
+    expect(itemAt(sales, 0).matched).toEqual(simulated?.matched);
   });
 
   it("una venta sin existencias no imputa sus comisiones como pérdida", () => {
@@ -386,7 +387,7 @@ describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
       ["buy-2001", "2001-03-05", 1500, 6000],
       ["buy-2011", "2011-09-14", 100, 500],
     ]);
-    expect(sim?.matched[0].price).toBeCloseTo(6, 9);
+    expect(sim?.matched[0]?.price).toBeCloseTo(6, 9);
   });
 
   it("la ampliación no crea lote propio: conserva el coste total y la fecha", () => {
@@ -394,8 +395,8 @@ describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
 
     expect(walk.bonusIssueIds).toEqual(["bonus-2007"]);
     expect(walk.open.map((o) => o.lotId)).toEqual(["buy-2001", "buy-2011"]);
-    expect(walk.open[0].quantity).toBeCloseTo(1500, 9);
-    expect(walk.open[0].quantity * walk.open[0].price).toBeCloseTo(9000, 6);
+    expect(itemAt(walk.open, 0).quantity).toBeCloseTo(1500, 9);
+    expect(itemAt(walk.open, 0).quantity * itemAt(walk.open, 0).price).toBeCloseTo(9000, 6);
   });
 
   it("reparte proporcionalmente entre varios lotes vivos y respeta lo ya vendido", () => {
@@ -411,8 +412,11 @@ describe("ampliaciones liberadas (art. 37.1.a LIRPF)", () => {
       ["a", 75],
       ["b", 150],
     ]);
-    expect(open[0].quantity * (open[0].price + open[0].feesPerUnit)).toBeCloseTo(50 * (10 + 0.1), 6);
-    expect(open[1].quantity * open[1].price).toBeCloseTo(2000, 6);
+    expect(itemAt(open, 0).quantity * (itemAt(open, 0).price + itemAt(open, 0).feesPerUnit)).toBeCloseTo(
+      50 * (10 + 0.1),
+      6,
+    );
+    expect(itemAt(open, 1).quantity * itemAt(open, 1).price).toBeCloseTo(2000, 6);
   });
 
   it("una compra a precio 0 con comisiones, o sin lotes vivos, sigue siendo compra normal", () => {

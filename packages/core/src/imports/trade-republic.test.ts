@@ -10,6 +10,7 @@ import {
   TradeRepublicParseError,
   type TradeRepublicParseErrorCode,
 } from "./trade-republic.js";
+import { itemAt, takeItems } from "../arrays.js";
 
 /** Export sintético (valores inventados) con una fila de cada tipo relevante. */
 const FIXTURE = readFileSync(resolve(import.meta.dirname, "fixtures/tr-transaction-export.synthetic.csv"), "utf8");
@@ -64,9 +65,9 @@ describe("parseCsv", () => {
 
   it("admite comas, comillas escapadas y saltos de línea dentro de comillas", () => {
     const records = parseCsv('"a, b","say ""hi""","l1\nl2"\n"x","y","z"');
-    expect(records[0].fields).toEqual(["a, b", 'say "hi"', "l1\nl2"]);
+    expect(itemAt(records, 0).fields).toEqual(["a, b", 'say "hi"', "l1\nl2"]);
     // La línea del segundo registro cuenta el salto interno del campo anterior.
-    expect(records[1].line).toBe(3);
+    expect(itemAt(records, 1).line).toBe(3);
   });
 
   it("admite CRLF, BOM y falta de salto final, e ignora líneas vacías", () => {
@@ -78,7 +79,7 @@ describe("parseCsv", () => {
   });
 
   it("conserva campos vacíos entrecomillados", () => {
-    expect(parseCsv('"a","","c"')[0].fields).toEqual(["a", "", "c"]);
+    expect(itemAt(parseCsv('"a","","c"'), 0).fields).toEqual(["a", "", "c"]);
   });
 
   it("falla con una comilla sin cerrar", () => {
@@ -102,7 +103,7 @@ describe("parseTradeRepublicCsv — export sintético", () => {
   });
 
   it("normaliza cantidad, precio, comisión y fechas", () => {
-    const [first, , third] = result.trades;
+    const [first, , third] = takeItems(result.trades, 3);
     expect(first).toEqual({
       externalId: "00000000-0000-0000-0000-000000006e17",
       isin: "ZZ00EXAMPL01",
@@ -228,7 +229,7 @@ describe("parseTradeRepublicCsv — export sintético", () => {
 describe("parseTradeRepublicCsv — filas", () => {
   it("lee nombres con comas y comillas", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ name: 'ACME, Inc. "Class A"' })));
-    expect(trades[0].name).toBe('ACME, Inc. "Class A"');
+    expect(itemAt(trades, 0).name).toBe('ACME, Inc. "Class A"');
   });
 
   it("usa `date` como fecha de operación aunque el día UTC difiera", () => {
@@ -258,7 +259,7 @@ describe("parseTradeRepublicCsv — filas", () => {
 
   it("guarda la comisión en valor absoluto", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ fee: "-1.50" })));
-    expect(trades[0].fees).toBe("1.5");
+    expect(itemAt(trades, 0).fees).toBe("1.5");
   });
 
   it("no suma el impuesto y cuenta cuántas operaciones lo traen", () => {
@@ -316,7 +317,7 @@ describe("parseTradeRepublicCsv — filas", () => {
 
   it("clasifica un asset_class vacío como other", () => {
     const { trades } = parseTradeRepublicCsv(csv(row({ asset_class: "" })));
-    expect(trades[0].assetClass).toBe("other");
+    expect(itemAt(trades, 0).assetClass).toBe("other");
   });
 
   it("trata las retiradas de efectivo como movimiento de efectivo", () => {

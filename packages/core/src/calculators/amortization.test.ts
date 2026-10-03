@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { amortizationSchedule, levelPayment, monthlyRate, presentValueOfPayments } from "./amortization.js";
+import { itemAt, takeItems } from "../arrays.js";
 
 describe("monthlyRate", () => {
   it("convierte el TIN anual en base 100 a fracción mensual", () => {
@@ -63,26 +64,26 @@ describe("amortizationSchedule", () => {
     const rate = monthlyRate(3);
     const months = [...amortizationSchedule(100000, rate, levelPayment(100000, rate, 360), 360)];
     expect(months).toHaveLength(360);
-    expect(months[0].month).toBe(1);
-    expect(months[0].balanceBefore).toBe(100000);
-    expect(months[0].interest).toBeCloseTo(250, 9);
+    expect(itemAt(months, 0).month).toBe(1);
+    expect(itemAt(months, 0).balanceBefore).toBe(100000);
+    expect(itemAt(months, 0).interest).toBeCloseTo(250, 9);
     expect(months.at(-1)?.balanceAfter).toBeCloseTo(0, 6);
   });
 
   it("encadena el saldo final de cada mes con el inicial del siguiente", () => {
     const months = [...amortizationSchedule(5000, 0.01, 300, 20)];
-    months.slice(1).forEach((m, k) => expect(m.balanceBefore).toBe(months[k].balanceAfter));
+    months.slice(1).forEach((m, k) => expect(m.balanceBefore).toBe(itemAt(months, k).balanceAfter));
   });
 
   it("no deja saldo negativo cuando la última cuota excede el saldo", () => {
     const months = [...amortizationSchedule(100, 0, 60, 5)];
     expect(months.map((m) => m.balanceAfter)).toEqual([40, 0, 0, 0, 0]);
     // el capital amortizado no se acota: es el consumidor quien decide
-    expect(months[2].principalPart).toBe(60);
+    expect(itemAt(months, 2).principalPart).toBe(60);
   });
 
   it("expone un capital negativo si la cuota no cubre los intereses", () => {
-    const [first, second] = [...amortizationSchedule(1000, 0.1, 50, 2)];
+    const [first, second] = takeItems([...amortizationSchedule(1000, 0.1, 50, 2)], 2);
     expect(first.principalPart).toBe(-50);
     expect(second.balanceBefore).toBe(1050);
   });

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildIncomeReport, type IncomeEvent } from "./income.js";
 import { buildRealisedGainsReport } from "./realised-gains.js";
 import { buildSavingsReturn, buildSavingsReturns } from "./savings-return.js";
+import { takeItems } from "../arrays.js";
 
 let seq = 0;
 function event(overrides: Partial<IncomeEvent> & Pick<IncomeEvent, "kind" | "gross">): IncomeEvent {
@@ -161,7 +162,7 @@ describe("buildSavingsReturns", () => {
     const results = buildSavingsReturns({ gains: losing, income: [], incomeEvents: [], rates: {}, manualPending: [] });
 
     expect(results.map((r) => r.year)).toEqual([2025, 2023]);
-    const [y2025, y2023] = results;
+    const [y2025, y2023] = takeItems(results, 2);
     expect(y2023.savingsBase.pending).toEqual([{ originYear: 2023, kind: "gains", amount: 400 }]);
     // 2024 sin datos se recorre igualmente; en 2025 la pérdida de 2023 compensa la ganancia.
     expect(y2025.savingsBase.base).toBeCloseTo(600, 10);
@@ -179,7 +180,7 @@ describe("buildSavingsReturns", () => {
       rates: {},
       manualPending: [{ originYear: 2020, kind: "capitalIncome", amount: 500 }],
     });
-    const [y2026, y2021] = results;
+    const [y2026, y2021] = takeItems(results, 2);
     expect(y2021.savingsBase.base).toBe(0);
     // Quedaban 400 de 2020: caducan en 2025 (cuatro años: 2021-2024).
     expect(y2026.savingsBase.base).toBeCloseTo(100, 10);

@@ -2,6 +2,7 @@
 // aproximación orientativa del cálculo de la AEAT por doble escala. Core puro.
 // Alcance y supuestos: ver ./README.md. Sin comunidad rige la escala supletoria.
 
+import { itemAt } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
 import {
   IRPF_ESTATAL_GENERAL,
@@ -96,7 +97,8 @@ function minimumFromSchedule(schedule: PersonalMinimumSchedule, c: PersonalCircu
 
   const children = dependants(c.children);
   for (let i = 0; i < children; i++) {
-    min += schedule.descendants[Math.min(i, schedule.descendants.length - 1)];
+    // Del cuarto hijo en adelante se repite el último importe del cuadro (nunca vacío).
+    min += itemAt(schedule.descendants, Math.min(i, schedule.descendants.length - 1));
   }
   const under3 = Math.min(children, dependants(c.childrenUnder3));
   min += schedule.descendantUnder3 * under3;

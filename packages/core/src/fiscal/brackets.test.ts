@@ -14,6 +14,7 @@ import {
   marginalRate,
   type Bracket,
 } from "./brackets.js";
+import { itemAt } from "../arrays.js";
 
 const SIMPLE: Bracket[] = [
   { upTo: 100, rate: 10 },
@@ -78,12 +79,12 @@ describe.each([
     if (bracket.upTo === null) return [];
     cumulative += ((bracket.upTo - lower) * bracket.rate) / 100;
     lower = bracket.upTo;
-    return [{ upTo: bracket.upTo, rate: bracket.rate, nextRate: scale[i + 1].rate, tax: cumulative }];
+    return [{ upTo: bracket.upTo, rate: bracket.rate, nextRate: itemAt(scale, i + 1).rate, tax: cumulative }];
   });
 
   it("la escala termina en un tramo abierto y sus límites son crecientes", () => {
     expect(scale.at(-1)?.upTo).toBeNull();
-    limits.forEach((l, i) => i > 0 && expect(l.upTo).toBeGreaterThan(limits[i - 1].upTo));
+    limits.forEach((l, i) => i > 0 && expect(l.upTo).toBeGreaterThan(itemAt(limits, i - 1).upTo));
   });
 
   it.each(limits)("en $upTo la cuota es la acumulada del tramo y el límite pertenece al tramo inferior", (l) => {
@@ -102,7 +103,7 @@ describe.each([
   it("la cuota es monótona creciente cruzando todos los límites", () => {
     const bases = limits.flatMap((l) => [l.upTo - CENT, l.upTo, l.upTo + CENT]);
     const taxes = bases.map((b) => applyProgressiveBrackets(b, scale));
-    taxes.forEach((t, i) => i > 0 && expect(t).toBeGreaterThanOrEqual(taxes[i - 1]));
+    taxes.forEach((t, i) => i > 0 && expect(t).toBeGreaterThanOrEqual(itemAt(taxes, i - 1)));
   });
 });
 

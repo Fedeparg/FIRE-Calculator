@@ -6,6 +6,7 @@
 // columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
+import { firstItem, itemAt } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 import { addDays } from "../dates.js";
 import { resolveFromBroker } from "../fiscal/dividend-resolution.js";
@@ -122,6 +123,8 @@ function normalizeDatetime(raw: string): string | null {
   const match = DATETIME.exec(raw);
   if (!match) return null;
   const [, base, fraction = ""] = match;
+  // El grupo de la fecha es obligatorio en `DATETIME`: si hay `match`, hay `base`.
+  if (base === undefined) return null;
   const normalized = `${base}.${fraction.padEnd(6, "0").slice(0, 6)}Z`;
   const parsed = new Date(normalized);
   // `Date` acepta 31 de febrero reajustándolo: se comprueba que el viaje de ida y vuelta coincide.
@@ -168,8 +171,10 @@ type Row = {
   transactionId: string;
 };
 
-function toRow(record: CsvRecord, index: Record<string, number>): Row {
-  const get = (column: (typeof TRADE_REPUBLIC_HEADER)[number]): string => record.fields[index[column]].trim();
+/** Fila de datos ya validada: tiene exactamente las columnas de `TRADE_REPUBLIC_HEADER`, en su orden. */
+function toRow(record: CsvRecord): Row {
+  const get = (column: (typeof TRADE_REPUBLIC_HEADER)[number]): string =>
+    itemAt(record.fields, TRADE_REPUBLIC_HEADER.indexOf(column)).trim();
   return {
     line: record.line,
     datetime: get("datetime"),
@@ -231,10 +236,11 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     throw new TradeRepublicParseError("EMPTY_FILE", "The file is empty");
   }
 
-  const [header, ...dataRecords] = records;
+  const header = firstItem(records);
+  const dataRecords = records.slice(1);
   const isExpectedHeader =
     header.fields.length === TRADE_REPUBLIC_HEADER.length &&
-    TRADE_REPUBLIC_HEADER.every((column, i) => header.fields[i].trim() === column);
+    TRADE_REPUBLIC_HEADER.every((column, i) => itemAt(header.fields, i).trim() === column);
   if (!isExpectedHeader) {
     throw new TradeRepublicParseError(
       "NOT_TRADE_REPUBLIC",
@@ -248,7 +254,6 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
     throw new TradeRepublicParseError("TOO_MANY_ROWS", `The file has more than ${MAX_IMPORT_ROWS} rows`);
   }
 
-  const index = Object.fromEntries(TRADE_REPUBLIC_HEADER.map((column, i) => [column, i]));
   const skipped: ImportSkippedRow[] = [];
   const skip = (row: { line: number; type: string }, reason: ImportSkipReason): void => {
     skipped.push({ line: row.line, type: row.type, reason });
@@ -268,7 +273,7 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
       skipped.push({ line: record.line, type: "", reason: "invalid_row" });
       continue;
     }
-    const row = toRow(record, index);
+    const row = toRow(record);
 
     if (row.type === "MIGRATION") {
       migrations.push(row);
@@ -417,7 +422,7 @@ function spanishBranchCutoff(
     )
     .map((row) => row.date)
     .sort();
-  return withheld.length > 0 ? { date: withheld[0], inclusive: true } : null;
+  return withheld.length > 0 ? { date: firstItem(withheld), inclusive: true } : null;
 }
 
 /**
@@ -468,7 +473,7 @@ function resolveIncome(
     if (row.type !== "INTEREST_PAYMENT" && tax === 0n) {
       const at = taxedBuys.findIndex((buy) => buy.row.date === row.date && buy.amount === amount);
       if (at !== -1) {
-        const [buy] = taxedBuys.splice(at, 1);
+        const buy = firstItem(taxedBuys.splice(at, 1));
         tax = buy.tax < 0n ? -buy.tax : buy.tax;
         buysWithBenefitTax++;
       }
@@ -591,7 +596,7 @@ function resolveBonusIssues(
       continue;
     }
     const at = issued.findLastIndex((issue) => issue.row.symbol === entry.row.symbol && issue.shares === -entry.shares);
-    if (at !== -1) skip(issued.splice(at, 1)[0].row, "bonus_issue_cancelled");
+    if (at !== -1) skip(firstItem(issued.splice(at, 1)).row, "bonus_issue_cancelled");
     skip(entry.row, "bonus_issue_cancelled");
   }
 
@@ -657,7 +662,7 @@ function resolveMigrations(
         continue;
       }
       skip(out.row, "migration_pair");
-      skip(unmatched.splice(at, 1)[0].row, "migration_pair");
+      skip(firstItem(unmatched.splice(at, 1)).row, "migration_pair");
     }
     for (const { row } of [...loose, ...unmatched]) {
       skip(row, "migration_unbalanced");

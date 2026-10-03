@@ -1,6 +1,7 @@
 // Núcleo fiscal compartido: escalas oficiales y motor de tramos progresivos. Core puro.
 // Alcance y supuestos: ver ./README.md. Cifras orientativas del ejercicio `FISCAL_YEAR`.
 
+import { lastItem } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
 
 /** Ejercicio fiscal de referencia de las escalas de este módulo. */
@@ -46,7 +47,7 @@ export function marginalRate(base: number, brackets: readonly Bracket[]): number
   for (const bracket of brackets) {
     if (b <= (bracket.upTo ?? Infinity)) return bracket.rate;
   }
-  return brackets.length > 0 ? brackets[brackets.length - 1].rate : 0;
+  return brackets.length > 0 ? lastItem(brackets).rate : 0;
 }
 
 export function effectiveRate(base: number, brackets: readonly Bracket[]): number {

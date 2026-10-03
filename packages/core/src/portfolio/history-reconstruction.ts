@@ -13,6 +13,7 @@
  * estimación para la gráfica, no un dato contable.
  */
 
+import { itemAt } from "../arrays.js";
 import type { TradeLot } from "../fiscal/plusvalias.js";
 import { QUANTITY_EPSILON } from "../inputs.js";
 import { compareStrings } from "../compare.js";
@@ -78,11 +79,11 @@ class SeriesCursor<T extends { date: string }> {
   constructor(private readonly series: readonly T[]) {}
 
   at(day: string): T | null {
-    while (this.index + 1 < this.series.length && this.series[this.index + 1].date <= day) {
+    while (this.index + 1 < this.series.length && itemAt(this.series, this.index + 1).date <= day) {
       this.index += 1;
     }
     if (this.index < 0) return null;
-    const point = this.series[this.index];
+    const point = itemAt(this.series, this.index);
     return daysBetween(point.date, day) <= MAX_CARRY_FORWARD_DAYS ? point : null;
   }
 }
@@ -169,8 +170,8 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
     const held: AggregateInput["positions"] = [];
     const dayPrices: AggregateInput["prices"] = {};
     for (const entry of state) {
-      while (entry.next < entry.lots.length && entry.lots[entry.next].tradedAt <= day) {
-        applyLot(entry.holding, entry.lots[entry.next]);
+      while (entry.next < entry.lots.length && itemAt(entry.lots, entry.next).tradedAt <= day) {
+        applyLot(entry.holding, itemAt(entry.lots, entry.next));
         entry.next += 1;
       }
       if (entry.holding.quantity <= QUANTITY_EPSILON) continue; // aún sin comprar, o ya vendida

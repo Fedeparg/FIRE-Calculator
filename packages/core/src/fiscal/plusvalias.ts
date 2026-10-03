@@ -3,6 +3,7 @@
 // Lo usan la simulación de venta y el informe `realised-gains.ts`, con las mismas reglas.
 // Alcance fiscal (qué modela y qué no): ver ./README.md. Resultado solo orientativo.
 
+import { firstItem } from "../arrays.js";
 import { finiteOr, QUANTITY_EPSILON } from "../inputs.js";
 import type { PositionLot } from "../portfolio/types.js";
 import { compareStrings } from "../compare.js";
@@ -144,7 +145,7 @@ function matchSale(open: OpenLot[], quantity: number, price: number, sellFees: n
   let acquisitionValue = 0;
 
   while (pending > QUANTITY_EPSILON && open.length > 0) {
-    const lot = open[0];
+    const lot = firstItem(open);
     const taken = Math.min(lot.quantity, pending);
     const lotAcquisition = taken * (lot.price + lot.feesPerUnit);
     const lotTransfer = quantitySold > 0 ? (transferValue * taken) / quantitySold : 0;

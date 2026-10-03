@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildBreakdown, type BreakdownInput } from "./breakdown.js";
+import { itemAt } from "../arrays.js";
 
 type Position = BreakdownInput["positions"][number];
 
@@ -55,7 +56,7 @@ describe("buildBreakdown", () => {
       prices: { AAPL: { close: 100, currency: "EUR" } },
     });
 
-    expect(result.slices[0].label).toBe("AAPL");
+    expect(itemAt(result.slices, 0).label).toBe("AAPL");
   });
 
   it("suma en un solo grupo el mismo activo en brókeres distintos", () => {
@@ -70,8 +71,8 @@ describe("buildBreakdown", () => {
     });
 
     expect(result.slices).toHaveLength(1);
-    expect(result.slices[0].value).toBe(1000);
-    expect(result.slices[0].positions).toBe(2);
+    expect(itemAt(result.slices, 0).value).toBe(1000);
+    expect(itemAt(result.slices, 0).positions).toBe(2);
   });
 
   it("excluye, como aggregatePortfolio, una posición cuya divisa no se puede convertir", () => {
@@ -104,7 +105,7 @@ describe("buildBreakdown", () => {
     });
 
     expect(result.slices.map((s) => s.label)).toEqual(["MyInvestor", "Sin bróker"]);
-    expect(result.slices[1].value).toBe(100);
+    expect(itemAt(result.slices, 1).value).toBe(100);
   });
 
   it("agrupa por divisa de la posición, no por la del precio", () => {
@@ -117,9 +118,9 @@ describe("buildBreakdown", () => {
     });
 
     expect(result.slices).toHaveLength(1);
-    expect(result.slices[0].label).toBe("EUR");
+    expect(itemAt(result.slices, 0).label).toBe("EUR");
     // 110 USD → 100 EUR con rates(EUR) = 1,1 USD/EUR.
-    expect(result.slices[0].value).toBeCloseTo(100, 10);
+    expect(itemAt(result.slices, 0).value).toBeCloseTo(100, 10);
   });
 
   it("excluye las posiciones sin precio", () => {

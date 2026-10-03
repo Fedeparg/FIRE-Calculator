@@ -2,6 +2,7 @@
 // la serie la descarga y cachea la API (`apps/api/src/fx-reference/`). Criterio fiscal y
 // fuentes: ver ./README.md, sección `fx-reference.ts`.
 
+import { itemAt } from "../arrays.js";
 import { daysBetween } from "../dates.js";
 
 /** Divisa en la que se declara el IRPF. */
@@ -49,7 +50,7 @@ export function referenceRateOn(rates: ReferenceRates, currency: string, date: s
   let found = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
-    if (series[mid].date <= date) {
+    if (itemAt(series, mid).date <= date) {
       found = mid;
       lo = mid + 1;
     } else {
@@ -58,7 +59,7 @@ export function referenceRateOn(rates: ReferenceRates, currency: string, date: s
   }
   if (found < 0) return null;
 
-  const point = series[found];
+  const point = itemAt(series, found);
   if (!Number.isFinite(point.unitsPerEur) || point.unitsPerEur <= 0) return null;
   if (daysBetween(point.date, date) > MAX_RATE_GAP_DAYS) return null;
   return { currency, unitsPerEur: point.unitsPerEur, date: point.date };

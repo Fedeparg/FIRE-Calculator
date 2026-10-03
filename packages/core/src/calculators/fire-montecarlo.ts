@@ -11,6 +11,7 @@
 // (Shiller); los bloques conservan rachas (1929-1932, 1973-1974…) y con ellas el riesgo de secuencia.
 // La mezcla acciones/bonos se rebalancea cada año.
 
+import { itemAt } from "../arrays.js";
 import { finiteOr, nonNegative } from "../inputs.js";
 import { computeFire, FIRE_SEARCH_MAX_YEARS } from "./fire.js";
 import { HISTORICAL_RETURNS } from "../data/shiller-returns.js";
@@ -154,11 +155,11 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
       retiredAt: currentSavings >= fireNumber ? 0 : null,
       depletedAt: null,
     };
-    wealthByYear[0][path] = state.wealth;
+    itemAt(wealthByYear, 0)[path] = state.wealth;
     drawPath(returns);
     for (let year = 1; year <= horizon; year++) {
-      step(state, year, returns[year - 1], params);
-      wealthByYear[year][path] = state.wealth;
+      step(state, year, itemAt(returns, year - 1), params);
+      itemAt(wealthByYear, year)[path] = state.wealth;
     }
 
     yearsToFire[path] = state.retiredAt ?? Infinity;
@@ -192,7 +193,7 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
   const chartEnd = Math.min(horizon, (yearsPercentiles.p50 ?? FIRE_SEARCH_MAX_YEARS) + retirementYears);
   const series: MonteCarloPoint[] = [];
   for (let year = 0; year <= chartEnd; year++) {
-    const sorted = wealthByYear[year].sort();
+    const sorted = itemAt(wealthByYear, year).sort();
     series.push({
       year,
       p10: percentileSorted(sorted, 10),
@@ -200,7 +201,7 @@ export function simulateFire(input: MonteCarloInput, options: MonteCarloOptions 
       p50: percentileSorted(sorted, 50),
       p75: percentileSorted(sorted, 75),
       p90: percentileSorted(sorted, 90),
-      deterministic: deterministicByYear[year],
+      deterministic: itemAt(deterministicByYear, year),
       target: fireNumber,
     });
   }
@@ -239,7 +240,7 @@ function historicalSampler(series: readonly number[], rng: Rng): (out: Float64Ar
     for (let i = 0; i < out.length; i += HISTORICAL_BLOCK_YEARS) {
       const start = Math.floor(rng() * n);
       const end = Math.min(out.length, i + HISTORICAL_BLOCK_YEARS);
-      for (let k = i; k < end; k++) out[k] = series[(start + k - i) % n];
+      for (let k = i; k < end; k++) out[k] = itemAt(series, (start + k - i) % n);
     }
   };
 }

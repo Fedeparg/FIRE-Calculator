@@ -2,6 +2,7 @@
 // euros y lo reexpresa con las tasas FX de cada día; aquí solo se recorta, se descartan los puntos no
 // convertibles y se resume el periodo.
 
+import { firstItem, lastItem } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 import type { HistoryPointDto } from "./types.js";
 
@@ -96,7 +97,8 @@ export function buildHistorySeries(points: readonly HistoryPointDto[]): HistoryS
     dropped,
     insufficient: usable.length < MIN_HISTORY_POINTS,
     changeAbs,
-    changePct: changeAbs !== null && first.marketValue > 0 ? (changeAbs / first.marketValue) * 100 : null,
+    changePct:
+      changeAbs !== null && first !== undefined && first.marketValue > 0 ? (changeAbs / first.marketValue) * 100 : null,
     from: first?.date ?? null,
     to: last?.date ?? null,
     estimatedRanges,
@@ -120,8 +122,8 @@ export function gainSince(points: readonly HistoryPointDto[], from: string): Per
     .filter((p): p is HistoryPointDto & { pnlAbs: number } => p.date >= from && Number.isFinite(p.pnlAbs))
     .sort((a, b) => compareStrings(a.date, b.date));
   if (usable.length < MIN_HISTORY_POINTS) return null;
-  const first = usable[0];
-  const last = usable[usable.length - 1];
+  const first = firstItem(usable);
+  const last = lastItem(usable);
   return { gain: last.pnlAbs - first.pnlAbs, since: first.date, estimated: first.estimated };
 }
 

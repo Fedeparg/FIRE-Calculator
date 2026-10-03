@@ -2,6 +2,7 @@
 // Muy orientativo: el ISD está cedido a las CCAA, que aplican bonificaciones (Madrid ~99 %) y
 // reducciones propias.
 
+import { itemAt } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
 import {
   GIFT_TAX_KINSHIP_COEFFICIENTS,
@@ -21,8 +22,9 @@ const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, numbe
 export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: number): number {
   const wealth = nonNegative(preexistingWealth);
   let tier = 0;
-  while (tier < GIFT_TAX_WEALTH_TIERS.length && wealth > GIFT_TAX_WEALTH_TIERS[tier]) tier++;
-  return KINSHIP_COEFFICIENTS[kinship][tier];
+  while (tier < GIFT_TAX_WEALTH_TIERS.length && wealth > itemAt(GIFT_TAX_WEALTH_TIERS, tier)) tier++;
+  // Hay un coeficiente más que umbrales, así que `tier` (0…umbrales) siempre tiene el suyo.
+  return itemAt(KINSHIP_COEFFICIENTS[kinship], tier);
 }
 
 export interface GiftTaxInput {
