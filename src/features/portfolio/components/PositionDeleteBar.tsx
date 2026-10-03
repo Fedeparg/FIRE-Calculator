@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 import { deletePosition } from "@/features/portfolio/api";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import Button from "@/shared/ui/Button";
 
 type Props = {
@@ -25,20 +26,12 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
   const tDetail = useTranslations("portfolio.detail");
   const tList = useTranslations("portfolio.list");
   const [confirming, setConfirming] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const deletion = useApiMutation();
+  const deleting = deletion.status === "pending";
 
   async function handleDelete() {
-    setDeleting(true);
-    setFailed(false);
-    try {
-      await deletePosition(positionId);
-      onDeleted(positionId);
-    } catch {
-      setFailed(true);
-    } finally {
-      setDeleting(false);
-    }
+    const result = await deletion.run(() => deletePosition(positionId));
+    if (result.ok) onDeleted(positionId);
   }
 
   return (
@@ -50,7 +43,7 @@ export default function PositionDeleteBar({ positionId, hasSales, onEdit, onDele
               {tList("confirmDeleteWithSales")}
             </p>
           )}
-          {failed && (
+          {deletion.status === "error" && (
             <p role="alert" className="text-xs text-warning">
               {tDetail("deleteError")}
             </p>

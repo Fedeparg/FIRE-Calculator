@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, apiErrorKey, apiFetch, apiJson } from "./client";
+import { ApiError, apiErrorKey, apiFetch, apiJson, createApiErrorMapper } from "./client";
 
 function mockFetch(impl: (path: string, init?: RequestInit) => Promise<Response> | Response) {
   const fn = vi.fn(async (path: string, init?: RequestInit) => impl(path, init));
@@ -115,5 +115,42 @@ describe("apiErrorKey", () => {
   it("falls back to generic for non-ApiError values", () => {
     expect(apiErrorKey(new Error("boom"))).toBe("errorGeneric");
     expect(apiErrorKey("x")).toBe("errorGeneric");
+  });
+});
+
+describe("createApiErrorMapper", () => {
+  const map = createApiErrorMapper({
+    codes: { QUOTA: "errorQuota" },
+    statuses: { 404: "errorNotFound", 429: "errorRateLimit" },
+    invalidFallback: "errorInvalid",
+  });
+
+  it("el código de dominio manda sobre el status", () => {
+    expect(map(new ApiError(400, "QUOTA"))).toBe("errorQuota");
+    expect(map(new ApiError(404, "QUOTA"))).toBe("errorQuota");
+  });
+
+  it("sin código conocido, usa el status propio", () => {
+    expect(map(new ApiError(404))).toBe("errorNotFound");
+    expect(map(new ApiError(429, "OTRO"))).toBe("errorRateLimit");
+  });
+
+  it("no confunde un código con una propiedad del prototipo", () => {
+    expect(map(new ApiError(400, "toString"))).toBe("errorInvalid");
+  });
+
+  it("el resto cae en el mapeo común", () => {
+    expect(map(new ApiError(0))).toBe("errorNetwork");
+    expect(map(new ApiError(401))).toBe("errorSession");
+    expect(map(new ApiError(503))).toBe("errorServer");
+    expect(map(new ApiError(409, "CONFLICT"))).toBe("errorGeneric");
+    expect(map(new Error("boom"))).toBe("errorGeneric");
+  });
+
+  it("un 400/422 sin código propio se traduce con invalidFallback", () => {
+    const noForm = createApiErrorMapper({ invalidFallback: "errorGeneric" });
+    expect(map(new ApiError(422))).toBe("errorInvalid");
+    expect(noForm(new ApiError(400))).toBe("errorGeneric");
+    expect(noForm(new ApiError(400, "OUT_OF_RANGE"))).toBe("errorGeneric");
   });
 });

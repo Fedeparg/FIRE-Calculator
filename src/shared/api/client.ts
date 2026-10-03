@@ -120,3 +120,42 @@ export function apiErrorKey(error: unknown): ApiErrorKey {
   if (error.status === 400 || error.status === 422) return "errorInvalid";
   return "errorGeneric";
 }
+
+/** Clave común que un mapeador puede devolver además de las suyas: todas menos `errorInvalid`, que se sustituye por `invalidFallback`. */
+type CommonErrorKey = Exclude<ApiErrorKey, "errorInvalid">;
+
+/** Configuración de `createApiErrorMapper`. */
+export type ApiErrorMapperConfig<K extends string, F extends string> = {
+  /** Códigos de dominio (`{ code }` del cuerpo) con mensaje propio. Mandan sobre el status. */
+  codes?: Readonly<Record<string, K>>;
+  /** Status HTTP con mensaje propio (p. ej. 404, 413, 429), cuando no hay código conocido. */
+  statuses?: Readonly<Partial<Record<number, K>>>;
+  /**
+   * Clave para un 400/422 sin código propio. `"errorInvalid"` ("revisa los datos") donde hay un
+   * formulario; `"errorGeneric"` donde no lo hay (un fichero, un botón) y ese mensaje confundiría.
+   */
+  invalidFallback: F;
+};
+
+/**
+ * Crea la función `error → clave i18n` de un namespace. Sustituye a las `xxxErrorKey` que cada
+ * feature escribía a mano con el mismo orden de reglas: primero el código de dominio, luego el
+ * status propio y, al final, el mapeo común de `apiErrorKey` (red, sesión, servidor…). Solo
+ * viaja el `code`, nunca el `message` del servidor: está en castellano y rompería el inglés.
+ */
+export function createApiErrorMapper<K extends string, F extends string>({
+  codes,
+  statuses,
+  invalidFallback,
+}: ApiErrorMapperConfig<K, F>): (error: unknown) => K | F | CommonErrorKey {
+  return (error) => {
+    if (error instanceof ApiError) {
+      // `hasOwn`: un `code` como "toString" no debe encontrar el prototipo del objeto.
+      if (codes && error.code !== undefined && Object.hasOwn(codes, error.code)) return codes[error.code];
+      const byStatus = statuses?.[error.status];
+      if (byStatus !== undefined) return byStatus;
+    }
+    const common = apiErrorKey(error);
+    return common === "errorInvalid" ? invalidFallback : common;
+  };
+}

@@ -11,7 +11,7 @@ import type { IncomeCategoryReport, IncomeEvent, IncomeYear } from "@sextante/co
 import { useFormat } from "@/shared/format/use-format";
 import Notice from "@/shared/ui/Notice";
 import { formatTaxBox } from "@sextante/core/money";
-import { useIncomeMutations } from "../use-income";
+import { useIncomeMutations } from "@/features/portfolio/use-income-mutations";
 import IncomeManager from "./IncomeManager";
 
 type Props = {

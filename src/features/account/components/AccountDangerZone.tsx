@@ -7,17 +7,14 @@ import { Link, useRouter } from "@/i18n/navigation";
 import Button from "@/shared/ui/Button";
 import Notice from "@/shared/ui/Notice";
 import { downloadBlob } from "@/shared/format/download";
-import { apiErrorKey, apiFetch, type ApiErrorKey } from "@/shared/api/client";
+import { apiFetch, createApiErrorMapper } from "@/shared/api/client";
 import { useApiMutation } from "@/shared/api/use-api-mutation";
 
-/** Claves de error que define el namespace `account` (no tiene `errorInvalid`). */
-type ErrorKey = Exclude<ApiErrorKey, "errorInvalid">;
-
-/** Traduce el fallo (red, sesión, servidor) a un mensaje específico, sin volcar el body crudo de la API. */
-function errorKeyFor(error: unknown): ErrorKey {
-  const key = apiErrorKey(error);
-  return key === "errorInvalid" ? "errorGeneric" : key;
-}
+/**
+ * Traduce el fallo (red, sesión, servidor) a un mensaje del namespace `account`, sin volcar el
+ * body crudo de la API. Ese namespace no tiene `errorInvalid`: aquí no hay formulario que revisar.
+ */
+const errorKeyFor = createApiErrorMapper({ invalidFallback: "errorGeneric" });
 
 type Props = {
   /** Email del usuario autenticado (del servidor). Sirve para confirmar el borrado. */

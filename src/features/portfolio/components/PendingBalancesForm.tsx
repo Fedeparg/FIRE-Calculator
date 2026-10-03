@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 
 import type { PendingNegative, SavingsGroup } from "@sextante/core/fiscal/savings-base";
 import { savePendingBalances } from "@/features/portfolio/api";
-import { apiErrorKey, type ApiErrorKey } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
 import Button from "@/shared/ui/Button";
@@ -42,11 +42,10 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
     })),
   );
   const [nextKey, setNextKey] = useState(balances.length);
-  const [saving, setSaving] = useState(false);
+  const save = useApiMutation();
   // El refresco va en una transición: "Guardado" no aparece hasta que llegan los datos nuevos.
   const [refreshing, startTransition] = useTransition();
-  const busy = saving || refreshing;
-  const [errorKey, setErrorKey] = useState<ApiErrorKey | null>(null);
+  const busy = save.status === "pending" || refreshing;
   const [saved, setSaved] = useState(false);
 
   const parsed = rows.map((row) => ({ ...row, value: parseDecimalInput(row.amount) ?? Number.NaN }));
@@ -60,17 +59,12 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
 
   async function handleSave() {
     if (!isValid) return;
-    setSaving(true);
-    setErrorKey(null);
-    try {
-      await savePendingBalances(parsed.map(({ originYear, kind, value }) => ({ originYear, kind, amount: value })));
-      setSaved(true);
-      startTransition(() => router.refresh());
-    } catch (error) {
-      setErrorKey(apiErrorKey(error));
-    } finally {
-      setSaving(false);
-    }
+    const result = await save.run(() =>
+      savePendingBalances(parsed.map(({ originYear, kind, value }) => ({ originYear, kind, amount: value }))),
+    );
+    if (!result.ok) return;
+    setSaved(true);
+    startTransition(() => router.refresh());
   }
 
   return (
@@ -141,9 +135,9 @@ export default function PendingBalancesForm({ balances, firstYear }: Props) {
         )}
 
         {duplicated && <p className="text-sm text-warning">{t("duplicated")}</p>}
-        {errorKey && (
+        {save.errorKey && (
           <p role="alert" className="text-sm text-warning">
-            {t(errorKey)}
+            {t(save.errorKey)}
           </p>
         )}
 

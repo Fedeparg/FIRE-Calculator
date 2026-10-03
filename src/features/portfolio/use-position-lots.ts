@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
-
-import { lotErrorKey, type LotErrorKey } from "@/features/portfolio/model/lots";
+import { lotErrorKey } from "@/features/portfolio/model/lots";
 import type { LotPayload, PositionLot } from "@sextante/core/portfolio/types";
 import { deleteLot, lotsPath, saveLot } from "@/features/portfolio/api";
 import { NO_STORE } from "@/shared/api/client";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useApiQuery } from "@/shared/api/use-api-query";
 
 const NO_LOTS: PositionLot[] = [];
@@ -27,20 +26,11 @@ export function usePositionLots(positionId: string, onMutated: () => void) {
   // `keepPrevious`: al recargar tras una mutación se siguen enseñando los lotes actuales.
   const query = useApiQuery<PositionLot[]>(lotsPath(positionId), { init: NO_STORE, keepPrevious: true });
   const { refetch } = query;
-  const [submitting, setSubmitting] = useState(false);
-  const [errorKey, setErrorKey] = useState<LotErrorKey | null>(null);
+  const mutation = useApiMutation();
 
   async function mutate(request: () => Promise<unknown>): Promise<boolean> {
-    setSubmitting(true);
-    setErrorKey(null);
-    try {
-      await request();
-    } catch (error) {
-      setErrorKey(lotErrorKey(error));
-      return false;
-    } finally {
-      setSubmitting(false);
-    }
+    const result = await mutation.run(request);
+    if (!result.ok) return false;
     onMutated();
     refetch();
     return true;
@@ -49,8 +39,8 @@ export function usePositionLots(positionId: string, onMutated: () => void) {
   return {
     lots: query.status === "ready" ? query.data : NO_LOTS,
     loadState: query.status,
-    errorKey,
-    submitting,
+    errorKey: mutation.error === null ? null : lotErrorKey(mutation.error),
+    submitting: mutation.status === "pending",
     /** Alta (`lotId === null`) o edición. `true` si la API lo aceptó. */
     save: (lotId: string | null, payload: LotPayload) => mutate(() => saveLot(positionId, lotId, payload)),
     remove: (lotId: string) => mutate(() => deleteLot(positionId, lotId)),

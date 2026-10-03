@@ -9,6 +9,7 @@ import type { RealisedGainsRow, RealisedGainsYear } from "@sextante/core/fiscal/
 import type { TaxBoxes } from "@sextante/core/fiscal/tax-boxes";
 import { ASSET_CLASSES, type AssetClass } from "@sextante/core/portfolio/types";
 import { setAssetClass } from "@/features/portfolio/api";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import { useFormat } from "@/shared/format/use-format";
 import CopyValue from "@/shared/ui/CopyValue";
 import { inputClass } from "@/shared/ui/field-classes";
@@ -288,24 +289,15 @@ function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: st
   // Controlado: tras un fallo vuelve al placeholder en vez de seguir mostrando una clase que no
   // se guardó.
   const [selected, setSelected] = useState<AssetClass | "">("");
-  const [saving, setSaving] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const save = useApiMutation();
   // El refresco va en una transición: el selector sigue ocupado hasta que la venta cambia de bloque.
   const [refreshing, startTransition] = useTransition();
 
   async function classify(value: AssetClass) {
     setSelected(value);
-    setSaving(true);
-    setFailed(false);
-    try {
-      await setAssetClass(positionId, value);
-      startTransition(() => router.refresh());
-    } catch {
-      setSelected("");
-      setFailed(true);
-    } finally {
-      setSaving(false);
-    }
+    const result = await save.run(() => setAssetClass(positionId, value));
+    if (result.ok) startTransition(() => router.refresh());
+    else setSelected("");
   }
 
   return (
@@ -313,7 +305,7 @@ function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: st
       <select
         aria-label={t("classifyLabel", { ticker })}
         value={selected}
-        disabled={saving || refreshing}
+        disabled={save.status === "pending" || refreshing}
         onChange={(e) => void classify(e.target.value as AssetClass)}
         className={`${inputClass} h-8 text-xs`}
       >
@@ -326,7 +318,7 @@ function ClassifySelect({ positionId, ticker }: { positionId: string; ticker: st
           </option>
         ))}
       </select>
-      {failed && <span className="text-xs text-warning">{t("classifyError")}</span>}
+      {save.status === "error" && <span className="text-xs text-warning">{t("classifyError")}</span>}
     </span>
   );
 }

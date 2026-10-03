@@ -16,13 +16,35 @@ import {
   savePosition,
   type PositionErrorKey,
 } from "@/features/portfolio/api";
+import { useApiMutation } from "@/shared/api/use-api-mutation";
 import PositionFormFields, { type PositionFormValues } from "./PositionFormFields";
 import Button from "@/shared/ui/Button";
 
 /** Id del título: da nombre al panel que contiene el formulario. */
 export const POSITION_FORM_TITLE_ID = "position-form-title";
 
-type Status = "idle" | "submitting" | "combining";
+/**
+ * Lo que impide guardar, como UNA unión en vez de cinco booleanos que podían contradecirse:
+ * - `duplicate`: en alta, ya existe ese símbolo+bróker (se ofrece combinar);
+ * - `brokerRequired`: el símbolo ya existe y falta el bróker para distinguirlo;
+ * - `brokerEmptied`: al editar, se intenta vaciar un bróker que la posición ya tenía;
+ * - `error`: cualquier otro fallo, con su mensaje.
+ */
+type Problem =
+  | { kind: "duplicate"; existing: Position }
+  | { kind: "brokerRequired" }
+  | { kind: "brokerEmptied" }
+  | { kind: "error"; key: PositionErrorKey };
+
+/** Problema que deja un fallo de la API al guardar o al combinar. */
+function problemFromError(error: unknown, isEditing: boolean): Problem {
+  // 409: BROKER_REQUIRED y DUPLICATE (solo en alta) tienen su propia reacción; HAS_SALES y el
+  // resto de fallos salen como mensaje (sesión, datos, servidor…).
+  const conflict = positionConflict(error);
+  if (conflict?.kind === "brokerRequired") return { kind: "brokerRequired" };
+  if (conflict?.kind === "duplicate" && !isEditing) return { kind: "duplicate", existing: conflict.existing };
+  return { kind: "error", key: positionErrorKey(error) };
+}
 
 type Props = {
   /** Si viene una posición, el formulario está en modo edición; si no, en modo alta. */
@@ -61,14 +83,21 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
     assetClass: editing?.assetClass ?? undefined,
   });
   const { ticker, name, quantity, avgPrice, broker, currency, assetClass } = values;
-  const [status, setStatus] = useState<Status>("idle");
-  const [errorKey, setErrorKey] = useState<PositionErrorKey | null>(null);
-  // En alta: posición existente que colisiona (símbolo+bróker), para ofrecer combinar.
-  const [duplicate, setDuplicate] = useState<Position | null>(null);
-  // El símbolo ya existe y el bróker está vacío: hay que indicar uno para distinguirlo.
-  const [brokerRequired, setBrokerRequired] = useState(false);
-  // Al editar, intento de vaciar un bróker que la posición ya tenía (no se permite).
+  // Dos mutaciones: guardar (alta o edición) y combinar con la posición duplicada. El problema
+  // se DERIVA de sus errores (no se copia a otro estado), salvo el de validación local.
+  const save = useApiMutation();
+  const combine = useApiMutation();
   const [brokerEmptied, setBrokerEmptied] = useState(false);
+  const saveProblem = save.status === "error" ? problemFromError(save.error, isEditing) : null;
+  const problem: Problem | null = brokerEmptied
+    ? { kind: "brokerEmptied" }
+    : combine.status === "error"
+      ? { kind: "error", key: positionErrorKey(combine.error) }
+      : saveProblem;
+  // El aviso de duplicado sigue a la vista mientras se combina (y si combinar falla).
+  const duplicate = saveProblem?.kind === "duplicate" ? saveProblem.existing : null;
+  const submitting = save.status === "pending";
+  const combining = combine.status === "pending";
 
   const quantityNum = parseDecimalInput(quantity) ?? NaN;
   const avgPriceNum = parseDecimalInput(avgPrice) ?? NaN;
@@ -82,11 +111,9 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
   function resetForm() {
     setValues({ ticker: "", name: "", quantity: "", avgPrice: "", broker: "", currency: "EUR" });
-    setDuplicate(null);
-    setBrokerRequired(false);
     setBrokerEmptied(false);
-    setErrorKey(null);
-    setStatus("idle");
+    save.reset();
+    combine.reset();
   }
 
   const payload = () => ({
@@ -101,54 +128,38 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setErrorKey(null);
-    setDuplicate(null);
-    setBrokerRequired(false);
     setBrokerEmptied(false);
+    combine.reset();
     // El botón está deshabilitado mientras no es válido (y sin botón activo no hay envío
     // implícito con Enter): esto solo estrecha los tipos.
     if (!isValid) return;
     // No se puede vaciar el bróker de una posición que ya lo tenía (el alta sí permite
     // crearla sin bróker; quitarlo después haría ambiguo el modelo de duplicados).
     if (isEditing && Boolean(editing?.broker) && broker.trim() === "") {
+      save.reset();
       setBrokerEmptied(true);
       return;
     }
-    setStatus("submitting");
-    try {
-      const saved = await savePosition(editing?.id ?? null, payload());
-      if (editing) {
-        onSaved(saved);
-      } else {
-        onCreated(saved);
-        resetForm();
-        trackEvent({ name: "position-added" });
-      }
-    } catch (error) {
-      // 409: BROKER_REQUIRED y DUPLICATE (solo en alta) tienen su propia reacción; HAS_SALES
-      // y el resto de fallos salen como mensaje (sesión, datos, servidor…).
-      const conflict = positionConflict(error);
-      if (conflict?.kind === "brokerRequired") setBrokerRequired(true);
-      else if (conflict?.kind === "duplicate" && !isEditing) setDuplicate(conflict.existing);
-      else setErrorKey(positionErrorKey(error));
+    const result = await save.run(() => savePosition(editing?.id ?? null, payload()));
+    if (!result.ok) return;
+    if (editing) {
+      onSaved(result.data);
+    } else {
+      onCreated(result.data);
+      resetForm();
+      trackEvent({ name: "position-added" });
     }
-    setStatus("idle");
   }
 
   /** Combina la compra actual con la posición existente que colisiona (media ponderada). */
   async function handleCombine() {
     if (!duplicate) return;
-    setStatus("combining");
-    setErrorKey(null);
-    try {
-      const merged = await combinePosition(duplicate.id, { quantity: quantityNum, avgPrice: avgPriceNum, currency });
-      onSaved(merged);
-      resetForm();
-      return;
-    } catch (error) {
-      setErrorKey(positionErrorKey(error));
-    }
-    setStatus("idle");
+    const result = await combine.run(() =>
+      combinePosition(duplicate.id, { quantity: quantityNum, avgPrice: avgPriceNum, currency }),
+    );
+    if (!result.ok) return;
+    onSaved(result.data);
+    resetForm();
   }
 
   return (
@@ -160,8 +171,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       <PositionFormFields
         values={values}
         onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
-        brokerRequired={brokerRequired}
-        brokerEmptied={brokerEmptied}
+        brokerRequired={problem?.kind === "brokerRequired"}
+        brokerEmptied={problem?.kind === "brokerEmptied"}
       />
 
       {duplicate && (
@@ -170,16 +181,16 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
             {t("duplicate", { ticker: duplicate.ticker, broker: duplicate.broker ?? "" })}
           </p>
           <p className="text-xs text-muted">{t("duplicateHint")}</p>
-          <Button size="sm" onClick={handleCombine} disabled={status === "combining"} className="self-start">
-            {status === "combining" ? t("combining") : t("combine")}
+          <Button size="sm" onClick={handleCombine} disabled={combining} className="self-start">
+            {combining ? t("combining") : t("combine")}
           </Button>
         </div>
       )}
 
-      {errorKey && (
+      {problem?.kind === "error" && (
         <p className="text-sm text-warning">
-          {t(errorKey)}
-          {errorKey === "errorSession" && (
+          {t(problem.key)}
+          {problem.key === "errorSession" && (
             <>
               {" "}
               <Link href="/entrar" className="font-medium text-brand underline underline-offset-2">
@@ -191,14 +202,8 @@ export default function PositionForm({ editing, onCreated, onSaved, onCancelEdit
       )}
 
       <div className="flex items-center gap-3">
-        <Button size="lg" type="submit" disabled={status !== "idle" || !isValid}>
-          {isEditing
-            ? status === "submitting"
-              ? t("saving")
-              : t("save")
-            : status === "submitting"
-              ? t("submitting")
-              : t("submit")}
+        <Button size="lg" type="submit" disabled={submitting || combining || !isValid}>
+          {isEditing ? (submitting ? t("saving") : t("save")) : submitting ? t("submitting") : t("submit")}
         </Button>
         {isEditing && (
           <Button variant="secondary" size="lg" onClick={onCancelEdit}>

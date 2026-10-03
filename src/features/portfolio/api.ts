@@ -15,7 +15,7 @@ import type {
   PositionPayload,
   PriceInfo,
 } from "@sextante/core/portfolio/types";
-import { ApiError, NO_STORE, apiErrorKey, apiJson, type ApiErrorKey } from "@/shared/api/client";
+import { ApiError, NO_STORE, apiJson, createApiErrorMapper } from "@/shared/api/client";
 
 export const FX_PATH = "/api/prices/fx";
 
@@ -107,9 +107,6 @@ export async function searchInstruments(query: string, signal: AbortSignal): Pro
   return body.results;
 }
 
-/** Claves del formulario de posición: las comunes más el 409 `HAS_SALES`. */
-export type PositionErrorKey = ApiErrorKey | "errorHasSales";
-
 /** Conflicto 409 del alta/edición de posiciones, con lo que la UI necesita para reaccionar. */
 export type PositionConflict =
   { kind: "hasSales" } | { kind: "brokerRequired" } | { kind: "duplicate"; existing: Position };
@@ -131,7 +128,10 @@ export function positionConflict(error: unknown): PositionConflict | null {
   return null;
 }
 
-/** Clave i18n de un fallo de posiciones (sin volcar el `message` del servidor, que está en castellano). */
-export function positionErrorKey(error: unknown): PositionErrorKey {
-  return positionConflict(error)?.kind === "hasSales" ? "errorHasSales" : apiErrorKey(error);
-}
+/** Clave i18n de un fallo de posiciones: las comunes más el 409 `HAS_SALES`. */
+export const positionErrorKey = createApiErrorMapper({
+  codes: { HAS_SALES: "errorHasSales" },
+  invalidFallback: "errorInvalid",
+});
+
+export type PositionErrorKey = ReturnType<typeof positionErrorKey>;

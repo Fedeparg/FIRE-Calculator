@@ -12,8 +12,8 @@ import PositionDetailSummary from "./PositionDetailSummary";
 import PositionLotForm from "./PositionLotForm";
 import SaleSimulator from "./SaleSimulator";
 import { positionHasSales } from "../model/lots";
-import { usePositionIncome } from "../use-income";
-import { usePositionLots } from "../use-position-lots";
+import { usePositionIncome } from "@/features/portfolio/use-position-income";
+import { usePositionLots } from "@/features/portfolio/use-position-lots";
 
 export { POSITION_DETAIL_TITLE_ID } from "./PositionDetailSummary";
 
