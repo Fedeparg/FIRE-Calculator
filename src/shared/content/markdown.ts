@@ -39,22 +39,41 @@ function rehypeLocalizeLinks(locale: Locale) {
 }
 
 /**
- * Compila Markdown a HTML en runtime (sin paso de build), de modo que el
- * contenido de la wiki pueda editarse en el servidor sin redesplegar la app.
- *
  * Pipeline: remark (parse + GFM para tablas/listas) → rehype → enlaces internos
  * con el prefijo del idioma → HTML string. No se permite HTML embebido en el
  * Markdown (remark-rehype lo descarta por defecto): el contenido es de confianza
  * y solo necesita Markdown puro.
  */
-export async function renderMarkdown(markdown: string, locale: Locale): Promise<string> {
-  const file = await unified()
+function buildProcessor(locale: Locale) {
+  return unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkRehype)
     .use(rehypeLocalizeLinks(locale))
     .use(rehypeStringify)
-    .process(markdown);
+    .freeze();
+}
 
-  return String(file);
+/**
+ * Un procesador congelado por idioma, creado la primera vez que se pide: montar el pipeline
+ * (cargar y configurar los plugins) en cada página era trabajo repetido. Va por idioma porque
+ * el plugin de enlaces depende de él.
+ */
+const processors = new Map<Locale, ReturnType<typeof buildProcessor>>();
+
+function processorFor(locale: Locale): ReturnType<typeof buildProcessor> {
+  let processor = processors.get(locale);
+  if (!processor) {
+    processor = buildProcessor(locale);
+    processors.set(locale, processor);
+  }
+  return processor;
+}
+
+/**
+ * Compila Markdown a HTML en runtime (sin paso de build), de modo que el
+ * contenido de la wiki pueda editarse en el servidor sin redesplegar la app.
+ */
+export async function renderMarkdown(markdown: string, locale: Locale): Promise<string> {
+  return String(await processorFor(locale).process(markdown));
 }
