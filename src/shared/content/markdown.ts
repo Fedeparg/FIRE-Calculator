@@ -8,6 +8,7 @@ import { unified } from "unified";
 
 import { localizeHref } from "@/i18n/localize-href";
 import type { Locale } from "@/i18n/types";
+import { isSafeHref } from "@/shared/content/safe-href";
 
 /** Nodo mínimo del árbol HTML (hast) que recorre `rehypeLocalizeLinks`. */
 type HastNode = {
@@ -19,13 +20,18 @@ type HastNode = {
 
 /**
  * Plugin de rehype: prefija con el idioma los enlaces internos (`<a href="/…">`), para que un
- * artículo en inglés no mande al lector a la versión en español. La regla está en
- * `localizeHref` (core puro y testeado).
+ * artículo en inglés no mande al lector a la versión en español (la regla está en
+ * `localizeHref`, pura y testeada), y QUITA el `href` de los enlaces con un esquema peligroso
+ * (`javascript:`, `data:`…; ver `isSafeHref`): el texto se conserva, sin enlace.
  */
 function rehypeLocalizeLinks(locale: Locale) {
   const visit = (node: HastNode): void => {
     if (node.type === "element" && node.tagName === "a" && typeof node.properties?.href === "string") {
-      node.properties.href = localizeHref(node.properties.href, locale);
+      if (isSafeHref(node.properties.href)) {
+        node.properties.href = localizeHref(node.properties.href, locale);
+      } else {
+        delete node.properties.href;
+      }
     }
     node.children?.forEach(visit);
   };
