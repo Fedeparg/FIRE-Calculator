@@ -17,7 +17,8 @@ import { signedTone } from "@/shared/format/signed-tone";
 import { useFormat } from "@/shared/format/use-format";
 import type { PriceInfo, Position } from "@sextante/core/portfolio/types";
 import ToggleGroup from "@/shared/ui/ToggleGroup";
-import { PendingPrice, SortHeader, StaleBadge } from "./PositionListParts";
+import { PendingPrice, StaleBadge } from "./PriceStatus";
+import SortHeader from "./SortHeader";
 
 type Props = {
   positions: Position[];
