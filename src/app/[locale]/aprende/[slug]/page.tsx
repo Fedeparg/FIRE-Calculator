@@ -35,6 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     locale,
     path: `/aprende/${slug}`,
+    og: { kind: "article", slug },
     title: article.title,
     description: article.description,
     ogType: "article",

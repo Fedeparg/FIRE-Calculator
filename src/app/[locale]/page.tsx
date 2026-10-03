@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     locale,
     path: "/",
+    og: { kind: "page", page: "home" },
     title: t("title"),
     description: t("description"),
     // El título de la home ya incluye la marca; no la dupliques con la plantilla.

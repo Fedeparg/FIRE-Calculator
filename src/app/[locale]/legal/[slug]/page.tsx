@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildMetadata({
     locale,
     path: `/legal/${slug}`,
+    og: { kind: "legal", slug },
     title: doc.title,
     description: doc.title,
   });
