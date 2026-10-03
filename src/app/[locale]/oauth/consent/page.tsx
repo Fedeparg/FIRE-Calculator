@@ -51,19 +51,23 @@ export default async function ConsentPage({ params, searchParams }: Props) {
     redirect({ href: { pathname: "/entrar", query: { returnTo } }, locale });
   }
 
-  // Nombre legible de la aplicación (best-effort; si falla, intro genérica).
+  // Nombre legible de la aplicación (best-effort; si falla, intro genérica) y sus
+  // `redirect_uris` registradas (sin ellas, "Denegar" vuelve a la portada).
   let clientName: string | null = null;
+  let redirectUris: string[] = [];
   try {
     const res = await fetch(`${API_URL}/api/oauth/consent/client/${encodeURIComponent(clientId)}`, {
       headers: { cookie: `${SESSION_COOKIE}=${await sessionToken()}` },
       cache: "no-store",
     });
     if (res.ok) {
-      const info = (await res.json()) as { clientName: string | null };
+      const info = (await res.json()) as { clientName: string | null; redirectUris?: string[] };
       clientName = info.clientName;
+      redirectUris = info.redirectUris ?? [];
     }
   } catch {
     clientName = null;
+    redirectUris = [];
   }
 
   const scopes = scope.split(" ").filter(Boolean);
@@ -76,7 +80,12 @@ export default async function ConsentPage({ params, searchParams }: Props) {
           <p className="text-sm text-muted">{clientName ? t("intro", { app: clientName }) : t("introGeneric")}</p>
         </div>
         <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-          <ConsentClient clientId={clientId} scopes={scopes} authorizeParams={authorizeParams} />
+          <ConsentClient
+            clientId={clientId}
+            scopes={scopes}
+            authorizeParams={authorizeParams}
+            redirectUris={redirectUris}
+          />
         </div>
       </div>
     </RouteMessages>
