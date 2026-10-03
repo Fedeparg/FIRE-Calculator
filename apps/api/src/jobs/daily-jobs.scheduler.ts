@@ -11,6 +11,9 @@ import { PriceHistoryService } from '../prices/price-history.service.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 import { errorMessage } from '../common/errors.js';
 
+/** Paso de un trabajo: nombre (para el log de error) y cuerpo. */
+type JobStep = readonly [name: string, run: () => Promise<unknown>];
+
 /** Por defecto: cada día a las 22:30 hora de Madrid. Formato de 6 campos (s m h D M W). */
 export const DEFAULT_CRON = '0 30 22 * * *';
 /** Intradía: en punto de 9:00 a 21:00 (Madrid), lunes a viernes; cubre Europa y casi todo EE. UU. y acaba antes del nocturno. */
@@ -32,7 +35,10 @@ export const INTRADAY_OFF = 'off';
  * nocturno deja la fila del día con el cierre. Comparten un cerrojo en memoria para no duplicar
  * peticiones a Yahoo: el intradía (y el arranque) se salta si hay otro trabajo en marcha, pero el
  * NOCTURNO espera a que termine, porque saltárselo dejaría el día sin snapshot. El cerrojo es de
- * proceso, no distribuido: vale porque la API corre en una sola réplica.
+ * proceso, no distribuido: vale porque la API corre en una sola réplica. Un
+ * `pg_try_advisory_lock` serviría con varias réplicas, pero es de SESIÓN: exige reservar una
+ * conexión del pool durante todo el trabajo y sondear para la espera del nocturno; no compensa
+ * mientras haya una sola instancia.
  *
  * Vive aquí y no en `prices/` porque el snapshot necesita `PortfolioModule`, que depende de
  * `PricesModule`: colgarlo de `prices/` crearía un ciclo que solo se rompe con `forwardRef`.
@@ -87,25 +93,24 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   private async bootstrapBackfill(): Promise<void> {
-    try {
-      await this.prices.ensureHistoryForActivePositions();
-    } catch (error) {
-      this.logger.error(`Backfill de histórico de precios al arrancar falló: ${errorMessage(error)}`);
-    }
-    try {
-      await this.snapshots.backfillAll();
-    } catch (error) {
-      this.logger.error(`Backfill de snapshots al arrancar falló: ${errorMessage(error)}`);
-    }
-    await this.classifyAssets();
+    await this.steps([
+      ['Backfill de histórico de precios al arrancar', () => this.prices.ensureHistoryForActivePositions()],
+      ['Backfill de snapshots al arrancar', () => this.snapshots.backfillAll()],
+      ['Clasificación de posiciones', () => this.assetClasses.classifyMissing()],
+    ]);
   }
 
-  /** Clase de activo de las posiciones que no la tienen (decide el bloque de la declaración). */
-  private async classifyAssets(): Promise<void> {
-    try {
-      await this.assetClasses.classifyMissing();
-    } catch (error) {
-      this.logger.error(`Clasificación de posiciones falló: ${errorMessage(error)}`);
+  /**
+   * Ejecuta los pasos en orden, cada uno con su propio `try/catch`: el fallo de uno se registra
+   * con su nombre y no impide los siguientes (con la fuente caída, el snapshot se guarda igual).
+   */
+  private async steps(steps: readonly JobStep[]): Promise<void> {
+    for (const [name, fn] of steps) {
+      try {
+        await fn();
+      } catch (error) {
+        this.logger.error(`${name} falló: ${errorMessage(error)}`);
+      }
     }
   }
 
@@ -115,14 +120,17 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   async runIntraday(): Promise<void> {
-    await this.exclusive('intradía', async () => {
-      try {
-        const summary = await this.prices.refreshAll();
-        this.logger.log(`Refresco intradía: ${summary.fetched}/${summary.symbols} símbolos`);
-      } catch (error) {
-        this.logger.error(`Refresco intradía de precios falló: ${errorMessage(error)}`);
-      }
-    });
+    await this.exclusive('intradía', () =>
+      this.steps([
+        [
+          'Refresco intradía de precios',
+          async () => {
+            const summary = await this.prices.refreshAll();
+            this.logger.log(`Refresco intradía: ${summary.fetched}/${summary.symbols} símbolos`);
+          },
+        ],
+      ]),
+    );
   }
 
   /**
@@ -151,49 +159,34 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
   }
 
   private async runNightly(): Promise<void> {
-    try {
-      await this.prices.refreshAll();
-    } catch (error) {
-      this.logger.error(`Refresco de precios falló: ${errorMessage(error)}`);
-    }
-
     // Las alertas evalúan este snapshot concreto (ver `evaluateAll`).
     let captureDate: string | undefined;
-    try {
-      captureDate = (await this.snapshots.captureAll()).date;
-    } catch (error) {
-      this.logger.error(`Captura de snapshots falló: ${errorMessage(error)}`);
-    }
-
-    try {
-      await this.snapshots.backfillAll();
-    } catch (error) {
-      this.logger.error(`Backfill de snapshots falló: ${errorMessage(error)}`);
-    }
-
-    try {
-      const alerts = await this.fireAlerts.evaluateAll(captureDate);
-      if (alerts.users > 0) {
-        this.logger.log(`Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`);
-      }
-    } catch (error) {
-      this.logger.error(`Evaluación de alertas FIRE falló: ${errorMessage(error)}`);
-    }
-
-    // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
-    // Va el último: el snapshot y los avisos no deben esperar a Yahoo.
-    try {
-      await this.prices.refreshStaleSplits();
-    } catch (error) {
-      this.logger.error(`Refresco de splits falló: ${errorMessage(error)}`);
-    }
-
-    // Con los dividendos de mercado recién cacheados (viajan con los splits), se completan los cobros pendientes.
-    try {
-      await this.dividends.resolvePending();
-    } catch (error) {
-      this.logger.error(`Resolución de dividendos falló: ${errorMessage(error)}`);
-    }
-    await this.classifyAssets();
+    await this.steps([
+      ['Refresco de precios', () => this.prices.refreshAll()],
+      [
+        'Captura de snapshots',
+        async () => {
+          captureDate = (await this.snapshots.captureAll()).date;
+        },
+      ],
+      ['Backfill de snapshots', () => this.snapshots.backfillAll()],
+      [
+        'Evaluación de alertas FIRE',
+        async () => {
+          const alerts = await this.fireAlerts.evaluateAll(captureDate);
+          if (alerts.users > 0) {
+            this.logger.log(
+              `Alertas FIRE: ${alerts.sent} enviadas, ${alerts.failed} fallidas, ${alerts.users} usuarios`,
+            );
+          }
+        },
+      ],
+      // Splits de los símbolos en uso con marca de más de 7 días (1 llamada por símbolo y semana).
+      // Va tras las alertas: el snapshot y los avisos no deben esperar a Yahoo.
+      ['Refresco de splits', () => this.prices.refreshStaleSplits()],
+      // Con los dividendos de mercado recién cacheados (viajan con los splits), se completan los cobros pendientes.
+      ['Resolución de dividendos', () => this.dividends.resolvePending()],
+      ['Clasificación de posiciones', () => this.assetClasses.classifyMissing()],
+    ]);
   }
 }
