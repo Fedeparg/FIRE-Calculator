@@ -1405,7 +1405,7 @@
       "ratesUnavailable": "The ECB exchange rates could not be loaded. Sales in other currencies are left out of the totals; reload the page in a moment.",
       "unconverted": "Sales in {currencies} without an ECB exchange rate for the sale date: {count}. They are left out of the totals and the tax; the CSV lists them in their own currency.",
       "fxIncomplete": "Sales missing the ECB rate of a purchase (before 1999 or in a currency the ECB does not publish): {count}. Their exchange difference has not been calculated.",
-      "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell. If you keep the currency in an account, that difference is not declared until you convert it.",
+      "fxCriterion": "Sales in another currency: as the Spanish tax authority states (DGT ruling V0152-26), the gain is calculated in that currency and converted at the ECB rate of the sale date. The exchange difference on the currency invested is a separate gain or loss, calculated assuming your broker converts to euros when you buy and when you sell; it is declared as a transfer of other assets (no official source sets the box). If you keep the currency in an account, that difference is not declared until you convert it.",
       "noSalesThisYear": "No sales recorded for this tax year.",
       "deferred": "Two-month rule: {amount} of losses from this year do not count because you bought back the same securities within two months before or after the sale. They will count when you sell the repurchased ones.",
       "integrated": "This year includes {amount} of losses the two-month rule had deferred, because you sold the repurchased securities.",
@@ -1419,7 +1419,7 @@
         },
         "funds": {
           "title": "Funds and ETFs",
-          "note": "Foreign ETFs and funds without withholding on redemption: boxes {funds} (transfer and acquisition value). If a Spanish custodian withheld tax when you sold, they go in the funds-with-withholding block (0310-0325)."
+          "note": "Listed ETFs and funds (IIC under article 75.3.j of the Regulation): boxes {funds} (transfer and acquisition value), even if your broker withheld tax when you sold. Unlisted funds redeemed with withholding go in the 0310-0325 block."
         },
         "other": {
           "title": "Derivatives and other assets",

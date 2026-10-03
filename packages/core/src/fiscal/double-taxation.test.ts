@@ -76,8 +76,8 @@ describe("computeDoubleTaxationDeduction", () => {
       HK: 10,
       JP: 5,
     });
-    // Irlanda, en duda (la tabla de 2018 y el texto del convenio no coinciden): sin dato.
-    expect(TREATY_DIVIDEND_RATES.IE).toBeUndefined();
+    // Irlanda: el convenio exime en origen (art. 10.1.c); nada de lo retenido allí se deduce en España.
+    expect(TREATY_DIVIDEND_RATES.IE).toBe(0);
   });
 
   it("sin convenio (Dinamarca) se acredita todo lo pagado, con el límite del tipo medio", () => {

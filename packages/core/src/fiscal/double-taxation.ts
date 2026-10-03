@@ -10,8 +10,9 @@
  * Solo entran países con tipo único y sin nota al pie en esa columna; un país ausente no
  * tiene dato confirmado. La tabla es de 2018 y se contrasta con los convenios posteriores:
  * - Japón: 5 % desde el convenio de 2018, en vigor el 01/05/2021 (BOE-A-2021-2977, art. 10.2).
- * - Irlanda queda fuera: la tabla dice 15 %, pero el art. 10.1.c) del convenio exime en Irlanda al
- *   residente en España; hasta aclararlo, sin dato.
+ * - Irlanda: 0 %. El art. 10.1.c) del convenio exime en Irlanda los dividendos del residente en
+ *   España; el 15 % de la tabla es la letra b) (régimen de crédito fiscal). Lo que retenga Irlanda
+ *   (25 % de DWT) no se deduce en España: se reclama a Revenue con el formulario V2A.
  */
 export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
   AT: 15,
@@ -25,6 +26,7 @@ export const TREATY_DIVIDEND_RATES: Readonly<Record<string, number>> = {
   FR: 15,
   GB: 10,
   HK: 10,
+  IE: 0,
   IT: 15,
   JP: 5,
   KR: 15,

@@ -189,8 +189,10 @@ por FIFO (`walkLots`), pasadas a euros, agrupadas por ejercicio y compensadas de
   (`computableGain = gain − deferredLoss + integratedLoss`). La pérdida se convierte a euros con el
   tipo del día de la venta que la originó y se integra por ese importe, no al tipo de la venta
   posterior (si esa venta no tiene tipo, se usa el de la que la integra). La diferencia de cambio
-  no es una transmisión de valores y no se difiere. Los derivados (`isDerivative`) quedan fuera
-  (DGT V2172-21) y no se agrupan con una acción del mismo símbolo. Una venta sin tipo del día
+  no es una transmisión de valores y no se difiere. Los derivados (`isDerivative`) no se agrupan
+  con una acción del mismo símbolo, pero sí están sujetos: los de la cartera son warrants y
+  certificados con ISIN, valores negociables (DGT V1790-07); V2172-21 y V3755-16 solo excluyen
+  contratos como opciones y futuros (que Sextante no distingue: limitación declarada). Una venta sin tipo del día
   (`unconverted`) queda fuera de los totales también en lo diferido.
 - **Sin tipo del día de la venta** (divisa que el BCE no publica, serie no disponible), la
   venta va a `unconverted`, en su divisa y fuera de los totales y de la cuota. **Sin tipo de
@@ -233,8 +235,10 @@ con pérdida`. Con varias ventas, se atienden por orden cronológico y cada una 
   considerará definitiva cuando, en los dos meses anteriores o posteriores a ella, no se adquieran
   nuevamente valores homogéneos»); si hay otra recompra, la parte proporcional pasa a los nuevos
   títulos conservando su venta de origen.
-- **Derivados:** no sujetos (DGT V2172-21); el que llama no debe pasarle su histórico
-  (`buildRealisedGainsReport` lo hace con `RealisedGainsPosition.isDerivative`).
+- **Derivados:** sujetos si son valores negociables (warrants, certificados, turbos con ISIN:
+  V1790-07); no lo están los contratos como opciones y futuros (V2172-21, V3755-16). Sextante no
+  distingue unos de otros y aplica la regla a todos: sus derivados importados son warrants y
+  certificados de Trade Republic.
 - **Fuentes:** Ley 35/2006, art. 33.5.f,
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764 ; AEAT, Manual práctico de Renta 2025,
   cap. 11 «Pérdidas patrimoniales que no se computan como tales»,
@@ -274,10 +278,10 @@ Reparte un dividendo importado en íntegro, retención en origen y retención es
    - después, España retiene el 19 % de lo cobrado neto de origen. Si `tax/amount` ≈ 19 %, lo
      abonado llegó neto de origen y `tax` es solo la española (ASML); si ≈ origen + 19 % del
      resto, `amount` es el íntegro y `tax` suma ambas (EE. UU. con W-8BEN, 15 %).
-   - **Base del 19 %:** el art. 93.1 RIRPF habla de la "contraprestación íntegra", pero la AEAT
-     explica que el depositario retiene sobre los dividendos netos de la retención en origen
-     (sede.agenciatributaria.gob.es, "Obtención de dividendos procedentes de otro país") y es lo que
-     aplica Trade Republic. No se ha localizado una consulta de la DGT que lo fije.
+   - **Base del 19 %:** el neto de la retención en origen. Lo fijan las consultas DGT V2505-10 y
+     V2506-10 (con la resolución del TEAC de 25/09/2008), que sustituyen el criterio anterior de
+     V1491-08 (íntegro); la AEAT lo explica igual en "Obtención de dividendos procedentes de otro
+     país" y es lo que aplica Trade Republic.
    - Deshacer un neto con un tipo supuesto (Países Bajos 15 %) es una **estimación**.
 2. **Mercado** (`resolveWithMarket`): acciones × dividendo por acción de mercado (Yahoo, sin el
    ajuste por splits posteriores), en la divisa de pago. Si coincide con lo abonado, el bróker dio
@@ -317,8 +321,11 @@ tabla verificada se muestra sin números de casilla, nunca con los de otro año.
   0331, importes globales por entidad); fondos y ETF no sujetos a retención (2224-2236); IIC con
   retención (0310-0325, cuando el depositario español retiene en el reembolso); otros elementos
   patrimoniales (1624-1654).
-- **Derivados:** el modelo no los nombra. Van en otros elementos patrimoniales por exclusión
-  (Trade Republic los pone ahí en su informe fiscal). Es una inferencia: confianza baja.
+- **Derivados:** el modelo no los nombra. Van en otros elementos patrimoniales: la DGT manda los
+  warrants a "otras ganancias y pérdidas patrimoniales" (V1790-07) y Trade Republic los pone ahí en
+  su informe fiscal. La clave del bloque (4) es por exclusión: confianza baja.
+- **Fondos y ETF:** las IIC del art. 75.3.j RIRPF (ETF) van en 2224-2236 aunque el depositario
+  haya retenido: el título del bloque 0310-0325 las excluye expresamente.
 - **Doble imposición:** solo el importe global (0588); el detalle por país no está en la Orden.
 
 ## `savings-base.ts`
@@ -334,28 +341,28 @@ ahorro. Puro y sin texto: devuelve cifras y la traza de cada compensación.
   anteriores» (art. 49.1): primero contra el positivo de su mismo grupo y después contra
   el del otro con el 25 %. Se compensa «en la cuantía máxima que permita cada uno de los
   ejercicios» (art. 49.2). Caducan los saldos con origen anterior a `ejercicio − 4`.
-- **Orden aplicado** (interpretación): primero el saldo negativo del propio ejercicio
-  contra el otro grupo; después los pendientes, del más antiguo al más reciente. El 25 %
-  es único por grupo positivo (se calcula sobre su saldo positivo del ejercicio antes de
-  compensar) y lo comparten el propio ejercicio y los arrastres. La compensación con el
-  mismo grupo no tiene límite porcentual. El texto del art. 49 no fija un orden entre
-  cruzar el saldo del propio ejercicio y aplicar los arrastres; se ha elegido el de la
-  integración anual (primero el ejercicio). A igual año, GPP antes que RCM.
+- **Orden aplicado** (Manual práctico de Renta 2025, cap. 12 y su caso práctico): primero el
+  saldo negativo del propio ejercicio contra el otro grupo; después todos los pendientes contra
+  su mismo grupo (sin límite porcentual), del más antiguo al más reciente; y por último, con lo
+  que les quede, contra el otro grupo. El 25 % es un único cupo por grupo positivo (sobre su saldo
+  positivo del ejercicio antes de compensar), compartido por el propio ejercicio y los arrastres
+  («límite conjunto», según el manual). El orden entre pendientes del mismo grupo de años
+  distintos no lo fija ninguna fuente: el más antiguo primero, para que caduque lo menos posible.
 - `savingsTax(base)` aplica `IRPF_AHORRO` y devuelve cuota íntegra y tipo medio
   efectivo en % (`null` con base 0).
 - **No modela**: la reducción del art. 55 LIRPF (remanente que reduce la base del
-  ahorro, art. 50.2), deducciones ni rentas exentas. Los tests son de elaboración propia
-  a partir del texto legal: no se encontraron ejemplos numéricos en el Manual práctico
-  de Renta 2025 de la AEAT que reproducir.
+  ahorro, art. 50.2), deducciones ni rentas exentas. Un test reproduce el caso práctico del
+  capítulo 12 del Manual práctico de Renta 2025 (base del ahorro de 200 €).
 - **Fuentes**: Ley 35/2006, arts. 46, 48, 49 y 50.2 (art. 49 en la redacción de la
   Ley 26/2014, de 27 de noviembre),
   https://www.boe.es/buscar/act.php?id=BOE-A-2006-20764
 
 ## `double-taxation.ts`
 
-> Contraste de 2026-10-03: la tabla de la DGT es de 2018. Japón está al 5 % (BOE-A-2021-2977) e
-> Irlanda queda sin dato porque el art. 10.1.c) de su convenio exime en origen al residente en
-> España y la tabla dice 15 %. Dinamarca (sin convenio desde 2009) e Islas Caimán no tienen
+> Contraste de 2026-10-03: la tabla de la DGT es de 2018. Japón está al 5 % (BOE-A-2021-2977).
+> Irlanda, 0 %: el art. 10.1.c) de su convenio exime en origen al residente en España (el 15 % de
+> la tabla es la letra b, régimen de crédito fiscal); lo retenido allí no se deduce en España y se
+> reclama a Revenue (formulario V2A), principio de la consulta V0220-12. Dinamarca (sin convenio desde 2009) e Islas Caimán no tienen
 > convenio: se acredita todo lo pagado, con el límite del tipo medio. El tipo medio que se usa es
 > el de la escala del ahorro; el del art. 80.2 es cuota líquida total × (cuota íntegra del ahorro /
 > cuota íntegra total) / base liquidable del ahorro (ejemplo del Manual de Renta 2025, cap. 18), que

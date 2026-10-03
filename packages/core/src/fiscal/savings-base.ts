@@ -66,10 +66,10 @@ const finitePositive = (n: number): boolean => Number.isFinite(n) && n > 0;
 /**
  * Integra y compensa la base del ahorro (art. 49 LIRPF).
  *
- * Orden: primero el saldo negativo del propio ejercicio contra el positivo del otro grupo
- * (25 %); después los pendientes de ejercicios anteriores del más antiguo al más reciente,
- * cada uno contra el positivo de su mismo grupo y, con lo que quede, contra el del otro
- * con el mismo 25 %. El 25 % es uno solo por grupo positivo y se calcula sobre su saldo
+ * Orden (Manual práctico de Renta 2025, cap. 12): primero el saldo negativo del propio ejercicio
+ * contra el positivo del otro grupo (25 %); después los pendientes de ejercicios anteriores, del
+ * más antiguo al más reciente, contra el positivo de su mismo grupo; y por último, con lo que les
+ * quede, contra el del otro grupo con el mismo 25 %. El 25 % es uno solo por grupo positivo y se calcula sobre su saldo
  * positivo del ejercicio antes de compensar. Las partidas con importe no finito o ≤ 0, o con
  * origen igual o posterior al ejercicio, se ignoran.
  */
@@ -107,25 +107,38 @@ export function computeSavingsBase(input: SavingsBaseInput): SavingsBaseResult {
   prior.sort((a, b) => a.originYear - b.originYear || (a.kind === b.kind ? 0 : a.kind === "gains" ? -1 : 1));
 
   const compensations: SavingsCompensation[] = [];
-  const apply = (item: NegativeItem): void => {
-    const source = { kind: item.kind, originYear: item.originYear };
+  const applySame = (item: NegativeItem): void => {
     const same = Math.min(item.remaining, positive[item.kind]);
-    if (same > EPSILON) {
-      positive[item.kind] -= same;
-      item.remaining -= same;
-      compensations.push({ source, target: item.kind, amount: same, cross: false });
-    }
+    if (same <= EPSILON) return;
+    positive[item.kind] -= same;
+    item.remaining -= same;
+    compensations.push({
+      source: { kind: item.kind, originYear: item.originYear },
+      target: item.kind,
+      amount: same,
+      cross: false,
+    });
+  };
+  const applyCross = (item: NegativeItem): void => {
     const target = other(item.kind);
     const cross = Math.min(item.remaining, positive[target], crossBudget[target]);
-    if (cross > EPSILON) {
-      positive[target] -= cross;
-      crossBudget[target] -= cross;
-      item.remaining -= cross;
-      compensations.push({ source, target, amount: cross, cross: true });
-    }
+    if (cross <= EPSILON) return;
+    positive[target] -= cross;
+    crossBudget[target] -= cross;
+    item.remaining -= cross;
+    compensations.push({
+      source: { kind: item.kind, originYear: item.originYear },
+      target,
+      amount: cross,
+      cross: true,
+    });
   };
-  own.forEach(apply);
-  prior.forEach(apply);
+  // Orden del Manual práctico de Renta 2025 (cap. 12): primero el saldo negativo del propio
+  // ejercicio contra el otro grupo; después TODOS los pendientes contra su mismo grupo (sin límite)
+  // y, al final, contra el otro grupo con lo que quede del cupo del 25 %, que es uno solo por grupo.
+  own.forEach(applyCross);
+  prior.forEach(applySame);
+  prior.forEach(applyCross);
 
   const pending: PendingNegative[] = [...prior, ...own]
     .filter((item) => item.remaining > EPSILON)

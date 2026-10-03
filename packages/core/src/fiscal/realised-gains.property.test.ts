@@ -83,19 +83,6 @@ describe("buildRealisedGainsReport — propiedades", () => {
     );
   });
 
-  it("los derivados no aplican la regla: sin pérdidas diferidas ni integradas", () => {
-    fc.assert(
-      fc.property(history, dailyRates, (lots, rates) => {
-        const report = buildRealisedGainsReport(
-          [{ id: "p", ticker: "X", name: null, currency: "USD", lots, isDerivative: true }],
-          rates,
-        );
-        return report.years.every((y) => y.deferred === 0 && y.integrated === 0);
-      }),
-      PROPERTY_PARAMS,
-    );
-  });
-
   it("la suma de las filas es el saldo del ejercicio", () => {
     fc.assert(
       fc.property(history, dailyRates, (lots, rates) => {

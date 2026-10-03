@@ -1405,7 +1405,7 @@
       "ratesUnavailable": "No se pudieron cargar los tipos de cambio del BCE. Las ventas en otra divisa quedan fuera de los totales; recarga la página en unos momentos.",
       "unconverted": "Ventas en {currencies} sin tipo de cambio del BCE para el día de la venta: {count}. Quedan fuera de los totales y de la cuota; el CSV las incluye en su divisa.",
       "fxIncomplete": "Ventas en las que falta el tipo del BCE de alguna compra (anterior a 1999 o de una divisa que el BCE no publica): {count}. Su diferencia de cambio no se ha calculado.",
-      "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender. Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias.",
+      "fxCriterion": "Ventas en divisa: como indica la Dirección General de Tributos (consulta V0152-26), la ganancia se calcula en la divisa y se convierte con el tipo del BCE del día de la venta. Las diferencias de cambio de la divisa invertida son otra ganancia o pérdida aparte, calculada suponiendo que tu bróker cambia a euros al comprar y al vender; se declaran como transmisión de otros elementos patrimoniales (la casilla no la fija ninguna fuente oficial). Si guardas la divisa en una cuenta, esa diferencia no se declara hasta que la cambias.",
       "noSalesThisYear": "No hay ventas registradas en este ejercicio.",
       "deferred": "Regla de los dos meses: {amount} de pérdidas de este ejercicio no se computan porque recompraste valores homogéneos en los dos meses anteriores o posteriores a la venta. Se integrarán cuando vendas los recomprados.",
       "integrated": "Se integran en este ejercicio {amount} de pérdidas que la regla de los dos meses había diferido, porque has vendido los valores recomprados.",
@@ -1419,7 +1419,7 @@
         },
         "funds": {
           "title": "Fondos y ETF",
-          "note": "ETF y fondos extranjeros sin retención en el reembolso: casillas {funds} (valor de transmisión y de adquisición). Si un depositario español te retuvo al vender, van en el bloque de fondos con retención (0310-0325)."
+          "note": "ETF y fondos de inversión cotizados (IIC del art. 75.3.j del Reglamento): casillas {funds} (valor de transmisión y de adquisición), aunque tu bróker haya retenido al vender. Los fondos no cotizados que se reembolsan con retención van en el bloque 0310-0325."
         },
         "other": {
           "title": "Derivados y otros elementos patrimoniales",

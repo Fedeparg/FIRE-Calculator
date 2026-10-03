@@ -22,8 +22,10 @@ export interface RealisedGainsPosition {
   currency: string;
   lots: readonly TradeLot[];
   /**
-   * Derivado (futuros, opciones, CFD...). Los derivados no están sujetos a la regla de los dos
-   * meses (DGT V2172-21), así que no se aplica a su histórico. Por defecto, `false`.
+   * Derivado. Solo sirve para no emparejarlo por FIFO con una acción del mismo símbolo: la regla
+   * de los dos meses sí se le aplica, porque los de la cartera son warrants y certificados con
+   * ISIN, que son valores negociables (DGT V1790-07); V2172-21 y V3755-16 solo excluyen contratos
+   * como opciones y futuros. Por defecto, `false`.
    */
   isDerivative?: boolean;
 }
@@ -239,8 +241,8 @@ export function buildRealisedGainsReport(
 
     const groupLots = group.flatMap((p) => p.lots);
     const walk = walkLots(groupLots, { trackOpenLots: true });
-    // Regla de los dos meses (art. 33.5.f): no aplica a derivados (DGT V2172-21).
-    const wash = group[0].isDerivative ? null : computeWashSales(groupLots, walk);
+    // Regla de los dos meses (art. 33.5.f), también para warrants y certificados (ver `isDerivative`).
+    const wash = computeWashSales(groupLots, walk);
 
     const groupSales: RealisedGainsSale[] = [];
     for (const sale of walk.sales) {

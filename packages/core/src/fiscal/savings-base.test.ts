@@ -115,4 +115,19 @@ describe("savingsTax", () => {
     expect(r.totalCompensated).toBeCloseTo(3800, 10);
     expect(r.pending).toEqual([{ originYear: 2021, kind: "capitalIncome", amount: 300 }]);
   });
+
+  it("aplica todos los pendientes contra su mismo grupo antes de cruzar ninguno (orden del manual)", () => {
+    const r = computeSavingsBase({
+      year: 2025,
+      gainsBalance: 1000,
+      capitalIncomeBalance: 0,
+      pending: [
+        { originYear: 2021, kind: "capitalIncome", amount: 500 },
+        { originYear: 2022, kind: "gains", amount: 1000 },
+      ],
+    });
+    // La pérdida de 2022 absorbe primero la ganancia; al RCM de 2021 no le queda nada que cruzar.
+    expect(r.base).toBe(0);
+    expect(r.pending).toEqual([{ originYear: 2021, kind: "capitalIncome", amount: 500 }]);
+  });
 });

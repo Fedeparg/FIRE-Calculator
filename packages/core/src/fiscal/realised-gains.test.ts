@@ -326,11 +326,11 @@ describe("buildRealisedGainsReport — regla de los dos meses (art. 33.5.f LIRPF
     expect(y2026.integrated).toBeCloseTo(-3840, 6);
   });
 
-  it("los derivados no están sujetos: la pérdida se integra aunque haya recompra", () => {
+  it("los warrants y certificados (derivados con ISIN) también están sujetos: son valores negociables", () => {
+    // V2172-21 y V3755-16 solo excluyen contratos (opciones, futuros); V1790-07 trata los warrants como valores.
     const [year] = build([position({ id: "a", isDerivative: true, lots: [...tsa, rebuy] })]).years;
 
-    expect(year.deferred).toBe(0);
-    expect(year.net).toBeCloseTo(-4800, 6);
+    expect(year.deferred).toBeCloseTo(-4800, 6);
   });
 
   it("la recompra en otra posición del mismo valor también bloquea", () => {
