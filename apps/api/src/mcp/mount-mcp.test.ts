@@ -295,6 +295,26 @@ describe('mountMcp (HTTP)', () => {
       expect(await db.select().from(positions).where(eq(positions.id, position.id))).toHaveLength(1);
     });
 
+    it('portfolio:write implica portfolio:read: un token emitido solo con write también lee', async () => {
+      // Token "legado" (emitido antes de la regla): la verificación aplica `withImpliedScopes`.
+      const token = await issueAccessToken({ scopes: [SCOPE_PORTFOLIO_WRITE] });
+
+      const result = await callTool(token, 'list_positions');
+
+      expect(result.isError).toBeFalsy();
+      expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'ok', clientId: CLIENT_ID }]);
+    });
+
+    it('un token sin portfolio:read no puede usar tools de lectura: isError y denied_scope', async () => {
+      const token = await issueAccessToken({ scopes: [] });
+
+      const result = await callTool(token, 'list_positions');
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('portfolio:read');
+      expect(await auditRows()).toEqual([{ tool: 'list_positions', outcome: 'denied_scope', clientId: CLIENT_ID }]);
+    });
+
     it('un token con portfolio:write sí puede usar tools de escritura', async () => {
       const [position] = await db
         .insert(positions)

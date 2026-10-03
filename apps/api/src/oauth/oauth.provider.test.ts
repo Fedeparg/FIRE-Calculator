@@ -2,7 +2,9 @@ import { createHash, randomBytes } from 'node:crypto';
 
 import { JwtService } from '@nestjs/jwt';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
+import { SESSION_COOKIE } from '@sextante/core/contracts';
 import { and, eq } from 'drizzle-orm';
+import type { Request, Response } from 'express';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import type { Database } from '../db/database.module.js';
@@ -13,7 +15,7 @@ import { OAuthClientsStore } from './oauth-clients.store.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';
 import { SextanteOAuthProvider } from './oauth.provider.js';
-import { REFRESH_TOKEN_TTL_SECONDS } from './oauth.constants.js';
+import { REFRESH_TOKEN_TTL_SECONDS, SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from './oauth.constants.js';
 
 const APP_URL = 'http://localhost:3000';
 const CLIENT: OAuthClientInformationFull = {
@@ -30,18 +32,13 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
   let urls: OAuthUrls;
   let grants: OAuthGrantsService;
   let provider: SextanteOAuthProvider;
+  const jwt = new JwtService({ secret: 'test-secret' });
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
     urls = new OAuthUrls(fakeConfig({ APP_URL }));
     grants = new OAuthGrantsService(db);
-    provider = new SextanteOAuthProvider(
-      db,
-      new JwtService({ secret: 'test-secret' }),
-      urls,
-      new OAuthClientsStore(db),
-      grants,
-    );
+    provider = new SextanteOAuthProvider(db, jwt, urls, new OAuthClientsStore(db), grants);
   });
 
   afterEach(async () => {
@@ -73,6 +70,35 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
     });
     return plain;
   }
+
+  describe('authorize — scopes', () => {
+    it('un cliente que pide solo portfolio:write ve también portfolio:read en el consentimiento', async () => {
+      const userId = await insertUser(db, 'a@example.com');
+      const session = await jwt.signAsync({ sub: userId, email: 'a@example.com' });
+      let redirectedTo = '';
+      const res = {
+        req: { cookies: { [SESSION_COOKIE]: session }, originalUrl: '/authorize?client_id=client-1' },
+        redirect: (url: string) => {
+          redirectedTo = url;
+        },
+      } as Partial<Response> as Response;
+      res.req = res.req as Request;
+
+      await provider.authorize(
+        CLIENT,
+        {
+          scopes: [SCOPE_PORTFOLIO_WRITE],
+          redirectUri: CLIENT.redirect_uris[0],
+          codeChallenge: 'challenge',
+        },
+        res,
+      );
+
+      const consent = new URL(redirectedTo);
+      expect(consent.pathname).toBe('/oauth/consent');
+      expect(consent.searchParams.get('scope')).toBe(`${SCOPE_PORTFOLIO_READ} ${SCOPE_PORTFOLIO_WRITE}`);
+    });
+  });
 
   describe('verifyAccessToken — audience binding (RFC 8707)', () => {
     it('acepta un access token con la audiencia canónica y expone el userId', async () => {
