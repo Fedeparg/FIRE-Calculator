@@ -2,8 +2,8 @@
   {
     "slug": "interes-compuesto",
     "category": "inversion",
-    "title": "Calculadora de interés compuesto",
-    "description": "Proyecta el crecimiento de una inversión con capital inicial y aportaciones periódicas: valor final, total aportado, intereses generados, valor real descontando inflación y serie año a año. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Compound interest calculator",
+    "description": "Projects the growth of an investment with an initial capital and periodic contributions: final value, total contributed, interest earned, real value after inflation and a year-by-year series. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -11,16 +11,16 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital inicial."
+          "description": "Initial capital."
         },
         "contribution": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Importe de cada aportación."
+          "description": "Amount of each contribution."
         },
         "frequency": {
-          "description": "Frecuencia de las aportaciones (por defecto monthly).",
+          "description": "Contribution frequency (default monthly).",
           "type": "string",
           "enum": [
             "weekly",
@@ -31,7 +31,7 @@
           ]
         },
         "compounding": {
-          "description": "Capitalización de los intereses, independiente de la frecuencia de aportación (por defecto annual). Con annual, annualRate es la rentabilidad anual efectiva; con otra, es un tipo nominal anual (TIN) que capitaliza ese número de veces al año.",
+          "description": "How often interest compounds, independent of the contribution frequency (default annual). With annual, annualRate is the effective annual return; with any other value, it is a nominal annual rate (TIN) compounded that many times a year.",
           "type": "string",
           "enum": [
             "monthly",
@@ -44,31 +44,31 @@
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad anual esperada."
+          "description": "Expected annual return."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Horizonte en años."
+          "description": "Horizon in years."
         },
         "annualFee": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Comisión anual del producto (TER)."
+          "description": "Annual product fee (TER)."
         },
         "contributionGrowth": {
           "type": "number",
           "minimum": -100,
           "maximum": 100,
-          "description": "Crecimiento anual de la aportación."
+          "description": "Annual growth of the contribution."
         },
         "inflationRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Inflación anual estimada, para el valor real."
+          "description": "Estimated annual inflation, for the real value."
         }
       },
       "required": [
@@ -83,8 +83,8 @@
   {
     "slug": "interes-simple",
     "category": "inversion",
-    "title": "Calculadora de interés simple",
-    "description": "Intereses de un capital a interés simple (sin reinvertir), brutos y netos de la retención española sobre rendimientos del capital mobiliario. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Simple interest calculator",
+    "description": "Interest on a principal at simple interest (not reinvested), gross and net of the Spanish withholding tax on investment income (rendimientos del capital mobiliario). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -92,25 +92,25 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital inicial."
+          "description": "Initial capital."
         },
         "annualRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Tipo de interés anual (TIN)."
+          "description": "Annual interest rate (TIN, nominal annual rate)."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Plazo en años."
+          "description": "Term in years."
         },
         "withholdingRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Retención sobre los intereses (por defecto 19 %)."
+          "description": "Withholding tax on the interest (default 19%)."
         }
       },
       "required": [
@@ -124,8 +124,8 @@
   {
     "slug": "promediar-acciones",
     "category": "inversion",
-    "title": "Promediar acciones (precio medio ponderado)",
-    "description": "Precio medio ponderado de varias compras de un mismo valor (incluidas comisiones) y, si se da el precio actual, valor y ganancia/pérdida de la posición. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Average share price (weighted average cost)",
+    "description": "Weighted average price of several purchases of the same security (fees included) and, if the current price is given, the position's value and gain/loss. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -140,19 +140,19 @@
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1000000000000,
-                "description": "Precio por acción de la compra."
+                "description": "Price per share of the purchase."
               },
               "shares": {
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1000000000000,
-                "description": "Número de acciones (admite fracciones)."
+                "description": "Number of shares (fractions allowed)."
               },
               "commission": {
                 "type": "number",
                 "minimum": 0,
                 "maximum": 1000000000000,
-                "description": "Comisión de la compra."
+                "description": "Purchase fee."
               }
             },
             "required": [
@@ -160,13 +160,13 @@
               "shares"
             ]
           },
-          "description": "Compras realizadas."
+          "description": "Purchases made."
         },
         "currentPrice": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio actual por acción (opcional)."
+          "description": "Current price per share (optional)."
         }
       },
       "required": [
@@ -178,8 +178,8 @@
   {
     "slug": "dividendos",
     "category": "inversion",
-    "title": "Calculadora de dividendos",
-    "description": "Ingresos por dividendos brutos y netos de retención, rentabilidad por dividendo y proyección con crecimiento del dividendo. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Dividend calculator",
+    "description": "Dividend income gross and net of withholding tax, dividend yield and a projection with dividend growth. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -187,37 +187,37 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Número de acciones."
+          "description": "Number of shares."
         },
         "dividendPerShare": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Dividendo anual por acción."
+          "description": "Annual dividend per share."
         },
         "sharePrice": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio por acción, para la rentabilidad por dividendo."
+          "description": "Price per share, for the dividend yield."
         },
         "withholdingRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Retención sobre los dividendos (por defecto 19 %)."
+          "description": "Withholding tax on the dividends (default 19%)."
         },
         "annualGrowth": {
           "type": "number",
           "minimum": -100,
           "maximum": 100,
-          "description": "Crecimiento anual del dividendo."
+          "description": "Annual dividend growth."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Horizonte de la proyección (0 = solo el primer año)."
+          "description": "Projection horizon (0 = first year only)."
         }
       },
       "required": [
@@ -230,8 +230,8 @@
   {
     "slug": "roi",
     "category": "inversion",
-    "title": "Calculadora de ROI",
-    "description": "Retorno de una inversión cerrada: ROI bruto y neto de costes e impuestos y, con años, rentabilidad anualizada (CAGR). Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "ROI calculator",
+    "description": "Return on a closed investment: ROI gross and net of costs and taxes and, given the years, the annualised return (CAGR). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -239,37 +239,37 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Inversión inicial."
+          "description": "Initial investment."
         },
         "final": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Valor final o importe recuperado."
+          "description": "Final value or amount recovered."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Horizonte en años, para anualizar."
+          "description": "Horizon in years, to annualise."
         },
         "costs": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Costes de la operación (comisiones, gastos)."
+          "description": "Transaction costs (fees, expenses)."
         },
         "income": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Rentas cobradas durante la inversión (dividendos, cupones…)."
+          "description": "Income received during the investment (dividends, coupons…)."
         },
         "taxRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Impuesto sobre la ganancia (por defecto 19 %)."
+          "description": "Tax on the gain (default 19%)."
         }
       },
       "required": [
@@ -282,8 +282,8 @@
   {
     "slug": "staking",
     "category": "inversion",
-    "title": "Calculadora de staking (cripto)",
-    "description": "Rendimiento del staking de criptoactivos con un APY compuesto, bruto y neto del impuesto sobre las recompensas. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Staking calculator (crypto)",
+    "description": "Return on staking crypto-assets at a compounded APY, gross and net of the tax on the rewards. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -291,25 +291,25 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital inicial en staking."
+          "description": "Initial capital staked."
         },
         "apy": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000,
-          "description": "APY (rendimiento anual compuesto)."
+          "description": "APY (compounded annual yield)."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Horizonte en años."
+          "description": "Horizon in years."
         },
         "withholdingRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Impuesto sobre las recompensas (por defecto 19 %)."
+          "description": "Tax on the rewards (default 19%)."
         }
       },
       "required": [
@@ -323,8 +323,8 @@
   {
     "slug": "independencia-financiera",
     "category": "fire",
-    "title": "Calculadora de independencia financiera (FIRE)",
-    "description": "Número FIRE (gasto anual / tasa de retiro) y años hasta alcanzarlo con el ahorro y la rentabilidad REAL indicados, con la serie año a año. Para la probabilidad de éxito con volatilidad usa `simulate_fire_monte_carlo`; para medir la cartera real del usuario contra el objetivo, `get_fire_goal_progress`. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Financial independence calculator (FIRE)",
+    "description": "FIRE number (annual spending / withdrawal rate) and years to reach it with the given savings and REAL return, with a year-by-year series. For the probability of success with volatility, use the `simulador-montecarlo` calculator; to measure the user's real portfolio against the goal, `get_fire_goal_progress`. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -332,22 +332,22 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gasto anual deseado una vez retirado."
+          "description": "Desired annual spending once retired."
         },
         "currentSavings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Patrimonio invertido actual."
+          "description": "Current invested wealth."
         },
         "savings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ahorro por periodo hasta alcanzar FIRE."
+          "description": "Savings per period until reaching FIRE."
         },
         "frequency": {
-          "description": "Frecuencia de las aportaciones (por defecto monthly).",
+          "description": "Contribution frequency (default monthly).",
           "type": "string",
           "enum": [
             "weekly",
@@ -361,19 +361,19 @@
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad anual REAL esperada."
+          "description": "Expected REAL annual return."
         },
         "withdrawalRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Tasa de retiro segura (habitual: 4)."
+          "description": "Safe withdrawal rate (typically 4)."
         },
         "savingsGrowth": {
           "type": "number",
           "minimum": -100,
           "maximum": 100,
-          "description": "Crecimiento anual del ahorro."
+          "description": "Annual growth of the savings."
         }
       },
       "required": [
@@ -389,8 +389,8 @@
   {
     "slug": "simulador-montecarlo",
     "category": "fire",
-    "title": "Simulador FIRE Monte Carlo",
-    "description": "Simula miles de vidas con rentabilidades aleatorias (lognormal) o remuestreando la historia de EE. UU. desde 1871 (Shiller) y devuelve la probabilidad de alcanzar FIRE y de que el dinero dure toda la jubilación, los años hasta FIRE en los percentiles 10/50/90 y la evolución del patrimonio por percentiles. Con la misma semilla el resultado es reproducible. Opcionalmente, tabla de sensibilidad a la tasa de retiro. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "FIRE Monte Carlo simulator",
+    "description": "Simulates thousands of lifetimes with random returns (lognormal) or by resampling US history since 1871 (Shiller) and returns the probability of reaching FIRE and of the money lasting through retirement, the years to FIRE at the 10th/50th/90th percentiles and the wealth path by percentile. The same seed gives a reproducible result. Optionally, a sensitivity table for the withdrawal rate. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -398,64 +398,64 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gasto anual deseado una vez retirado."
+          "description": "Desired annual spending once retired."
         },
         "currentSavings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Patrimonio invertido actual."
+          "description": "Current invested wealth."
         },
         "monthlySavings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ahorro mensual hasta alcanzar FIRE."
+          "description": "Monthly savings until reaching FIRE."
         },
         "annualReturn": {
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad anual REAL media (modelo lognormal)."
+          "description": "Average REAL annual return (lognormal model)."
         },
         "volatility": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Volatilidad anual (desviación típica)."
+          "description": "Annual volatility (standard deviation)."
         },
         "withdrawalRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Tasa de retiro segura (habitual: 4)."
+          "description": "Safe withdrawal rate (typically 4)."
         },
         "retirementYears": {
           "type": "number",
           "minimum": 0,
           "maximum": 60,
-          "description": "Años que el patrimonio debe sostener el gasto una vez retirado."
+          "description": "Years the portfolio must sustain spending once retired."
         },
         "historicalStockShare": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Si se indica, usa rentabilidades históricas con este % en bolsa (el resto, bonos) en lugar del modelo lognormal; annualReturn y volatility se ignoran."
+          "description": "If given, uses historical returns with this % in stocks (the rest in bonds) instead of the lognormal model; annualReturn and volatility are ignored."
         },
         "paths": {
-          "description": "Número de vidas simuladas (por defecto 5000).",
+          "description": "Number of simulated lifetimes (default 5000).",
           "type": "integer",
           "minimum": 100,
           "maximum": 10000
         },
         "seed": {
-          "description": "Semilla del generador aleatorio.",
+          "description": "Random number generator seed.",
           "type": "integer",
           "minimum": -9007199254740991,
           "maximum": 9007199254740991
         },
         "includeSensitivity": {
-          "description": "Añade la probabilidad de éxito con tasas de retiro del 3 % al 5 %.",
+          "description": "Adds the probability of success for withdrawal rates from 3% to 5%.",
           "type": "boolean"
         }
       },
@@ -474,8 +474,8 @@
   {
     "slug": "ahorro-jubilacion",
     "category": "fire",
-    "title": "Calculadora de ahorro para la jubilación",
-    "description": "Patrimonio estimado a la edad de jubilación con el ahorro mensual indicado, en términos nominales y reales, con la serie año a año. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Retirement savings calculator",
+    "description": "Estimated wealth at retirement age with the given monthly savings, in nominal and real terms, with a year-by-year series. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -483,49 +483,49 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 100,
-          "description": "Edad actual."
+          "description": "Current age."
         },
         "retirementAge": {
           "type": "integer",
           "minimum": 0,
           "maximum": 100,
-          "description": "Edad de jubilación."
+          "description": "Retirement age."
         },
         "currentSavings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Patrimonio invertido actual."
+          "description": "Current invested wealth."
         },
         "monthlySavings": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Aportación mensual hasta la jubilación."
+          "description": "Monthly contribution until retirement."
         },
         "annualReturn": {
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad anual NOMINAL esperada."
+          "description": "Expected NOMINAL annual return."
         },
         "inflationRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Inflación media anual."
+          "description": "Average annual inflation."
         },
         "annualFee": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Comisión anual del producto (TER)."
+          "description": "Annual product fee (TER)."
         },
         "contributionGrowth": {
           "type": "number",
           "minimum": -100,
           "maximum": 100,
-          "description": "Crecimiento anual de la aportación."
+          "description": "Annual growth of the contribution."
         }
       },
       "required": [
@@ -541,8 +541,8 @@
   {
     "slug": "presupuesto-mensual",
     "category": "fire",
-    "title": "Presupuesto mensual (regla 50/30/20)",
-    "description": "Reparte los ingresos netos mensuales en necesidades, deseos y ahorro y los compara con la regla 50/30/20. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Monthly budget (50/30/20 rule)",
+    "description": "Splits net monthly income into needs, wants and savings and compares them with the 50/30/20 rule. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -550,19 +550,19 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ingresos mensuales netos."
+          "description": "Net monthly income."
         },
         "needs": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gasto mensual en necesidades (vivienda, comida, suministros…)."
+          "description": "Monthly spending on needs (housing, food, utilities…)."
         },
         "wants": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gasto mensual en deseos (ocio, caprichos…)."
+          "description": "Monthly spending on wants (leisure, treats…)."
         }
       },
       "required": [
@@ -576,8 +576,8 @@
   {
     "slug": "hipoteca-fija",
     "category": "hipoteca",
-    "title": "Hipoteca a tipo fijo",
-    "description": "Cuota mensual (sistema francés), intereses totales, TAE con comisión de apertura y vinculaciones, y cuadro de amortización por años. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Fixed-rate mortgage",
+    "description": "Monthly payment (French amortisation system), total interest, TAE (annual equivalent rate) including the opening fee and bundled products (vinculaciones), and a yearly amortisation schedule. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -585,31 +585,31 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital prestado."
+          "description": "Loan principal."
         },
         "annualRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TIN anual."
+          "description": "TIN (nominal annual rate)."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo en años."
+          "description": "Term in years."
         },
         "openingFeeRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 10,
-          "description": "Comisión de apertura, % del capital."
+          "description": "Opening fee (comisión de apertura), % of the principal."
         },
         "annualInsurance": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Coste anual de los productos vinculados."
+          "description": "Annual cost of the bundled products (vinculaciones)."
         }
       },
       "required": [
@@ -623,8 +623,8 @@
   {
     "slug": "que-hipoteca-me-puedo-permitir",
     "category": "hipoteca",
-    "title": "¿Qué hipoteca me puedo permitir?",
-    "description": "Precio máximo de vivienda e hipoteca asumibles según ingresos, deudas, ahorro y ratio de esfuerzo, indicando qué límite manda (cuota o entrada). Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "What mortgage can I afford?",
+    "description": "Maximum affordable home price and mortgage given income, debts, savings and debt-to-income ratio (ratio de esfuerzo), stating which limit binds (monthly payment or down payment). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -632,49 +632,49 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ingresos mensuales netos del hogar."
+          "description": "Household net monthly income."
         },
         "monthlyDebts": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Otras cuotas mensuales de deuda."
+          "description": "Other monthly debt payments."
         },
         "downPayment": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ahorro disponible para la entrada y los gastos."
+          "description": "Savings available for the down payment and purchase costs."
         },
         "annualRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TIN anual de la hipoteca."
+          "description": "Mortgage TIN (nominal annual rate)."
         },
         "termYears": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo en años."
+          "description": "Term in years."
         },
         "effortRatio": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Ratio de esfuerzo máximo (por defecto 35 %)."
+          "description": "Maximum debt-to-income ratio (ratio de esfuerzo, default 35%)."
         },
         "maxLtv": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "% máximo del precio que financia el banco (por defecto 80 %)."
+          "description": "Maximum % of the price the bank finances (loan-to-value, default 80%)."
         },
         "purchaseCostsRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Gastos de compra, % del precio (por defecto 12 %)."
+          "description": "Purchase costs, % of the price (default 12%)."
         }
       },
       "required": [
@@ -690,8 +690,8 @@
   {
     "slug": "hipoteca-vs-alquiler",
     "category": "hipoteca",
-    "title": "Hipoteca frente a alquiler",
-    "description": "Compara el patrimonio neto de comprar con hipoteca frente a alquilar e invertir la diferencia durante el horizonte indicado, con la serie año a año. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Buying with a mortgage vs renting",
+    "description": "Compares the net worth of buying with a mortgage against renting and investing the difference over the given horizon, with a year-by-year series. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -699,73 +699,73 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio de compra."
+          "description": "Purchase price."
         },
         "purchaseCosts": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gastos e impuestos de compra."
+          "description": "Purchase costs and taxes."
         },
         "downPayment": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Entrada aportada."
+          "description": "Down payment."
         },
         "mortgageRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TIN de la hipoteca."
+          "description": "Mortgage TIN (nominal annual rate)."
         },
         "mortgageTerm": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo de la hipoteca en años."
+          "description": "Mortgage term in years."
         },
         "annualCostRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Gastos anuales de propiedad, % del precio (IBI, comunidad…)."
+          "description": "Annual ownership costs, % of the price (IBI property tax, community fees…)."
         },
         "appreciationRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Revalorización anual del inmueble."
+          "description": "Annual property appreciation."
         },
         "monthlyRent": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Alquiler mensual equivalente."
+          "description": "Equivalent monthly rent."
         },
         "rentGrowthRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Subida anual del alquiler."
+          "description": "Annual rent increase."
         },
         "investmentReturn": {
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad anual de invertir el capital libre."
+          "description": "Annual return on investing the spare capital."
         },
         "horizonYears": {
           "type": "number",
           "minimum": 0,
           "maximum": 60,
-          "description": "Horizonte de comparación en años."
+          "description": "Comparison horizon in years."
         },
         "sellingCostsRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Gastos de venta al final, % del valor."
+          "description": "Selling costs at the end, % of the value."
         }
       },
       "required": [
@@ -787,8 +787,8 @@
   {
     "slug": "amortizacion-anticipada",
     "category": "hipoteca",
-    "title": "Amortización anticipada de hipoteca",
-    "description": "Compara amortizar reduciendo cuota o reduciendo plazo: nueva cuota, plazo, intereses ahorrados y ahorro neto tras la comisión de amortización. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Early mortgage repayment",
+    "description": "Compares an early repayment that lowers the monthly payment with one that shortens the term: new payment, term, interest saved and net saving after the early repayment fee (comisión de amortización). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -796,31 +796,31 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital pendiente."
+          "description": "Outstanding principal."
         },
         "annualRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TIN anual."
+          "description": "TIN (nominal annual rate)."
         },
         "remainingYears": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo restante en años."
+          "description": "Remaining term in years."
         },
         "extraPayment": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Importe a amortizar."
+          "description": "Amount to repay early."
         },
         "compensationRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 10,
-          "description": "Comisión por amortización, % de lo amortizado."
+          "description": "Early repayment fee (comisión por amortización), % of the amount repaid."
         }
       },
       "required": [
@@ -835,8 +835,8 @@
   {
     "slug": "rentabilidad-alquiler",
     "category": "hipoteca",
-    "title": "Rentabilidad de un alquiler",
-    "description": "Rentabilidad bruta y neta de un inmueble en alquiler de larga estancia, con vacíos, IBI, comunidad, seguro y mantenimiento. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Rental yield",
+    "description": "Gross and net yield of a long-term rental property, accounting for vacancies, IBI (property tax), community fees, insurance and maintenance. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -844,49 +844,49 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio de compra."
+          "description": "Purchase price."
         },
         "purchaseCosts": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gastos e impuestos de compra."
+          "description": "Purchase costs and taxes."
         },
         "monthlyRent": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Alquiler mensual."
+          "description": "Monthly rent."
         },
         "vacancyRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Impago o meses vacíos, % del año (por defecto 5 %)."
+          "description": "Non-payment or vacant months, % of the year (default 5%)."
         },
         "ibiAnnual": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "IBI anual."
+          "description": "Annual IBI (property tax)."
         },
         "communityMonthly": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Cuota de comunidad mensual."
+          "description": "Monthly community fee (cuota de comunidad)."
         },
         "insuranceAnnual": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Seguro anual (hogar + impago)."
+          "description": "Annual insurance (home + rent default)."
         },
         "maintenanceAnnual": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Mantenimiento anual."
+          "description": "Annual maintenance."
         }
       },
       "required": [
@@ -900,8 +900,8 @@
   {
     "slug": "rentabilidad-alquiler-vacacional",
     "category": "hipoteca",
-    "title": "Rentabilidad de un alquiler vacacional",
-    "description": "Ingresos, gastos y rentabilidad neta de un alquiler turístico según precio por noche, ocupación, comisiones y limpiezas. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Holiday rental yield",
+    "description": "Income, costs and net yield of a holiday rental given the nightly rate, occupancy, fees and cleaning. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -909,40 +909,40 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio de compra."
+          "description": "Purchase price."
         },
         "purchaseCosts": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gastos e impuestos de compra."
+          "description": "Purchase costs and taxes."
         },
         "nightlyRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Precio medio por noche."
+          "description": "Average price per night."
         },
         "occupiedNights": {
           "type": "integer",
           "minimum": 0,
           "maximum": 366,
-          "description": "Noches ocupadas al año."
+          "description": "Nights occupied per year."
         },
         "managementRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Comisión de plataforma/gestión sobre ingresos."
+          "description": "Platform/management fee on income."
         },
         "cleaningFee": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Coste de limpieza por estancia."
+          "description": "Cleaning cost per stay."
         },
         "avgStayNights": {
-          "description": "Estancia media en noches (por defecto 3).",
+          "description": "Average stay in nights (default 3).",
           "type": "number",
           "minimum": 1,
           "maximum": 366
@@ -951,7 +951,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gastos fijos anuales (IBI, comunidad, seguro, suministros…)."
+          "description": "Fixed annual costs (IBI property tax, community fees, insurance, utilities…)."
         }
       },
       "required": [
@@ -968,8 +968,8 @@
   {
     "slug": "deposito-plazo-fijo",
     "category": "ahorro",
-    "title": "Depósito a plazo fijo o cuenta remunerada",
-    "description": "Intereses de un depósito a plazo fijo o de una cuenta remunerada a partir de la TAE, brutos y netos de la retención, y valor final en poder adquisitivo de hoy. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Fixed-term deposit or interest-bearing account",
+    "description": "Interest on a fixed-term deposit (depósito a plazo fijo) or an interest-bearing account (cuenta remunerada) from its TAE (annual equivalent rate), gross and net of withholding tax, and the final value in today's purchasing power. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -977,31 +977,31 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital depositado."
+          "description": "Deposited principal."
         },
         "apr": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TAE."
+          "description": "TAE (annual equivalent rate, APY)."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo en años (admite decimales: 0,5 = 6 meses)."
+          "description": "Term in years (decimals allowed: 0.5 = 6 months)."
         },
         "withholdingRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Retención sobre los intereses (por defecto 19 %)."
+          "description": "Withholding tax on the interest (default 19%)."
         },
         "inflationRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Inflación anual estimada."
+          "description": "Estimated annual inflation."
         }
       },
       "required": [
@@ -1015,8 +1015,8 @@
   {
     "slug": "cuenta-remunerada",
     "category": "ahorro",
-    "title": "Depósito a plazo fijo o cuenta remunerada",
-    "description": "Intereses de un depósito a plazo fijo o de una cuenta remunerada a partir de la TAE, brutos y netos de la retención, y valor final en poder adquisitivo de hoy. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Fixed-term deposit or interest-bearing account",
+    "description": "Interest on a fixed-term deposit (depósito a plazo fijo) or an interest-bearing account (cuenta remunerada) from its TAE (annual equivalent rate), gross and net of withholding tax, and the final value in today's purchasing power. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1024,31 +1024,31 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Capital depositado."
+          "description": "Deposited principal."
         },
         "apr": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "TAE."
+          "description": "TAE (annual equivalent rate, APY)."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 50,
-          "description": "Plazo en años (admite decimales: 0,5 = 6 meses)."
+          "description": "Term in years (decimals allowed: 0.5 = 6 months)."
         },
         "withholdingRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Retención sobre los intereses (por defecto 19 %)."
+          "description": "Withholding tax on the interest (default 19%)."
         },
         "inflationRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Inflación anual estimada."
+          "description": "Estimated annual inflation."
         }
       },
       "required": [
@@ -1062,8 +1062,8 @@
   {
     "slug": "salario-bruto-neto",
     "category": "fiscalidad",
-    "title": "Salario bruto a neto",
-    "description": "Estima el salario neto anual y mensual a partir del bruto: cotizaciones a la Seguridad Social, IRPF estatal y autonómico, mínimos personales y familiares. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Gross to net salary",
+    "description": "Estimates the annual and monthly net salary from the gross: Social Security contributions, state and regional IRPF (Spanish income tax), and personal and family allowances (mínimos). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1071,10 +1071,10 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Salario bruto anual en euros."
+          "description": "Gross annual salary in euros."
         },
         "payments": {
-          "description": "Número de pagas al año (12 o 14; por defecto 14).",
+          "description": "Number of salary payments per year (12 or 14; default 14).",
           "anyOf": [
             {
               "type": "number",
@@ -1090,16 +1090,16 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Aportación anual a plan de pensiones (reduce la base)."
+          "description": "Annual pension plan contribution (reduces the tax base)."
         },
         "age": {
           "type": "integer",
           "minimum": 0,
           "maximum": 120,
-          "description": "Edad del contribuyente (afecta al mínimo personal)."
+          "description": "Taxpayer's age (affects the personal allowance, mínimo personal)."
         },
         "contractType": {
-          "description": "Tipo de contrato (cambia la cotización por desempleo).",
+          "description": "Contract type (changes the unemployment contribution).",
           "type": "string",
           "enum": [
             "indefinido",
@@ -1110,22 +1110,22 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "Hijos o descendientes a cargo."
+          "description": "Dependent children or descendants."
         },
         "childrenUnder3": {
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "De esos hijos, cuántos tienen menos de 3 años."
+          "description": "How many of those children are under 3."
         },
         "ascendants": {
           "type": "integer",
           "minimum": 0,
           "maximum": 10,
-          "description": "Ascendientes mayores de 65 años a cargo."
+          "description": "Dependent ascendants (parents, grandparents) over 65."
         },
         "disability": {
-          "description": "Grado de discapacidad del contribuyente: none, g33 (≥33 %) o g65 (≥65 %).",
+          "description": "Taxpayer's disability grade: none, g33 (≥33%) or g65 (≥65%).",
           "type": "string",
           "enum": [
             "none",
@@ -1134,11 +1134,11 @@
           ]
         },
         "jointReturn": {
-          "description": "Tributación conjunta (unidad familiar).",
+          "description": "Joint return (tributación conjunta, family unit).",
           "type": "boolean"
         },
         "region": {
-          "description": "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. País Vasco, Navarra y Ceuta/Melilla no están soportados.",
+          "description": "Autonomous community (comunidad autónoma, common regime). Without a value, the default regional scale (escala autonómica supletoria) applies. The Basque Country, Navarre and Ceuta/Melilla are not supported.",
           "type": "string",
           "enum": [
             "andalucia",
@@ -1168,8 +1168,8 @@
   {
     "slug": "irpf-nomina",
     "category": "fiscalidad",
-    "title": "Retención de IRPF en nómina",
-    "description": "Tipo de retención de IRPF que corresponde en nómina y retención mensual, con el mismo modelo que el salario neto. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "IRPF payroll withholding",
+    "description": "IRPF (Spanish income tax) withholding rate that applies to the payroll and the monthly withholding, with the same model as the net salary. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1177,10 +1177,10 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Salario bruto anual en euros."
+          "description": "Gross annual salary in euros."
         },
         "payments": {
-          "description": "Número de pagas al año (12 o 14; por defecto 14).",
+          "description": "Number of salary payments per year (12 or 14; default 14).",
           "anyOf": [
             {
               "type": "number",
@@ -1196,16 +1196,16 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Aportación anual a plan de pensiones (reduce la base)."
+          "description": "Annual pension plan contribution (reduces the tax base)."
         },
         "age": {
           "type": "integer",
           "minimum": 0,
           "maximum": 120,
-          "description": "Edad del contribuyente (afecta al mínimo personal)."
+          "description": "Taxpayer's age (affects the personal allowance, mínimo personal)."
         },
         "contractType": {
-          "description": "Tipo de contrato (cambia la cotización por desempleo).",
+          "description": "Contract type (changes the unemployment contribution).",
           "type": "string",
           "enum": [
             "indefinido",
@@ -1216,22 +1216,22 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "Hijos o descendientes a cargo."
+          "description": "Dependent children or descendants."
         },
         "childrenUnder3": {
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "De esos hijos, cuántos tienen menos de 3 años."
+          "description": "How many of those children are under 3."
         },
         "ascendants": {
           "type": "integer",
           "minimum": 0,
           "maximum": 10,
-          "description": "Ascendientes mayores de 65 años a cargo."
+          "description": "Dependent ascendants (parents, grandparents) over 65."
         },
         "disability": {
-          "description": "Grado de discapacidad del contribuyente: none, g33 (≥33 %) o g65 (≥65 %).",
+          "description": "Taxpayer's disability grade: none, g33 (≥33%) or g65 (≥65%).",
           "type": "string",
           "enum": [
             "none",
@@ -1240,11 +1240,11 @@
           ]
         },
         "jointReturn": {
-          "description": "Tributación conjunta (unidad familiar).",
+          "description": "Joint return (tributación conjunta, family unit).",
           "type": "boolean"
         },
         "region": {
-          "description": "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. País Vasco, Navarra y Ceuta/Melilla no están soportados.",
+          "description": "Autonomous community (comunidad autónoma, common regime). Without a value, the default regional scale (escala autonómica supletoria) applies. The Basque Country, Navarre and Ceuta/Melilla are not supported.",
           "type": "string",
           "enum": [
             "andalucia",
@@ -1274,8 +1274,8 @@
   {
     "slug": "irpf-autonomos",
     "category": "fiscalidad",
-    "title": "IRPF de autónomos",
-    "description": "IRPF anual de un autónomo en estimación directa (normal o simplificada) a partir de ingresos, gastos y cuota de autónomos, con rendimiento neto y tipo efectivo. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "IRPF for the self-employed (autónomos)",
+    "description": "Annual IRPF (Spanish income tax) of a self-employed worker under direct assessment (estimación directa, normal or simplified) from income, expenses and the self-employed social security fee (cuota de autónomos), with net business income and effective rate. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1283,38 +1283,38 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Ingresos anuales de la actividad."
+          "description": "Annual business income."
         },
         "expenses": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Gastos deducibles anuales (sin la cuota de autónomos)."
+          "description": "Annual deductible expenses (excluding the self-employed social security fee, cuota de autónomos)."
         },
         "socialSecurity": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Cuota anual de autónomos."
+          "description": "Annual self-employed social security fee (cuota de autónomos)."
         },
         "pensionContribution": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Aportación anual a plan de pensiones."
+          "description": "Annual pension plan contribution."
         },
         "simplifiedRegime": {
-          "description": "Estimación directa simplificada (5 % de gastos de difícil justificación).",
+          "description": "Simplified direct assessment (estimación directa simplificada: 5% for hard-to-justify expenses).",
           "type": "boolean"
         },
         "age": {
           "type": "integer",
           "minimum": 0,
           "maximum": 120,
-          "description": "Edad del contribuyente (afecta al mínimo personal)."
+          "description": "Taxpayer's age (affects the personal allowance, mínimo personal)."
         },
         "contractType": {
-          "description": "Tipo de contrato (cambia la cotización por desempleo).",
+          "description": "Contract type (changes the unemployment contribution).",
           "type": "string",
           "enum": [
             "indefinido",
@@ -1325,22 +1325,22 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "Hijos o descendientes a cargo."
+          "description": "Dependent children or descendants."
         },
         "childrenUnder3": {
           "type": "integer",
           "minimum": 0,
           "maximum": 20,
-          "description": "De esos hijos, cuántos tienen menos de 3 años."
+          "description": "How many of those children are under 3."
         },
         "ascendants": {
           "type": "integer",
           "minimum": 0,
           "maximum": 10,
-          "description": "Ascendientes mayores de 65 años a cargo."
+          "description": "Dependent ascendants (parents, grandparents) over 65."
         },
         "disability": {
-          "description": "Grado de discapacidad del contribuyente: none, g33 (≥33 %) o g65 (≥65 %).",
+          "description": "Taxpayer's disability grade: none, g33 (≥33%) or g65 (≥65%).",
           "type": "string",
           "enum": [
             "none",
@@ -1349,11 +1349,11 @@
           ]
         },
         "jointReturn": {
-          "description": "Tributación conjunta (unidad familiar).",
+          "description": "Joint return (tributación conjunta, family unit).",
           "type": "boolean"
         },
         "region": {
-          "description": "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. País Vasco, Navarra y Ceuta/Melilla no están soportados.",
+          "description": "Autonomous community (comunidad autónoma, common regime). Without a value, the default regional scale (escala autonómica supletoria) applies. The Basque Country, Navarre and Ceuta/Melilla are not supported.",
           "type": "string",
           "enum": [
             "andalucia",
@@ -1385,8 +1385,8 @@
   {
     "slug": "desgravacion-plan-pensiones",
     "category": "fiscalidad",
-    "title": "Desgravación del plan de pensiones",
-    "description": "Ahorro de IRPF por aportar a un plan de pensiones según el salario bruto y la comunidad, aplicando los límites legales de aportación individual y de empresa. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Pension plan tax relief",
+    "description": "IRPF (Spanish income tax) saving from contributing to a pension plan given the gross salary and the autonomous community, applying the legal limits on individual and employer contributions. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1394,22 +1394,22 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Salario bruto anual."
+          "description": "Gross annual salary."
         },
         "contribution": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Aportación anual individual."
+          "description": "Annual individual contribution."
         },
         "employerContribution": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Contribución anual de la empresa a un plan de empleo."
+          "description": "Annual employer contribution to an occupational pension plan (plan de empleo)."
         },
         "region": {
-          "description": "Comunidad autónoma (régimen común). Sin valor se aplica la escala autonómica supletoria. País Vasco, Navarra y Ceuta/Melilla no están soportados.",
+          "description": "Autonomous community (comunidad autónoma, common regime). Without a value, the default regional scale (escala autonómica supletoria) applies. The Basque Country, Navarre and Ceuta/Melilla are not supported.",
           "type": "string",
           "enum": [
             "andalucia",
@@ -1440,8 +1440,8 @@
   {
     "slug": "impuesto-donaciones",
     "category": "fiscalidad",
-    "title": "Impuesto de donaciones",
-    "description": "Cuota del Impuesto sobre Sucesiones y Donaciones (donación) con la tarifa estatal, el coeficiente por parentesco y patrimonio previo y la bonificación autonómica indicada. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Gift tax (impuesto de donaciones)",
+    "description": "Tax due under the Inheritance and Gift Tax (Impuesto sobre Sucesiones y Donaciones, gift) with the state scale, the multiplier for kinship and pre-existing wealth, and the given regional rebate (bonificación autonómica). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1449,16 +1449,16 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Valor de lo donado."
+          "description": "Value of the gift."
         },
         "reduction": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Reducciones aplicables."
+          "description": "Applicable reductions."
         },
         "kinship": {
-          "description": "Grupo de parentesco: grupoI_II (descendientes, cónyuge, ascendientes), grupoIII (hermanos, sobrinos, tíos, afines) o grupoIV (resto).",
+          "description": "Kinship group (grupo de parentesco): grupoI_II (descendants, spouse, ascendants), grupoIII (siblings, nephews and nieces, uncles and aunts, in-laws) or grupoIV (everyone else).",
           "type": "string",
           "enum": [
             "grupoI_II",
@@ -1470,13 +1470,13 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Patrimonio previo del donatario."
+          "description": "Recipient's pre-existing wealth."
         },
         "regionalRebate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Bonificación autonómica sobre la cuota."
+          "description": "Regional rebate (bonificación autonómica) on the tax due."
         }
       },
       "required": [
@@ -1488,8 +1488,8 @@
   {
     "slug": "impuesto-patrimonio",
     "category": "fiscalidad",
-    "title": "Impuesto sobre el patrimonio",
-    "description": "Cuota del Impuesto sobre el Patrimonio con la tarifa estatal, la exención de la vivienda habitual, el mínimo exento y la bonificación autonómica indicada. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Wealth tax (impuesto sobre el patrimonio)",
+    "description": "Tax due under the Wealth Tax (Impuesto sobre el Patrimonio) with the state scale, the primary residence exemption, the tax-free allowance (mínimo exento) and the given regional rebate (bonificación autonómica). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1497,25 +1497,25 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Patrimonio neto total (bienes y derechos menos deudas)."
+          "description": "Total net wealth (assets and rights minus debts)."
         },
         "primaryResidenceValue": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Valor de la vivienda habitual (exenta hasta 300.000 €)."
+          "description": "Value of the primary residence (vivienda habitual, exempt up to €300,000)."
         },
         "exemptMinimum": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Mínimo exento (por defecto 700.000 €)."
+          "description": "Tax-free allowance (mínimo exento, default €700,000)."
         },
         "regionalRebate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Bonificación autonómica sobre la cuota."
+          "description": "Regional rebate (bonificación autonómica) on the tax due."
         }
       },
       "required": [
@@ -1528,8 +1528,8 @@
   {
     "slug": "intereses-tarjeta-credito",
     "category": "deuda",
-    "title": "Intereses de tarjeta de crédito",
-    "description": "Meses hasta saldar una deuda de tarjeta (cuota fija o porcentaje del saldo, típico del revolving), intereses totales y saldo al final de cada año. Si el pago no cubre los intereses, monthsToPayoff es null y los totales también (la deuda no se salda nunca). Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Credit card interest",
+    "description": "Months to pay off a card debt (fixed payment or a percentage of the balance, typical of revolving credit), total interest and the balance at the end of each year. If the payment does not cover the interest, monthsToPayoff is null and so are the totals (the debt is never paid off). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1537,16 +1537,16 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Saldo pendiente."
+          "description": "Outstanding balance."
         },
         "annualRate": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Tipo de interés anual."
+          "description": "Annual interest rate."
         },
         "paymentMode": {
-          "description": "fixed (cuota fija) o percent (% del saldo con suelo).",
+          "description": "fixed (fixed payment) or percent (% of the balance, with a floor).",
           "type": "string",
           "enum": [
             "fixed",
@@ -1557,19 +1557,19 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Pago mensual fijo (modo fixed)."
+          "description": "Fixed monthly payment (fixed mode)."
         },
         "minPercent": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Cuota mínima, % del saldo (modo percent)."
+          "description": "Minimum payment, % of the balance (percent mode)."
         },
         "minFloor": {
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Suelo de la cuota mínima (modo percent)."
+          "description": "Floor of the minimum payment (percent mode)."
         }
       },
       "required": [
@@ -1583,8 +1583,8 @@
   {
     "slug": "inflacion",
     "category": "herramientas",
-    "title": "Inflación y poder adquisitivo",
-    "description": "Cuánto vale en el futuro un importe de hoy con la inflación indicada y cuánto poder adquisitivo se pierde si el dinero está parado o rinde poco, con la serie año a año. Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Inflation and purchasing power",
+    "description": "What an amount of today is worth in the future with the given inflation and how much purchasing power is lost if the money sits idle or earns little, with a year-by-year series. Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1592,25 +1592,25 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1000000000000,
-          "description": "Importe de referencia (hoy)."
+          "description": "Reference amount (today)."
         },
         "annualRate": {
           "type": "number",
           "minimum": -50,
           "maximum": 100,
-          "description": "Inflación media anual."
+          "description": "Average annual inflation."
         },
         "years": {
           "type": "number",
           "minimum": 0,
           "maximum": 100,
-          "description": "Horizonte en años."
+          "description": "Horizon in years."
         },
         "nominalReturn": {
           "type": "number",
           "minimum": -99,
           "maximum": 100,
-          "description": "Rentabilidad nominal del dinero (0 = parado)."
+          "description": "Nominal return on the money (0 = idle)."
         }
       },
       "required": [
@@ -1624,55 +1624,55 @@
   {
     "slug": "salud-financiera",
     "category": "herramientas",
-    "title": "Test de salud financiera",
-    "description": "Puntúa de 0 a 100 la salud financiera con 8 preguntas ponderadas y devuelve una categoría (critical, fragile, stable, strong). Cada respuesta es una opción de 0 (peor) a 3 (mejor); las que falten cuentan como 0. Opciones: emergencyFund (0 nada, 1 <1 mes de gastos, 2 1–3 meses, 3 >3 meses); savingsRate (0 nada, 1 <10 %, 2 10–20 %, 3 >20 %); debt sin hipoteca (0 deuda cara, 1 préstamo personal/coche, 2 poca y controlada, 3 ninguna); housingCost % de ingresos (0 >50 %, 1 35–50 %, 2 25–35 %, 3 <25 %); investing (0 no, 1 empezando, 2 puntual, 3 periódico y diversificado); retirement (0 nada, 1 solo pensión pública, 2 aporta a veces, 3 plan con aportación regular); protection (0 sin seguros, 1 solo obligatorios, 2 algún seguro clave, 3 bien cubierto); tracking (0 no sabe, 1 idea aproximada, 2 revisa a veces, 3 presupuesto mensual). Los importes van en la divisa que use el usuario (las calculadoras fiscales, en euros). Los porcentajes van en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es una estimación orientativa, no asesoramiento.",
+    "title": "Financial health check",
+    "description": "Scores financial health from 0 to 100 with 8 weighted questions and returns a category (critical, fragile, stable, strong). Each answer is an option from 0 (worst) to 3 (best); missing ones count as 0. Options: emergencyFund (0 none, 1 <1 month of expenses, 2 1–3 months, 3 >3 months); savingsRate (0 none, 1 <10%, 2 10–20%, 3 >20%); debt excluding the mortgage (0 expensive debt, 1 personal/car loan, 2 little and under control, 3 none); housingCost as % of income (0 >50%, 1 35–50%, 2 25–35%, 3 <25%); investing (0 no, 1 getting started, 2 occasionally, 3 regularly and diversified); retirement (0 nothing, 1 public pension only, 2 contributes sometimes, 3 plan with regular contributions); protection (0 no insurance, 1 mandatory only, 2 some key insurance, 3 well covered); tracking (0 does not know, 1 rough idea, 2 checks now and then, 3 monthly budget). Amounts are in the user's currency (the tax calculators, in euros). Percentages are on a base of 100 (5 = 5%). Computation only, without reading user data; it is an indicative estimate, not advice.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "emergencyFund": {
-          "description": "Respuesta a emergencyFund (0–3).",
+          "description": "Answer to emergencyFund (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "savingsRate": {
-          "description": "Respuesta a savingsRate (0–3).",
+          "description": "Answer to savingsRate (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "debt": {
-          "description": "Respuesta a debt (0–3).",
+          "description": "Answer to debt (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "housingCost": {
-          "description": "Respuesta a housingCost (0–3).",
+          "description": "Answer to housingCost (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "investing": {
-          "description": "Respuesta a investing (0–3).",
+          "description": "Answer to investing (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "retirement": {
-          "description": "Respuesta a retirement (0–3).",
+          "description": "Answer to retirement (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "protection": {
-          "description": "Respuesta a protection (0–3).",
+          "description": "Answer to protection (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3
         },
         "tracking": {
-          "description": "Respuesta a tracking (0–3).",
+          "description": "Answer to tracking (0–3).",
           "type": "integer",
           "minimum": 0,
           "maximum": 3

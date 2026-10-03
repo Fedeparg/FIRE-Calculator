@@ -15,15 +15,16 @@ export function registerCalculatorTools(server: McpServer, runner: ToolRunner): 
   server.registerTool(
     'list_calculators',
     {
-      title: 'Calculadoras disponibles',
+      title: 'Available calculators',
       description:
-        'Lista las calculadoras de Sextante con su slug, categoría, descripción y el esquema ' +
-        'de entrada (JSON Schema con unidades, mínimos y máximos de cada campo). Úsala antes ' +
-        'de `calculate` para saber qué calculadora usar y qué `inputs` enviarle. Filtra por ' +
-        '`category` o `slug`: sin filtro devuelve todas (unos 40 KB). Solo lectura.',
+        'Lists the Sextante calculators with their slug, category, description and input ' +
+        'schema (JSON Schema with the units, minimum and maximum of each field). Use it before ' +
+        '`calculate` to know which calculator to use and which `inputs` to send. Filter by ' +
+        '`category` or `slug`: without a filter it returns all of them (about 40 KB). ' +
+        'Read-only.',
       inputSchema: {
-        category: z.enum(CALCULATOR_CATEGORIES).optional().describe('Solo las de esta categoría.'),
-        slug: z.string().max(64).optional().describe('Solo la de este slug.'),
+        category: z.enum(CALCULATOR_CATEGORIES).optional().describe('Only those in this category.'),
+        slug: z.string().max(64).optional().describe('Only the one with this slug.'),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
@@ -36,17 +37,17 @@ export function registerCalculatorTools(server: McpServer, runner: ToolRunner): 
   server.registerTool(
     'calculate',
     {
-      title: 'Ejecutar una calculadora',
+      title: 'Run a calculator',
       description:
-        'Ejecuta una calculadora de Sextante con el mismo motor que la web. `calculator` es el ' +
-        'slug (ver `list_calculators`) e `inputs` un objeto que cumple el esquema de esa ' +
-        'calculadora: un campo fuera de rango, de otro tipo o desconocido devuelve un error ' +
-        'sin calcular. Los importes van en la divisa del usuario (las fiscales, en euros) y ' +
-        'los porcentajes en base 100 (5 = 5 %). Solo cálculo, sin leer datos del usuario; es ' +
-        'una estimación orientativa, no asesoramiento. Solo lectura.',
+        'Runs a Sextante calculator with the same engine as the website. `calculator` is the ' +
+        "slug (see `list_calculators`) and `inputs` an object that matches that calculator's " +
+        'schema: a field that is out of range, of the wrong type or unknown returns an error ' +
+        "without computing. Amounts are in the user's currency (the tax calculators, in " +
+        'euros) and percentages on a base of 100 (5 = 5%). Computation only, without reading ' +
+        'user data; it is an indicative estimate, not advice. Read-only.',
       inputSchema: {
-        calculator: z.string().max(64).describe('Slug de la calculadora (p. ej. hipoteca-fija).'),
-        inputs: z.record(z.string(), z.unknown()).describe('Entradas de la calculadora, según su esquema.'),
+        calculator: z.string().max(64).describe('Calculator slug (e.g. hipoteca-fija).'),
+        inputs: z.record(z.string(), z.unknown()).describe('Calculator inputs, following its schema.'),
       },
       annotations: { readOnlyHint: true, openWorldHint: false },
     },
