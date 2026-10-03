@@ -7,6 +7,7 @@ import type { Database } from '../db/database.module.js';
 import { oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { OAuthGrantsService } from './oauth-grants.service.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 const randomHash = (): string => randomBytes(16).toString('hex');
 
@@ -81,8 +82,8 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
       expect(rows).toHaveLength(1);
       // Orden de concesión, sin duplicados.
-      expect(rows[0].scopes).toEqual(['portfolio:read', 'portfolio:write']);
-      expect(rows[0].lastUsedAt).not.toBeNull();
+      expect(itemAt(rows, 0).scopes).toEqual(['portfolio:read', 'portfolio:write']);
+      expect(itemAt(rows, 0).lastUsedAt).not.toBeNull();
     });
 
     it('dos aprobaciones simultáneas dejan UNA fila con la unión de ambas, sin error', async () => {
@@ -99,7 +100,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
         const rows = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userId));
         expect(rows).toHaveLength(1);
-        expect([...rows[0].scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
+        expect([...itemAt(rows, 0).scopes].sort()).toEqual(['portfolio:read', 'portfolio:write']);
       } finally {
         await concurrent.close();
       }
@@ -118,8 +119,8 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
 
       await service.touch(userA, 'c1');
 
-      const [a] = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userA));
-      const [b] = await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userB));
+      const a = firstItem(await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userA)));
+      const b = firstItem(await db.select().from(oauthGrants).where(eq(oauthGrants.userId, userB)));
       expect(a.lastUsedAt?.getTime()).toBeGreaterThan(longAgo.getTime());
       expect(b.lastUsedAt?.getTime()).toBe(longAgo.getTime());
     });
@@ -188,7 +189,7 @@ describe('OAuthGrantsService (integración con Postgres)', () => {
       const list = await service.listWithClients(userA);
 
       expect(list.map((g) => g.clientId)).toEqual(['recent', 'old']);
-      expect(list[0].scopes).toEqual(['portfolio:read']);
+      expect(itemAt(list, 0).scopes).toEqual(['portfolio:read']);
     });
 
     it('trae el nombre y la URL del cliente en la misma consulta, y null si el cliente ya no existe', async () => {

@@ -58,7 +58,8 @@ export class ReferenceRatesService {
       .orderBy(asc(fxReferenceRates.currency), asc(fxReferenceRates.date));
 
     const series: Record<string, ReferenceRatePoint[]> = Object.fromEntries(wanted.map((c) => [c, []]));
-    for (const row of rows) series[row.currency].push({ date: row.date, unitsPerEur: Number(row.unitsPerEur) });
+    // La consulta filtra por `wanted`, así que cada fila tiene ya su serie.
+    for (const row of rows) series[row.currency]?.push({ date: row.date, unitsPerEur: Number(row.unitsPerEur) });
     return series;
   }
 

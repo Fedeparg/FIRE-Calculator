@@ -14,6 +14,7 @@ import { PositionLotsService } from '../positions/position-lots.service.js';
 import { PositionsService } from '../positions/positions.service.js';
 import { PendingBalancesService } from './pending-balances.service.js';
 import { TaxReturnService } from './tax-return.service.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 const RATES: ReferenceRates = {
   USD: [
@@ -49,10 +50,9 @@ describe('TaxReturnService (integración con Postgres)', () => {
   afterAll(() => close());
 
   async function seedPosition(userId: string, ticker: string, currency: 'EUR' | 'USD') {
-    const [row] = await db
-      .insert(positions)
-      .values({ userId, ticker, quantity: '0', avgPrice: '0', currency })
-      .returning();
+    const row = firstItem(
+      await db.insert(positions).values({ userId, ticker, quantity: '0', avgPrice: '0', currency }).returning(),
+    );
     return row.id;
   }
 
@@ -131,7 +131,7 @@ describe('TaxReturnService (integración con Postgres)', () => {
     expect(report.gains?.sales).toHaveLength(2);
     expect(report.incomeEvents.map((e) => e.grossSource)).toEqual(['manual', 'manual']);
     expect(report.savings?.savingsBase.pending).toBeDefined();
-    expect(report.savings?.gainsBalance).toBeCloseTo(gains[0].total, 9);
+    expect(report.savings?.gainsBalance).toBeCloseTo(itemAt(gains, 0).total, 9);
     // Procedencia de las ventas: tipo del BCE aplicado.
     expect(report.gains?.sales.find((s) => s.currency === 'USD')?.eur?.sellRate).toMatchObject({
       unitsPerEur: 1.04,

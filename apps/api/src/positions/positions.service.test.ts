@@ -10,6 +10,7 @@ import { buildPositionsStack } from '../../test/positions-stack.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import { LOT_CHANGED_EVENT } from './position-events.js';
 import { PositionsService } from './positions.service.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 function dto(partial: Partial<CreatePositionDto> & { ticker: string }): CreatePositionDto {
   return {
@@ -49,9 +50,9 @@ describe('PositionsService (integración con Postgres)', () => {
       const bPositions = await service.findAllByUser(userB);
 
       expect(aPositions).toHaveLength(1);
-      expect(aPositions[0].ticker).toBe('IWDA');
+      expect(itemAt(aPositions, 0).ticker).toBe('IWDA');
       expect(bPositions).toHaveLength(1);
-      expect(bPositions[0].ticker).toBe('VWCE');
+      expect(itemAt(bPositions, 0).ticker).toBe('VWCE');
     });
 
     it('un usuario no puede borrar la posición de otro (404)', async () => {
@@ -110,7 +111,7 @@ describe('PositionsService (integración con Postgres)', () => {
         ]);
 
         expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-        const [rejected] = results.filter((r) => r.status === 'rejected');
+        const rejected = firstItem(results.filter((r) => r.status === 'rejected'));
         expect(rejected.reason).toBeInstanceOf(ConflictException);
         expect(rejected.reason).toMatchObject({ response: { code: 'DUPLICATE', existing: { ticker: 'IWDA' } } });
       } finally {

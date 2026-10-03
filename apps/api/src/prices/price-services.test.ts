@@ -8,6 +8,7 @@ import type { PriceHistory, PriceProvider, Quote, SplitEvent } from './price-pro
 import { PriceHistoryService } from './price-history.service.js';
 import { PriceReadService } from './price-read.service.js';
 import type { SymbolResolver } from './symbol-resolver.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /** Resolutor identidad: el ticker ES el símbolo (el caso del buscador, sin OpenFIGI). */
 const identityResolver: SymbolResolver = {
@@ -114,7 +115,7 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
     const rows = await cachedRows('IWDA');
     expect(rows.map((r) => r.date)).toEqual(['2026-03-13', '2026-03-14', '2026-03-15']);
     expect(rows.map((r) => r.close)).toEqual(['95.10000000', '96.20000000', '97.30000000']);
-    expect(rows[0].source).toBe('stub');
+    expect(itemAt(rows, 0).source).toBe('stub');
     // Una sola petición de histórico por símbolo: no se repite por cada cierre.
     expect(provider.historyCalls.filter((symbol) => symbol === 'IWDA')).toEqual(['IWDA']);
   });
@@ -134,7 +135,7 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
 
     const rows = await cachedRows('IWDA');
     expect(rows).toHaveLength(3);
-    expect(rows[1].close).toBe('96.99000000');
+    expect(itemAt(rows, 1).close).toBe('96.99000000');
   });
 
   it('cachea también el HISTÓRICO del par FX de la divisa de la posición, no solo el último cierre', async () => {
@@ -188,7 +189,7 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
 
     const rows = await cachedRows('RARO');
     expect(rows).toHaveLength(1);
-    expect(rows[0].close).toBe('12.50000000');
+    expect(itemAt(rows, 0).close).toBe('12.50000000');
     // Y, como el resto de altas, asegura la tasa EUR (la base de los snapshots): sin histórico
     // del par, también cae a su último cierre.
     expect(provider.quoteCalls).toEqual([['RARO'], ['EURUSD=X']]);
@@ -213,7 +214,7 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
 
     const rows = await cachedRows('IWDA');
     expect(rows).toHaveLength(250);
-    expect(rows[249].close).toBe('349.00000000');
+    expect(itemAt(rows, 249).close).toBe('349.00000000');
   });
 
   it('getPrices devuelve el cierre MÁS RECIENTE de la serie cacheada', async () => {
@@ -309,8 +310,8 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
         daysAgo(3),
       );
 
-      expect(prices.IWDA.map((p) => p.close)).toEqual([90, 92]);
-      expect(prices.IWDA[0]).toEqual({ date: daysAgo(3), close: 90, currency: 'EUR' });
+      expect(prices.IWDA?.map((p) => p.close)).toEqual([90, 92]);
+      expect(prices.IWDA?.[0]).toEqual({ date: daysAgo(3), close: 90, currency: 'EUR' });
       expect(prices.DESCONOCIDO).toBeUndefined();
       expect(fx.EUR).toEqual([{ date: daysAgo(2), rate: 1.1 }]);
       expect(fx.GBP).toBeUndefined();
@@ -324,7 +325,7 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
       const { prices } = await reads.getSeriesSince(await reads.resolveCachedTickers(['IWDA']), daysAgo(5));
 
       // `daysAgo(8)` entra (margen de arrastre); `daysAgo(25)` queda fuera.
-      expect(prices.IWDA.map((p) => p.close)).toEqual([90, 95]);
+      expect(prices.IWDA?.map((p) => p.close)).toEqual([90, 95]);
     });
 
     it('sin tickers ni símbolos con datos devuelve series vacías sin fallar', async () => {
@@ -353,10 +354,12 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
     /** Símbolo ya cacheado ANTES de existir los splits: precios con cobertura, sin splits ni marca. */
     async function seedLegacySymbol(): Promise<void> {
       const userId = await insertUser(db, 'legacy@example.com');
-      const [position] = await db
-        .insert(positions)
-        .values({ userId, ticker: 'NVDA', quantity: '10', avgPrice: '100', currency: 'USD' })
-        .returning();
+      const position = firstItem(
+        await db
+          .insert(positions)
+          .values({ userId, ticker: 'NVDA', quantity: '10', avgPrice: '100', currency: 'USD' })
+          .returning(),
+      );
       await db.insert(positionLots).values({
         positionId: position.id,
         userId,
@@ -554,10 +557,9 @@ describe('PriceReadService + PriceHistoryService — caché de histórico (integ
     /** Posición con un único lote de compra en `tradedAt`. */
     async function insertPositionWithLot(ticker: string, currency: string, tradedAt: string): Promise<void> {
       const userId = await insertUser(db, `${ticker}@example.com`);
-      const [position] = await db
-        .insert(positions)
-        .values({ userId, ticker, quantity: '10', avgPrice: '150', currency })
-        .returning();
+      const position = firstItem(
+        await db.insert(positions).values({ userId, ticker, quantity: '10', avgPrice: '150', currency }).returning(),
+      );
       await db.insert(positionLots).values({
         positionId: position.id,
         userId,

@@ -16,6 +16,7 @@ import { DevEmailService } from '../email/dev-email.service.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { disableStartupBackfill, waitForStartupJobs } from '../../test/startup-jobs.js';
 import { SESSION_TTL_SECONDS } from './session.constants.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /**
  * `AppModule` se importa en diferido: `ConfigModule.forRoot({ validate })` valida el entorno al
@@ -61,7 +62,7 @@ function sessionSetCookie(res: Response): string | undefined {
 
 /** Valor de la cookie de sesión de una cabecera `Set-Cookie`. */
 function cookieValue(setCookie: string): string {
-  return setCookie.split(';')[0].slice(SESSION_COOKIE.length + 1);
+  return itemAt(setCookie.split(';'), 0).slice(SESSION_COOKIE.length + 1);
 }
 
 describe('AuthController (HTTP)', () => {
@@ -175,7 +176,7 @@ describe('AuthController (HTTP)', () => {
       const before = Date.now();
       const token = await requestToken('a@example.com');
 
-      const [row] = await db.select().from(loginTokens);
+      const row = firstItem(await db.select().from(loginTokens));
       expect(row.tokenHash).toBe(sha256(token));
       expect(row.tokenHash).not.toContain(token);
       expect(row.consumedAt).toBeNull();
@@ -183,14 +184,14 @@ describe('AuthController (HTTP)', () => {
       expect(ttl).toBeGreaterThan(14 * 60_000);
       expect(ttl).toBeLessThanOrEqual(15 * 60_000 + 5_000);
       // El enlace apunta al frontend público.
-      expect(sentLinks[0].link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
+      expect(itemAt(sentLinks, 0).link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
     });
 
     it('normaliza el email a minúsculas antes de guardarlo y enviarlo', async () => {
       await postJson(`${baseUrl}/request`, { email: 'A@Example.COM' });
 
-      expect(sentLinks[0].to).toBe('a@example.com');
-      const [row] = await db.select().from(loginTokens);
+      expect(itemAt(sentLinks, 0).to).toBe('a@example.com');
+      const row = firstItem(await db.select().from(loginTokens));
       expect(row.email).toBe('a@example.com');
     });
 
@@ -199,8 +200,8 @@ describe('AuthController (HTTP)', () => {
       await postJson(`${baseUrl}/request`, { email: 'b@example.com', locale: 'en' });
 
       expect(sentLinks.map((sent) => sent.locale)).toEqual(['es', 'en']);
-      expect(sentLinks[0].link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
-      expect(sentLinks[1].link.startsWith(`${APP_URL}/en/auth/verify?token=`)).toBe(true);
+      expect(itemAt(sentLinks, 0).link.startsWith(`${APP_URL}/auth/verify?token=`)).toBe(true);
+      expect(itemAt(sentLinks, 1).link.startsWith(`${APP_URL}/en/auth/verify?token=`)).toBe(true);
     });
 
     it('rechaza un idioma no soportado con 400', async () => {
@@ -232,7 +233,7 @@ describe('AuthController (HTTP)', () => {
       const res = await postJson(`${baseUrl}/verify`, { token });
 
       expect(res.status).toBe(200);
-      const [user] = await db.select().from(users);
+      const user = firstItem(await db.select().from(users));
       expect(user.email).toBe('nuevo@example.com');
       expect(await res.json()).toEqual({ id: user.id, email: 'nuevo@example.com' });
       expect(sessionSetCookie(res)).toBeDefined();

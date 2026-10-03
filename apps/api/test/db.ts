@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { firstItem } from '@sextante/core/arrays';
 import { sql } from 'drizzle-orm';
 import postgres from 'postgres';
 import { inject } from 'vitest';
@@ -59,6 +60,6 @@ export async function resetDb(db: Database): Promise<void> {
 
 /** Inserta un usuario y devuelve su id (las posiciones/tokens necesitan un FK válido). */
 export async function insertUser(db: Database, email: string): Promise<string> {
-  const [row] = await db.insert(schema.users).values({ email }).returning({ id: schema.users.id });
+  const row = firstItem(await db.insert(schema.users).values({ email }).returning({ id: schema.users.id }));
   return row.id;
 }

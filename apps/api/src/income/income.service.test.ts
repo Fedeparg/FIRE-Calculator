@@ -8,6 +8,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { createIncomeSchema } from './dto/create-income.dto.js';
 import { updateIncomeSchema } from './dto/update-income.dto.js';
 import { IncomeService } from './income.service.js';
+import { firstItem } from '@sextante/core/arrays';
 
 describe('IncomeService (integración con Postgres)', () => {
   let db: Database;
@@ -22,10 +23,12 @@ describe('IncomeService (integración con Postgres)', () => {
   afterAll(() => close());
 
   async function positionFor(userId: string): Promise<string> {
-    const [row] = await db
-      .insert(positions)
-      .values({ userId, ticker: 'AAPL', quantity: '1', avgPrice: '100', currency: 'USD' })
-      .returning();
+    const row = firstItem(
+      await db
+        .insert(positions)
+        .values({ userId, ticker: 'AAPL', quantity: '1', avgPrice: '100', currency: 'USD' })
+        .returning(),
+    );
     return row.id;
   }
 
@@ -107,7 +110,7 @@ describe('IncomeService (integración con Postgres)', () => {
     const created = await service.create(userId, { ...dividend, positionId });
 
     await db.delete(positions).where(eq(positions.id, positionId));
-    const [row] = await db.select().from(incomeEvents).where(eq(incomeEvents.id, created.id));
+    const row = firstItem(await db.select().from(incomeEvents).where(eq(incomeEvents.id, created.id)));
     expect(row.positionId).toBeNull();
   });
 });

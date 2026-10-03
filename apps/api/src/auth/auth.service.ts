@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { firstItem } from '@sextante/core/arrays';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 
 import type { SessionUser } from '@sextante/core/contracts';
@@ -52,15 +53,17 @@ export class AuthService {
     // peticiones simultáneas verían el mismo recuento y pasarían todas del límite.
     const allowed = await this.db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext('login_links'), hashtext(${email}))`);
-      const [recent] = await tx
-        .select({ total: count() })
-        .from(loginTokens)
-        .where(
-          and(
-            eq(loginTokens.email, email),
-            gt(loginTokens.createdAt, new Date(Date.now() - LINKS_PER_EMAIL_WINDOW_MS)),
+      const recent = firstItem(
+        await tx
+          .select({ total: count() })
+          .from(loginTokens)
+          .where(
+            and(
+              eq(loginTokens.email, email),
+              gt(loginTokens.createdAt, new Date(Date.now() - LINKS_PER_EMAIL_WINDOW_MS)),
+            ),
           ),
-        );
+      );
       if (recent.total >= MAX_LINKS_PER_EMAIL) return false;
       await tx.insert(loginTokens).values({ email, tokenHash, expiresAt });
       return true;

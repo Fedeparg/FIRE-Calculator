@@ -6,6 +6,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { Database } from './database.module.js';
 import { DB_ENUM_VALUES, incomeEvents, positionLots, positions } from './schema.js';
+import { firstItem } from '@sextante/core/arrays';
 
 /** Constraints de la migración 0027 (`0027_check_closed_unions_not_valid.sql`). */
 const NEW_CHECKS = [
@@ -48,10 +49,12 @@ describe('CHECK de las uniones cerradas', () => {
 
     async function seedPosition(): Promise<{ userId: string; positionId: string }> {
       const userId = await insertUser(db, 'a@example.com');
-      const [position] = await db
-        .insert(positions)
-        .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '1', broker: '' })
-        .returning({ id: positions.id });
+      const position = firstItem(
+        await db
+          .insert(positions)
+          .values({ userId, ticker: 'IWDA', quantity: '1', avgPrice: '1', broker: '' })
+          .returning({ id: positions.id }),
+      );
       return { userId, positionId: position.id };
     }
 

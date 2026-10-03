@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { firstItem } from '@sextante/core/arrays';
 import { and, desc, eq, ne } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -45,19 +46,21 @@ export class PositionsService {
     try {
       // Alta y lote inicial en la misma transacción: sin lotes, el primer recálculo la pondría a cero.
       const row = await this.db.transaction(async (tx) => {
-        const [inserted] = await tx
-          .insert(positions)
-          .values({
-            userId,
-            ticker,
-            name: dto.name ?? null,
-            quantity: dto.quantity.toString(),
-            avgPrice: dto.avgPrice.toString(),
-            broker: broker || null,
-            currency: dto.currency ?? 'EUR',
-            assetClass: dto.assetClass ?? null,
-          })
-          .returning();
+        const inserted = firstItem(
+          await tx
+            .insert(positions)
+            .values({
+              userId,
+              ticker,
+              name: dto.name ?? null,
+              quantity: dto.quantity.toString(),
+              avgPrice: dto.avgPrice.toString(),
+              broker: broker || null,
+              currency: dto.currency ?? 'EUR',
+              assetClass: dto.assetClass ?? null,
+            })
+            .returning(),
+        );
 
         await this.lots.appendLotOwned(tx, {
           positionId: inserted.id,
@@ -204,8 +207,8 @@ export class PositionsService {
 
   /** Relee la posición tras un recálculo de lotes. */
   private async reread(tx: DatabaseOrTransaction, id: string): Promise<Position> {
-    const [row] = await tx.select().from(positions).where(eq(positions.id, id));
-    return row;
+    // La posición existe: se acaba de recalcular dentro de la misma transacción.
+    return firstItem(await tx.select().from(positions).where(eq(positions.id, id)));
   }
 
   /**

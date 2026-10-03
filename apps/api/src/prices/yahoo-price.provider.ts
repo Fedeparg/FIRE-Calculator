@@ -180,7 +180,7 @@ export class YahooPriceProvider implements PriceProvider {
     const budget = AbortSignal.timeout(this.batchBudgetMs);
     let consecutiveOutages = 0;
 
-    for (let i = 0; i < unique.length; i++) {
+    for (const [i, symbol] of unique.entries()) {
       if (i > 0) await sleep(this.requestDelayMs);
       if (budget.aborted) {
         this.logger.error(
@@ -188,12 +188,12 @@ export class YahooPriceProvider implements PriceProvider {
         );
         break;
       }
-      const outcome = await this.fetchChart(unique[i], '1d', '1d', undefined, budget);
+      const outcome = await this.fetchChart(symbol, '1d', '1d', undefined, budget);
       if (outcome.ok) {
         consecutiveOutages = 0;
-        const quote = parseYahooChart(unique[i], outcome.body);
+        const quote = parseYahooChart(symbol, outcome.body);
         if (quote) result.set(quote.symbol, quote);
-        else this.logger.warn(`Yahoo ${unique[i]}: respuesta sin precio utilizable`);
+        else this.logger.warn(`Yahoo ${symbol}: respuesta sin precio utilizable`);
         continue;
       }
       consecutiveOutages = outcome.outage ? consecutiveOutages + 1 : 0;

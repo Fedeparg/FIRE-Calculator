@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { firstItem } from '@sextante/core/arrays';
 import { and, eq, inArray } from 'drizzle-orm';
 import type { ImportedIncome, ImportFailureCode, ImportIncomeSummary } from '@sextante/core/imports/types';
 
@@ -100,21 +101,23 @@ export class TradeImportWriter {
     const wasCreated = position === undefined;
 
     if (position === undefined) {
-      [position] = await tx
-        .insert(positions)
-        .values({
-          userId,
-          ticker: group.isin,
-          name: group.name.slice(0, NAME_MAX_LENGTH) || null,
-          // La foto real la escribe `appendImported` al recalcular; aquí solo el hueco.
-          quantity: '0',
-          avgPrice: '0',
-          broker: TRADE_REPUBLIC_BROKER,
-          currency: 'EUR',
-          isDerivative: group.assetClass === 'derivative',
-          assetClass: group.assetClass,
-        })
-        .returning();
+      position = firstItem(
+        await tx
+          .insert(positions)
+          .values({
+            userId,
+            ticker: group.isin,
+            name: group.name.slice(0, NAME_MAX_LENGTH) || null,
+            // La foto real la escribe `appendImported` al recalcular; aquí solo el hueco.
+            quantity: '0',
+            avgPrice: '0',
+            broker: TRADE_REPUBLIC_BROKER,
+            currency: 'EUR',
+            isDerivative: group.assetClass === 'derivative',
+            assetClass: group.assetClass,
+          })
+          .returning(),
+      );
     }
 
     if (!wasCreated) position = (await this.backfillAssetClassIn(tx, position, group)) ?? position;
@@ -131,7 +134,8 @@ export class TradeImportWriter {
       return { position, wasCreated: false, inserted };
     }
 
-    const [fresh] = await tx.select().from(positions).where(eq(positions.id, position.id));
+    // La posición existe: la ha escrito esta misma transacción.
+    const fresh = firstItem(await tx.select().from(positions).where(eq(positions.id, position.id)));
     return { position: fresh, wasCreated, inserted };
   }
 

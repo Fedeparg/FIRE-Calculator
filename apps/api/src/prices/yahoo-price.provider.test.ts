@@ -8,6 +8,7 @@ import {
   parseYahooSplits,
   YahooPriceProvider,
 } from './yahoo-price.provider.js';
+import { itemAt } from '@sextante/core/arrays';
 
 /** Construye una respuesta de Yahoo con el `meta` indicado. */
 const chart = (meta: Record<string, unknown>): unknown => ({ chart: { result: [{ meta }] } });
@@ -128,7 +129,7 @@ describe('parseYahooChartHistory', () => {
     const quotes = parseYahooChartHistory('X', series([DAY_1, DAY_2, DAY_3], ['95.1', Number.NaN, 96.5]));
 
     expect(quotes).toHaveLength(1);
-    expect(quotes[0].close).toBe(96.5);
+    expect(itemAt(quotes, 0).close).toBe(96.5);
   });
 
   it('se queda con la última barra si dos caen el mismo día UTC', () => {
@@ -202,7 +203,7 @@ describe('YahooPriceProvider.getQuotes — Yahoo caído', () => {
     return provider;
   }
   const symbols = Array.from({ length: 12 }, (_, i) => `S${i}`);
-  const symbolOf = (url: string): string => url.split('/chart/')[1].split('?')[0];
+  const symbolOf = (url: string): string => itemAt(itemAt(url.split('/chart/'), 1).split('?'), 0);
 
   it('corta el lote tras 5 símbolos seguidos con la fuente caída (red o 5xx)', async () => {
     const fetchMock = vi.fn((url: string) =>

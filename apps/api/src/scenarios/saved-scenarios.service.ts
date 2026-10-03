@@ -1,5 +1,6 @@
 import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { firstItem } from '@sextante/core/arrays';
 import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
@@ -48,10 +49,12 @@ export class SavedScenariosService {
     const row = await this.db.transaction(async (tx) => {
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext('saved_scenarios'), hashtext(${userId}))`);
       await this.assertQuotaAvailable(tx, userId);
-      const [inserted] = await tx
-        .insert(savedScenarios)
-        .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
-        .returning();
+      const inserted = firstItem(
+        await tx
+          .insert(savedScenarios)
+          .values({ userId, slug: dto.slug, name: dto.name, inputs: dto.inputs })
+          .returning(),
+      );
       return inserted;
     });
 
@@ -113,7 +116,9 @@ export class SavedScenariosService {
 
   /** Rechaza el alta si el usuario ya está en su tope de escenarios. */
   private async assertQuotaAvailable(tx: DatabaseOrTransaction, userId: string): Promise<void> {
-    const [row] = await tx.select({ total: count() }).from(savedScenarios).where(eq(savedScenarios.userId, userId));
+    const row = firstItem(
+      await tx.select({ total: count() }).from(savedScenarios).where(eq(savedScenarios.userId, userId)),
+    );
 
     if (row.total >= MAX_SCENARIOS_PER_USER) {
       throw new BadRequestException({

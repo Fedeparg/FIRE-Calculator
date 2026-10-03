@@ -1,5 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { firstItem } from '@sextante/core/arrays';
 import { and, asc, eq, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -66,19 +67,21 @@ export class PositionLotsService {
     const created = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
 
-      const [row] = await tx
-        .insert(positionLots)
-        .values({
-          positionId,
-          userId,
-          kind: dto.kind,
-          quantity: dto.quantity.toString(),
-          price: dto.price.toString(),
-          fees: (dto.fees ?? 0).toString(),
-          tradedAt: dto.tradedAt,
-          note: dto.note || null,
-        })
-        .returning();
+      const row = firstItem(
+        await tx
+          .insert(positionLots)
+          .values({
+            positionId,
+            userId,
+            kind: dto.kind,
+            quantity: dto.quantity.toString(),
+            price: dto.price.toString(),
+            fees: (dto.fees ?? 0).toString(),
+            tradedAt: dto.tradedAt,
+            note: dto.note || null,
+          })
+          .returning(),
+      );
 
       await this.recompute(tx, positionId);
       return toPositionLotResponse(row);
@@ -255,7 +258,7 @@ export class PositionLotsService {
     }
 
     if (existing.length === 1) {
-      const [only] = existing;
+      const only = firstItem(existing);
       // Declarar lo que ya hay no toca el lote (ver `staleSnapshotDates`).
       if (only.kind === 'buy' && sameAmount(only.quantity, input.quantity) && sameAmount(only.price, input.price)) {
         return;

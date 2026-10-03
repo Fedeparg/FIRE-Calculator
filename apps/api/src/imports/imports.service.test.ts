@@ -16,6 +16,7 @@ import { PostImportTasks } from './post-import.tasks.js';
 import { TradeImportWriter } from './trade-import.writer.js';
 import { TRADE_REPUBLIC_BROKER } from './trade-republic-import.model.js';
 import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 /** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */
 const dividendsStub = { resolvePending: () => Promise.resolve(0) } as unknown as DividendResolutionService;
@@ -126,17 +127,19 @@ describe('ImportsService (integración con Postgres)', () => {
     const lots = await lotsOf(userId);
     expect(lots).toHaveLength(2);
     expect(lots[0]).toMatchObject({ kind: 'buy', fees: '1.000000', tradedAt: '2025-03-03' });
-    expect(lots[0].externalId).toMatch(/^trade-republic:00000000-/);
+    expect(itemAt(lots, 0).externalId).toMatch(/^trade-republic:00000000-/);
     // Los lotes manuales no llevan id externo: aquí solo hay importados.
     expect(lots.every((lot) => lot.externalId !== null)).toBe(true);
   });
 
   it('amplía una posición existente de Trade Republic en vez de fallar por duplicada', async () => {
     const userId = await insertUser(db, 'a@example.com');
-    const [existing] = await db
-      .insert(positions)
-      .values({ userId, ticker: ETF, quantity: '0', avgPrice: '0', broker: 'trade republic', currency: 'EUR' })
-      .returning();
+    const existing = firstItem(
+      await db
+        .insert(positions)
+        .values({ userId, ticker: ETF, quantity: '0', avgPrice: '0', broker: 'trade republic', currency: 'EUR' })
+        .returning(),
+    );
     await db.insert(positionLots).values({
       positionId: existing.id,
       userId,
@@ -157,7 +160,7 @@ describe('ImportsService (integración con Postgres)', () => {
     });
 
     const result = await service.confirm(userId, csv(trade('BUY', ETF, '1', '110', 3)));
-    expect(result.positions[0].status).toBe('extended');
+    expect(itemAt(result.positions, 0).status).toBe('extended');
 
     const all = await positionsOf(userId);
     expect(all).toHaveLength(1);
@@ -176,7 +179,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
     const second = trade('BUY', ETF, '2', '100', 2);
     await svc.confirm(userId, csv(second));
-    const [position] = await positionsOf(userId);
+    const position = firstItem(await positionsOf(userId));
     expect(emitted).toEqual([{ userId, positionId: position.id }]);
 
     // Reimportar sin lotes nuevos no emite.
@@ -227,7 +230,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
     const again = await service.confirm(userId, file);
     expect(again.totals).toEqual({ lotsCreated: 0, duplicates: 2, failedPositions: 0 });
-    expect(again.positions[0].status).toBe('unchanged');
+    expect(itemAt(again.positions, 0).status).toBe('unchanged');
     expect({ positions: await positionsOf(userId), lots: await lotsOf(userId) }).toEqual(before);
 
     const plan = await service.preview(userId, file);
@@ -242,7 +245,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
     const result = await service.confirm(userId, csv(first, trade('BUY', ETF, '1', '130', 9)));
     expect(result.totals).toEqual({ lotsCreated: 1, duplicates: 1, failedPositions: 0 });
-    const [position] = await positionsOf(userId);
+    const position = firstItem(await positionsOf(userId));
     expect(position.quantity).toBe('3.000000');
   });
 
@@ -286,7 +289,7 @@ describe('ImportsService (integración con Postgres)', () => {
     expect(resultB.totals.lotsCreated).toBe(1);
     expect(await lotsOf(userA)).toHaveLength(1);
     expect(await lotsOf(userB)).toHaveLength(1);
-    expect((await positionsOf(userB))[0].quantity).toBe('2.000000');
+    expect(firstItem(await positionsOf(userB)).quantity).toBe('2.000000');
   });
 
   it('la vista previa no escribe nada y marca los derivados como "precio posiblemente no disponible"', async () => {
@@ -333,7 +336,7 @@ describe('ImportsService (integración con Postgres)', () => {
       ),
     );
     expect(result.totals.failedPositions).toBe(0);
-    expect((await positionsOf(userId))[0].quantity).toBe('0.000000');
+    expect(firstItem(await positionsOf(userId)).quantity).toBe('0.000000');
   });
 
   it('resume las filas descartadas por motivo y propaga los avisos, solo con recuentos', async () => {
@@ -437,7 +440,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
         }),
       ),
     );
-    const [position] = await positionsOf(userId);
+    const position = firstItem(await positionsOf(userId));
     const [row] = await db.select().from(incomeEvents);
     expect(row).toMatchObject({ kind: 'dividend', isin: STOCK, positionId: position.id, gross: '1.360000' });
   });

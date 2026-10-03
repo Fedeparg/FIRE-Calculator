@@ -289,10 +289,10 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
 
   /** Primer candidato que cotiza en la fuente (el orden es la prioridad), o null. */
   private async firstThatPrices(candidates: string[]): Promise<string | null> {
-    for (let i = 0; i < candidates.length; i++) {
+    for (const [i, candidate] of candidates.entries()) {
       if (i > 0) await sleep(VALIDATION_DELAY_MS);
-      const quotes = await this.provider.getQuotes([candidates[i]]);
-      if (quotes.has(candidates[i])) return candidates[i];
+      const quotes = await this.provider.getQuotes([candidate]);
+      if (quotes.has(candidate)) return candidate;
     }
     return null;
   }
@@ -304,7 +304,7 @@ export class OpenFigiSymbolResolver implements SymbolResolver {
       .from(instruments)
       .where(eq(instruments.query, query))
       .limit(1);
-    return rows.length ? rows[0].symbol : undefined;
+    return rows[0]?.symbol;
   }
 
   /** Upsert de la resolución (permanente). `symbol` null cachea un "no encontrado" real. */

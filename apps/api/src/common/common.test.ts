@@ -7,6 +7,7 @@ import { isoDate, todayUtc } from './dates.js';
 import { errorMessage } from './errors.js';
 import { numberOrNull } from './numeric.js';
 import { scheduleFromEnv } from './schedule.js';
+import { firstItem } from '@sextante/core/arrays';
 
 describe('dates', () => {
   afterEach(() => vi.useRealTimers());
@@ -69,7 +70,7 @@ describe('scheduleFromEnv', () => {
       handler: vi.fn(),
     });
     expect(scheduled).toBe('0 */5 * * * *');
-    const [name, job] = registry.addCronJob.mock.calls[0];
+    const [name, job] = firstItem(registry.addCronJob.mock.calls);
     expect(name).toBe('custom');
     expect(job.isActive).toBe(true);
     expect(String(job.cronTime.timeZone)).toBe('Europe/Madrid');

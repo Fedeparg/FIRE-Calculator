@@ -6,6 +6,7 @@ import type { Database } from '../db/database.module.js';
 import { oauthClients } from '../db/schema.js';
 import { createTestDb, resetDb } from '../../test/db.js';
 import { OAuthClientsStore } from './oauth-clients.store.js';
+import { firstItem } from '@sextante/core/arrays';
 
 const CLIENT: OAuthClientInformationFull = {
   client_id: 'client-1',
@@ -31,7 +32,7 @@ describe('OAuthClientsStore (integración con Postgres)', () => {
   });
 
   const readClient = async (clientId: string) =>
-    (await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)))[0];
+    firstItem(await db.select().from(oauthClients).where(eq(oauthClients.clientId, clientId)));
 
   it('registra un cliente nuevo con lastUsedAt a null', async () => {
     await store.registerClient(CLIENT);

@@ -1,3 +1,4 @@
+import { firstItem } from '@sextante/core/arrays';
 import { Injectable, Logger } from '@nestjs/common';
 
 import { fetchText } from '../common/http.js';
@@ -39,7 +40,7 @@ const CURRENCY = /^[A-Z]{3}$/;
 export function parseEcbCsv(text: string): EcbRate[] {
   const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
   if (lines.length === 0) return [];
-  const header = lines[0].split(',');
+  const header = firstItem(lines).split(',');
   const currencyAt = header.indexOf('CURRENCY');
   const dateAt = header.indexOf('TIME_PERIOD');
   const valueAt = header.indexOf('OBS_VALUE');
@@ -52,7 +53,7 @@ export function parseEcbCsv(text: string): EcbRate[] {
     const currency = cells[currencyAt];
     const date = cells[dateAt];
     const unitsPerEur = Number(cells[valueAt]);
-    if (!CURRENCY.test(currency ?? '') || !DATE.test(date ?? '')) continue;
+    if (currency === undefined || date === undefined || !CURRENCY.test(currency) || !DATE.test(date)) continue;
     if (!Number.isFinite(unitsPerEur) || unitsPerEur <= 0) continue;
     out.push({ currency, date, unitsPerEur });
   }

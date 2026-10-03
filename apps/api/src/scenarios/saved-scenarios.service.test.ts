@@ -8,6 +8,7 @@ import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import type { CreateSavedScenarioDto } from './dto/create-saved-scenario.dto.js';
 import { MAX_SCENARIOS_PER_USER } from '@sextante/core/contracts';
 import { MAX_INPUTS_BYTES, SavedScenariosService } from './saved-scenarios.service.js';
+import { firstItem, itemAt } from '@sextante/core/arrays';
 
 function dto(partial: Partial<CreateSavedScenarioDto> = {}): CreateSavedScenarioDto {
   return {
@@ -54,7 +55,7 @@ describe('SavedScenariosService (integración con Postgres)', () => {
     const filtered = await service.findAllByUser(userId, 'interes-compuesto');
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0].name).toBe('Otro');
+    expect(itemAt(filtered, 0).name).toBe('Otro');
   });
 
   it('actualiza nombre e inputs sin tocar el slug', async () => {
@@ -160,7 +161,7 @@ describe('SavedScenariosService (integración con Postgres)', () => {
       await expect(service.remove(userB, created.id)).rejects.toBeInstanceOf(NotFoundException);
 
       // El escenario sigue intacto para su dueño.
-      expect((await service.findAllByUser(userA))[0].name).toBe('Mi plan');
+      expect(firstItem(await service.findAllByUser(userA)).name).toBe('Mi plan');
     });
 
     it('un escenario inexistente da 404', async () => {

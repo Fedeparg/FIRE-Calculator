@@ -17,6 +17,7 @@ import { OAuthGrantsService } from './oauth-grants.service.js';
 import { OAuthUrls } from './oauth-urls.js';
 import { SextanteOAuthProvider } from './oauth.provider.js';
 import { REFRESH_TOKEN_TTL_SECONDS, SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from './oauth.constants.js';
+import { firstItem } from '@sextante/core/arrays';
 
 const APP_URL = 'http://localhost:3000';
 const CLIENT: OAuthClientInformationFull = {
@@ -86,7 +87,7 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
 
       await provider.authorize(
         CLIENT,
-        { scopes, redirectUri: CLIENT.redirect_uris[0], codeChallenge: 'challenge' },
+        { scopes, redirectUri: firstItem(CLIENT.redirect_uris), codeChallenge: 'challenge' },
         res,
       );
       return new URL(redirectedTo);
@@ -166,10 +167,12 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       expect(tokens.refresh_token).not.toBe(refresh);
 
       // El refresh original queda consumido.
-      const [old] = await db
-        .select({ consumedAt: oauthTokens.consumedAt })
-        .from(oauthTokens)
-        .where(eq(oauthTokens.tokenHash, hash(refresh)));
+      const old = firstItem(
+        await db
+          .select({ consumedAt: oauthTokens.consumedAt })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.tokenHash, hash(refresh))),
+      );
       expect(old.consumedAt).not.toBeNull();
     });
 
@@ -210,10 +213,12 @@ describe('SextanteOAuthProvider (integración con Postgres)', () => {
       await expect(provider.exchangeRefreshToken(CLIENT, refresh)).rejects.toThrow();
       spy.mockRestore();
 
-      const [row] = await db
-        .select({ consumedAt: oauthTokens.consumedAt })
-        .from(oauthTokens)
-        .where(eq(oauthTokens.tokenHash, hash(refresh)));
+      const row = firstItem(
+        await db
+          .select({ consumedAt: oauthTokens.consumedAt })
+          .from(oauthTokens)
+          .where(eq(oauthTokens.tokenHash, hash(refresh))),
+      );
       expect(row.consumedAt).toBeNull();
       // Y el reintento funciona, sin tomarse por reuso.
       await expect(provider.exchangeRefreshToken(CLIENT, refresh)).resolves.toHaveProperty('access_token');

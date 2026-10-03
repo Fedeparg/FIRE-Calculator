@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { firstItem } from '@sextante/core/arrays';
 import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm';
 
 import type { IncomeEvent } from '@sextante/core/fiscal/income';
@@ -48,26 +49,28 @@ export class IncomeService {
       throw new BadRequestException(['gross: las retenciones no pueden superar el íntegro']);
     }
     if (dto.positionId) await findOwnedPosition(this.db, userId, dto.positionId);
-    const [row] = await this.db
-      .insert(incomeEvents)
-      .values({
-        userId,
-        positionId: dto.positionId ?? null,
-        kind: dto.kind,
-        paidAt: dto.paidAt,
-        isin: dto.isin ?? null,
-        name: dto.name ?? null,
-        country: dto.country ?? null,
-        currency: dto.currency ?? 'EUR',
-        gross: decimal(dto.gross),
-        withholdingOrigin: dto.withholdingOrigin == null ? null : decimal(dto.withholdingOrigin),
-        withholdingSpain: decimal(dto.withholdingSpain ?? 0),
-        reportedToAeat: dto.reportedToAeat ?? false,
-        source: 'manual',
-        grossSource: 'manual',
-        withholdingOriginSource: dto.withholdingOrigin == null ? null : 'manual',
-      })
-      .returning();
+    const row = firstItem(
+      await this.db
+        .insert(incomeEvents)
+        .values({
+          userId,
+          positionId: dto.positionId ?? null,
+          kind: dto.kind,
+          paidAt: dto.paidAt,
+          isin: dto.isin ?? null,
+          name: dto.name ?? null,
+          country: dto.country ?? null,
+          currency: dto.currency ?? 'EUR',
+          gross: decimal(dto.gross),
+          withholdingOrigin: dto.withholdingOrigin == null ? null : decimal(dto.withholdingOrigin),
+          withholdingSpain: decimal(dto.withholdingSpain ?? 0),
+          reportedToAeat: dto.reportedToAeat ?? false,
+          source: 'manual',
+          grossSource: 'manual',
+          withholdingOriginSource: dto.withholdingOrigin == null ? null : 'manual',
+        })
+        .returning(),
+    );
     return toIncomeEvent(row);
   }
 
@@ -111,6 +114,8 @@ export class IncomeService {
       })
       .where(and(eq(incomeEvents.id, id), eq(incomeEvents.userId, userId)))
       .returning();
+    // Solo falta si se borró entre `findOwned` y el UPDATE.
+    if (!row) throw new NotFoundException('Cobro no encontrado');
     return toIncomeEvent(row);
   }
 

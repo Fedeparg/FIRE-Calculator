@@ -9,6 +9,7 @@ import type { FireAlertsService } from '../notifications/fire-alerts.service.js'
 import type { PortfolioSnapshotsService } from '../portfolio/portfolio-snapshots.service.js';
 import type { PriceHistoryService, RefreshSummary } from '../prices/price-history.service.js';
 import { DailyJobsScheduler, DEFAULT_INTRADAY_CRON } from './daily-jobs.scheduler.js';
+import { firstItem } from '@sextante/core/arrays';
 
 const SUMMARY: RefreshSummary = { symbols: 1, fetched: 1, missing: [] };
 
@@ -114,8 +115,8 @@ describe('DailyJobsScheduler', () => {
 
     await scheduler.run();
 
-    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll, fireAlerts.evaluateAll].map(
-      (fn) => fn.mock.invocationCallOrder[0],
+    const order = [prices.refreshAll, snapshots.captureAll, snapshots.backfillAll, fireAlerts.evaluateAll].map((fn) =>
+      firstItem(fn.mock.invocationCallOrder),
     );
     expect(order).toEqual([...order].sort((a, b) => a - b));
   });
