@@ -1,33 +1,33 @@
-// Valoración agregada de la cartera en una divisa. Core puro. La usan la web (Resumen), la API
-// (valoración diaria, snapshots, alertas) y la tool MCP `get_portfolio_valuation`.
+// Aggregate portfolio valuation in one currency. Pure core. Used by the web app (Summary), the API
+// (daily valuation, snapshots, alerts) and the MCP tool `get_portfolio_valuation`.
 
 import { convertCurrency } from "../fx.js";
 
-/** Lo que hace falta de una posición para valorarla en otra divisa. */
+/** What a position needs in order to be valued in another currency. */
 export interface ValuedPositionInput {
   quantity: number;
   avgPrice: number;
-  /** Divisa del coste (`avgPrice`). */
+  /** Currency of the cost (`avgPrice`). */
   currency: string;
 }
 
-/** Último cierre de un instrumento, en su divisa nativa. */
+/** Latest close of an instrument, in its native currency. */
 export interface DisplayPrice {
   close: number;
   currency: string;
 }
 
-/** Coste y valor de mercado de una posición, los dos en la misma divisa. */
+/** Cost and market value of a position, both in the same currency. */
 export interface DisplayValuation {
   invested: number;
   marketValue: number;
 }
 
 /**
- * La regla de "posición valorable": coste (desde la divisa de la posición) y valor de mercado
- * (desde la del precio, que puede ser otra) convertidos a `display`, o `null` si falta alguna de
- * las dos tasas. Exigir AMBAS es lo que hace que P&L = valor − invertido cuadre y que los pesos
- * del reparto sumen el total.
+ * The "valuable position" rule: cost (from the position's currency) and market value (from the
+ * price's currency, which may differ) converted to `display`, or `null` if either rate is
+ * missing. Requiring BOTH is what keeps P&L = value − invested consistent and makes the
+ * allocation weights add up to the total.
  */
 export function valueInDisplay(
   position: ValuedPositionInput,
@@ -40,11 +40,11 @@ export function valueInDisplay(
   return invested === null || marketValue === null ? null : { invested, marketValue };
 }
 
-/** Entrada mínima para agregar, independiente de los tipos de la app. */
+/** Minimal input for aggregation, independent of the app's types. */
 export interface AggregateInput {
   positions: (ValuedPositionInput & {
     ticker: string;
-    /** Los derivados no se valoran y quedan fuera del total; es obligatorio para que no se mezclen en el P&L. */
+    /** Derivatives are not valued and stay out of the total; required so they never leak into the P&L. */
     isDerivative: boolean;
   })[];
   prices: Record<string, DisplayPrice>;
@@ -53,28 +53,28 @@ export interface AggregateInput {
 }
 
 export interface PortfolioAggregate {
-  /** Coste de las posiciones valoradas, en `display`. */
+  /** Cost of the valued positions, in `display`. */
   invested: number;
   marketValue: number;
   pnlAbs: number;
   pnlPct: number | null;
   valued: number;
-  /** Nº de posiciones valorables (valoradas + excluidas por falta de precio/divisa); sin derivados. */
+  /** Number of valuable positions (valued + excluded for a missing price/currency); excludes derivatives. */
   total: number;
   display: string;
 }
 
 /**
- * Agrega la cartera a `display`. Cuenta una posición con precio y ambas divisas convertibles (ver
- * `valueInDisplay`). Invertido, valor y P&L usan el mismo subconjunto para que P&L = valor −
- * invertido cuadre.
+ * Aggregates the portfolio into `display`. Counts a position that has a price and both currencies
+ * convertible (see `valueInDisplay`). Invested, value and P&L use the same subset so that
+ * P&L = value − invested holds.
  */
 export function aggregatePortfolio({ positions, prices, rates, display }: AggregateInput): PortfolioAggregate {
   let invested = 0;
   let marketValue = 0;
   let valued = 0;
 
-  // Sextante no sigue el precio de los derivados: sin cotización fiable distorsionarían el P&L.
+  // Sextante does not track derivative prices: without a reliable quote they would distort the P&L.
   const tracked = positions.filter((p) => !p.isDerivative);
 
   for (const p of tracked) {

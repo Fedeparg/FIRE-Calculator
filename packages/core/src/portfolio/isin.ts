@@ -2,24 +2,24 @@ import type { IncomePayload } from "../fiscal/income.js";
 import type { Position } from "./types.js";
 
 /**
- * Formato de un ISIN (ISO 6166): dos letras de país, nueve alfanuméricos y un dígito de control
- * (no se verifica el dígito). Lo comparten la web, el DTO de cobros y el resolutor de símbolos.
+ * ISIN format (ISO 6166): two country letters, nine alphanumerics and a check digit (the digit is
+ * not verified). Shared by the web app, the income DTO and the symbol resolver.
  */
 export const ISIN_PATTERN = /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/;
 
-/** ¿Tiene `value` forma de ISIN? Sensible a mayúsculas: normaliza antes si hace falta. */
+/** Does `value` look like an ISIN? Case-sensitive: normalize first if needed. */
 export function isIsin(value: string): boolean {
   return ISIN_PATTERN.test(value);
 }
 
-/** País del emisor según el ISIN (sus dos primeras letras), o `null` si no es un ISIN. */
+/** Issuer country from the ISIN (its first two letters), or `null` if it is not an ISIN. */
 export function isinCountry(value: string): string | null {
   return isIsin(value) ? value.slice(0, 2) : null;
 }
 
 /**
- * Valores de partida de un cobro nuevo de una posición. Un ticker con forma de ISIN (posiciones
- * importadas) da el ISIN y el país del emisor de sus dividendos.
+ * Default values for a new income entry of a position. A ticker shaped like an ISIN (imported
+ * positions) yields the ISIN and the issuer country for its dividends.
  */
 export function incomeDefaultsFor(
   position: Pick<Position, "id" | "ticker" | "name" | "currency">,

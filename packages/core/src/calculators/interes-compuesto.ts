@@ -1,13 +1,16 @@
-// Interés compuesto con aportaciones periódicas; delega en `project`.
+// Compound interest with periodic contributions; delegates to `project`.
 
 import { project, type Frequency, type ProjectionResult } from "../projection.js";
 
 export interface CompoundInput {
   initial: number;
   contribution: number;
-  /** Frecuencia de aportación (cuándo se añade dinero). */
+  /** Contribution frequency (when money is added). */
   frequency?: Frequency;
-  /** Capitalización de intereses (cuándo se abonan y empiezan a rendir); independiente de `frequency`. Por defecto anual. */
+  /**
+   * Interest compounding (when interest is credited and starts earning); independent of `frequency`. Defaults
+   * to annual.
+   */
   compounding?: Frequency;
   annualRate: number;
   years: number;

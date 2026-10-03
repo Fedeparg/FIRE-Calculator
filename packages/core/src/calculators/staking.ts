@@ -1,4 +1,5 @@
-// Staking cripto: capitaliza al APY sobre el motor de proyección y aplica retención sobre las recompensas. Core puro.
+// Crypto staking: compounds at the APY on top of the projection engine and applies withholding to rewards. Pure
+// core.
 
 import { project, type ProjectionResult } from "../projection.js";
 import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
@@ -7,7 +8,7 @@ export interface StakingInput {
   principal: number;
   apy: number;
   years: number;
-  /** Retención sobre las recompensas, en base 100; por defecto 19 % (tributan como renta del ahorro). */
+  /** Withholding on rewards, in base 100; defaults to 19% (they are taxed as savings income). */
   withholdingRate?: number;
 }
 

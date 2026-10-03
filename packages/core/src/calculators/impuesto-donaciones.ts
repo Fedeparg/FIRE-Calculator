@@ -1,6 +1,6 @@
-// Impuesto sobre Donaciones (ISD): tarifa estatal supletoria por coeficiente de parentesco. Core puro.
-// Muy orientativo: el ISD está cedido a las CCAA, que aplican bonificaciones (Madrid ~99 %) y
-// reducciones propias.
+// Gift tax (Impuesto sobre Donaciones, ISD): fallback state scale times the kinship coefficient. Pure
+// core. Highly indicative: the ISD is devolved to the autonomous communities (CCAA), which apply their
+// own rebates (Madrid ~99%) and reductions.
 
 import { itemAt } from "../arrays.js";
 import { nonNegative } from "../inputs.js";
@@ -14,16 +14,16 @@ import {
 export const KINSHIP_GROUPS = ["grupoI_II", "grupoIII", "grupoIV"] as const;
 export type KinshipGroup = (typeof KINSHIP_GROUPS)[number];
 
-/** Coeficientes por grupo (tabla en `brackets.ts`); el tipo exige uno por cada grupo de `KINSHIP_GROUPS`. */
+/** Coefficients per group (table in `brackets.ts`); the type requires one per group in `KINSHIP_GROUPS`. */
 const KINSHIP_COEFFICIENTS: Record<KinshipGroup, readonly [number, number, number, number]> =
   GIFT_TAX_KINSHIP_COEFFICIENTS;
 
-/** Coeficiente multiplicador según parentesco y patrimonio preexistente (art. 22.2 Ley 29/1987). */
+/** Multiplier coefficient by kinship and pre-existing wealth (art. 22.2 Ley 29/1987). */
 export function kinshipCoefficient(kinship: KinshipGroup, preexistingWealth: number): number {
   const wealth = nonNegative(preexistingWealth);
   let tier = 0;
   while (tier < GIFT_TAX_WEALTH_TIERS.length && wealth > itemAt(GIFT_TAX_WEALTH_TIERS, tier)) tier++;
-  // Hay un coeficiente más que umbrales, así que `tier` (0…umbrales) siempre tiene el suyo.
+  // There is one more coefficient than thresholds, so `tier` (0…thresholds) always has its own.
   return itemAt(KINSHIP_COEFFICIENTS[kinship], tier);
 }
 
@@ -31,7 +31,7 @@ export interface GiftTaxInput {
   amount: number;
   reduction?: number;
   kinship?: KinshipGroup;
-  /** Patrimonio preexistente (€); eleva el coeficiente desde 402.678,11 €. */
+  /** Pre-existing wealth (€); raises the coefficient from €402,678.11. */
   preexistingWealth?: number;
   regionalRebate?: number;
 }

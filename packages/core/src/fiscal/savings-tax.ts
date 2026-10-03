@@ -1,18 +1,19 @@
-// Cuota de la escala del ahorro (art. 66 y 76 LIRPF, `IRPF_SAVINGS_SCALE`): la única implementación,
-// que usan la base del ahorro del informe de la Renta (`savingsTax`) y la estimación de una
-// ganancia aislada (`estimateSavingsTax`: simulador de venta y resumen de plusvalías). Core puro.
+// Savings-scale tax (arts. 66 and 76 LIRPF, `IRPF_SAVINGS_SCALE`): the single implementation, used
+// by the savings base (base del ahorro) of the tax return report (`savingsTax`) and by the estimate
+// for an isolated gain (`estimateSavingsTax`: sale simulator and capital-gains summary). Pure core
+// module.
 
 import { nonNegative } from "../inputs.js";
 import { applyProgressiveBrackets, IRPF_SAVINGS_SCALE, marginalRate } from "./brackets.js";
 
 export interface SavingsTax {
-  /** Cuota íntegra de la escala del ahorro. */
+  /** Gross tax liability (cuota íntegra) under the savings scale. */
   readonly tax: number;
-  /** Tipo medio efectivo en % (cuota / base × 100); `null` si la base es 0. */
+  /** Average effective rate in % (tax / base × 100); `null` if the base is 0. */
   readonly averageRatePct: number | null;
 }
 
-/** Aplica la escala del ahorro (`IRPF_SAVINGS_SCALE`) a la base liquidable. */
+/** Applies the savings scale (`IRPF_SAVINGS_SCALE`) to the taxable base. */
 export function savingsTax(base: number): SavingsTax {
   const b = nonNegative(base);
   if (b === 0) return { tax: 0, averageRatePct: null };
@@ -20,21 +21,21 @@ export function savingsTax(base: number): SavingsTax {
   return { tax, averageRatePct: (tax / b) * 100 };
 }
 
-/** Estimación de la cuota del ahorro de una ganancia patrimonial aislada. */
+/** Savings-tax estimate for an isolated capital gain. */
 export interface SavingsTaxEstimate {
-  /** Base del ahorro considerada: la ganancia, o 0 si la operación da pérdida. */
+  /** Savings base considered: the gain, or 0 if the transaction makes a loss. */
   base: number;
-  /** Cuota estimada aplicando `IRPF_SAVINGS_SCALE` por tramos. */
+  /** Estimated tax applying `IRPF_SAVINGS_SCALE` by brackets. */
   tax: number;
-  /** Ganancia después de impuestos (`gain − tax`). Con pérdida, la propia pérdida. */
+  /** After-tax gain (`gain − tax`). With a loss, the loss itself. */
   net: number;
-  /** Tipo efectivo en %, o `null` si no hay base positiva sobre la que calcularlo. */
+  /** Effective rate in %, or `null` if there is no positive base to compute it on. */
   effectiveRate: number | null;
-  /** Tipo marginal en % del último euro de la base. */
+  /** Marginal rate in % of the last euro of the base. */
   marginal: number;
 }
 
-/** Cuota del IRPF del ahorro de una ganancia aislada, en euros; una pérdida da 0 (no se compensa, ver README). */
+/** IRPF savings tax on an isolated gain, in euros; a loss gives 0 (it is not offset, see README). */
 export function estimateSavingsTax(gain: number): SavingsTaxEstimate {
   if (!Number.isFinite(gain)) {
     return { base: NaN, tax: NaN, net: NaN, effectiveRate: null, marginal: NaN };

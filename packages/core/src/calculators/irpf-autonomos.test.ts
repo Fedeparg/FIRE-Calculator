@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { computeSelfEmployedTax } from "./irpf-autonomos.js";
 
 describe("computeSelfEmployedTax", () => {
-  it("rendimiento neto = ingresos − gastos − cuota autónomos", () => {
+  it("net income = revenue − expenses − self-employed social security fee", () => {
     const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
     expect(r.netIncome).toBe(28000);
   });
 
-  it("valores por defecto del componente (golden, estimación directa simplificada)", () => {
+  it("component defaults (golden, simplified direct assessment)", () => {
     const r = computeSelfEmployedTax({
       income: 40000,
       expenses: 8000,
@@ -16,7 +16,7 @@ describe("computeSelfEmployedTax", () => {
       simplifiedRegime: true,
     });
     expect(r.grossNetIncome).toBe(28000);
-    expect(r.difficultExpenses).toBe(1400); // 5 % de 28.000
+    expect(r.difficultExpenses).toBe(1400); // 5% of 28,000
     expect(r.netIncome).toBe(26600);
     expect(r.personalMinimum).toBe(5550);
     expect(r.taxableBase).toBe(26600);
@@ -26,7 +26,7 @@ describe("computeSelfEmployedTax", () => {
     expect(r.marginalRate).toBe(30);
   });
 
-  it("las circunstancias familiares aumentan el mínimo y bajan el IRPF", () => {
+  it("family circumstances raise the minimum and lower the IRPF", () => {
     const solo = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
     const familia = computeSelfEmployedTax({
       income: 40000,
@@ -40,20 +40,20 @@ describe("computeSelfEmployedTax", () => {
     expect(familia.incomeTax).toBeLessThan(solo.incomeTax);
   });
 
-  it("la tributación conjunta reduce la base 3.400 €", () => {
+  it("joint filing reduces the base by €3,400", () => {
     const ind = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
     const conj = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, jointReturn: true });
     expect(conj.taxableBase).toBe(ind.taxableBase - 3400);
     expect(conj.incomeTax).toBeLessThan(ind.incomeTax);
   });
 
-  it("no permite rendimiento neto negativo", () => {
+  it("does not allow a negative net income", () => {
     const r = computeSelfEmployedTax({ income: 5000, expenses: 8000, socialSecurity: 4000 });
     expect(r.netIncome).toBe(0);
     expect(r.incomeTax).toBe(0);
   });
 
-  it("aportar a un plan de pensiones reduce el IRPF", () => {
+  it("contributing to a pension plan reduces the IRPF", () => {
     const sin = computeSelfEmployedTax({ income: 40000, expenses: 5000, socialSecurity: 4000 });
     const con = computeSelfEmployedTax({
       income: 40000,
@@ -64,34 +64,34 @@ describe("computeSelfEmployedTax", () => {
     expect(con.incomeTax).toBeLessThan(sin.incomeTax);
   });
 
-  it("expone tipo efectivo y marginal coherentes", () => {
+  it("exposes consistent effective and marginal rates", () => {
     const r = computeSelfEmployedTax({ income: 50000, expenses: 10000, socialSecurity: 4000 });
     expect(r.effectiveRate).toBeGreaterThan(0);
     expect(r.marginalRate).toBeGreaterThanOrEqual(r.effectiveRate);
   });
 
-  it("sin estimación directa simplificada no aplica gastos de difícil justificación", () => {
+  it("without simplified direct assessment it does not apply hard-to-justify expenses", () => {
     const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
     expect(r.grossNetIncome).toBe(28000);
     expect(r.difficultExpenses).toBe(0);
     expect(r.netIncome).toBe(28000);
   });
 
-  it("estimación directa simplificada: 5 % del rendimiento neto previo", () => {
+  it("simplified direct assessment: 5% of the prior net income", () => {
     const r = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
     expect(r.grossNetIncome).toBe(28000);
-    expect(r.difficultExpenses).toBe(1400); // 5 % de 28.000
+    expect(r.difficultExpenses).toBe(1400); // 5% of 28,000
     expect(r.netIncome).toBe(26600);
   });
 
-  it("estimación directa simplificada: tope de 2.000 € en los gastos de difícil justificación", () => {
+  it("simplified direct assessment: €2,000 cap on hard-to-justify expenses", () => {
     const r = computeSelfEmployedTax({ income: 80000, expenses: 8000, socialSecurity: 4000, simplifiedRegime: true });
     expect(r.grossNetIncome).toBe(68000);
-    expect(r.difficultExpenses).toBe(2000); // 5 % serían 3.400 → tope 2.000
+    expect(r.difficultExpenses).toBe(2000); // 5% would be 3,400 → capped at 2,000
     expect(r.netIncome).toBe(66000);
   });
 
-  it("los gastos de difícil justificación reducen el IRPF", () => {
+  it("hard-to-justify expenses reduce the IRPF", () => {
     const normal = computeSelfEmployedTax({ income: 40000, expenses: 8000, socialSecurity: 4000 });
     const simplificada = computeSelfEmployedTax({
       income: 40000,

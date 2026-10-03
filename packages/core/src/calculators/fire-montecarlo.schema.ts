@@ -10,8 +10,8 @@ import {
 import { amount, horizon, percent } from "./schema-helpers.js";
 
 /**
- * Entrada plana del MCP: `historicalStockShare` sustituye al `returnModel` del core (que es una
- * unión discriminada, incómoda para un cliente) y `paths`/`seed` son las opciones de la simulación.
+ * Flat MCP input: `historicalStockShare` replaces the core's `returnModel` (a discriminated union,
+ * awkward for a client) and `paths`/`seed` are the simulation options.
  */
 export const monteCarloSchema = z.strictObject({
   annualExpenses: amount("Gasto anual deseado una vez retirado."),

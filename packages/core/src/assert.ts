@@ -1,9 +1,9 @@
 /**
- * Devuelve `value` si no es `null` ni `undefined`, y si lo es lanza un `Error` con `what` en el
- * mensaje. Sustituye al `!` de TypeScript (prohibido por lint), que silencia al compilador sin
- * comprobar nada: aquí la suposición queda escrita y, si se rompe, falla en el sitio.
+ * Returns `value` if it is neither `null` nor `undefined`; otherwise throws an `Error` naming
+ * `what`. Replaces TypeScript's `!` (banned by lint), which silences the compiler without checking
+ * anything: here the assumption is written down and, if it breaks, fails on the spot.
  */
-export function defined<T>(value: T | null | undefined, what = "valor"): T {
-  if (value === null || value === undefined) throw new Error(`Se esperaba ${what} y no hay`);
+export function defined<T>(value: T | null | undefined, what = "value"): T {
+  if (value === null || value === undefined) throw new Error(`Expected ${what} but got none`);
   return value;
 }

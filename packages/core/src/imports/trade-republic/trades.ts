@@ -1,4 +1,4 @@
-// Compras y ventas (`BUY`/`SELL`) → operaciones normalizadas.
+// Buys and sells (`BUY`/`SELL`) → normalized trades.
 
 import { absUnits } from "../decimal.js";
 import type { ImportedTrade, ImportSkipReason } from "../types.js";
@@ -14,13 +14,13 @@ import {
   type Row,
 } from "./rows.js";
 
-/** Operación ya normalizada con la línea de su fila (para ordenar de forma estable). */
+/** Already normalized trade with its row's line (for stable sorting). */
 export type ParsedTrade = { trade: ImportedTrade; line: number };
 
-/** Compra con retención en su fila: candidata a ser la retención de un saveback (ver `resolveIncome`). */
+/** Buy with withholding on its row: a candidate for a saveback's withholding (see `resolveIncome`). */
 export type TaxedBuy = { row: Row; amount: bigint; tax: bigint };
 
-/** Tipos que son solo movimientos de efectivo o de renta, sin efecto en las posiciones. */
+/** Types that are only cash or income movements, with no effect on positions. */
 export function skipReasonForType(type: string): ImportSkipReason {
   switch (type) {
     case "IPO_SUBSCRIPTION":
@@ -28,8 +28,8 @@ export function skipReasonForType(type: string): ImportSkipReason {
     case "CUSTOMER_INBOUND":
       return "cash_movement";
     default:
-      // Ingresos y retiradas (`CUSTOMER_INBOUND`, `CUSTOMER_OUTBOUND_REQUEST`…), tarjeta y
-      // transferencias: todo es efectivo, sin efecto en las posiciones.
+      // Deposits and withdrawals (`CUSTOMER_INBOUND`, `CUSTOMER_OUTBOUND_REQUEST`…), card and
+      // transfers: all cash, with no effect on positions.
       return type.startsWith("CARD_") || type.startsWith("TRANSFER_") || type.startsWith("CUSTOMER_")
         ? "cash_movement"
         : "unknown_type";
@@ -37,10 +37,10 @@ export function skipReasonForType(type: string): ImportSkipReason {
 }
 
 /**
- * Una fila `BUY`/`SELL` → operación, o `null` si se descarta (el motivo queda en `context`).
- * El importe bruto es `cantidad × precio`: la columna `amount` no se usa (hay una compra antigua
- * con `amount` y `fee` vacíos que sigue siendo válida). `fee` se guarda en valor absoluto y `tax`
- * no se suma al coste: se devuelve aparte para avisar o asignarlo a un saveback.
+ * A `BUY`/`SELL` row → trade, or `null` if skipped (the reason is recorded in `context`).
+ * The gross amount is `quantity × price`: the `amount` column is not used (there is an old buy
+ * with empty `amount` and `fee` that is still valid). `fee` is stored as an absolute value and
+ * `tax` is not added to the cost: it is returned separately to warn or assign it to a saveback.
  */
 export function parseTradeRow(
   row: Row,
@@ -60,7 +60,7 @@ export function parseTradeRow(
   const fee = row.fee === "" ? 0n : amountUnits(row.fee);
   const tax = row.tax === "" ? 0n : amountUnits(row.tax);
   const executedAt = normalizeDatetime(row.datetime);
-  // BUY lleva cantidad positiva y SELL negativa; cualquier otra cosa es una fila corrupta.
+  // BUY carries a positive quantity and SELL a negative one; anything else is a corrupt row.
   const signMatches = shares !== null && (row.type === "BUY" ? shares > 0n : shares < 0n);
 
   if (

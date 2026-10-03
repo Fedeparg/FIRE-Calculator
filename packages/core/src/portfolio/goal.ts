@@ -1,7 +1,8 @@
 /**
- * Puente entre la calculadora FIRE y la cartera real: objetivo, patrimonio actual y lo que falta.
- * Core puro. No reimplementa nada: sustituye el patrimonio tecleado por el valor de mercado y deriva
- * el progreso. Agnóstico de divisa: `annualExpenses`, `contribution` y `currentValue` van en la misma.
+ * Bridge between the FIRE calculator and the real portfolio: target, current net worth and what is
+ * left. Pure core. It reimplements nothing: it replaces the typed-in net worth with the market value
+ * and derives the progress. Currency-agnostic: `annualExpenses`, `contribution` and `currentValue`
+ * share one currency.
  */
 
 import { finiteOr, nonNegative } from "../inputs.js";
@@ -9,43 +10,43 @@ import { computeFire, FIRE_SEARCH_MAX_YEARS } from "../calculators/fire.js";
 import { simulateFire, type MonteCarloOptions, type MonteCarloResult } from "../calculators/fire-montecarlo.js";
 import { PERIODS_PER_YEAR, periodRateFromEffective, project, type Frequency } from "../projection.js";
 
-/** Slug de la calculadora FIRE; los escenarios guardados lo comparten con el objetivo de la cartera. */
+/** Slug of the FIRE calculator; saved scenarios share it with the portfolio goal. */
 export const FIRE_CALCULATOR_SLUG = "independencia-financiera";
 
 export interface PortfolioGoalInput {
-  /** Gasto anual estimado una vez alcanzada la independencia. */
+  /** Estimated annual spending once financial independence is reached. */
   annualExpenses: number;
-  /** Tasa de retiro segura, en base 100 (4 = regla del 4 %). */
+  /** Safe withdrawal rate, in base 100 (4 = the 4% rule). */
   withdrawalRate: number;
-  /** Valor de mercado actual de la cartera (el mismo total que muestra el resumen). */
+  /** Current market value of the portfolio (the same total the summary shows). */
   currentValue: number;
-  /** Aportación por periodo con la que se estima el tiempo restante. */
+  /** Contribution per period used to estimate the remaining time. */
   contribution: number;
-  /** Frecuencia de la aportación. */
+  /** Contribution frequency. */
   frequency: Frequency;
-  /** Rentabilidad anual esperada, en base 100. */
+  /** Expected annual return, in base 100. */
   annualReturn: number;
 }
 
 export interface PortfolioGoalResult {
-  /** Patrimonio objetivo (número FIRE = gasto anual / tasa de retiro). */
+  /** Target net worth (FIRE number = annual spending / withdrawal rate). */
   target: number;
-  /** Patrimonio actual usado en la comparación (ya saneado). */
+  /** Current net worth used in the comparison (already sanitized). */
   current: number;
-  /** Porcentaje completado (0–100), o `null` si el objetivo no es positivo (la UI lo pinta como "—"). */
+  /** Completed percentage (0–100), or `null` if the target is not positive (the UI renders it as "—"). */
   progress: number | null;
-  /** Lo que falta para el objetivo (0 si ya se ha alcanzado). */
+  /** What is left to reach the target (0 if already reached). */
   remaining: number;
-  /** Años hasta alcanzarlo con la aportación actual; `0` si ya está, `null` si no se llega en 60 años. */
+  /** Years to reach it with the current contribution; `0` if already there, `null` if not reached within 60 years. */
   yearsToTarget: number | null;
-  /** Si el patrimonio actual ya cubre el objetivo. */
+  /** Whether the current net worth already covers the target. */
   reached: boolean;
 }
 
 /**
- * Progreso de la cartera hacia el objetivo FIRE. Casos borde (con test): gasto 0 → alcanzado con
- * `progress` null; tasa de retiro <= 0 → se hereda el 4 % de `computeFire`; patrimonio no finito
- * o negativo → 0.
+ * Portfolio progress towards the FIRE target. Edge cases (tested): spending 0 → reached with
+ * `progress` null; withdrawal rate <= 0 → inherits the 4% default from `computeFire`; non-finite
+ * or negative net worth → 0.
  */
 export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalResult {
   const current = Number.isFinite(input.currentValue) && input.currentValue > 0 ? input.currentValue : 0;
@@ -68,49 +69,49 @@ export function computePortfolioGoal(input: PortfolioGoalInput): PortfolioGoalRe
     current,
     progress,
     remaining: Math.max(0, target - current),
-    // fuerza coherencia entre "alcanzado" y "0 años"
+    // keeps "reached" and "0 years" consistent
     yearsToTarget: reached ? 0 : fire.yearsToFire,
     reached,
   };
 }
 
-/** Modo de un objetivo guardado: `fire` (vivir de rentas) o `amount` (reunir una cantidad en un plazo). */
+/** Mode of a saved goal: `fire` (live off the portfolio) or `amount` (save a sum within a deadline). */
 export type GoalMode = "fire" | "amount";
 export const GOAL_MODES: readonly GoalMode[] = ["fire", "amount"];
 
-/** Modo de los `inputs` de un escenario; sin la clave (escenarios antiguos) es `fire`. */
+/** Mode of a scenario's `inputs`; without the key (older scenarios) it is `fire`. */
 export function goalModeFromInputs(inputs: unknown): GoalMode {
   const mode = typeof inputs === "object" && inputs !== null && "goalMode" in inputs ? inputs.goalMode : undefined;
   return mode === "amount" ? "amount" : "fire";
 }
 
 export interface AmountGoalInput {
-  /** Cantidad a reunir. */
+  /** Amount to save. */
   targetAmount: number;
-  /** Plazo en años enteros (se redondea, como en `project`). */
+  /** Deadline in whole years (rounded, as in `project`). */
   years: number;
   currentValue: number;
-  /** Aportación por periodo (`frequency`). */
+  /** Contribution per period (`frequency`). */
   contribution: number;
   frequency: Frequency;
-  /** Rentabilidad anual esperada, en base 100. */
+  /** Expected annual return, in base 100. */
   annualReturn: number;
 }
 
 export interface AmountGoalResult extends PortfolioGoalResult {
-  /** Plazo usado, en años enteros. */
+  /** Deadline used, in whole years. */
   deadlineYears: number;
-  /** Valor proyectado al final del plazo con la aportación actual. */
+  /** Projected value at the deadline with the current contribution. */
   projectedAtDeadline: number;
-  /** Aportación por periodo para llegar justo a tiempo; 0 si ya se llega, `null` si no se puede. */
+  /** Contribution per period to get there just in time; 0 if already on course, `null` if impossible. */
   requiredContribution: number | null;
-  /** Si al ritmo actual se llega dentro del plazo. */
+  /** Whether the current pace reaches the target within the deadline. */
   onTrack: boolean;
 }
 
 /**
- * Objetivo "quiero X en N años" con las convenciones de `project`. La aportación necesaria despeja
- * P en `VF = C·(1+i)^n + P·((1+i)^n − 1) / i` (con i = 0, P·n).
+ * "I want X in N years" goal, using the conventions of `project`. The required contribution solves
+ * for P in `FV = C·(1+i)^n + P·((1+i)^n − 1) / i` (with i = 0, P·n).
  */
 export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
   const current = nonNegative(input.currentValue);
@@ -154,23 +155,23 @@ export function computeAmountGoal(input: AmountGoalInput): AmountGoalResult {
   };
 }
 
-/** Resultado de un objetivo, con su modo para que quien lo pinte sepa qué campos tiene. */
+/** Outcome of a goal, tagged with its mode so the renderer knows which fields it has. */
 export type GoalOutcome = ({ mode: "fire" } & PortfolioGoalResult) | ({ mode: "amount" } & AmountGoalResult);
 
-/** Qué se persigue: vivir de rentas (`fire`) o reunir una cantidad en un plazo (`amount`). */
+/** What is pursued: living off the portfolio (`fire`) or saving a sum within a deadline (`amount`). */
 export type GoalTarget =
   | { mode: "fire"; annualExpenses: number; withdrawalRate: number }
   | { mode: "amount"; targetAmount: number; targetYears: number };
 
-/** Lo que comparten los dos modos: la cartera de partida y el ritmo de ahorro. */
+/** What both modes share: the starting portfolio and the savings pace. */
 export type GoalProgressInput = Pick<
   PortfolioGoalInput,
   "currentValue" | "contribution" | "frequency" | "annualReturn"
 >;
 
 /**
- * Progreso de la cartera hacia un objetivo en cualquiera de los dos modos: un único punto de
- * entrada para la web y para el MCP, de modo que ambos decidan el modo y armen el resultado igual.
+ * Portfolio progress towards a goal in either mode: a single entry point for the web app and the
+ * MCP, so both pick the mode and build the result the same way.
  */
 export function computeGoalProgress(target: GoalTarget, input: GoalProgressInput): GoalOutcome {
   return target.mode === "amount"
@@ -188,7 +189,7 @@ export function computeGoalProgress(target: GoalTarget, input: GoalProgressInput
       };
 }
 
-/** Campos de objetivo tal y como llegan de un cliente: cualquiera puede faltar. */
+/** Goal fields as they arrive from a client: any of them may be missing. */
 export interface RawGoalTarget {
   annualExpenses?: number;
   withdrawalRate?: number;
@@ -199,9 +200,9 @@ export interface RawGoalTarget {
 export type GoalTargetError = "amountIncomplete" | "mixedModes" | "fireIncomplete";
 
 /**
- * Deduce el modo de campos opcionales y exige que sean coherentes: cualquiera de los campos de
- * cantidad fuerza el modo cantidad, que excluye a los de FIRE. Devuelve un código de error (no un
- * texto) para que cada cliente lo exprese a su manera.
+ * Infers the mode from optional fields and requires them to be consistent: any of the amount fields
+ * forces amount mode, which rules out the FIRE ones. Returns an error code (not a message) so each
+ * client can phrase it its own way.
  */
 export function resolveGoalTarget(raw: RawGoalTarget): { target: GoalTarget } | { error: GoalTargetError } {
   const { annualExpenses, withdrawalRate, targetAmount, targetYears } = raw;
@@ -215,15 +216,15 @@ export function resolveGoalTarget(raw: RawGoalTarget): { target: GoalTarget } | 
 }
 
 export interface PortfolioGoalSimulationInput extends PortfolioGoalInput {
-  /** Volatilidad anual de la cartera, en base 100 (15 = 15 %). */
+  /** Annual portfolio volatility, in base 100 (15 = 15%). */
   volatility: number;
-  /** Años que el patrimonio debe sostener el gasto una vez alcanzado el objetivo. */
+  /** Years the net worth must sustain the spending once the target is reached. */
   retirementYears: number;
 }
 
 /**
- * Aportación expresada como ahorro mensual (lo que recibe el simulador Monte Carlo), conservando el
- * total anual. También la usa el enlace "Abrir en el simulador".
+ * Contribution expressed as monthly savings (what the Monte Carlo simulator takes), preserving the
+ * annual total. Also used by the "Open in the simulator" link.
  */
 export function monthlyContribution(contribution: number, frequency: Frequency): number {
   const periodsPerYear = PERIODS_PER_YEAR[frequency];
@@ -231,9 +232,9 @@ export function monthlyContribution(contribution: number, frequency: Frequency):
 }
 
 /**
- * Probabilidad de alcanzar y sostener el objetivo con el patrimonio real: `simulateFire` con el
- * valor de mercado, sin segundo modelo. El simulador aporta al final de cada año, así que solo
- * coincide con `computePortfolioGoal` en frecuencia anual.
+ * Probability of reaching and sustaining the target with the real net worth: `simulateFire` fed the
+ * market value, with no second model. The simulator contributes at the end of each year, so it only
+ * matches `computePortfolioGoal` at annual frequency.
  */
 export function simulatePortfolioGoal(
   input: PortfolioGoalSimulationInput,

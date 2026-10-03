@@ -1,18 +1,18 @@
-// Retención que aplica de hecho el país de la fuente a los dividendos de una persona física
-// residente en España, para ESTIMAR la retención en origen cuando ni el bróker ni el dato de
-// mercado la dan (`dividend-resolution.ts`, capa 3). Toda cifra que salga de aquí se marca como
-// estimación. Los datos y sus fuentes viven en `countries.ts` (en %); aquí, en tanto por uno.
-// Contrastado el 2026-10-03: ver ./README.md, sección `withholding-rates.ts`.
+// Withholding the source country actually applies to the dividends of an individual resident in
+// Spain, to ESTIMATE the withholding at source (retención en origen) when neither the broker nor
+// the market data give it (`dividend-resolution.ts`, layer 3). Every figure that comes out of here
+// is flagged as an estimate. The data and their sources live in `countries.ts` (in %); here, as
+// fractions. Cross-checked on 2026-10-03: see ./README.md, section `withholding-rates.ts`.
 
 import { countryColumn } from "./countries.js";
 
-/** Tipo (en tanto por uno) y de dónde sale. */
+/** Rate (as a fraction) and where it comes from. */
 export interface StatutoryWithholding {
   rate: number;
   source: string;
 }
 
-/** Por país (ISO 3166-1 alfa-2); ausente si el tipo depende de algo que no sabemos (ver `countries.ts`). */
+/** By country (ISO 3166-1 alpha-2); absent if the rate depends on something we do not know (see `countries.ts`). */
 export const STATUTORY_DIVIDEND_WITHHOLDING: Readonly<Record<string, StatutoryWithholding>> = countryColumn(
   (rates) => rates.statutory && { rate: rates.statutory.pct / 100, source: rates.statutory.source },
 );

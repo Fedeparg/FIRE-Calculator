@@ -4,29 +4,29 @@ import { computeDoubleTaxationDeduction, TREATY_DIVIDEND_RATES } from "./double-
 import { itemAt } from "../arrays.js";
 
 describe("computeDoubleTaxationDeduction", () => {
-  it("sin rentas: todo a 0", () => {
+  it("no income: everything is 0", () => {
     const r = computeDoubleTaxationDeduction([], 19);
     expect(r).toMatchObject({ deduction: 0, creditableTotal: 0, limit: 0, warnings: [] });
   });
 
-  it("EE. UU. con retención del convenio: se deduce entera", () => {
+  it("US withheld at the treaty rate: fully deductible", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 1000, withholdingOrigin: 150 }], 19);
     expect(r.countries[0]).toMatchObject({ creditable: 150, excessReclaimable: 0, treatyRatePct: 15 });
     expect(r.deduction).toBe(150);
     expect(r.warnings).toEqual([]);
   });
 
-  it("Suiza 35 %: acredita el 15 % y reclama el 20 %", () => {
+  it("Switzerland 35%: credits 15% and reclaims 20%", () => {
     const r = computeDoubleTaxationDeduction([{ country: "CH", gross: 1000, withholdingOrigin: 350 }], 21);
     expect(r.countries[0]).toMatchObject({ creditable: 150, excessReclaimable: 200 });
     expect(r.warnings).toEqual([{ code: "excess_withholding", country: "CH", amount: 200 }]);
     expect(r.deduction).toBe(150);
   });
 
-  it("el tope del convenio va por cobro: el exceso de uno no se compensa con el hueco de otro", () => {
-    // Dos cobros de EE. UU. (convenio 15 %), uno retenido al 30 % y otro sin retención. Agregados,
-    // 300 € cabrían en el 15 % de 2.000 €; por cobro, solo se acreditan 150 € y 150 € se reclaman en
-    // origen.
+  it("the treaty cap applies per payment: the excess on one is not offset by the headroom of another", () => {
+    // Two US payments (15% treaty), one withheld at 30% and one with no withholding. In aggregate,
+    // €300 would fit within 15% of €2,000; per payment, only €150 is credited and €150 is reclaimed
+    // at source.
     const r = computeDoubleTaxationDeduction(
       [
         { country: "US", gross: 1000, withholdingOrigin: 300 },
@@ -44,9 +44,9 @@ describe("computeDoubleTaxationDeduction", () => {
     expect(r.deduction).toBe(150);
   });
 
-  it("el límite del tipo medio va por país: la holgura de uno no cubre el exceso de otro", () => {
-    // Al 10 %: EE. UU. acredita 150 € con un límite de 100 €; Irlanda, nada con un límite de 100 €.
-    // Agregado saldrían 150 € (límite 200 €); país a país, 100 €.
+  it("the average-rate limit applies per country: one country's headroom does not cover another's excess", () => {
+    // At 10%: the US credits €150 against a €100 limit; Ireland, nothing against a €100 limit.
+    // In aggregate it would be €150 (limit €200); country by country, €100.
     const r = computeDoubleTaxationDeduction(
       [
         { country: "US", gross: 1000, withholdingOrigin: 150 },
@@ -63,36 +63,36 @@ describe("computeDoubleTaxationDeduction", () => {
     expect(r.limitedByAverageRate).toBe(true);
   });
 
-  it("el tipo medio efectivo limita la deducción", () => {
+  it("the effective average rate limits the deduction", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 1000, withholdingOrigin: 150 }], 10);
     expect(r.limit).toBe(100);
     expect(r.deduction).toBe(100);
     expect(r.limitedByAverageRate).toBe(true);
   });
 
-  it("redondea el tipo medio a dos decimales (art. 80.2)", () => {
+  it("rounds the average rate to two decimals (art. 80.2)", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 1000, withholdingOrigin: 150 }], 10.126);
     expect(r.averageRatePct).toBe(10.13);
   });
 
-  it("retención desconocida: aviso y sin deducción", () => {
+  it("unknown withholding: warning and no deduction", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 500, withholdingOrigin: null }], 19);
     expect(r.deduction).toBe(0);
     expect(r.warnings).toEqual([{ code: "origin_unknown", country: "US", amount: 500 }]);
   });
 
-  it("país sin tipo de convenio confirmado: aviso y sin deducción", () => {
+  it("country without a confirmed treaty rate: warning and no deduction", () => {
     const r = computeDoubleTaxationDeduction([{ country: "zz", gross: 100, withholdingOrigin: 25 }], 19);
     expect(r.deduction).toBe(0);
     expect(r.warnings).toEqual([{ code: "no_treaty_rate", country: "ZZ", amount: 25 }]);
   });
 
-  it("tipo medio null (base 0): no hay deducción", () => {
+  it("null average rate (base 0): no deduction", () => {
     const r = computeDoubleTaxationDeduction([{ country: "US", gross: 100, withholdingOrigin: 15 }], null);
     expect(r.deduction).toBe(0);
   });
 
-  it("agrupa por país y mezcla retenciones conocidas y desconocidas", () => {
+  it("groups by country and mixes known and unknown withholdings", () => {
     const r = computeDoubleTaxationDeduction(
       [
         { country: "DE", gross: 100, withholdingOrigin: 26.375 },
@@ -105,7 +105,7 @@ describe("computeDoubleTaxationDeduction", () => {
     expect(itemAt(r.countries, 0).excessReclaimable).toBeCloseTo(11.375, 9);
   });
 
-  it("la tabla del convenio contiene los países de la DGT confirmados", () => {
+  it("the treaty table contains the countries confirmed by the DGT", () => {
     expect(TREATY_DIVIDEND_RATES).toMatchObject({
       US: 15,
       NL: 15,
@@ -117,18 +117,18 @@ describe("computeDoubleTaxationDeduction", () => {
       HK: 10,
       JP: 5,
     });
-    // Irlanda: el convenio exime en origen (art. 10.1.c); nada de lo retenido allí se deduce en España.
+    // Ireland: the treaty exempts at source (art. 10.1.c); nothing withheld there is deductible in Spain.
     expect(TREATY_DIVIDEND_RATES.IE).toBe(0);
   });
 
-  it("sin convenio (Dinamarca) se acredita todo lo pagado, con el límite del tipo medio", () => {
+  it("without a treaty (Denmark) everything paid is credited, subject to the average-rate limit", () => {
     const r = computeDoubleTaxationDeduction([{ country: "DK", gross: 100, withholdingOrigin: 27 }], 19);
     expect(r.countries[0]).toMatchObject({ creditable: 27, excessReclaimable: 0, treatyRatePct: null });
     expect(r.deduction).toBeCloseTo(19, 10);
     expect(r.warnings).toEqual([]);
   });
 
-  it("Japón usa el 5 % del convenio vigente desde 2021, no el 15 % de la tabla de 2018", () => {
+  it("Japan uses the 5% of the treaty in force since 2021, not the 15% of the 2018 table", () => {
     const r = computeDoubleTaxationDeduction([{ country: "JP", gross: 100, withholdingOrigin: 15.315 }], 19);
     expect(itemAt(r.countries, 0).creditable).toBeCloseTo(5, 10);
   });

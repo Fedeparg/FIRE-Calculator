@@ -1,10 +1,10 @@
-// Rentabilidad bruta y neta de un alquiler de larga duración, con gastos recurrentes y vacancy. Core puro.
+// Gross and net yield of a long-term rental, with recurring expenses and vacancy. Pure core.
 
 export interface RentalInput {
   purchasePrice: number;
   purchaseCosts: number;
   monthlyRent: number;
-  /** Previsión de impago / meses vacíos, como % del año. Por defecto 5 %. */
+  /** Expected non-payment / empty months, as a % of the year. Defaults to 5%. */
   vacancyRate?: number;
   ibiAnnual?: number;
   communityMonthly?: number;

@@ -3,9 +3,9 @@ import { z } from "zod";
 import { FINANCIAL_HEALTH_OPTIONS, FINANCIAL_HEALTH_QUESTIONS } from "./salud-financiera.js";
 
 /**
- * Una respuesta opcional (opción de 0 a `FINANCIAL_HEALTH_OPTIONS - 1`) por pregunta. El esquema se
- * deriva de la lista de preguntas del core, así que añadir una pregunta lo actualiza solo; por eso
- * no hay un tipo de entrada con el que enlazarlo.
+ * One optional answer (an option from 0 to `FINANCIAL_HEALTH_OPTIONS - 1`) per question. The schema
+ * is derived from the core's question list, so adding a question updates it automatically; that is
+ * why there is no input type to tie it to.
  */
 export const financialHealthSchema = z.strictObject(
   Object.fromEntries(

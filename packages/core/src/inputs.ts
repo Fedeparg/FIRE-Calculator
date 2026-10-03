@@ -1,42 +1,42 @@
-// Política de entradas numéricas de las calculadoras. Core puro.
+// Numeric input policy of the calculators. Pure core.
 //
-//   1. Una calculadora NUNCA lanza ni se cuelga, sea cual sea la entrada numérica (NaN, ±Infinity,
-//      negativos, ceros). Las entradas llegan de formularios, de URLs compartidas y del MCP; un
-//      fallo aquí rompería la página entera.
-//   2. Con entradas finitas (incluidos ceros y negativos) toda cifra de salida es finita. Lo que no
-//      tiene respuesta se expresa con `null` (p. ej. `yearsToFire`) o con el resultado documentado
-//      de la calculadora (la deuda de tarjeta que nunca se paga devuelve intereses `Infinity`).
-//   3. Con entradas no finitas la salida puede ser no finita: la web la pinta como «—»
-//      (`shared/format/format.ts`). El MCP ya las rechaza antes de llegar aquí (zod `z.number()` con
-//      topes), y los formularios acotan cada campo.
-//   4. Los campos de plazo se acotan a `MAX_HORIZON_YEARS`: sin tope, `years = Infinity` (o 1e9)
-//      haría un bucle sin fin construyendo una serie de ese tamaño.
+//   1. A calculator NEVER throws or hangs, whatever the numeric input (NaN, ±Infinity, negatives,
+//      zeros). Inputs come from forms, shared URLs and MCP; a failure here would break the whole
+//      page.
+//   2. With finite inputs (zeros and negatives included) every output figure is finite. What has no
+//      answer is expressed as `null` (e.g. `yearsToFire`) or as the calculator's documented result
+//      (credit card debt that is never paid off returns `Infinity` interest).
+//   3. With non-finite inputs the output may be non-finite: the web renders it as "—"
+//      (`shared/format/format.ts`). MCP already rejects them before they get here (zod `z.number()`
+//      with bounds), and the forms bound every field.
+//   4. Term fields are clamped to `MAX_HORIZON_YEARS`: without a cap, `years = Infinity` (or 1e9)
+//      would loop forever building a series of that size.
 //
-// Tests: `edge-inputs.test.ts` comprueba 1 y 2 sobre todas las calculadoras.
+// Tests: `edge-inputs.test.ts` checks 1 and 2 across all calculators.
 
-/** Tope de los campos de plazo, en años; el mismo que el MCP aplica por defecto. */
+/** Cap for term fields, in years; the same one MCP applies by default. */
 export const MAX_HORIZON_YEARS = 100;
 
 /**
- * Plazo en años como entero de `min` a `MAX_HORIZON_YEARS`. NaN cuenta como 0 (como el resto de
- * entradas: `x || 0`); ±Infinity se acota al extremo correspondiente.
+ * Term in years as an integer from `min` to `MAX_HORIZON_YEARS`. NaN counts as 0 (like the rest of
+ * the inputs: `x || 0`); ±Infinity is clamped to the matching bound.
  */
 export function clampYears(years: number | undefined, min = 0): number {
   return Math.min(MAX_HORIZON_YEARS, Math.max(min, Math.round(years || 0)));
 }
 
 /**
- * Tolerancia de cantidades (participaciones): se guardan con 6 decimales, así que un resto menor
- * es ruido binario de la coma flotante y cuenta como cero.
+ * Quantity (units/shares) tolerance: they are stored with 6 decimals, so a smaller remainder is
+ * binary floating-point noise and counts as zero.
  */
 export const QUANTITY_EPSILON = 1e-9;
 
-/** `value` si es finito; si no (NaN, ±Infinity), `fallback`. */
+/** `value` if finite; otherwise (NaN, ±Infinity), `fallback`. */
 export function finiteOr(value: number, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
-/** `value` si es finito y positivo; cualquier otra cosa (negativos, cero, NaN, ±Infinity) da 0. */
+/** `value` if finite and positive; anything else (negatives, zero, NaN, ±Infinity) gives 0. */
 export function nonNegative(value: number): number {
   return Number.isFinite(value) && value > 0 ? value : 0;
 }

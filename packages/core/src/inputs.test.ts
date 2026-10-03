@@ -5,14 +5,14 @@ import { MAX_HORIZON_YEARS, clampYears, finiteOr, nonNegative } from "./inputs.j
 import { project } from "./projection.js";
 
 describe("clampYears", () => {
-  it("redondea y acota al rango [min, MAX_HORIZON_YEARS]", () => {
+  it("rounds and clamps to the [min, MAX_HORIZON_YEARS] range", () => {
     expect(clampYears(10.4)).toBe(10);
     expect(clampYears(-3)).toBe(0);
     expect(clampYears(0, 1)).toBe(1);
     expect(clampYears(1e9)).toBe(MAX_HORIZON_YEARS);
   });
 
-  it("NaN cuenta como 0 y ±Infinity se acota", () => {
+  it("NaN counts as 0 and ±Infinity is clamped", () => {
     expect(clampYears(Number.NaN)).toBe(0);
     expect(clampYears(Number.NaN, 1)).toBe(1);
     expect(clampYears(Infinity)).toBe(MAX_HORIZON_YEARS);
@@ -20,21 +20,21 @@ describe("clampYears", () => {
   });
 });
 
-describe("plazos infinitos no cuelgan las calculadoras", () => {
-  it("project devuelve una serie del tamaño del tope", () => {
+describe("infinite terms do not hang the calculators", () => {
+  it("project returns a series as long as the cap", () => {
     const { series } = project({ initial: 1000, contribution: 0, frequency: "annual", annualRate: 5, years: Infinity });
     expect(series).toHaveLength(MAX_HORIZON_YEARS + 1);
   });
 
-  it("la hipoteca a plazo infinito se calcula al tope", () => {
+  it("an infinite-term mortgage is computed at the cap", () => {
     const r = computeMortgage({ principal: 100000, annualRate: 3, years: Infinity });
     expect(r.schedule).toHaveLength(MAX_HORIZON_YEARS);
     expect(Number.isFinite(r.monthlyPayment)).toBe(true);
   });
 });
 
-describe("personas a cargo infinitas no cuelgan el mínimo personal", () => {
-  it("children = Infinity termina y da un neto finito", () => {
+describe("infinite dependants do not hang the personal and family allowance", () => {
+  it("children = Infinity terminates and gives a finite net figure", () => {
     const r = estimateNetSalary({
       grossAnnual: 40000,
       children: Infinity,
@@ -46,7 +46,7 @@ describe("personas a cargo infinitas no cuelgan el mínimo personal", () => {
 });
 
 describe("finiteOr", () => {
-  it("deja pasar los finitos y sustituye NaN y ±Infinity", () => {
+  it("passes finite values through and replaces NaN and ±Infinity", () => {
     expect(finiteOr(-3.5, 7)).toBe(-3.5);
     expect(finiteOr(0, 7)).toBe(0);
     expect(finiteOr(Number.NaN, 7)).toBe(7);
@@ -56,7 +56,7 @@ describe("finiteOr", () => {
 });
 
 describe("nonNegative", () => {
-  it("deja los positivos finitos y convierte lo demás en 0", () => {
+  it("keeps finite positives and turns everything else into 0", () => {
     expect(nonNegative(12.5)).toBe(12.5);
     expect(nonNegative(-1)).toBe(0);
     expect(Object.is(nonNegative(-0), 0)).toBe(true);

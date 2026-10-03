@@ -1,7 +1,7 @@
-// Política de entradas numéricas de las calculadoras (ver `../inputs.ts`), verificada
-// en tabla sobre TODAS ellas: con cada campo numérico a 0, −1, −100 (un −100 % anula los factores
-// de crecimiento), NaN, ±Infinity, y con todos a la vez, ninguna lanza; y con entradas finitas
-// (0 / negativas) todas las cifras de salida son finitas.
+// The calculators' numeric input policy (see `../inputs.ts`), checked as a table over ALL of
+// them: with each numeric field set to 0, −1, −100 (a −100% cancels growth factors), NaN,
+// ±Infinity, and with all of them at once, none throws; and with finite inputs (0 / negative)
+// every output figure is finite.
 
 import { describe, expect, it } from "vitest";
 import { computeEarlyRepayment } from "./amortizacion-anticipada.js";
@@ -33,10 +33,10 @@ import { itemAt } from "../arrays.js";
 
 interface Case {
   name: string;
-  /** Entrada válida con TODOS los campos numéricos opcionales rellenos, para poder variar cada uno. */
+  /** Valid input with ALL optional numeric fields filled in, so each one can be varied. */
   baseline: unknown;
   run: (input: never) => unknown;
-  /** Rutas de salida no finitas a propósito (la deuda que nunca se paga, una tasa sin casos). */
+  /** Output paths that are non-finite on purpose (a debt that is never paid off, a rate with no cases). */
   allowInfinity?: readonly string[];
 }
 
@@ -93,8 +93,8 @@ const CASES: readonly Case[] = [
       withdrawalRate: 4,
       retirementYears: 30,
     },
-    // Si ninguna vida llega a FIRE (p. ej. rentabilidad −100 %), la supervivencia no tiene respuesta:
-    // es `NaN` a propósito y la web la pinta «—» (ver `fire-montecarlo.test.ts`).
+    // If no path reaches FIRE (e.g. a −100% return), survival has no answer: it is `NaN` on
+    // purpose and the web app renders it as "—" (see `fire-montecarlo.test.ts`).
     allowInfinity: ["survivalRate"],
   },
   {
@@ -108,7 +108,7 @@ const CASES: readonly Case[] = [
       withdrawalRate: 4,
       savingsGrowth: 2,
     },
-    // Con un objetivo imposible de alcanzar el resultado es `null`, no un número no finito.
+    // With an unreachable target the result is `null`, not a non-finite number.
   },
   {
     name: "hipoteca-asequible",
@@ -250,17 +250,17 @@ const CASES: readonly Case[] = [
     baseline: { principal: 5000, apy: 8, years: 3, withholdingRate: 19 },
   },
   {
-    name: "tarjeta-credito (cuota fija)",
+    name: "tarjeta-credito (fixed payment)",
     run: computeCreditCard,
     baseline: { balance: 3000, annualRate: 22, paymentMode: "fixed", monthlyPayment: 150, minPercent: 3, minFloor: 25 },
-    // Deuda que no se amortiza nunca: la semántica documentada es `monthsToPayoff: null` e intereses infinitos.
+    // A debt that is never paid off: the documented semantics are `monthsToPayoff: null` and infinite interest.
     allowInfinity: ["totalInterest", "totalPaid"],
   },
 ];
 
 type Path = (string | number)[];
 
-/** Rutas de todas las hojas numéricas (incluidas las de arrays y objetos anidados). */
+/** Paths of every numeric leaf (including those inside nested arrays and objects). */
 function numericPaths(value: unknown, prefix: Path = []): Path[] {
   if (typeof value === "number") return [prefix];
   if (Array.isArray(value)) return value.flatMap((v, i) => numericPaths(v, [...prefix, i]));
@@ -280,7 +280,7 @@ function withValue(value: unknown, paths: readonly Path[], replacement: number):
   return copy;
 }
 
-/** Rutas de todos los números no finitos de una salida (vacío = todo finito). */
+/** Paths of every non-finite number in an output (empty = all finite). */
 function nonFinitePaths(value: unknown, prefix = ""): string[] {
   if (typeof value === "number") return Number.isFinite(value) ? [] : [`${prefix}=${value}`];
   if (Array.isArray(value)) return value.flatMap((v, i) => nonFinitePaths(v, `${prefix}[${i}]`));
@@ -293,8 +293,8 @@ function nonFinitePaths(value: unknown, prefix = ""): string[] {
 const FINITE_EDGES = [0, -1, -100] as const;
 const NON_FINITE_EDGES = [Number.NaN, Infinity, -Infinity] as const;
 
-describe("detector de no finitos", () => {
-  it("encuentra cualquier número no finito en profundidad y respeta null", () => {
+describe("non-finite detector", () => {
+  it("finds any deeply nested non-finite number and respects null", () => {
     expect(nonFinitePaths({ a: 1, b: null, c: [{ d: Infinity }, { e: Number.NaN }] })).toEqual([
       "c[0].d=Infinity",
       "c[1].e=NaN",
@@ -303,15 +303,15 @@ describe("detector de no finitos", () => {
   });
 });
 
-describe.each(CASES)("bordes numéricos: $name", ({ baseline, run, allowInfinity = [] }) => {
+describe.each(CASES)("numeric edge cases: $name", ({ baseline, run, allowInfinity = [] }) => {
   const call = run as (input: unknown) => unknown;
   const paths = numericPaths(baseline);
 
-  it("la entrada base devuelve cifras finitas", () => {
+  it("the baseline input returns finite figures", () => {
     expect(nonFinitePaths(call(baseline))).toEqual([]);
   });
 
-  it.each(FINITE_EDGES)("con un campo a %s: no lanza y todo es finito", (edge) => {
+  it.each(FINITE_EDGES)("with one field set to %s: does not throw and everything is finite", (edge) => {
     for (const path of paths) {
       const bad = nonFinitePaths(call(withValue(baseline, [path], edge))).filter(
         (p) => !allowInfinity.some((allowed) => p.startsWith(`${allowed}=`)),
@@ -321,26 +321,26 @@ describe.each(CASES)("bordes numéricos: $name", ({ baseline, run, allowInfinity
     const all = nonFinitePaths(call(withValue(baseline, paths, edge))).filter(
       (p) => !allowInfinity.some((allowed) => p.startsWith(`${allowed}=`)),
     );
-    expect({ field: "todos", edge, all }).toEqual({ field: "todos", edge, all: [] });
+    expect({ field: "all", edge, all }).toEqual({ field: "all", edge, all: [] });
   });
 
-  it.each(NON_FINITE_EDGES)("con un campo a %s: no lanza", (edge) => {
+  it.each(NON_FINITE_EDGES)("with one field set to %s: does not throw", (edge) => {
     for (const path of paths) expect(() => call(withValue(baseline, [path], edge))).not.toThrow();
     expect(() => call(withValue(baseline, paths, edge))).not.toThrow();
   });
 });
 
-describe("bordes numéricos: tarjeta-credito (cuota como % del saldo)", () => {
+describe("numeric edge cases: tarjeta-credito (payment as % of the balance)", () => {
   const baseline = { balance: 3000, annualRate: 22, paymentMode: "percent", minPercent: 3, minFloor: 25 };
   const allowed = ["totalInterest", "totalPaid"];
 
-  it.each([...FINITE_EDGES, ...NON_FINITE_EDGES])("con un campo a %s no lanza", (edge) => {
+  it.each([...FINITE_EDGES, ...NON_FINITE_EDGES])("with one field set to %s it does not throw", (edge) => {
     for (const path of numericPaths(baseline)) {
       expect(() => computeCreditCard(withValue(baseline, [path], edge) as never)).not.toThrow();
     }
   });
 
-  it.each(FINITE_EDGES)("con un campo a %s solo es infinito el coste de una deuda sin fin", (edge) => {
+  it.each(FINITE_EDGES)("with one field set to %s only the cost of an endless debt is infinite", (edge) => {
     for (const path of numericPaths(baseline)) {
       const bad = nonFinitePaths(computeCreditCard(withValue(baseline, [path], edge) as never)).filter(
         (p) => !allowed.some((a) => p.startsWith(`${a}=`)),

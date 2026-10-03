@@ -1,39 +1,39 @@
 import { itemAt } from "../arrays.js";
 import { compareStrings } from "../compare.js";
 /**
- * Capturas reales del histórico de la cartera que han quedado obsoletas. Core puro.
+ * Real snapshots of the portfolio history that have gone stale. Pure core.
  *
- * Una captura de fecha `D` escrita en `W` está obsoleta si existe un lote con `tradedAt <= D` cuyo
- * último cambio es posterior a `W` (p. ej. se importó una operación con fecha anterior): si no, la
- * serie mostraría un escalón falso. Los lotes borrados no dejan marca: el llamante pasa
- * `invalidateFrom` y se invalidan las capturas con fecha `>= invalidateFrom`.
+ * A snapshot dated `D` written at `W` is stale if there is a lot with `tradedAt <= D` whose last
+ * change is later than `W` (e.g. a back-dated trade was imported): otherwise the series would show a
+ * false step. Deleted lots leave no trace: the caller passes `invalidateFrom` and snapshots dated
+ * `>= invalidateFrom` are invalidated.
  */
 
 export interface StalenessLot {
-  /** Fecha de la operación, YYYY-MM-DD. */
+  /** Trade date, YYYY-MM-DD. */
   tradedAt: string;
-  /** Último cambio del lote (creación o edición), en milisegundos desde epoch. */
+  /** Last change of the lot (creation or edit), in milliseconds since epoch. */
   changedAt: number;
 }
 
-/** Captura real reducida a lo que importa para la regla. */
+/** Real snapshot reduced to what matters for the rule. */
 export interface StalenessSnapshot {
-  /** Fecha de la captura, YYYY-MM-DD. */
+  /** Snapshot date, YYYY-MM-DD. */
   date: string;
-  /** Instante en que se escribió la captura, en milisegundos desde epoch. */
+  /** Instant the snapshot was written, in milliseconds since epoch. */
   writtenAt: number;
 }
 
 export interface StalenessInput {
   snapshots: readonly StalenessSnapshot[];
   lots: readonly StalenessLot[];
-  /** Fecha desde la que todo se da por obsoleto (lote borrado o movido); `null` si no aplica. */
+  /** Date from which everything is considered stale (lot deleted or moved); `null` if not applicable. */
   invalidateFrom?: string | null;
 }
 
 const byDate = (a: string, b: string): number => compareStrings(a, b);
 
-/** Fechas (YYYY-MM-DD) de las capturas obsoletas, en O(n log n). */
+/** Dates (YYYY-MM-DD) of the stale snapshots, in O(n log n). */
 export function staleSnapshotDates(input: StalenessInput): Set<string> {
   const { snapshots, lots, invalidateFrom = null } = input;
   const stale = new Set<string>();
@@ -41,7 +41,7 @@ export function staleSnapshotDates(input: StalenessInput): Set<string> {
   const lotsByDate = [...lots].sort((a, b) => byDate(a.tradedAt, b.tradedAt));
   const snapshotsByDate = [...snapshots].sort((a, b) => byDate(a.date, b.date));
 
-  // Cambio más reciente entre los lotes con `tradedAt <= fecha de la captura`.
+  // Most recent change among the lots with `tradedAt <= snapshot date`.
   let latestChange = Number.NEGATIVE_INFINITY;
   let next = 0;
   for (const snapshot of snapshotsByDate) {
@@ -56,9 +56,9 @@ export function staleSnapshotDates(input: StalenessInput): Set<string> {
   return stale;
 }
 
-/** Valores de un día del histórico, tal como se guardan (`numeric` como texto, tasas FX del día). */
+/** Values of one history day, as stored (`numeric` as text, that day's FX rates). */
 export interface SnapshotValues {
-  /** Fecha, YYYY-MM-DD. */
+  /** Date, YYYY-MM-DD. */
   date: string;
   invested: string;
   marketValue: string;
@@ -67,45 +67,45 @@ export interface SnapshotValues {
   fxRates: Record<string, number>;
 }
 
-/** Fila ya guardada: los valores y si es una estimación (reconstruida) o una captura real. */
+/** Already-stored row: the values and whether it is a (reconstructed) estimate or a real snapshot. */
 export interface StoredSnapshot extends SnapshotValues {
   estimated: boolean;
 }
 
 export interface SnapshotWritePlanInput<Row extends SnapshotValues> {
-  /** Días que sale de la reconstrucción, sin la marca `estimated` (la pone el plan). */
+  /** Days produced by the reconstruction, without the `estimated` flag (the plan sets it). */
   rows: readonly Row[];
-  /** Lo que ya hay guardado del usuario. */
+  /** What is already stored for the user. */
   existing: readonly StoredSnapshot[];
-  /** Capturas reales obsoletas (`staleSnapshotDates`): las únicas reales que se pueden pisar. */
+  /** Stale real snapshots (`staleSnapshotDates`): the only real ones that may be overwritten. */
   staleReal: ReadonlySet<string>;
-  /** Inicio del seguimiento en Sextante (YYYY-MM-DD): antes, cada día es una estimación. */
+  /** Start of tracking in Sextante (YYYY-MM-DD): before it, every day is an estimate. */
   trackingSince: string;
 }
 
 export interface SnapshotWritePlan<Row extends SnapshotValues> {
-  /** Filas a escribir (upsert), ya con `estimated = date < trackingSince`. */
+  /** Rows to write (upsert), already with `estimated = date < trackingSince`. */
   changed: (Row & { estimated: boolean })[];
-  /** Fechas de estimaciones guardadas que ya no salen de la reconstrucción: se retiran. */
+  /** Dates of stored estimates the reconstruction no longer produces: they are removed. */
   stale: string[];
 }
 
-/** Igualdad de tasas FX (un `jsonb` no conserva el orden de las claves). */
+/** FX rate equality (a `jsonb` does not preserve key order). */
 function sameRates(a: Record<string, number>, b: Record<string, number>): boolean {
   const keys = Object.keys(a);
   return keys.length === Object.keys(b).length && keys.every((key) => a[key] === b[key]);
 }
 
 /**
- * Qué escribir tras reconstruir el histórico de un usuario: solo la diferencia con lo guardado
- * (reescribir ~1.800 filas idénticas cada noche no aporta nada). Core puro.
+ * What to write after reconstructing a user's history: only the diff against what is stored
+ * (rewriting ~1,800 identical rows every night adds nothing). Pure core.
  *
- * - Un día sin fila guardada se escribe.
- * - Una captura REAL solo se sustituye si está obsoleta (`staleReal`).
- * - Una ESTIMACIÓN se reescribe si cambia algún valor o si su `estimated` ya no cumple la regla
- *   (reparación automática).
- * - Las estimaciones guardadas que ya no salen de la reconstrucción (operación borrada...) se
- *   retiran; las reales nunca.
+ * - A day without a stored row is written.
+ * - A REAL snapshot is only replaced if it is stale (`staleReal`).
+ * - An ESTIMATE is rewritten if any value changes or if its `estimated` flag no longer follows the
+ *   rule (automatic repair).
+ * - Stored estimates the reconstruction no longer produces (deleted trade...) are removed; real
+ *   ones never are.
  */
 export function planSnapshotWrites<Row extends SnapshotValues>(
   input: SnapshotWritePlanInput<Row>,

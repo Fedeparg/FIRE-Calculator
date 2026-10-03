@@ -6,16 +6,16 @@ const run = (gainsBalance: number, capitalIncomeBalance: number, pending: Pendin
   computeSavingsBase({ year, gainsBalance, capitalIncomeBalance, pending });
 
 describe("computeSavingsBase", () => {
-  it("ejercicio sin nada: base 0 y nada pendiente", () => {
+  it("empty tax year: base 0 and nothing pending", () => {
     const r = run(0, 0);
     expect(r).toMatchObject({ base: 0, compensations: [], pending: [], expired: [], totalCompensated: 0 });
   });
 
-  it("sin negativos: la base es la suma de los saldos", () => {
+  it("no negatives: the base is the sum of the balances", () => {
     expect(run(1000, 500).base).toBe(1500);
   });
 
-  it("solo pérdidas: base 0 y ambas quedan pendientes con su año", () => {
+  it("losses only: base 0 and both stay pending with their year", () => {
     const r = run(-300, -200);
     expect(r.base).toBe(0);
     expect(r.pending).toEqual([
@@ -24,7 +24,7 @@ describe("computeSavingsBase", () => {
     ]);
   });
 
-  it("compensación exacta al 25 %: pérdida igual al 25 % del positivo", () => {
+  it("exact 25% offset: a loss equal to 25% of the positive balance", () => {
     const r = run(-250, 1000);
     expect(r.base).toBe(750);
     expect(r.pending).toEqual([]);
@@ -33,14 +33,14 @@ describe("computeSavingsBase", () => {
     ]);
   });
 
-  it("pérdida mayor que el 25 % del otro grupo: el resto queda pendiente", () => {
+  it("a loss above 25% of the other group: the rest stays pending", () => {
     const r = run(1000, -600);
     expect(r.base).toBe(750);
     expect(r.totalCompensated).toBe(250);
     expect(r.pending).toEqual([{ originYear: 2025, kind: "capitalIncome", amount: 350 }]);
   });
 
-  it("el arrastre de hace 4 años aún se aplica y el de hace 5 caduca", () => {
+  it("a carryforward from 4 years ago still applies and one from 5 years ago expires", () => {
     const r = run(1000, 0, [
       { originYear: 2021, kind: "gains", amount: 100 },
       { originYear: 2020, kind: "gains", amount: 70 },
@@ -49,7 +49,7 @@ describe("computeSavingsBase", () => {
     expect(r.expired).toEqual([{ originYear: 2020, kind: "gains", amount: 70 }]);
   });
 
-  it("el arrastre se aplica primero al mismo grupo, sin límite del 25 %", () => {
+  it("the carryforward applies to the same group first, with no 25% cap", () => {
     const r = run(1000, 400, [{ originYear: 2024, kind: "gains", amount: 900 }]);
     expect(r.compensations).toEqual([
       { source: { kind: "gains", originYear: 2024 }, target: "gains", amount: 900, cross: false },
@@ -57,15 +57,16 @@ describe("computeSavingsBase", () => {
     expect(r.base).toBe(500);
   });
 
-  it("el remanente del arrastre pasa al otro grupo con el 25 %, compartido con el propio ejercicio", () => {
-    // GPP 1000 (positivo), RCM -150 del ejercicio y RCM pendiente 2024 de 400. Tope: 250.
+  it("the carryforward remainder crosses to the other group under the 25% cap, shared with the current year", () => {
+    // Capital gains (GPP) 1000 (positive), capital income (RCM) -150 for the year and a pending 2024 RCM of
+    // 400. Cap: 250.
     const r = run(1000, -150, [{ originYear: 2024, kind: "capitalIncome", amount: 400 }]);
     expect(r.compensations.reduce((s, c) => s + c.amount, 0)).toBe(250);
     expect(r.base).toBe(750);
     expect(r.pending).toEqual([{ originYear: 2024, kind: "capitalIncome", amount: 300 }]);
   });
 
-  it("aplica del más antiguo al más reciente", () => {
+  it("applies from oldest to newest", () => {
     const r = run(100, 0, [
       { originYear: 2024, kind: "gains", amount: 60 },
       { originYear: 2022, kind: "gains", amount: 60 },
@@ -77,7 +78,7 @@ describe("computeSavingsBase", () => {
     expect(r.pending).toEqual([{ originYear: 2024, kind: "gains", amount: 20 }]);
   });
 
-  it("ignora partidas inválidas (no finitas, ≤ 0, de origen futuro)", () => {
+  it("ignores invalid items (non-finite, ≤ 0, originating in the future)", () => {
     const r = run(100, 0, [
       { originYear: 2024, kind: "gains", amount: Number.NaN },
       { originYear: 2024, kind: "gains", amount: -5 },
@@ -88,8 +89,8 @@ describe("computeSavingsBase", () => {
   });
 });
 
-describe("computeSavingsBase: casos del manual", () => {
-  it("reproduce el caso práctico del Manual de Renta 2025 de la AEAT (cap. 12): base del ahorro 200", () => {
+describe("computeSavingsBase: Manual cases", () => {
+  it("reproduces the worked example of the AEAT's Manual de Renta 2025 (ch. 12): savings base (base del ahorro) 200", () => {
     // https://sede.agenciatributaria.gob.es/Sede/ayuda/manuales-videos-folletos/manuales-practicos/irpf-2025/c12-integracion-compensacion-rentas/caso-practico.html
     const r = computeSavingsBase({
       year: 2025,
@@ -106,7 +107,7 @@ describe("computeSavingsBase: casos del manual", () => {
     expect(r.pending).toEqual([{ originYear: 2021, kind: "capitalIncome", amount: 300 }]);
   });
 
-  it("aplica todos los pendientes contra su mismo grupo antes de cruzar ninguno (orden del manual)", () => {
+  it("applies every pending item against its own group before crossing any (the Manual's order)", () => {
     const r = computeSavingsBase({
       year: 2025,
       gainsBalance: 1000,
@@ -116,7 +117,7 @@ describe("computeSavingsBase: casos del manual", () => {
         { originYear: 2022, kind: "gains", amount: 1000 },
       ],
     });
-    // La pérdida de 2022 absorbe primero la ganancia; al RCM de 2021 no le queda nada que cruzar.
+    // The 2022 loss absorbs the gain first; the 2021 RCM has nothing left to cross against.
     expect(r.base).toBe(0);
     expect(r.pending).toEqual([{ originYear: 2021, kind: "capitalIncome", amount: 500 }]);
   });

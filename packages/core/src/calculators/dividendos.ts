@@ -1,4 +1,4 @@
-// Dividendos: ingreso anual, retención española y proyección con crecimiento. Core puro.
+// Dividends: annual income, Spanish withholding and a projection with growth. Pure core.
 
 import { clampYears } from "../inputs.js";
 import { SPAIN_SAVINGS_WITHHOLDING_PCT } from "../fiscal/countries.js";
@@ -9,7 +9,7 @@ export interface DividendInput {
   sharePrice?: number;
   withholdingRate?: number;
   annualGrowth?: number;
-  /** Años de proyección; por defecto 0 (solo año 1). */
+  /** Projection years; defaults to 0 (year 1 only). */
   years?: number;
 }
 
@@ -28,7 +28,7 @@ export interface DividendResult {
   netYield: number | null;
   cumulativeNet: number;
   finalYearNet: number;
-  /** Año 0 = punto base, sin dividendo cobrado todavía. */
+  /** Year 0 = baseline, no dividend received yet. */
   series: DividendYearPoint[];
 }
 

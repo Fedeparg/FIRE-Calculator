@@ -9,13 +9,13 @@ const base = {
 };
 
 describe("computeEarlyRepayment", () => {
-  it("sin aportación extra no hay ahorro en ninguna opción", () => {
+  it("without an extra payment neither option saves anything", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 0 });
     expect(r.reducePayment.interestSaved).toBeCloseTo(0, 2);
     expect(r.reduceTerm.interestSaved).toBeCloseTo(0, 2);
   });
 
-  it("la cuota base coincide con la calculadora de hipoteca", () => {
+  it("the base payment matches the mortgage calculator", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 0 });
     const mortgage = computeMortgage({
       principal: base.pendingPrincipal,
@@ -25,33 +25,33 @@ describe("computeEarlyRepayment", () => {
     expect(r.monthlyPaymentBefore).toBeCloseTo(mortgage.monthlyPayment, 6);
   });
 
-  it("una aportación extra ahorra intereses en ambas opciones", () => {
+  it("an extra payment saves interest in both options", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 20000 });
     expect(r.reducePayment.interestSaved).toBeGreaterThan(0);
     expect(r.reduceTerm.interestSaved).toBeGreaterThan(0);
   });
 
-  it("reducir plazo ahorra más intereses que reducir cuota", () => {
+  it("shortening the term saves more interest than lowering the payment", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 20000 });
     expect(r.reduceTerm.interestSaved).toBeGreaterThan(r.reducePayment.interestSaved);
     expect(r.reduceTerm.monthsSaved).toBeGreaterThan(0);
   });
 
-  it("reducir cuota baja la mensualidad", () => {
+  it("lowering the payment reduces the monthly installment", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 20000 });
     expect(r.reducePayment.newMonthlyPayment).toBeLessThan(r.monthlyPaymentBefore);
   });
 
-  it("sin comisión, el ahorro neto iguala al ahorro de intereses", () => {
+  it("without a fee, the net saving equals the interest saved", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 20000 });
     expect(r.prepaymentFee).toBe(0);
     expect(r.reduceTerm.netSaved).toBeCloseTo(r.reduceTerm.interestSaved, 6);
     expect(r.reducePayment.netSaved).toBeCloseTo(r.reducePayment.interestSaved, 6);
   });
 
-  it("la comisión por amortización se paga aparte y reduce el ahorro neto", () => {
+  it("the prepayment fee is paid separately and reduces the net saving", () => {
     const r = computeEarlyRepayment({ ...base, extraPayment: 20000, compensationRate: 2 });
-    expect(r.prepaymentFee).toBeCloseTo(400, 6); // 2% de 20.000
+    expect(r.prepaymentFee).toBeCloseTo(400, 6); // 2% of 20,000
     expect(r.reduceTerm.netSaved).toBeCloseTo(r.reduceTerm.interestSaved - 400, 6);
     expect(r.reducePayment.netSaved).toBeCloseTo(r.reducePayment.interestSaved - 400, 6);
   });

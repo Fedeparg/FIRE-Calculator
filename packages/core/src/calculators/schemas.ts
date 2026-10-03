@@ -54,28 +54,28 @@ import { computeCreditCard } from "./tarjeta-credito.js";
 import { creditCardSchema } from "./tarjeta-credito.schema.js";
 
 /**
- * Registro de las calculadoras de Sextante expuestas por MCP con DOS tools genéricas
- * (`list_calculators` y `calculate`), en vez de una tool por calculadora. Ejecutan exactamente el
- * mismo código que la web, así que el asistente y la calculadora no pueden dar cifras distintas.
- * No leen datos del usuario: son funciones puras sobre lo que el cliente envía. La clave es el
- * slug de la web (el mismo que devuelve `list_saved_scenarios`).
+ * Registry of the Sextante calculators exposed over MCP through TWO generic tools
+ * (`list_calculators` and `calculate`) instead of one tool per calculator. They run exactly the
+ * same code as the website, so the assistant and the calculator cannot disagree on the figures.
+ * They read no user data: they are pure functions over what the client sends. The key is the
+ * website slug (the same one `list_saved_scenarios` returns).
  *
- * Cada entrada enlaza el esquema zod de su calculadora (`<módulo>.schema.ts`, con límites de
- * importes, tasas, años y simulaciones) con su cálculo. Además de documentar las unidades al
- * cliente (se publica como JSON Schema en `list_calculators`), los límites acotan el trabajo que
- * una llamada puede pedir al servidor: el Monte Carlo corre aquí, no en el navegador. Añadir una
- * calculadora es añadir una entrada a `CALCULATORS`.
+ * Each entry links its calculator's zod schema (`<module>.schema.ts`, with bounds on amounts,
+ * rates, years and simulations) to its computation. Besides documenting units to the client
+ * (it is published as JSON Schema in `list_calculators`), the bounds cap the work a single call
+ * can ask of the server: the Monte Carlo runs here, not in the browser. Adding a calculator means
+ * adding an entry to `CALCULATORS`.
  *
- * Solo para el servidor: arrastra zod, así que el frontend no debe importarlo (regla de ESLint).
+ * Server-only: it pulls in zod, so the frontend must not import it (enforced by an ESLint rule).
  */
 
 export interface CalculatorEntry {
   readonly category: CalculatorCategory;
   readonly title: string;
   readonly description: string;
-  /** Esquema de entrada. Estricto: una clave desconocida es un error, no se ignora en silencio. */
+  /** Input schema. Strict: an unknown key is an error, not silently ignored. */
   readonly schema: z.ZodType;
-  /** Valida la entrada con `schema` (lanza `ZodError` si no cumple) y calcula. */
+  /** Validates the input against `schema` (throws `ZodError` if it does not conform) and computes. */
   readonly run: (input: unknown) => unknown;
 }
 
@@ -98,10 +98,10 @@ function defineCalculator<S extends z.ZodType>(
   };
 }
 
-/** Paso del muestreo anual de la serie de la tarjeta (que es mensual y puede durar 100 años). */
+/** Step for the yearly sampling of the credit-card series (which is monthly and may span 100 years). */
 const MONTHS_PER_YEAR = 12;
 
-/** Depósito a plazo fijo y cuenta remunerada comparten cálculo (TAE) y esquema. */
+/** Fixed-term deposit and interest-bearing account share the computation (TAE, i.e. APY) and schema. */
 const DEPOSIT = defineCalculator(
   "ahorro",
   {
@@ -115,7 +115,7 @@ const DEPOSIT = defineCalculator(
 );
 
 export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
-  // --- Inversión ------------------------------------------------------------------------------
+  // --- Investing ------------------------------------------------------------------------------
   "interes-compuesto": defineCalculator(
     "inversion",
     {
@@ -184,7 +184,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
     computeStaking,
   ),
 
-  // --- FIRE y jubilación ----------------------------------------------------------------------
+  // --- FIRE and retirement --------------------------------------------------------------------
   "independencia-financiera": defineCalculator(
     "fire",
     {
@@ -248,7 +248,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
     computeBudget,
   ),
 
-  // --- Hipoteca e inmuebles -------------------------------------------------------------------
+  // --- Mortgages and real estate --------------------------------------------------------------
   "hipoteca-fija": defineCalculator(
     "hipoteca",
     {
@@ -316,11 +316,11 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
     computeHolidayRental,
   ),
 
-  // --- Ahorro ---------------------------------------------------------------------------------
+  // --- Savings --------------------------------------------------------------------------------
   "deposito-plazo-fijo": DEPOSIT,
   "cuenta-remunerada": DEPOSIT,
 
-  // --- Fiscalidad -----------------------------------------------------------------------------
+  // --- Taxes ----------------------------------------------------------------------------------
   "salario-bruto-neto": defineCalculator(
     "fiscalidad",
     {
@@ -388,7 +388,7 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
     computeWealthTax,
   ),
 
-  // --- Deuda y herramientas -------------------------------------------------------------------
+  // --- Debt and tools -------------------------------------------------------------------------
   "intereses-tarjeta-credito": defineCalculator(
     "deuda",
     {
@@ -401,8 +401,8 @@ export const CALCULATORS: Readonly<Record<string, CalculatorEntry>> = {
     },
     (args) => {
       const { series, ...result } = computeCreditCard(args);
-      // La serie es mensual (hasta 1.200 puntos): al cliente le basta el saldo al cierre de
-      // cada año y el del último mes.
+      // The series is monthly (up to 1,200 points): the client only needs the balance at the end
+      // of each year and in the last month.
       const yearly = series.filter(
         (point, index) => point.month % MONTHS_PER_YEAR === 0 || index === series.length - 1,
       );

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { NetSalaryInput } from "../fiscal/irpf.js";
 import { amount, personalCircumstances } from "./schema-helpers.js";
 
-/** Salario neto y retención de nómina comparten modelo (`NetSalaryInput`) y, por tanto, esquema. */
+/** Net salary and payroll withholding share a model (`NetSalaryInput`) and therefore a schema. */
 export const netSalarySchema = z.strictObject({
   grossAnnual: amount("Salario bruto anual en euros."),
   payments: z

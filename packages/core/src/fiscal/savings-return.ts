@@ -1,7 +1,8 @@
-// La base del ahorro de un ejercicio completa: ganancias y pérdidas por venta, rendimientos del
-// capital mobiliario, compensación (art. 49 LIRPF), cuota, deducción por doble imposición
-// internacional (art. 80 LIRPF) y retenciones españolas. Core puro: une `realised-gains.ts`,
-// `income.ts`, `savings-base.ts`, `savings-tax.ts` y `double-taxation.ts`. Ver ./README.md.
+// A tax year's complete savings base (base del ahorro): gains and losses from sales, capital
+// income (rendimientos del capital mobiliario), offsetting (art. 49 LIRPF), tax, foreign tax
+// credit (deducción por doble imposición internacional, art. 80 LIRPF) and Spanish withholding.
+// Pure core module: it joins `realised-gains.ts`, `income.ts`, `savings-base.ts`, `savings-tax.ts`
+// and `double-taxation.ts`. See ./README.md.
 
 import { firstItem, lastItem } from "../arrays.js";
 import { computeDoubleTaxationDeduction, type DoubleTaxationResult } from "./double-taxation.js";
@@ -13,41 +14,41 @@ import { savingsTax, type SavingsTax } from "./savings-tax.js";
 
 export interface SavingsReturnInput {
   year: number;
-  /** Ventas del ejercicio (`buildRealisedGainsReport`), o `undefined` si no hubo. */
+  /** The tax year's sales (`buildRealisedGainsReport`), or `undefined` if there were none. */
   gains: RealisedGainsYear | undefined;
-  /** Cobros del ejercicio resumidos (`buildIncomeReport`), o `undefined` si no hubo. */
+  /** The tax year's income payments, summarised (`buildIncomeReport`), or `undefined` if there were none. */
   income: IncomeYear | undefined;
-  /** Cobros del ejercicio, para la doble imposición país a país. */
+  /** The tax year's income payments, for country-by-country double taxation. */
   incomeEvents: readonly IncomeEvent[];
   rates: ReferenceRates;
-  /** Saldos negativos de ejercicios anteriores pendientes de compensar. */
+  /** Negative balances from earlier tax years pending offset. */
   pending: readonly PendingNegative[];
 }
 
 export interface SavingsReturn {
   year: number;
-  /** Saldo de ganancias y pérdidas por transmisión (ventas + diferencias de cambio). */
+  /** Balance of gains and losses from transfers (sales + FX differences). */
   gainsBalance: number;
-  /** Rendimiento neto del capital mobiliario (íntegros; sin gastos deducibles registrados). */
+  /** Net capital income (gross amounts; no deductible expenses recorded). */
   capitalIncomeBalance: number;
   savingsBase: SavingsBaseResult;
-  /** Cuota íntegra del ahorro y tipo medio. */
+  /** Savings gross tax liability (cuota íntegra) and average rate. */
   tax: SavingsTax;
   doubleTaxation: DoubleTaxationResult;
-  /** Cuota tras la deducción por doble imposición. */
+  /** Tax after the foreign tax credit. */
   netTax: number;
-  /** Retenciones españolas de los cobros: se restan después, en la cuota diferencial. */
+  /** Spanish withholding on the income payments: subtracted later, in the final tax due (cuota diferencial). */
   withholdingSpain: number;
-  /** Lo que la base del ahorro aporta al resultado de la declaración: cuota − retenciones. */
+  /** What the savings base contributes to the return's result: tax − withholdings. */
   result: number;
   /**
-   * La cifra no está completa: hay ventas o cobros sin tipo de cambio, o dividendos extranjeros
-   * sin retención en origen conocida.
+   * The figure is incomplete: there are sales or income payments without an exchange rate, or
+   * foreign dividends with no known withholding at source.
    */
   incomplete: boolean;
 }
 
-/** Calcula la base del ahorro del ejercicio de principio a fin. */
+/** Computes the tax year's savings base end to end. */
 export function buildSavingsReturn(input: SavingsReturnInput): SavingsReturn {
   const { gains, income } = input;
   const gainsBalance = gains?.total ?? 0;
@@ -61,9 +62,9 @@ export function buildSavingsReturn(input: SavingsReturnInput): SavingsReturn {
   });
   const tax = savingsTax(savingsBase.base);
 
-  // Rendimientos gravados en el extranjero (art. 80.1.b), cobro a cobro y en euros. Lo que no pagó
-  // nada fuera (intereses de la cuenta alemana de TR) no entra: inflaría el límite del tipo medio.
-  // Con la retención desconocida sí, para que la doble imposición avise de que falta.
+  // Income taxed abroad (art. 80.1.b), payment by payment and in euros. Whatever paid nothing
+  // abroad (interest on TR's German account) is left out: it would inflate the average-rate limit.
+  // With unknown withholding it is included, so the double taxation module warns that it is missing.
   const foreign = input.incomeEvents.flatMap((event) => {
     if (!event.country || event.country === "ES" || event.withholdingOrigin === 0) return [];
     const rate = referenceRateOn(input.rates, event.currency, event.paidAt);
@@ -101,17 +102,17 @@ export interface SavingsReturnsInput {
   incomeEvents: readonly IncomeEvent[];
   rates: ReferenceRates;
   /**
-   * Saldos negativos pendientes al empezar el primer ejercicio que calcula Sextante, de años que
-   * no calcula (los copia el usuario de su última declaración).
+   * Negative balances pending at the start of the first tax year Sextante computes, from years it
+   * does not compute (the user copies them from their last return).
    */
   manualPending: readonly PendingNegative[];
 }
 
 /**
- * La base del ahorro de todos los ejercicios con datos, en orden, arrastrando de uno a otro los
- * saldos negativos pendientes (art. 49 LIRPF: cuatro años). Los años intermedios sin datos
- * también se recorren, para que los saldos caduquen cuando toca. Devuelve los ejercicios con
- * ventas o cobros, del más reciente al más antiguo.
+ * The savings base of every tax year with data, in order, carrying the pending negative balances
+ * forward from one to the next (art. 49 LIRPF: four years). Intermediate years with no data are
+ * walked too, so balances expire when they should. Returns the tax years with sales or income
+ * payments, from newest to oldest.
  */
 export function buildSavingsReturns(input: SavingsReturnsInput): SavingsReturn[] {
   const gainsByYear = new Map(input.gains.map((y) => [y.year, y]));

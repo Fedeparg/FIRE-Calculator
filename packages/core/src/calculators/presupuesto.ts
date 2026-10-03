@@ -1,4 +1,4 @@
-// Presupuesto mensual con la regla 50/30/20 (necesidades / deseos / ahorro). Core puro.
+// Monthly budget with the 50/30/20 rule (needs / wants / savings). Pure core.
 
 export interface BudgetInput {
   income: number;

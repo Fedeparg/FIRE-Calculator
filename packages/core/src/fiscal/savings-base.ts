@@ -1,21 +1,25 @@
-// Integración y compensación de la base imponible del ahorro (arts. 46, 48 y 49 LIRPF).
-// Core puro: no traduce, los resultados son cifras y códigos. Alcance: ver ./README.md.
+// Netting and offsetting (integración y compensación) of the savings tax base (base imponible del
+// ahorro, arts. 46, 48 and 49 LIRPF). Pure core module: it does not translate, the results are
+// figures and codes. Scope: see ./README.md.
 
 import { finiteOr } from "../inputs.js";
 
-/** Grupo de renta del ahorro: ganancias y pérdidas patrimoniales (GPP) o rendimientos del capital mobiliario (RCM). */
+/**
+ * Savings income group: capital gains and losses (ganancias y pérdidas patrimoniales, GPP) or
+ * capital income (rendimientos del capital mobiliario, RCM).
+ */
 export type SavingsGroup = "gains" | "capitalIncome";
 
-/** Límite de la compensación cruzada entre grupos: 25 % del saldo positivo (art. 49.1 LIRPF, desde 2018). */
+/** Limit of cross-group offsetting: 25% of the positive balance (art. 49.1 LIRPF, since 2018). */
 export const SAVINGS_CROSS_COMPENSATION_LIMIT = 0.25;
 
-/** Años siguientes en los que se puede compensar un saldo negativo (art. 49.1 LIRPF). */
+/** Following years in which a negative balance can be offset (art. 49.1 LIRPF). */
 export const SAVINGS_CARRYFORWARD_YEARS = 4;
 
-/** Tolerancia para no arrastrar polvo de coma flotante como si fuera un saldo pendiente. */
+/** Tolerance so floating-point dust is not carried forward as if it were a pending balance. */
 const EPSILON = 1e-9;
 
-/** Saldo negativo de un ejercicio que aún se puede compensar. `amount` es positivo. */
+/** A tax year's negative balance that can still be offset. `amount` is positive. */
 export interface PendingNegative {
   readonly originYear: number;
   readonly kind: SavingsGroup;
@@ -23,33 +27,33 @@ export interface PendingNegative {
 }
 
 export interface SavingsBaseInput {
-  /** Ejercicio que se liquida. */
+  /** Tax year being assessed. */
   readonly year: number;
-  /** Saldo del ejercicio de GPP por transmisión (puede ser negativo). */
+  /** The tax year's balance of GPP from transfers (may be negative). */
   readonly gainsBalance: number;
-  /** Saldo neto del ejercicio de RCM (puede ser negativo). */
+  /** The tax year's net RCM balance (may be negative). */
   readonly capitalIncomeBalance: number;
-  /** Saldos negativos pendientes de ejercicios anteriores. */
+  /** Pending negative balances from earlier tax years. */
   readonly pending: readonly PendingNegative[];
 }
 
-/** Una compensación aplicada: de qué saldo negativo, contra qué grupo positivo y cuánto. */
+/** An applied offset: from which negative balance, against which positive group and how much. */
 export interface SavingsCompensation {
   readonly source: { readonly kind: SavingsGroup; readonly originYear: number };
   readonly target: SavingsGroup;
   readonly amount: number;
-  /** `true` si el saldo negativo y el positivo son de grupos distintos (sujeta al límite del 25 %). */
+  /** `true` if the negative and positive balances belong to different groups (subject to the 25% limit). */
   readonly cross: boolean;
 }
 
 export interface SavingsBaseResult {
-  /** Base liquidable del ahorro (≥ 0), sin la reducción del art. 55 LIRPF. */
+  /** Savings taxable base (base liquidable del ahorro, ≥ 0), without the art. 55 LIRPF reduction. */
   readonly base: number;
   readonly compensations: readonly SavingsCompensation[];
   readonly totalCompensated: number;
-  /** Saldos negativos que siguen pendientes (incluye el remanente del propio ejercicio). */
+  /** Negative balances still pending (including the current tax year's remainder). */
   readonly pending: readonly PendingNegative[];
-  /** Saldos negativos que han caducado sin compensar (origen anterior a ejercicio − 4). */
+  /** Negative balances that expired without being offset (origin before tax year − 4). */
   readonly expired: readonly PendingNegative[];
 }
 
@@ -64,14 +68,15 @@ const other = (kind: SavingsGroup): SavingsGroup => (kind === "gains" ? "capital
 const finitePositive = (n: number): boolean => Number.isFinite(n) && n > 0;
 
 /**
- * Integra y compensa la base del ahorro (art. 49 LIRPF).
+ * Nets and offsets the savings base (art. 49 LIRPF).
  *
- * Orden (Manual práctico de Renta 2025, cap. 12): primero el saldo negativo del propio ejercicio
- * contra el positivo del otro grupo (25 %); después los pendientes de ejercicios anteriores, del
- * más antiguo al más reciente, contra el positivo de su mismo grupo; y por último, con lo que les
- * quede, contra el del otro grupo con el mismo 25 %. El 25 % es uno solo por grupo positivo y se calcula sobre su saldo
- * positivo del ejercicio antes de compensar. Las partidas con importe no finito o ≤ 0, o con
- * origen igual o posterior al ejercicio, se ignoran.
+ * Order (Manual práctico de Renta 2025, ch. 12): first the current tax year's negative balance
+ * against the other group's positive balance (25%); then the pending balances from earlier tax
+ * years, from oldest to newest, against the positive balance of their own group; and finally,
+ * with what is left, against the other group's with the same 25%. The 25% is a single allowance
+ * per positive group and is computed on its positive balance for the tax year before offsetting.
+ * Items with a non-finite or ≤ 0 amount, or with an origin equal to or after the tax year, are
+ * ignored.
  */
 export function computeSavingsBase(input: SavingsBaseInput): SavingsBaseResult {
   const { year } = input;
@@ -103,7 +108,7 @@ export function computeSavingsBase(input: SavingsBaseInput): SavingsBaseResult {
     if (p.originYear < oldestUsable) expired.push({ ...p });
     else prior.push({ kind: p.kind, originYear: p.originYear, remaining: p.amount });
   }
-  // Estable: a igual año, GPP antes que RCM, para que el resultado no dependa del orden de entrada.
+  // Stable: for the same year, GPP before RCM, so the result does not depend on the input order.
   prior.sort((a, b) => a.originYear - b.originYear || (a.kind === b.kind ? 0 : a.kind === "gains" ? -1 : 1));
 
   const compensations: SavingsCompensation[] = [];
@@ -133,9 +138,10 @@ export function computeSavingsBase(input: SavingsBaseInput): SavingsBaseResult {
       cross: true,
     });
   };
-  // Orden del Manual práctico de Renta 2025 (cap. 12): primero el saldo negativo del propio
-  // ejercicio contra el otro grupo; después TODOS los pendientes contra su mismo grupo (sin límite)
-  // y, al final, contra el otro grupo con lo que quede del cupo del 25 %, que es uno solo por grupo.
+  // Order of the Manual práctico de Renta 2025 (ch. 12): first the current tax year's negative
+  // balance against the other group; then ALL pending balances against their own group (no limit)
+  // and, finally, against the other group with what is left of the 25% allowance, which is a
+  // single one per group.
   own.forEach(applyCross);
   prior.forEach(applySame);
   prior.forEach(applyCross);

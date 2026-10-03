@@ -1,4 +1,4 @@
-// Límites de importación; la UI los usa para avisar antes de subir, así que deben coincidir con la API.
+// Import limits; the UI uses them to warn before uploading, so they must match the API.
 
 export const MAX_IMPORT_BYTES = 2 * 1024 * 1024;
 

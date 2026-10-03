@@ -1,16 +1,16 @@
 /**
- * Reconstrucción del histórico de la cartera a partir de las operaciones (lotes). Core puro.
+ * Reconstruction of the portfolio history from the trades (lots). Pure core.
  *
- * Cada día se valora lo vigente ese día (lotes con `tradedAt <= día`, cierre y FX de ese día) con
- * `aggregatePortfolio`; no se inventa historia antes de la primera compra ni tras vender todo.
+ * Each day values whatever was held that day (lots with `tradedAt <= day`, that day's close and FX)
+ * with `aggregatePortfolio`; no history is invented before the first buy or after selling it all.
  *
- * Splits: los cierres de la fuente vienen ajustados (acciones de hoy) pero las cantidades de los
- * lotes son crudas, así que cada lote se multiplica por el ratio de los splits posteriores a su
- * fecha (y su precio se divide, para conservar el coste). Los splits se reconsultan cada 7 días.
+ * Splits: the source's closes come adjusted (today's shares) but lot quantities are raw, so each lot
+ * is multiplied by the ratio of the splits after its date (and its price divided, to preserve the
+ * cost). Splits are re-fetched every 7 days.
  *
- * Limitaciones: los bonus de bróker llegan como compra a precio 0 y bajan el precio medio sin trato
- * especial; no se modelan fusiones, spin-offs ni dividendos. Aritmética en `number`: es una
- * estimación para la gráfica, no un dato contable.
+ * Limitations: broker bonuses arrive as a buy at price 0 and lower the average price with no special
+ * handling; mergers, spin-offs and dividends are not modelled. Arithmetic in `number`: this is an
+ * estimate for the chart, not an accounting figure.
  */
 
 import { itemAt } from "../arrays.js";
@@ -21,19 +21,19 @@ import { addDays, daysBetween } from "../dates.js";
 import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "./aggregate.js";
 
 /**
- * Días máximos que se arrastra el último cierre/tasa cuando un día no tiene dato propio. Pasado el
- * margen no hay precio ese día (mejor un hueco que un cierre rancio); 10 cubre Semana Santa y Navidad.
+ * Maximum days the last close/rate is carried forward when a day has no data of its own. Past that
+ * margin there is no price that day (a gap beats a stale close); 10 covers Easter and Christmas.
  */
 export const MAX_CARRY_FORWARD_DAYS = 10;
 
-/** Lo que la reconstrucción usa de cada operación. */
+/** What the reconstruction uses from each trade. */
 export type HistoryLot = Pick<TradeLot, "kind" | "quantity" | "price" | "tradedAt">;
 
 export interface HistoryPosition {
   ticker: string;
   currency: string;
   isDerivative: boolean;
-  /** Los del mismo día se procesan en el orden recibido (`createdAt, id`): vender y recomprar no es lo mismo que recomprar y vender. */
+  /** Same-day lots are processed in the order received (`createdAt, id`): selling then rebuying is not the same as rebuying then selling. */
   lots: readonly HistoryLot[];
 }
 
@@ -43,15 +43,15 @@ export interface PricePoint {
   currency: string;
 }
 
-/** Tasa diaria: USD por unidad (convención de `aggregatePortfolio`). */
+/** Daily rate: USD per unit (the `aggregatePortfolio` convention). */
 export interface FxPoint {
   date: string;
   rate: number;
 }
 
-/** Split: `ratio` = nuevas por cada antigua (10 para 10:1, 0,5 para inverso 1:2). */
+/** Split: `ratio` = new shares per old share (10 for 10:1, 0.5 for a 1:2 reverse split). */
 export interface SplitPoint {
-  /** Primer día cotizando con el split. */
+  /** First trading day with the split applied. */
   date: string;
   ratio: number;
 }
@@ -59,7 +59,7 @@ export interface SplitPoint {
 export interface HistoryInput {
   positions: readonly HistoryPosition[];
   prices: Readonly<Record<string, readonly PricePoint[]>>;
-  /** Tasas por divisa (USD por unidad), ascendentes; USD no hace falta. */
+  /** Rates per currency (USD per unit), ascending; USD is not needed. */
   fx: Readonly<Record<string, readonly FxPoint[]>>;
   splits?: Readonly<Record<string, readonly SplitPoint[]>>;
   from: string;
@@ -101,7 +101,7 @@ function applyLot(holding: Holding, lot: HistoryLot): void {
     holding.cost += lot.quantity * lot.price;
     return;
   }
-  // no se admiten cortos: se acota a lo que hay
+  // short positions are not supported: clamp to what is held
   const sold = Math.min(lot.quantity, holding.quantity);
   const remaining = holding.quantity - sold;
   if (remaining <= QUANTITY_EPSILON) {
@@ -113,7 +113,7 @@ function applyLot(holding: Holding, lot: HistoryLot): void {
   holding.quantity = remaining;
 }
 
-/** Expresa los lotes en acciones de hoy; un split del mismo día no cuenta (la operación ya fue a precio post-split). */
+/** Expresses the lots in today's shares; a same-day split does not count (the trade was already at the post-split price). */
 function adjustForSplits(lots: readonly HistoryLot[], splits: readonly SplitPoint[]): HistoryLot[] {
   return lots.map((lot) => {
     let factor = 1;
@@ -124,7 +124,7 @@ function adjustForSplits(lots: readonly HistoryLot[], splits: readonly SplitPoin
   });
 }
 
-/** Fecha de la operación más antigua, o `null`; acota desde dónde reconstruir. */
+/** Date of the oldest trade, or `null`; bounds where the reconstruction starts. */
 export function firstTradeDate(positions: readonly HistoryPosition[]): string | null {
   let first: string | null = null;
   for (const position of positions) {
@@ -136,9 +136,9 @@ export function firstTradeDate(positions: readonly HistoryPosition[]): string | 
 }
 
 /**
- * Valoración día a día entre `from` y `to` (inclusive). Se omiten los días sin ninguna posición
- * valorable; si solo algunas tienen precio, `aggregate.valued < aggregate.total`. Una pasada lineal
- * con cursores: O(días + lotes + puntos de precio).
+ * Day-by-day valuation between `from` and `to` (inclusive). Days without any valuable position are
+ * skipped; if only some have a price, `aggregate.valued < aggregate.total`. A single linear pass
+ * with cursors: O(days + lots + price points).
  */
 export function reconstructHistory(input: HistoryInput): HistoryDay[] {
   const { positions, prices, fx, splits = {}, from, to, display } = input;
@@ -146,7 +146,7 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
 
   const state = positions.map((position) => ({
     position,
-    // orden estable: los lotes del mismo día conservan el recibido
+    // stable sort: same-day lots keep the order received
     lots: adjustForSplits(position.lots, splits[position.ticker] ?? []).sort((a, b) =>
       compareStrings(a.tradedAt, b.tradedAt),
     ),
@@ -174,7 +174,7 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
         applyLot(entry.holding, itemAt(entry.lots, entry.next));
         entry.next += 1;
       }
-      if (entry.holding.quantity <= QUANTITY_EPSILON) continue; // aún sin comprar, o ya vendida
+      if (entry.holding.quantity <= QUANTITY_EPSILON) continue; // not bought yet, or already sold
 
       const { ticker, currency, isDerivative } = entry.position;
       held.push({

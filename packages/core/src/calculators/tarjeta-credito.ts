@@ -1,6 +1,6 @@
-// Tarjeta de crédito (deuda revolving): amortización mes a mes. Core puro. Modos de pago: "fixed"
-// (cuota fija) y "percent" (mínimo como % del saldo con suelo en euros; sin suelo la cuota tiende a 0
-// y la deuda no termina).
+// Credit card (revolving debt): month-by-month amortization. Pure core. Payment modes: "fixed"
+// (fixed payment) and "percent" (minimum as a % of the balance with a floor in euros; without a floor
+// the payment tends to 0 and the debt never ends).
 
 import { roundCents } from "../money.js";
 import { monthlyRate } from "./amortization.js";
@@ -59,9 +59,9 @@ export function computeCreditCard(input: CreditCardInput): CreditCardResult {
     };
   }
 
-  // sin suelo, en modo "percent" la deuda nunca termina
+  // without a floor, in "percent" mode the debt never ends
   if (mode === "percent" && minFloor <= 0) return NEVER;
-  // en modo "fixed", si el pago no cubre los intereses del primer mes la deuda nunca baja
+  // in "fixed" mode, if the payment does not cover the first month's interest the debt never goes down
   if (mode === "fixed" && fixedPayment <= balance * rate) return NEVER;
 
   let remaining = balance;
