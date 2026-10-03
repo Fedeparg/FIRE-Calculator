@@ -62,9 +62,10 @@ tax(base) − tax(personal and family minimum).
 Regional scales and personal and family minimums (mínimo personal y familiar) of the 15
 common-regime regions (comunidades autónomas de régimen común).
 
-- **Combination**: `generalGrossTax = stateScaleTax(BLG) + regionalScaleTax(BLG)` (cuota
-  íntegra general over the base liquidable general, BLG), with no 0.5 factor. Each tax is
-  independent: `scaleTax(BLG) − scaleTax(minimum)`, floored at zero separately.
+- **Combination**: `generalGrossTax = stateScaleTax(BLG) + regionalScaleTax(BLG)` (general
+  gross tax liability, cuota íntegra general, on the general taxable base, base liquidable
+  general or BLG), with no 0.5 factor. Each tax is independent: `scaleTax(BLG) −
+  scaleTax(minimum)`, floored at zero separately.
 - **No "the region did not legislate" branch**: since 2011 the fallback application of the state
   rules to the regional rate no longer applies, and all 15 regions have their own scale.
 - **Savings base (base del ahorro)**: not a regional competence (arts. 66.1 and 76 LIRPF; it is
