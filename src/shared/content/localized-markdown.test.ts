@@ -36,11 +36,13 @@ describe("listLocalizedSlugs", () => {
     expect(await listLocalizedSlugs(dir, "es")).toEqual([]);
   });
 
-  it("acepta puntos en el slug y un patrón de slug propio", async () => {
+  it("ignora los slugs no seguros (puntos, mayúsculas) y acepta un patrón de slug propio", async () => {
     await write("a.b.es.md", "");
+    await write("Mayus.es.md", "");
     await write("2026-09-01.es.md", "");
     await write("draft.es.md", "");
-    expect(await listLocalizedSlugs(dir, "es")).toContain("a.b");
+    // Por defecto solo slugs seguros (los mismos que acepta `readLocalizedMarkdown`).
+    expect(await listLocalizedSlugs(dir, "es")).toEqual(["2026-09-01", "draft"]);
     expect(await listLocalizedSlugs(dir, "es", "\\d{4}-\\d{2}-\\d{2}")).toEqual(["2026-09-01"]);
   });
 });
@@ -66,6 +68,20 @@ describe("readLocalizedMarkdown", () => {
     await write("a.es.md", "x");
     expect(await readLocalizedMarkdown(dir, "a", "en")).toBeNull();
     expect(await readLocalizedMarkdown(dir, "zzz", "es")).toBeNull();
+  });
+
+  it("no sale del directorio ni lee idiomas desconocidos: slug o idioma no seguros dan null", async () => {
+    const inner = path.join(dir, "inner");
+    await fs.mkdir(inner);
+    await write("secreto.es.md", "fuera del directorio de contenido");
+    await fs.writeFile(path.join(inner, "a.es.md"), "dentro");
+
+    expect(await readLocalizedMarkdown(inner, "../secreto", "es")).toBeNull();
+    expect(await readLocalizedMarkdown(inner, "..%2Fsecreto", "es")).toBeNull();
+    expect(await readLocalizedMarkdown(inner, "a", "../inner/a.es")).toBeNull();
+    expect(await readLocalizedMarkdown(inner, "A", "es")).toBeNull();
+    expect(await readLocalizedMarkdown(inner, "a", "fr")).toBeNull();
+    expect((await readLocalizedMarkdown(inner, "a", "es"))?.content).toBe("dentro");
   });
 
   it("sin frontmatter da data vacío y el texto íntegro", async () => {
