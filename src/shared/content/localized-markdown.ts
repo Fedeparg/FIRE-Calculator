@@ -10,8 +10,15 @@ import matter from "gray-matter";
  * (`renderMarkdown`) se deja a quien llama, porque los metadatos se leen a menudo sin el cuerpo.
  */
 
-/** Slug por defecto: cualquier cosa. Las novedades lo restringen a una fecha ISO. */
-const ANY_SLUG = ".+";
+/**
+ * Slug válido por defecto: minúsculas, dígitos y guiones (todo el contenido cumple). Las novedades
+ * lo restringen aún más, a una fecha ISO. Que el listado y la lectura usen la misma regla evita
+ * prerenderizar un slug que luego no se puede leer.
+ */
+const SAFE_SLUG = "[a-z0-9-]+";
+const SAFE_SLUG_RE = new RegExp(`^${SAFE_SLUG}$`);
+const LOCALE_SUFFIX = "es|en";
+const LOCALE_RE = new RegExp(`^(${LOCALE_SUFFIX})$`);
 
 export interface LocalizedFile {
   slug: string;
@@ -31,7 +38,7 @@ export interface ParsedMarkdown {
  * existe equivale a ninguno: el contenido es opcional y la degradación, silenciosa. Los
  * subdirectorios (p. ej. `explainers/`) se ignoran.
  */
-export async function listLocalizedFiles(dir: string, slugPattern: string = ANY_SLUG): Promise<LocalizedFile[]> {
+export async function listLocalizedFiles(dir: string, slugPattern: string = SAFE_SLUG): Promise<LocalizedFile[]> {
   let entries: import("node:fs").Dirent[];
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
@@ -39,7 +46,7 @@ export async function listLocalizedFiles(dir: string, slugPattern: string = ANY_
     return [];
   }
 
-  const fileRe = new RegExp(`^(${slugPattern})\\.(es|en)\\.md$`);
+  const fileRe = new RegExp(`^(${slugPattern})\\.(${LOCALE_SUFFIX})\\.md$`);
   const files: LocalizedFile[] = [];
   for (const entry of entries) {
     if (!entry.isFile()) continue;
@@ -53,7 +60,7 @@ export async function listLocalizedFiles(dir: string, slugPattern: string = ANY_
 export async function listLocalizedSlugs(
   dir: string,
   locale: string,
-  slugPattern: string = ANY_SLUG,
+  slugPattern: string = SAFE_SLUG,
 ): Promise<string[]> {
   const files = await listLocalizedFiles(dir, slugPattern);
   return files
@@ -74,8 +81,13 @@ export async function readMarkdownFile(filePath: string): Promise<ParsedMarkdown
   return { data, content };
 }
 
-/** `<dir>/<slug>.<locale>.md` parseado, o `null` si no existe (sin fallback a otro idioma). */
-export function readLocalizedMarkdown(dir: string, slug: string, locale: string): Promise<ParsedMarkdown | null> {
+/**
+ * `<dir>/<slug>.<locale>.md` parseado, o `null` si no existe (sin fallback a otro idioma). El slug
+ * y el idioma llegan de la URL (`dynamicParams`), así que se validan ANTES de tocar el disco: con
+ * `../` o separadores, `path.join` saldría del directorio de contenido.
+ */
+export async function readLocalizedMarkdown(dir: string, slug: string, locale: string): Promise<ParsedMarkdown | null> {
+  if (!SAFE_SLUG_RE.test(slug) || !LOCALE_RE.test(locale)) return null;
   return readMarkdownFile(path.join(dir, `${slug}.${locale}.md`));
 }
 
