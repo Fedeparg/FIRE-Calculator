@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, asc, eq } from 'drizzle-orm';
 
@@ -6,14 +6,7 @@ import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type PositionLot } from '../db/schema.js';
 import type { CreatePositionLotDto } from './dto/create-position-lot.dto.js';
 import type { UpdatePositionLotDto } from './dto/update-position-lot.dto.js';
-import {
-  aggregateLots,
-  AMOUNT_SCALE,
-  LotAggregateError,
-  parseDecimal,
-  type AggregatableLot,
-  type LotAggregate,
-} from './lot-aggregate.js';
+import { aggregateLots, AMOUNT_SCALE, LotAggregateError, parseDecimal, type LotAggregate } from './lot-aggregate.js';
 import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { LOT_CHANGED_EVENT, type LotChangedEvent } from './position-events.js';
 import { todayUtc } from '../common/dates.js';
@@ -259,7 +252,7 @@ export class PositionLotsService {
     const existing = await this.selectLots(tx, input.positionId);
 
     if (existing.some((lot) => lot.kind === 'sell')) {
-      const current = this.aggregate(existing);
+      const current = aggregateLots(existing);
       if (sameAmount(current.quantity, input.quantity) && sameAmount(current.avgPrice, input.price)) {
         return;
       }
@@ -308,7 +301,7 @@ export class PositionLotsService {
     // `FOR UPDATE` no admite (interbloqueo entre las dos); `NO KEY UPDATE` sí.
     await tx.select({ id: positions.id }).from(positions).where(eq(positions.id, positionId)).for('no key update');
     const lots = await this.selectLots(tx, positionId);
-    const aggregate = this.aggregate(lots);
+    const aggregate = aggregateLots(lots);
 
     await tx
       .update(positions)
@@ -320,18 +313,6 @@ export class PositionLotsService {
       .where(eq(positions.id, positionId));
 
     return aggregate;
-  }
-
-  /** Traduce los errores de la lógica pura a 400. */
-  private aggregate(lots: readonly AggregatableLot[]): LotAggregate {
-    try {
-      return aggregateLots(lots);
-    } catch (error) {
-      if (error instanceof LotAggregateError) {
-        throw new BadRequestException({ code: error.code, message: error.message });
-      }
-      throw error;
-    }
   }
 
   /** Lotes de una posición en el orden canónico `(tradedAt, createdAt, id)`. */

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -207,7 +207,7 @@ describe('PositionLotsService (integración con Postgres)', () => {
           price: 180,
           tradedAt: '2026-06-01',
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toMatchObject({ code: 'NEGATIVE_QUANTITY' });
 
       // Ni el lote inválido ni un descuadre en la posición.
       expect(await lots.listByPosition(userId, position.id)).toHaveLength(1);

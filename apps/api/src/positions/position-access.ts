@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql, type SQL } from 'drizzle-orm';
 
 import type { DatabaseOrTransaction } from '../db/database.module.js';
 import { positions, type Position } from '../db/schema.js';
@@ -21,4 +21,13 @@ export async function findOwnedPosition(db: DatabaseOrTransaction, userId: strin
     throw new NotFoundException('Posición no encontrada');
   }
   return row;
+}
+
+/**
+ * Condición "esta posición es de este bróker", sin distinguir mayúsculas: la misma regla que el
+ * índice único `(user_id, ticker, lower(coalesce(broker, '')))` de `schema.ts`. Un solo sitio
+ * para que el alta, la edición y la importación no la escriban cada uno a su manera.
+ */
+export function brokerEquals(broker: string): SQL {
+  return sql`lower(${positions.broker}) = lower(${broker})`;
 }

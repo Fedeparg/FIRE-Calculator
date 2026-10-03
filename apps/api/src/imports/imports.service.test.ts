@@ -11,10 +11,25 @@ import { IncomeService } from '../income/income.service.js';
 import { LOT_CHANGED_EVENT } from '../positions/position-events.js';
 import { createTestDb, insertUser, resetDb } from '../../test/db.js';
 import { buildPositionsStack, pricesStub } from '../../test/positions-stack.js';
-import { ImportsService, TRADE_REPUBLIC_BROKER } from './imports.service.js';
+import { ImportsService } from './imports.service.js';
+import { PostImportTasks } from './post-import.tasks.js';
+import { TradeImportWriter } from './trade-import.writer.js';
+import { TRADE_REPUBLIC_BROKER } from './trade-republic-import.model.js';
+import { TradeRepublicImportPlanner } from './trade-republic-import.planner.js';
 
 /** La resolución con datos de mercado tiene su propio test; aquí no hace nada. */
 const dividendsStub = { resolvePending: () => Promise.resolve(0) } as unknown as DividendResolutionService;
+
+/** El grafo de la importación tal y como lo cablea Nest, con precios y dividendos en no-op. */
+function buildImportsService(db: Database, events: EventEmitter2 = new EventEmitter2()): ImportsService {
+  const income = new IncomeService(db);
+  return new ImportsService(
+    new TradeRepublicImportPlanner(db, income),
+    new TradeImportWriter(db, buildPositionsStack(db).lots, income),
+    new PostImportTasks(pricesStub, events, dividendsStub),
+    events,
+  );
+}
 
 type Fields = Partial<Record<(typeof TRADE_REPUBLIC_HEADER)[number], string>>;
 
@@ -65,14 +80,7 @@ describe('ImportsService (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new ImportsService(
-      db,
-      buildPositionsStack(db).lots,
-      pricesStub,
-      new EventEmitter2(),
-      new IncomeService(db),
-      dividendsStub,
-    );
+    service = buildImportsService(db);
   });
 
   afterEach(async () => {
@@ -160,14 +168,7 @@ describe('ImportsService (integración con Postgres)', () => {
     const events = new EventEmitter2();
     const emitted: unknown[] = [];
     events.on(LOT_CHANGED_EVENT, (payload: unknown) => emitted.push(payload));
-    const svc = new ImportsService(
-      db,
-      buildPositionsStack(db).lots,
-      pricesStub,
-      events,
-      new IncomeService(db),
-      dividendsStub,
-    );
+    const svc = buildImportsService(db, events);
     const userId = await insertUser(db, 'a@example.com');
 
     await svc.confirm(userId, csv(trade('BUY', ETF, '1', '100', 1)));
@@ -368,14 +369,7 @@ describe('ImportsService — cobros (integración con Postgres)', () => {
 
   beforeAll(() => {
     ({ db, close } = createTestDb());
-    service = new ImportsService(
-      db,
-      buildPositionsStack(db).lots,
-      pricesStub,
-      new EventEmitter2(),
-      new IncomeService(db),
-      dividendsStub,
-    );
+    service = buildImportsService(db);
   });
   afterEach(() => resetDb(db));
   afterAll(() => close());

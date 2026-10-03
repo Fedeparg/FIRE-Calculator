@@ -13,7 +13,7 @@ import { DonationsModule } from './donations/donations.module.js';
 import { EmailModule } from './email/email.module.js';
 import { DailyJobsModule } from './jobs/daily-jobs.module.js';
 import { parseEnv } from './config/env.js';
-import { PgErrorFilter } from './common/pg-error.filter.js';
+import { ErrorTranslationFilter } from './common/error-translation.filter.js';
 import { FxReferenceModule } from './fx-reference/fx-reference.module.js';
 import { IncomeModule } from './income/income.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -59,7 +59,7 @@ import { ScenariosModule } from './scenarios/scenarios.module.js';
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Errores de Postgres con significado para el cliente (FK, único…) → 4xx/503 en vez de 500.
-    { provide: APP_FILTER, useClass: PgErrorFilter },
+    { provide: APP_FILTER, useClass: ErrorTranslationFilter },
   ],
 })
 export class AppModule {}

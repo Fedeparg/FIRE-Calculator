@@ -13,7 +13,8 @@ import { APP_FILTER, NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { PgErrorFilter } from './pg-error.filter.js';
+import { LotAggregateError } from '../positions/lot-aggregate.js';
+import { ErrorTranslationFilter } from './error-translation.filter.js';
 import { findPgError, pgErrorToHttp } from './pg-error.js';
 
 /** Error de postgres-js envuelto como lo hace Drizzle (`DrizzleQueryError` con `cause`). */
@@ -73,14 +74,15 @@ class BoomController {
   boom(@Param('kind') kind: string): never {
     if (kind === 'http') throw new NotFoundException({ code: 'NOT_FOUND', message: 'No está' });
     if (kind === 'unique') throw drizzleError('23505', 'positions_user_ticker_broker_idx');
+    if (kind === 'domain') throw new LotAggregateError('NEGATIVE_QUANTITY', 'La cantidad quedaría en negativo');
     throw new Error('Failed query: select secreto');
   }
 }
 
-@Module({ controllers: [BoomController], providers: [{ provide: APP_FILTER, useClass: PgErrorFilter }] })
+@Module({ controllers: [BoomController], providers: [{ provide: APP_FILTER, useClass: ErrorTranslationFilter }] })
 class BoomModule {}
 
-describe('PgErrorFilter (HTTP)', () => {
+describe('ErrorTranslationFilter (HTTP)', () => {
   let app: NestExpressApplication;
   let origin: string;
 
@@ -104,6 +106,13 @@ describe('PgErrorFilter (HTTP)', () => {
     expect(status).toBe(409);
     expect(body).toMatchObject({ code: 'CONFLICT' });
     expect(JSON.stringify(body)).not.toContain('secreto');
+  });
+
+  it('traduce un error de dominio a 400 con su código y su mensaje', async () => {
+    expect(await get('domain')).toEqual({
+      status: 400,
+      body: { code: 'NEGATIVE_QUANTITY', message: 'La cantidad quedaría en negativo' },
+    });
   });
 
   it('deja intactas las HttpException', async () => {

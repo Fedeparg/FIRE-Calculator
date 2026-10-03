@@ -9,6 +9,7 @@ import { CALCULATORS } from '@sextante/core/calculators/schemas';
 import { SCOPE_PORTFOLIO_READ, SCOPE_PORTFOLIO_WRITE } from '../oauth/oauth.constants.js';
 import { createIncomeSchema } from '../income/dto/create-income.dto.js';
 import { updateIncomeSchema } from '../income/dto/update-income.dto.js';
+import { LotAggregateError } from '../positions/lot-aggregate.js';
 import { TaxReturnService } from '../tax-return/tax-return.service.js';
 import { McpService } from './mcp.service.js';
 
@@ -504,6 +505,24 @@ describe('McpService', () => {
     // Lo válido sí llega al servicio, ya normalizado por el esquema.
     expect((await call('update_income', { id: 'i1', gross: 10 })).isError).toBeFalsy();
     expect(income.update).toHaveBeenCalledWith(USER, 'i1', { gross: 10 });
+  });
+
+  it('reenvía los errores de dominio con su código, igual que REST', async () => {
+    const { service, valuation } = makeService();
+    valuation.breakdown.mockRejectedValueOnce(
+      new LotAggregateError('NEGATIVE_QUANTITY', 'La cantidad de la posición quedaría en negativo'),
+    );
+    client = await connect(service);
+
+    const result = (await client.callTool({
+      name: 'get_portfolio_breakdown',
+      arguments: { groupBy: 'broker' },
+    })) as CallToolResult;
+
+    expect(result.isError).toBe(true);
+    expect(JSON.stringify(result.content)).toContain(
+      'La cantidad de la posición quedaría en negativo (NEGATIVE_QUANTITY)',
+    );
   });
 
   it('exige portfolio:read para las tools de lectura y audita el rechazo', async () => {

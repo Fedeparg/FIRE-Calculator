@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { and, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, ne } from 'drizzle-orm';
 
 import type { AssetClass } from '@sextante/core/portfolio/types';
 import { DRIZZLE, type Database } from '../db/database.module.js';
@@ -9,7 +9,7 @@ import { PricesService } from '../prices/prices.service.js';
 import type { CombinePositionDto } from './dto/combine-position.dto.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import type { UpdatePositionDto } from './dto/update-position.dto.js';
-import { findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import { brokerEquals, findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
 import { PositionLotsService, sameAmount } from './position-lots.service.js';
 import {
   LOT_CHANGED_EVENT,
@@ -237,11 +237,7 @@ export class PositionsService {
       return;
     }
 
-    const conditions = [
-      eq(positions.userId, userId),
-      eq(positions.ticker, ticker),
-      sql`lower(${positions.broker}) = lower(${broker})`,
-    ];
+    const conditions = [eq(positions.userId, userId), eq(positions.ticker, ticker), brokerEquals(broker)];
     if (excludeId) {
       conditions.push(ne(positions.id, excludeId));
     }
