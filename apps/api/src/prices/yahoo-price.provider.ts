@@ -18,8 +18,25 @@ const REQUEST_TIMEOUT_MS = 12_000;
 const RETRY: RetryPolicy = {
   max: MAX_RETRIES,
   baseMs: RETRY_BASE_MS,
-  retryOn: (status) => status === 429 || status >= 500,
+  retryOn: isUnavailableStatus,
 };
+/**
+ * Fallos de "fuente caída" (red, timeout, 5xx o 429 tras agotar reintentos) seguidos a partir de
+ * los que se corta el lote: con Yahoo caído cada símbolo gasta ~40 s en reintentos y un refresco
+ * de decenas de símbolos bloquearía el cron horas. Un símbolo sin precio (404, cuerpo sin
+ * cotización) NO cuenta: es un símbolo malo, no la fuente.
+ */
+const MAX_CONSECUTIVE_OUTAGES = 5;
+/** Presupuesto total de un lote de `getQuotes`: por debajo de la hora que separa dos intradía. */
+const QUOTES_BATCH_BUDGET_MS = 15 * 60_000;
+
+/** 429 y 5xx: la fuente no está disponible (se reintenta y, agotado, cuenta como caída). */
+function isUnavailableStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+/** Resultado de pedir un `chart`: el cuerpo, o el fallo distinguiendo la fuente caída de un símbolo malo. */
+type ChartOutcome = { ok: true; body: unknown } | { ok: false; outage: boolean };
 
 /**
  * Cinco años de cierres diarios (~1.280 barras, ~135 kB) caben en una llamada al mismo
@@ -147,16 +164,46 @@ export function parseYahooDividends(symbol: string, body: unknown): DividendEven
 export class YahooPriceProvider implements PriceProvider {
   readonly name = 'yahoo';
   private readonly logger = new Logger(YahooPriceProvider.name);
+  /** Públicos para que los tests los acorten (como `historyRequestDelayMs` en `PricesService`). */
+  requestDelayMs = REQUEST_DELAY_MS;
+  batchBudgetMs = QUOTES_BATCH_BUDGET_MS;
+  retry: RetryPolicy = RETRY;
 
+  /**
+   * Última cotización de cada símbolo. Secuencial con pausa (el volumen es bajo y así se evita el
+   * 429), con dos cortacircuitos para que una caída de Yahoo no bloquee el cron: se para tras
+   * `MAX_CONSECUTIVE_OUTAGES` fallos de fuente seguidos y al agotar el presupuesto del lote.
+   */
   async getQuotes(symbols: string[]): Promise<Map<string, Quote>> {
     const unique = [...new Set(symbols.map((s) => s.trim()).filter(Boolean))];
     const result = new Map<string, Quote>();
+    const budget = AbortSignal.timeout(this.batchBudgetMs);
+    let consecutiveOutages = 0;
 
-    // Secuencial con pausa: el volumen es bajo y así se evita el 429.
     for (let i = 0; i < unique.length; i++) {
-      if (i > 0) await sleep(REQUEST_DELAY_MS);
-      const quote = await this.fetchOne(unique[i]);
-      if (quote) result.set(quote.symbol, quote);
+      if (i > 0) await sleep(this.requestDelayMs);
+      if (budget.aborted) {
+        this.logger.error(
+          `Yahoo: presupuesto de ${this.batchBudgetMs} ms agotado; ${unique.length - i} símbolos sin pedir`,
+        );
+        break;
+      }
+      const outcome = await this.fetchChart(unique[i], '1d', '1d', undefined, budget);
+      if (outcome.ok) {
+        consecutiveOutages = 0;
+        const quote = parseYahooChart(unique[i], outcome.body);
+        if (quote) result.set(quote.symbol, quote);
+        else this.logger.warn(`Yahoo ${unique[i]}: respuesta sin precio utilizable`);
+        continue;
+      }
+      consecutiveOutages = outcome.outage ? consecutiveOutages + 1 : 0;
+      if (consecutiveOutages >= MAX_CONSECUTIVE_OUTAGES) {
+        this.logger.error(
+          `Yahoo parece caído (${consecutiveOutages} fallos seguidos de red, 5xx o 429): ` +
+            `se cortan los ${unique.length - i - 1} símbolos restantes del lote`,
+        );
+        break;
+      }
     }
     return result;
   }
@@ -167,33 +214,32 @@ export class YahooPriceProvider implements PriceProvider {
     if (!clean) return { quotes: [], splits: [], dividends: [] };
 
     // Splits y dividendos viajan en la misma llamada.
-    const body = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'div|split');
-    if (body === null) return { quotes: [], splits: [], dividends: [] };
+    const outcome = await this.fetchChart(clean, HISTORY_RANGE, HISTORY_INTERVAL, 'div|split');
+    if (!outcome.ok) return { quotes: [], splits: [], dividends: [] };
 
-    const quotes = parseYahooChartHistory(clean, body);
+    const quotes = parseYahooChartHistory(clean, outcome.body);
     if (quotes.length === 0) {
       this.logger.warn(`Yahoo ${clean}: histórico vacío o no utilizable`);
     }
-    return { quotes, splits: parseYahooSplits(clean, body), dividends: parseYahooDividends(clean, body) };
-  }
-
-  /** Última cotización de un símbolo, o `null` si no se pudo obtener. */
-  private async fetchOne(symbol: string): Promise<Quote | null> {
-    const body = await this.fetchChart(symbol, '1d', '1d');
-    if (body === null) return null;
-
-    const quote = parseYahooChart(symbol, body);
-    if (!quote) {
-      this.logger.warn(`Yahoo ${symbol}: respuesta sin precio utilizable`);
-    }
-    return quote;
+    return {
+      quotes,
+      splits: parseYahooSplits(clean, outcome.body),
+      dividends: parseYahooDividends(clean, outcome.body),
+    };
   }
 
   /**
-   * Pide el `chart` con reintentos (backoff) ante 429/5xx; `null` ante un fallo definitivo para
-   * que un símbolo malo no rompa el lote. Devuelve el cuerpo sin parsear (`unknown`).
+   * Pide el `chart` con reintentos (backoff) ante 429/5xx; ante un fallo definitivo devuelve si
+   * fue la fuente (`outage`) o el símbolo, para que un símbolo malo no rompa el lote. El cuerpo
+   * va sin parsear (`unknown`).
    */
-  private async fetchChart(symbol: string, range: string, interval: string, events?: string): Promise<unknown> {
+  private async fetchChart(
+    symbol: string,
+    range: string,
+    interval: string,
+    events?: string,
+    signal?: AbortSignal,
+  ): Promise<ChartOutcome> {
     const url =
       `${YAHOO_CHART_URL}/${encodeURIComponent(symbol)}` +
       `?interval=${encodeURIComponent(interval)}&range=${encodeURIComponent(range)}` +
@@ -201,12 +247,14 @@ export class YahooPriceProvider implements PriceProvider {
     const result = await fetchJson(url, {
       timeoutMs: REQUEST_TIMEOUT_MS,
       headers: { 'User-Agent': YAHOO_USER_AGENT },
-      retry: RETRY,
+      retry: this.retry,
+      signal,
     });
-    if (result.ok) return result.body;
+    if (result.ok) return { ok: true, body: result.body };
 
-    const exhausted = result.status !== undefined && RETRY.retryOn(result.status) ? ' (sin reintentos restantes)' : '';
+    const outage = result.status === undefined || isUnavailableStatus(result.status);
+    const exhausted = result.status !== undefined && outage ? ' (sin reintentos restantes)' : '';
     this.logger.warn(`Yahoo ${symbol}: ${result.error}${exhausted}`);
-    return null;
+    return { ok: false, outage };
   }
 }

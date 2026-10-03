@@ -29,9 +29,10 @@ export const INTRADAY_OFF = 'off';
  *   4. Alertas de hitos FIRE (opt-in) sobre el snapshot recién capturado.
  *
  * El intradía (`PRICE_INTRADAY_CRON`, `off` lo desactiva) solo actualiza precios y FX; el
- * nocturno deja la fila del día con el cierre. Ambos comparten un cerrojo en memoria: si uno sigue
- * en marcha, el otro se salta (y se registra) en vez de duplicar peticiones a Yahoo. El cerrojo
- * es de proceso, no distribuido: vale porque la API corre en una sola réplica.
+ * nocturno deja la fila del día con el cierre. Comparten un cerrojo en memoria para no duplicar
+ * peticiones a Yahoo: el intradía (y el arranque) se salta si hay otro trabajo en marcha, pero el
+ * NOCTURNO espera a que termine, porque saltárselo dejaría el día sin snapshot. El cerrojo es de
+ * proceso, no distribuido: vale porque la API corre en una sola réplica.
  *
  * Vive aquí y no en `prices/` porque el snapshot necesita `PortfolioModule`, que depende de
  * `PricesModule`: colgarlo de `prices/` crearía un ciclo que solo se rompe con `forwardRef`.
@@ -39,7 +40,8 @@ export const INTRADAY_OFF = 'off';
 @Injectable()
 export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap {
   private readonly logger = new Logger(DailyJobsScheduler.name);
-  private running = false;
+  /** Trabajo en marcha (nunca rechaza), o null si el cerrojo está libre. */
+  private current: Promise<void> | null = null;
 
   constructor(
     private readonly prices: PricesService,
@@ -109,7 +111,7 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
 
   /** Pasos con errores capturados por separado: con la fuente caída el snapshot se guarda igual (precios de ayer, mejor que un hueco). */
   async run(): Promise<void> {
-    await this.exclusive('nocturno', () => this.runNightly());
+    await this.exclusive('nocturno', () => this.runNightly(), 'wait');
   }
 
   async runIntraday(): Promise<void> {
@@ -123,17 +125,28 @@ export class DailyJobsScheduler implements OnModuleInit, OnApplicationBootstrap 
     });
   }
 
-  /** Ejecuta `task` si no hay otro trabajo en marcha; el cerrojo se libera siempre. */
-  private async exclusive(label: string, task: () => Promise<void>): Promise<void> {
-    if (this.running) {
-      this.logger.warn(`Trabajo ${label} omitido: hay otro trabajo de precios en marcha`);
-      return;
+  /**
+   * Ejecuta `task` con el cerrojo. Si hay otro trabajo en marcha, `skip` lo omite (y lo registra)
+   * y `wait` espera a que termine antes de empezar. El cerrojo se libera siempre.
+   */
+  private async exclusive(label: string, task: () => Promise<void>, onBusy: 'skip' | 'wait' = 'skip'): Promise<void> {
+    while (this.current) {
+      if (onBusy === 'skip') {
+        this.logger.warn(`Trabajo ${label} omitido: hay otro trabajo de precios en marcha`);
+        return;
+      }
+      this.logger.warn(`Trabajo ${label} en espera: hay otro trabajo de precios en marcha`);
+      await this.current;
     }
-    this.running = true;
+    const running = task();
+    this.current = running.then(
+      () => undefined,
+      () => undefined,
+    );
     try {
-      await task();
+      await running;
     } finally {
-      this.running = false;
+      this.current = null;
     }
   }
 

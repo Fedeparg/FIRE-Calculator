@@ -91,6 +91,34 @@ describe('fetchJson / fetchText', () => {
     expect(result.ok ? '' : result.error).toMatch(/timeout|aborted/i);
   });
 
+  it('un presupuesto externo agotado aborta el intento en curso y no reintenta', async () => {
+    const fetchMock = vi.fn((_url: string, init: RequestInit) => {
+      return new Promise<Response>((_resolve, reject) => {
+        init.signal?.addEventListener('abort', () => reject(init.signal?.reason as Error));
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchJson('https://x.test', {
+      timeoutMs: 60_000,
+      retry: RETRY,
+      signal: AbortSignal.timeout(10),
+    });
+
+    expect(result).toMatchObject({ ok: false });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('con el presupuesto ya agotado no llega a pedir nada', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await fetchJson('https://x.test', { timeoutMs: 1000, signal: AbortSignal.abort() });
+
+    expect(result).toEqual({ ok: false, error: 'presupuesto de tiempo agotado' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('fetchText devuelve el cuerpo como texto y envía método, cabeceras y cuerpo', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response('a,b\n1,2', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);

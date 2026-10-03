@@ -126,7 +126,7 @@ describe('DailyJobsScheduler', () => {
     expect(fireAlerts.evaluateAll).toHaveBeenCalledWith('2026-09-28');
   });
 
-  it('si hay un trabajo en marcha, el otro se salta en vez de solaparse', async () => {
+  it('si hay un trabajo en marcha, el intradía se salta en vez de solaparse', async () => {
     const { scheduler, prices } = setup();
     const gate = deferred();
     prices.refreshAll.mockImplementationOnce(async () => {
@@ -140,6 +140,44 @@ describe('DailyJobsScheduler', () => {
     await nightly;
 
     expect(prices.refreshAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('el nocturno NO se descarta si el intradía sigue en marcha: espera y después corre entero', async () => {
+    const { scheduler, prices, snapshots } = setup();
+    const gate = deferred();
+    prices.refreshAll.mockImplementationOnce(async () => {
+      await gate.promise;
+      return SUMMARY;
+    });
+
+    const intraday = scheduler.runIntraday();
+    const nightly = scheduler.run();
+    await Promise.resolve();
+    // Mientras el intradía (colgado de Yahoo) no acaba, el nocturno no ha empezado.
+    expect(prices.refreshAll).toHaveBeenCalledTimes(1);
+    expect(snapshots.captureAll).not.toHaveBeenCalled();
+
+    gate.resolve();
+    await Promise.all([intraday, nightly]);
+
+    expect(prices.refreshAll).toHaveBeenCalledTimes(2);
+    expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
+  });
+
+  it('el nocturno espera también si el trabajo en marcha falla', async () => {
+    const { scheduler, prices, snapshots } = setup();
+    const gate = deferred();
+    prices.ensureHistoryForActivePositions.mockImplementationOnce(async () => {
+      await gate.promise;
+      throw new Error('Yahoo caído');
+    });
+
+    scheduler.onApplicationBootstrap();
+    const nightly = scheduler.run();
+    gate.resolve();
+    await nightly;
+
+    expect(snapshots.captureAll).toHaveBeenCalledTimes(1);
   });
 
   it('libera el cerrojo aunque el refresco falle', async () => {

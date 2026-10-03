@@ -25,6 +25,11 @@ export interface RequestOptions {
    * timeouts y un cuerpo ilegible.
    */
   retry?: RetryPolicy;
+  /**
+   * Presupuesto externo (p. ej. el de un lote entero, `AbortSignal.timeout`): si se agota, el
+   * intento en curso se aborta y no se reintenta más.
+   */
+  signal?: AbortSignal;
 }
 
 /**
@@ -43,12 +48,16 @@ async function request<T>(
   let last: HttpResult<T> = { ok: false, error: 'sin intentos' };
   for (let attempt = 1; attempt <= attempts; attempt++) {
     if (attempt > 1 && options.retry) await sleep(options.retry.baseMs * (attempt - 1));
+    if (options.signal?.aborted) {
+      return { ok: false, error: 'presupuesto de tiempo agotado' };
+    }
+    const timeout = AbortSignal.timeout(options.timeoutMs);
     try {
       const response = await fetch(url, {
         method: options.method,
         headers: options.headers,
         body: options.body,
-        signal: AbortSignal.timeout(options.timeoutMs),
+        signal: options.signal ? AbortSignal.any([timeout, options.signal]) : timeout,
       });
       if (!response.ok) {
         last = { ok: false, status: response.status, error: `HTTP ${response.status}` };
@@ -58,6 +67,7 @@ async function request<T>(
       return { ok: true, status: response.status, body: await read(response) };
     } catch (error) {
       last = { ok: false, error: errorMessage(error) };
+      if (options.signal?.aborted) return last;
     }
   }
   return last;
