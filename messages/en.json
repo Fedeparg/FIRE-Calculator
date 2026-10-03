@@ -371,7 +371,8 @@
       "sensitivityCaption": "Probability of success by withdrawal rate, with everything else unchanged and the same market scenarios.",
       "sensitivityRate": "Withdrawal rate",
       "sensitivityTarget": "FIRE number",
-      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future."
+      "historicalSource": "Historical data: Robert J. Shiller, “U.S. Stock Markets 1871-Present”, real returns from {from} to {to}. It is the US market, one of the best-performing in the world: the past does not guarantee the future.",
+      "recalculating": "Recalculating…"
     },
     "hipoteca-fija": {
       "title": "Fixed-rate mortgage calculator",
