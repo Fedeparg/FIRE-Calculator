@@ -22,7 +22,7 @@ import {
 } from '@sextante/core/portfolio/history-reconstruction';
 import type { HistoryPointDto, PortfolioHistoryDto } from '@sextante/core/portfolio/types';
 import { staleSnapshotDates } from '@sextante/core/portfolio/staleness';
-import { isoDate, todayUtc } from '../common/dates.js';
+import { addDays, isoDate, todayUtc } from '../common/dates.js';
 
 /**
  * Divisa base del histórico: `portfolio_snapshots` se guarda siempre en euros para no depender
@@ -48,8 +48,6 @@ export interface SnapshotSummary {
 
 /** Tope de `numeric(20,8)`: 12 dígitos enteros. */
 const MAX_SNAPSHOT_AMOUNT = 1e12;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Igualdad de tasas FX (un `jsonb` no conserva el orden de las claves). */
 function sameRates(a: Record<string, number>, b: Record<string, number>): boolean {
@@ -235,9 +233,9 @@ export class PortfolioSnapshotsService {
 
       const earliest = firstTradeDate(historyPositions);
       if (earliest === null) return;
-      const floor = isoDate(new Date(Date.now() - HISTORY_MAX_DAYS * DAY_MS));
+      const floor = addDays(todayUtc(), -HISTORY_MAX_DAYS);
       const from = earliest > floor ? earliest : floor;
-      const to = isoDate(new Date(Date.now() - DAY_MS)); // ayer: hoy es del cron
+      const to = addDays(todayUtc(), -1); // ayer: hoy es del cron
       if (from > to) return;
 
       const series = await this.prices.getSeriesSince(tickerToSymbol, from, tx);
@@ -438,7 +436,7 @@ export class PortfolioSnapshotsService {
     display: string = SNAPSHOT_BASE_CURRENCY,
   ): Promise<PortfolioHistoryDto> {
     const span = Math.min(Math.max(Math.trunc(days), 1), HISTORY_MAX_DAYS);
-    const from = isoDate(new Date(Date.now() - span * 24 * 60 * 60 * 1000));
+    const from = addDays(todayUtc(), -span);
 
     const rows = await this.db
       .select()

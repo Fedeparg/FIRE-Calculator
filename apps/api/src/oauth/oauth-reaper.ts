@@ -6,6 +6,7 @@ import { and, eq, isNull, lt, notExists, or, sql } from 'drizzle-orm';
 import type { Env } from '../config/env.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { loginTokens, mcpAuditLog, oauthAuthCodes, oauthClients, oauthGrants, oauthTokens } from '../db/schema.js';
+import { MS_PER_DAY } from '../common/dates.js';
 import { scheduleFromEnv, TIME_ZONE } from '../common/schedule.js';
 
 /** Por defecto: cada hora en el minuto 15. Formato de 6 campos (s m h D M W). */
@@ -21,8 +22,6 @@ const DEFAULT_CRON = '0 15 * * * *';
  *    abandonado (un cliente que se registró y nunca completó el flujo).
  */
 type RetentionKey = 'LOGIN_TOKEN_RETENTION_DAYS' | 'MCP_AUDIT_RETENTION_DAYS' | 'OAUTH_CLIENT_RETENTION_DAYS';
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** Filas borradas en una pasada, por tabla. */
 export interface ReapSummary {

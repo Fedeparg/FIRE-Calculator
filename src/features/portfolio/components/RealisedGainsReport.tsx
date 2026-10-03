@@ -24,10 +24,12 @@ import { downloadBlob } from "@/shared/format/download";
 import { useFormat } from "@/shared/format/use-format";
 import { trackEvent } from "@/shared/analytics/track";
 import Button from "@/shared/ui/Button";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import IncomeSection from "./IncomeSection";
 import SalesBlocks from "./SalesBlocks";
 import PendingBalancesForm from "./PendingBalancesForm";
 import SavingsReturnSection from "./SavingsReturnSection";
+import { yearOf } from "@sextante/core/dates";
 
 type Props = {
   positions: RealisedGainsPosition[];
@@ -62,23 +64,23 @@ export default function RealisedGainsReport({
   const tIncome = useTranslations("portfolio.income");
   const locale = asLocale(useLocale());
   const { formatCurrency } = useFormat();
+  const currentYear = yearOf(useTodayUtc());
 
   const report = useMemo(() => buildRealisedGainsReport(positions, rates), [positions, rates]);
   const incomeReport = useMemo(() => buildIncomeReport(income, rates), [income, rates]);
   // Ejercicios con ventas o con cobros; sin ninguno, el actual (para poder anotar el primer cobro).
   const years = useMemo(() => {
     const all = new Set([...report.years.map((y) => y.year), ...incomeReport.years.map((y) => y.year)]);
-    if (all.size === 0) all.add(new Date().getUTCFullYear());
+    if (all.size === 0) all.add(currentYear);
     return [...all].sort((a, b) => b - a);
-  }, [report, incomeReport]);
+  }, [report, incomeReport, currentYear]);
 
   // Por defecto, el ejercicio que se declara ahora (el año pasado), si tiene datos: el actual
   // aún no ha terminado.
   const [selected, setSelected] = useState<string>(() => {
-    const lastClosed = new Date().getUTCFullYear() - 1;
+    const lastClosed = currentYear - 1;
     return String(years.includes(lastClosed) ? lastClosed : years[0]);
   });
-  const currentYear = new Date().getUTCFullYear();
   const [failed, setFailed] = useState(false);
   // Se mide si el informe se usa (sin cifras): decide si merece la pena seguir invirtiendo en él.
   useEffect(() => trackEvent({ name: "tax-report-viewed" }), []);

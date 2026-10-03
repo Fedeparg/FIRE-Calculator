@@ -6,6 +6,7 @@
 // columnas por nombre y solo a las que hacen falta, así que esos datos mueren con el array
 // `fields` de cada registro y no llegan a ningún resultado, log ni mensaje de error.
 
+import { addDays } from "../dates.js";
 import { resolveFromBroker } from "../fiscal/dividend-resolution.js";
 import { CsvSyntaxError, parseCsv, type CsvRecord } from "./csv.js";
 import { MAX_IMPORT_ROWS } from "./limits.js";
@@ -365,10 +366,6 @@ export function parseTradeRepublicCsv(text: string): ImportParseResult {
   return { trades, income, skipped, warnings };
 }
 
-function previousDay(date: string): string {
-  return new Date(Date.parse(`${date}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
-}
-
 /** Tipos de fila que son cobros. */
 const INCOME_TYPES = new Set(["INTEREST_PAYMENT", "BENEFITS_SAVEBACK", "STOCKPERK", "DIVIDEND"]);
 
@@ -520,7 +517,7 @@ function resolveIncome(
     // La sucursal española comunica a la AEAT los intereses del mes con fecha de su último día,
     // aunque los abone el día 1 del siguiente: así el de diciembre cuenta en su año, como en el borrador.
     const paidAt =
-      row.type === "INTEREST_PAYMENT" && isReported && row.date.endsWith("-01") ? previousDay(row.date) : row.date;
+      row.type === "INTEREST_PAYMENT" && isReported && row.date.endsWith("-01") ? addDays(row.date, -1) : row.date;
     income.push({
       line: row.line,
       item: {

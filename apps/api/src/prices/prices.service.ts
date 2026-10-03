@@ -26,7 +26,7 @@ import {
   type Quote,
 } from './price-provider.interface.js';
 import { SYMBOL_RESOLVER, type SymbolResolver } from './symbol-resolver.js';
-import { isoDate } from '../common/dates.js';
+import { addDays, MS_PER_DAY, todayUtc } from '../common/dates.js';
 
 /** Divisa puente de las tasas FX: todo se cotiza contra USD y se pivota por él. */
 const FX_QUOTE = 'USD';
@@ -38,14 +38,13 @@ const UPSERT_CHUNK_SIZE = 200;
 export const HISTORY_MAX_DAYS = 1825;
 /** Margen en días: un fin de semana o festivo retrasa la primera barra sin que falte nada. */
 const COVERAGE_TOLERANCE_DAYS = 7;
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 /** Antigüedad (días) para reconsultar los splits de un símbolo. */
 const SPLITS_REFRESH_DAYS = 7;
 /** Tope por pasada de `refreshStaleSplits` (los vencimientos nacen el mismo día). */
 const SPLITS_REFRESH_MAX_PER_RUN = 40;
 /** `YYYY-MM-DD` (UTC) de hace `days` días. */
 function daysAgo(days: number): string {
-  return isoDate(new Date(Date.now() - days * MS_PER_DAY));
+  return addDays(todayUtc(), -days);
 }
 /** Pausa entre históricos seguidos: Yahoo rate-limita por IP (429). */
 const HISTORY_REQUEST_DELAY_MS = 500;
@@ -193,9 +192,7 @@ export class PricesService {
     }
     const symbols = [...new Set([...tickerToSymbol.values(), ...currencyBySymbol.keys()])];
 
-    const start = new Date(Date.parse(`${from}T00:00:00Z`) - MAX_CARRY_FORWARD_DAYS * MS_PER_DAY)
-      .toISOString()
-      .slice(0, 10);
+    const start = addDays(from, -MAX_CARRY_FORWARD_DAYS);
     const rows =
       symbols.length === 0
         ? []
@@ -333,9 +330,7 @@ export class PricesService {
       .filter(([symbol, since]) => {
         const minDate = earliest.get(symbol);
         if (!minDate) return true;
-        const limit = new Date(Date.parse(`${since}T00:00:00Z`) + COVERAGE_TOLERANCE_DAYS * MS_PER_DAY)
-          .toISOString()
-          .slice(0, 10);
+        const limit = addDays(since, COVERAGE_TOLERANCE_DAYS);
         return minDate > limit;
       })
       .map(([symbol]) => symbol);

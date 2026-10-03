@@ -7,7 +7,7 @@ import {
   type ReferenceRatePoint,
   type ReferenceRates,
 } from '@sextante/core/fiscal/fx-reference';
-import { isoDate, todayUtc } from '../common/dates.js';
+import { addDays, todayUtc } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { fxReferenceCoverage, fxReferenceRates } from '../db/schema.js';
 import { REFERENCE_RATES_PROVIDER, type EcbRate, type ReferenceRatesProvider } from './ecb-reference-rates.provider.js';
@@ -21,10 +21,6 @@ const TAIL_REFRESH_MS = 6 * 3_600_000;
 
 const CURRENCY = /^[A-Z]{3}$/;
 const INSERT_CHUNK = 1_000;
-
-function addDays(date: string, days: number): string {
-  return isoDate(new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000));
-}
 
 /**
  * Tipos de referencia del BCE con caché permanente en BD: las publicaciones pasadas no cambian,

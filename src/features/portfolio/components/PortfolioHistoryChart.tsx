@@ -18,6 +18,7 @@ import type { PortfolioHistoryDto } from "@sextante/core/portfolio/types";
 import { useFormat } from "@/shared/format/use-format";
 import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
 import { usePortfolioData } from "./PortfolioDataProvider";
 
 type Props = {
@@ -56,11 +57,12 @@ export default function PortfolioHistoryChart({ display }: Props) {
   // El snapshot de hoy se escribe de noche: la valoración en vivo (la misma del Resumen) cierra
   // la serie en el día de hoy para que la gráfica no se quede en ayer.
   const { agg } = usePortfolioData();
+  const today = useTodayUtc();
   const series = useMemo(() => {
     const live =
       agg.display === display
         ? {
-            date: new Date().toISOString().slice(0, 10),
+            date: today,
             marketValue: agg.marketValue,
             invested: agg.invested,
             pnlAbs: agg.pnlAbs,
@@ -70,7 +72,7 @@ export default function PortfolioHistoryChart({ display }: Props) {
           }
         : null;
     return buildHistorySeries(withLivePoint(history?.points ?? [], live));
-  }, [history, agg, display]);
+  }, [history, agg, display, today]);
 
   const estimatedColumn: ChartTableColumn<DataRow> = {
     label: t("estimatedColumn"),

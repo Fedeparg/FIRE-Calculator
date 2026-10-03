@@ -11,6 +11,8 @@ import { useFormat } from "@/shared/format/use-format";
 import { historyPath } from "@/features/portfolio/api";
 import { NO_STORE } from "@/shared/api/client";
 import { useApiQuery } from "@/shared/api/use-api-query";
+import { useTodayUtc } from "@/shared/ui/use-today-utc";
+import { daysBetween, yearOf } from "@sextante/core/dates";
 
 type Props = {
   /** Total agregado (lo calcula el proveedor de datos, el mismo para todas las pestañas). */
@@ -24,11 +26,10 @@ type Props = {
   display: string;
 };
 
-/** 1 de enero del año en curso (UTC) y los días que han pasado desde entonces, hoy incluido. */
-function startOfYear(now: Date): { from: string; days: number } {
-  const from = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-  const days = Math.floor((now.getTime() - from.getTime()) / 86_400_000) + 1;
-  return { from: from.toISOString().slice(0, 10), days };
+/** 1 de enero del año de `today` y los días que han pasado desde entonces, hoy incluido. */
+function startOfYear(today: string): { from: string; days: number } {
+  const from = `${yearOf(today)}-01-01`;
+  return { from, days: daysBetween(from, today) + 1 };
 }
 
 /** Clase de color de una ganancia o pérdida. */
@@ -48,7 +49,7 @@ export default function PortfolioSummary({ agg, fxAsOf, pricesFetchedAt, pricesC
 
   // La ganancia del año sale del histórico diario: se pide solo lo que va de año. Es un dato de
   // apoyo: sin histórico (error o aún cargando) simplemente no se enseña.
-  const { from, days } = startOfYear(new Date());
+  const { from, days } = startOfYear(useTodayUtc());
   const history = useApiQuery<PortfolioHistoryDto>(historyPath(days, display), { init: NO_STORE });
   const gain = history.status === "ready" ? gainSince(history.data.points, from) : null;
 

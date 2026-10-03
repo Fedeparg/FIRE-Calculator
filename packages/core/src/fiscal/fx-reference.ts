@@ -2,6 +2,8 @@
 // la serie la descarga y cachea la API (`apps/api/src/fx-reference/`). Criterio fiscal y
 // fuentes: ver ./README.md, sección `fx-reference.ts`.
 
+import { daysBetween } from "../dates.js";
+
 /** Divisa en la que se declara el IRPF. */
 export const TAX_CURRENCY = "EUR";
 
@@ -28,12 +30,6 @@ export interface AppliedRate {
   unitsPerEur: number;
   /** Día de la publicación usada: el de la operación o el último hábil anterior. */
   date: string;
-}
-
-const MS_PER_DAY = 86_400_000;
-
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
 }
 
 /**

@@ -11,6 +11,7 @@ import {
   type IncomePayload,
 } from "@sextante/core/fiscal/income";
 import { SUPPORTED_CURRENCIES } from "@sextante/core/contracts";
+import { todayUtc } from "@sextante/core/dates";
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
 import { inputClass } from "@/shared/ui/field-classes";
@@ -25,8 +26,6 @@ type Props = {
   onSubmit: (payload: IncomePayload) => void;
   onCancelEdit: () => void;
 };
-
-const todayUtc = () => new Date().toISOString().slice(0, 10);
 
 /**
  * Alta y edición de un cobro: dividendo, interés o recompensa del bróker. La retención en origen

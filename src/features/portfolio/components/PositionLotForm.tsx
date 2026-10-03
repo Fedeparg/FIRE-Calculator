@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 
 import { formatDecimalInput, parseDecimalInput, sanitizeDecimalInput } from "@/shared/format/number-input";
 import { useFormat } from "@/shared/format/use-format";
+import { todayUtc } from "@sextante/core/dates";
 import type { LotPayload, PositionLot, PositionLotKind } from "@sextante/core/portfolio/types";
 import { inputClass } from "@/shared/ui/field-classes";
 import Button from "@/shared/ui/Button";
@@ -18,11 +19,6 @@ type Props = {
   onSubmit: (payload: LotPayload) => void;
   onCancelEdit: () => void;
 };
-
-/** Fecha de hoy en UTC (`YYYY-MM-DD`), la misma referencia que usa `traded_at` en la API. */
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /**
  * Alta y edición de un lote. Los importes van en la divisa de la posición (un lote no tiene

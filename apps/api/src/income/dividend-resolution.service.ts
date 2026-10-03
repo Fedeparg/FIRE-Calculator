@@ -8,13 +8,13 @@ import {
   type DividendResolution,
 } from '@sextante/core/fiscal/dividend-resolution';
 import { STATUTORY_DIVIDEND_WITHHOLDING } from '@sextante/core/fiscal/withholding-rates';
+import { addDays } from '../common/dates.js';
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { incomeEvents, instrumentDividends, instrumentSplits, positions, type IncomeEventRow } from '../db/schema.js';
 import { PricesService } from '../prices/prices.service.js';
 
 /** Margen máximo entre la fecha ex-dividendo y la de pago. */
 const MAX_EX_TO_PAY_DAYS = 100;
-const MS_PER_DAY = 86_400_000;
 
 /** Dividendo por acción de mercado de un símbolo, ya sin el ajuste por splits posteriores. */
 type MarketDividend = { exDate: string; amount: number; currency: string };
@@ -144,9 +144,7 @@ function factsOf(event: IncomeEventRow): DividendFacts {
  */
 function matchDividend(dividends: readonly MarketDividend[], event: IncomeEventRow): MarketDividend | null {
   const currency = event.originalCurrency ?? 'EUR';
-  const earliest = new Date(Date.parse(`${event.paidAt}T00:00:00Z`) - MAX_EX_TO_PAY_DAYS * MS_PER_DAY)
-    .toISOString()
-    .slice(0, 10);
+  const earliest = addDays(event.paidAt, -MAX_EX_TO_PAY_DAYS);
   const candidates = dividends.filter(
     (d) => d.currency === currency && d.exDate <= event.paidAt && d.exDate >= earliest,
   );

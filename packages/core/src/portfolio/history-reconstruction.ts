@@ -13,6 +13,7 @@
  * estimación para la gráfica, no un dato contable.
  */
 
+import { addDays, daysBetween } from "../dates.js";
 import { aggregatePortfolio, type AggregateInput, type PortfolioAggregate } from "../fx.js";
 
 /**
@@ -23,8 +24,6 @@ export const MAX_CARRY_FORWARD_DAYS = 10;
 
 /** Por debajo de esto una cantidad es cero (ruido de redondeo). */
 const QUANTITY_EPSILON = 1e-9;
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface HistoryLot {
   kind: "buy" | "sell";
@@ -75,14 +74,6 @@ export interface HistoryDay {
   date: string;
   aggregate: PortfolioAggregate;
   rates: Record<string, number>;
-}
-
-function daysBetween(from: string, to: string): number {
-  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
-}
-
-function nextDay(day: string): string {
-  return new Date(Date.parse(`${day}T00:00:00Z`) + MS_PER_DAY).toISOString().slice(0, 10);
 }
 
 class SeriesCursor<T extends { date: string }> {
@@ -170,7 +161,7 @@ export function reconstructHistory(input: HistoryInput): HistoryDay[] {
   }));
 
   const days: HistoryDay[] = [];
-  for (let day = from; day <= to; day = nextDay(day)) {
+  for (let day = from; day <= to; day = addDays(day, 1)) {
     const rates: Record<string, number> = { USD: 1 };
     for (const { currency, cursor } of fxCursors) {
       const point = cursor.at(day);

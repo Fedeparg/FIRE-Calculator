@@ -3,6 +3,7 @@
 // posteriores. Core puro, sin conversión de divisas: trabaja en la divisa de la posición.
 // Criterios, supuestos y fuentes: ver ./README.md (sección `wash-sale.ts`).
 
+import { addMonths } from "../dates.js";
 import { compareTradeLots, walkLots, type LotWalk, type TradeLot } from "./plusvalias.js";
 
 /** Parte de una pérdida diferida que se integra en una venta posterior. */
@@ -29,25 +30,6 @@ export interface SaleWashSale {
 
 /** Tolerancia: las cantidades tienen 6 decimales, un resto menor es ruido binario. */
 const QUANTITY_EPSILON = 1e-9;
-
-/** Días del mes de un `YYYY-MM-DD`. */
-function daysInMonth(year: number, month: number): number {
-  return new Date(Date.UTC(year, month, 0)).getUTCDate();
-}
-
-/**
- * Suma `months` meses a una fecha `YYYY-MM-DD` «de fecha a fecha» (art. 5.1 Código Civil): el
- * 16/07 más dos meses es el 16/09 y menos dos meses, el 16/05. Si el mes de destino no tiene ese
- * día (31/12 + 2 meses), se toma su último día (28/02 o 29/02).
- */
-export function addMonths(date: string, months: number): string {
-  const [year, month, day] = date.split("-").map(Number);
-  const index = year * 12 + (month - 1) + months;
-  const targetYear = Math.floor(index / 12);
-  const targetMonth = (index % 12) + 1;
-  const targetDay = Math.min(day, daysInMonth(targetYear, targetMonth));
-  return `${String(targetYear).padStart(4, "0")}-${String(targetMonth).padStart(2, "0")}-${String(targetDay).padStart(2, "0")}`;
-}
 
 /** Estado de una compra: parte libre (que aún no bloquea ninguna pérdida) y pérdidas que bloquea. */
 interface PurchaseState {
