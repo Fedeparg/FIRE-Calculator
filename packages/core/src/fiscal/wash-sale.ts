@@ -205,7 +205,9 @@ function integrateReleased(
  *   (whether at a gain or a loss), the proportional part stays deferred and moves to the new
  *   shares.
  *
- * Derivatives are not subject to the rule (DGT V2172-21): do not call it with their history.
+ * Derivatives are subject to the rule too: the imported ones are warrants and certificates, which
+ * are transferable securities (DGT V1790-07); V2172-21 only excludes contracts such as options
+ * and futures. See ./README.md.
  */
 export function computeWashSales(lots: readonly TradeLot[], walk?: LotWalk): Map<string, SaleWashSale> {
   const tracked = walk?.openAfterSale ? walk : walkLots(lots, { trackOpenLots: true });
