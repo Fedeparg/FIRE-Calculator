@@ -1,6 +1,6 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database } from '../db/database.module.js';
 import { positionLots, positions, type PositionLot } from '../db/schema.js';
@@ -136,8 +136,9 @@ export class PositionLotsService {
           note: dto.note !== undefined ? dto.note || null : current.note,
           updatedAt: new Date(),
         })
-        .where(eq(positionLots.id, lotId))
+        .where(this.ownedLot(userId, positionId, lotId))
         .returning();
+      if (!row) throw lotNotFound();
 
       await this.recompute(tx, positionId);
       return toPositionLotResponse(row);
@@ -152,7 +153,11 @@ export class PositionLotsService {
     const removedDate = await this.db.transaction(async (tx) => {
       await findOwnedPosition(tx, userId, positionId);
       const lot = await this.findLot(tx, positionId, lotId);
-      await tx.delete(positionLots).where(eq(positionLots.id, lotId));
+      const deleted = await tx
+        .delete(positionLots)
+        .where(this.ownedLot(userId, positionId, lotId))
+        .returning({ id: positionLots.id });
+      if (deleted.length === 0) throw lotNotFound();
       await this.recompute(tx, positionId);
       return lot.tradedAt;
     });
@@ -317,10 +322,26 @@ export class PositionLotsService {
       .from(positionLots)
       .where(and(eq(positionLots.id, lotId), eq(positionLots.positionId, positionId)));
     if (!row) {
-      throw new NotFoundException('Lote no encontrado');
+      throw lotNotFound();
     }
     return row;
   }
+
+  /**
+   * Condición "el lote `lotId`, de la posición `positionId`, es de `userId`". Las escrituras la
+   * usan además de `findOwnedPosition`/`findLot`: defensa en profundidad (ver `ownedPosition`).
+   */
+  private ownedLot(userId: string, positionId: string, lotId: string): SQL {
+    return and(
+      eq(positionLots.id, lotId),
+      eq(positionLots.positionId, positionId),
+      eq(positionLots.userId, userId),
+    ) as SQL;
+  }
+}
+
+function lotNotFound(): NotFoundException {
+  return new NotFoundException('Lote no encontrado');
 }
 
 /** ¿Mismo importe a la escala de la columna? Compara en coma fija; un valor ilegible (p. ej. exponencial) cuenta como distinto. */

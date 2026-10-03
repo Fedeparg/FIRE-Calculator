@@ -8,7 +8,13 @@ import { PriceHistoryService } from '../prices/price-history.service.js';
 import type { CombinePositionDto } from './dto/combine-position.dto.js';
 import type { CreatePositionDto } from './dto/create-position.dto.js';
 import type { UpdatePositionDto } from './dto/update-position.dto.js';
-import { brokerEquals, findOwnedPosition, type DatabaseOrTransaction } from './position-access.js';
+import {
+  brokerEquals,
+  findOwnedPosition,
+  ownedPosition,
+  positionNotFound,
+  type DatabaseOrTransaction,
+} from './position-access.js';
 import { PositionLotsService, sameAmount } from './position-lots.service.js';
 import { toPositionResponse, type PositionResponse } from './position.mapper.js';
 import {
@@ -157,8 +163,10 @@ export class PositionsService {
           assetClass: dto.assetClass ?? current.assetClass,
           updatedAt: new Date(),
         })
-        .where(eq(positions.id, id))
+        .where(ownedPosition(userId, id))
         .returning();
+      // Borrada entre la comprobación de propiedad y la escritura.
+      if (!updated) throw positionNotFound();
 
       if (!declaresAmounts) return updated;
 
@@ -185,8 +193,8 @@ export class PositionsService {
 
   /** Borra una posición propia: 404 si no existe o es de otro usuario. */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.db.delete(positions).where(eq(positions.id, id));
+    const deleted = await this.db.delete(positions).where(ownedPosition(userId, id)).returning({ id: positions.id });
+    if (deleted.length === 0) throw positionNotFound();
   }
 
   /** Delega en el helper compartido con el servicio de lotes (ver `position-access.ts`). */

@@ -1,6 +1,6 @@
 import { MAX_SCENARIOS_PER_USER, type SavedScenarioResponse } from '@sextante/core/contracts';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql, type SQL } from 'drizzle-orm';
 
 import { DRIZZLE, type Database, type DatabaseOrTransaction } from '../db/database.module.js';
 import { savedScenarios, type SavedScenario } from '../db/schema.js';
@@ -70,26 +70,28 @@ export class SavedScenariosService {
         inputs: dto.inputs ?? current.inputs,
         updatedAt: new Date(),
       })
-      .where(eq(savedScenarios.id, id))
+      .where(ownedScenario(userId, id))
       .returning();
+    // Borrado entre la comprobación de propiedad y la escritura.
+    if (!row) throw scenarioNotFound();
 
     return toResponse(row);
   }
 
   /** Borra un escenario del usuario (404 si no existe o es de otro). */
   async remove(userId: string, id: string): Promise<void> {
-    await this.findOwned(userId, id);
-    await this.db.delete(savedScenarios).where(eq(savedScenarios.id, id));
+    const deleted = await this.db
+      .delete(savedScenarios)
+      .where(ownedScenario(userId, id))
+      .returning({ id: savedScenarios.id });
+    if (deleted.length === 0) throw scenarioNotFound();
   }
 
   /** Localiza un escenario verificando propiedad. Centraliza el scoping por usuario. */
   private async findOwned(userId: string, id: string): Promise<SavedScenario> {
-    const [row] = await this.db
-      .select()
-      .from(savedScenarios)
-      .where(and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)));
+    const [row] = await this.db.select().from(savedScenarios).where(ownedScenario(userId, id));
     if (!row) {
-      throw new NotFoundException('Escenario no encontrado');
+      throw scenarioNotFound();
     }
     return row;
   }
@@ -131,4 +133,16 @@ function toResponse(row: SavedScenario): SavedScenarioResponse {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+/**
+ * Condición "el escenario `id` es de `userId`". Lecturas y escrituras por id la llevan siempre,
+ * no solo la comprobación previa: defensa en profundidad entre usuarios.
+ */
+function ownedScenario(userId: string, id: string): SQL {
+  return and(eq(savedScenarios.id, id), eq(savedScenarios.userId, userId)) as SQL;
+}
+
+function scenarioNotFound(): NotFoundException {
+  return new NotFoundException('Escenario no encontrado');
 }

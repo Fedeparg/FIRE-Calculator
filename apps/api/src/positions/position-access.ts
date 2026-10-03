@@ -13,14 +13,25 @@ export type { DatabaseOrTransaction } from '../db/database.module.js';
  * no debe duplicarse.
  */
 export async function findOwnedPosition(db: DatabaseOrTransaction, userId: string, id: string): Promise<Position> {
-  const [row] = await db
-    .select()
-    .from(positions)
-    .where(and(eq(positions.id, id), eq(positions.userId, userId)));
+  const [row] = await db.select().from(positions).where(ownedPosition(userId, id));
   if (!row) {
-    throw new NotFoundException('Posición no encontrada');
+    throw positionNotFound();
   }
   return row;
+}
+
+/**
+ * Condición "la posición `id` es de `userId`". Las escrituras por id la usan además de haber
+ * llamado antes a `findOwnedPosition`: defensa en profundidad, para que la barrera entre
+ * usuarios no dependa solo del orden de las llamadas.
+ */
+export function ownedPosition(userId: string, id: string): SQL {
+  return and(eq(positions.id, id), eq(positions.userId, userId)) as SQL;
+}
+
+/** El 404 de una posición inexistente o ajena (mismo mensaje en todos los caminos). */
+export function positionNotFound(): NotFoundException {
+  return new NotFoundException('Posición no encontrada');
 }
 
 /**
