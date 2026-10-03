@@ -4,8 +4,8 @@ import { parseEnv, type Env } from '../src/config/env.js';
 import { stub } from './factories.js';
 
 /**
- * `ConfigService` mínimo para tests unitarios, respaldado por el esquema real: así los
- * defectos y las conversiones (números, booleanos) son los de producción y no los de un mock.
+ * Minimal `ConfigService` for unit tests, backed by the real schema: the defaults and the
+ * conversions (numbers, booleans) are the production ones rather than a mock's.
  */
 export function fakeConfig(overrides: Record<string, string> = {}): ConfigService<Env, true> {
   const env = parseEnv({

@@ -4,9 +4,9 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 /**
- * ESLint del backend (NestJS + Drizzle). Independiente del ESLint de la raíz (Next), que
- * ignora `apps/**` a propósito: cada paquete se chequea por separado. Usa el preset
- * "type-checked" de typescript-eslint (apoyado en el tsconfig) para reglas con tipos.
+ * Backend ESLint (NestJS + Drizzle). Independent of the root ESLint (Next), which ignores
+ * `apps/**` on purpose: each package is checked separately. Uses the typescript-eslint
+ * "type-checked" preset (backed by the tsconfig) for type-aware rules.
  */
 export default tseslint.config(
   {
@@ -25,12 +25,12 @@ export default tseslint.config(
   },
   {
     rules: {
-      // Nest usa decoradores y DI: algunos patrones disparan falsos positivos.
+      // Nest uses decorators and DI: some patterns trigger false positives.
       '@typescript-eslint/no-extraneous-class': 'off',
-      // Promesas "fire-and-forget" deliberadas se marcan con `void`; el resto, error.
+      // Deliberate "fire-and-forget" promises are marked with `void`; anything else is an error.
       '@typescript-eslint/no-floating-promises': 'error',
-      // Mismo trío que la raíz. `consistent-type-imports` no reporta en ficheros con decoradores
-      // (con `emitDecoratorMetadata`, la inyección de Nest necesita el import en runtime).
+      // Same trio as the root. `consistent-type-imports` does not report in files with decorators
+      // (with `emitDecoratorMetadata`, Nest's injection needs the import at runtime).
       '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],
       '@typescript-eslint/no-non-null-assertion': 'error',
       eqeqeq: ['error', 'always', { null: 'ignore' }],

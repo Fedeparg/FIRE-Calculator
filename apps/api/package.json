@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "API de Sextante (NestJS + Drizzle + PostgreSQL).",
+  "description": "Sextante API (NestJS + Drizzle + PostgreSQL).",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.13"

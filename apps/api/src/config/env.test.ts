@@ -5,7 +5,7 @@ import { DEV_JWT_SECRET, MIN_PRODUCTION_JWT_SECRET_LENGTH, parseDatabaseEnv, par
 const MIN = { DATABASE_URL: 'postgres://db', JWT_SECRET: 'a-strong-secret', APP_URL: 'https://sextante.test' };
 
 describe('parseEnv', () => {
-  it('aplica los defectos con solo las variables obligatorias', () => {
+  it('applies the defaults with only the required variables', () => {
     expect(parseEnv(MIN)).toEqual({
       ...MIN,
       NODE_ENV: 'development',
@@ -22,7 +22,7 @@ describe('parseEnv', () => {
     });
   });
 
-  it('trata la cadena vacía del compose como ausente', () => {
+  it('treats the empty string from compose as absent', () => {
     const env = parseEnv({
       ...MIN,
       PORT: '',
@@ -49,7 +49,7 @@ describe('parseEnv', () => {
     expect(env.OAUTH_REAPER_CRON).toBeUndefined();
   });
 
-  it('convierte PORT a número y recorta los textos opcionales', () => {
+  it('converts PORT to a number and trims optional text', () => {
     const env = parseEnv({ ...MIN, PORT: '8080', PRICE_INTRADAY_CRON: ' off ', OPENFIGI_API_KEY: ' key ' });
 
     expect(env.PORT).toBe(8080);
@@ -57,32 +57,32 @@ describe('parseEnv', () => {
     expect(env.OPENFIGI_API_KEY).toBe('key');
   });
 
-  it('COOKIE_SECURE solo es true con el texto exacto "true"', () => {
+  it('COOKIE_SECURE is true only for the exact text "true"', () => {
     expect(parseEnv({ ...MIN, COOKIE_SECURE: 'true' }).COOKIE_SECURE).toBe(true);
     for (const value of ['false', 'TRUE', '1', 'yes']) {
       expect(parseEnv({ ...MIN, COOKIE_SECURE: value }).COOKIE_SECURE).toBe(false);
     }
   });
 
-  it('TRUST_PROXY_HOPS acepta enteros >= 0 y cae a 1 con un valor inválido', () => {
+  it('TRUST_PROXY_HOPS accepts integers >= 0 and falls back to 1 on an invalid value', () => {
     expect(parseEnv({ ...MIN, TRUST_PROXY_HOPS: '0' }).TRUST_PROXY_HOPS).toBe(0);
     expect(parseEnv({ ...MIN, TRUST_PROXY_HOPS: '2' }).TRUST_PROXY_HOPS).toBe(2);
-    expect(parseEnv({ ...MIN, TRUST_PROXY_HOPS: 'dos' }).TRUST_PROXY_HOPS).toBe(1);
+    expect(parseEnv({ ...MIN, TRUST_PROXY_HOPS: 'two' }).TRUST_PROXY_HOPS).toBe(1);
     expect(parseEnv({ ...MIN, TRUST_PROXY_HOPS: '-1' }).TRUST_PROXY_HOPS).toBe(1);
   });
 
-  it('las retenciones solo aceptan enteros > 0 y si no caen a su defecto', () => {
+  it('retention settings accept only integers > 0 and otherwise fall back to their default', () => {
     expect(parseEnv({ ...MIN, MCP_AUDIT_RETENTION_DAYS: '5' }).MCP_AUDIT_RETENTION_DAYS).toBe(5);
     expect(parseEnv({ ...MIN, MCP_AUDIT_RETENTION_DAYS: '0' }).MCP_AUDIT_RETENTION_DAYS).toBe(180);
-    expect(parseEnv({ ...MIN, MCP_AUDIT_RETENTION_DAYS: 'cero' }).MCP_AUDIT_RETENTION_DAYS).toBe(180);
+    expect(parseEnv({ ...MIN, MCP_AUDIT_RETENTION_DAYS: 'zero' }).MCP_AUDIT_RETENTION_DAYS).toBe(180);
     expect(parseEnv({ ...MIN, OAUTH_CLIENT_RETENTION_DAYS: '-3' }).OAUTH_CLIENT_RETENTION_DAYS).toBe(30);
   });
 
-  it('exige DATABASE_URL, JWT_SECRET y APP_URL y las lista todas juntas', () => {
+  it('requires DATABASE_URL, JWT_SECRET and APP_URL and lists them all together', () => {
     expect(() => parseEnv({})).toThrow(
-      /DATABASE_URL: DATABASE_URL es obligatoria[\s\S]*JWT_SECRET: JWT_SECRET es obligatoria[\s\S]*APP_URL: APP_URL es obligatoria/,
+      /DATABASE_URL: DATABASE_URL is required[\s\S]*JWT_SECRET: JWT_SECRET is required[\s\S]*APP_URL: APP_URL is required/,
     );
-    expect(() => parseEnv({ ...MIN, JWT_SECRET: '' })).toThrow(/JWT_SECRET es obligatoria/);
+    expect(() => parseEnv({ ...MIN, JWT_SECRET: '' })).toThrow(/JWT_SECRET is required/);
   });
 
   it.each([
@@ -91,14 +91,14 @@ describe('parseEnv', () => {
     ['PORT', 'abc'],
     ['PORT', '0'],
     ['PORT', '70000'],
-  ])('rechaza %s=%s con un mensaje que nombra la variable', (name, value) => {
+  ])('rejects %s=%s with a message naming the variable', (name, value) => {
     expect(() => parseEnv({ ...MIN, [name]: value })).toThrow(
-      new RegExp(`Configuración de entorno inválida[\\s\\S]*${name}:`),
+      new RegExp(`Invalid environment configuration[\\s\\S]*${name}:`),
     );
   });
 
-  describe('producción', () => {
-    /** Mínimo válido en producción: secreto largo, cookie Secure y APP_URL https. */
+  describe('production', () => {
+    /** Minimal valid production config: long secret, Secure cookie and https APP_URL. */
     const PROD = {
       ...MIN,
       NODE_ENV: 'production',
@@ -106,48 +106,48 @@ describe('parseEnv', () => {
       COOKIE_SECURE: 'true',
     };
 
-    it('rechaza el secreto de desarrollo', () => {
+    it('rejects the development secret', () => {
       expect(() => parseEnv({ ...PROD, JWT_SECRET: DEV_JWT_SECRET })).toThrow(
-        /JWT_SECRET: usa el valor de desarrollo en producción/,
+        /JWT_SECRET: uses the development value in production/,
       );
     });
 
-    it('rechaza un secreto de menos de 32 caracteres', () => {
+    it('rejects a secret shorter than 32 characters', () => {
       expect(() => parseEnv({ ...PROD, JWT_SECRET: 'x'.repeat(MIN_PRODUCTION_JWT_SECRET_LENGTH - 1) })).toThrow(
-        /JWT_SECRET: debe tener al menos 32 caracteres/,
+        /JWT_SECRET: must be at least 32 characters long/,
       );
     });
 
-    it('exige COOKIE_SECURE=true', () => {
-      expect(() => parseEnv({ ...PROD, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE: debe ser "true"/);
+    it('requires COOKIE_SECURE=true', () => {
+      expect(() => parseEnv({ ...PROD, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE: must be "true"/);
       expect(() => parseEnv({ ...PROD, COOKIE_SECURE: undefined })).toThrow(/COOKIE_SECURE/);
     });
 
-    it('exige un APP_URL https', () => {
-      expect(() => parseEnv({ ...PROD, APP_URL: 'http://sextante.test' })).toThrow(/APP_URL: debe empezar por https/);
+    it('requires an https APP_URL', () => {
+      expect(() => parseEnv({ ...PROD, APP_URL: 'http://sextante.test' })).toThrow(/APP_URL: must start with https/);
     });
 
-    it('acepta una configuración segura', () => {
+    it('accepts a secure configuration', () => {
       expect(parseEnv(PROD).NODE_ENV).toBe('production');
     });
 
-    it('permite el secreto de desarrollo fuera de producción', () => {
+    it('allows the development secret outside production', () => {
       expect(parseEnv({ ...MIN, JWT_SECRET: DEV_JWT_SECRET }).JWT_SECRET).toBe(DEV_JWT_SECRET);
       expect(parseEnv({ ...MIN, NODE_ENV: 'test', JWT_SECRET: DEV_JWT_SECRET }).JWT_SECRET).toBe(DEV_JWT_SECRET);
     });
   });
 
   describe('EMAIL_TRANSPORT=resend', () => {
-    it('exige RESEND_API_KEY y EMAIL_FROM', () => {
+    it('requires RESEND_API_KEY and EMAIL_FROM', () => {
       expect(() => parseEnv({ ...MIN, EMAIL_TRANSPORT: 'resend' })).toThrow(
-        /RESEND_API_KEY: es obligatoria[\s\S]*EMAIL_FROM: es obligatoria/,
+        /RESEND_API_KEY: is required[\s\S]*EMAIL_FROM: is required/,
       );
       expect(() => parseEnv({ ...MIN, EMAIL_TRANSPORT: 'resend', RESEND_API_KEY: 're_x', EMAIL_FROM: '' })).toThrow(
-        /EMAIL_FROM: es obligatoria/,
+        /EMAIL_FROM: is required/,
       );
     });
 
-    it('arranca con ambas definidas', () => {
+    it('starts with both set', () => {
       const env = parseEnv({
         ...MIN,
         EMAIL_TRANSPORT: 'resend',
@@ -157,19 +157,19 @@ describe('parseEnv', () => {
       expect(env.EMAIL_FROM).toBe('Sextante <a@b.c>');
     });
 
-    it('no pide nada de Resend con el transporte dev', () => {
+    it('requires nothing from Resend with the dev transport', () => {
       expect(parseEnv({ ...MIN, EMAIL_TRANSPORT: 'dev' }).RESEND_API_KEY).toBeUndefined();
     });
   });
 });
 
 describe('parseDatabaseEnv', () => {
-  it('solo exige DATABASE_URL', () => {
+  it('requires only DATABASE_URL', () => {
     expect(parseDatabaseEnv({ DATABASE_URL: 'postgres://db' })).toEqual({ DATABASE_URL: 'postgres://db' });
   });
 
-  it('falla sin DATABASE_URL o con ella vacía', () => {
-    expect(() => parseDatabaseEnv({})).toThrow(/DATABASE_URL es obligatoria/);
-    expect(() => parseDatabaseEnv({ DATABASE_URL: '' })).toThrow(/DATABASE_URL es obligatoria/);
+  it('fails without DATABASE_URL or with it empty', () => {
+    expect(() => parseDatabaseEnv({})).toThrow(/DATABASE_URL is required/);
+    expect(() => parseDatabaseEnv({ DATABASE_URL: '' })).toThrow(/DATABASE_URL is required/);
   });
 });

@@ -1,5 +1,5 @@
-// Debe ir PRIMERO: en ESM los imports se evalúan en orden y los decoradores de Nest
-// escriben metadata vía reflect-metadata al definirse las clases.
+// Must come FIRST: in ESM imports are evaluated in order, and Nest's decorators write
+// metadata through reflect-metadata when the classes are defined.
 import 'reflect-metadata';
 
 import { NestFactory } from '@nestjs/core';
@@ -17,29 +17,29 @@ async function bootstrap(): Promise<void> {
     bufferLogs: false,
   });
 
-  // Ejecuta OnModuleDestroy (cierra el pool de Postgres).
+  // Runs OnModuleDestroy (closes the Postgres pool).
   app.enableShutdownHooks();
 
   const config = app.get<ConfigService<Env, true>>(ConfigService);
 
-  // Saltos de proxy de confianza (IP real para el rate limit y cookies Secure). En producción
-  // puede haber dos (proxy TLS → BFF de Next → API); si el de en medio reescribe
-  // `X-Forwarded-For`, con `1` todos compartirían cubo. Se ajusta con `TRUST_PROXY_HOPS` según
-  // el log de diagnóstico de `POST /api/auth/request` (`req.ip` y `X-Forwarded-For`).
+  // Trusted proxy hops (real IP for the rate limit and Secure cookies). In production there can
+  // be two (TLS proxy → Next BFF → API); if the middle one rewrites `X-Forwarded-For`, with `1`
+  // everyone would share a bucket. Tune it with `TRUST_PROXY_HOPS` based on the diagnostic log
+  // of `POST /api/auth/request` (`req.ip` and `X-Forwarded-For`).
   app.set('trust proxy', config.get('TRUST_PROXY_HOPS', { infer: true }));
 
   app.use(cookieParser());
 
-  // /api encaja con la topología same-origin (Caddy en prod, rewrites de Next en dev).
+  // /api fits the same-origin topology (Caddy in prod, Next rewrites in dev).
   app.setGlobalPrefix('api');
 
-  // Tras cookieParser: /authorize lee la cookie de sesión.
+  // After cookieParser: /authorize reads the session cookie.
   mountMcp(app);
 
   const port = config.get('PORT', { infer: true });
 
   await app.listen(port, '0.0.0.0');
-  Logger.log(`API escuchando en http://localhost:${port}/api`, 'Bootstrap');
+  Logger.log(`API listening on http://localhost:${port}/api`, 'Bootstrap');
 }
 
 void bootstrap();

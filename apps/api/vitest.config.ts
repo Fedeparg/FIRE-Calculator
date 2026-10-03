@@ -4,17 +4,17 @@ import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 
 /**
- * Configuración de Vitest para el backend.
+ * Vitest configuration for the backend.
  *
- * - `unplugin-swc` compila el TS con decoradores de NestJS (legacy + metadata),
- *   igual que `tsc`/`nest build`; esbuild (el transform por defecto de Vitest) no
- *   emite metadata de decoradores.
- * - El alias `@sextante/core` apunta al código fuente del paquete, así los tests
- *   no necesitan compilarlo a `dist/` antes.
- * - `globalSetup` levanta UN PostgreSQL efímero (Testcontainers) para toda la
- *   suite y aplica las migraciones; la URL se pasa a los tests vía `inject`.
- * - `fileParallelism: false`: los ficheros comparten esa única BD, así que se
- *   ejecutan en serie y cada uno limpia sus tablas (ver `test/db.ts`).
+ * - `unplugin-swc` compiles the TS with NestJS decorators (legacy + metadata),
+ *   like `tsc`/`nest build`; esbuild (Vitest's default transform) does not emit
+ *   decorator metadata.
+ * - The `@sextante/core` alias points at the package source, so the tests do
+ *   not need it compiled to `dist/` first.
+ * - `globalSetup` starts ONE ephemeral PostgreSQL (Testcontainers) for the whole
+ *   suite and applies the migrations; the URL reaches the tests via `inject`.
+ * - `fileParallelism: false`: the files share that single DB, so they run
+ *   serially and each one cleans its tables (see `test/db.ts`).
  */
 export default defineConfig({
   plugins: [
