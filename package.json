@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Personal finance and FIRE calculator suite for the Spanish tax system, with an aggregated portfolio and an MCP server.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "author": "Federico Pardo",
   "homepage": "https://sextante.fpardo.net",
   "packageManager": "pnpm@11.6.0",
