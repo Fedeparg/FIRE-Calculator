@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Sextante API (NestJS + Drizzle + PostgreSQL).",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=22.13"
   },

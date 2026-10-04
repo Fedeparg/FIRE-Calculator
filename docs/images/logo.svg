@@ -1,0 +1,12 @@
+<!-- Sextante distilled to what reads at 16px: frame, index arm, knob and arc.
+     No theme variables: a favicon is rasterized outside the document. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#4f46e5" />
+  <g stroke="#ffffff" stroke-width="2.8" stroke-linecap="round">
+    <line x1="16" y1="7.5" x2="6.2" y2="24" />
+    <line x1="16" y1="7.5" x2="25.8" y2="24" />
+    <line x1="16" y1="7.5" x2="16" y2="25" />
+  </g>
+  <path d="M5.6 24 A20 20 0 0 0 26.4 24" fill="none" stroke="#10b981" stroke-width="3.2" stroke-linecap="round" />
+  <circle cx="16" cy="7" r="3.6" fill="#ffffff" />
+</svg>
