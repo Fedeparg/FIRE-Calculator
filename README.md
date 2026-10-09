@@ -9,7 +9,6 @@ plus an aggregated portfolio that your own AI assistant can read and write over 
 
 [sextante.fpardo.net](https://sextante.fpardo.net) (Spanish) · [English](https://sextante.fpardo.net/en)
 
-[![Status: discontinued](https://img.shields.io/badge/status-discontinued-lightgrey)](#project-status)
 [![License: MIT](https://img.shields.io/badge/license-MIT-10b981)](LICENSE)
 [![CI](https://github.com/Fedeparg/FIRE-Calculator/actions/workflows/ci.yml/badge.svg)](https://github.com/Fedeparg/FIRE-Calculator/actions/workflows/ci.yml)
 <br>
@@ -31,10 +30,8 @@ plus an aggregated portfolio that your own AI assistant can read and write over 
 
 ## Project status
 
-> [!IMPORTANT]
-> **Sextante is discontinued.** It is no longer developed or maintained: there will be no new
-> features, fixes or support. The full source code is released under the [MIT licence](LICENSE)
-> so that anyone can study it, reuse it or carry it on.
+Sextante is live at [sextante.fpardo.net](https://sextante.fpardo.net). The full source code is
+released under the [MIT licence](LICENSE), so anyone can study it and reuse it.
 
 > [!WARNING]
 > **Not financial advice.** Sextante computes and explains; it never recommends. Every result
