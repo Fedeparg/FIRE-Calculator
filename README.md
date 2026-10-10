@@ -10,7 +10,7 @@ plus an aggregated portfolio that your own AI assistant can read and write over 
 [sextante.fpardo.net](https://sextante.fpardo.net) (Spanish) · [English](https://sextante.fpardo.net/en)
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-10b981)](LICENSE)
-[![CI](https://github.com/Fedeparg/FIRE-Calculator/actions/workflows/ci.yml/badge.svg)](https://github.com/Fedeparg/FIRE-Calculator/actions/workflows/ci.yml)
+[![CI](https://github.com/Fedeparg/sextante/actions/workflows/ci.yml/badge.svg)](https://github.com/Fedeparg/sextante/actions/workflows/ci.yml)
 <br>
 ![Next.js 16](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
 ![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)

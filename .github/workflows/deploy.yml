@@ -60,17 +60,16 @@ jobs:
   deploy:
     # Three conditions, all required:
     #
-    # - `github.repository`: this repo is mirrored to a PUBLIC mirror
-    #   (Fedeparg/sextante) that exists only as a showcase and has NO runner of its own.
-    #   Without this guard, the job there would request a nonexistent
-    #   `[self-hosted, sextante]` runner and stay queued forever. CAUTION: this is NOT a
-    #   security control (a PR from a fork can bring its own workflow without this `if`);
-    #   what makes the public copy safe is that it has no registered runner.
+    # - `github.repository`: run only in this repository. A fork or any other copy has no
+    #   `[self-hosted, sextante]` runner, so without this guard the job there would stay
+    #   queued forever. CAUTION: this is NOT a security control (a PR from a fork can bring
+    #   its own workflow without this `if`); what keeps other copies harmless is that they
+    #   have no registered runner.
     # - `workflow_dispatch`: a manual trigger is accepted with no further checks (only
     #   someone with write access to the repo can launch it).
     # - `workflow_run`: only if CI ended green AND it was the `main` branch.
     if: >-
-      github.repository == 'Fedeparg/FIRE-Calculator' &&
+      github.repository == 'Fedeparg/sextante' &&
       (github.event_name == 'workflow_dispatch' ||
        (github.event.workflow_run.conclusion == 'success' &&
         github.event.workflow_run.head_branch == 'main'))
